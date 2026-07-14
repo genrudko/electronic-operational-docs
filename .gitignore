@@ -1,0 +1,46 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Runtime data
+data/*
+!data/.gitkeep
+*.sqlite3
+*.db
+media/
+staticfiles/
+
+# Patch runtime artifacts
+backups/
+logs/
+*.log
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
+# Packaging artifacts
+*.egg-info/
+
+# Patch delivery files belong outside the project repository
+/patch_*.py
+/patch_*.ps1
+/PATCH_*.zip
+/PATCH_*_RUNBOOK.txt

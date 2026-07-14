@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:18.4-bookworm
+    container_name: eod-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-eod}
+      POSTGRES_USER: ${POSTGRES_USER:-eod}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eod_local_password}
+    ports:
+      - "${POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - eod_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eod} -d ${POSTGRES_DB:-eod}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  eod_postgres_data:
