@@ -79,6 +79,8 @@
             <dd>
                 {% if integrity.snapshot.schema_version == "eod.document.registration.v1" %}
                     Регистрация документа, версия 1
+                {% elif integrity.snapshot.schema_version == "eod.document.registration.v2" %}
+                    Регистрация документа с оборудованием, версия 2
                 {% else %}
                     Неизвестный формат снимка
                 {% endif %}
@@ -151,6 +153,34 @@
         {% endif %}
         <div class="document-body">{{ document.current_version.content.body|linebreaksbr }}</div>
     </article>
+</section>
+
+<section class="profile-card">
+    <h2>Оборудование документа</h2>
+    <p class="muted">
+        Для зарегистрированной версии показаны диспетчерские наименования,
+        зафиксированные на момент регистрации.
+    </p>
+    <div class="document-equipment-list">
+    {% for row in equipment_rows %}
+        <article class="document-equipment-item">
+            <div>
+                <a href="{% url 'equipment:detail' row.public_id %}">
+                    <strong>{{ row.display_name }}</strong>
+                </a>
+                <div class="muted">{{ row.technical_name }}</div>
+            </div>
+            <code>{{ row.code }}</code>
+            <span>{{ row.type_name }}</span>
+            <small>{{ row.site_name }}{% if row.hierarchy_path %} · {{ row.hierarchy_path }}{% endif %}</small>
+            {% if row.frozen %}
+                <span class="snapshot-label">Снимок на момент регистрации</span>
+            {% endif %}
+        </article>
+    {% empty %}
+        <p class="muted">Оборудование к этой версии не привязано.</p>
+    {% endfor %}
+    </div>
 </section>
 
 <section class="profile-card">

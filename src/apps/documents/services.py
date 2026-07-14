@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from enum import StrEnum
@@ -13,6 +14,12 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.utils import timezone
 
+from apps.equipment.services import (
+    document_equipment_preview,
+    equipment_snapshot_payload,
+    freeze_document_equipment_links,
+    set_document_equipment_links,
+)
 from apps.organizations.models import Employee
 from apps.organizations.services import get_effective_roles, user_has_role
 
@@ -95,6 +102,7 @@ def create_document_draft(
     actor: Employee,
     title: str,
     content: dict[str, Any],
+    equipment_assets: Iterable[Any] | None = None,
     public_id: UUID | None = None,
 ) -> Document:
     _validate_actor(actor, document_type.organization_id)
@@ -124,6 +132,12 @@ def create_document_draft(
     )
     document.current_version = version
     document.save(update_fields=("current_version", "updated_at"))
+    if equipment_assets is not None:
+        set_document_equipment_links(
+            document_version=version,
+            actor=actor,
+            equipment_assets=equipment_assets,
+        )
     _audit(
         event_type=AuditEvent.EventType.DOCUMENT_CREATED,
         actor=actor,
@@ -141,6 +155,7 @@ def update_document_draft(
     actor: Employee,
     title: str,
     content: dict[str, Any],
+    equipment_assets: Iterable[Any] | None = None,
 ) -> Document:
     locked = (
         Document.objects.select_for_update()
@@ -165,6 +180,12 @@ def update_document_draft(
     version.title = normalized_title
     version.content = content
     version.save(update_fields=("title", "content", "updated_at"))
+    if equipment_assets is not None:
+        set_document_equipment_links(
+            document_version=version,
+            actor=actor,
+            equipment_assets=equipment_assets,
+        )
     _audit(
         event_type=AuditEvent.EventType.DRAFT_UPDATED,
         actor=actor,
@@ -216,7 +237,9 @@ class IntegrityResult:
     signature: DocumentSignature | None = None
 
 
-SNAPSHOT_SCHEMA = "eod.document.registration.v1"
+LEGACY_SNAPSHOT_SCHEMA = "eod.document.registration.v1"
+SNAPSHOT_SCHEMA = "eod.document.registration.v2"
+SUPPORTED_SNAPSHOT_SCHEMAS = {LEGACY_SNAPSHOT_SCHEMA, SNAPSHOT_SCHEMA}
 SIGNATURE_SCHEMA = "eod.document.signature.v1"
 
 
@@ -301,11 +324,18 @@ def _effective_roles_snapshot(actor: Employee, day: date) -> list[dict[str, Any]
     )
 
 
-def registration_confirmation_preview(actor: Employee) -> dict[str, Any]:
-    return {
+def registration_confirmation_preview(
+    actor: Employee,
+    document: Document | None = None,
+) -> dict[str, Any]:
+    preview = {
         "identity": _employee_snapshot(actor),
         "effective_roles": _effective_roles_snapshot(actor, timezone.localdate()),
+        "equipment": [],
     }
+    if document is not None:
+        preview["equipment"] = document_equipment_preview(document)
+    return preview
 
 
 def _protected_document_payload(document: Document, version: DocumentVersion) -> dict[str, Any]:
@@ -368,6 +398,7 @@ def _registration_snapshot_payload(
         "schema": SNAPSHOT_SCHEMA,
         "purpose": SignedSnapshot.Purpose.REGISTRATION,
         **protected,
+        "equipment": equipment_snapshot_payload(version),
         "historical_context": historical_context,
     }
 
@@ -552,6 +583,11 @@ def _register_document_core(
         )
     )
 
+    freeze_document_equipment_links(
+        document_version=version,
+        actor=actor,
+        captured_at=registered_at,
+    )
     snapshot, signature = _create_registration_signature(
         document=locked,
         version=version,
@@ -666,10 +702,18 @@ def verify_document_integrity(document: Document) -> IntegrityResult:
             snapshot=snapshot,
             signature=signature,
         )
-    if stored_payload.get("schema") != SNAPSHOT_SCHEMA:
+    stored_schema = stored_payload.get("schema")
+    if stored_schema not in SUPPORTED_SNAPSHOT_SCHEMAS:
         return IntegrityResult(
             status=IntegrityStatus.INVALID,
             message="Версия схемы снимка не поддерживается.",
+            snapshot=snapshot,
+            signature=signature,
+        )
+    if snapshot.schema_version != stored_schema:
+        return IntegrityResult(
+            status=IntegrityStatus.INVALID,
+            message="Версия схемы записи не совпадает со схемой канонического снимка.",
             snapshot=snapshot,
             signature=signature,
         )
@@ -687,6 +731,18 @@ def verify_document_integrity(document: Document) -> IntegrityResult:
             snapshot=snapshot,
             signature=signature,
         )
+    if stored_schema == SNAPSHOT_SCHEMA:
+        current_equipment = _json_safe(equipment_snapshot_payload(version))
+        if current_equipment != stored_payload.get("equipment"):
+            return IntegrityResult(
+                status=IntegrityStatus.INVALID,
+                message=(
+                    "Снимок оборудования документа отличается от "
+                    "подписанного канонического снимка."
+                ),
+                snapshot=snapshot,
+                signature=signature,
+            )
 
     checksum_payload = _signature_checksum_payload(
         snapshot_digest=snapshot.digest,

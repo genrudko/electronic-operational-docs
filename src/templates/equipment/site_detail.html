@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{{ site }} · Реестр оборудования{% endblock %}
+
+{% block content %}
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">ЭНЕРГООБЪЕКТ</div>
+        <h1>{{ site }}</h1>
+        <p>{{ site.name }}</p>
+    </div>
+    <a href="{% url 'equipment:registry' %}">К реестру</a>
+</section>
+
+<section class="profile-card">
+    <h2>Реквизиты энергообъекта</h2>
+    <dl>
+        <dt>Системный код</dt><dd><code>{{ site.code }}</code></dd>
+        <dt>Вид объекта</dt><dd>{{ site.get_site_type_display }}</dd>
+        <dt>Организация</dt><dd>{{ site.organization }}</dd>
+        <dt>Контур</dt>
+        <dd>{% if site.is_external %}Смежный или внешний объект{% else %}Объект организации{% endif %}</dd>
+        <dt>Состояние</dt><dd>{% if site.is_active %}Действующий{% else %}Недействующий{% endif %}</dd>
+    </dl>
+</section>
+
+<section class="profile-card">
+    <h2>Иерархия оборудования</h2>
+    <p class="muted">
+        Отступ показывает вложенность: например, распределительное устройство →
+        секция → ячейка → комплект РЗА.
+    </p>
+    <div class="equipment-tree">
+    {% for row in tree_rows %}
+        <a
+            class="equipment-tree-row"
+            style="--tree-level: {{ row.level }}"
+            href="{% url 'equipment:detail' row.equipment.public_id %}"
+        >
+            <span class="tree-branch" aria-hidden="true">└</span>
+            <strong>{{ row.display_name }}</strong>
+            <code>{{ row.equipment.code }}</code>
+            <span>{{ row.equipment.equipment_type.name }}</span>
+        </a>
+    {% empty %}
+        <p class="muted">Оборудование на энергообъекте пока не заведено.</p>
+    {% endfor %}
+    </div>
+</section>
+{% endblock %}

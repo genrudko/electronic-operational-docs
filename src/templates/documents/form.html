@@ -39,6 +39,13 @@
         {{ form.body }}
         <div class="field-errors">{{ form.body.errors }}</div>
 
+        <label for="{{ form.equipment_assets.id_for_label }}">
+            {{ form.equipment_assets.label }}
+        </label>
+        {{ form.equipment_assets }}
+        <p class="field-help-text">{{ form.equipment_assets.help_text }}</p>
+        <div class="field-errors">{{ form.equipment_assets.errors }}</div>
+
         <div class="form-actions">
             <button class="button" type="submit">{{ submit_label }}</button>
             {% if document %}

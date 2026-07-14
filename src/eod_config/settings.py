@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "apps.organizations.apps.OrganizationsConfig",
     "apps.documents.apps.DocumentsConfig",
     "apps.normatives.apps.NormativesConfig",
+    "apps.equipment.apps.EquipmentConfig",
 ]
 
 MIDDLEWARE = [

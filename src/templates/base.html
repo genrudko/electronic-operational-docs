@@ -8,6 +8,7 @@
     <title>{% block title %}Электронная оперативная документация{% endblock %}</title>
     <link rel="icon" href="{% static 'system/favicon.svg' %}" type="image/svg+xml">
     <link rel="stylesheet" href="{% static 'system/app.css' %}">
+    <script src="{% static 'system/app.js' %}" defer></script>
 </head>
 <body>
 <header class="topbar">
@@ -24,6 +25,7 @@
             <a href="{% url 'organizations:directory' %}">Организация</a>
             <a href="{% url 'documents:list' %}">Документы</a>
             <a href="{% url 'normatives:registry' %}">Нормативы</a>
+            <a href="{% url 'equipment:registry' %}">Оборудование</a>
             <a href="{% url 'organizations:account' %}">Моя учётная запись</a>
             <form method="post" action="{% url 'organizations:logout' %}">
                 {% csrf_token %}

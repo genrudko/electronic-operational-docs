@@ -7,6 +7,8 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods, require_POST
 
+from apps.equipment.services import document_equipment_rows
+
 from .forms import (
     DocumentDraftForm,
     DocumentLinkForm,
@@ -78,6 +80,7 @@ def document_create(request: HttpRequest) -> HttpResponse:
                 "subject": form.cleaned_data["subject"],
                 "body": form.cleaned_data["body"],
             },
+            equipment_assets=form.cleaned_data["equipment_assets"],
         )
         messages.success(request, "Черновик документа создан.")
         return redirect("documents:detail", public_id=document.public_id)
@@ -148,6 +151,7 @@ def document_detail(request: HttpRequest, public_id) -> HttpResponse:
             "outgoing_links": outgoing_links,
             "incoming_links": incoming_links,
             "link_form": link_form,
+            "equipment_rows": document_equipment_rows(document),
             "integrity": (
                 verify_document_integrity(document)
                 if document.status == Document.Status.REGISTERED
@@ -189,6 +193,7 @@ def document_edit(request: HttpRequest, public_id) -> HttpResponse:
                     "subject": form.cleaned_data["subject"],
                     "body": form.cleaned_data["body"],
                 },
+                equipment_assets=form.cleaned_data["equipment_assets"],
             )
         except ValidationError as error:
             form.add_error(None, _validation_message(error))
@@ -245,7 +250,7 @@ def document_register(request: HttpRequest, public_id) -> HttpResponse:
         {
             "document": document,
             "employee": employee,
-            "confirmation_preview": registration_confirmation_preview(employee),
+            "confirmation_preview": registration_confirmation_preview(employee, document),
             "form": form,
         },
     )

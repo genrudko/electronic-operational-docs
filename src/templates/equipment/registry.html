@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Реестр оборудования · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">ДОВЕРЕННОЕ СИСТЕМНОЕ ЯДРО · PATCH 006</div>
+        <h1>Реестр оборудования</h1>
+        <p>
+            Энергообъекты, иерархия оборудования, диспетчерские наименования,
+            алиасы, связи и исторические редакции.
+        </p>
+    </div>
+</section>
+
+<section class="help-overview">
+    <h2>Как устроен реестр</h2>
+    <p>
+        Стабильный код идентифицирует оборудование в системе, а диспетчерское
+        наименование хранится редакциями. Старый документ сохраняет то наименование,
+        которое действовало при его регистрации.
+    </p>
+</section>
+
+<section class="summary-grid equipment-summary">
+    <article class="metric">
+        <span>Энергообъекты</span>
+        <strong>{{ sites|length }}</strong>
+    </article>
+    <article class="metric">
+        <span>Найдено оборудования</span>
+        <strong>{{ asset_count }}</strong>
+    </article>
+    <article class="metric">
+        <span>Виды оборудования</span>
+        <strong>{{ types|length }}</strong>
+    </article>
+</section>
+
+<section class="profile-card equipment-filter-card">
+    <h2>Поиск и фильтры</h2>
+    <form method="get" class="equipment-filter-form">
+        <div>
+            <label for="equipment-search">Наименование, код или алиас</label>
+            <input
+                id="equipment-search"
+                type="search"
+                name="q"
+                value="{{ query }}"
+                placeholder="Например: КТП 1, ВЭУ-01 или DEMO-KTP-01"
+            >
+        </div>
+        <div>
+            <label for="equipment-site-filter">Энергообъект</label>
+            <select id="equipment-site-filter" name="site">
+                <option value="">Все энергообъекты</option>
+                {% for site in sites %}
+                    <option value="{{ site.code }}" {% if selected_site == site.code %}selected{% endif %}>
+                        {{ site }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="equipment-type-filter">Вид оборудования</label>
+            <select id="equipment-type-filter" name="type">
+                <option value="">Все виды</option>
+                {% for type in types %}
+                    <option value="{{ type.code }}" {% if selected_type == type.code %}selected{% endif %}>
+                        {{ type.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="button" type="submit">Найти</button>
+        {% if query or selected_site or selected_type %}
+            <a href="{% url 'equipment:registry' %}">Сбросить</a>
+        {% endif %}
+    </form>
+</section>
+
+<section class="profile-card">
+    <h2>Энергообъекты</h2>
+    <div class="site-card-grid">
+    {% for site in sites %}
+        <a class="site-card" href="{% url 'equipment:site_detail' site.code %}">
+            <strong>{{ site }}</strong>
+            <span>{{ site.get_site_type_display }}</span>
+            {% if site.is_external %}<em>Смежный объект</em>{% endif %}
+        </a>
+    {% empty %}
+        <p class="muted">Энергообъектов пока нет.</p>
+    {% endfor %}
+    </div>
+</section>
+
+<section class="profile-card">
+    <h2>Оборудование</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Диспетчерское наименование</th>
+                    <th>Стабильный код</th>
+                    <th>Вид</th>
+                    <th>Энергообъект</th>
+                    <th>Состояние</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in rows %}
+                <tr>
+                    <td>
+                        <a href="{% url 'equipment:detail' row.equipment.public_id %}">
+                            {{ row.display_name }}
+                        </a>
+                        {% if row.equipment.parent_id %}
+                            <div class="muted equipment-path">{{ row.hierarchy_path }}</div>
+                        {% endif %}
+                    </td>
+                    <td><code>{{ row.equipment.code }}</code></td>
+                    <td>{{ row.equipment.equipment_type.name }}</td>
+                    <td>{{ row.equipment.site }}</td>
+                    <td>{{ row.equipment.get_status_display }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5">По заданным условиям оборудование не найдено.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

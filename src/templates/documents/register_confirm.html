@@ -5,7 +5,7 @@
 {% block content %}
 <section class="page-heading compact">
     <div>
-        <div class="eyebrow">СИСТЕМНОЕ ПОДТВЕРЖДЕНИЕ · PATCH 005</div>
+        <div class="eyebrow">СИСТЕМНОЕ ПОДТВЕРЖДЕНИЕ · PATCH 005.1–006</div>
         <h1>Подтверждение регистрации</h1>
         <p>Проверьте точное содержимое версии до выделения регистрационного номера.</p>
     </div>
@@ -24,7 +24,7 @@
         <p>
             После успешной проверки пароля система зафиксирует показанную версию документа,
             данные текущей персональной учётной записи, должность, подразделение, рабочее место,
-            действующие полномочия и серверное время.
+            действующие полномочия, выбранное оборудование и серверное время.
         </p>
         <p>
             Пароль нигде не сохраняется. Неверный пароль не выделяет регистрационный номер
@@ -80,6 +80,31 @@
         {% endif %}
         <div class="document-body">{{ document.current_version.content.body|linebreaksbr }}</div>
     </article>
+</section>
+
+<section class="profile-card">
+    <h2>Оборудование, включаемое в снимок</h2>
+    <p class="muted">
+        При регистрации будут зафиксированы стабильный код, вид оборудования,
+        энергообъект, иерархический путь и действующее диспетчерское наименование.
+    </p>
+    <div class="document-equipment-list">
+    {% for row in confirmation_preview.equipment %}
+        <article class="document-equipment-item">
+            <div>
+                <a href="{% url 'equipment:detail' row.public_id %}">
+                    <strong>{{ row.display_name }}</strong>
+                </a>
+                <div class="muted">{{ row.technical_name }}</div>
+            </div>
+            <code>{{ row.code }}</code>
+            <span>{{ row.type_name }}</span>
+            <small>{{ row.site_name }}{% if row.hierarchy_path %} · {{ row.hierarchy_path }}{% endif %}</small>
+        </article>
+    {% empty %}
+        <p class="muted">Оборудование к версии не привязано.</p>
+    {% endfor %}
+    </div>
 </section>
 
 <section class="profile-card registration-confirm-card">
