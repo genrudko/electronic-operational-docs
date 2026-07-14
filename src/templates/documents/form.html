@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">ДОКУМЕНТАРНОЕ ЯДРО</div>
+        <h1>{{ page_title }}</h1>
+        <p>Содержимое черновика можно изменять до серверной регистрации.</p>
+    </div>
+    {% if document %}
+        <a href="{% url 'documents:detail' document.public_id %}">Вернуться к документу</a>
+    {% else %}
+        <a href="{% url 'documents:list' %}">К списку документов</a>
+    {% endif %}
+</section>
+
+<section class="profile-card document-form-card">
+    <form class="document-form" method="post">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <label for="{{ form.document_type.id_for_label }}">{{ form.document_type.label }}</label>
+        {{ form.document_type }}
+        <div class="field-errors">{{ form.document_type.errors }}</div>
+
+        <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+        {{ form.title }}
+        <div class="field-errors">{{ form.title.errors }}</div>
+
+        <label for="{{ form.subject.id_for_label }}">{{ form.subject.label }}</label>
+        {{ form.subject }}
+        <div class="field-errors">{{ form.subject.errors }}</div>
+
+        <label for="{{ form.body.id_for_label }}">{{ form.body.label }}</label>
+        {{ form.body }}
+        <div class="field-errors">{{ form.body.errors }}</div>
+
+        <div class="form-actions">
+            <button class="button" type="submit">{{ submit_label }}</button>
+            {% if document %}
+                <a href="{% url 'documents:detail' document.public_id %}">Отмена</a>
+            {% else %}
+                <a href="{% url 'documents:list' %}">Отмена</a>
+            {% endif %}
+        </div>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Документы · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">ДОКУМЕНТАРНОЕ ЯДРО</div>
+        <h1>Документы</h1>
+        <p>Черновики редактируются до регистрации. Зарегистрированные версии остаются неизменными.</p>
+    </div>
+    <a class="button" href="{% url 'documents:create' %}">Новый черновик</a>
+</section>
+
+<section class="summary-grid document-summary">
+    <article class="metric"><span>Всего</span><strong>{{ counts.total }}</strong></article>
+    <article class="metric"><span>Черновики</span><strong>{{ counts.drafts }}</strong></article>
+    <article class="metric"><span>Зарегистрировано</span><strong>{{ counts.registered }}</strong></article>
+</section>
+
+<section class="profile-card document-list-card">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Номер</th>
+                    <th>Тип</th>
+                    <th>Заголовок</th>
+                    <th>Статус</th>
+                    <th>Автор</th>
+                    <th>Время</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for document in documents %}
+                <tr>
+                    <td>
+                        <a href="{% url 'documents:detail' document.public_id %}">
+                            <code>{{ document.registration_number|default:"черновик" }}</code>
+                        </a>
+                    </td>
+                    <td>{{ document.document_type.name }}</td>
+                    <td>
+                        <a href="{% url 'documents:detail' document.public_id %}">
+                            {{ document.title }}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="status-chip status-{{ document.status|lower }}">
+                            {{ document.get_status_display }}
+                        </span>
+                    </td>
+                    <td>{{ document.created_by.full_name }}</td>
+                    <td>
+                        {% if document.registered_at %}
+                            {{ document.registered_at|date:"d.m.Y H:i:s" }}
+                        {% else %}
+                            {{ document.updated_at|date:"d.m.Y H:i:s" }}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" class="muted">Документов пока нет. Создайте первый черновик.</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

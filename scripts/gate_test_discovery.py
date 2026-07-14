@@ -8,14 +8,20 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 os.environ.setdefault("DB_ENGINE", "sqlite")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "eod_config.settings")
+os.environ.setdefault("PYTHONUTF8", "1")
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 
 import django  # noqa: E402
 from django.test.runner import DiscoverRunner  # noqa: E402
 
 django.setup()
 
-TEST_LABELS = ["apps.system.tests", "apps.organizations.tests"]
-MIN_TEST_COUNT = 20
+TEST_LABELS = [
+    "apps.system.tests",
+    "apps.organizations.tests",
+    "apps.documents.tests",
+]
+MIN_TEST_COUNT = 45
 
 runner = DiscoverRunner(verbosity=2, interactive=False)
 suite = runner.build_suite(test_labels=TEST_LABELS)
@@ -29,4 +35,4 @@ failures = runner.run_tests(TEST_LABELS)
 if failures:
     raise SystemExit(f"Test suite failed: {failures} failure(s).")
 
-print("PATCH_002_TEST_DISCOVERY_GATE_PASSED")
+print("PATCH_003_TEST_DISCOVERY_GATE_PASSED")

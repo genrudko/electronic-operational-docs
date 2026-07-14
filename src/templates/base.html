@@ -22,6 +22,7 @@
         <a href="{% url 'system:home' %}">Главная</a>
         {% if request.user.is_authenticated %}
             <a href="{% url 'organizations:directory' %}">Организация</a>
+            <a href="{% url 'documents:list' %}">Документы</a>
             <a href="{% url 'organizations:account' %}">Моя учётная запись</a>
             <form method="post" action="{% url 'organizations:logout' %}">
                 {% csrf_token %}

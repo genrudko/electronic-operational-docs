@@ -6,14 +6,14 @@
 
 ```powershell
 Set-Location "G:\electronic-operational-docs"
-.\scriptsun_dev.ps1
+.\scripts\run_dev.ps1
 ```
 
 Скрипт автоматически выбирает свободный локальный порт и выводит точные адреса главной страницы и `/health/`.
 
 ## Демонстрационные персональные записи
 
-Patch 002 создаёт вымышленные локальные записи:
+Вымышленные локальные записи:
 
 ```text
 operator.demo   / EodDemo!2026
@@ -22,20 +22,40 @@ supervisor.demo / EodDemo!2026
 
 Они предназначены только для локального прототипа. Каждая учётная запись связана ровно с одним сотрудником.
 
-Повторное заполнение справочника:
+Повторное заполнение организационного справочника:
 
 ```powershell
 .\.venv\Scripts\python.exe manage.py seed_demo_organization --reset-passwords
+```
+
+## Демонстрационное документарное ядро
+
+Patch 003 добавляет:
+
+- типы документов;
+- черновики и версии;
+- транзакционную серверную регистрацию;
+- нумераторы по организации, типу и году;
+- запрет изменения зарегистрированных документов;
+- запрет физического удаления документов, версий, связей и аудита;
+- типизированные связи документов;
+- базовые append-only события аудита.
+
+Повторное заполнение вымышленных документов:
+
+```powershell
+.\.venv\Scripts\python.exe manage.py seed_demo_documents
 ```
 
 ## Ручные проверки
 
 ```powershell
 $env:DB_ENGINE = "sqlite"
+.\.venv\Scripts\python.exe manage.py makemigrations --check --dry-run
 .\.venv\Scripts\python.exe manage.py migrate --noinput
 .\.venv\Scripts\python.exe manage.py check
 .\.venv\Scripts\python.exe scripts\gate_test_discovery.py
-.\.venv\Scripts\python.exe scripts\gate_patch_002.py
+.\.venv\Scripts\python.exe scripts\gate_patch_003.py
 .\.venv\Scripts\python.exe -m ruff check manage.py src scripts
 ```
 
@@ -44,10 +64,12 @@ $env:DB_ENGINE = "sqlite"
 PostgreSQL остаётся целевой базой проекта. При наличии Docker:
 
 ```powershell
-.\scriptsun_postgres.ps1
+.\scripts\run_postgres.ps1
 ```
 
-SQLite используется только для локального интерфейсного прототипирования. До реализации конкурентной нумерации, неизменяемых документов, подписей и промышленного пилота критические gate-проверки должны выполняться на PostgreSQL.
+SQLite используется для локального интерфейсного прототипирования и проверки доменных инвариантов.
+Полноценная проверка параллельной регистрации и блокировки серверного нумератора выполняется
+на PostgreSQL отдельным `TransactionTestCase`.
 
 ## Ограничение
 
@@ -61,7 +83,7 @@ Private repository:
 genrudko/electronic-operational-docs
 ```
 
-Every successful patch is finalized through:
+Каждый успешный патч завершается через:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\git_finalize_patch.py `
@@ -70,4 +92,4 @@ Every successful patch is finalized through:
   --message "Describe the change"
 ```
 
-See `docs/GIT_WORKFLOW.md`.
+См. `docs/GIT_WORKFLOW.md`.

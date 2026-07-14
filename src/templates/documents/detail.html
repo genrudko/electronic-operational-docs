@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}{{ document.title }} · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">ДОКУМЕНТАРНОЕ ЯДРО</div>
+        <h1>{{ document.title }}</h1>
+        <p>
+            {% if document.registration_number %}
+                Регистрационный номер <code>{{ document.registration_number }}</code>
+            {% else %}
+                Черновик <code>{{ document.public_id }}</code>
+            {% endif %}
+        </p>
+    </div>
+    <div class="document-actions">
+        <a href="{% url 'documents:list' %}">К списку</a>
+        {% if document.status == "DRAFT" %}
+            <a class="button secondary" href="{% url 'documents:edit' document.public_id %}">
+                Редактировать
+            </a>
+            <form method="post" action="{% url 'documents:register' document.public_id %}">
+                {% csrf_token %}
+                <button class="button" type="submit">Зарегистрировать</button>
+            </form>
+        {% endif %}
+    </div>
+</section>
+
+<section class="document-state {% if document.status == 'REGISTERED' %}registered{% else %}draft{% endif %}">
+    <strong>{{ document.get_status_display }}</strong>
+    {% if document.status == "REGISTERED" %}
+        <span>Версия зафиксирована и защищена от изменения и физического удаления.</span>
+    {% else %}
+        <span>Черновик можно редактировать до серверной регистрации.</span>
+    {% endif %}
+</section>
+
+<section class="profile-grid document-profile-grid">
+    <article class="profile-card">
+        <h2>Реквизиты</h2>
+        <dl>
+            <dt>Тип документа</dt><dd>{{ document.document_type.name }}</dd>
+            <dt>Организация</dt><dd>{{ document.organization }}</dd>
+            <dt>Автор</dt><dd>{{ document.created_by.full_name }}</dd>
+            <dt>Создан</dt><dd>{{ document.created_at|date:"d.m.Y H:i:s T" }}</dd>
+            <dt>Текущая версия</dt><dd>№ {{ document.current_version.version_number }}</dd>
+            {% if document.registered_at %}
+                <dt>Зарегистрирован</dt><dd>{{ document.registered_at|date:"d.m.Y H:i:s T" }}</dd>
+                <dt>Регистратор</dt><dd>{{ document.registered_by.full_name }}</dd>
+            {% endif %}
+        </dl>
+    </article>
+    <article class="profile-card">
+        <h2>Содержимое версии</h2>
+        {% if document.current_version.content.subject %}
+            <div class="document-subject">{{ document.current_version.content.subject }}</div>
+        {% endif %}
+        <div class="document-body">{{ document.current_version.content.body|linebreaksbr }}</div>
+    </article>
+</section>
+
+<section class="profile-card">
+    <h2>Версии</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Версия</th>
+                    <th>Статус</th>
+                    <th>Автор</th>
+                    <th>Создана</th>
+                    <th>Зафиксирована</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for version in versions %}
+                <tr>
+                    <td>№ {{ version.version_number }}</td>
+                    <td>{{ version.get_status_display }}</td>
+                    <td>{{ version.created_by.full_name }}</td>
+                    <td>{{ version.created_at|date:"d.m.Y H:i:s" }}</td>
+                    <td>{{ version.registered_at|date:"d.m.Y H:i:s"|default:"—" }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="profile-grid document-profile-grid">
+    <article class="profile-card">
+        <h2>Исходящие связи</h2>
+        <ul class="clean-list document-links">
+            {% for link in outgoing_links %}
+                <li>
+                    <span>{{ link.get_link_type_display }}</span>
+                    <a href="{% url 'documents:detail' link.target_document.public_id %}">
+                        {{ link.target_document.registration_number }} · {{ link.target_document.title }}
+                    </a>
+                </li>
+            {% empty %}
+                <li class="muted">Исходящих связей нет.</li>
+            {% endfor %}
+        </ul>
+    </article>
+    <article class="profile-card">
+        <h2>Входящие связи</h2>
+        <ul class="clean-list document-links">
+            {% for link in incoming_links %}
+                <li>
+                    <span>{{ link.get_link_type_display }}</span>
+                    <a href="{% url 'documents:detail' link.source_document.public_id %}">
+                        {{ link.source_document.registration_number }} · {{ link.source_document.title }}
+                    </a>
+                </li>
+            {% empty %}
+                <li class="muted">Входящих связей нет.</li>
+            {% endfor %}
+        </ul>
+    </article>
+</section>
+
+{% if link_form %}
+<section class="profile-card">
+    <h2>Добавить связь</h2>
+    <form class="inline-form" method="post" action="{% url 'documents:link_create' document.public_id %}">
+        {% csrf_token %}
+        <div>
+            <label for="{{ link_form.target_document.id_for_label }}">
+                {{ link_form.target_document.label }}
+            </label>
+            {{ link_form.target_document }}
+        </div>
+        <div>
+            <label for="{{ link_form.link_type.id_for_label }}">{{ link_form.link_type.label }}</label>
+            {{ link_form.link_type }}
+        </div>
+        <button class="button" type="submit">Создать связь</button>
+    </form>
+</section>
+{% endif %}
+
+<section class="profile-card">
+    <h2>Базовый аудит</h2>
+    <div class="audit-timeline">
+        {% for event in audit_events %}
+            <article>
+                <time>{{ event.occurred_at|date:"d.m.Y H:i:s T" }}</time>
+                <strong>{{ event.get_event_type_display }}</strong>
+                <span>{{ event.actor_employee.full_name|default:"системное действие" }}</span>
+                {% if event.payload.registration_number %}
+                    <code>{{ event.payload.registration_number }}</code>
+                {% endif %}
+            </article>
+        {% empty %}
+            <p class="muted">Событий аудита нет.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

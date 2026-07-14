@@ -3,7 +3,7 @@
 {% block content %}
 <section class="page-heading">
     <div>
-        <div class="eyebrow">STAGE 1 · ОРГАНИЗАЦИОННОЕ ЯДРО</div>
+        <div class="eyebrow">STAGE 2 · ДОКУМЕНТАРНОЕ ЯДРО</div>
         <h1>Электронная оперативная документация</h1>
         <p>Универсальная модульная система для персональной и прослеживаемой работы оперативного персонала.</p>
     </div>
@@ -11,33 +11,33 @@
 </section>
 
 <section class="hero">
-    <div class="hero-title"><span class="status-dot"></span>Каркас системы и персональная аутентификация готовы</div>
+    <div class="hero-title"><span class="status-dot"></span>Документарное ядро и серверная регистрация готовы</div>
     <p>
-        Добавлены организации, подразделения, рабочие места, должности, сотрудники,
-        роли, области ответственности, временные замещения и аудит входов.
+        Добавлены черновики, зафиксированные версии, серверный нумератор,
+        типизированные связи и неизменяемый базовый аудит документарных действий.
     </p>
     <div class="dev-profile">
         <strong>Локальный профиль разработки:</strong>
         {% if database_vendor == "sqlite" %}
-            SQLite без Docker. Перед проверкой конкурентных операций и пилотом система будет переведена на PostgreSQL.
+            SQLite без Docker. Конкурентная регистрация окончательно проверяется на PostgreSQL.
         {% else %}
-            PostgreSQL.
+            PostgreSQL: доступна полноценная проверка конкурентного нумератора.
         {% endif %}
     </div>
 </section>
 
 {% if request.user.is_authenticated %}
 <section class="summary-grid">
-    <article class="metric"><span>Организации</span><strong>{{ organization_stats.organizations }}</strong></article>
-    <article class="metric"><span>Сотрудники</span><strong>{{ organization_stats.employees }}</strong></article>
-    <article class="metric"><span>Роли</span><strong>{{ organization_stats.roles }}</strong></article>
-    <article class="metric"><span>Активные замещения</span><strong>{{ organization_stats.substitutions }}</strong></article>
+    <article class="metric"><span>Организации</span><strong>{{ system_stats.organizations }}</strong></article>
+    <article class="metric"><span>Сотрудники</span><strong>{{ system_stats.employees }}</strong></article>
+    <article class="metric"><span>Черновики</span><strong>{{ system_stats.drafts }}</strong></article>
+    <article class="metric"><span>Зарегистрировано</span><strong>{{ system_stats.registered }}</strong></article>
 </section>
 {% else %}
 <section class="login-callout">
     <div>
         <h2>Персональная работа начинается со входа</h2>
-        <p>Общие и обезличенные учётные записи не используются. Каждая тестовая запись связана с одним сотрудником.</p>
+        <p>Общие учётные записи не используются. Каждое документарное действие связывается с сотрудником.</p>
     </div>
     <a class="button" href="{% url 'organizations:login' %}">Войти</a>
 </section>
@@ -54,22 +54,26 @@
             <span class="badge">Готово</span>
         {% endif %}
     </article>
-    <article class="card">
+    <article class="card active">
         <span class="number">01</span>
+        <h2>Документарное ядро</h2>
+        <p>Черновики, серверная регистрация, версии, связи и базовый аудит.</p>
+        {% if request.user.is_authenticated %}
+            <a class="card-link" href="{% url 'documents:list' %}">Открыть документы</a>
+        {% else %}
+            <span class="badge">Готово</span>
+        {% endif %}
+    </article>
+    <article class="card">
+        <span class="number">02</span>
         <h2>Оперативный журнал</h2>
         <p>Поток подписанных событий, исправления, аннулирование и связи.</p>
         <span class="badge">Следующая очередь</span>
     </article>
     <article class="card">
-        <span class="number">02</span>
+        <span class="number">03</span>
         <h2>Заявки</h2>
         <p>Маршруты рассмотрения, согласования, разрешения и закрытия.</p>
-        <span class="badge">Первая очередь</span>
-    </article>
-    <article class="card">
-        <span class="number">03</span>
-        <h2>Наряды и распоряжения</h2>
-        <p>Учёт работ, допусков, инструктажей, перерывов и завершения.</p>
         <span class="badge">Первая очередь</span>
     </article>
 </section>
@@ -77,11 +81,11 @@
 <section class="principles">
     <h2>Неподвижные принципы</h2>
     <ul>
-        <li>Персональный вход не является электронной подписью.</li>
-        <li>Одна учётная запись может быть связана только с одним сотрудником.</li>
-        <li>Полномочия ограничиваются сроком и областью ответственности.</li>
-        <li>Временное замещение не изменяет исторические назначения ролей.</li>
-        <li>Все входы, ошибки входа и выходы фиксируются отдельными событиями.</li>
+        <li>Черновик можно редактировать до регистрации.</li>
+        <li>Зарегистрированный документ и его версия неизменяемы.</li>
+        <li>Физическое удаление документов, версий, связей и аудита запрещено.</li>
+        <li>Регистрационный номер выделяется сервером внутри транзакции.</li>
+        <li>Вход в систему подтверждает пользователя, но не является электронной подписью.</li>
     </ul>
 </section>
 

@@ -5,31 +5,27 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
 
-from apps.organizations.models import Employee, Organization, Role, Substitution
+from apps.documents.models import Document
+from apps.organizations.models import Employee, Organization
 
 
 def home(request):
-    organization_stats = None
+    system_stats = None
     if request.user.is_authenticated:
-        today = timezone.localdate()
-        organization_stats = {
+        system_stats = {
             "organizations": Organization.objects.filter(is_active=True).count(),
             "employees": Employee.objects.filter(is_active=True).count(),
-            "roles": Role.objects.filter(is_active=True).count(),
-            "substitutions": Substitution.objects.filter(
-                is_active=True,
-                valid_from__lte=today,
-                valid_until__gte=today,
-            ).count(),
+            "drafts": Document.objects.filter(status=Document.Status.DRAFT).count(),
+            "registered": Document.objects.filter(status=Document.Status.REGISTERED).count(),
         }
     return render(
         request,
         "system/home.html",
         {
             "server_time": timezone.localtime(),
-            "project_version": "0.2.0-dev",
+            "project_version": "0.3.0-dev",
             "database_vendor": connection.vendor,
-            "organization_stats": organization_stats,
+            "system_stats": system_stats,
         },
     )
 
