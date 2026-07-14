@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.documents.models import Document
-from apps.documents.services import create_document_draft, register_document
+from apps.documents.services import create_document_draft, register_demo_document
 
 from .factories import document_context
 
 
+@override_settings(DEBUG=True)
 class DocumentViewTests(TestCase):
     def setUp(self) -> None:
         self.employee, self.user, self.document_type = document_context(code="VIEW")
@@ -72,8 +73,15 @@ class DocumentViewTests(TestCase):
         document.refresh_from_db()
         self.assertEqual(document.title, "Обновлённый документ")
 
+        preview_response = self.client.get(
+            reverse("documents:register", kwargs={"public_id": document.public_id})
+        )
+        self.assertEqual(preview_response.status_code, 200)
+        self.assertContains(preview_response, "Подтверждение регистрации")
+
         register_response = self.client.post(
             reverse("documents:register", kwargs={"public_id": document.public_id}),
+            {"password": "TestPass!2026", "confirm": "on"},
         )
         self.assertRedirects(
             register_response,
@@ -90,7 +98,7 @@ class DocumentViewTests(TestCase):
         self.assertContains(detail_response, "Зарегистрирован")
 
     def test_registered_document_edit_is_rejected(self):
-        document = register_document(document=self._draft(), actor=self.employee).document
+        document = register_demo_document(document=self._draft(), actor=self.employee).document
         self.client.force_login(self.user)
         response = self.client.get(
             reverse("documents:edit", kwargs={"public_id": document.public_id})
@@ -115,14 +123,14 @@ class DocumentViewTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_link_can_be_created_from_detail_action(self):
-        source = register_document(document=self._draft(), actor=self.employee).document
+        source = register_demo_document(document=self._draft(), actor=self.employee).document
         target = create_document_draft(
             document_type=self.document_type,
             actor=self.employee,
             title="Связанный документ",
             content={"body": "Содержимое"},
         )
-        target = register_document(document=target, actor=self.employee).document
+        target = register_demo_document(document=target, actor=self.employee).document
         self.client.force_login(self.user)
         response = self.client.post(
             reverse("documents:link_create", kwargs={"public_id": source.public_id}),

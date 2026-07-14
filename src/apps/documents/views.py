@@ -7,14 +7,20 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods, require_POST
 
-from .forms import DocumentDraftForm, DocumentLinkForm
+from .forms import (
+    DocumentDraftForm,
+    DocumentLinkForm,
+    DocumentRegistrationConfirmationForm,
+)
 from .models import Document
 from .services import (
     create_document_draft,
     create_document_link,
-    register_document,
+    register_document_with_password,
+    registration_confirmation_preview,
     require_document_employee,
     update_document_draft,
+    verify_document_integrity,
 )
 
 
@@ -142,6 +148,11 @@ def document_detail(request: HttpRequest, public_id) -> HttpResponse:
             "outgoing_links": outgoing_links,
             "incoming_links": incoming_links,
             "link_form": link_form,
+            "integrity": (
+                verify_document_integrity(document)
+                if document.status == Document.Status.REGISTERED
+                else None
+            ),
         },
     )
 
@@ -197,20 +208,47 @@ def document_edit(request: HttpRequest, public_id) -> HttpResponse:
 
 
 @login_required
-@require_POST
+@require_http_methods(["GET", "POST"])
 def document_register(request: HttpRequest, public_id) -> HttpResponse:
     employee = require_document_employee(request.user)
     document = _document_for_employee(public_id, employee)
-    try:
-        result = register_document(document=document, actor=employee)
-    except ValidationError as error:
-        messages.error(request, _validation_message(error))
-    else:
-        messages.success(
-            request,
-            f"Документ зарегистрирован под номером {result.registration_number}.",
-        )
-    return redirect("documents:detail", public_id=document.public_id)
+    if document.status != Document.Status.DRAFT:
+        messages.error(request, "Документ уже зарегистрирован.")
+        return redirect("documents:detail", public_id=document.public_id)
+
+    form = DocumentRegistrationConfirmationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            result = register_document_with_password(
+                document=document,
+                actor=employee,
+                user=request.user,
+                password=form.cleaned_data["password"],
+            )
+        except ValidationError as error:
+            if hasattr(error, "message_dict") and "password" in error.message_dict:
+                for message in error.message_dict["password"]:
+                    form.add_error("password", message)
+            else:
+                form.add_error(None, _validation_message(error))
+        else:
+            messages.success(
+                request,
+                f"Документ зарегистрирован под номером {result.registration_number}; "
+                "созданы неизменяемый снимок и системное подтверждение.",
+            )
+            return redirect("documents:detail", public_id=document.public_id)
+
+    return render(
+        request,
+        "documents/register_confirm.html",
+        {
+            "document": document,
+            "employee": employee,
+            "confirmation_preview": registration_confirmation_preview(employee),
+            "form": form,
+        },
+    )
 
 
 @login_required

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import uuid
 from typing import Any
 
@@ -348,6 +349,180 @@ class DocumentVersion(models.Model):
             raise ValidationError(errors)
 
 
+
+class SignedSnapshot(models.Model):
+    class Purpose(models.TextChoices):
+        REGISTRATION = "REGISTRATION", "Регистрация документа"
+
+    document = models.ForeignKey(
+        Document,
+        on_delete=models.PROTECT,
+        related_name="signed_snapshots",
+        verbose_name="Документ",
+    )
+    document_version = models.ForeignKey(
+        DocumentVersion,
+        on_delete=models.PROTECT,
+        related_name="signed_snapshots",
+        verbose_name="Версия документа",
+    )
+    purpose = models.CharField("Назначение", max_length=32, choices=Purpose.choices)
+    schema_version = models.CharField(
+        "Версия схемы снимка",
+        max_length=64,
+        default="eod.document.registration.v1",
+        editable=False,
+    )
+    canonical_json = models.TextField("Каноническое JSON-представление", editable=False)
+    hash_algorithm = models.CharField(
+        "Алгоритм контрольной суммы",
+        max_length=16,
+        default="SHA-256",
+        editable=False,
+    )
+    digest = models.CharField("SHA-256", max_length=64, db_index=True, editable=False)
+    created_at = models.DateTimeField("Создан", default=timezone.now, editable=False)
+
+    objects = ImmutableManager()
+
+    class Meta:
+        ordering = ("-created_at", "-pk")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("document_version", "purpose"),
+                name="uniq_signed_snapshot_per_version_purpose",
+            )
+        ]
+        verbose_name = "подписываемый снимок"
+        verbose_name_plural = "подписываемые снимки"
+
+    def __str__(self) -> str:
+        return f"{self.document} · {self.get_purpose_display()} · {self.digest[:12]}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.pk:
+            raise ValidationError("Подписываемый снимок неизменяем.")
+        self.digest = self.digest.strip().lower()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
+        raise ValidationError("Физическое удаление подписываемого снимка запрещено.")
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if self.document_id and self.document_version_id:
+            if self.document_version.document_id != self.document_id:
+                errors["document_version"] = "Версия относится к другому документу."
+        try:
+            parsed = json.loads(self.canonical_json)
+        except (TypeError, ValueError):
+            errors["canonical_json"] = "Снимок должен содержать корректный JSON."
+        else:
+            if not isinstance(parsed, dict):
+                errors["canonical_json"] = "Корневое значение снимка должно быть JSON-объектом."
+        if self.hash_algorithm != "SHA-256":
+            errors["hash_algorithm"] = "Поддерживается только SHA-256."
+        if len(self.digest) != 64 or any(ch not in "0123456789abcdef" for ch in self.digest):
+            errors["digest"] = "Контрольная сумма должна быть SHA-256 в нижнем hex-регистре."
+        if errors:
+            raise ValidationError(errors)
+
+
+class DocumentSignature(models.Model):
+    class ConfirmationMethod(models.TextChoices):
+        PASSWORD_REAUTH = "PASSWORD_REAUTH", "Повторная аутентификация паролем"
+        LEGACY_MIGRATION = "LEGACY_MIGRATION", "Перенесено без повторной аутентификации"
+        DEMO_SEED = "DEMO_SEED", "Демонстрационное системное заполнение"
+
+    snapshot = models.OneToOneField(
+        SignedSnapshot,
+        on_delete=models.PROTECT,
+        related_name="signature",
+        verbose_name="Подписываемый снимок",
+    )
+    purpose = models.CharField(
+        "Назначение",
+        max_length=32,
+        choices=SignedSnapshot.Purpose.choices,
+    )
+    confirmation_method = models.CharField(
+        "Способ подтверждения",
+        max_length=32,
+        choices=ConfirmationMethod.choices,
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="document_signatures",
+        verbose_name="Учётная запись",
+    )
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="document_signatures",
+        verbose_name="Сотрудник",
+    )
+    username_snapshot = models.CharField("Имя пользователя на момент подтверждения", max_length=150)
+    full_name_snapshot = models.CharField("Ф.И.О. на момент подтверждения", max_length=500)
+    position_snapshot = models.CharField("Должность на момент подтверждения", max_length=500, blank=True)
+    division_snapshot = models.CharField("Подразделение на момент подтверждения", max_length=500, blank=True)
+    workplace_snapshot = models.CharField("Рабочее место на момент подтверждения", max_length=500, blank=True)
+    roles_snapshot = models.JSONField("Полномочия на момент подтверждения", default=list, blank=True)
+    signed_at = models.DateTimeField("Серверное время подтверждения", default=timezone.now, editable=False)
+    checksum_algorithm = models.CharField(
+        "Алгоритм контрольной суммы записи",
+        max_length=16,
+        default="SHA-256",
+        editable=False,
+    )
+    checksum = models.CharField("Контрольная сумма записи подписи", max_length=64, editable=False)
+
+    objects = ImmutableManager()
+
+    class Meta:
+        ordering = ("-signed_at", "-pk")
+        verbose_name = "системное подтверждение"
+        verbose_name_plural = "системные подтверждения"
+
+    def __str__(self) -> str:
+        identity = self.full_name_snapshot or self.username_snapshot or "неизвестный подписант"
+        return f"{identity} · {self.get_confirmation_method_display()}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.pk:
+            raise ValidationError("Запись системного подтверждения неизменяема.")
+        self.checksum = self.checksum.strip().lower()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
+        raise ValidationError("Физическое удаление системного подтверждения запрещено.")
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if self.snapshot_id and self.purpose != self.snapshot.purpose:
+            errors["purpose"] = "Назначение подписи не совпадает с назначением снимка."
+        if self.confirmation_method == self.ConfirmationMethod.PASSWORD_REAUTH:
+            if not self.user_id:
+                errors["user"] = "Для повторной аутентификации обязательна учётная запись."
+            if not self.employee_id:
+                errors["employee"] = "Для повторной аутентификации обязателен сотрудник."
+        if not isinstance(self.roles_snapshot, list):
+            errors["roles_snapshot"] = "Снимок полномочий должен быть JSON-массивом."
+        if self.checksum_algorithm != "SHA-256":
+            errors["checksum_algorithm"] = "Поддерживается только SHA-256."
+        if len(self.checksum) != 64 or any(ch not in "0123456789abcdef" for ch in self.checksum):
+            errors["checksum"] = "Контрольная сумма должна быть SHA-256 в нижнем hex-регистре."
+        if errors:
+            raise ValidationError(errors)
+
 class DocumentLink(models.Model):
     class LinkType(models.TextChoices):
         RELATED = "RELATED", "Связанный документ"
@@ -424,6 +599,8 @@ class AuditEvent(models.Model):
         DOCUMENT_CREATED = "DOCUMENT_CREATED", "Создан черновик"
         DRAFT_UPDATED = "DRAFT_UPDATED", "Черновик изменён"
         DOCUMENT_REGISTERED = "DOCUMENT_REGISTERED", "Документ зарегистрирован"
+        DOCUMENT_SIGNATURE_CREATED = "DOCUMENT_SIGNATURE_CREATED", "Создано системное подтверждение"
+        LEGACY_SIGNATURE_MIGRATED = "LEGACY_SIGNATURE_MIGRATED", "Создан legacy-маркер миграции"
         DOCUMENT_LINK_CREATED = "DOCUMENT_LINK_CREATED", "Создана связь документов"
 
     organization = models.ForeignKey(

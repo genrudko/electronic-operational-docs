@@ -5,8 +5,10 @@ from .models import (
     Document,
     DocumentLink,
     DocumentNumberSequence,
+    DocumentSignature,
     DocumentType,
     DocumentVersion,
+    SignedSnapshot,
 )
 
 
@@ -143,6 +145,78 @@ class DocumentNumberSequenceAdmin(admin.ModelAdmin):
     list_display = ("organization", "document_type", "year", "last_value", "updated_at")
     list_filter = ("organization", "year")
     readonly_fields = ("organization", "document_type", "year", "last_value", "updated_at")
+
+    def has_add_permission(self, request) -> bool:
+        return False
+
+    def has_change_permission(self, request, obj=None) -> bool:
+        return False
+
+    def has_delete_permission(self, request, obj=None) -> bool:
+        return False
+
+
+@admin.register(SignedSnapshot)
+class SignedSnapshotAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "document", "purpose", "hash_algorithm", "short_digest")
+    list_filter = ("purpose", "hash_algorithm")
+    search_fields = ("document__registration_number", "document__title", "digest")
+    readonly_fields = (
+        "document",
+        "document_version",
+        "purpose",
+        "schema_version",
+        "canonical_json",
+        "hash_algorithm",
+        "digest",
+        "created_at",
+    )
+
+    @admin.display(description="SHA-256")
+    def short_digest(self, obj):
+        return obj.digest[:16]
+
+    def has_add_permission(self, request) -> bool:
+        return False
+
+    def has_change_permission(self, request, obj=None) -> bool:
+        return False
+
+    def has_delete_permission(self, request, obj=None) -> bool:
+        return False
+
+
+@admin.register(DocumentSignature)
+class DocumentSignatureAdmin(admin.ModelAdmin):
+    list_display = (
+        "signed_at",
+        "full_name_snapshot",
+        "confirmation_method",
+        "purpose",
+        "snapshot",
+    )
+    list_filter = ("confirmation_method", "purpose")
+    search_fields = (
+        "full_name_snapshot",
+        "username_snapshot",
+        "snapshot__document__registration_number",
+    )
+    readonly_fields = (
+        "snapshot",
+        "purpose",
+        "confirmation_method",
+        "user",
+        "employee",
+        "username_snapshot",
+        "full_name_snapshot",
+        "position_snapshot",
+        "division_snapshot",
+        "workplace_snapshot",
+        "roles_snapshot",
+        "signed_at",
+        "checksum_algorithm",
+        "checksum",
+    )
 
     def has_add_permission(self, request) -> bool:
         return False

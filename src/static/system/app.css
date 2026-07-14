@@ -386,3 +386,31 @@ footer { display: flex; justify-content: space-between; gap: 20px; padding: 18px
         grid-template-columns: 1fr;
     }
 }
+/* Patch 004: system confirmation and integrity */
+.prototype-signature-warning {
+    margin: 0 0 1rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid rgba(209, 138, 0, 0.45);
+    border-radius: 0.75rem;
+    background: rgba(255, 181, 46, 0.1);
+}
+.integrity-panel {
+    display: grid;
+    gap: 0.65rem;
+    border-left: 4px solid var(--accent, #1683ff);
+}
+.integrity-panel.status-invalid { border-left-color: #c83b3b; }
+.integrity-panel.status-legacy { border-left-color: #b27700; }
+.integrity-panel.status-missing { border-left-color: #6d7785; }
+.integrity-badge {
+    display: inline-flex;
+    width: fit-content;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+.registration-confirm-card form { max-width: 48rem; }
+.registration-confirm-card .form-row { margin-bottom: 1rem; }
+.field-error { margin-top: 0.3rem; color: #c83b3b; }
+.hash-value { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }

@@ -21,10 +21,9 @@
             <a class="button secondary" href="{% url 'documents:edit' document.public_id %}">
                 Редактировать
             </a>
-            <form method="post" action="{% url 'documents:register' document.public_id %}">
-                {% csrf_token %}
-                <button class="button" type="submit">Зарегистрировать</button>
-            </form>
+            <a class="button" href="{% url 'documents:register' document.public_id %}">
+                Проверить и зарегистрировать
+            </a>
         {% endif %}
     </div>
 </section>
@@ -37,6 +36,36 @@
         <span>Черновик можно редактировать до серверной регистрации.</span>
     {% endif %}
 </section>
+
+{% if integrity %}
+<section class="profile-card integrity-panel status-{{ integrity.status.value|lower }}">
+    <div class="eyebrow">КОНТРОЛЬ ЦЕЛОСТНОСТИ</div>
+    <span class="integrity-badge">{{ integrity.status.value }}</span>
+    <p>{{ integrity.message }}</p>
+    {% if integrity.snapshot %}
+        <dl>
+            <dt>SHA-256 снимка</dt><dd class="hash-value">{{ integrity.snapshot.digest }}</dd>
+            <dt>Схема</dt><dd>{{ integrity.snapshot.schema_version }}</dd>
+            <dt>Создан</dt><dd>{{ integrity.snapshot.created_at|date:"d.m.Y H:i:s T" }}</dd>
+        </dl>
+    {% endif %}
+    {% if integrity.signature %}
+        <dl>
+            <dt>Способ</dt><dd>{{ integrity.signature.get_confirmation_method_display }}</dd>
+            <dt>Подтвердил</dt><dd>{{ integrity.signature.full_name_snapshot|default:"—" }}</dd>
+            <dt>Должность</dt><dd>{{ integrity.signature.position_snapshot|default:"—" }}</dd>
+            <dt>Подразделение</dt><dd>{{ integrity.signature.division_snapshot|default:"—" }}</dd>
+            <dt>Рабочее место</dt><dd>{{ integrity.signature.workplace_snapshot|default:"—" }}</dd>
+            <dt>Серверное время</dt><dd>{{ integrity.signature.signed_at|date:"d.m.Y H:i:s T" }}</dd>
+            <dt>Контрольная сумма подтверждения</dt>
+            <dd class="hash-value">{{ integrity.signature.checksum }}</dd>
+        </dl>
+    {% endif %}
+    <p class="muted">
+        Это системное подтверждение и SHA-256 прототипа, а не заявление о наличии УКЭП или УНЭП.
+    </p>
+</section>
+{% endif %}
 
 <section class="profile-grid document-profile-grid">
     <article class="profile-card">

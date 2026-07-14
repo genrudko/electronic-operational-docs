@@ -9,7 +9,7 @@ from apps.documents.models import Document, DocumentLink, DocumentType
 from apps.documents.services import (
     create_document_draft,
     create_document_link,
-    register_document,
+    register_demo_document,
 )
 from apps.organizations.models import Employee, Organization
 
@@ -120,5 +120,5 @@ class Command(BaseCommand):
                 public_id=public_id,
             )
         if register and document.status == Document.Status.DRAFT:
-            document = register_document(document=document, actor=actor).document
+            document = register_demo_document(document=document, actor=actor).document
         return document

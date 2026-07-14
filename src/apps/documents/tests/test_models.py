@@ -1,19 +1,20 @@
 from __future__ import annotations
 
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from apps.documents.models import AuditEvent, Document, DocumentLink, DocumentType, DocumentVersion
 from apps.documents.services import (
     create_document_draft,
     create_document_link,
-    register_document,
+    register_demo_document,
     update_document_draft,
 )
 
 from .factories import document_context
 
 
+@override_settings(DEBUG=True)
 class DocumentCoreModelTests(TestCase):
     def setUp(self) -> None:
         self.employee, self.user, self.document_type = document_context(code="DOC")
@@ -83,7 +84,7 @@ class DocumentCoreModelTests(TestCase):
 
     def test_registration_fixes_document_and_version(self):
         document = self._draft()
-        result = register_document(document=document, actor=self.employee)
+        result = register_demo_document(document=document, actor=self.employee)
         result.document.refresh_from_db()
         result.version.refresh_from_db()
 
@@ -101,8 +102,8 @@ class DocumentCoreModelTests(TestCase):
         )
 
     def test_server_counter_allocates_unique_sequential_numbers(self):
-        first = register_document(document=self._draft("Первый"), actor=self.employee).document
-        second = register_document(document=self._draft("Второй"), actor=self.employee).document
+        first = register_demo_document(document=self._draft("Первый"), actor=self.employee).document
+        second = register_demo_document(document=self._draft("Второй"), actor=self.employee).document
         self.assertEqual(first.sequence_number, 1)
         self.assertEqual(second.sequence_number, 2)
         self.assertNotEqual(first.registration_number, second.registration_number)
@@ -110,18 +111,18 @@ class DocumentCoreModelTests(TestCase):
     def test_registration_requires_non_empty_body(self):
         document = self._draft(body="")
         with self.assertRaises(ValidationError):
-            register_document(document=document, actor=self.employee)
+            register_demo_document(document=document, actor=self.employee)
         document.refresh_from_db()
         self.assertEqual(document.status, Document.Status.DRAFT)
 
     def test_registered_document_cannot_be_saved(self):
-        document = register_document(document=self._draft(), actor=self.employee).document
+        document = register_demo_document(document=self._draft(), actor=self.employee).document
         document.title = "Попытка изменения"
         with self.assertRaises(ValidationError):
             document.save()
 
     def test_registered_version_cannot_be_saved(self):
-        result = register_document(document=self._draft(), actor=self.employee)
+        result = register_demo_document(document=self._draft(), actor=self.employee)
         result.version.content = {"body": "Подмена"}
         with self.assertRaises(ValidationError):
             result.version.save()
@@ -152,7 +153,7 @@ class DocumentCoreModelTests(TestCase):
             AuditEvent.objects.filter(pk=event.pk).delete()
 
     def test_document_link_rejects_self_reference(self):
-        document = register_document(document=self._draft(), actor=self.employee).document
+        document = register_demo_document(document=self._draft(), actor=self.employee).document
         with self.assertRaises(ValidationError):
             create_document_link(
                 source_document=document,
@@ -162,7 +163,7 @@ class DocumentCoreModelTests(TestCase):
             )
 
     def test_document_link_rejects_other_organization(self):
-        source = register_document(document=self._draft(), actor=self.employee).document
+        source = register_demo_document(document=self._draft(), actor=self.employee).document
         other_employee, _, other_type = document_context(code="OTHER")
         target = create_document_draft(
             document_type=other_type,
@@ -170,7 +171,7 @@ class DocumentCoreModelTests(TestCase):
             title="Другой документ",
             content={"body": "Содержимое"},
         )
-        target = register_document(document=target, actor=other_employee).document
+        target = register_demo_document(document=target, actor=other_employee).document
         with self.assertRaises(ValidationError):
             create_document_link(
                 source_document=source,
@@ -180,8 +181,8 @@ class DocumentCoreModelTests(TestCase):
             )
 
     def test_link_creation_is_append_only_and_audited(self):
-        source = register_document(document=self._draft("Источник"), actor=self.employee).document
-        target = register_document(document=self._draft("Цель"), actor=self.employee).document
+        source = register_demo_document(document=self._draft("Источник"), actor=self.employee).document
+        target = register_demo_document(document=self._draft("Цель"), actor=self.employee).document
         link = create_document_link(
             source_document=source,
             target_document=target,

@@ -79,3 +79,22 @@ class DocumentLinkForm(forms.Form):
             .exclude(pk=source_document.pk)
             .order_by("-registered_at", "-pk")
         )
+
+
+class DocumentRegistrationConfirmationForm(forms.Form):
+    password = forms.CharField(
+        label="Текущий пароль",
+        strip=False,
+        widget=forms.PasswordInput(
+            attrs={
+                "autocomplete": "current-password",
+                "placeholder": "Введите пароль своей учётной записи",
+            }
+        ),
+    )
+    confirm = forms.BooleanField(
+        label=(
+            "Я проверил(а) отображённое содержимое и подтверждаю регистрацию "
+            "этой версии от своего имени"
+        )
+    )

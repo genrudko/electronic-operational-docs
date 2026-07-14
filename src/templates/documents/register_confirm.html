@@ -1,0 +1,72 @@
+
+{% extends "base.html" %}
+
+{% block title %}Подтверждение регистрации · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">СИСТЕМНОЕ ПОДТВЕРЖДЕНИЕ · PATCH 004</div>
+        <h1>Подтверждение регистрации</h1>
+        <p>Проверьте точное содержимое версии до выделения регистрационного номера.</p>
+    </div>
+    <a href="{% url 'documents:detail' document.public_id %}">Отмена</a>
+</section>
+
+<section class="prototype-signature-warning">
+    <strong>Важно:</strong>
+    это системное подтверждение личности и контроль SHA-256 в демонстрационном прототипе.
+    Механизм не является УКЭП или УНЭП и не заменяет утверждённый локальный порядок предприятия.
+</section>
+
+<section class="profile-grid document-profile-grid">
+    <article class="profile-card">
+        <h2>Подписываемые реквизиты</h2>
+        <dl>
+            <dt>Документ</dt><dd>{{ document.title }}</dd>
+            <dt>Тип</dt><dd>{{ document.document_type.name }}</dd>
+            <dt>Организация</dt><dd>{{ document.organization }}</dd>
+            <dt>Версия</dt><dd>№ {{ document.current_version.version_number }}</dd>
+            <dt>Подтверждает</dt><dd>{{ employee.full_name }}</dd>
+            <dt>Должность</dt><dd>{{ confirmation_preview.identity.position|default:"—" }}</dd>
+            <dt>Подразделение</dt><dd>{{ confirmation_preview.identity.division|default:"—" }}</dd>
+            <dt>Рабочее место</dt><dd>{{ confirmation_preview.identity.workplace|default:"—" }}</dd>
+            <dt>Действующие полномочия</dt>
+            <dd>
+                {% for role in confirmation_preview.effective_roles %}
+                    <div>{{ role.role_name }}{% if role.scope_name %} · {{ role.scope_name }}{% endif %}</div>
+                {% empty %}
+                    —
+                {% endfor %}
+            </dd>
+        </dl>
+    </article>
+    <article class="profile-card">
+        <h2>Содержимое версии</h2>
+        {% if document.current_version.content.subject %}
+            <div class="document-subject">{{ document.current_version.content.subject }}</div>
+        {% endif %}
+        <div class="document-body">{{ document.current_version.content.body|linebreaksbr }}</div>
+    </article>
+</section>
+
+<section class="profile-card registration-confirm-card">
+    <h2>Повторная аутентификация</h2>
+    <p class="muted">
+        Пароль проверяется только механизмом Django и не сохраняется в документе, снимке,
+        подписи, аудите или журнале патча.
+    </p>
+    <form method="post" autocomplete="off">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% for field in form %}
+            <div class="form-row">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+            </div>
+        {% endfor %}
+        <button class="button" type="submit">Подтвердить и зарегистрировать</button>
+    </form>
+</section>
+{% endblock %}

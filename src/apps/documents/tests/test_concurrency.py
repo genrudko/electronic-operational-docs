@@ -5,10 +5,10 @@ from threading import Barrier
 from unittest import skipUnless
 
 from django.db import close_old_connections, connection
-from django.test import TransactionTestCase
+from django.test import TransactionTestCase, override_settings
 
 from apps.documents.models import Document
-from apps.documents.services import create_document_draft, register_document
+from apps.documents.services import create_document_draft, register_demo_document
 from apps.organizations.models import Employee
 
 from .factories import document_context
@@ -18,6 +18,7 @@ from .factories import document_context
     connection.vendor == "postgresql",
     "Полноценная конкурентная проверка серверного нумератора выполняется на PostgreSQL.",
 )
+@override_settings(DEBUG=True)
 class PostgreSQLConcurrentNumberingTests(TransactionTestCase):
     reset_sequences = True
 
@@ -42,7 +43,7 @@ class PostgreSQLConcurrentNumberingTests(TransactionTestCase):
                 document = Document.objects.get(pk=document_pk)
                 actor = Employee.objects.get(pk=self.employee.pk)
                 barrier.wait(timeout=10)
-                return register_document(document=document, actor=actor).registration_number
+                return register_demo_document(document=document, actor=actor).registration_number
             finally:
                 close_old_connections()
 

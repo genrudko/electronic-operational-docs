@@ -90,7 +90,7 @@ except ValidationError:
 else:
     raise SystemExit("Audit event bulk mutation was not blocked.")
 
-service_source = inspect.getsource(services.register_document)
+service_source = inspect.getsource(services._register_document_core)
 if "transaction.atomic" not in service_source:
     raise SystemExit("Registration service is not transactional.")
 if "select_for_update" not in service_source:
