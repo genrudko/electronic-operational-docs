@@ -32,10 +32,12 @@ registered = list(documents.filter(status=Document.Status.REGISTERED))
 drafts = list(documents.filter(status=Document.Status.DRAFT))
 numbers = [item.registration_number for item in registered]
 
+# The gate validates domain invariants, not an exact mutable demo-data snapshot.
+# A user is allowed to register the seeded draft, so DRAFT_COUNT may legitimately be zero.
+if documents.count() < 3:
+    raise SystemExit("Expected at least three demo documents.")
 if len(registered) < 2:
     raise SystemExit("Expected at least two registered demo documents.")
-if len(drafts) < 1:
-    raise SystemExit("Expected at least one demo draft.")
 if len(numbers) != len(set(numbers)):
     raise SystemExit("Registered document numbers are not unique.")
 if not DocumentLink.objects.exists():
