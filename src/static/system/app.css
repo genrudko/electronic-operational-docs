@@ -414,3 +414,85 @@ footer { display: flex; justify-content: space-between; gap: 20px; padding: 18px
 .registration-confirm-card .form-row { margin-bottom: 1rem; }
 .field-error { margin-top: 0.3rem; color: #c83b3b; }
 .hash-value { overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+
+/* Patch 005: русскоязычная контекстная справка и нормативный реестр */
+.help-overview,
+.help-panel {
+    margin: 0 0 18px;
+    padding: 18px 20px;
+    border: 1px solid rgba(114, 167, 255, .35);
+    border-radius: 12px;
+    background: rgba(17, 26, 38, .92);
+}
+.help-overview h2 { margin: 0 0 8px; font-size: 18px; }
+.help-overview p,
+.help-panel p { color: var(--muted); line-height: 1.55; }
+.help-panel summary { color: #dce9ff; font-weight: 750; cursor: pointer; }
+.help-panel > div { padding-top: 10px; }
+.help-panel ul { color: var(--muted); line-height: 1.6; }
+.help-label { display: inline-flex; align-items: center; gap: 6px; }
+.help-tip { position: relative; display: inline-block; vertical-align: middle; }
+.help-tip summary {
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border: 1px solid rgba(114, 167, 255, .55);
+    border-radius: 50%;
+    color: #cfe0ff;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    list-style: none;
+}
+.help-tip summary::-webkit-details-marker { display: none; }
+.help-tip > div {
+    position: absolute;
+    z-index: 30;
+    left: 24px;
+    top: -8px;
+    width: min(330px, 72vw);
+    padding: 12px 14px;
+    border: 1px solid rgba(114, 167, 255, .45);
+    border-radius: 10px;
+    background: #101b29;
+    color: #dce6ef;
+    box-shadow: var(--shadow);
+    font-size: 13px;
+    line-height: 1.5;
+}
+.field-help-text { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
+.revision-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.revision-list li,
+.trace-card {
+    display: grid;
+    gap: 6px;
+    padding: 13px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: rgba(10, 15, 23, .35);
+}
+.revision-list span,
+.trace-card > span { color: var(--muted); font-size: 12px; }
+.short-hash { color: #bdd4ff; }
+.requirements-stack,
+.trace-list { display: grid; gap: 18px; }
+.requirement-card { margin-bottom: 0; }
+.requirement-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.requirement-heading h2 { margin: 10px 0 0; }
+.requirement-heading > strong { color: var(--warning); }
+.requirement-card > p { line-height: 1.6; }
+.requirement-card h3 { margin: 24px 0 12px; font-size: 16px; }
+.trace-card dl { margin-top: 8px; }
+
+@media (max-width: 720px) {
+    .help-tip > div {
+        position: fixed;
+        left: 20px;
+        right: 20px;
+        top: auto;
+        bottom: 20px;
+        width: auto;
+    }
+    .requirement-heading { flex-direction: column; }
+}

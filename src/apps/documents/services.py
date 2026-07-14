@@ -198,6 +198,15 @@ class IntegrityStatus(StrEnum):
     LEGACY = "LEGACY"
     MISSING = "MISSING"
 
+    @property
+    def label(self) -> str:
+        return {
+            self.VALID: "Целостность подтверждена",
+            self.INVALID: "Целостность нарушена",
+            self.LEGACY: "Наследованный документ",
+            self.MISSING: "Подтверждение отсутствует",
+        }[self]
+
 
 @dataclass(frozen=True, slots=True)
 class IntegrityResult:

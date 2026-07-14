@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Редакция № {{ revision.revision_number }} · {{ document.short_title|default:document.title }}{% endblock %}
+
+{% block content %}
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">ОПУБЛИКОВАННАЯ НОРМАТИВНАЯ РЕДАКЦИЯ</div>
+        <h1>{{ document.short_title|default:document.title }} · редакция № {{ revision.revision_number }}</h1>
+        <p>{{ revision.change_summary|default:"Описание редакции не указано." }}</p>
+    </div>
+    <a href="{% url 'normatives:document_detail' document.code %}">К документу</a>
+</section>
+
+<section class="profile-card">
+    <h2>Сведения о редакции</h2>
+    <dl>
+        <dt>
+            <span class="help-label">Статус
+                <details class="help-tip"><summary>?</summary><div>Опубликованная редакция зафиксирована и больше не изменяется.</div></details>
+            </span>
+        </dt>
+        <dd>{{ revision.get_status_display }}</dd>
+        <dt>Действует с</dt><dd>{{ revision.effective_from|date:"d.m.Y" }}</dd>
+        <dt>Действует по</dt><dd>{{ revision.effective_until|date:"d.m.Y"|default:"Без указанной даты окончания" }}</dd>
+        <dt>
+            <span class="help-label">SHA-256 редакции
+                <details class="help-tip"><summary>?</summary><div>Контрольная сумма опубликованных реквизитов и требований. Изменение данных приведёт к другому значению.</div></details>
+            </span>
+        </dt>
+        <dd class="hash-value">{{ revision.digest|default:"Контрольная сумма появится после публикации." }}</dd>
+        <dt>Источник</dt><dd>{{ revision.source_reference|default:"Не указан" }}</dd>
+        <dt>Опубликовал</dt><dd>{{ revision.approved_by.full_name|default:"Не опубликована" }}</dd>
+        <dt>Серверное время</dt><dd>{{ revision.published_at|date:"d.m.Y H:i:s T"|default:"Не опубликована" }}</dd>
+    </dl>
+</section>
+
+<section class="requirements-stack">
+{% for requirement in requirements %}
+    <article class="profile-card requirement-card">
+        <div class="requirement-heading">
+            <div>
+                <span class="code-chip">{{ requirement.code }}</span>
+                <h2>{{ requirement.title }}</h2>
+            </div>
+            <strong>{{ requirement.clause }}</strong>
+        </div>
+        <p>{{ requirement.requirement_text }}</p>
+        <dl>
+            <dt>Применимость</dt><dd>{{ requirement.applicability_text|default:"Применяется ко всей системе." }}</dd>
+            <dt>Обязательность</dt><dd>{% if requirement.is_mandatory %}Обязательное{% else %}Рекомендательное{% endif %}</dd>
+        </dl>
+
+        <h3>Связь с реализацией и испытаниями</h3>
+        <div class="trace-list">
+        {% for trace in requirement.traces.all %}
+            <div class="trace-card">
+                <strong>{{ trace.function_name }}</strong>
+                <span>{{ trace.get_implementation_status_display }}</span>
+                <dl>
+                    <dt>Код функции</dt><dd>{{ trace.function_code }}</dd>
+                    <dt>Автоматический тест</dt><dd>{{ trace.test_reference|default:"Пока не назначен" }}</dd>
+                    <dt>Приёмочный сценарий</dt><dd>{{ trace.acceptance_scenario|default:"Пока не назначен" }}</dd>
+                </dl>
+            </div>
+        {% empty %}
+            <p class="muted">Трассировка для требования пока не создана.</p>
+        {% endfor %}
+        </div>
+    </article>
+{% empty %}
+    <section class="empty-state">В этой редакции пока нет требований.</section>
+{% endfor %}
+</section>
+{% endblock %}

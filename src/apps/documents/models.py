@@ -433,8 +433,8 @@ class SignedSnapshot(models.Model):
 class DocumentSignature(models.Model):
     class ConfirmationMethod(models.TextChoices):
         PASSWORD_REAUTH = "PASSWORD_REAUTH", "Повторная аутентификация паролем"
-        LEGACY_MIGRATION = "LEGACY_MIGRATION", "Перенесено без повторной аутентификации"
-        DEMO_SEED = "DEMO_SEED", "Демонстрационное системное заполнение"
+        LEGACY_MIGRATION = "LEGACY_MIGRATION", "Перенос ранее зарегистрированного документа"
+        DEMO_SEED = "DEMO_SEED", "Демонстрационное создание"
 
     snapshot = models.OneToOneField(
         SignedSnapshot,
@@ -600,7 +600,7 @@ class AuditEvent(models.Model):
         DRAFT_UPDATED = "DRAFT_UPDATED", "Черновик изменён"
         DOCUMENT_REGISTERED = "DOCUMENT_REGISTERED", "Документ зарегистрирован"
         DOCUMENT_SIGNATURE_CREATED = "DOCUMENT_SIGNATURE_CREATED", "Создано системное подтверждение"
-        LEGACY_SIGNATURE_MIGRATED = "LEGACY_SIGNATURE_MIGRATED", "Создан legacy-маркер миграции"
+        LEGACY_SIGNATURE_MIGRATED = "LEGACY_SIGNATURE_MIGRATED", "Создан признак перенесённого документа"
         DOCUMENT_LINK_CREATED = "DOCUMENT_LINK_CREATED", "Создана связь документов"
 
     organization = models.ForeignKey(

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}{{ document.short_title|default:document.title }} · Нормативный реестр{% endblock %}
+
+{% block content %}
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">НОРМАТИВНЫЙ ДОКУМЕНТ</div>
+        <h1>{{ document.short_title|default:document.title }}</h1>
+        <p>{{ document.title }}</p>
+    </div>
+    <a href="{% url 'normatives:registry' %}">К реестру</a>
+</section>
+
+<section class="profile-card">
+    <h2>Реквизиты документа</h2>
+    <dl>
+        <dt>Уровень документа</dt><dd>{{ document.get_scope_display }}</dd>
+        <dt>Издатель</dt><dd>{{ document.issuer }}</dd>
+        <dt>Номер</dt><dd>{{ document.document_number|default:"Не указан" }}</dd>
+        <dt>Дата</dt><dd>{{ document.document_date|date:"d.m.Y"|default:"Не указана" }}</dd>
+        <dt>Организация</dt><dd>{{ document.organization|default:"Общий нормативный документ" }}</dd>
+    </dl>
+</section>
+
+<section class="profile-card">
+    <h2>Редакции</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Редакция</th>
+                    <th>Статус</th>
+                    <th>Период действия</th>
+                    <th>Требования</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for revision in revisions %}
+                <tr>
+                    <td>
+                        <a href="{% url 'normatives:revision_detail' document.code revision.revision_number %}">
+                            № {{ revision.revision_number }}
+                        </a>
+                    </td>
+                    <td>{{ revision.get_status_display }}</td>
+                    <td>
+                        с {{ revision.effective_from|date:"d.m.Y" }}
+                        {% if revision.effective_until %}по {{ revision.effective_until|date:"d.m.Y" }}{% endif %}
+                    </td>
+                    <td>{{ revision.requirements.count }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="4">Редакций пока нет.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

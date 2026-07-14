@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Подтверждение регистрации · ЭОД{% endblock %}
@@ -6,7 +5,7 @@
 {% block content %}
 <section class="page-heading compact">
     <div>
-        <div class="eyebrow">СИСТЕМНОЕ ПОДТВЕРЖДЕНИЕ · PATCH 004</div>
+        <div class="eyebrow">СИСТЕМНОЕ ПОДТВЕРЖДЕНИЕ · PATCH 005</div>
         <h1>Подтверждение регистрации</h1>
         <p>Проверьте точное содержимое версии до выделения регистрационного номера.</p>
     </div>
@@ -19,19 +18,52 @@
     Механизм не является УКЭП или УНЭП и не заменяет утверждённый локальный порядок предприятия.
 </section>
 
+<details class="help-panel" open>
+    <summary>Что именно подтверждается?</summary>
+    <div>
+        <p>
+            После успешной проверки пароля система зафиксирует показанную версию документа,
+            данные текущей персональной учётной записи, должность, подразделение, рабочее место,
+            действующие полномочия и серверное время.
+        </p>
+        <p>
+            Пароль нигде не сохраняется. Неверный пароль не выделяет регистрационный номер
+            и не изменяет документ.
+        </p>
+    </div>
+</details>
+
 <section class="profile-grid document-profile-grid">
     <article class="profile-card">
-        <h2>Подписываемые реквизиты</h2>
+        <h2>Подтверждаемые реквизиты</h2>
         <dl>
-            <dt>Документ</dt><dd>{{ document.title }}</dd>
-            <dt>Тип</dt><dd>{{ document.document_type.name }}</dd>
-            <dt>Организация</dt><dd>{{ document.organization }}</dd>
-            <dt>Версия</dt><dd>№ {{ document.current_version.version_number }}</dd>
-            <dt>Подтверждает</dt><dd>{{ employee.full_name }}</dd>
-            <dt>Должность</dt><dd>{{ confirmation_preview.identity.position|default:"—" }}</dd>
-            <dt>Подразделение</dt><dd>{{ confirmation_preview.identity.division|default:"—" }}</dd>
-            <dt>Рабочее место</dt><dd>{{ confirmation_preview.identity.workplace|default:"—" }}</dd>
-            <dt>Действующие полномочия</dt>
+            <dt><span class="help-label">Документ
+                <details class="help-tip"><summary>?</summary><div>Заголовок документа, который будет зафиксирован при регистрации.</div></details>
+            </span></dt><dd>{{ document.title }}</dd>
+            <dt><span class="help-label">Тип
+                <details class="help-tip"><summary>?</summary><div>Тип определяет правила нумерации и дальнейшую обработку документа.</div></details>
+            </span></dt><dd>{{ document.document_type.name }}</dd>
+            <dt><span class="help-label">Организация
+                <details class="help-tip"><summary>?</summary><div>Организация, к документарному реестру которой относится документ.</div></details>
+            </span></dt><dd>{{ document.organization }}</dd>
+            <dt><span class="help-label">Версия
+                <details class="help-tip"><summary>?</summary><div>Именно эта версия станет неизменяемой после регистрации.</div></details>
+            </span></dt><dd>№ {{ document.current_version.version_number }}</dd>
+            <dt><span class="help-label">Подтверждает
+                <details class="help-tip"><summary>?</summary><div>Ф.И.О. сотрудника, связанного с текущей персональной учётной записью.</div></details>
+            </span></dt><dd>{{ employee.full_name }}</dd>
+            <dt><span class="help-label">Должность
+                <details class="help-tip"><summary>?</summary><div>Должность будет сохранена в историческом снимке подтверждения.</div></details>
+            </span></dt><dd>{{ confirmation_preview.identity.position|default:"—" }}</dd>
+            <dt><span class="help-label">Подразделение
+                <details class="help-tip"><summary>?</summary><div>Подразделение будет сохранено в историческом снимке подтверждения.</div></details>
+            </span></dt><dd>{{ confirmation_preview.identity.division|default:"—" }}</dd>
+            <dt><span class="help-label">Рабочее место
+                <details class="help-tip"><summary>?</summary><div>Основное рабочее место будет сохранено в историческом снимке подтверждения.</div></details>
+            </span></dt><dd>{{ confirmation_preview.identity.workplace|default:"—" }}</dd>
+            <dt><span class="help-label">Действующие полномочия
+                <details class="help-tip"><summary>?</summary><div>Роли и области ответственности, действующие у сотрудника на дату подтверждения, включая законное замещение.</div></details>
+            </span></dt>
             <dd>
                 {% for role in confirmation_preview.effective_roles %}
                     <div>{{ role.role_name }}{% if role.scope_name %} · {{ role.scope_name }}{% endif %}</div>
@@ -54,7 +86,7 @@
     <h2>Повторная аутентификация</h2>
     <p class="muted">
         Пароль проверяется только механизмом Django и не сохраняется в документе, снимке,
-        подписи, аудите или журнале патча.
+        подтверждении, аудите или журнале патча.
     </p>
     <form method="post" autocomplete="off">
         {% csrf_token %}
@@ -63,6 +95,11 @@
             <div class="form-row">
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }}
+                {% if field.name == "password" %}
+                    <p class="field-help-text">
+                        Введите текущий пароль именно той учётной записи, под которой открыт сеанс.
+                    </p>
+                {% endif %}
                 {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
             </div>
         {% endfor %}

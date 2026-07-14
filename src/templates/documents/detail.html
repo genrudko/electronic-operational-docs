@@ -40,24 +40,86 @@
 {% if integrity %}
 <section class="profile-card integrity-panel status-{{ integrity.status.value|lower }}">
     <div class="eyebrow">КОНТРОЛЬ ЦЕЛОСТНОСТИ</div>
-    <span class="integrity-badge">{{ integrity.status.value }}</span>
+    <span class="integrity-badge">{{ integrity.status.label }}</span>
     <p>{{ integrity.message }}</p>
+
+    <details class="help-panel">
+        <summary>Что означает этот раздел?</summary>
+        <div>
+            <p>
+                Система сравнивает зарегистрированное содержимое с неизменяемым снимком,
+                проверяет SHA-256 снимка и контрольную сумму системного подтверждения.
+            </p>
+            <ul>
+                <li><strong>Целостность подтверждена</strong> — проверяемые сведения совпадают.</li>
+                <li><strong>Целостность нарушена</strong> — найдено расхождение или повреждение.</li>
+                <li><strong>Наследованный документ</strong> — документ существовал до механизма повторной аутентификации.</li>
+                <li><strong>Подтверждение отсутствует</strong> — обязательного снимка или подтверждения нет.</li>
+            </ul>
+            <p>
+                Это контроль прототипа, а не заявление о применении УКЭП или УНЭП.
+                При нарушении целостности документ нельзя считать достоверным до разбирательства.
+            </p>
+        </div>
+    </details>
+
     {% if integrity.snapshot %}
         <dl>
-            <dt>SHA-256 снимка</dt><dd class="hash-value">{{ integrity.snapshot.digest }}</dd>
-            <dt>Схема</dt><dd>{{ integrity.snapshot.schema_version }}</dd>
-            <dt>Создан</dt><dd>{{ integrity.snapshot.created_at|date:"d.m.Y H:i:s T" }}</dd>
+            <dt>
+                <span class="help-label">SHA-256 снимка
+                    <details class="help-tip"><summary>?</summary><div>Контрольная сумма точного содержимого, зафиксированного при регистрации. Любое изменение приведёт к другому значению.</div></details>
+                </span>
+            </dt>
+            <dd class="hash-value">{{ integrity.snapshot.digest }}</dd>
+            <dt>
+                <span class="help-label">Формат снимка
+                    <details class="help-tip"><summary>?</summary><div>Версия правил, по которым документ преобразован в проверяемый неизменяемый снимок.</div></details>
+                </span>
+            </dt>
+            <dd>
+                {% if integrity.snapshot.schema_version == "eod.document.registration.v1" %}
+                    Регистрация документа, версия 1
+                {% else %}
+                    Неизвестный формат снимка
+                {% endif %}
+            </dd>
+            <dt>
+                <span class="help-label">Снимок создан
+                    <details class="help-tip"><summary>?</summary><div>Серверное время создания неизменяемого снимка документа.</div></details>
+                </span>
+            </dt>
+            <dd>{{ integrity.snapshot.created_at|date:"d.m.Y H:i:s T" }}</dd>
         </dl>
     {% endif %}
     {% if integrity.signature %}
         <dl>
-            <dt>Способ</dt><dd>{{ integrity.signature.get_confirmation_method_display }}</dd>
-            <dt>Подтвердил</dt><dd>{{ integrity.signature.full_name_snapshot|default:"—" }}</dd>
-            <dt>Должность</dt><dd>{{ integrity.signature.position_snapshot|default:"—" }}</dd>
-            <dt>Подразделение</dt><dd>{{ integrity.signature.division_snapshot|default:"—" }}</dd>
-            <dt>Рабочее место</dt><dd>{{ integrity.signature.workplace_snapshot|default:"—" }}</dd>
-            <dt>Серверное время</dt><dd>{{ integrity.signature.signed_at|date:"d.m.Y H:i:s T" }}</dd>
-            <dt>Контрольная сумма подтверждения</dt>
+            <dt><span class="help-label">Способ подтверждения
+                <details class="help-tip"><summary>?</summary><div>Показывает, как было создано подтверждение: повторным вводом пароля, демонстрационным заполнением или переносом старого документа.</div></details>
+            </span></dt>
+            <dd>{{ integrity.signature.get_confirmation_method_display }}</dd>
+            <dt><span class="help-label">Подтвердил
+                <details class="help-tip"><summary>?</summary><div>Ф.И.О., зафиксированное в момент подтверждения. Последующее изменение карточки сотрудника не меняет этот снимок.</div></details>
+            </span></dt>
+            <dd>{{ integrity.signature.full_name_snapshot|default:"—" }}</dd>
+            <dt><span class="help-label">Должность
+                <details class="help-tip"><summary>?</summary><div>Должность пользователя на момент подтверждения документа.</div></details>
+            </span></dt>
+            <dd>{{ integrity.signature.position_snapshot|default:"—" }}</dd>
+            <dt><span class="help-label">Подразделение
+                <details class="help-tip"><summary>?</summary><div>Подразделение пользователя на момент подтверждения документа.</div></details>
+            </span></dt>
+            <dd>{{ integrity.signature.division_snapshot|default:"—" }}</dd>
+            <dt><span class="help-label">Рабочее место
+                <details class="help-tip"><summary>?</summary><div>Основное рабочее место пользователя, зафиксированное при подтверждении.</div></details>
+            </span></dt>
+            <dd>{{ integrity.signature.workplace_snapshot|default:"—" }}</dd>
+            <dt><span class="help-label">Серверное время
+                <details class="help-tip"><summary>?</summary><div>Время сервера приложения. Время компьютера пользователя для подтверждения не используется.</div></details>
+            </span></dt>
+            <dd>{{ integrity.signature.signed_at|date:"d.m.Y H:i:s T" }}</dd>
+            <dt><span class="help-label">Контрольная сумма подтверждения
+                <details class="help-tip"><summary>?</summary><div>SHA-256 сведений о снимке, подписанте, способе подтверждения и серверном времени.</div></details>
+            </span></dt>
             <dd class="hash-value">{{ integrity.signature.checksum }}</dd>
         </dl>
     {% endif %}
