@@ -6,26 +6,26 @@
 
 ```powershell
 Set-Location "G:\electronic-operational-docs"
-.\scripts\run_dev.ps1
+.\scriptsun_dev.ps1
 ```
 
-Скрипт автоматически выбирает свободный локальный порт и выводит точные адреса:
+Скрипт автоматически выбирает свободный локальный порт и выводит точные адреса главной страницы и `/health/`.
+
+## Демонстрационные персональные записи
+
+Patch 002 создаёт вымышленные локальные записи:
 
 ```text
-Главная страница: http://127.0.0.1:<порт>/
-Проверка состояния: http://127.0.0.1:<порт>/health/
+operator.demo   / EodDemo!2026
+supervisor.demo / EodDemo!2026
 ```
 
-При необходимости порт можно задать явно:
+Они предназначены только для локального прототипа. Каждая учётная запись связана ровно с одним сотрудником.
+
+Повторное заполнение справочника:
 
 ```powershell
-.\scripts\run_dev.ps1 -Port 8765
-```
-
-Проверить только выбор свободного порта, не запуская Django:
-
-```powershell
-.\scripts\run_dev.ps1 -CheckOnly
+.\.venv\Scripts\python.exe manage.py seed_demo_organization --reset-passwords
 ```
 
 ## Ручные проверки
@@ -34,7 +34,8 @@ Set-Location "G:\electronic-operational-docs"
 $env:DB_ENGINE = "sqlite"
 .\.venv\Scripts\python.exe manage.py migrate --noinput
 .\.venv\Scripts\python.exe manage.py check
-.\.venv\Scripts\python.exe manage.py test
+.\.venv\Scripts\python.exe scripts\gate_test_discovery.py
+.\.venv\Scripts\python.exe scripts\gate_patch_002.py
 .\.venv\Scripts\python.exe -m ruff check manage.py src scripts
 ```
 
@@ -43,12 +44,10 @@ $env:DB_ENGINE = "sqlite"
 PostgreSQL остаётся целевой базой проекта. При наличии Docker:
 
 ```powershell
-.\scripts\run_postgres.ps1
+.\scriptsun_postgres.ps1
 ```
 
-SQLite используется только для локального интерфейсного прототипирования. До реализации
-конкурентной нумерации, неизменяемых документов, подписей и промышленного пилота все
-критические gate-проверки должны выполняться на PostgreSQL.
+SQLite используется только для локального интерфейсного прототипирования. До реализации конкурентной нумерации, неизменяемых документов, подписей и промышленного пилота критические gate-проверки должны выполняться на PostgreSQL.
 
 ## Ограничение
 

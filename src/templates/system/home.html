@@ -1,84 +1,89 @@
-{% load static %}
-<!doctype html>
-<html lang="ru">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Электронная оперативная документация</title>
-    <link rel="stylesheet" href="{% static 'system/app.css' %}">
-</head>
-<body>
-<header class="topbar">
+{% extends "base.html" %}
+
+{% block content %}
+<section class="page-heading">
     <div>
-        <div class="eyebrow">ПРОТОТИП · НЕ ДЛЯ ПРОИЗВОДСТВЕННОЙ ЭКСПЛУАТАЦИИ</div>
+        <div class="eyebrow">STAGE 1 · ОРГАНИЗАЦИОННОЕ ЯДРО</div>
         <h1>Электронная оперативная документация</h1>
-        <p>Универсальная модульная система для оперативного персонала</p>
+        <p>Универсальная модульная система для персональной и прослеживаемой работы оперативного персонала.</p>
     </div>
     <div class="version">v{{ project_version }}</div>
-</header>
+</section>
 
-<main>
-    <section class="hero">
-        <div>
-            <span class="status-dot"></span>
-            Каркас системы запущен
-        </div>
-        <p>
-            Первый патч подготовил воспроизводимую среду. Документарное ядро,
-            подписи и журнальные модули будут добавляться последовательными патчами.
-        </p>
-        <div class="dev-profile">
-            <strong>Локальный профиль разработки:</strong>
-            {% if database_vendor == "sqlite" %}
-                SQLite без Docker. Перед проверкой конкурентных операций и пилотом
-                система будет переведена на PostgreSQL.
-            {% else %}
-                PostgreSQL.
-            {% endif %}
-        </div>
-    </section>
+<section class="hero">
+    <div class="hero-title"><span class="status-dot"></span>Каркас системы и персональная аутентификация готовы</div>
+    <p>
+        Добавлены организации, подразделения, рабочие места, должности, сотрудники,
+        роли, области ответственности, временные замещения и аудит входов.
+    </p>
+    <div class="dev-profile">
+        <strong>Локальный профиль разработки:</strong>
+        {% if database_vendor == "sqlite" %}
+            SQLite без Docker. Перед проверкой конкурентных операций и пилотом система будет переведена на PostgreSQL.
+        {% else %}
+            PostgreSQL.
+        {% endif %}
+    </div>
+</section>
 
-    <section class="grid">
-        <article class="card active">
-            <span class="number">01</span>
-            <h2>Оперативный журнал</h2>
-            <p>Поток подписанных событий, исправления, аннулирование и связи.</p>
-            <span class="badge">Первая очередь</span>
-        </article>
-        <article class="card">
-            <span class="number">02</span>
-            <h2>Заявки</h2>
-            <p>Маршруты рассмотрения, согласования, разрешения и закрытия.</p>
-            <span class="badge">Первая очередь</span>
-        </article>
-        <article class="card">
-            <span class="number">03</span>
-            <h2>Наряды и распоряжения</h2>
-            <p>Учёт работ, допусков, инструктажей, перерывов и завершения.</p>
-            <span class="badge">Первая очередь</span>
-        </article>
-        <article class="card">
-            <span class="number">04</span>
-            <h2>Дефекты</h2>
-            <p>Карточка дефекта от обнаружения до подтверждения устранения.</p>
-            <span class="badge">Первая очередь</span>
-        </article>
-    </section>
+{% if request.user.is_authenticated %}
+<section class="summary-grid">
+    <article class="metric"><span>Организации</span><strong>{{ organization_stats.organizations }}</strong></article>
+    <article class="metric"><span>Сотрудники</span><strong>{{ organization_stats.employees }}</strong></article>
+    <article class="metric"><span>Роли</span><strong>{{ organization_stats.roles }}</strong></article>
+    <article class="metric"><span>Активные замещения</span><strong>{{ organization_stats.substitutions }}</strong></article>
+</section>
+{% else %}
+<section class="login-callout">
+    <div>
+        <h2>Персональная работа начинается со входа</h2>
+        <p>Общие и обезличенные учётные записи не используются. Каждая тестовая запись связана с одним сотрудником.</p>
+    </div>
+    <a class="button" href="{% url 'organizations:login' %}">Войти</a>
+</section>
+{% endif %}
 
-    <section class="principles">
-        <h2>Неподвижные принципы</h2>
-        <ul>
-            <li>Подписанные версии не редактируются и не удаляются.</li>
-            <li>Исправления оформляются новой связанной редакцией.</li>
-            <li>Все значимые действия отражаются в неизменяемом аудите.</li>
-            <li>Система не зависит от SCADA, CIM и технологического оборудования.</li>
-        </ul>
-    </section>
-</main>
+<section class="grid module-grid">
+    <article class="card active">
+        <span class="number">00</span>
+        <h2>Организация и персонал</h2>
+        <p>Структура предприятия, сотрудники, роли, области ответственности и замещения.</p>
+        {% if request.user.is_authenticated %}
+            <a class="card-link" href="{% url 'organizations:directory' %}">Открыть справочник</a>
+        {% else %}
+            <span class="badge">Готово</span>
+        {% endif %}
+    </article>
+    <article class="card">
+        <span class="number">01</span>
+        <h2>Оперативный журнал</h2>
+        <p>Поток подписанных событий, исправления, аннулирование и связи.</p>
+        <span class="badge">Следующая очередь</span>
+    </article>
+    <article class="card">
+        <span class="number">02</span>
+        <h2>Заявки</h2>
+        <p>Маршруты рассмотрения, согласования, разрешения и закрытия.</p>
+        <span class="badge">Первая очередь</span>
+    </article>
+    <article class="card">
+        <span class="number">03</span>
+        <h2>Наряды и распоряжения</h2>
+        <p>Учёт работ, допусков, инструктажей, перерывов и завершения.</p>
+        <span class="badge">Первая очередь</span>
+    </article>
+</section>
 
-<footer>
-    <span>Серверное время: {{ server_time|date:"d.m.Y H:i:s T" }}</span>
-    <a href="{% url 'system:health' %}">Проверка состояния</a>
-</footer>
-</body>
-</html>
+<section class="principles">
+    <h2>Неподвижные принципы</h2>
+    <ul>
+        <li>Персональный вход не является электронной подписью.</li>
+        <li>Одна учётная запись может быть связана только с одним сотрудником.</li>
+        <li>Полномочия ограничиваются сроком и областью ответственности.</li>
+        <li>Временное замещение не изменяет исторические назначения ролей.</li>
+        <li>Все входы, ошибки входа и выходы фиксируются отдельными событиями.</li>
+    </ul>
+</section>
+
+<div class="page-meta">Серверное время: {{ server_time|date:"d.m.Y H:i:s T" }}</div>
+{% endblock %}

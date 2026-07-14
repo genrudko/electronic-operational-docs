@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Моя учётная запись · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">ПЕРСОНАЛЬНАЯ УЧЁТНАЯ ЗАПИСЬ</div>
+        <h1>{{ request.user.get_username }}</h1>
+        <p>Вход подтверждает личность пользователя, но не заменяет повторное подтверждение при электронной подписи.</p>
+    </div>
+</section>
+
+{% if employee %}
+<section class="profile-grid">
+    <article class="profile-card">
+        <h2>{{ employee.full_name }}</h2>
+        <dl>
+            <dt>Организация</dt><dd>{{ employee.organization }}</dd>
+            <dt>Подразделение</dt><dd>{{ employee.division.name }}</dd>
+            <dt>Должность</dt><dd>{{ employee.position.name }}</dd>
+            <dt>Рабочее место</dt><dd>{{ employee.workplace|default:"не назначено" }}</dd>
+            <dt>Табельный номер</dt><dd><code>{{ employee.personnel_number }}</code></dd>
+        </dl>
+    </article>
+    <article class="profile-card">
+        <h2>Эффективные роли</h2>
+        <ul class="role-list">
+            {% for item in effective_roles %}
+                <li>
+                    <strong>{{ item.assignment.role.name }}</strong>
+                    <span>{{ item.assignment.scope|default:"Вся организация" }}</span>
+                    {% if item.is_substituted %}
+                        <em>по замещению {{ item.source_employee.full_name }}</em>
+                    {% else %}
+                        <em>прямое назначение</em>
+                    {% endif %}
+                </li>
+            {% empty %}<li class="muted">Действующих ролей нет.</li>{% endfor %}
+        </ul>
+    </article>
+</section>
+<section class="profile-card">
+    <h2>Исторические прямые назначения</h2>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Роль</th><th>Область</th><th>Начало</th><th>Окончание</th><th>Активно</th></tr></thead>
+            <tbody>
+            {% for assignment in direct_assignments %}
+                <tr><td>{{ assignment.role.name }}</td><td>{{ assignment.scope|default:"Вся организация" }}</td><td>{{ assignment.valid_from }}</td><td>{{ assignment.valid_until|default:"без ограничения" }}</td><td>{{ assignment.is_active|yesno:"да,нет" }}</td></tr>
+            {% empty %}<tr><td colspan="5" class="muted">Назначений нет.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% else %}
+<section class="empty-state warning"><h2>Учётная запись не связана с сотрудником</h2><p>Такая запись не может получать оперативные полномочия. Обратитесь к администратору справочников.</p></section>
+{% endif %}
+{% endblock %}

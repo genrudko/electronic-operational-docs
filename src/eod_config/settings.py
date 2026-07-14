@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "apps.system.apps.SystemConfig",
+    "apps.organizations.apps.OrganizationsConfig",
 ]
 
 MIDDLEWARE = [
@@ -123,3 +124,6 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
+LOGIN_URL = "organizations:login"
+LOGIN_REDIRECT_URL = "system:home"
+LOGOUT_REDIRECT_URL = "system:home"

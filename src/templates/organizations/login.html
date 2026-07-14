@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Персональный вход · ЭОД{% endblock %}
+
+{% block content %}
+<section class="auth-shell">
+    <div class="auth-card">
+        <div class="eyebrow">ПЕРСОНАЛЬНАЯ АУТЕНТИФИКАЦИЯ</div>
+        <h1>Вход в систему</h1>
+        <p>Используйте только собственную тестовую учётную запись. Факт входа не является электронной подписью.</p>
+        <form method="post" class="auth-form">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="form-errors">{{ form.non_field_errors }}</div>
+            {% endif %}
+            {% for field in form %}
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
+            {% endfor %}
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+            <button class="button full" type="submit">Войти</button>
+        </form>
+        <div class="demo-credentials">
+            <strong>Локальные демонстрационные записи</strong>
+            <code>operator.demo / EodDemo!2026</code>
+            <code>supervisor.demo / EodDemo!2026</code>
+        </div>
+    </div>
+</section>
+{% endblock %}

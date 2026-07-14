@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import os
@@ -15,18 +14,19 @@ from django.test.runner import DiscoverRunner  # noqa: E402
 
 django.setup()
 
+TEST_LABELS = ["apps.system.tests", "apps.organizations.tests"]
+MIN_TEST_COUNT = 20
+
 runner = DiscoverRunner(verbosity=2, interactive=False)
-suite = runner.build_suite(test_labels=["apps.system.tests"])
+suite = runner.build_suite(test_labels=TEST_LABELS)
 count = suite.countTestCases()
 
 print(f"DISCOVERED_TEST_COUNT={count}")
-if count < 2:
-    raise SystemExit(
-        f"Expected at least 2 tests, discovered {count}."
-    )
+if count < MIN_TEST_COUNT:
+    raise SystemExit(f"Expected at least {MIN_TEST_COUNT} tests, discovered {count}.")
 
-failures = runner.run_tests(["apps.system.tests"])
+failures = runner.run_tests(TEST_LABELS)
 if failures:
     raise SystemExit(f"Test suite failed: {failures} failure(s).")
 
-print("PATCH_001_5_TEST_DISCOVERY_GATE_PASSED")
+print("PATCH_002_TEST_DISCOVERY_GATE_PASSED")
