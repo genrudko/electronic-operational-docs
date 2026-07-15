@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.views.decorators.http import require_GET
 
 from .models import EnergySite, EquipmentAsset, EquipmentType
 from .services import (
@@ -8,6 +9,7 @@ from .services import (
     build_site_tree,
     dispatcher_name_on,
     equipment_registry_rows,
+    equipment_selector_page,
     name_history_rows,
     require_equipment_employee,
     search_equipment,
@@ -47,6 +49,31 @@ def registry(request: HttpRequest) -> HttpResponse:
             "selected_type": type_code,
             "asset_count": assets.count(),
         },
+    )
+
+
+@login_required
+@require_GET
+def selector_options(request: HttpRequest) -> JsonResponse:
+    employee = require_equipment_employee(request.user)
+
+    def positive_integer(name: str, default: int) -> int:
+        try:
+            return max(1, int(request.GET.get(name, default)))
+        except (TypeError, ValueError):
+            return default
+
+    payload = equipment_selector_page(
+        organization=employee.organization,
+        query=request.GET.get("q", "").strip(),
+        site_code=request.GET.get("site", "").strip(),
+        category=request.GET.get("category", "").strip(),
+        type_code=request.GET.get("type", "").strip(),
+        page=positive_integer("page", 1),
+    )
+    return JsonResponse(
+        payload,
+        json_dumps_params={"ensure_ascii": False},
     )
 
 

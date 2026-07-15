@@ -5,7 +5,7 @@
 {% block content %}
 <section class="page-heading compact">
     <div>
-        <div class="eyebrow">ДОКУМЕНТАРНОЕ ЯДРО</div>
+        <div class="eyebrow">ДОКУМЕНТАРНОЕ ЯДРО · PATCH 006.1</div>
         <h1>{{ page_title }}</h1>
         <p>Содержимое черновика можно изменять до серверной регистрации.</p>
     </div>
@@ -39,12 +39,147 @@
         {{ form.body }}
         <div class="field-errors">{{ form.body.errors }}</div>
 
-        <label for="{{ form.equipment_assets.id_for_label }}">
-            {{ form.equipment_assets.label }}
-        </label>
-        {{ form.equipment_assets }}
-        <p class="field-help-text">{{ form.equipment_assets.help_text }}</p>
-        <div class="field-errors">{{ form.equipment_assets.errors }}</div>
+        <section
+            class="equipment-selector"
+            data-equipment-selector
+            data-endpoint="{% url 'equipment:selector_options' %}"
+        >
+            <div class="equipment-selector-heading">
+                <div>
+                    <h2>Оборудование документа</h2>
+                    <p>
+                        Поиск выполняется на сервере порциями по 50 записей.
+                        В браузер не загружается весь реестр.
+                    </p>
+                </div>
+                <button
+                    class="button secondary"
+                    type="button"
+                    data-equipment-selector-open
+                >
+                    Выбрать оборудование
+                </button>
+            </div>
+
+            <div data-equipment-hidden-inputs hidden>
+                {{ form.equipment_assets }}
+            </div>
+            {{ form.selected_equipment_rows|json_script:"equipment-selector-initial" }}
+
+            <div class="equipment-selector-summary">
+                Выбрано: <strong data-equipment-selected-count>0</strong>
+            </div>
+            <div
+                class="equipment-selected-list"
+                data-equipment-selected-list
+                aria-live="polite"
+            ></div>
+            <p class="field-help-text">{{ form.equipment_assets.help_text }}</p>
+            <div class="field-errors">{{ form.equipment_assets.errors }}</div>
+
+            <dialog class="equipment-selector-dialog" data-equipment-dialog>
+                <div class="equipment-selector-dialog-shell">
+                    <header>
+                        <div>
+                            <div class="eyebrow">СЕРВЕРНЫЙ СЕЛЕКТОР</div>
+                            <h2>Выбор оборудования</h2>
+                            <p>
+                                Используйте энергообъект, категорию, вид оборудования,
+                                код, диспетчерское наименование или алиас.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            class="icon-button"
+                            data-equipment-dialog-close
+                            aria-label="Закрыть окно выбора"
+                        >×</button>
+                    </header>
+
+                    <div class="equipment-selector-layout">
+                        <aside class="equipment-selector-filters">
+                            <label for="equipment-selector-search">Поиск</label>
+                            <input
+                                id="equipment-selector-search"
+                                type="search"
+                                placeholder="КТП-01, ВЭУ, код или старое наименование"
+                                data-equipment-search
+                            >
+
+                            <label for="equipment-selector-site">Энергообъект</label>
+                            <select id="equipment-selector-site" data-equipment-site>
+                                <option value="">Все энергообъекты</option>
+                            </select>
+
+                            <h3>Категории</h3>
+                            <div
+                                class="equipment-category-list"
+                                data-equipment-categories
+                            ></div>
+
+                            <label for="equipment-selector-type">Вид оборудования</label>
+                            <select id="equipment-selector-type" data-equipment-type>
+                                <option value="">Все виды</option>
+                            </select>
+                        </aside>
+
+                        <main class="equipment-selector-results-panel">
+                            <div class="equipment-selector-result-heading">
+                                <strong data-equipment-result-total>Найдено: 0</strong>
+                                <span data-equipment-loading hidden>Загрузка…</span>
+                            </div>
+                            <div
+                                class="equipment-selector-results"
+                                data-equipment-results
+                            ></div>
+                            <button
+                                type="button"
+                                class="button secondary"
+                                data-equipment-load-more
+                                hidden
+                            >
+                                Показать ещё
+                            </button>
+                        </main>
+
+                        <aside class="equipment-selector-picked-panel">
+                            <h3>
+                                Выбрано:
+                                <span data-equipment-dialog-selected-count>0</span>
+                            </h3>
+                            <button
+                                type="button"
+                                class="text-button"
+                                data-equipment-clear
+                            >
+                                Очистить выбор
+                            </button>
+                            <div
+                                class="equipment-selector-picked"
+                                data-equipment-dialog-selected
+                            ></div>
+                        </aside>
+                    </div>
+
+                    <footer>
+                        <button
+                            class="button"
+                            type="button"
+                            data-equipment-apply
+                        >
+                            Применить выбор
+                        </button>
+                        <button
+                            class="button secondary"
+                            type="button"
+                            data-equipment-dialog-close
+                        >
+                            Закрыть
+                        </button>
+                    </footer>
+                </div>
+            </dialog>
+        </section>
 
         <div class="form-actions">
             <button class="button" type="submit">{{ submit_label }}</button>

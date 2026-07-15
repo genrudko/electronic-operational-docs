@@ -730,3 +730,276 @@ footer { display: flex; justify-content: space-between; gap: 20px; padding: 18px
         grid-column: 1;
     }
 }
+
+/* Patch 006.1: масштабируемый селектор оборудования */
+.equipment-selector {
+    display: grid;
+    gap: 12px;
+    margin-top: 8px;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(10, 15, 23, .28);
+}
+.equipment-selector-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+}
+.equipment-selector-heading h2 {
+    margin: 0 0 5px;
+    font-size: 17px;
+}
+.equipment-selector-heading p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+}
+.equipment-selector-summary {
+    color: var(--muted);
+    font-size: 13px;
+}
+.equipment-selected-list {
+    display: grid;
+    gap: 8px;
+}
+.equipment-picked-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 11px 12px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: #0c141f;
+}
+.equipment-picked-card > div {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+.equipment-picked-card small {
+    color: var(--muted);
+    overflow-wrap: anywhere;
+}
+.equipment-picked-card.compact {
+    padding: 9px 10px;
+}
+.equipment-remove-button,
+.text-button {
+    border: 0;
+    background: transparent;
+    color: #9fc4ff;
+    cursor: pointer;
+}
+.equipment-remove-button:hover,
+.text-button:hover {
+    color: #d5e6ff;
+}
+.equipment-selector-dialog {
+    width: min(1240px, calc(100vw - 32px));
+    max-width: none;
+    height: min(820px, calc(100vh - 32px));
+    max-height: none;
+    padding: 0;
+    border: 1px solid rgba(114, 167, 255, .45);
+    border-radius: 14px;
+    background: #0b131e;
+    color: var(--text);
+    box-shadow: 0 28px 90px rgba(0, 0, 0, .58);
+}
+.equipment-selector-dialog::backdrop {
+    background: rgba(3, 7, 12, .78);
+    backdrop-filter: blur(3px);
+}
+.equipment-selector-dialog-shell {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    height: 100%;
+}
+.equipment-selector-dialog header,
+.equipment-selector-dialog footer {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+}
+.equipment-selector-dialog footer {
+    justify-content: flex-end;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    border-bottom: 0;
+}
+.equipment-selector-dialog h2 {
+    margin: 3px 0 5px;
+}
+.equipment-selector-dialog header p {
+    margin: 0;
+    color: var(--muted);
+}
+.icon-button {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: #101a27;
+    color: var(--text);
+    font-size: 24px;
+    cursor: pointer;
+}
+.equipment-selector-layout {
+    display: grid;
+    grid-template-columns: 260px minmax(360px, 1fr) 310px;
+    min-height: 0;
+}
+.equipment-selector-filters,
+.equipment-selector-picked-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    padding: 16px;
+    overflow: auto;
+    border-right: 1px solid var(--border);
+}
+.equipment-selector-picked-panel {
+    border-right: 0;
+    border-left: 1px solid var(--border);
+}
+.equipment-selector-filters label,
+.equipment-selector-filters h3,
+.equipment-selector-picked-panel h3 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 750;
+}
+.equipment-selector-filters input,
+.equipment-selector-filters select {
+    width: 100%;
+    min-height: 40px;
+    padding: 9px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #0a121d;
+    color: var(--text);
+}
+.equipment-category-list {
+    display: grid;
+    gap: 6px;
+}
+.equipment-category-button {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #0c1521;
+    color: var(--muted);
+    text-align: left;
+    cursor: pointer;
+}
+.equipment-category-button.active {
+    border-color: rgba(114, 167, 255, .7);
+    background: rgba(66, 126, 205, .18);
+    color: #e6f0ff;
+}
+.equipment-selector-results-panel {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    min-height: 0;
+    padding: 16px;
+}
+.equipment-selector-result-heading {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 10px;
+}
+.equipment-selector-results {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    min-height: 0;
+    overflow: auto;
+    padding-right: 4px;
+}
+.equipment-result-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 11px 12px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: rgba(10, 15, 23, .4);
+}
+.equipment-result-card.selected {
+    border-color: rgba(86, 214, 163, .55);
+    background: rgba(49, 147, 112, .1);
+}
+.equipment-result-card > div {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+.equipment-result-card span,
+.equipment-result-card small {
+    color: var(--muted);
+}
+.equipment-result-path {
+    overflow-wrap: anywhere;
+}
+.equipment-selector-picked {
+    display: grid;
+    align-content: start;
+    gap: 7px;
+    min-height: 0;
+    overflow: auto;
+}
+[data-equipment-load-more] {
+    margin-top: 10px;
+    justify-self: center;
+}
+
+@media (max-width: 1020px) {
+    .equipment-selector-layout {
+        grid-template-columns: 230px minmax(320px, 1fr);
+    }
+    .equipment-selector-picked-panel {
+        grid-column: 1 / -1;
+        max-height: 230px;
+        border-top: 1px solid var(--border);
+        border-left: 0;
+    }
+}
+
+@media (max-width: 760px) {
+    .equipment-selector-heading {
+        flex-direction: column;
+    }
+    .equipment-selector-dialog {
+        width: 100vw;
+        height: 100dvh;
+        border: 0;
+        border-radius: 0;
+    }
+    .equipment-selector-layout {
+        grid-template-columns: 1fr;
+        overflow: auto;
+    }
+    .equipment-selector-filters,
+    .equipment-selector-picked-panel {
+        overflow: visible;
+        border: 0;
+        border-bottom: 1px solid var(--border);
+    }
+    .equipment-selector-results-panel {
+        min-height: 520px;
+    }
+    .equipment-result-card {
+        grid-template-columns: 1fr;
+    }
+}

@@ -5,15 +5,10 @@ from typing import Any
 from django import forms
 
 from apps.equipment.models import EquipmentAsset
-from apps.equipment.services import equipment_label
+from apps.equipment.services import equipment_selection_rows
 from apps.organizations.models import Employee
 
 from .models import Document, DocumentLink, DocumentType
-
-
-class EquipmentMultipleChoiceField(forms.ModelMultipleChoiceField):
-    def label_from_instance(self, obj: EquipmentAsset) -> str:
-        return equipment_label(obj)
 
 
 class DocumentDraftForm(forms.Form):
@@ -41,15 +36,15 @@ class DocumentDraftForm(forms.Form):
             }
         ),
     )
-    equipment_assets = EquipmentMultipleChoiceField(
+    equipment_assets = forms.ModelMultipleChoiceField(
         label="Оборудование документа",
         queryset=EquipmentAsset.objects.none(),
         required=False,
         help_text=(
-            "Выбранные объекты будут зафиксированы вместе с действующими "
-            "диспетчерскими наименованиями при регистрации."
+            "Используйте поиск, категории и фильтры. В форму передаются только "
+            "идентификаторы выбранного оборудования."
         ),
-        widget=forms.SelectMultiple(attrs={"size": 8}),
+        widget=forms.MultipleHiddenInput(),
     )
 
     def __init__(
@@ -65,18 +60,46 @@ class DocumentDraftForm(forms.Form):
             organization=employee.organization,
             is_active=True,
         )
-        self.fields["equipment_assets"].queryset = (
+        equipment_queryset = (
             EquipmentAsset.objects.filter(organization=employee.organization)
-            .select_related("site", "equipment_type")
+            .select_related("site", "equipment_type", "parent")
             .order_by("site__name", "code")
         )
+        self.fields["equipment_assets"].queryset = equipment_queryset
+
+        selected_ids: list[str] = []
+        if self.is_bound:
+            field_name = self.add_prefix("equipment_assets")
+            if hasattr(self.data, "getlist"):
+                submitted_values = self.data.getlist(field_name)
+            else:
+                raw_value = self.data.get(field_name, [])
+                if isinstance(raw_value, (list, tuple, set)):
+                    submitted_values = raw_value
+                elif raw_value in (None, ""):
+                    submitted_values = []
+                else:
+                    submitted_values = [raw_value]
+            selected_ids = [
+                str(value)
+                for value in submitted_values
+                if value not in (None, "")
+            ]
+        elif document is not None and document.current_version_id:
+            selected_ids = [
+                str(value)
+                for value in EquipmentAsset.objects.filter(
+                    document_links__document_version_id=document.current_version_id
+                ).values_list("pk", flat=True)
+            ]
+            self.fields["equipment_assets"].initial = selected_ids
+
+        selected_assets = equipment_queryset.filter(pk__in=selected_ids)
+        self.selected_equipment_rows = equipment_selection_rows(selected_assets)
+
         if document is not None:
             self.fields["document_type"].initial = document.document_type
             self.fields["document_type"].disabled = True
-            if document.current_version_id:
-                self.fields["equipment_assets"].initial = EquipmentAsset.objects.filter(
-                    document_links__document_version_id=document.current_version_id
-                ).order_by("code")
 
 
 class DocumentLinkForm(forms.Form):

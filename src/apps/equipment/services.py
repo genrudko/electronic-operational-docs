@@ -22,6 +22,7 @@ from .models import (
     EquipmentAsset,
     EquipmentAuditEvent,
     EquipmentNameRevision,
+    EquipmentType,
     PublicationStatus,
 )
 
@@ -607,3 +608,112 @@ def document_equipment_rows(document: Document) -> list[dict[str, Any]]:
             for item in snapshots
         ]
     return document_equipment_preview(document)
+
+SELECTOR_PAGE_SIZE = 50
+
+
+def equipment_selector_item(
+    equipment: EquipmentAsset,
+    day: date | None = None,
+) -> dict[str, Any]:
+    revision = dispatcher_name_revision_on(equipment, day)
+    return {
+        "id": equipment.pk,
+        "public_id": str(equipment.public_id),
+        "code": equipment.code,
+        "display_name": (
+            revision.dispatcher_name
+            if revision is not None
+            else equipment.technical_name
+        ),
+        "technical_name": equipment.technical_name,
+        "type_code": equipment.equipment_type.code,
+        "type_name": equipment.equipment_type.name,
+        "category": equipment.equipment_type.category,
+        "category_label": equipment.equipment_type.get_category_display(),
+        "site_code": equipment.site.code,
+        "site_name": str(equipment.site),
+        "status": equipment.status,
+        "status_label": equipment.get_status_display(),
+        "hierarchy_path": hierarchy_path(equipment, day),
+    }
+
+
+def equipment_selection_rows(assets: Iterable[EquipmentAsset]) -> list[dict[str, Any]]:
+    return [
+        equipment_selector_item(equipment)
+        for equipment in assets
+    ]
+
+
+def equipment_selector_page(
+    *,
+    organization: Organization,
+    query: str = "",
+    site_code: str = "",
+    category: str = "",
+    type_code: str = "",
+    page: int = 1,
+) -> dict[str, Any]:
+    queryset = search_equipment(
+        organization=organization,
+        query=query,
+        site_code=site_code,
+        type_code=type_code,
+    )
+    if category:
+        queryset = queryset.filter(equipment_type__category=category)
+
+    page_number = max(1, page)
+    total = queryset.count()
+    start = (page_number - 1) * SELECTOR_PAGE_SIZE
+    end = start + SELECTOR_PAGE_SIZE
+    assets = list(queryset[start:end])
+
+    site_rows = EnergySite.objects.filter(
+        organization=organization,
+        is_active=True,
+    ).order_by("name")
+    type_rows = (
+        EquipmentType.objects.filter(
+            equipment_assets__organization=organization,
+            is_active=True,
+        )
+        .distinct()
+        .order_by("category", "name")
+    )
+    used_categories = set(type_rows.values_list("category", flat=True))
+    category_labels = dict(EquipmentType.Category.choices)
+
+    return {
+        "items": equipment_selection_rows(assets),
+        "page": page_number,
+        "page_size": SELECTOR_PAGE_SIZE,
+        "total": total,
+        "has_more": end < total,
+        "filters": {
+            "sites": [
+                {
+                    "code": site.code,
+                    "name": str(site),
+                }
+                for site in site_rows
+            ],
+            "categories": [
+                {
+                    "code": code,
+                    "name": category_labels[code],
+                }
+                for code in category_labels
+                if code in used_categories
+            ],
+            "types": [
+                {
+                    "code": equipment_type.code,
+                    "name": equipment_type.name,
+                    "category": equipment_type.category,
+                }
+                for equipment_type in type_rows
+            ],
+        },
+    }
