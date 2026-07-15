@@ -34,6 +34,22 @@ SECRET_PATTERNS = (
     re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
 )
 
+# Only these directories/files are ever auto-staged when they show up as
+# NEW (untracked) paths. Anything else dropped in the repo - reference
+# documents, chat exports, scratch notes, downloaded attachments - is
+# reported but left untracked instead of silently riding along, the way
+# `git add -A` allowed on Patch 006.1.
+ALLOWLIST_PREFIXES = ("src/", "scripts/", "docs/")
+ALLOWLIST_EXACT = {
+    "manage.py",
+    "pyproject.toml",
+    "README.md",
+    "compose.yaml",
+    ".gitattributes",
+    ".gitignore",
+    ".env.example",
+}
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -70,6 +86,13 @@ def run(command: list[str], root: Path) -> subprocess.CompletedProcess[str]:
 
 def normalize(path: str) -> str:
     return path.replace("\\", "/")
+
+
+def in_allowlist(path: str) -> bool:
+    normalized = normalize(path)
+    if normalized in ALLOWLIST_EXACT:
+        return True
+    return any(normalized.startswith(prefix) for prefix in ALLOWLIST_PREFIXES)
 
 
 def blocked(path: str) -> bool:
@@ -116,12 +139,38 @@ def main() -> int:
         raise RuntimeError(f"Not a Git repository: {root}")
 
     run(["git", "diff", "--check"], root)
-    run(["git", "add", "-A"], root)
 
+    # Stage modifications/deletions of already-tracked files. This never
+    # introduces a new path, so it is always safe on its own.
+    run(["git", "add", "-u"], root)
+
+    # For untracked files, only stage the ones inside recognised project
+    # directories/files (see ALLOWLIST_PREFIXES/ALLOWLIST_EXACT). Anything
+    # else is reported but left untracked. `-z` avoids git's default
+    # quoting/escaping of non-ASCII (e.g. Cyrillic) filenames, which would
+    # otherwise break exact path matching against the allowlist.
+    untracked = run(
+        ["git", "ls-files", "--others", "--exclude-standard", "-z"], root
+    ).stdout.split("\0")
+    untracked = [path.strip() for path in untracked if path.strip()]
+
+    allowed_untracked = [path for path in untracked if in_allowlist(path)]
+    skipped_untracked = [path for path in untracked if not in_allowlist(path)]
+
+    if allowed_untracked:
+        run(["git", "add", "--", *allowed_untracked], root)
+
+    if skipped_untracked:
+        print("Skipped untracked files outside the allowlist (not staged):")
+        for path in sorted(skipped_untracked):
+            print(" -", path)
+
+    # `-z` avoids git's default quoting/escaping of non-ASCII filenames
+    # (this repo has plenty of Cyrillic paths under docs/ and elsewhere).
     staged = run(
-        ["git", "diff", "--cached", "--name-only"],
+        ["git", "diff", "--cached", "--name-only", "-z"],
         root,
-    ).stdout.splitlines()
+    ).stdout.split("\0")
     staged = [path.strip() for path in staged if path.strip()]
 
     if not staged:

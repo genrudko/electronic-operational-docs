@@ -44,3 +44,8 @@ desktop.ini
 /patch_*.ps1
 /PATCH_*.zip
 /PATCH_*_RUNBOOK.txt
+
+# Reference material and real-world documents - not part of the codebase
+/Инструкции/
+/ChatGPT-*.md
+/EOD_full_project_plan_v2_*.md
