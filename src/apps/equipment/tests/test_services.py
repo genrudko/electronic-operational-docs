@@ -45,7 +45,7 @@ class EquipmentRegistryServiceTests(EquipmentDemoMixin, TestCase):
             EquipmentAsset.objects.get(code="DEMO-RZA-01")
         )
         self.assertIn("РУ 35 кВ", path)
-        self.assertIn("ячейка 1", path)
+        self.assertIn("ячейка № 1", path)
         self.assertIn("РЗА", path)
 
     def test_name_history_derives_previous_end_date(self):

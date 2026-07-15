@@ -1,48 +1,83 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}Моя учётная запись · ЭОД{% endblock %}
+{% block title %}Учётная запись и интерфейс · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading compact">
+<section class="page-heading compact presentation-heading">
     <div>
-        <div class="eyebrow">ПЕРСОНАЛЬНАЯ УЧЁТНАЯ ЗАПИСЬ</div>
-        <h1>{{ request.user.get_username }}</h1>
-        <p>Вход подтверждает личность пользователя, но не заменяет повторное подтверждение при электронной подписи.</p>
+        <div class="section-kicker">Персональный профиль</div>
+        <h1>Учётная запись и интерфейс</h1>
+        <p>Персональные данные, действующие роли и настройки отображения системы.</p>
     </div>
 </section>
 
 {% if employee %}
-<section class="profile-grid">
-    <article class="profile-card">
-        <h2>{{ employee.full_name }}</h2>
-        <dl>
+<section class="profile-grid account-overview-grid">
+    <article class="profile-card identity-card">
+        <div class="card-heading-with-icon">
+            <span class="section-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-user"></use></svg></span>
+            <div><span class="card-label">Сотрудник</span><h2>{{ employee.full_name }}</h2></div>
+        </div>
+        <dl class="human-detail-list">
             <dt>Организация</dt><dd>{{ employee.organization }}</dd>
             <dt>Подразделение</dt><dd>{{ employee.division.name }}</dd>
             <dt>Должность</dt><dd>{{ employee.position.name }}</dd>
-            <dt>Рабочее место</dt><dd>{{ employee.workplace|default:"не назначено" }}</dd>
-            <dt>Табельный номер</dt><dd><code>{{ employee.personnel_number }}</code></dd>
+            <dt>Рабочее место</dt><dd>{{ employee.workplace|default:"Не назначено" }}</dd>
+            <dt class="technical-only">Табельный номер</dt><dd class="technical-only"><code>{{ employee.personnel_number }}</code></dd>
         </dl>
     </article>
-    <article class="profile-card">
-        <h2>Эффективные роли</h2>
+
+    <article class="profile-card roles-card">
+        <div class="card-heading-with-icon">
+            <span class="section-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-role"></use></svg></span>
+            <div><span class="card-label">Полномочия</span><h2>Действующие роли</h2></div>
+        </div>
         <ul class="role-list">
             {% for item in effective_roles %}
                 <li>
                     <strong>{{ item.assignment.role.name }}</strong>
                     <span>{{ item.assignment.scope|default:"Вся организация" }}</span>
-                    {% if item.is_substituted %}
-                        <em>по замещению {{ item.source_employee.full_name }}</em>
-                    {% else %}
-                        <em>прямое назначение</em>
-                    {% endif %}
+                    {% if item.is_substituted %}<em>По замещению</em>{% else %}<em>Прямое назначение</em>{% endif %}
                 </li>
             {% empty %}<li class="muted">Действующих ролей нет.</li>{% endfor %}
         </ul>
     </article>
 </section>
-<section class="profile-card">
-    <h2>Исторические прямые назначения</h2>
-    <div class="table-wrap">
+
+<section class="profile-card interface-settings-card" data-interface-settings>
+    <div class="settings-heading">
+        <div class="card-heading-with-icon">
+            <span class="section-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-settings"></use></svg></span>
+            <div><span class="card-label">Персональные настройки</span><h2>Интерфейс</h2></div>
+        </div>
+        <p>Настройки сохраняются для этой учётной записи и применяются после сохранения.</p>
+    </div>
+    <form method="post" class="interface-settings-form" data-interface-settings-form>
+        {% csrf_token %}
+        <div class="settings-grid">
+            {% for field in preference_form %}
+                <div class="setting-field {% if field.name == 'show_technical_details' %}setting-toggle{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                    {% for error in field.errors %}<span class="field-errors">{{ error }}</span>{% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+        <div class="settings-actions">
+            <button class="button" type="submit">Сохранить настройки</button>
+            <span class="muted">Технические реквизиты по умолчанию скрыты.</span>
+        </div>
+    </form>
+</section>
+
+<details class="profile-card history-disclosure technical-only">
+    <summary>
+        <span><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-history"></use></svg> История прямых назначений</span>
+        <small>{{ direct_assignments|length }} записей</small>
+    </summary>
+    <div class="table-wrap disclosure-body">
         <table>
             <thead><tr><th>Роль</th><th>Область</th><th>Начало</th><th>Окончание</th><th>Активно</th></tr></thead>
             <tbody>
@@ -52,8 +87,8 @@
             </tbody>
         </table>
     </div>
-</section>
+</details>
 {% else %}
-<section class="empty-state warning"><h2>Учётная запись не связана с сотрудником</h2><p>Такая запись не может получать оперативные полномочия. Обратитесь к администратору справочников.</p></section>
+<section class="empty-state warning"><h2>Учётная запись не связана с сотрудником</h2><p>Обратитесь к администратору справочников.</p></section>
 {% endif %}
 {% endblock %}

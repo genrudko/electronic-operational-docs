@@ -98,8 +98,8 @@ class Command(BaseCommand):
             organization=organization,
             code="demo-wpp",
             defaults={
-                "name": "Демонстрационная ветроэлектростанция",
-                "short_name": "Демо-ВЭС",
+                "name": "Кочубеевская ВЭС — презентационный профиль",
+                "short_name": "Кочубеевская ВЭС",
                 "site_type": EnergySite.SiteType.WIND_POWER_PLANT,
                 "is_external": False,
                 "is_active": True,
@@ -109,8 +109,8 @@ class Command(BaseCommand):
             organization=organization,
             code="demo-grid-substation",
             defaults={
-                "name": "Смежная демонстрационная подстанция 330 кВ",
-                "short_name": "Демо-ПС 330 кВ",
+                "name": "ПС 330 кВ Северная — презентационный смежный объект",
+                "short_name": "ПС 330 кВ Северная",
                 "site_type": EnergySite.SiteType.SUBSTATION,
                 "is_external": True,
                 "is_active": True,
@@ -222,31 +222,40 @@ class Command(BaseCommand):
         name_rows = {
             "DEMO-RU35": (
                 (1, "РУ 35 кВ Демо-ВЭС", date(2024, 1, 1)),
+                (2, "РУ 35 кВ Кочубеевской ВЭС", date(2026, 7, 16)),
             ),
             "DEMO-RU35-S1": (
                 (1, "1 секция шин 35 кВ Демо-ВЭС", date(2024, 1, 1)),
+                (2, "1 секция шин 35 кВ Кочубеевской ВЭС", date(2026, 7, 16)),
             ),
             "DEMO-CELL-01": (
                 (1, "ячейка 1 КЛ-35 кВ Демо-ВЭС", date(2024, 1, 1)),
+                (2, "ячейка № 1 КЛ 35 кВ КТП-01", date(2026, 7, 16)),
             ),
             "DEMO-KTP-01": (
                 (1, "КТП-1 Демо-ВЭС", date(2024, 1, 1)),
                 (2, "КТП-01 Демо-ВЭС", date(2026, 1, 1)),
+                (3, "КТП-01 Кочубеевской ВЭС", date(2026, 7, 16)),
             ),
             "DEMO-WTG-01": (
                 (1, "ВЭУ-01 Демо-ВЭС", date(2024, 1, 1)),
+                (2, "ВЭУ-01 Кочубеевской ВЭС", date(2026, 7, 16)),
             ),
             "DEMO-KL35-01": (
                 (1, "КЛ 35 кВ КТП-01 — ячейка 1", date(2024, 1, 1)),
+                (2, "КЛ 35 кВ КТП-01 — ячейка № 1", date(2026, 7, 16)),
             ),
             "DEMO-RZA-01": (
                 (1, "РЗА ячейки 1 КЛ-35 кВ", date(2024, 1, 1)),
+                (2, "комплект РЗА ячейки № 1 КЛ 35 кВ", date(2026, 7, 16)),
             ),
             "DEMO-SDTU-01": (
                 (1, "СДТУ Демо-ВЭС", date(2024, 1, 1)),
+                (2, "СДТУ Кочубеевской ВЭС", date(2026, 7, 16)),
             ),
             "DEMO-GRID-BAY-01": (
                 (1, "присоединение Демо-ВЭС на Демо-ПС 330 кВ", date(2024, 1, 1)),
+                (2, "присоединение Кочубеевской ВЭС на ПС 330 кВ Северная", date(2026, 7, 16)),
             ),
         }
         for equipment_code, revisions in name_rows.items():
@@ -259,7 +268,7 @@ class Command(BaseCommand):
                         "effective_from": effective_from,
                         "effective_until": None,
                         "basis_reference": (
-                            "Вымышленная демонстрационная редакция "
+                            "Безопасная презентационная редакция "
                             f"№ {revision_number}"
                         ),
                     },

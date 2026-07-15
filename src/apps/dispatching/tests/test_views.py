@@ -14,7 +14,7 @@ class DispatchingViewTests(DispatchingDemoMixin, TestCase):
         response = self.client.get(reverse("dispatching:registry"))
         self.assertContains(response, "Управление и ведение")
         self.assertContains(response, "Информационное ведение")
-        self.assertContains(response, "Демо-РДЦ")
+        self.assertContains(response, "Региональный ДЦ")
 
     def test_equipment_from_other_organization_is_hidden(self):
         # Organization scoping must return 404 for an unknown public identifier.
@@ -30,6 +30,6 @@ class DispatchingViewTests(DispatchingDemoMixin, TestCase):
     def test_subjects_page_shows_explicit_adjacent_interaction(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("dispatching:subjects"))
-        self.assertContains(response, "Взаимодействие смежных субъектов")
-        self.assertContains(response, "Демо-смежный ДЦ")
-        self.assertContains(response, "Правила")
+        self.assertContains(response, "Взаимодействие субъектов")
+        self.assertContains(response, "Смежный ДЦ ПС 330 кВ")
+        self.assertContains(response, "Правила и основание")

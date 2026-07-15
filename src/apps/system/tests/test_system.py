@@ -8,8 +8,9 @@ class SystemSmokeTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Электронная оперативная документация")
-        self.assertContains(response, "Локальный профиль разработки")
-        self.assertContains(response, "Документарное ядро")
+        self.assertContains(response, "Базовые реестры готовы к демонстрации")
+        self.assertContains(response, "Управление и ведение")
+        self.assertNotContains(response, "Локальный профиль разработки")
 
     def test_health_endpoint(self):
         response = self.client.get(reverse("system:health"))

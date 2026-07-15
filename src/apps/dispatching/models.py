@@ -100,6 +100,16 @@ class DispatchLevel(models.Model):
         supervision_used = self.supervision_revisions.filter(status=PublicationStatus.PUBLISHED).exists()
         return management_used or supervision_used
 
+    @property
+    def presentation_label(self) -> str:
+        """Безопасная подпись UI без изменения опубликованного справочника."""
+        if self.organization.code != "DEMO":
+            return self.name
+        return {
+            "regional-dispatch": "Региональный диспетчерский уровень",
+            "station-operational": "Оперативно-технологический уровень Кочубеевской ВЭС",
+        }.get(self.code, self.name)
+
 
 class DispatchSubject(models.Model):
     class SubjectType(models.TextChoices):
@@ -169,6 +179,18 @@ class DispatchSubject(models.Model):
             or self.outgoing_adjacent_relations.filter(revisions__status=PublicationStatus.PUBLISHED).exists()
             or self.incoming_adjacent_relations.filter(revisions__status=PublicationStatus.PUBLISHED).exists()
         )
+
+    @property
+    def presentation_label(self) -> str:
+        """Безопасная подпись UI без изменения опубликованного справочника."""
+        stored_label = self.short_name or self.name
+        if self.organization.code != "DEMO":
+            return stored_label
+        return {
+            "demo-station-shift": "Смена Кочубеевской ВЭС",
+            "demo-regional-center": "Региональный ДЦ",
+            "demo-adjacent-center": "Смежный ДЦ ПС 330 кВ",
+        }.get(self.code, stored_label)
 
 
 class ManagementObject(models.Model):

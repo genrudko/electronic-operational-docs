@@ -67,7 +67,7 @@ if EquipmentNameRevision.objects.filter(status="PUBLISHED").count() < 10:
 
 if dispatcher_name_on(ktp, date(2025, 6, 1)) != "КТП-1 Демо-ВЭС":
     raise SystemExit("Historical dispatcher name resolution failed.")
-if dispatcher_name_on(ktp) != "КТП-01 Демо-ВЭС":
+if dispatcher_name_on(ktp) != "КТП-01 Кочубеевской ВЭС":
     raise SystemExit("Current dispatcher name resolution failed.")
 if resolve_equipment_alias(organization, "КТП 1") != ktp:
     raise SystemExit("Equipment alias resolution failed.")

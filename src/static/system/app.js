@@ -501,4 +501,43 @@
         window.clearTimeout(searchTimer);
         searchTimer = window.setTimeout(() => loadPage(true), 280);
     });
+})();(() => {
+    "use strict";
+
+    const toggle = document.querySelector("[data-nav-toggle]");
+    const navigation = document.querySelector("[data-main-navigation]");
+    if (toggle && navigation) {
+        toggle.addEventListener("click", () => {
+            const open = navigation.classList.toggle("open");
+            toggle.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+    }
+
+    const menus = Array.from(document.querySelectorAll("details.nav-menu"));
+    for (const menu of menus) {
+        menu.addEventListener("toggle", () => {
+            if (!menu.open) {
+                return;
+            }
+            for (const other of menus) {
+                if (other !== menu) {
+                    other.open = false;
+                }
+            }
+        });
+    }
+    document.addEventListener("pointerdown", (event) => {
+        for (const menu of menus) {
+            if (menu.open && !menu.contains(event.target)) {
+                menu.open = false;
+            }
+        }
+    });
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            for (const menu of menus) {
+                menu.open = false;
+            }
+        }
+    });
 })();

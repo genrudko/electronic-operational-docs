@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
@@ -5,8 +6,8 @@ from django.db.models import Count, Prefetch
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
-from .forms import PersonalAuthenticationForm
-from .models import Division, Employee, Organization, RoleAssignment
+from .forms import InterfacePreferenceForm, PersonalAuthenticationForm
+from .models import Division, Employee, InterfacePreference, Organization, RoleAssignment
 from .services import get_effective_roles
 
 
@@ -53,6 +54,16 @@ def account(request):
         .filter(user=request.user)
         .first()
     )
+    preferences, _ = InterfacePreference.objects.get_or_create(user=request.user)
+    if request.method == "POST":
+        preference_form = InterfacePreferenceForm(request.POST, instance=preferences)
+        if preference_form.is_valid():
+            preference_form.save()
+            messages.success(request, "Настройки интерфейса сохранены.")
+            return redirect("organizations:account")
+    else:
+        preference_form = InterfacePreferenceForm(instance=preferences)
+
     effective_roles = get_effective_roles(employee) if employee else []
     direct_assignments = (
         RoleAssignment.objects.select_related("role", "scope")
@@ -68,6 +79,7 @@ def account(request):
             "employee": employee,
             "effective_roles": effective_roles,
             "direct_assignments": direct_assignments,
+            "preference_form": preference_form,
         },
     )
 

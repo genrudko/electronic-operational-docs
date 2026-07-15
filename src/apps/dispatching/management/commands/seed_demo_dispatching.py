@@ -36,7 +36,7 @@ class Command(BaseCommand):
         organization = Organization.objects.get(code="DEMO")
         actor = Employee.objects.select_related("user").get(user__username="operator.demo")
 
-        regional, _ = DispatchLevel.objects.update_or_create(
+        regional, _ = DispatchLevel.objects.get_or_create(
             organization=organization,
             code="regional-dispatch",
             defaults={
@@ -47,7 +47,7 @@ class Command(BaseCommand):
                 "is_active": True,
             },
         )
-        station, _ = DispatchLevel.objects.update_or_create(
+        station, _ = DispatchLevel.objects.get_or_create(
             organization=organization,
             code="station-operational",
             defaults={
@@ -59,7 +59,7 @@ class Command(BaseCommand):
             },
         )
 
-        station_shift, _ = DispatchSubject.objects.update_or_create(
+        station_shift, _ = DispatchSubject.objects.get_or_create(
             organization=organization,
             code="demo-station-shift",
             defaults={
@@ -71,7 +71,7 @@ class Command(BaseCommand):
                 "is_active": True,
             },
         )
-        regional_center, _ = DispatchSubject.objects.update_or_create(
+        regional_center, _ = DispatchSubject.objects.get_or_create(
             organization=organization,
             code="demo-regional-center",
             defaults={
@@ -83,7 +83,7 @@ class Command(BaseCommand):
                 "is_active": True,
             },
         )
-        adjacent_center, _ = DispatchSubject.objects.update_or_create(
+        adjacent_center, _ = DispatchSubject.objects.get_or_create(
             organization=organization,
             code="demo-adjacent-center",
             defaults={
@@ -128,7 +128,7 @@ class Command(BaseCommand):
                     "subject": subject,
                     "effective_from": date(2024, 1, 1),
                     "effective_until": None,
-                    "basis_reference": "Демонстрационный перечень объектов управления № 1",
+                    "basis_reference": "Презентационный перечень объектов управления № 1",
                     "change_summary": "Первичная демонстрационная редакция.",
                 },
             )
@@ -156,7 +156,7 @@ class Command(BaseCommand):
                     "is_information_only": information_only,
                     "effective_from": date(2024, 1, 1),
                     "effective_until": None,
-                    "basis_reference": "Демонстрационный перечень объектов ведения № 1",
+                    "basis_reference": "Презентационный перечень объектов ведения № 1",
                     "change_summary": "Первичная демонстрационная редакция.",
                 },
             )
@@ -197,7 +197,7 @@ class Command(BaseCommand):
                     "effective_until": None,
                     "interaction_scope": scope,
                     "communication_rules": rules,
-                    "basis_reference": "Демонстрационный регламент взаимодействия № 1",
+                    "basis_reference": "Презентационный регламент взаимодействия № 1",
                     "change_summary": "Первичная демонстрационная редакция.",
                 },
             )

@@ -449,6 +449,65 @@ class Substitution(models.Model):
         return self.is_active and self.valid_from <= current <= self.valid_until
 
 
+class InterfacePreference(models.Model):
+    class Theme(models.TextChoices):
+        DARK = "DARK", "Тёмная"
+        LIGHT = "LIGHT", "Светлая"
+        SYSTEM = "SYSTEM", "Как в системе"
+
+    class Density(models.TextChoices):
+        COMFORTABLE = "COMFORTABLE", "Комфортная"
+        COMPACT = "COMPACT", "Компактная"
+
+    class FontScale(models.TextChoices):
+        SMALL = "SMALL", "Мелкий"
+        NORMAL = "NORMAL", "Обычный"
+        LARGE = "LARGE", "Крупный"
+
+    class ContentWidth(models.TextChoices):
+        STANDARD = "STANDARD", "Стандартная"
+        WIDE = "WIDE", "Широкая"
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="interface_preference",
+        verbose_name="Учётная запись",
+    )
+    theme = models.CharField("Цветовая схема", max_length=16, choices=Theme.choices, default=Theme.DARK)
+    density = models.CharField(
+        "Плотность интерфейса",
+        max_length=16,
+        choices=Density.choices,
+        default=Density.COMFORTABLE,
+    )
+    font_scale = models.CharField(
+        "Размер текста",
+        max_length=16,
+        choices=FontScale.choices,
+        default=FontScale.NORMAL,
+    )
+    content_width = models.CharField(
+        "Ширина рабочей области",
+        max_length=16,
+        choices=ContentWidth.choices,
+        default=ContentWidth.STANDARD,
+    )
+    show_technical_details = models.BooleanField("Показывать технические реквизиты", default=False)
+    updated_at = models.DateTimeField("Обновлено", auto_now=True)
+
+    class Meta:
+        verbose_name = "настройки интерфейса"
+        verbose_name_plural = "настройки интерфейса"
+
+    def __str__(self) -> str:
+        return f"Интерфейс: {self.user}"
+
+    def save(self, *args, **kwargs) -> None:
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+
 class AuthenticationEvent(models.Model):
     class EventType(models.TextChoices):
         LOGIN_SUCCESS = "LOGIN_SUCCESS", "Успешный вход"

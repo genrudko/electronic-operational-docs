@@ -1,117 +1,91 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Управление и ведение · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading compact">
+<section class="page-heading compact presentation-heading">
     <div>
-        <div class="eyebrow">ДОВЕРЕННОЕ СИСТЕМНОЕ ЯДРО · PATCH 007</div>
+        <div class="section-kicker">Распределение оперативных функций</div>
         <h1>Управление и ведение</h1>
-        <p>
-            Опубликованные сведения о том, кто и на каком уровне управляет
-            оборудованием или ведёт его режим.
-        </p>
+        <p>Кто управляет оборудованием, кто ведёт его режим и на каком уровне действует назначение.</p>
     </div>
-    <a class="button" href="{% url 'dispatching:subjects' %}">Субъекты и взаимодействие</a>
+    <a class="button secondary-action" href="{% url 'dispatching:subjects' %}">
+        <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-subjects"></use></svg>
+        Субъекты и взаимодействие
+    </a>
 </section>
 
-<section class="help-overview">
-    <h2>Два независимых контура</h2>
-    <p>
-        Управление и ведение не смешиваются. Информационное ведение является
-        отдельной характеристикой ведения, а не разновидностью управления.
-        Опубликованные редакции неизменяемы и имеют контрольную сумму SHA-256.
-    </p>
+<section class="concept-note">
+    <span class="section-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-info"></use></svg></span>
+    <div><strong>Управление и ведение — разные функции</strong><p>Информационное ведение обозначается отдельно и не предоставляет права управления.</p></div>
 </section>
 
-<section class="summary-grid">
-    <article class="metric"><span>Объекты управления</span><strong>{{ management_count }}</strong></article>
-    <article class="metric"><span>Действующие ведения</span><strong>{{ supervision_count }}</strong></article>
+<section class="summary-grid presentation-summary dispatching-summary">
+    <article class="metric"><span>Назначения управления</span><strong>{{ management_count }}</strong></article>
+    <article class="metric"><span>Назначения ведения</span><strong>{{ supervision_count }}</strong></article>
     <article class="metric"><span>Информационное ведение</span><strong>{{ information_count }}</strong></article>
 </section>
 
-<section class="profile-card equipment-filter-card">
-    <h2>Поиск и фильтры</h2>
-    <form method="get" class="equipment-filter-form">
+<details class="filter-disclosure" {% if query or level_type %}open{% endif %}>
+    <summary><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-search"></use></svg> Поиск и фильтры</summary>
+    <form method="get" class="equipment-filter-form disclosure-body">
         <div>
             <label for="dispatching-search">Оборудование или субъект</label>
-            <input
-                id="dispatching-search"
-                type="search"
-                name="q"
-                value="{{ query }}"
-                placeholder="Например: КЛ 35 кВ, Демо-РДЦ или DEMO-WTG-01"
-            >
+            <input id="dispatching-search" type="search" name="q" value="{{ query }}" placeholder="Например: КЛ 35 кВ или Региональный ДЦ">
         </div>
         <div>
             <label for="dispatching-level-type">Тип уровня</label>
             <select id="dispatching-level-type" name="level_type">
                 <option value="">Все уровни</option>
-                {% for value, label in level_types %}
-                    <option value="{{ value }}" {% if level_type == value %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
+                {% for value, label in level_types %}<option value="{{ value }}" {% if level_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
             </select>
         </div>
         <button class="button" type="submit">Найти</button>
-        {% if query or level_type %}<a href="{% url 'dispatching:registry' %}">Сбросить</a>{% endif %}
+        {% if query or level_type %}<a class="quiet-action" href="{% url 'dispatching:registry' %}">Сбросить</a>{% endif %}
     </form>
-</section>
+</details>
 
-<section class="profile-card">
-    <h2>Действующее распределение</h2>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Оборудование</th>
-                    <th>Управление</th>
-                    <th>Ведение</th>
-                    <th>Основание</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for row in rows %}
-                <tr>
-                    <td>
-                        <a href="{% url 'dispatching:equipment_detail' row.equipment.public_id %}">
-                            {{ row.display_name }}
-                        </a>
-                        <div class="muted"><code>{{ row.equipment.code }}</code> · {{ row.equipment.site }}</div>
-                    </td>
-                    <td>
-                        {% for item in row.management %}
-                            <div class="dispatching-assignment">
-                                <strong>{{ item.subject }}</strong>
-                                <span class="muted">{{ item.level }}</span>
-                            </div>
-                        {% empty %}
-                            <span class="muted">Не задано</span>
-                        {% endfor %}
-                    </td>
-                    <td>
-                        {% for item in row.supervision %}
-                            <div class="dispatching-assignment">
-                                <strong>{{ item.subject }}</strong>
-                                <span class="muted">{{ item.level }}</span>
-                                {% if item.is_information_only %}
-                                    <span class="badge dispatching-info-badge">Информационное ведение</span>
-                                {% endif %}
-                            </div>
-                        {% empty %}
-                            <span class="muted">Не задано</span>
-                        {% endfor %}
-                    </td>
-                    <td>
-                        {% for item in row.management %}
-                            <div>{{ item.basis_reference }}</div>
-                        {% empty %}—{% endfor %}
-                    </td>
-                </tr>
-            {% empty %}
-                <tr><td colspan="4">По заданным условиям записи не найдены.</td></tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
+<section class="dispatching-object-list" aria-label="Действующее распределение">
+    {% for row in rows %}
+        <article class="dispatching-object-card">
+            <header>
+                <div>
+                    <a class="object-title" href="{% url 'dispatching:equipment_detail' row.equipment.public_id %}">{{ row.display_name }}</a>
+                    <span class="object-context">{{ row.equipment.equipment_type.name }} · {{ row.equipment.site }}</span>
+                </div>
+                <a class="icon-action" href="{% url 'dispatching:equipment_detail' row.equipment.public_id %}" aria-label="Открыть карточку {{ row.display_name }}">
+                    <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-chevron-right"></use></svg>
+                </a>
+            </header>
+            <div class="assignment-columns">
+                <section class="assignment-lane management-lane">
+                    <div class="lane-heading"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-management"></use></svg><span>Управляет</span></div>
+                    {% for item in row.management %}
+                        <div class="assignment-person"><strong>{{ item.subject.presentation_label }}</strong><small>{{ item.level.presentation_label }}</small></div>
+                    {% empty %}<div class="friendly-empty">Управляющий субъект не указан</div>{% endfor %}
+                </section>
+                <section class="assignment-lane supervision-lane">
+                    <div class="lane-heading"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-supervision"></use></svg><span>Ведёт режим</span></div>
+                    {% for item in row.supervision %}
+                        <div class="assignment-person">
+                            <strong>{{ item.subject.presentation_label }}</strong><small>{{ item.level.presentation_label }}</small>
+                            {% if item.is_information_only %}<span class="semantic-badge information">Только информационное ведение</span>{% endif %}
+                        </div>
+                    {% empty %}<div class="friendly-empty">Ведение режима не назначено</div>{% endfor %}
+                </section>
+            </div>
+            <details class="record-details technical-only">
+                <summary>Технические реквизиты</summary>
+                <div class="record-detail-grid">
+                    <span>Код оборудования</span><code>{{ row.equipment.code }}</code>
+                    <span>Основание управления</span>
+                    <div>{% for item in row.management %}{{ item.basis_reference }}{% if not forloop.last %}<br>{% endif %}{% empty %}—{% endfor %}</div>
+                </div>
+            </details>
+        </article>
+    {% empty %}
+        <section class="empty-state"><h2>Записи не найдены</h2><p>Измените строку поиска или снимите фильтр уровня.</p></section>
+    {% endfor %}
 </section>
 {% endblock %}

@@ -116,9 +116,17 @@ class DocumentEquipmentIntegrationTests(EquipmentDemoMixin, TestCase):
         frozen = DocumentEquipmentSnapshot.objects.get(
             document=result.document
         )
+        frozen_name = frozen.dispatcher_name_snapshot
+        next_revision_number = (
+            EquipmentNameRevision.objects.filter(equipment=self.ktp)
+            .order_by("-revision_number")
+            .values_list("revision_number", flat=True)
+            .first()
+            or 0
+        ) + 1
         future_revision = EquipmentNameRevision.objects.create(
             equipment=self.ktp,
-            revision_number=3,
+            revision_number=next_revision_number,
             dispatcher_name="КТП-01 новое будущее имя",
             effective_from=timezone.localdate() + timedelta(days=1),
         )
@@ -127,10 +135,7 @@ class DocumentEquipmentIntegrationTests(EquipmentDemoMixin, TestCase):
             actor=self.employee,
         )
         frozen.refresh_from_db()
-        self.assertEqual(
-            frozen.dispatcher_name_snapshot,
-            "КТП-01 Демо-ВЭС",
-        )
+        self.assertEqual(frozen.dispatcher_name_snapshot, frozen_name)
         self.assertEqual(
             verify_document_integrity(result.document).status,
             IntegrityStatus.VALID,

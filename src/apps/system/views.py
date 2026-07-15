@@ -5,7 +5,9 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
 
+from apps.dispatching.models import ManagementRevision, PublicationStatus
 from apps.documents.models import Document
+from apps.equipment.models import EquipmentAsset
 from apps.organizations.models import Employee, Organization
 
 
@@ -17,13 +19,17 @@ def home(request):
             "employees": Employee.objects.filter(is_active=True).count(),
             "drafts": Document.objects.filter(status=Document.Status.DRAFT).count(),
             "registered": Document.objects.filter(status=Document.Status.REGISTERED).count(),
+            "equipment": EquipmentAsset.objects.filter(status=EquipmentAsset.Status.ACTIVE).count(),
+            "management": ManagementRevision.objects.filter(
+                status=PublicationStatus.PUBLISHED
+            ).count(),
         }
     return render(
         request,
         "system/home.html",
         {
             "server_time": timezone.localtime(),
-            "project_version": "0.3.0-dev",
+            "project_version": "0.3.1-dev",
             "database_vendor": connection.vendor,
             "system_stats": system_stats,
         },

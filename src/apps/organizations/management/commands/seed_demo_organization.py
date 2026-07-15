@@ -38,22 +38,22 @@ class Command(BaseCommand):
         organization, _ = Organization.objects.update_or_create(
             code="DEMO",
             defaults={
-                "name": "Демонстрационный энергообъект",
-                "short_name": "ДЕМО-ЭО",
+                "name": "Кочубеевская ВЭС — презентационный контур",
+                "short_name": "Кочубеевская ВЭС",
                 "is_active": True,
             },
         )
         division, _ = Division.objects.update_or_create(
             organization=organization,
             code="OPS",
-            defaults={"name": "Оперативная служба", "is_active": True},
+            defaults={"name": "Оперативная служба Кочубеевской ВЭС", "is_active": True},
         )
         workplace, _ = Workplace.objects.update_or_create(
             organization=organization,
             code="CONTROL_ROOM",
             defaults={
                 "division": division,
-                "name": "Главный щит управления",
+                "name": "Главный щит управления Кочубеевской ВЭС",
                 "is_active": True,
             },
         )
@@ -62,7 +62,7 @@ class Command(BaseCommand):
             code="STATION",
             defaults={
                 "division": division,
-                "name": "Электроустановки демонстрационного объекта",
+                "name": "Электроустановки Кочубеевской ВЭС (презентационный профиль)",
                 "is_active": True,
             },
         )
@@ -71,7 +71,7 @@ class Command(BaseCommand):
             organization=organization,
             code="OPERATOR",
             defaults={
-                "name": "Оперативный работник",
+                "name": "Дежурный электромонтёр Кочубеевской ВЭС",
                 "is_operational": True,
                 "is_active": True,
             },
@@ -80,7 +80,7 @@ class Command(BaseCommand):
             organization=organization,
             code="SHIFT_SUPERVISOR",
             defaults={
-                "name": "Начальник смены",
+                "name": "Начальник смены Кочубеевской ВЭС",
                 "is_operational": True,
                 "is_active": True,
             },
@@ -90,7 +90,7 @@ class Command(BaseCommand):
             code="STATION",
             defaults={
                 "operational_area": area,
-                "name": "Демонстрационный объект целиком",
+                "name": "Кочубеевская ВЭС целиком",
                 "is_active": True,
             },
         )
@@ -115,15 +115,15 @@ class Command(BaseCommand):
         operator_user = self._user(
             user_model,
             username="operator.demo",
-            first_name="Алексей",
-            last_name="Операторов",
+            first_name="Илья",
+            last_name="Кузнецов",
             reset_password=options["reset_passwords"],
         )
         supervisor_user = self._user(
             user_model,
             username="supervisor.demo",
-            first_name="Марина",
-            last_name="Сменова",
+            first_name="Анна",
+            last_name="Орлова",
             reset_password=options["reset_passwords"],
         )
 
@@ -135,9 +135,9 @@ class Command(BaseCommand):
                 "position": operator_position,
                 "workplace": workplace,
                 "user": operator_user,
-                "last_name": "Операторов",
-                "first_name": "Алексей",
-                "middle_name": "Демонстрационный",
+                "last_name": "Кузнецов",
+                "first_name": "Илья",
+                "middle_name": "Андреевич",
                 "employment_start": date(2026, 1, 1),
                 "employment_end": None,
                 "is_active": True,
@@ -151,9 +151,9 @@ class Command(BaseCommand):
                 "position": supervisor_position,
                 "workplace": workplace,
                 "user": supervisor_user,
-                "last_name": "Сменова",
-                "first_name": "Марина",
-                "middle_name": "Демонстрационная",
+                "last_name": "Орлова",
+                "first_name": "Анна",
+                "middle_name": "Сергеевна",
                 "employment_start": date(2026, 1, 1),
                 "employment_end": None,
                 "is_active": True,
@@ -191,7 +191,7 @@ class Command(BaseCommand):
             defaults={
                 "valid_from": today - timedelta(days=1),
                 "valid_until": today + timedelta(days=7),
-                "reason": "Демонстрационное временное замещение",
+                "reason": "Презентационный сценарий временного замещения",
                 "is_active": True,
             },
         )

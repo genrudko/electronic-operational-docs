@@ -34,7 +34,7 @@ class EquipmentRegistryViewTests(EquipmentDemoMixin, TestCase):
         response = self.client.get(reverse("equipment:registry"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Реестр оборудования")
-        self.assertContains(response, "КТП-01 Демо-ВЭС")
+        self.assertContains(response, "КТП-01 Кочубеевской ВЭС")
         self.assertContains(response, "Исторические редакции", count=0)
 
     def test_registry_searches_by_alias(self):
@@ -44,8 +44,8 @@ class EquipmentRegistryViewTests(EquipmentDemoMixin, TestCase):
             {"q": "Блочная КТП №1"},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "КТП-01 Демо-ВЭС")
-        self.assertNotContains(response, "ВЭУ-01 Демо-ВЭС")
+        self.assertContains(response, "КТП-01 Кочубеевской ВЭС")
+        self.assertNotContains(response, "ВЭУ-01 Кочубеевской ВЭС")
 
     def test_site_detail_shows_hierarchy(self):
         self.client.force_login(self.user)
@@ -113,5 +113,5 @@ class EquipmentRegistryViewTests(EquipmentDemoMixin, TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Оборудование документа")
-        self.assertContains(response, "КТП-01 Демо-ВЭС")
+        self.assertContains(response, "КТП-01 Кочубеевской ВЭС")
         self.assertContains(response, "Снимок на момент регистрации")

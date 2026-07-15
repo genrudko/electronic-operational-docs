@@ -4,6 +4,7 @@ from .models import (
     AuthenticationEvent,
     Division,
     Employee,
+    InterfacePreference,
     OperationalArea,
     Organization,
     Position,
@@ -110,6 +111,27 @@ class SubstitutionAdmin(admin.ModelAdmin):
         "substitute_employee__last_name",
         "reason",
     )
+
+
+@admin.register(InterfacePreference)
+class InterfacePreferenceAdmin(admin.ModelAdmin):
+    list_display = (
+        "user",
+        "theme",
+        "density",
+        "font_scale",
+        "content_width",
+        "show_technical_details",
+        "updated_at",
+    )
+    list_filter = (
+        "theme",
+        "density",
+        "font_scale",
+        "content_width",
+        "show_technical_details",
+    )
+    search_fields = ("user__username",)
 
 
 @admin.register(AuthenticationEvent)

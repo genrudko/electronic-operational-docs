@@ -1,39 +1,95 @@
 {% load static %}
 <!doctype html>
-<html lang="ru">
+<html
+    lang="ru"
+    data-theme="{{ ui_preferences.theme|lower }}"
+    data-density="{{ ui_preferences.density|lower }}"
+    data-font-scale="{{ ui_preferences.font_scale|lower }}"
+    data-content-width="{{ ui_preferences.content_width|lower }}"
+    data-technical="{{ ui_preferences.show_technical_details|yesno:'true,false' }}"
+>
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="dark">
+    <meta name="color-scheme" content="dark light">
     <title>{% block title %}Электронная оперативная документация{% endblock %}</title>
     <link rel="icon" href="{% static 'system/favicon.svg' %}" type="image/svg+xml">
     <link rel="stylesheet" href="{% static 'system/app.css' %}">
     <script src="{% static 'system/app.js' %}" defer></script>
 </head>
 <body>
-<header class="topbar">
+<header class="topbar presentation-topbar">
     <a class="brand" href="{% url 'system:home' %}">
         <span class="brand-mark">ЭОД</span>
-        <span>
-            <span class="eyebrow">ПРОТОТИП · НЕ ДЛЯ ПРОИЗВОДСТВЕННОЙ ЭКСПЛУАТАЦИИ</span>
+        <span class="brand-copy">
+            <span class="prototype-label">Демонстрационный прототип</span>
             <strong>Электронная оперативная документация</strong>
         </span>
     </a>
-    <nav class="topnav" aria-label="Основная навигация">
-        <a href="{% url 'system:home' %}">Главная</a>
+
+    <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="main-navigation">
+        <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-menu"></use></svg>
+        <span>Меню</span>
+    </button>
+
+    <nav id="main-navigation" class="topnav presentation-nav" data-main-navigation aria-label="Основная навигация">
+        <a href="{% url 'system:home' %}" {% if request.resolver_match.namespace == 'system' %}class="active"{% endif %}>
+            <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-home"></use></svg>
+            <span>Главная</span>
+        </a>
         {% if request.user.is_authenticated %}
-            <a href="{% url 'organizations:directory' %}">Организация</a>
-            <a href="{% url 'documents:list' %}">Документы</a>
-            <a href="{% url 'normatives:registry' %}">Нормативы</a>
-            <a href="{% url 'equipment:registry' %}">Оборудование</a>
-            <a href="{% url 'dispatching:registry' %}">Управление</a>
-            <a href="{% url 'organizations:account' %}">Моя учётная запись</a>
-            <form method="post" action="{% url 'organizations:logout' %}">
-                {% csrf_token %}
-                <button class="link-button" type="submit">Выйти</button>
-            </form>
+            <a href="{% url 'documents:list' %}" {% if request.resolver_match.namespace == 'documents' %}class="active"{% endif %}>
+                <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg>
+                <span>Документы</span>
+            </a>
+            <a href="{% url 'equipment:registry' %}" {% if request.resolver_match.namespace == 'equipment' %}class="active"{% endif %}>
+                <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-equipment"></use></svg>
+                <span>Оборудование</span>
+            </a>
+            <a href="{% url 'dispatching:registry' %}" {% if request.resolver_match.namespace == 'dispatching' %}class="active"{% endif %}>
+                <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-management"></use></svg>
+                <span>Управление</span>
+            </a>
+            <details class="nav-menu">
+                <summary>
+                    <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-directory"></use></svg>
+                    <span>Справочники</span>
+                </summary>
+                <div class="nav-menu-panel">
+                    <a href="{% url 'organizations:directory' %}">
+                        <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-organization"></use></svg>
+                        Организация и персонал
+                    </a>
+                    <a href="{% url 'normatives:registry' %}">
+                        <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-normative"></use></svg>
+                        Нормативные документы
+                    </a>
+                </div>
+            </details>
+            <details class="nav-menu user-menu">
+                <summary aria-label="Меню пользователя">
+                    <span class="user-avatar">{{ request.user.get_username|slice:":1"|upper }}</span>
+                    <span class="user-menu-label">{{ request.user.get_username }}</span>
+                </summary>
+                <div class="nav-menu-panel nav-menu-panel-right">
+                    <a href="{% url 'organizations:account' %}">
+                        <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-settings"></use></svg>
+                        Учётная запись и интерфейс
+                    </a>
+                    <form method="post" action="{% url 'organizations:logout' %}">
+                        {% csrf_token %}
+                        <button class="nav-menu-action" type="submit">
+                            <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-logout"></use></svg>
+                            Выйти
+                        </button>
+                    </form>
+                </div>
+            </details>
         {% else %}
-            <a class="primary-link" href="{% url 'organizations:login' %}">Персональный вход</a>
+            <a class="primary-link" href="{% url 'organizations:login' %}">
+                <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-user"></use></svg>
+                Персональный вход
+            </a>
         {% endif %}
     </nav>
 </header>
@@ -50,7 +106,10 @@
 
 <footer>
     <span>Независимый демонстрационный прототип</span>
-    <a href="{% url 'system:health' %}">Проверка состояния</a>
+    <span class="footer-links">
+        {% if request.user.is_authenticated %}<a href="{% url 'organizations:account' %}">Настройки интерфейса</a>{% endif %}
+        <a href="{% url 'system:health' %}">Проверка состояния</a>
+    </span>
 </footer>
 </body>
 </html>
