@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Управление и ведение · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">ДОВЕРЕННОЕ СИСТЕМНОЕ ЯДРО · PATCH 007</div>
+        <h1>Управление и ведение</h1>
+        <p>
+            Опубликованные сведения о том, кто и на каком уровне управляет
+            оборудованием или ведёт его режим.
+        </p>
+    </div>
+    <a class="button" href="{% url 'dispatching:subjects' %}">Субъекты и взаимодействие</a>
+</section>
+
+<section class="help-overview">
+    <h2>Два независимых контура</h2>
+    <p>
+        Управление и ведение не смешиваются. Информационное ведение является
+        отдельной характеристикой ведения, а не разновидностью управления.
+        Опубликованные редакции неизменяемы и имеют контрольную сумму SHA-256.
+    </p>
+</section>
+
+<section class="summary-grid">
+    <article class="metric"><span>Объекты управления</span><strong>{{ management_count }}</strong></article>
+    <article class="metric"><span>Действующие ведения</span><strong>{{ supervision_count }}</strong></article>
+    <article class="metric"><span>Информационное ведение</span><strong>{{ information_count }}</strong></article>
+</section>
+
+<section class="profile-card equipment-filter-card">
+    <h2>Поиск и фильтры</h2>
+    <form method="get" class="equipment-filter-form">
+        <div>
+            <label for="dispatching-search">Оборудование или субъект</label>
+            <input
+                id="dispatching-search"
+                type="search"
+                name="q"
+                value="{{ query }}"
+                placeholder="Например: КЛ 35 кВ, Демо-РДЦ или DEMO-WTG-01"
+            >
+        </div>
+        <div>
+            <label for="dispatching-level-type">Тип уровня</label>
+            <select id="dispatching-level-type" name="level_type">
+                <option value="">Все уровни</option>
+                {% for value, label in level_types %}
+                    <option value="{{ value }}" {% if level_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="button" type="submit">Найти</button>
+        {% if query or level_type %}<a href="{% url 'dispatching:registry' %}">Сбросить</a>{% endif %}
+    </form>
+</section>
+
+<section class="profile-card">
+    <h2>Действующее распределение</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Оборудование</th>
+                    <th>Управление</th>
+                    <th>Ведение</th>
+                    <th>Основание</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in rows %}
+                <tr>
+                    <td>
+                        <a href="{% url 'dispatching:equipment_detail' row.equipment.public_id %}">
+                            {{ row.display_name }}
+                        </a>
+                        <div class="muted"><code>{{ row.equipment.code }}</code> · {{ row.equipment.site }}</div>
+                    </td>
+                    <td>
+                        {% for item in row.management %}
+                            <div class="dispatching-assignment">
+                                <strong>{{ item.subject }}</strong>
+                                <span class="muted">{{ item.level }}</span>
+                            </div>
+                        {% empty %}
+                            <span class="muted">Не задано</span>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for item in row.supervision %}
+                            <div class="dispatching-assignment">
+                                <strong>{{ item.subject }}</strong>
+                                <span class="muted">{{ item.level }}</span>
+                                {% if item.is_information_only %}
+                                    <span class="badge dispatching-info-badge">Информационное ведение</span>
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <span class="muted">Не задано</span>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for item in row.management %}
+                            <div>{{ item.basis_reference }}</div>
+                        {% empty %}—{% endfor %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="4">По заданным условиям записи не найдены.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

@@ -1003,3 +1003,51 @@ footer { display: flex; justify-content: space-between; gap: 20px; padding: 18px
         grid-template-columns: 1fr;
     }
 }
+
+/* Patch 007: управление и ведение */
+.dispatching-current-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.dispatching-assignment,
+.dispatching-current-item {
+    display: grid;
+    gap: 0.2rem;
+    margin-bottom: 0.75rem;
+}
+
+.dispatching-current-item {
+    padding: 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+}
+
+.dispatching-info-badge {
+    width: fit-content;
+}
+
+.dispatching-subject-card {
+    cursor: default;
+}
+
+.adjacent-relation-card {
+    padding: 1rem 0;
+    border-top: 1px solid var(--border);
+}
+
+.adjacent-relation-card:first-of-type {
+    border-top: 0;
+}
+
+.digest {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 840px) {
+    .dispatching-current-grid {
+        grid-template-columns: 1fr;
+    }
+}

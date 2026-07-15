@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}{{ display_name }} · управление и ведение · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">ОБЪЕКТ УПРАВЛЕНИЯ И ВЕДЕНИЯ</div>
+        <h1>{{ display_name }}</h1>
+        <p><code>{{ equipment.code }}</code> · {{ equipment.equipment_type.name }} · {{ equipment.site }}</p>
+    </div>
+    <a href="{% url 'dispatching:registry' %}">← К реестру</a>
+</section>
+
+<section class="dispatching-current-grid">
+    <article class="profile-card">
+        <h2>Действующее управление</h2>
+        {% for item in current_management %}
+            <div class="dispatching-current-item">
+                <dl class="detail-list">
+                    <dt>Субъект</dt><dd>{{ item.subject }}</dd>
+                    <dt>Уровень</dt><dd>{{ item.level }}</dd>
+                    <dt>Период</dt>
+                    <dd>
+                        с {{ item.effective_from|date:"d.m.Y" }}
+                        {% if item.effective_until %}
+                            по {{ item.effective_until|date:"d.m.Y" }}
+                        {% else %}
+                            без установленной даты окончания
+                        {% endif %}
+                    </dd>
+                    <dt>Основание</dt><dd>{{ item.basis_reference }}</dd>
+                    <dt>SHA-256</dt><dd><code class="digest">{{ item.digest }}</code></dd>
+                </dl>
+            </div>
+        {% empty %}
+            <p class="muted">Действующее управление не опубликовано.</p>
+        {% endfor %}
+    </article>
+
+    <article class="profile-card">
+        <h2>Действующее ведение</h2>
+        {% for item in current_supervision %}
+            <div class="dispatching-current-item">
+                <strong>{{ item.subject }}</strong>
+                <span>{{ item.level }}</span>
+                {% if item.is_information_only %}
+                    <span class="badge dispatching-info-badge">Информационное ведение</span>
+                {% endif %}
+                <small>{{ item.basis_reference }}</small>
+            </div>
+        {% empty %}
+            <p class="muted">Действующее ведение не опубликовано.</p>
+        {% endfor %}
+    </article>
+</section>
+
+<section class="profile-card">
+    <h2>История управления</h2>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Редакция</th><th>Период</th><th>Уровень</th><th>Субъект</th><th>Статус</th></tr></thead>
+            <tbody>
+            {% for item in management_history %}
+                <tr>
+                    <td>№ {{ item.revision_number }}</td>
+                    <td>{{ item.effective_from|date:"d.m.Y" }} — {{ item.effective_until|date:"d.m.Y"|default:"по настоящее время" }}</td>
+                    <td>{{ item.level }}</td>
+                    <td>{{ item.subject }}</td>
+                    <td>{{ item.get_status_display }}</td>
+                </tr>
+            {% empty %}<tr><td colspan="5">Редакций управления нет.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="profile-card">
+    <h2>История ведения</h2>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Редакция</th><th>Период</th><th>Уровень</th><th>Субъект</th><th>Вид</th></tr></thead>
+            <tbody>
+            {% for item in supervision_history %}
+                <tr>
+                    <td>№ {{ item.revision_number }}</td>
+                    <td>{{ item.effective_from|date:"d.m.Y" }} — {{ item.effective_until|date:"d.m.Y"|default:"по настоящее время" }}</td>
+                    <td>{{ item.level }}</td>
+                    <td>{{ item.subject }}</td>
+                    <td>{% if item.is_information_only %}Информационное ведение{% else %}Оперативное ведение{% endif %}</td>
+                </tr>
+            {% empty %}<tr><td colspan="5">Редакций ведения нет.</td></tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

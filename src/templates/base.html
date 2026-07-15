@@ -26,6 +26,7 @@
             <a href="{% url 'documents:list' %}">Документы</a>
             <a href="{% url 'normatives:registry' %}">Нормативы</a>
             <a href="{% url 'equipment:registry' %}">Оборудование</a>
+            <a href="{% url 'dispatching:registry' %}">Управление</a>
             <a href="{% url 'organizations:account' %}">Моя учётная запись</a>
             <form method="post" action="{% url 'organizations:logout' %}">
                 {% csrf_token %}

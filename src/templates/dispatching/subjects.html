@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Субъекты и взаимодействие · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">PATCH 007 · ЯВНЫЕ СМЕЖНЫЕ СУБЪЕКТЫ</div>
+        <h1>Субъекты и взаимодействие</h1>
+        <p>Внутренние, вышестоящие и смежные субъекты с опубликованными правилами взаимодействия.</p>
+    </div>
+    <a href="{% url 'dispatching:registry' %}">← К управлению и ведению</a>
+</section>
+
+<section class="profile-card">
+    <h2>Субъекты</h2>
+    <div class="site-card-grid">
+        {% for subject in subjects %}
+            <article class="site-card dispatching-subject-card">
+                <strong>{{ subject }}</strong>
+                <span>{{ subject.get_subject_type_display }}</span>
+                <code>{{ subject.code }}</code>
+                {% if subject.is_external %}<em>Внешний субъект</em>{% endif %}
+            </article>
+        {% empty %}<p class="muted">Субъекты пока не заведены.</p>{% endfor %}
+    </div>
+</section>
+
+<section class="profile-card">
+    <h2>Взаимодействие смежных субъектов</h2>
+    {% for row in relation_rows %}
+        <article class="adjacent-relation-card">
+            <h3>{{ row.relation.source_subject }} ↔ {{ row.relation.target_subject }}</h3>
+            {% if row.revision %}
+                <dl class="detail-list">
+                    <dt>Область</dt><dd>{{ row.revision.interaction_scope }}</dd>
+                    <dt>Правила</dt><dd>{{ row.revision.communication_rules }}</dd>
+                    <dt>Основание</dt><dd>{{ row.revision.basis_reference }}</dd>
+                    <dt>Редакция</dt><dd>№ {{ row.revision.revision_number }} · SHA-256 {{ row.revision.digest|slice:":12" }}…</dd>
+                </dl>
+            {% else %}
+                <p class="muted">Опубликованных правил взаимодействия нет.</p>
+            {% endif %}
+        </article>
+    {% empty %}<p class="muted">Явных взаимодействий пока нет.</p>{% endfor %}
+</section>
+{% endblock %}

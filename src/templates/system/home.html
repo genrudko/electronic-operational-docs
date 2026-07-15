@@ -64,14 +64,25 @@
             <span class="badge">Готово</span>
         {% endif %}
     </article>
-    <article class="card">
+
+    <article class="card active">
         <span class="number">02</span>
+        <h2>Управление и ведение</h2>
+        <p>Уровни, субъекты, объекты управления и ведения, сроки и смежное взаимодействие.</p>
+        {% if request.user.is_authenticated %}
+            <a class="card-link" href="{% url 'dispatching:registry' %}">Открыть реестр</a>
+        {% else %}
+            <span class="badge">Готово</span>
+        {% endif %}
+    </article>
+    <article class="card">
+        <span class="number">03</span>
         <h2>Оперативный журнал</h2>
         <p>Поток подписанных событий, исправления, аннулирование и связи.</p>
         <span class="badge">Следующая очередь</span>
     </article>
     <article class="card">
-        <span class="number">03</span>
+        <span class="number">04</span>
         <h2>Заявки</h2>
         <p>Маршруты рассмотрения, согласования, разрешения и закрытия.</p>
         <span class="badge">Первая очередь</span>
