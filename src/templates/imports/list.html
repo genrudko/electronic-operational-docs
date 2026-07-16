@@ -13,11 +13,11 @@
 </section>
 
 <section class="notice-card import-safety-notice">
-    <strong>Публикация по-прежнему недоступна</strong>
+    <strong>Публикация отделена от проверки и требует повторного подтверждения</strong>
     <p>
-        Здесь можно сопоставить колонки, проверить дубли, исправить строки и принять
-        предварительные решения. Ни одно действие этого раздела не записывает данные
-        в рабочий реестр.
+        Сопоставление, исправления и предварительные решения остаются в staging-зоне.
+        Запись принятых строк выполняется только отдельной транзакцией после проверки
+        итогового SHA-256 и повторного ввода пароля администратором справочников.
     </p>
 </section>
 
@@ -25,6 +25,7 @@
     <article class="metric"><span>Попыток</span><strong>{{ summary.total }}</strong></article>
     <article class="metric"><span>Готовы к просмотру</span><strong>{{ summary.ready }}</strong></article>
     <article class="metric"><span>Требуют внимания</span><strong>{{ summary.attention }}</strong></article>
+    <article class="metric"><span>Опубликованы</span><strong>{{ summary.published }}</strong></article>
     <article class="metric"><span>Убраны из рабочего списка</span><strong>{{ summary.discarded }}</strong></article>
 </section>
 
@@ -34,7 +35,9 @@
             <div class="eyebrow">ЖУРНАЛ ПОПЫТОК</div>
             <h2>Загрузки организации</h2>
         </div>
-        {% if batches %}<span class="count-badge">{{ batches|length }}</span>{% endif %}
+        {% if batches %}
+            <span class="count-badge">Всего загрузок: {{ batches|length }}</span>
+        {% endif %}
     </div>
     <div class="table-wrap">
         <table>
@@ -64,7 +67,9 @@
                         <span class="import-status status-{{ batch.status|lower }}">
                             {{ batch.get_status_display }}
                         </span>
-                        {% if batch.mapping_completed_at %}
+                        {% if batch.status == 'PUBLISHED' %}
+                            <small>Создано записей: {{ batch.publication_counts.accepted }}</small>
+                        {% elif batch.mapping_completed_at %}
                             <small>Сопоставление № {{ batch.mapping_revision }}</small>
                         {% elif batch.status == 'READY' %}
                             <small>Ожидается сопоставление колонок</small>

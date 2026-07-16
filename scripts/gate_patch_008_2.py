@@ -151,7 +151,7 @@ for marker in (
     "Массовое решение для отмеченных строк",
     "Приняты предварительно",
     "Убрать из рабочего списка",
-    "Публикация из этого этапа",
+    "КОНТРОЛИРУЕМАЯ ПУБЛИКАЦИЯ",
     "Нормализованные значения строки",
 ):
     if marker not in detail_html:
@@ -166,8 +166,10 @@ if "Исправление останется только в промежуто
     "utf-8"
 ):
     raise SystemExit("Row correction safety marker is missing.")
-if "/publish/" in detail_html or 'name="publish"' in detail_html:
-    raise SystemExit("A publication action appeared in Patch 008.2.")
+if 'name="password"' in detail_html or 'name="confirm"' in detail_html:
+    raise SystemExit("Direct publication confirmation appeared on the row-review page.")
+if batch.status == ImportBatch.Status.PUBLISHED:
+    raise SystemExit("Mapping and row decisions published a staging batch implicitly.")
 
 urls_text = (ROOT / "src/apps/imports/urls.py").read_text(encoding="utf-8")
 list_template = (ROOT / "src/templates/imports/list.html").read_text(encoding="utf-8")
@@ -175,13 +177,22 @@ css = (ROOT / "src/static/system/app.css").read_text(encoding="utf-8")
 for marker in (
     "imports/<uuid:public_id>/mapping/",
     "imports/<uuid:public_id>/bulk-decision/",
-    "{% if batches %}<span class=\"count-badge\"",
     "Patch 008.2: import column mapping and row review.",
 ):
     if marker not in urls_text + list_template + css:
         raise SystemExit(f"Patch 008.2 integration marker is missing: {marker}")
-if "publish" in urls_text.casefold():
-    raise SystemExit("Imports URL configuration contains a publication endpoint.")
+for marker in (
+    'class="count-badge"',
+    "Всего загрузок:",
+):
+    if marker not in list_template:
+        raise SystemExit(f"Patch 008.2 list marker is missing: {marker}")
+for marker in (
+    'name="publication"',
+    'name="publication_result"',
+):
+    if marker not in urls_text:
+        raise SystemExit(f"Separate controlled publication route is missing: {marker}")
 
 if active_counts != {
     "employees": Employee.objects.count(),
@@ -198,5 +209,5 @@ print("ROW_CORRECTION_AND_DECISIONS=PASSED")
 print("INDIVIDUAL_DECISION_AUDIT=PASSED")
 print("IMMUTABLE_IMPORT_AUDIT=PASSED")
 print("MAPPING_AND_REVIEW_UI=PASSED")
-print("ACTIVE_REGISTRY_PUBLICATION=DISABLED")
+print("ACTIVE_REGISTRY_PUBLICATION=SEPARATE_CONFIRMATION")
 print("PATCH_008_2_MAPPING_AND_REVIEW_GATE_PASSED")

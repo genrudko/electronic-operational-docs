@@ -9,18 +9,25 @@ import re
 import unicodedata
 import zipfile
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from xml.etree import ElementTree
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Max, Q
 from django.utils import timezone
 
-from apps.organizations.models import Employee
+from apps.organizations.models import Employee, RoleAssignment
 
-from .models import ImportBatch, ImportColumn, ImportEvent, ImportRow
+from .models import (
+    ImportBatch,
+    ImportColumn,
+    ImportEvent,
+    ImportPublication,
+    ImportPublicationRow,
+    ImportRow,
+)
 
 MAX_FILE_SIZE = 10 * 1024 * 1024
 MAX_DATA_ROWS = 5000
@@ -981,10 +988,6 @@ def normalize_field_value(spec: ImportFieldSpec, value: str) -> tuple[str, list[
         if spec.required:
             issues.append(f"Поле «{spec.label}» обязательно.")
         return "", issues
-    if len(normalized) > spec.max_length:
-        issues.append(
-            f"Поле «{spec.label}» длиннее допустимых {spec.max_length} символов."
-        )
     if spec.kind == "code":
         normalized = normalized.upper()
     elif spec.kind == "date":
@@ -1010,6 +1013,10 @@ def normalize_field_value(spec: ImportFieldSpec, value: str) -> tuple[str, list[
             issues.append(f"Поле «{spec.label}» допускает значения: {labels}.")
         else:
             normalized = canonical
+    if len(normalized) > spec.max_length:
+        issues.append(
+            f"Поле «{spec.label}» длиннее допустимых {spec.max_length} символов."
+        )
     return normalized, issues
 
 
@@ -1605,3 +1612,687 @@ def bulk_decide_import_rows(
     )
     _save_review_counts(batch)
     return result
+
+
+PUBLICATION_SCHEMA = "eod.import.publication.v1"
+PUBLISHER_ROLE_CODE = "organization_admin"
+
+
+@dataclass(frozen=True, slots=True)
+class ImportPublicationPreview:
+    batch: ImportBatch
+    accepted_rows: tuple[ImportRow, ...]
+    rejected_count: int
+    canonical_json: str
+    digest: str
+    effects: tuple[dict[str, object], ...]
+
+
+def _canonical_json(value: object) -> str:
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    )
+
+
+def _sha256_json(value: object) -> tuple[str, str]:
+    canonical = _canonical_json(value)
+    return canonical, hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def can_publish_import(user) -> bool:
+    if user is None or not getattr(user, "is_authenticated", False):
+        return False
+    employee = getattr(user, "employee_profile", None)
+    if employee is None or not employee.is_active or employee.user_id != getattr(user, "pk", None):
+        return False
+    today = timezone.localdate()
+    return (
+        RoleAssignment.objects.filter(
+            employee=employee,
+            role__code=PUBLISHER_ROLE_CODE,
+            role__is_active=True,
+            is_active=True,
+            valid_from__lte=today,
+        )
+        .filter(Q(valid_until__isnull=True) | Q(valid_until__gte=today))
+        .exists()
+    )
+
+
+def require_import_publisher(user) -> Employee:
+    employee = require_import_employee(user)
+    if employee.user_id != getattr(user, "pk", None):
+        raise PermissionDenied("Учётная запись не соответствует карточке сотрудника.")
+    if not can_publish_import(user):
+        raise PermissionDenied(
+            "Для публикации требуется прямая действующая роль «Администратор справочников»."
+        )
+    return employee
+
+
+def _parse_iso_date(value: str, *, default: date | None = None) -> date | None:
+    normalized = normalize_cell(value)
+    if not normalized:
+        return default
+    return date.fromisoformat(normalized)
+
+
+def _boolean_value(value: str, *, default: bool = False) -> bool:
+    normalized = normalize_header(value)
+    if not normalized:
+        return default
+    if normalized in {_lookup_token(item) for item in TRUE_VALUES} | {"да"}:
+        return True
+    if normalized in {_lookup_token(item) for item in FALSE_VALUES} | {"нет"}:
+        return False
+    raise ValidationError("Логическое значение не удалось преобразовать.")
+
+
+def _resolve_division(batch: ImportBatch, value: str):
+    from apps.organizations.models import Division
+
+    token = normalize_cell(value)
+    queryset = Division.objects.filter(
+        organization=batch.organization,
+        is_active=True,
+    )
+    by_code = queryset.filter(code__iexact=token).first()
+    if by_code is not None:
+        return by_code
+    matches = list(queryset.filter(name__iexact=token)[:2])
+    if len(matches) != 1:
+        raise ValidationError(
+            f"Подразделение «{token}» не найдено однозначно в действующем справочнике."
+        )
+    return matches[0]
+
+
+def _resolve_position(batch: ImportBatch, value: str):
+    from apps.organizations.models import Position
+
+    token = normalize_cell(value)
+    queryset = Position.objects.filter(
+        organization=batch.organization,
+        is_active=True,
+    )
+    by_code = queryset.filter(code__iexact=token).first()
+    if by_code is not None:
+        return by_code
+    matches = list(queryset.filter(name__iexact=token)[:2])
+    if len(matches) != 1:
+        raise ValidationError(
+            f"Должность «{token}» не найдена однозначно в действующем справочнике."
+        )
+    return matches[0]
+
+
+def _resolve_site(batch: ImportBatch, value: str):
+    from apps.equipment.models import EnergySite
+
+    token = normalize_cell(value)
+    queryset = EnergySite.objects.filter(
+        organization=batch.organization,
+        is_active=True,
+    )
+    by_code = queryset.filter(code__iexact=token).first()
+    if by_code is not None:
+        return by_code
+    matches = list(
+        queryset.filter(Q(name__iexact=token) | Q(short_name__iexact=token)).distinct()[:2]
+    )
+    if len(matches) != 1:
+        raise ValidationError(
+            f"Энергообъект «{token}» не найден однозначно в действующем справочнике."
+        )
+    return matches[0]
+
+
+def _resolve_equipment_type(value: str):
+    from apps.equipment.models import EquipmentType
+
+    token = normalize_cell(value)
+    queryset = EquipmentType.objects.filter(is_active=True)
+    by_code = queryset.filter(code__iexact=token).first()
+    if by_code is not None:
+        return by_code
+    matches = list(queryset.filter(name__iexact=token)[:2])
+    if len(matches) != 1:
+        raise ValidationError(
+            f"Вид оборудования «{token}» не найден однозначно в действующем справочнике."
+        )
+    return matches[0]
+
+
+def _resolve_equipment(batch: ImportBatch, value: str):
+    from apps.equipment.models import EquipmentAsset
+
+    token = normalize_cell(value)
+    matches = list(
+        EquipmentAsset.objects.filter(
+            organization=batch.organization,
+            code__iexact=token,
+        )[:2]
+    )
+    if len(matches) != 1:
+        raise ValidationError(
+            f"Оборудование «{token}» не найдено однозначно в действующем реестре."
+        )
+    return matches[0]
+
+
+def _resolve_dispatch_subject(batch: ImportBatch, value: str):
+    from apps.dispatching.models import DispatchSubject
+
+    token = normalize_cell(value)
+    queryset = DispatchSubject.objects.filter(
+        organization=batch.organization,
+        is_active=True,
+    )
+    by_code = queryset.filter(code__iexact=token).first()
+    if by_code is not None:
+        return by_code
+    matches = list(
+        queryset.filter(Q(name__iexact=token) | Q(short_name__iexact=token)).distinct()[:2]
+    )
+    if len(matches) != 1:
+        raise ValidationError(
+            f"Субъект «{token}» не найден однозначно в действующем справочнике."
+        )
+    return matches[0]
+
+
+def _resolve_dispatch_level(batch: ImportBatch, value: str):
+    from apps.dispatching.models import DispatchLevel
+
+    token = normalize_cell(value)
+    queryset = DispatchLevel.objects.filter(
+        organization=batch.organization,
+        is_active=True,
+    )
+    by_code = queryset.filter(code__iexact=token).first()
+    if by_code is not None:
+        return by_code
+    matches = list(queryset.filter(name__iexact=token)[:2])
+    if len(matches) != 1:
+        raise ValidationError(
+            f"Уровень «{token}» не найден однозначно в действующем справочнике."
+        )
+    return matches[0]
+
+
+def _publication_basis(batch: ImportBatch, supplied: str = "") -> str:
+    value = normalize_cell(supplied)
+    if value:
+        return value[:1000]
+    return (
+        f"Контролируемая публикация импорта «{batch.original_filename}», "
+        f"SHA-256 {batch.file_sha256}"
+    )[:1000]
+
+
+def _publication_effect(
+    batch: ImportBatch,
+    row: ImportRow,
+    values: dict[str, str],
+) -> dict[str, object]:
+    if batch.target_registry == ImportBatch.TargetRegistry.ORGANIZATION:
+        division = _resolve_division(batch, values["division"])
+        position = _resolve_position(batch, values["position"])
+        return {
+            "row_number": row.row_number,
+            "action": "create",
+            "target_model": "organizations.Employee",
+            "label": (
+                f"{values['personnel_number']} · {values['last_name']} "
+                f"{values['first_name']} · {division.name} · {position.name}"
+            ),
+        }
+    if batch.target_registry == ImportBatch.TargetRegistry.EQUIPMENT:
+        site = _resolve_site(batch, values["site"])
+        equipment_type = _resolve_equipment_type(values["type"])
+        return {
+            "row_number": row.row_number,
+            "action": "create",
+            "target_model": "equipment.EquipmentAsset",
+            "label": (
+                f"{values['code']} · {values['technical_name']} · "
+                f"{site} · {equipment_type.name}"
+            ),
+            "publishes_dispatcher_name": bool(values.get("dispatcher_name")),
+        }
+    if batch.target_registry == ImportBatch.TargetRegistry.DISPATCHING:
+        equipment = _resolve_equipment(batch, values["equipment_code"])
+        subject = _resolve_dispatch_subject(batch, values["subject"])
+        level = _resolve_dispatch_level(batch, values["level"])
+        relation_label = (
+            "оперативное управление"
+            if values["relation_kind"] == "MANAGEMENT"
+            else "оперативное ведение"
+        )
+        return {
+            "row_number": row.row_number,
+            "action": "publish_revision",
+            "target_model": (
+                "dispatching.ManagementRevision"
+                if values["relation_kind"] == "MANAGEMENT"
+                else "dispatching.SupervisionRevision"
+            ),
+            "label": (
+                f"{equipment.code} · {relation_label} · {subject} · {level.name}"
+            ),
+        }
+    raise ValidationError(
+        "Назначение «Другой справочник» доступно только для staging и не публикуется."
+    )
+
+
+def _accepted_rows_and_effects(
+    batch: ImportBatch,
+) -> tuple[tuple[ImportRow, ...], tuple[dict[str, object], ...]]:
+    persisted_status = (
+        ImportBatch.objects.filter(pk=batch.pk)
+        .values_list("status", flat=True)
+        .first()
+        if batch.pk
+        else batch.status
+    )
+    if persisted_status == ImportBatch.Status.PUBLISHED:
+        raise ValidationError("Эта загрузка уже опубликована.")
+    if batch.status != ImportBatch.Status.READY:
+        raise ValidationError("Публикация доступна только для разобранной загрузки.")
+    if batch.mapping_completed_at is None:
+        raise ValidationError("Сначала подтвердите сопоставление колонок.")
+    if batch.target_registry == ImportBatch.TargetRegistry.OTHER:
+        raise ValidationError(
+            "Назначение «Другой справочник» не имеет рабочего реестра для публикации."
+        )
+
+    rows = tuple(batch.rows.select_related("decided_by").order_by("row_number"))
+    pending = [row.row_number for row in rows if row.decision == ImportRow.Decision.PENDING]
+    if pending:
+        raise ValidationError(
+            "До публикации требуется принять или отклонить решение по каждой строке."
+        )
+    accepted = tuple(row for row in rows if row.decision == ImportRow.Decision.ACCEPTED)
+    if not accepted:
+        raise ValidationError("Нет ни одной предварительно принятой строки.")
+
+    context = _validation_context(batch)
+    effects: list[dict[str, object]] = []
+    for row in accepted:
+        values, issues = validate_mapped_values(
+            batch.target_registry,
+            row.effective_values,
+        )
+        issues.extend(_reference_issues(batch, values, context))
+        conflicts = _active_registry_conflicts(batch, values, context)
+        if issues or conflicts:
+            detail = "; ".join(issues + conflicts)
+            raise ValidationError(
+                f"Строка {row.row_number} больше не готова к публикации: {detail}"
+            )
+        effects.append(_publication_effect(batch, row, values))
+    return accepted, tuple(effects)
+
+
+def build_import_publication_preview(batch: ImportBatch) -> ImportPublicationPreview:
+    accepted_rows, effects = _accepted_rows_and_effects(batch)
+    payload = {
+        "schema": PUBLICATION_SCHEMA,
+        "batch_public_id": str(batch.public_id),
+        "organization": {
+            "id": batch.organization_id,
+            "code": batch.organization.code,
+        },
+        "source": {
+            "filename": batch.original_filename,
+            "format": batch.source_format,
+            "size": batch.file_size,
+            "sha256": batch.file_sha256,
+            "sheet": batch.sheet_name,
+        },
+        "target_registry": batch.target_registry,
+        "mapping_revision": batch.mapping_revision,
+        "rows": [
+            {
+                "row_id": row.pk,
+                "row_number": row.row_number,
+                "values": row.effective_values,
+                "decision_note": row.decision_note,
+                "decided_by_id": row.decided_by_id,
+                "decided_at": (
+                    row.decided_at.isoformat()
+                    if row.decided_at is not None
+                    else None
+                ),
+            }
+            for row in accepted_rows
+        ],
+    }
+    canonical, digest = _sha256_json(payload)
+    return ImportPublicationPreview(
+        batch=batch,
+        accepted_rows=accepted_rows,
+        rejected_count=batch.rows.filter(
+            decision=ImportRow.Decision.REJECTED
+        ).count(),
+        canonical_json=canonical,
+        digest=digest,
+        effects=effects,
+    )
+
+
+def _create_employee_from_import(
+    *,
+    batch: ImportBatch,
+    values: dict[str, str],
+) -> tuple[str, str, dict[str, object]]:
+    from apps.organizations.models import Employee
+
+    division = _resolve_division(batch, values["division"])
+    position = _resolve_position(batch, values["position"])
+    employee = Employee(
+        organization=batch.organization,
+        division=division,
+        position=position,
+        personnel_number=values["personnel_number"],
+        last_name=values["last_name"],
+        first_name=values["first_name"],
+        middle_name=values.get("middle_name", ""),
+        employment_start=_parse_iso_date(
+            values.get("employment_start", ""),
+            default=timezone.localdate(),
+        ),
+        is_active=_boolean_value(values.get("is_active", ""), default=True),
+    )
+    employee.full_clean()
+    employee.save()
+    return (
+        "organizations.Employee",
+        str(employee.pk),
+        {
+            "employee_id": employee.pk,
+            "personnel_number": employee.personnel_number,
+            "full_name": employee.full_name,
+        },
+    )
+
+
+def _create_equipment_from_import(
+    *,
+    batch: ImportBatch,
+    actor: Employee,
+    values: dict[str, str],
+) -> tuple[str, str, dict[str, object]]:
+    from apps.equipment.models import (
+        EquipmentAsset,
+        EquipmentNameRevision,
+    )
+    from apps.equipment.services import publish_equipment_name_revision
+
+    site = _resolve_site(batch, values["site"])
+    equipment_type = _resolve_equipment_type(values["type"])
+    commissioned_on = _parse_iso_date(values.get("commissioned_on", ""))
+    equipment = EquipmentAsset(
+        organization=batch.organization,
+        site=site,
+        equipment_type=equipment_type,
+        code=values["code"],
+        technical_name=values["technical_name"],
+        status=values.get("status") or EquipmentAsset.Status.ACTIVE,
+        voltage_level=values.get("voltage_level", ""),
+        commissioned_on=commissioned_on,
+    )
+    equipment.save()
+    result: dict[str, object] = {
+        "equipment_id": equipment.pk,
+        "public_id": str(equipment.public_id),
+        "code": equipment.code,
+    }
+    dispatcher_name = normalize_cell(values.get("dispatcher_name", ""))
+    if dispatcher_name:
+        revision = EquipmentNameRevision.objects.create(
+            equipment=equipment,
+            revision_number=1,
+            dispatcher_name=dispatcher_name,
+            effective_from=commissioned_on or timezone.localdate(),
+            basis_reference=_publication_basis(batch),
+        )
+        revision = publish_equipment_name_revision(revision=revision, actor=actor)
+        result["dispatcher_name_revision_id"] = revision.pk
+        result["dispatcher_name_digest"] = revision.digest
+    return "equipment.EquipmentAsset", str(equipment.pk), result
+
+
+def _create_dispatching_from_import(
+    *,
+    batch: ImportBatch,
+    actor: Employee,
+    values: dict[str, str],
+) -> tuple[str, str, dict[str, object]]:
+    from apps.dispatching.models import (
+        ManagementObject,
+        ManagementRevision,
+        SupervisionObject,
+        SupervisionRevision,
+    )
+    from apps.dispatching.services import (
+        publish_management_revision,
+        publish_supervision_revision,
+    )
+
+    equipment = _resolve_equipment(batch, values["equipment_code"])
+    subject = _resolve_dispatch_subject(batch, values["subject"])
+    level = _resolve_dispatch_level(batch, values["level"])
+    effective_from = _parse_iso_date(
+        values.get("effective_from", ""),
+        default=timezone.localdate(),
+    )
+    effective_until = _parse_iso_date(values.get("effective_until", ""))
+    basis_reference = _publication_basis(batch, values.get("basis_reference", ""))
+    if values["relation_kind"] == "MANAGEMENT":
+        management_object, _created = ManagementObject.objects.get_or_create(
+            organization=batch.organization,
+            equipment=equipment,
+            defaults={"notes": "Создано контролируемой публикацией импорта."},
+        )
+        revision_number = (
+            management_object.revisions.aggregate(value=Max("revision_number"))["value"]
+            or 0
+        ) + 1
+        revision = ManagementRevision.objects.create(
+            management_object=management_object,
+            revision_number=revision_number,
+            level=level,
+            subject=subject,
+            effective_from=effective_from,
+            effective_until=effective_until,
+            basis_reference=basis_reference,
+            change_summary="Создано контролируемой публикацией импорта.",
+        )
+        revision = publish_management_revision(revision=revision, actor=actor)
+        return (
+            "dispatching.ManagementRevision",
+            str(revision.pk),
+            {
+                "revision_id": revision.pk,
+                "equipment_id": equipment.pk,
+                "revision_number": revision.revision_number,
+                "digest": revision.digest,
+            },
+        )
+
+    supervision_object, _created = SupervisionObject.objects.get_or_create(
+        organization=batch.organization,
+        equipment=equipment,
+        defaults={"notes": "Создано контролируемой публикацией импорта."},
+    )
+    revision_number = (
+        supervision_object.revisions.aggregate(value=Max("revision_number"))["value"]
+        or 0
+    ) + 1
+    revision = SupervisionRevision.objects.create(
+        supervision_object=supervision_object,
+        revision_number=revision_number,
+        level=level,
+        subject=subject,
+        is_information_only=_boolean_value(
+            values.get("information_only", ""),
+            default=False,
+        ),
+        effective_from=effective_from,
+        effective_until=effective_until,
+        basis_reference=basis_reference,
+        change_summary="Создано контролируемой публикацией импорта.",
+    )
+    revision = publish_supervision_revision(revision=revision, actor=actor)
+    return (
+        "dispatching.SupervisionRevision",
+        str(revision.pk),
+        {
+            "revision_id": revision.pk,
+            "equipment_id": equipment.pk,
+            "revision_number": revision.revision_number,
+            "digest": revision.digest,
+            "information_only": revision.is_information_only,
+        },
+    )
+
+
+def _publish_row(
+    *,
+    batch: ImportBatch,
+    row: ImportRow,
+    actor: Employee,
+) -> tuple[str, str, dict[str, object]]:
+    values = row.effective_values
+    if batch.target_registry == ImportBatch.TargetRegistry.ORGANIZATION:
+        return _create_employee_from_import(batch=batch, values=values)
+    if batch.target_registry == ImportBatch.TargetRegistry.EQUIPMENT:
+        return _create_equipment_from_import(
+            batch=batch,
+            actor=actor,
+            values=values,
+        )
+    if batch.target_registry == ImportBatch.TargetRegistry.DISPATCHING:
+        return _create_dispatching_from_import(
+            batch=batch,
+            actor=actor,
+            values=values,
+        )
+    raise ValidationError("Выбранный справочник не поддерживает публикацию.")
+
+
+@transaction.atomic
+def publish_import_batch(
+    *,
+    batch: ImportBatch,
+    actor: Employee,
+    user,
+    password: str,
+    expected_digest: str,
+) -> ImportPublication:
+    if user is None or not getattr(user, "is_authenticated", False):
+        raise PermissionDenied("Для публикации требуется действующая персональная сессия.")
+    if actor.user_id != getattr(user, "pk", None):
+        raise PermissionDenied("Учётная запись не соответствует публикующему сотруднику.")
+    if not can_publish_import(user):
+        raise PermissionDenied(
+            "Для публикации требуется прямая действующая роль «Администратор справочников»."
+        )
+    if not password or not user.check_password(password):
+        raise ValidationError({"password": "Неверный текущий пароль."})
+
+    locked = (
+        ImportBatch.objects.select_for_update()
+        .select_related("organization", "created_by", "published_by")
+        .get(pk=batch.pk)
+    )
+    list(
+        locked.rows.select_for_update()
+        .select_related("decided_by")
+        .order_by("row_number")
+    )
+    preview = build_import_publication_preview(locked)
+    if not expected_digest or expected_digest != preview.digest:
+        raise ValidationError(
+            "Состав публикации изменился. Обновите страницу и повторно проверьте итог."
+        )
+
+    result_rows: list[tuple[ImportRow, str, str, dict[str, object]]] = []
+    model_counts: dict[str, int] = {}
+    for row in preview.accepted_rows:
+        target_model, target_object_id, result = _publish_row(
+            batch=locked,
+            row=row,
+            actor=actor,
+        )
+        result_rows.append((row, target_model, target_object_id, result))
+        model_counts[target_model] = model_counts.get(target_model, 0) + 1
+
+    result_summary: dict[str, object] = {
+        "accepted": len(result_rows),
+        "rejected": preview.rejected_count,
+        "models": model_counts,
+    }
+    publication = ImportPublication.objects.create(
+        batch=locked,
+        actor=actor,
+        schema_version=PUBLICATION_SCHEMA,
+        target_registry=locked.target_registry,
+        mapping_revision=locked.mapping_revision,
+        canonical_json=preview.canonical_json,
+        digest=preview.digest,
+        result_summary=result_summary,
+    )
+    for row, target_model, target_object_id, result in result_rows:
+        row_payload = {
+            "publication_digest": publication.digest,
+            "row_number": row.row_number,
+            "target_model": target_model,
+            "target_object_id": target_object_id,
+            "result": result,
+        }
+        _canonical, row_digest = _sha256_json(row_payload)
+        ImportPublicationRow.objects.create(
+            publication=publication,
+            row=row,
+            target_model=target_model,
+            target_object_id=target_object_id,
+            result=result,
+            digest=row_digest,
+        )
+
+    published_at = timezone.now()
+    locked.status = ImportBatch.Status.PUBLISHED
+    locked.published_at = published_at
+    locked.published_by = actor
+    locked.publication_digest = publication.digest
+    locked.publication_counts = result_summary
+    locked.save(
+        update_fields=(
+            "status",
+            "published_at",
+            "published_by",
+            "publication_digest",
+            "publication_counts",
+            "updated_at",
+        )
+    )
+    ImportEvent.objects.create(
+        batch=locked,
+        event_type=ImportEvent.EventType.PUBLISHED,
+        actor=actor,
+        details={
+            "publication_id": publication.pk,
+            "publication_digest": publication.digest,
+            "accepted": len(result_rows),
+            "rejected": preview.rejected_count,
+            "models": model_counts,
+        },
+    )
+    return publication

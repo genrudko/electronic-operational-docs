@@ -26,6 +26,7 @@ class ImportBatch(models.Model):
         READY = "READY", "Предварительный просмотр готов"
         FAILED = "FAILED", "Ошибка разбора"
         DISCARDED = "DISCARDED", "Убрано из рабочего списка"
+        PUBLISHED = "PUBLISHED", "Опубликовано в рабочий справочник"
 
     public_id = models.UUIDField(
         "Публичный идентификатор",
@@ -89,6 +90,30 @@ class ImportBatch(models.Model):
         default=dict,
         blank=True,
     )
+    published_at = models.DateTimeField(
+        "Опубликовано в рабочий справочник",
+        null=True,
+        blank=True,
+    )
+    published_by = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="published_import_batches",
+        verbose_name="Опубликовал",
+    )
+    publication_digest = models.CharField(
+        "SHA-256 публикации",
+        max_length=64,
+        blank=True,
+        editable=False,
+    )
+    publication_counts = models.JSONField(
+        "Итоги публикации",
+        default=dict,
+        blank=True,
+    )
     created_at = models.DateTimeField("Создано", auto_now_add=True)
     updated_at = models.DateTimeField("Изменено", auto_now=True)
     discarded_at = models.DateTimeField(
@@ -141,10 +166,37 @@ class ImportBatch(models.Model):
             )
         if not isinstance(self.review_counts, dict):
             errors["review_counts"] = "Счётчики проверки должны храниться объектом."
+        if not isinstance(self.publication_counts, dict):
+            errors["publication_counts"] = "Итоги публикации должны храниться объектом."
+        publication_fields_present = bool(
+            self.published_at
+            or self.published_by_id
+            or self.publication_digest
+            or self.publication_counts
+        )
+        if self.status == self.Status.PUBLISHED:
+            if (
+                self.published_at is None
+                or self.published_by_id is None
+                or len(self.publication_digest) != 64
+                or not self.publication_counts
+            ):
+                errors["status"] = (
+                    "Опубликованная загрузка требует автора, времени, SHA-256 и итогов."
+                )
+        elif publication_fields_present:
+            errors["status"] = (
+                "Реквизиты публикации допустимы только для опубликованной загрузки."
+            )
+        if self.published_by_id and self.organization_id:
+            if self.published_by.organization_id != self.organization_id:
+                errors["published_by"] = "Публикующий сотрудник относится к другой организации."
         if errors:
             raise ValidationError(errors)
 
     def mark_discarded(self) -> None:
+        if self.status == self.Status.PUBLISHED:
+            raise ValidationError("Опубликованную загрузку нельзя убрать из рабочего списка.")
         if self.status == self.Status.DISCARDED:
             return
         self.status = self.Status.DISCARDED
@@ -363,6 +415,7 @@ class ImportEvent(models.Model):
         REVIEW_RECALCULATED = "REVIEW_RECALCULATED", "Проверка строк пересчитана"
         ROW_DECISION = "ROW_DECISION", "Принято решение по строке"
         BULK_DECISION = "BULK_DECISION", "Выполнено массовое решение"
+        PUBLISHED = "PUBLISHED", "Принятые строки опубликованы"
 
     batch = models.ForeignKey(
         ImportBatch,
@@ -417,5 +470,129 @@ class ImportEvent(models.Model):
                 errors["actor"] = "Сотрудник относится к другой организации."
         if not isinstance(self.details, dict):
             errors["details"] = "Сведения события должны храниться объектом."
+        if errors:
+            raise ValidationError(errors)
+
+
+class ImportPublication(models.Model):
+    public_id = models.UUIDField(
+        "Публичный идентификатор",
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
+    batch = models.OneToOneField(
+        ImportBatch,
+        on_delete=models.PROTECT,
+        related_name="publication",
+        verbose_name="Загрузка",
+    )
+    actor = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        related_name="import_publications",
+        verbose_name="Опубликовал",
+    )
+    schema_version = models.CharField(
+        "Версия схемы снимка",
+        max_length=64,
+        default="eod.import.publication.v1",
+    )
+    target_registry = models.CharField(
+        "Назначение",
+        max_length=24,
+        choices=ImportBatch.TargetRegistry.choices,
+    )
+    mapping_revision = models.PositiveIntegerField("Редакция сопоставления")
+    canonical_json = models.TextField("Канонический снимок публикации")
+    digest = models.CharField("SHA-256 снимка публикации", max_length=64, unique=True)
+    result_summary = models.JSONField("Итоги записи", default=dict)
+    created_at = models.DateTimeField("Опубликовано", auto_now_add=True)
+
+    objects = ImmutableAuditManager()
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+        verbose_name = "публикация импорта"
+        verbose_name_plural = "публикации импорта"
+
+    def __str__(self) -> str:
+        return f"{self.batch.original_filename} · {self.digest[:12]}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.pk:
+            raise ValidationError("Снимок публикации импорта неизменяем.")
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
+        raise ValidationError("Физическое удаление публикации импорта запрещено.")
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if self.batch_id and self.actor_id:
+            if self.batch.organization_id != self.actor.organization_id:
+                errors["actor"] = "Сотрудник относится к другой организации."
+            if self.target_registry != self.batch.target_registry:
+                errors["target_registry"] = "Назначение снимка не совпадает с загрузкой."
+        if len(self.digest) != 64:
+            errors["digest"] = "Для публикации требуется SHA-256."
+        if not isinstance(self.result_summary, dict):
+            errors["result_summary"] = "Итоги должны храниться объектом."
+        if errors:
+            raise ValidationError(errors)
+
+
+class ImportPublicationRow(models.Model):
+    publication = models.ForeignKey(
+        ImportPublication,
+        on_delete=models.PROTECT,
+        related_name="published_rows",
+        verbose_name="Публикация",
+    )
+    row = models.OneToOneField(
+        ImportRow,
+        on_delete=models.PROTECT,
+        related_name="publication_result",
+        verbose_name="Строка импорта",
+    )
+    target_model = models.CharField("Целевая модель", max_length=128)
+    target_object_id = models.CharField("Идентификатор созданной записи", max_length=128)
+    result = models.JSONField("Результат строки", default=dict)
+    digest = models.CharField("SHA-256 результата строки", max_length=64)
+    created_at = models.DateTimeField("Записано", auto_now_add=True)
+
+    objects = ImmutableAuditManager()
+
+    class Meta:
+        ordering = ("row__row_number",)
+        verbose_name = "результат публикации строки"
+        verbose_name_plural = "результаты публикации строк"
+
+    def __str__(self) -> str:
+        return f"Строка {self.row.row_number} → {self.target_model}:{self.target_object_id}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.pk:
+            raise ValidationError("Результат публикации строки неизменяем.")
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
+        raise ValidationError("Физическое удаление результата публикации запрещено.")
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if self.publication_id and self.row_id:
+            if self.row.batch_id != self.publication.batch_id:
+                errors["row"] = "Строка относится к другой загрузке."
+            if self.row.decision != ImportRow.Decision.ACCEPTED:
+                errors["row"] = "Публиковать можно только предварительно принятую строку."
+        if not isinstance(self.result, dict):
+            errors["result"] = "Результат должен храниться объектом."
+        if len(self.digest) != 64:
+            errors["digest"] = "Для результата строки требуется SHA-256."
         if errors:
             raise ValidationError(errors)

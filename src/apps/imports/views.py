@@ -10,17 +10,22 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import (
     ImportColumnMappingForm,
+    ImportPublicationConfirmationForm,
     ImportRowCorrectionForm,
     ImportUploadForm,
 )
-from .models import ImportBatch, ImportRow
+from .models import ImportBatch, ImportPublication, ImportRow
 from .services import (
+    build_import_publication_preview,
     bulk_decide_import_rows,
+    can_publish_import,
     create_import_batch,
     decide_import_row,
     discard_import_batch,
+    publish_import_batch,
     registry_field_specs,
     require_import_employee,
+    require_import_publisher,
     save_column_mapping,
     save_row_correction,
 )
@@ -73,6 +78,9 @@ def import_list(request: HttpRequest) -> HttpResponse:
         ),
         "discarded": sum(
             batch.status == ImportBatch.Status.DISCARDED for batch in batches
+        ),
+        "published": sum(
+            batch.status == ImportBatch.Status.PUBLISHED for batch in batches
         ),
     }
     return render(
@@ -186,6 +194,7 @@ def import_detail(request: HttpRequest, public_id) -> HttpResponse:
         .count()
     )
     mapped_count = batch.columns.exclude(mapped_key="").count()
+    publication = getattr(batch, "publication", None)
     return render(
         request,
         "imports/detail.html",
@@ -204,6 +213,8 @@ def import_detail(request: HttpRequest, public_id) -> HttpResponse:
             "mapped_count": mapped_count,
             "required_count": sum(spec.required for spec in field_specs),
             "field_labels": field_labels,
+            "publication": publication,
+            "can_publish": can_publish_import(request.user),
         },
     )
 
@@ -254,6 +265,9 @@ def import_row_edit(request: HttpRequest, public_id, row_id: int) -> HttpRespons
         pk=row_id,
         batch=batch,
     )
+    if batch.status != ImportBatch.Status.READY:
+        messages.error(request, "Опубликованную или закрытую загрузку нельзя редактировать.")
+        return redirect("imports:detail", public_id=batch.public_id)
     if batch.mapping_completed_at is None:
         messages.error(request, "Сначала подтвердите сопоставление колонок.")
         return redirect("imports:mapping", public_id=batch.public_id)
@@ -340,9 +354,100 @@ def import_discard(request: HttpRequest, public_id) -> HttpResponse:
     if request.method != "POST":
         return redirect("imports:detail", public_id=public_id)
     employee, batch = _organization_batch(request, public_id)
-    discard_import_batch(batch=batch, employee=employee)
-    messages.success(
-        request,
-        "Загрузка убрана из рабочего списка. Аудиторская запись сохранена.",
-    )
+    try:
+        discard_import_batch(batch=batch, employee=employee)
+    except ValidationError as error:
+        messages.error(request, _validation_message(error))
+    else:
+        messages.success(
+            request,
+            "Загрузка убрана из рабочего списка. Аудиторская запись сохранена.",
+        )
     return redirect("imports:detail", public_id=batch.public_id)
+
+
+
+@login_required
+def import_publication(request: HttpRequest, public_id) -> HttpResponse:
+    employee, batch = _organization_batch(request, public_id)
+    if batch.status == ImportBatch.Status.PUBLISHED:
+        return redirect("imports:publication_result", public_id=batch.public_id)
+
+    try:
+        preview = build_import_publication_preview(batch)
+    except ValidationError as error:
+        messages.error(request, _validation_message(error))
+        return redirect("imports:detail", public_id=batch.public_id)
+
+    allowed = can_publish_import(request.user)
+    if request.method == "POST":
+        publisher = require_import_publisher(request.user)
+        form = ImportPublicationConfirmationForm(request.POST)
+        if form.is_valid():
+            try:
+                publication = publish_import_batch(
+                    batch=batch,
+                    actor=publisher,
+                    user=request.user,
+                    password=form.cleaned_data["password"],
+                    expected_digest=form.cleaned_data["preview_digest"],
+                )
+            except ValidationError as error:
+                if hasattr(error, "message_dict") and "password" in error.message_dict:
+                    for message in error.message_dict["password"]:
+                        form.add_error("password", message)
+                else:
+                    form.add_error(None, _validation_message(error))
+            else:
+                messages.success(
+                    request,
+                    (
+                        "Публикация завершена транзакционно. "
+                        f"Создано записей: {publication.result_summary['accepted']}."
+                    ),
+                )
+                return redirect(
+                    "imports:publication_result",
+                    public_id=batch.public_id,
+                )
+    else:
+        form = ImportPublicationConfirmationForm(
+            initial={"preview_digest": preview.digest}
+        )
+
+    return render(
+        request,
+        "imports/publication.html",
+        {
+            "batch": batch,
+            "employee": employee,
+            "preview": preview,
+            "form": form,
+            "can_publish": allowed,
+        },
+    )
+
+
+@login_required
+def import_publication_result(request: HttpRequest, public_id) -> HttpResponse:
+    _employee, batch = _organization_batch(request, public_id)
+    publication = get_object_or_404(
+        ImportPublication.objects.select_related(
+            "batch",
+            "actor",
+            "actor__position",
+        ),
+        batch=batch,
+    )
+    rows = publication.published_rows.select_related("row").order_by(
+        "row__row_number"
+    )
+    return render(
+        request,
+        "imports/publication_result.html",
+        {
+            "batch": batch,
+            "publication": publication,
+            "published_rows": rows,
+        },
+    )

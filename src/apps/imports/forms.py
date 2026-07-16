@@ -129,3 +129,24 @@ class ImportRowCorrectionForm(forms.Form):
             for key, value in self.cleaned_data.items()
             if key != "note"
         }
+
+
+
+class ImportPublicationConfirmationForm(forms.Form):
+    preview_digest = forms.CharField(widget=forms.HiddenInput())
+    password = forms.CharField(
+        label="Текущий пароль",
+        strip=False,
+        widget=forms.PasswordInput(
+            attrs={
+                "autocomplete": "current-password",
+                "placeholder": "Введите пароль своей учётной записи",
+            }
+        ),
+    )
+    confirm = forms.BooleanField(
+        label=(
+            "Я проверил(а) итог публикации и подтверждаю создание записей "
+            "в рабочем справочнике от своего имени"
+        )
+    )

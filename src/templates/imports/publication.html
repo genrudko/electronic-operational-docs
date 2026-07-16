@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Публикация импорта · {{ batch.original_filename }} · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+    <div>
+        <div class="eyebrow">КОНТРОЛИРУЕМАЯ ПУБЛИКАЦИЯ</div>
+        <h1>Проверка итоговой записи</h1>
+        <p>{{ batch.original_filename }} · {{ batch.get_target_registry_display }}</p>
+    </div>
+    <a href="{% url 'imports:detail' batch.public_id %}">К проверке строк</a>
+</section>
+
+<section class="notice-card warning-notice">
+    <strong>Следующее подтверждение изменит рабочий справочник</strong>
+    <p>
+        До ввода пароля запись не выполняется. При подтверждении все принятые строки
+        записываются одной транзакцией: либо создаются все записи, либо не создаётся ни одной.
+        Перед записью ссылки и конфликты проверяются повторно.
+    </p>
+</section>
+
+<section class="summary-grid">
+    <article class="metric">
+        <span>Будет создано</span><strong>{{ preview.accepted_rows|length }}</strong>
+    </article>
+    <article class="metric">
+        <span>Отклонено и пропущено</span><strong>{{ preview.rejected_count }}</strong>
+    </article>
+    <article class="metric">
+        <span>Редакция сопоставления</span><strong>{{ batch.mapping_revision }}</strong>
+    </article>
+</section>
+
+<section class="profile-card">
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow">ТОЧНЫЙ ИТОГ</div>
+            <h2>Изменения рабочего справочника</h2>
+        </div>
+        <span class="count-badge">{{ preview.effects|length }}</span>
+    </div>
+    <div class="event-list">
+        {% for effect in preview.effects %}
+        <article>
+            <strong>Строка {{ effect.row_number }}</strong>
+            <span>{{ effect.label }}</span>
+            <small>{{ effect.target_model }}</small>
+            {% if effect.publishes_dispatcher_name %}
+                <small>Одновременно будет опубликовано диспетчерское наименование.</small>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="profile-card">
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow">КОНТРОЛЬ ЦЕЛОСТНОСТИ</div>
+            <h2>Снимок перед записью</h2>
+        </div>
+    </div>
+    <dl class="detail-list">
+        <dt>SHA-256 исходного файла</dt>
+        <dd><code class="breakable">{{ batch.file_sha256 }}</code></dd>
+        <dt>SHA-256 состава публикации</dt>
+        <dd><code class="breakable">{{ preview.digest }}</code></dd>
+        <dt>Публикующий сотрудник</dt>
+        <dd>{{ employee.full_name }}</dd>
+        <dt>Требуемая роль</dt>
+        <dd>Администратор справочников — прямое назначение</dd>
+    </dl>
+    <details class="technical-only">
+        <summary>Канонический снимок публикации</summary>
+        <div class="technical-panel">
+            <pre class="breakable">{{ preview.canonical_json }}</pre>
+        </div>
+    </details>
+</section>
+
+<section class="profile-card">
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow">ПОДТВЕРЖДЕНИЕ</div>
+            <h2>Запись от имени пользователя</h2>
+        </div>
+    </div>
+    {% if can_publish %}
+        <form method="post" class="stacked-form">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {{ form.preview_digest }}
+            <div class="field-row">
+                <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+                {{ form.password }}
+                {{ form.password.errors }}
+            </div>
+            <div class="checkbox-row">
+                {{ form.confirm }}
+                <label for="{{ form.confirm.id_for_label }}">{{ form.confirm.label }}</label>
+                {{ form.confirm.errors }}
+            </div>
+            <div class="document-actions">
+                <button class="button" type="submit">
+                    Опубликовать {{ preview.accepted_rows|length }} принятых строк
+                </button>
+                <a class="button secondary" href="{% url 'imports:detail' batch.public_id %}">
+                    Отмена
+                </a>
+            </div>
+        </form>
+    {% else %}
+        <div class="notice-card">
+            <strong>Недостаточно полномочий для подтверждения</strong>
+            <p>
+                Итог можно просмотреть, но запись доступна только пользователю с прямой
+                действующей ролью «Администратор справочников». Оперативное замещение
+                эту административную роль не передаёт.
+            </p>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

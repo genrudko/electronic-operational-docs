@@ -29,6 +29,16 @@ urlpatterns = [
         name="bulk_decide",
     ),
     path(
+        "imports/<uuid:public_id>/publication/",
+        views.import_publication,
+        name="publication",
+    ),
+    path(
+        "imports/<uuid:public_id>/publication/result/",
+        views.import_publication_result,
+        name="publication_result",
+    ),
+    path(
         "imports/<uuid:public_id>/discard/",
         views.import_discard,
         name="discard",

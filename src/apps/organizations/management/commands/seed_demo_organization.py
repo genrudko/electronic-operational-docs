@@ -301,6 +301,7 @@ class Command(BaseCommand):
             ("DEMO-001", "operator"),
             ("DEMO-002", "shift_supervisor"),
             ("DEMO-002", "operator"),
+            ("DEMO-002", "organization_admin"),
         ):
             RoleAssignment.objects.update_or_create(
                 employee=employees[employee_number],

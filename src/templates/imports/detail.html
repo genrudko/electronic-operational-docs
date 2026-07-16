@@ -16,11 +16,15 @@
                 Сопоставить колонки
             </a>
         {% endif %}
-        {% if batch.status != 'DISCARDED' %}
-        <form method="post" action="{% url 'imports:discard' batch.public_id %}">
-            {% csrf_token %}
-            <button class="button secondary" type="submit">Убрать из рабочего списка</button>
-        </form>
+        {% if batch.status == 'PUBLISHED' %}
+            <a class="button" href="{% url 'imports:publication_result' batch.public_id %}">
+                Итог публикации
+            </a>
+        {% elif batch.status != 'DISCARDED' %}
+            <form method="post" action="{% url 'imports:discard' batch.public_id %}">
+                {% csrf_token %}
+                <button class="button secondary" type="submit">Убрать из рабочего списка</button>
+            </form>
         {% endif %}
     </div>
 </section>
@@ -35,12 +39,21 @@
     <strong>Загрузка убрана из рабочего списка</strong>
     <p>Исходные строки, сопоставление, решения и события сохранены для аудиторской истории.</p>
 </section>
+{% elif batch.status == 'PUBLISHED' %}
+<section class="notice-card success-notice">
+    <strong>Принятые строки опубликованы транзакционно</strong>
+    <p>
+        Рабочий справочник изменён один раз. Снимок, SHA-256, автор и результат каждой
+        опубликованной строки сохранены и не редактируются.
+    </p>
+</section>
 {% else %}
 <section class="notice-card import-safety-notice">
     <strong>Это только предварительный просмотр</strong>
+    <p class="muted">Рабочий реестр изменится только после отдельного подтверждения.</p>
     <p>
-        Ни одна строка не опубликована и не записана в действующие справочники.
-        Предварительное принятие означает только решение внутри промежуточной зоны.
+        Сопоставление и решения по строкам не меняют рабочие справочники. Запись возможна
+        только на отдельном экране публикации, после повторного ввода пароля администратором.
     </p>
 </section>
 {% endif %}
@@ -73,13 +86,22 @@
                 <dt>Публичный идентификатор</dt><dd><code>{{ batch.public_id }}</code></dd>
                 <dt>Повторных загрузок того же файла</dt><dd>{{ duplicate_attempts }}</dd>
                 <dt>Исходный файл хранится</dt><dd>Нет</dd>
-                <dt>Публикация из этого этапа</dt><dd>Невозможна</dd>
+                <dt>Контролируемая публикация</dt>
+                <dd>
+                    {% if batch.status == 'PUBLISHED' %}
+                        Выполнена · <code>{{ batch.publication_digest }}</code>
+                    {% elif batch.target_registry == 'OTHER' %}
+                        Не поддерживается для этого назначения
+                    {% else %}
+                        Только после завершения решений и повторного ввода пароля
+                    {% endif %}
+                </dd>
             </dl>
         </div>
     </details>
 </section>
 
-{% if batch.status == 'READY' or batch.status == 'DISCARDED' %}
+{% if batch.status == 'READY' or batch.status == 'DISCARDED' or batch.status == 'PUBLISHED' %}
 <section class="profile-card import-mapping-card">
     <div class="section-heading">
         <div>
@@ -173,6 +195,56 @@
             <span>{{ label }}</span><strong>{{ value }}</strong>
         </article>
     {% endfor %}
+</section>
+
+<section class="profile-card">
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow">КОНТРОЛИРУЕМАЯ ПУБЛИКАЦИЯ</div>
+            <h2>Готовность итоговой записи</h2>
+        </div>
+        {% if batch.status == 'PUBLISHED' %}
+            <span class="import-status status-published">Опубликовано</span>
+        {% elif batch.review_counts.ready %}
+            <span class="import-status status-recognized">Решения завершены</span>
+        {% else %}
+            <span class="import-status status-review">Не готово</span>
+        {% endif %}
+    </div>
+    {% if batch.status == 'PUBLISHED' %}
+        <p>
+            Создано записей: {{ batch.publication_counts.accepted }}.
+            Отклонено и не опубликовано: {{ batch.publication_counts.rejected }}.
+        </p>
+        <a class="button" href="{% url 'imports:publication_result' batch.public_id %}">
+            Открыть неизменяемый итог
+        </a>
+    {% elif batch.target_registry == 'OTHER' %}
+        <p>
+            Назначение «Другой справочник» используется только для анализа в staging-зоне:
+            соответствующий рабочий реестр пока не определён.
+        </p>
+    {% elif batch.review_counts.ready %}
+        <p>
+            Все строки получили решение, есть предварительно принятые записи. Перед
+            записью система заново проверит ссылки и конфликты, покажет точный итог,
+            сверит SHA-256 и запросит текущий пароль.
+        </p>
+        <a class="button" href="{% url 'imports:publication' batch.public_id %}">
+            Проверить итог перед публикацией
+        </a>
+        {% if not can_publish %}
+            <p class="muted">
+                Просмотр доступен, но подтвердить запись может только сотрудник с прямой
+                ролью «Администратор справочников».
+            </p>
+        {% endif %}
+    {% else %}
+        <p>
+            Сначала примите или отклоните каждую строку. Публикация недоступна, пока
+            остаются решения в состоянии ожидания.
+        </p>
+    {% endif %}
 </section>
 
 <section class="profile-card">

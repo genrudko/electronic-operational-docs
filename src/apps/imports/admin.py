@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import ImportBatch, ImportColumn, ImportEvent, ImportRow
+from .models import (
+    ImportBatch,
+    ImportColumn,
+    ImportEvent,
+    ImportPublication,
+    ImportPublicationRow,
+    ImportRow,
+)
 
 
 class ImportColumnInline(admin.TabularInline):
@@ -42,6 +49,10 @@ class ImportBatchAdmin(admin.ModelAdmin):
         "mapping_completed_at",
         "review_recalculated_at",
         "review_counts",
+        "published_at",
+        "published_by",
+        "publication_digest",
+        "publication_counts",
         "created_at",
         "updated_at",
         "discarded_at",
@@ -87,6 +98,76 @@ class ImportEventAdmin(admin.ModelAdmin):
     list_display = ("batch", "event_type", "actor", "created_at")
     list_filter = ("event_type",)
     readonly_fields = ("batch", "event_type", "actor", "details", "created_at")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+
+@admin.register(ImportPublication)
+class ImportPublicationAdmin(admin.ModelAdmin):
+    list_display = (
+        "batch",
+        "target_registry",
+        "actor",
+        "digest",
+        "created_at",
+    )
+    list_filter = ("target_registry",)
+    search_fields = ("batch__original_filename", "digest")
+    readonly_fields = (
+        "public_id",
+        "batch",
+        "actor",
+        "schema_version",
+        "target_registry",
+        "mapping_revision",
+        "canonical_json",
+        "digest",
+        "result_summary",
+        "created_at",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(ImportPublicationRow)
+class ImportPublicationRowAdmin(admin.ModelAdmin):
+    list_display = (
+        "publication",
+        "row",
+        "target_model",
+        "target_object_id",
+        "created_at",
+    )
+    list_filter = ("target_model",)
+    search_fields = (
+        "publication__batch__original_filename",
+        "target_object_id",
+        "digest",
+    )
+    readonly_fields = (
+        "publication",
+        "row",
+        "target_model",
+        "target_object_id",
+        "result",
+        "digest",
+        "created_at",
+    )
 
     def has_add_permission(self, request):
         return False
