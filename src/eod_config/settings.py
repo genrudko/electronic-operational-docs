@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "apps.normatives.apps.NormativesConfig",
     "apps.equipment.apps.EquipmentConfig",
     "apps.dispatching.apps.DispatchingConfig",
+    "apps.imports.apps.ImportsConfig",
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Импорт справочников · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+    <div>
+        <div class="eyebrow">БЕЗОПАСНАЯ ПРОМЕЖУТОЧНАЯ ЗОНА</div>
+        <h1>Импорт справочников</h1>
+        <p>Загруженные файлы разбираются отдельно и не изменяют действующие справочники.</p>
+    </div>
+    <a class="button" href="{% url 'imports:upload' %}">Загрузить файл</a>
+</section>
+
+<section class="notice-card import-safety-notice">
+    <strong>До публикации ещё далеко</strong>
+    <p>
+        На этом этапе система сохраняет исходные значения, создаёт нормализованную копию,
+        отмечает дубли и ошибки. Записать данные в рабочий реестр отсюда невозможно.
+    </p>
+</section>
+
+<section class="summary-grid import-summary">
+    <article class="metric"><span>Попыток</span><strong>{{ summary.total }}</strong></article>
+    <article class="metric"><span>Готовы к просмотру</span><strong>{{ summary.ready }}</strong></article>
+    <article class="metric"><span>Требуют внимания</span><strong>{{ summary.attention }}</strong></article>
+    <article class="metric"><span>Удалены из рабочего списка</span><strong>{{ summary.discarded }}</strong></article>
+</section>
+
+<section class="profile-card">
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow">ЖУРНАЛ ПОПЫТОК</div>
+            <h2>Загрузки организации</h2>
+        </div>
+        <span class="count-badge">{{ batches|length }}</span>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Файл</th>
+                    <th>Назначение</th>
+                    <th>Формат</th>
+                    <th>Строки</th>
+                    <th>Состояние</th>
+                    <th>Загрузил</th>
+                    <th>Время</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for batch in batches %}
+                <tr class="{% if batch.status == 'DISCARDED' %}muted-row{% endif %}">
+                    <td>
+                        <a href="{% url 'imports:detail' batch.public_id %}">
+                            {{ batch.original_filename }}
+                        </a>
+                    </td>
+                    <td>{{ batch.get_target_registry_display }}</td>
+                    <td>{{ batch.get_source_format_display }}</td>
+                    <td>{{ batch.data_rows }}</td>
+                    <td>
+                        <span class="import-status status-{{ batch.status|lower }}">
+                            {{ batch.get_status_display }}
+                        </span>
+                        {% if batch.warning_count %}
+                            <small>{{ batch.warning_count }} замеч.</small>
+                        {% endif %}
+                    </td>
+                    <td>{{ batch.created_by.full_name }}</td>
+                    <td>{{ batch.created_at|date:"d.m.Y H:i" }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="7" class="muted">
+                        Загрузок пока нет. Начните с небольшого тестового CSV или XLSX.
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

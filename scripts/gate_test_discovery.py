@@ -23,8 +23,9 @@ TEST_LABELS = [
     "apps.normatives.tests",
     "apps.equipment.tests",
     "apps.dispatching.tests",
+    "apps.imports.tests",
 ]
-MIN_TEST_COUNT = 211
+MIN_TEST_COUNT = 223
 
 runner = DiscoverRunner(verbosity=2, interactive=False)
 suite = runner.build_suite(test_labels=TEST_LABELS)
@@ -38,4 +39,4 @@ failures = runner.run_tests(TEST_LABELS)
 if failures:
     raise SystemExit(f"Test suite failed: {failures} failure(s).")
 
-print("PATCH_007_6_TEST_DISCOVERY_GATE_PASSED")
+print("PATCH_008_1_TEST_DISCOVERY_GATE_PASSED")

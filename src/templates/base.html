@@ -50,7 +50,7 @@
                 <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-management"></use></svg>
                 <span>Управление и ведение</span>
             </a>
-            <details class="nav-menu{% if request.resolver_match.namespace == 'organizations' or request.resolver_match.namespace == 'normatives' %} active{% endif %}">
+            <details class="nav-menu{% if request.resolver_match.namespace == 'organizations' or request.resolver_match.namespace == 'normatives' or request.resolver_match.namespace == 'imports' %} active{% endif %}">
                 <summary>
                     <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-directory"></use></svg>
                     <span>Справочники</span>
@@ -63,6 +63,10 @@
                     <a href="{% url 'normatives:registry' %}">
                         <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-normative"></use></svg>
                         Нормативные документы
+                    </a>
+                    <a href="{% url 'imports:list' %}">
+                        <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-directory"></use></svg>
+                        Импорт данных
                     </a>
                 </div>
             </details>

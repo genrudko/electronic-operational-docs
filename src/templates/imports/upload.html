@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Новая загрузка · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+    <div>
+        <div class="eyebrow">ИМПОРТ СПРАВОЧНИКОВ</div>
+        <h1>Новая загрузка</h1>
+        <p>CSV или XLSX будет разобран в изолированной промежуточной зоне.</p>
+    </div>
+    <a href="{% url 'imports:list' %}">К журналу загрузок</a>
+</section>
+
+<section class="content-grid import-upload-grid">
+    <article class="profile-card">
+        <h2>Выберите назначение и файл</h2>
+        <form method="post" enctype="multipart/form-data" class="stack-form">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="field-error">{{ form.non_field_errors }}</div>
+            {% endif %}
+            <label>
+                <span>{{ form.target_registry.label }}</span>
+                {{ form.target_registry }}
+                {{ form.target_registry.errors }}
+            </label>
+            <label class="file-drop-field">
+                <span>{{ form.source_file.label }}</span>
+                {{ form.source_file }}
+                <small>{{ form.source_file.help_text }}</small>
+                {{ form.source_file.errors }}
+            </label>
+            <button class="button" type="submit">Загрузить и сформировать просмотр</button>
+        </form>
+    </article>
+
+    <aside class="profile-card">
+        <div class="eyebrow">ОГРАНИЧЕНИЯ ЭТАПА 008.1</div>
+        <h2>Что произойдёт</h2>
+        <ul class="plain-list">
+            <li>Исходные значения ячеек сохранятся без исправления.</li>
+            <li>Нормализованные значения будут записаны отдельно.</li>
+            <li>Формулы XLSX сохранятся как текст и не выполнятся.</li>
+            <li>Полные дубли строк будут отмечены конфликтами.</li>
+            <li>Рабочие справочники останутся без изменений.</li>
+        </ul>
+        <p class="muted">
+            Ограничения: до 10 МБ, до 5000 строк данных и до 100 колонок.
+            Содержимое исходного файла после разбора не хранится; сохраняются его
+            SHA-256, метаданные и значения ячеек.
+        </p>
+    </aside>
+</section>
+{% endblock %}

@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}{{ batch.original_filename }} · Импорт · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+    <div>
+        <div class="eyebrow">ПРЕДВАРИТЕЛЬНЫЙ ПРОСМОТР</div>
+        <h1>{{ batch.original_filename }}</h1>
+        <p>{{ batch.get_target_registry_display }} · {{ batch.get_status_display }}</p>
+    </div>
+    <div class="document-actions">
+        <a href="{% url 'imports:list' %}">К журналу</a>
+        {% if batch.status != 'DISCARDED' %}
+        <form method="post" action="{% url 'imports:discard' batch.public_id %}">
+            {% csrf_token %}
+            <button class="button secondary" type="submit">Удалить загрузку</button>
+        </form>
+        {% endif %}
+    </div>
+</section>
+
+{% if batch.status == 'FAILED' %}
+<section class="notice-card error-notice">
+    <strong>Файл не разобран</strong>
+    <p>{{ batch.error_message }}</p>
+</section>
+{% elif batch.status == 'DISCARDED' %}
+<section class="notice-card">
+    <strong>Загрузка удалена из рабочего списка</strong>
+    <p>Исходные строки и события сохранены только для аудиторской истории прототипа.</p>
+</section>
+{% else %}
+<section class="notice-card import-safety-notice">
+    <strong>Это только предварительный просмотр</strong>
+    <p>Ни одна строка не опубликована и не записана в действующие справочники.</p>
+</section>
+{% endif %}
+
+<section class="profile-card import-metadata-card">
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow">ИСХОДНЫЙ ФАЙЛ</div>
+            <h2>Реквизиты загрузки</h2>
+        </div>
+        <span class="import-status status-{{ batch.status|lower }}">
+            {{ batch.get_status_display }}
+        </span>
+    </div>
+    <dl class="detail-list import-metadata">
+        <dt>Назначение</dt><dd>{{ batch.get_target_registry_display }}</dd>
+        <dt>Формат</dt><dd>{{ batch.get_source_format_display }}</dd>
+        <dt>Размер</dt><dd>{{ batch.file_size }} байт</dd>
+        {% if batch.sheet_name %}<dt>Лист</dt><dd>{{ batch.sheet_name }}</dd>{% endif %}
+        {% if batch.source_encoding %}<dt>Кодировка</dt><dd>{{ batch.source_encoding }}</dd>{% endif %}
+        {% if batch.source_delimiter %}<dt>Разделитель</dt><dd><code>{{ batch.source_delimiter }}</code></dd>{% endif %}
+        <dt>Загрузил</dt><dd>{{ batch.created_by.full_name }}</dd>
+        <dt>Время</dt><dd>{{ batch.created_at|date:"d.m.Y H:i:s" }}</dd>
+    </dl>
+    <details class="technical-only">
+        <summary>Технические реквизиты файла</summary>
+        <div class="technical-panel">
+            <dl class="detail-list">
+                <dt>SHA-256</dt><dd><code class="breakable">{{ batch.file_sha256 }}</code></dd>
+                <dt>Публичный идентификатор</dt><dd><code>{{ batch.public_id }}</code></dd>
+                <dt>Повторных загрузок того же файла</dt><dd>{{ duplicate_attempts }}</dd>
+                <dt>Исходный файл хранится</dt><dd>Нет</dd>
+            </dl>
+        </div>
+    </details>
+</section>
+
+{% if batch.status == 'READY' or batch.status == 'DISCARDED' %}
+<section class="summary-grid import-row-summary">
+    {% for label, value, kind in metrics %}
+        <article class="metric import-metric metric-{{ kind }}">
+            <span>{{ label }}</span><strong>{{ value }}</strong>
+        </article>
+    {% endfor %}
+</section>
+
+<section class="profile-card">
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow">СТРУКТУРА ФАЙЛА</div>
+            <h2>Колонки</h2>
+        </div>
+        <span class="count-badge">{{ batch.column_count }}</span>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Исходный заголовок</th>
+                    <th>Нормализованный заголовок</th>
+                    <th>Распознано как</th>
+                    <th>Проверка</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for column in columns %}
+                <tr>
+                    <td>{{ column.position }}</td>
+                    <td>{{ column.source_name|default:"—" }}</td>
+                    <td>{{ column.normalized_name }}</td>
+                    <td>{{ column.recognized_key|default:"—" }}</td>
+                    <td>
+                        {% if column.needs_review %}
+                            <span class="import-status status-review">Требуется</span>
+                        {% else %}
+                            <span class="import-status status-recognized">Не требуется</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if hidden_column_count %}
+        <p class="muted">В предварительной таблице скрыто ещё {{ hidden_column_count }} колонок.</p>
+    {% endif %}
+</section>
+
+<section class="profile-card">
+    <div class="section-heading import-preview-heading">
+        <div>
+            <div class="eyebrow">ИСХОДНЫЕ ЗНАЧЕНИЯ</div>
+            <h2>Строки файла</h2>
+        </div>
+        <form method="get" class="inline-filter">
+            <label>
+                <span>Состояние</span>
+                <select name="status">
+                    <option value="">Все строки</option>
+                    {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <button class="button secondary" type="submit">Показать</button>
+        </form>
+    </div>
+
+    <div class="table-wrap import-preview-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>Строка</th>
+                    <th>Состояние</th>
+                    {% for column in columns %}
+                        <th>{{ column.source_name|default:column.normalized_name }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in page.object_list %}
+                <tr>
+                    <td>{{ row.row_number }}</td>
+                    <td>
+                        <span class="import-status status-{{ row.status|lower }}">
+                            {{ row.get_status_display }}
+                        </span>
+                        {% for issue in row.issues %}<small class="row-issue">{{ issue }}</small>{% endfor %}
+                    </td>
+                    {% for value in row.preview_values %}
+                        <td>{{ value|default:"—" }}</td>
+                    {% endfor %}
+                </tr>
+                <tr class="normalized-row">
+                    <td colspan="{{ columns|length|add:2 }}">
+                        <details>
+                            <summary>Нормализованные значения строки {{ row.row_number }}</summary>
+                            <dl class="normalized-values">
+                            {% for column, source, normalized in row.preview_pairs %}
+                                <dt>{{ column.normalized_name }}</dt>
+                                <dd>
+                                    <span class="muted">Исходное:</span> {{ source|default:"—" }}
+                                    <span class="muted">Нормализовано:</span> {{ normalized|default:"—" }}
+                                </dd>
+                            {% endfor %}
+                            </dl>
+                        </details>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="{{ columns|length|add:2 }}" class="muted">Строк с таким состоянием нет.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page.paginator.num_pages > 1 %}
+    <nav class="pagination" aria-label="Страницы предварительного просмотра">
+        {% if page.has_previous %}
+            <a href="?status={{ status_filter }}&page={{ page.previous_page_number }}">Назад</a>
+        {% endif %}
+        <span>Страница {{ page.number }} из {{ page.paginator.num_pages }}</span>
+        {% if page.has_next %}
+            <a href="?status={{ status_filter }}&page={{ page.next_page_number }}">Далее</a>
+        {% endif %}
+    </nav>
+    {% endif %}
+</section>
+
+<section class="profile-card">
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow">АУДИТ</div>
+            <h2>События загрузки</h2>
+        </div>
+        <span class="count-badge">{{ batch.events.count }}</span>
+    </div>
+    <div class="event-list">
+    {% for event in batch.events.all %}
+        <article>
+            <time>{{ event.created_at|date:"d.m.Y H:i:s" }}</time>
+            <strong>{{ event.get_event_type_display }}</strong>
+            <span>{{ event.actor.full_name }}</span>
+        </article>
+    {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}
