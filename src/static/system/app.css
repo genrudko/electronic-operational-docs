@@ -1641,3 +1641,60 @@ html[data-theme="light"] .message { background: var(--surface); color: var(--sur
     display: grid;
     gap: 2px;
 }
+/* Patch 007.5: presentation cleanup and stable technical-detail contract. */
+html[data-technical="false"] .technical-only {
+    display: none !important;
+}
+
+.presentation-topbar .nav-menu.active > summary {
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    color: var(--topbar-text) !important;
+}
+
+.user-menu-label {
+    max-width: 230px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.user-menu-identity {
+    display: grid;
+    gap: 3px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.user-menu-identity strong {
+    color: var(--surface-text);
+    font-size: 13px;
+}
+
+.user-menu-identity span {
+    color: var(--surface-secondary-text);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.technical-traceability {
+    margin-top: 18px;
+}
+
+.technical-traceability > summary {
+    list-style: none;
+}
+
+.technical-traceability > summary::-webkit-details-marker {
+    display: none;
+}
+
+.technical-traceability > summary::before {
+    content: "▸";
+    display: inline-block;
+    margin-right: 8px;
+    transition: transform 120ms ease;
+}
+
+.technical-traceability[open] > summary::before {
+    transform: rotate(90deg);
+}

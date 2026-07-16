@@ -25,9 +25,9 @@
 </section>
 
 <section class="summary-grid presentation-summary dispatching-summary">
-    <article class="metric"><span>Назначения управления</span><strong>{{ management_count }}</strong></article>
-    <article class="metric"><span>Назначения ведения</span><strong>{{ supervision_count }}</strong></article>
-    <article class="metric"><span>Информационный характер ведения</span><strong>{{ information_count }}</strong></article>
+    <article class="metric"><span>Оборудование с назначенным управлением</span><strong>{{ management_count }}</strong></article>
+    <article class="metric"><span>Оборудование с назначенным ведением</span><strong>{{ supervision_count }}</strong></article>
+    <article class="metric"><span>В том числе информационное ведение</span><strong>{{ information_count }}</strong></article>
 </section>
 
 <details class="filter-disclosure" {% if query or level_type %}open{% endif %}>

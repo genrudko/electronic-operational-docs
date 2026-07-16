@@ -50,7 +50,7 @@
                 <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-management"></use></svg>
                 <span>Управление и ведение</span>
             </a>
-            <details class="nav-menu">
+            <details class="nav-menu{% if request.resolver_match.namespace == 'organizations' or request.resolver_match.namespace == 'normatives' %} active{% endif %}">
                 <summary>
                     <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-directory"></use></svg>
                     <span>Справочники</span>
@@ -68,10 +68,14 @@
             </details>
             <details class="nav-menu user-menu">
                 <summary aria-label="Меню пользователя">
-                    <span class="user-avatar">{{ request.user.get_username|slice:":1"|upper }}</span>
-                    <span class="user-menu-label">{{ request.user.get_username }}</span>
+                    <span class="user-avatar">{{ user_initial }}</span>
+                    <span class="user-menu-label">{{ user_display_name }}</span>
                 </summary>
                 <div class="nav-menu-panel nav-menu-panel-right">
+                    <div class="user-menu-identity">
+                        <strong>{{ user_display_name }}</strong>
+                        {% if user_display_role %}<span>{{ user_display_role }}</span>{% endif %}
+                    </div>
                     <a href="{% url 'organizations:account' %}">
                         <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-settings"></use></svg>
                         Учётная запись и интерфейс

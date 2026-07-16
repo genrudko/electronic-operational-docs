@@ -15,7 +15,7 @@
 <section class="profile-card">
     <h2>Сведения о редакции</h2>
     <dl>
-        <dt>
+        <dt class="technical-only">
             <span class="help-label">Статус
                 <details class="help-tip"><summary>?</summary><div>Опубликованная редакция зафиксирована и больше не изменяется.</div></details>
             </span>
@@ -28,7 +28,7 @@
                 <details class="help-tip"><summary>?</summary><div>Контрольная сумма опубликованных реквизитов и требований. Изменение данных приведёт к другому значению.</div></details>
             </span>
         </dt>
-        <dd class="hash-value">{{ revision.digest|default:"Контрольная сумма появится после публикации." }}</dd>
+        <dd class="hash-value technical-only">{{ revision.digest|default:"Контрольная сумма появится после публикации." }}</dd>
         <dt>Источник</dt><dd>{{ revision.source_reference|default:"Не указан" }}</dd>
         <dt>Опубликовал</dt><dd>{{ revision.approved_by.full_name|default:"Не опубликована" }}</dd>
         <dt>Серверное время</dt><dd>{{ revision.published_at|date:"d.m.Y H:i:s T"|default:"Не опубликована" }}</dd>
@@ -40,7 +40,7 @@
     <article class="profile-card requirement-card">
         <div class="requirement-heading">
             <div>
-                <span class="code-chip">{{ requirement.code }}</span>
+                <span class="code-chip technical-only">{{ requirement.code }}</span>
                 <h2>{{ requirement.title }}</h2>
             </div>
             <strong>{{ requirement.clause }}</strong>
@@ -51,7 +51,10 @@
             <dt>Обязательность</dt><dd>{% if requirement.is_mandatory %}Обязательное{% else %}Рекомендательное{% endif %}</dd>
         </dl>
 
-        <h3>Связь с реализацией и испытаниями</h3>
+        <details class="technical-disclosure technical-traceability technical-only">
+            <summary>Техническая трассируемость</summary>
+            <div class="technical-disclosure-body">
+
         <div class="trace-list">
         {% for trace in requirement.traces.all %}
             <div class="trace-card">
@@ -67,6 +70,8 @@
             <p class="muted">Трассировка для требования пока не создана.</p>
         {% endfor %}
         </div>
+            </div>
+        </details>
     </article>
 {% empty %}
     <section class="empty-state">В этой редакции пока нет требований.</section>

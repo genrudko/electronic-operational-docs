@@ -11,7 +11,10 @@
             {% if document.registration_number %}
                 Регистрационный номер <code>{{ document.registration_number }}</code>
             {% else %}
-                Черновик <code>{{ document.public_id }}</code>
+                Черновик без регистрационного номера
+                <span class="technical-only">
+                    · внутренний идентификатор <code>{{ document.public_id }}</code>
+                </span>
             {% endif %}
         </p>
     </div>

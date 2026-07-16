@@ -15,11 +15,11 @@
 <section class="profile-card">
     <h2>Реквизиты энергообъекта</h2>
     <dl>
-        <dt>Системный код</dt><dd><code>{{ site.code }}</code></dd>
+        <dt class="technical-only">Системный код</dt><dd class="technical-only"><code>{{ site.code }}</code></dd>
         <dt>Вид объекта</dt><dd>{{ site.get_site_type_display }}</dd>
         <dt>Организация</dt><dd>{{ site.organization }}</dd>
-        <dt>Контур</dt>
-        <dd>{% if site.is_external %}Смежный или внешний объект{% else %}Объект организации{% endif %}</dd>
+        <dt>Принадлежность</dt>
+        <dd>{% if site.is_external %}Смежный или внешний энергообъект{% else %}Энергообъект организации{% endif %}</dd>
         <dt>Состояние</dt><dd>{% if site.is_active %}Действующий{% else %}Недействующий{% endif %}</dd>
     </dl>
 </section>
@@ -39,7 +39,7 @@
         >
             <span class="tree-branch" aria-hidden="true">└</span>
             <strong>{{ row.display_name }}</strong>
-            <code>{{ row.equipment.code }}</code>
+            <code class="technical-only">{{ row.equipment.code }}</code>
             <span>{{ row.equipment.equipment_type.name }}</span>
         </a>
     {% empty %}

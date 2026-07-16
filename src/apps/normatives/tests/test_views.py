@@ -41,7 +41,7 @@ class NormativeRegistryViewTests(NormativeDemoMixin, TestCase):
             )
         )
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Связь с реализацией и испытаниями")
+        self.assertContains(response, "Техническая трассируемость")
         self.assertContains(response, "Автоматический тест")
         self.assertContains(response, 'class="help-tip"', html=False)
 

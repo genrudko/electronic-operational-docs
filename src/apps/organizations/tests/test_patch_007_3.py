@@ -32,7 +32,7 @@ class Patch0073PresentationTests(TestCase):
     def test_information_only_is_characteristic_of_supervision(self):
         response = self.client.get(reverse("dispatching:registry"))
         self.assertContains(response, "Информационное ведение")
-        self.assertContains(response, "Информационный характер ведения")
+        self.assertContains(response, "В том числе информационное ведение")
 
     def test_detail_history_names_assignment_kind(self):
         equipment = EquipmentAsset.objects.filter(management_object__isnull=False).first()

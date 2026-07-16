@@ -10,6 +10,7 @@ from django.utils import timezone
 from apps.organizations.models import (
     Division,
     Employee,
+    InterfacePreference,
     OperationalArea,
     Organization,
     Position,
@@ -59,7 +60,7 @@ class Command(BaseCommand):
             divisions[code] = item
             return item
 
-        division("CHIEF_ENGINEER_BLOCK", "Блок главного инженера")
+        division("CHIEF_ENGINEER_BLOCK", "Блок ЗГД — главного инженера")
         division(
             "CENTER",
             "ЦОТУиЭ ВЭС Невинномысск",
@@ -222,6 +223,18 @@ class Command(BaseCommand):
             last_name="Орлова",
             reset_password=options["reset_passwords"],
         )
+
+        for demo_user in (operator_user, supervisor_user):
+            InterfacePreference.objects.get_or_create(
+                user=demo_user,
+                defaults={
+                    "theme": InterfacePreference.Theme.LIGHT,
+                    "density": InterfacePreference.Density.COMFORTABLE,
+                    "font_scale": InterfacePreference.FontScale.NORMAL,
+                    "content_width": InterfacePreference.ContentWidth.STANDARD,
+                    "show_technical_details": False,
+                },
+            )
 
         employee_rows = (
             (
