@@ -15,7 +15,7 @@
 <section class="profile-card">
     <h2>Сведения о редакции</h2>
     <dl>
-        <dt class="technical-only">
+        <dt>
             <span class="help-label">Статус
                 <details class="help-tip"><summary>?</summary><div>Опубликованная редакция зафиксирована и больше не изменяется.</div></details>
             </span>
@@ -23,17 +23,30 @@
         <dd>{{ revision.get_status_display }}</dd>
         <dt>Действует с</dt><dd>{{ revision.effective_from|date:"d.m.Y" }}</dd>
         <dt>Действует по</dt><dd>{{ revision.effective_until|date:"d.m.Y"|default:"Без указанной даты окончания" }}</dd>
-        <dt>
-            <span class="help-label">SHA-256 редакции
-                <details class="help-tip"><summary>?</summary><div>Контрольная сумма опубликованных реквизитов и требований. Изменение данных приведёт к другому значению.</div></details>
-            </span>
-        </dt>
-        <dd class="hash-value technical-only">{{ revision.digest|default:"Контрольная сумма появится после публикации." }}</dd>
         <dt>Источник</dt><dd>{{ revision.source_reference|default:"Не указан" }}</dd>
         <dt>Опубликовал</dt><dd>{{ revision.approved_by.full_name|default:"Не опубликована" }}</dd>
         <dt>Серверное время</dt><dd>{{ revision.published_at|date:"d.m.Y H:i:s T"|default:"Не опубликована" }}</dd>
     </dl>
 </section>
+
+<details
+    class="profile-card technical-disclosure revision-technical-details technical-only"
+    data-default-collapsed="true"
+>
+    <summary>Технические реквизиты редакции</summary>
+    <div class="technical-disclosure-body">
+        <dl>
+            <dt>
+                <span class="help-label">SHA-256 редакции
+                    <details class="help-tip"><summary>?</summary><div>Контрольная сумма опубликованных реквизитов и требований. Изменение данных приведёт к другому значению.</div></details>
+                </span>
+            </dt>
+            <dd class="hash-value">
+                {{ revision.digest|default:"Контрольная сумма появится после публикации." }}
+            </dd>
+        </dl>
+    </div>
+</details>
 
 <section class="requirements-stack">
 {% for requirement in requirements %}
@@ -51,7 +64,10 @@
             <dt>Обязательность</dt><dd>{% if requirement.is_mandatory %}Обязательное{% else %}Рекомендательное{% endif %}</dd>
         </dl>
 
-        <details class="technical-disclosure technical-traceability technical-only">
+        <details
+            class="technical-disclosure technical-traceability technical-only"
+            data-default-collapsed="true"
+        >
             <summary>Техническая трассируемость</summary>
             <div class="technical-disclosure-body">
 

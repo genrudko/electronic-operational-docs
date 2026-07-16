@@ -1698,3 +1698,134 @@ html[data-technical="false"] .technical-only {
 .technical-traceability[open] > summary::before {
     transform: rotate(90deg);
 }
+
+/* Patch 007.6: visual acceptance fixes. */
+.site-card,
+.equipment-tree-row {
+    border-color: var(--border);
+    background: var(--panel);
+    color: var(--text);
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+    transition:
+        border-color 140ms ease,
+        background-color 140ms ease,
+        box-shadow 140ms ease,
+        transform 140ms ease;
+}
+
+.site-card:hover,
+.site-card:focus-visible,
+.equipment-tree-row:hover,
+.equipment-tree-row:focus-within {
+    border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+    background: color-mix(in srgb, var(--accent) 6%, var(--panel));
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+    transform: translateY(-1px);
+}
+
+.site-card:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent) 72%, transparent);
+    outline-offset: 2px;
+}
+
+.document-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    min-width: max-content;
+    align-self: flex-start;
+}
+
+.document-actions > * {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+.document-number-placeholder {
+    display: inline-block;
+    max-width: 150px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.25;
+}
+
+.role-assignment {
+    position: relative;
+    overflow: hidden;
+}
+
+.role-assignment.direct {
+    border-left: 3px solid var(--accent);
+}
+
+.role-assignment.substituted {
+    border-left: 3px solid var(--warning);
+}
+
+.role-assignment-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.role-assignment-basis {
+    flex: 0 0 auto;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.role-assignment.substituted .role-assignment-basis {
+    background: color-mix(in srgb, var(--warning) 14%, transparent);
+    color: var(--warning);
+}
+
+.role-assignment-scope-label {
+    margin-top: 5px;
+    color: var(--muted);
+    font-size: 10px !important;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.role-assignment-scope {
+    color: var(--text) !important;
+    line-height: 1.4;
+}
+
+.revision-technical-details {
+    margin-bottom: 18px;
+}
+
+.revision-technical-details > summary,
+.technical-traceability > summary {
+    cursor: pointer;
+    font-weight: 700;
+}
+
+details[data-default-collapsed="true"]:not([open])
+    > .technical-disclosure-body {
+    display: none;
+}
+
+@media (max-width: 760px) {
+    .document-actions {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        min-width: 0;
+    }
+
+    .role-assignment-heading {
+        display: grid;
+    }
+
+    .role-assignment-basis {
+        width: fit-content;
+    }
+}

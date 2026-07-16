@@ -36,7 +36,13 @@
                 <tr>
                     <td>
                         <a href="{% url 'documents:detail' document.public_id %}">
-                            <code>{{ document.registration_number|default:"черновик" }}</code>
+                            {% if document.registration_number %}
+                                <code>{{ document.registration_number }}</code>
+                            {% else %}
+                                <span class="document-number-placeholder">
+                                    Без регистрационного номера
+                                </span>
+                            {% endif %}
                         </a>
                     </td>
                     <td>{{ document.document_type.name }}</td>

@@ -35,10 +35,17 @@
         </div>
         <ul class="role-list">
             {% for item in effective_roles %}
-                <li>
-                    <strong>{{ item.assignment.role.name }}</strong>
-                    <span>{{ item.assignment.scope|default:"Вся организация" }}</span>
-                    {% if item.is_substituted %}<em>По замещению</em>{% else %}<em>Прямое назначение</em>{% endif %}
+                <li class="role-assignment {% if item.is_substituted %}substituted{% else %}direct{% endif %}">
+                    <div class="role-assignment-heading">
+                        <strong>{{ item.assignment.role.name }}</strong>
+                        <em class="role-assignment-basis">
+                            {% if item.is_substituted %}По замещению{% else %}Прямое назначение{% endif %}
+                        </em>
+                    </div>
+                    <span class="role-assignment-scope-label">Область действия</span>
+                    <span class="role-assignment-scope">
+                        {{ item.assignment.scope|default:"Вся организация" }}
+                    </span>
                 </li>
             {% empty %}<li class="muted">Действующих ролей нет.</li>{% endfor %}
         </ul>

@@ -541,3 +541,27 @@
         }
     });
 })();
+
+/* Patch 007.6: technical disclosures always start collapsed. */
+(() => {
+    "use strict";
+
+    function closeDefaultCollapsedDisclosures() {
+        const disclosures = document.querySelectorAll(
+            'details[data-default-collapsed="true"]',
+        );
+        for (const disclosure of disclosures) {
+            disclosure.open = false;
+        }
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener(
+            "DOMContentLoaded",
+            closeDefaultCollapsedDisclosures,
+            {once: true},
+        );
+    } else {
+        closeDefaultCollapsedDisclosures();
+    }
+})();
