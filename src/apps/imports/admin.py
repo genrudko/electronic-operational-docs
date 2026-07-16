@@ -11,6 +11,8 @@ class ImportColumnInline(admin.TabularInline):
         "source_name",
         "normalized_name",
         "recognized_key",
+        "mapped_key",
+        "mapping_origin",
         "needs_review",
         "issues",
     )
@@ -25,6 +27,7 @@ class ImportBatchAdmin(admin.ModelAdmin):
         "target_registry",
         "status",
         "data_rows",
+        "mapping_revision",
         "warning_count",
         "created_at",
     )
@@ -35,6 +38,10 @@ class ImportBatchAdmin(admin.ModelAdmin):
         "file_sha256",
         "file_size",
         "status_counts",
+        "mapping_revision",
+        "mapping_completed_at",
+        "review_recalculated_at",
+        "review_counts",
         "created_at",
         "updated_at",
         "discarded_at",
@@ -44,8 +51,15 @@ class ImportBatchAdmin(admin.ModelAdmin):
 
 @admin.register(ImportRow)
 class ImportRowAdmin(admin.ModelAdmin):
-    list_display = ("batch", "row_number", "status", "fingerprint")
-    list_filter = ("status",)
+    list_display = (
+        "batch",
+        "row_number",
+        "status",
+        "review_status",
+        "decision",
+        "decided_by",
+    )
+    list_filter = ("status", "review_status", "decision")
     search_fields = ("batch__original_filename", "fingerprint")
     readonly_fields = (
         "batch",
@@ -55,6 +69,15 @@ class ImportRowAdmin(admin.ModelAdmin):
         "status",
         "issues",
         "fingerprint",
+        "mapped_values",
+        "review_status",
+        "validation_issues",
+        "registry_conflicts",
+        "decision",
+        "decision_values",
+        "decision_note",
+        "decided_by",
+        "decided_at",
         "created_at",
     )
 
@@ -64,3 +87,12 @@ class ImportEventAdmin(admin.ModelAdmin):
     list_display = ("batch", "event_type", "actor", "created_at")
     list_filter = ("event_type",)
     readonly_fields = ("batch", "event_type", "actor", "details", "created_at")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

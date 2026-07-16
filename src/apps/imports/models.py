@@ -25,7 +25,7 @@ class ImportBatch(models.Model):
         PROCESSING = "PROCESSING", "Обрабатывается"
         READY = "READY", "Предварительный просмотр готов"
         FAILED = "FAILED", "Ошибка разбора"
-        DISCARDED = "DISCARDED", "Удалено пользователем"
+        DISCARDED = "DISCARDED", "Убрано из рабочего списка"
 
     public_id = models.UUIDField(
         "Публичный идентификатор",
@@ -73,9 +73,29 @@ class ImportBatch(models.Model):
     status_counts = models.JSONField("Счётчики строк", default=dict, blank=True)
     warning_count = models.PositiveIntegerField("Замечаний", default=0)
     error_message = models.TextField("Ошибка разбора", blank=True)
+    mapping_revision = models.PositiveIntegerField("Редакция сопоставления", default=0)
+    mapping_completed_at = models.DateTimeField(
+        "Сопоставление подтверждено",
+        null=True,
+        blank=True,
+    )
+    review_recalculated_at = models.DateTimeField(
+        "Проверка строк пересчитана",
+        null=True,
+        blank=True,
+    )
+    review_counts = models.JSONField(
+        "Счётчики ручной проверки",
+        default=dict,
+        blank=True,
+    )
     created_at = models.DateTimeField("Создано", auto_now_add=True)
     updated_at = models.DateTimeField("Изменено", auto_now=True)
-    discarded_at = models.DateTimeField("Удалено пользователем", null=True, blank=True)
+    discarded_at = models.DateTimeField(
+        "Убрано из рабочего списка",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         ordering = ("-created_at", "-id")
@@ -92,7 +112,6 @@ class ImportBatch(models.Model):
         verbose_name = "попытка импорта"
         verbose_name_plural = "попытки импорта"
 
-
     def __str__(self) -> str:
         return f"{self.original_filename} · {self.get_status_display()}"
 
@@ -104,7 +123,8 @@ class ImportBatch(models.Model):
 
     def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
         raise ValidationError(
-            "Физическое удаление попытки импорта запрещено. Используйте отзыв загрузки."
+            "Физическое удаление попытки импорта запрещено. "
+            "Используйте удаление из рабочего списка."
         )
 
     def clean(self) -> None:
@@ -114,9 +134,13 @@ class ImportBatch(models.Model):
             if self.created_by.organization_id != self.organization_id:
                 errors["created_by"] = "Сотрудник относится к другой организации."
         if self.status == self.Status.DISCARDED and self.discarded_at is None:
-            errors["discarded_at"] = "Для удалённой загрузки требуется время удаления."
+            errors["discarded_at"] = "Для убранной загрузки требуется время операции."
         if self.status != self.Status.DISCARDED and self.discarded_at is not None:
-            errors["discarded_at"] = "Время удаления допустимо только для удалённой загрузки."
+            errors["discarded_at"] = (
+                "Время удаления из рабочего списка допустимо только для убранной загрузки."
+            )
+        if not isinstance(self.review_counts, dict):
+            errors["review_counts"] = "Счётчики проверки должны храниться объектом."
         if errors:
             raise ValidationError(errors)
 
@@ -129,6 +153,11 @@ class ImportBatch(models.Model):
 
 
 class ImportColumn(models.Model):
+    class MappingOrigin(models.TextChoices):
+        AUTO = "AUTO", "Предложено автоматически"
+        MANUAL = "MANUAL", "Назначено пользователем"
+        IGNORED = "IGNORED", "Не используется"
+
     batch = models.ForeignKey(
         ImportBatch,
         on_delete=models.CASCADE,
@@ -139,6 +168,13 @@ class ImportColumn(models.Model):
     source_name = models.CharField("Исходный заголовок", max_length=1000, blank=True)
     normalized_name = models.CharField("Нормализованный заголовок", max_length=1000)
     recognized_key = models.CharField("Распознанное поле", max_length=64, blank=True)
+    mapped_key = models.CharField("Назначенное поле", max_length=64, blank=True)
+    mapping_origin = models.CharField(
+        "Источник сопоставления",
+        max_length=12,
+        choices=MappingOrigin.choices,
+        default=MappingOrigin.AUTO,
+    )
     needs_review = models.BooleanField("Требует проверки", default=False)
     issues = models.JSONField("Замечания", default=list, blank=True)
 
@@ -158,8 +194,13 @@ class ImportColumn(models.Model):
 
     def clean(self) -> None:
         super().clean()
+        errors: dict[str, str] = {}
         if not isinstance(self.issues, list):
-            raise ValidationError({"issues": "Замечания должны храниться списком."})
+            errors["issues"] = "Замечания должны храниться списком."
+        if self.mapping_origin == self.MappingOrigin.IGNORED and self.mapped_key:
+            errors["mapped_key"] = "Игнорируемая колонка не может быть назначена полю."
+        if errors:
+            raise ValidationError(errors)
 
 
 class ImportRow(models.Model):
@@ -169,6 +210,18 @@ class ImportRow(models.Model):
         REVIEW = "REVIEW", "Требует проверки"
         CONFLICT = "CONFLICT", "Конфликт"
         REJECTED = "REJECTED", "Отклонена"
+
+    class ReviewStatus(models.TextChoices):
+        NOT_MAPPED = "NOT_MAPPED", "Сопоставление не подтверждено"
+        VALID = "VALID", "Готова к решению"
+        REVIEW = "REVIEW", "Нужна ручная проверка"
+        CONFLICT = "CONFLICT", "Обнаружен конфликт"
+        INVALID = "INVALID", "Есть ошибки"
+
+    class Decision(models.TextChoices):
+        PENDING = "PENDING", "Решение не принято"
+        ACCEPTED = "ACCEPTED", "Принята предварительно"
+        REJECTED = "REJECTED", "Отклонена пользователем"
 
     batch = models.ForeignKey(
         ImportBatch,
@@ -180,12 +233,50 @@ class ImportRow(models.Model):
     source_values = models.JSONField("Исходные значения", default=list)
     normalized_values = models.JSONField("Нормализованные значения", default=list)
     status = models.CharField(
-        "Состояние строки",
+        "Состояние строки источника",
         max_length=16,
         choices=Status.choices,
     )
-    issues = models.JSONField("Замечания", default=list, blank=True)
+    issues = models.JSONField("Замечания разбора", default=list, blank=True)
     fingerprint = models.CharField("Отпечаток нормализованной строки", max_length=64)
+    mapped_values = models.JSONField("Сопоставленные значения", default=dict, blank=True)
+    review_status = models.CharField(
+        "Состояние ручной проверки",
+        max_length=16,
+        choices=ReviewStatus.choices,
+        default=ReviewStatus.NOT_MAPPED,
+    )
+    validation_issues = models.JSONField(
+        "Ошибки проверки",
+        default=list,
+        blank=True,
+    )
+    registry_conflicts = models.JSONField(
+        "Конфликты с реестрами",
+        default=list,
+        blank=True,
+    )
+    decision = models.CharField(
+        "Предварительное решение",
+        max_length=12,
+        choices=Decision.choices,
+        default=Decision.PENDING,
+    )
+    decision_values = models.JSONField(
+        "Исправленные значения решения",
+        default=dict,
+        blank=True,
+    )
+    decision_note = models.TextField("Комментарий к решению", blank=True)
+    decided_by = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="decided_import_rows",
+        verbose_name="Решение принял",
+    )
+    decided_at = models.DateTimeField("Время решения", null=True, blank=True)
     created_at = models.DateTimeField("Создано", auto_now_add=True)
 
     class Meta:
@@ -205,6 +296,10 @@ class ImportRow(models.Model):
                 fields=("batch", "fingerprint"),
                 name="imp_row_fingerprint_idx",
             ),
+            models.Index(
+                fields=("batch", "review_status", "decision"),
+                name="imp_row_review_idx",
+            ),
         ]
         verbose_name = "строка импорта"
         verbose_name_plural = "строки импорта"
@@ -212,17 +307,50 @@ class ImportRow(models.Model):
     def __str__(self) -> str:
         return f"{self.batch.original_filename}: строка {self.row_number}"
 
+    @property
+    def effective_values(self) -> dict[str, str]:
+        if self.decision == self.Decision.ACCEPTED and self.decision_values:
+            return dict(self.decision_values)
+        return dict(self.mapped_values)
+
     def clean(self) -> None:
         super().clean()
         errors: dict[str, str] = {}
-        if not isinstance(self.source_values, list):
-            errors["source_values"] = "Исходные значения должны храниться списком."
-        if not isinstance(self.normalized_values, list):
-            errors["normalized_values"] = "Нормализованные значения должны храниться списком."
-        if not isinstance(self.issues, list):
-            errors["issues"] = "Замечания должны храниться списком."
+        list_fields = (
+            "source_values",
+            "normalized_values",
+            "issues",
+            "validation_issues",
+            "registry_conflicts",
+        )
+        for field in list_fields:
+            if not isinstance(getattr(self, field), list):
+                errors[field] = "Значение должно храниться списком."
+        for field in ("mapped_values", "decision_values"):
+            if not isinstance(getattr(self, field), dict):
+                errors[field] = "Значение должно храниться объектом."
+        has_decision_actor = self.decided_by_id is not None and self.decided_at is not None
+        if self.decision == self.Decision.PENDING:
+            if self.decided_by_id or self.decided_at or self.decision_values or self.decision_note:
+                errors["decision"] = "Ожидающая строка не должна содержать реквизиты решения."
+        elif not has_decision_actor:
+            errors["decided_by"] = "Для решения требуются сотрудник и время."
+        if self.decided_by_id and self.batch_id:
+            if self.decided_by.organization_id != self.batch.organization_id:
+                errors["decided_by"] = "Сотрудник относится к другой организации."
         if errors:
             raise ValidationError(errors)
+
+
+class ImmutableAuditQuerySet(models.QuerySet):
+    def update(self, **kwargs: Any) -> int:
+        raise ValidationError("Массовое изменение аудиторских событий запрещено.")
+
+    def delete(self) -> tuple[int, dict[str, int]]:
+        raise ValidationError("Физическое удаление аудиторских событий запрещено.")
+
+
+ImmutableAuditManager = models.Manager.from_queryset(ImmutableAuditQuerySet)
 
 
 class ImportEvent(models.Model):
@@ -230,7 +358,11 @@ class ImportEvent(models.Model):
         UPLOADED = "UPLOADED", "Файл загружен"
         PARSED = "PARSED", "Предварительный просмотр сформирован"
         FAILED = "FAILED", "Разбор завершился ошибкой"
-        DISCARDED = "DISCARDED", "Загрузка удалена пользователем"
+        DISCARDED = "DISCARDED", "Загрузка убрана из рабочего списка"
+        MAPPING_UPDATED = "MAPPING_UPDATED", "Сопоставление колонок подтверждено"
+        REVIEW_RECALCULATED = "REVIEW_RECALCULATED", "Проверка строк пересчитана"
+        ROW_DECISION = "ROW_DECISION", "Принято решение по строке"
+        BULK_DECISION = "BULK_DECISION", "Выполнено массовое решение"
 
     batch = models.ForeignKey(
         ImportBatch,
@@ -240,7 +372,7 @@ class ImportEvent(models.Model):
     )
     event_type = models.CharField(
         "Событие",
-        max_length=16,
+        max_length=24,
         choices=EventType.choices,
     )
     actor = models.ForeignKey(
@@ -251,6 +383,8 @@ class ImportEvent(models.Model):
     )
     details = models.JSONField("Сведения", default=dict, blank=True)
     created_at = models.DateTimeField("Время", auto_now_add=True)
+
+    objects = ImmutableAuditManager()
 
     class Meta:
         ordering = ("created_at", "id")
@@ -265,6 +399,15 @@ class ImportEvent(models.Model):
 
     def __str__(self) -> str:
         return f"{self.batch.original_filename}: {self.get_event_type_display()}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.pk:
+            raise ValidationError("Аудиторское событие импорта неизменяемо.")
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
+        raise ValidationError("Физическое удаление аудиторского события запрещено.")
 
     def clean(self) -> None:
         super().clean()

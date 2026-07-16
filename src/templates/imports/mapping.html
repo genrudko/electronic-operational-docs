@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Сопоставление колонок · {{ batch.original_filename }} · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+    <div>
+        <div class="eyebrow">ИМПОРТ СПРАВОЧНИКОВ</div>
+        <h1>Сопоставление колонок</h1>
+        <p>{{ batch.original_filename }} · {{ batch.get_target_registry_display }}</p>
+    </div>
+    <a href="{% url 'imports:detail' batch.public_id %}">К предварительному просмотру</a>
+</section>
+
+<section class="notice-card import-safety-notice">
+    <strong>Сопоставление не публикует данные</strong>
+    <p>
+        Вы назначаете смысл исходным колонкам. После сохранения система только пересчитает
+        проверку строк в промежуточной зоне. Рабочие справочники останутся без изменений.
+    </p>
+</section>
+
+<div class="content-grid import-mapping-layout">
+    <section class="profile-card">
+        <div class="section-heading">
+            <div>
+                <div class="eyebrow">КОЛОНКИ ФАЙЛА</div>
+                <h2>Назначьте поля</h2>
+            </div>
+            <span class="count-badge">{{ batch.column_count }}</span>
+        </div>
+
+        <form method="post" class="stack-form import-mapping-form">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="form-errors">{{ form.non_field_errors }}</div>
+            {% endif %}
+            <div class="mapping-table">
+            {% for field in form %}
+                <label class="mapping-row">
+                    <span class="mapping-source">
+                        <strong>{{ field.label }}</strong>
+                        <small>{{ field.help_text }}</small>
+                    </span>
+                    <span class="mapping-arrow" aria-hidden="true">→</span>
+                    <span class="mapping-target">
+                        {{ field }}
+                        {% for error in field.errors %}<small class="field-error">{{ error }}</small>{% endfor %}
+                    </span>
+                </label>
+            {% endfor %}
+            </div>
+            <div class="form-actions">
+                <button class="button" type="submit">Подтвердить сопоставление и пересчитать строки</button>
+                <a class="button secondary" href="{% url 'imports:detail' batch.public_id %}">Отмена</a>
+            </div>
+        </form>
+    </section>
+
+    <aside class="profile-card import-field-catalog">
+        <div class="eyebrow">ПОЛЯ НАЗНАЧЕНИЯ</div>
+        <h2>{{ batch.get_target_registry_display }}</h2>
+        <p class="muted">Звёздочкой отмечены обязательные поля.</p>
+        <dl class="field-catalog-list">
+        {% for spec in field_specs %}
+            <dt>{{ spec.label }}{% if spec.required %} *{% endif %}</dt>
+            <dd>
+                <code>{{ spec.key }}</code>
+                {% if spec.kind == 'date' %} · дата{% endif %}
+                {% if spec.kind == 'boolean' %} · Да/Нет{% endif %}
+                {% if spec.kind == 'choice' %} · фиксированный список{% endif %}
+            </dd>
+        {% endfor %}
+        </dl>
+        <div class="notice-card compact-notice">
+            <strong>Важно</strong>
+            <p>Одно поле нельзя назначить сразу двум исходным колонкам.</p>
+        </div>
+    </aside>
+</div>
+{% endblock %}

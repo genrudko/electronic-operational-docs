@@ -13,10 +13,11 @@
 </section>
 
 <section class="notice-card import-safety-notice">
-    <strong>До публикации ещё далеко</strong>
+    <strong>Публикация по-прежнему недоступна</strong>
     <p>
-        На этом этапе система сохраняет исходные значения, создаёт нормализованную копию,
-        отмечает дубли и ошибки. Записать данные в рабочий реестр отсюда невозможно.
+        Здесь можно сопоставить колонки, проверить дубли, исправить строки и принять
+        предварительные решения. Ни одно действие этого раздела не записывает данные
+        в рабочий реестр.
     </p>
 </section>
 
@@ -24,7 +25,7 @@
     <article class="metric"><span>Попыток</span><strong>{{ summary.total }}</strong></article>
     <article class="metric"><span>Готовы к просмотру</span><strong>{{ summary.ready }}</strong></article>
     <article class="metric"><span>Требуют внимания</span><strong>{{ summary.attention }}</strong></article>
-    <article class="metric"><span>Удалены из рабочего списка</span><strong>{{ summary.discarded }}</strong></article>
+    <article class="metric"><span>Убраны из рабочего списка</span><strong>{{ summary.discarded }}</strong></article>
 </section>
 
 <section class="profile-card">
@@ -33,7 +34,7 @@
             <div class="eyebrow">ЖУРНАЛ ПОПЫТОК</div>
             <h2>Загрузки организации</h2>
         </div>
-        <span class="count-badge">{{ batches|length }}</span>
+        {% if batches %}<span class="count-badge">{{ batches|length }}</span>{% endif %}
     </div>
     <div class="table-wrap">
         <table>
@@ -63,8 +64,10 @@
                         <span class="import-status status-{{ batch.status|lower }}">
                             {{ batch.get_status_display }}
                         </span>
-                        {% if batch.warning_count %}
-                            <small>{{ batch.warning_count }} замеч.</small>
+                        {% if batch.mapping_completed_at %}
+                            <small>Сопоставление № {{ batch.mapping_revision }}</small>
+                        {% elif batch.status == 'READY' %}
+                            <small>Ожидается сопоставление колонок</small>
                         {% endif %}
                     </td>
                     <td>{{ batch.created_by.full_name }}</td>

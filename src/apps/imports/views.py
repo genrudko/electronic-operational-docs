@@ -2,17 +2,27 @@ from __future__ import annotations
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Count
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import ImportUploadForm
+from .forms import (
+    ImportColumnMappingForm,
+    ImportRowCorrectionForm,
+    ImportUploadForm,
+)
 from .models import ImportBatch, ImportRow
 from .services import (
+    bulk_decide_import_rows,
     create_import_batch,
+    decide_import_row,
     discard_import_batch,
+    registry_field_specs,
     require_import_employee,
+    save_column_mapping,
+    save_row_correction,
 )
 
 
@@ -30,6 +40,16 @@ def _organization_batch(request: HttpRequest, public_id):
     return employee, batch
 
 
+def _validation_message(error: ValidationError) -> str:
+    if hasattr(error, "message_dict"):
+        return " ".join(
+            message
+            for values in error.message_dict.values()
+            for message in values
+        )
+    return " ".join(error.messages)
+
+
 @login_required
 def import_list(request: HttpRequest) -> HttpResponse:
     employee = require_import_employee(request.user)
@@ -45,8 +65,9 @@ def import_list(request: HttpRequest) -> HttpResponse:
             batch.status == ImportBatch.Status.READY for batch in batches
         ),
         "attention": sum(
-            batch.status in {ImportBatch.Status.FAILED}
+            batch.status == ImportBatch.Status.FAILED
             or batch.warning_count > 0
+            or bool(batch.review_counts.get("blocked", 0))
             for batch in batches
             if batch.status != ImportBatch.Status.DISCARDED
         ),
@@ -92,14 +113,23 @@ def import_upload(request: HttpRequest) -> HttpResponse:
 def import_detail(request: HttpRequest, public_id) -> HttpResponse:
     _employee, batch = _organization_batch(request, public_id)
     columns = list(batch.columns.all()[:12])
-    status_filter = request.GET.get("status", "").strip().upper()
-    allowed_statuses = {value for value, _label in ImportRow.Status.choices}
+    field_specs = registry_field_specs(batch.target_registry)
+    field_labels = {spec.key: spec.label for spec in field_specs}
 
-    rows = batch.rows.all()
-    if status_filter in allowed_statuses:
-        rows = rows.filter(status=status_filter)
+    review_filter = request.GET.get("review", "").strip().upper()
+    decision_filter = request.GET.get("decision", "").strip().upper()
+    allowed_review = {value for value, _label in ImportRow.ReviewStatus.choices}
+    allowed_decisions = {value for value, _label in ImportRow.Decision.choices}
+
+    rows = batch.rows.select_related("decided_by")
+    if review_filter in allowed_review:
+        rows = rows.filter(review_status=review_filter)
     else:
-        status_filter = ""
+        review_filter = ""
+    if decision_filter in allowed_decisions:
+        rows = rows.filter(decision=decision_filter)
+    else:
+        decision_filter = ""
 
     paginator = Paginator(rows, 25)
     page = paginator.get_page(request.GET.get("page"))
@@ -110,29 +140,42 @@ def import_detail(request: HttpRequest, public_id) -> HttpResponse:
         row.preview_pairs = list(
             zip(columns, source_values, normalized_values, strict=True)
         )
+        row.effective_pairs = [
+            (field_labels.get(key, key), value)
+            for key, value in row.effective_values.items()
+        ]
+        row.can_accept = row.review_status in {
+            ImportRow.ReviewStatus.VALID,
+            ImportRow.ReviewStatus.REVIEW,
+        }
 
-    metrics = [
-        ("Новые", batch.status_counts.get(ImportRow.Status.NEW, 0), "new"),
+    clean_source_rows = (
+        batch.status_counts.get(ImportRow.Status.NEW, 0)
+        + batch.status_counts.get(ImportRow.Status.RECOGNIZED, 0)
+    )
+    source_metrics = [
+        ("Без блокирующих замечаний", clean_source_rows, "recognized"),
         (
-            "Распознаны",
-            batch.status_counts.get(ImportRow.Status.RECOGNIZED, 0),
-            "recognized",
-        ),
-        (
-            "Требуют проверки",
+            "Требуют ручной проверки",
             batch.status_counts.get(ImportRow.Status.REVIEW, 0),
             "review",
         ),
         (
-            "Конфликты",
+            "Конфликты внутри файла",
             batch.status_counts.get(ImportRow.Status.CONFLICT, 0),
             "conflict",
         ),
         (
-            "Отклонены",
+            "Отклонены при разборе",
             batch.status_counts.get(ImportRow.Status.REJECTED, 0),
             "rejected",
         ),
+    ]
+    review_metrics = [
+        ("Ожидают решения", batch.review_counts.get("pending", 0), "pending"),
+        ("Приняты предварительно", batch.review_counts.get("accepted", 0), "accepted"),
+        ("Отклонены пользователем", batch.review_counts.get("rejected", 0), "rejected"),
+        ("Заблокированы", batch.review_counts.get("blocked", 0), "blocked"),
     ]
     duplicate_attempts = (
         ImportBatch.objects.filter(
@@ -142,6 +185,7 @@ def import_detail(request: HttpRequest, public_id) -> HttpResponse:
         .exclude(pk=batch.pk)
         .count()
     )
+    mapped_count = batch.columns.exclude(mapped_key="").count()
     return render(
         request,
         "imports/detail.html",
@@ -150,12 +194,145 @@ def import_detail(request: HttpRequest, public_id) -> HttpResponse:
             "columns": columns,
             "hidden_column_count": max(batch.column_count - len(columns), 0),
             "page": page,
-            "metrics": metrics,
-            "status_filter": status_filter,
-            "status_choices": ImportRow.Status.choices,
+            "source_metrics": source_metrics,
+            "review_metrics": review_metrics,
+            "review_filter": review_filter,
+            "decision_filter": decision_filter,
+            "review_choices": ImportRow.ReviewStatus.choices,
+            "decision_choices": ImportRow.Decision.choices,
             "duplicate_attempts": duplicate_attempts,
+            "mapped_count": mapped_count,
+            "required_count": sum(spec.required for spec in field_specs),
+            "field_labels": field_labels,
         },
     )
+
+
+@login_required
+def import_mapping(request: HttpRequest, public_id) -> HttpResponse:
+    employee, batch = _organization_batch(request, public_id)
+    if batch.status != ImportBatch.Status.READY:
+        messages.error(request, "Сопоставление недоступно для этой загрузки.")
+        return redirect("imports:detail", public_id=batch.public_id)
+
+    if request.method == "POST":
+        form = ImportColumnMappingForm(request.POST, batch=batch)
+        if form.is_valid():
+            try:
+                batch = save_column_mapping(
+                    batch=batch,
+                    employee=employee,
+                    mapping=form.mapping,
+                )
+            except ValidationError as error:
+                form.add_error(None, _validation_message(error))
+            else:
+                messages.success(
+                    request,
+                    "Сопоставление подтверждено. Проверка строк пересчитана без публикации.",
+                )
+                return redirect("imports:detail", public_id=batch.public_id)
+    else:
+        form = ImportColumnMappingForm(batch=batch)
+
+    return render(
+        request,
+        "imports/mapping.html",
+        {
+            "batch": batch,
+            "form": form,
+            "field_specs": registry_field_specs(batch.target_registry),
+        },
+    )
+
+
+@login_required
+def import_row_edit(request: HttpRequest, public_id, row_id: int) -> HttpResponse:
+    employee, batch = _organization_batch(request, public_id)
+    row = get_object_or_404(
+        ImportRow.objects.select_related("batch"),
+        pk=row_id,
+        batch=batch,
+    )
+    if batch.mapping_completed_at is None:
+        messages.error(request, "Сначала подтвердите сопоставление колонок.")
+        return redirect("imports:mapping", public_id=batch.public_id)
+
+    if request.method == "POST":
+        form = ImportRowCorrectionForm(request.POST, row=row)
+        if form.is_valid():
+            try:
+                save_row_correction(
+                    row=row,
+                    employee=employee,
+                    values=form.corrected_values,
+                    note=form.cleaned_data["note"],
+                )
+            except ValidationError as error:
+                form.add_error(None, _validation_message(error))
+            else:
+                messages.success(
+                    request,
+                    f"Строка {row.row_number} исправлена и предварительно принята.",
+                )
+                return redirect("imports:detail", public_id=batch.public_id)
+    else:
+        form = ImportRowCorrectionForm(row=row)
+
+    return render(
+        request,
+        "imports/row_edit.html",
+        {"batch": batch, "row": row, "form": form},
+    )
+
+
+@login_required
+def import_row_decide(request: HttpRequest, public_id, row_id: int) -> HttpResponse:
+    if request.method != "POST":
+        return redirect("imports:detail", public_id=public_id)
+    employee, batch = _organization_batch(request, public_id)
+    row = get_object_or_404(ImportRow, pk=row_id, batch=batch)
+    action = request.POST.get("action", "")
+    try:
+        decide_import_row(
+            row=row,
+            employee=employee,
+            action=action,
+            note=request.POST.get("note", ""),
+        )
+    except ValidationError as error:
+        messages.error(request, _validation_message(error))
+    else:
+        messages.success(request, f"Решение по строке {row.row_number} сохранено.")
+    return redirect("imports:detail", public_id=batch.public_id)
+
+
+@login_required
+def import_bulk_decide(request: HttpRequest, public_id) -> HttpResponse:
+    if request.method != "POST":
+        return redirect("imports:detail", public_id=public_id)
+    employee, batch = _organization_batch(request, public_id)
+    raw_ids = request.POST.getlist("rows")
+    try:
+        row_ids = [int(value) for value in raw_ids]
+    except ValueError:
+        messages.error(request, "Передан некорректный список строк.")
+        return redirect("imports:detail", public_id=batch.public_id)
+    try:
+        result = bulk_decide_import_rows(
+            batch=batch,
+            employee=employee,
+            row_ids=row_ids,
+            action=request.POST.get("action", ""),
+        )
+    except ValidationError as error:
+        messages.error(request, _validation_message(error))
+    else:
+        messages.success(
+            request,
+            f"Обработано строк: {result['processed']}. Пропущено: {result['skipped']}.",
+        )
+    return redirect("imports:detail", public_id=batch.public_id)
 
 
 @login_required
@@ -166,6 +343,6 @@ def import_discard(request: HttpRequest, public_id) -> HttpResponse:
     discard_import_batch(batch=batch, employee=employee)
     messages.success(
         request,
-        "Загрузка удалена из рабочего списка. Аудиторская запись сохранена.",
+        "Загрузка убрана из рабочего списка. Аудиторская запись сохранена.",
     )
     return redirect("imports:detail", public_id=batch.public_id)

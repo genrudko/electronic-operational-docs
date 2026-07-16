@@ -9,11 +9,14 @@ import re
 import unicodedata
 import zipfile
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from xml.etree import ElementTree
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
+from django.db.models import Q
+from django.utils import timezone
 
 from apps.organizations.models import Employee
 
@@ -50,6 +53,22 @@ HEADER_ALIASES = {
     "подразделение": "division",
     "должность": "position",
     "табельный номер": "personnel_number",
+    "фамилия": "last_name",
+    "имя": "first_name",
+    "отчество": "middle_name",
+    "дата приема": "employment_start",
+    "дата приёма": "employment_start",
+    "дата ввода": "commissioned_on",
+    "класс напряжения": "voltage_level",
+    "управление или ведение": "relation_kind",
+    "вид отношения": "relation_kind",
+    "субъект": "subject",
+    "уровень": "level",
+    "действует с": "effective_from",
+    "действует по": "effective_until",
+    "информационное ведение": "information_only",
+    "ключ": "key",
+    "примечание": "note",
 }
 
 
@@ -66,6 +85,241 @@ class ParsedTable:
     encoding: str = ""
     delimiter: str = ""
     formula_cells: frozenset[tuple[int, int]] = frozenset()
+
+
+@dataclass(frozen=True)
+class ImportFieldSpec:
+    key: str
+    label: str
+    required: bool = False
+    kind: str = "text"
+    max_length: int = 1000
+    choices: tuple[tuple[str, str], ...] = ()
+    aliases: tuple[str, ...] = ()
+
+
+EQUIPMENT_STATUS_CHOICES = (
+    ("ACTIVE", "В работе"),
+    ("RESERVE", "Резерв"),
+    ("OUT_OF_SERVICE", "Выведено из работы"),
+    ("DECOMMISSIONED", "Выведено из эксплуатации"),
+    ("PROJECT", "Проектное оборудование"),
+)
+RELATION_KIND_CHOICES = (
+    ("MANAGEMENT", "Оперативное управление"),
+    ("SUPERVISION", "Оперативное ведение"),
+)
+
+REGISTRY_FIELD_SPECS: dict[str, tuple[ImportFieldSpec, ...]] = {
+    ImportBatch.TargetRegistry.ORGANIZATION: (
+        ImportFieldSpec(
+            "personnel_number",
+            "Табельный номер",
+            required=True,
+            max_length=64,
+            aliases=("табельный номер", "personnel number", "personnel_number"),
+        ),
+        ImportFieldSpec(
+            "last_name",
+            "Фамилия",
+            required=True,
+            max_length=150,
+            aliases=("фамилия", "last name", "last_name"),
+        ),
+        ImportFieldSpec(
+            "first_name",
+            "Имя",
+            required=True,
+            max_length=150,
+            aliases=("имя", "first name", "first_name"),
+        ),
+        ImportFieldSpec(
+            "middle_name",
+            "Отчество",
+            max_length=150,
+            aliases=("отчество", "middle name", "middle_name"),
+        ),
+        ImportFieldSpec(
+            "division",
+            "Подразделение",
+            required=True,
+            max_length=255,
+            aliases=("подразделение", "division"),
+        ),
+        ImportFieldSpec(
+            "position",
+            "Должность",
+            required=True,
+            max_length=255,
+            aliases=("должность", "position"),
+        ),
+        ImportFieldSpec(
+            "employment_start",
+            "Дата начала работы",
+            kind="date",
+            max_length=10,
+            aliases=("дата приема", "дата приёма", "дата начала работы"),
+        ),
+        ImportFieldSpec(
+            "is_active",
+            "Действующий сотрудник",
+            kind="boolean",
+            max_length=3,
+            aliases=("действующий", "активен", "is active", "is_active"),
+        ),
+    ),
+    ImportBatch.TargetRegistry.EQUIPMENT: (
+        ImportFieldSpec(
+            "code",
+            "Стабильный код",
+            required=True,
+            kind="code",
+            max_length=96,
+            aliases=("код", "системный код", "стабильный код", "code"),
+        ),
+        ImportFieldSpec(
+            "technical_name",
+            "Техническое наименование",
+            required=True,
+            max_length=500,
+            aliases=("наименование", "название", "техническое наименование", "name"),
+        ),
+        ImportFieldSpec(
+            "dispatcher_name",
+            "Диспетчерское наименование",
+            max_length=1000,
+            aliases=("диспетчерское наименование",),
+        ),
+        ImportFieldSpec(
+            "type",
+            "Вид оборудования",
+            required=True,
+            max_length=255,
+            aliases=("тип", "вид", "вид оборудования", "type"),
+        ),
+        ImportFieldSpec(
+            "site",
+            "Энергообъект",
+            required=True,
+            max_length=500,
+            aliases=("энергообъект", "объект", "site"),
+        ),
+        ImportFieldSpec(
+            "status",
+            "Состояние",
+            kind="choice",
+            max_length=24,
+            choices=EQUIPMENT_STATUS_CHOICES,
+            aliases=("статус", "состояние", "status"),
+        ),
+        ImportFieldSpec(
+            "voltage_level",
+            "Класс напряжения",
+            max_length=64,
+            aliases=("класс напряжения", "напряжение"),
+        ),
+        ImportFieldSpec(
+            "commissioned_on",
+            "Дата ввода в эксплуатацию",
+            kind="date",
+            max_length=10,
+            aliases=("дата ввода", "введено в эксплуатацию"),
+        ),
+    ),
+    ImportBatch.TargetRegistry.DISPATCHING: (
+        ImportFieldSpec(
+            "equipment_code",
+            "Код оборудования",
+            required=True,
+            kind="code",
+            max_length=96,
+            aliases=("код оборудования", "оборудование", "equipment code", "code"),
+        ),
+        ImportFieldSpec(
+            "relation_kind",
+            "Управление или ведение",
+            required=True,
+            kind="choice",
+            max_length=16,
+            choices=RELATION_KIND_CHOICES,
+            aliases=("управление или ведение", "вид отношения", "relation kind"),
+        ),
+        ImportFieldSpec(
+            "subject",
+            "Субъект",
+            required=True,
+            max_length=1000,
+            aliases=("субъект", "subject"),
+        ),
+        ImportFieldSpec(
+            "level",
+            "Уровень",
+            required=True,
+            max_length=500,
+            aliases=("уровень", "level"),
+        ),
+        ImportFieldSpec(
+            "effective_from",
+            "Действует с",
+            kind="date",
+            max_length=10,
+            aliases=("действует с", "effective from"),
+        ),
+        ImportFieldSpec(
+            "effective_until",
+            "Действует по",
+            kind="date",
+            max_length=10,
+            aliases=("действует по", "effective until"),
+        ),
+        ImportFieldSpec(
+            "information_only",
+            "Только информационное ведение",
+            kind="boolean",
+            max_length=3,
+            aliases=("информационное ведение", "только информация"),
+        ),
+        ImportFieldSpec(
+            "basis_reference",
+            "Документ-основание",
+            max_length=1000,
+            aliases=("основание", "документ-основание"),
+        ),
+    ),
+    ImportBatch.TargetRegistry.OTHER: (
+        ImportFieldSpec(
+            "key",
+            "Ключ записи",
+            required=True,
+            kind="code",
+            max_length=128,
+            aliases=("ключ", "код", "key", "code"),
+        ),
+        ImportFieldSpec(
+            "name",
+            "Наименование",
+            required=True,
+            max_length=1000,
+            aliases=("наименование", "название", "name"),
+        ),
+        ImportFieldSpec(
+            "status",
+            "Состояние",
+            max_length=255,
+            aliases=("статус", "состояние", "status"),
+        ),
+        ImportFieldSpec(
+            "note",
+            "Примечание",
+            max_length=2000,
+            aliases=("примечание", "комментарий", "note"),
+        ),
+    ),
+}
+
+
+TRUE_VALUES = {"1", "да", "истина", "true", "yes", "y", "on"}
+FALSE_VALUES = {"0", "нет", "ложь", "false", "no", "n", "off"}
 
 
 def require_import_employee(user) -> Employee:
@@ -326,7 +580,71 @@ def parse_tabular_file(data: bytes, filename: str) -> ParsedTable:
     return parsed
 
 
-def _column_payloads(parsed: ParsedTable, width: int) -> list[dict[str, object]]:
+def registry_field_specs(target_registry: str) -> tuple[ImportFieldSpec, ...]:
+    try:
+        return REGISTRY_FIELD_SPECS[target_registry]
+    except KeyError as exc:
+        raise ValidationError("Неизвестное назначение импорта.") from exc
+
+
+def _field_spec_map(target_registry: str) -> dict[str, ImportFieldSpec]:
+    return {spec.key: spec for spec in registry_field_specs(target_registry)}
+
+
+def suggest_column_mapping(target_registry: str, normalized_name: str) -> str:
+    header = normalize_header(normalized_name)
+    specs = registry_field_specs(target_registry)
+    for spec in specs:
+        aliases = {normalize_header(alias) for alias in spec.aliases}
+        aliases.add(normalize_header(spec.label))
+        if header in aliases:
+            return spec.key
+
+    recognized = HEADER_ALIASES.get(header, "")
+    translations = {
+        ImportBatch.TargetRegistry.ORGANIZATION: {
+            "personnel_number": "personnel_number",
+            "division": "division",
+            "position": "position",
+            "last_name": "last_name",
+            "first_name": "first_name",
+            "middle_name": "middle_name",
+            "employment_start": "employment_start",
+        },
+        ImportBatch.TargetRegistry.EQUIPMENT: {
+            "code": "code",
+            "name": "technical_name",
+            "dispatcher_name": "dispatcher_name",
+            "type": "type",
+            "site": "site",
+            "status": "status",
+            "voltage_level": "voltage_level",
+            "commissioned_on": "commissioned_on",
+        },
+        ImportBatch.TargetRegistry.DISPATCHING: {
+            "code": "equipment_code",
+            "relation_kind": "relation_kind",
+            "subject": "subject",
+            "level": "level",
+            "effective_from": "effective_from",
+            "effective_until": "effective_until",
+            "information_only": "information_only",
+        },
+        ImportBatch.TargetRegistry.OTHER: {
+            "code": "key",
+            "name": "name",
+            "status": "status",
+            "note": "note",
+        },
+    }
+    return translations.get(target_registry, {}).get(recognized, "")
+
+
+def _column_payloads(
+    parsed: ParsedTable,
+    width: int,
+    target_registry: str,
+) -> list[dict[str, object]]:
     header = list(parsed.rows[0])
     header.extend("" for _ in range(width - len(header)))
     normalized_headers = [normalize_header(value) for value in header]
@@ -337,6 +655,7 @@ def _column_payloads(parsed: ParsedTable, width: int) -> list[dict[str, object]]
     }
 
     payloads: list[dict[str, object]] = []
+    used_suggestions: set[str] = set()
     for index, source_name in enumerate(header):
         if len(source_name) > 1000:
             raise ImportParseError(
@@ -349,12 +668,20 @@ def _column_payloads(parsed: ParsedTable, width: int) -> list[dict[str, object]]
             normalized_name = f"колонка {index + 1}"
         if normalized_headers[index] in duplicate_names:
             issues.append("Заголовок повторяется.")
+        mapped_key = suggest_column_mapping(target_registry, normalized_name)
+        if mapped_key in used_suggestions:
+            mapped_key = ""
+            issues.append("Автоматическое сопоставление неоднозначно.")
+        if mapped_key:
+            used_suggestions.add(mapped_key)
         payloads.append(
             {
                 "position": index + 1,
                 "source_name": source_name,
                 "normalized_name": normalized_name,
                 "recognized_key": HEADER_ALIASES.get(normalized_headers[index], ""),
+                "mapped_key": mapped_key,
+                "mapping_origin": ImportColumn.MappingOrigin.AUTO,
                 "needs_review": bool(issues),
                 "issues": issues,
             }
@@ -500,7 +827,7 @@ def create_import_batch(
         if width > MAX_COLUMNS:
             raise ImportParseError(f"Файл содержит больше {MAX_COLUMNS} колонок.")
 
-        column_payloads = _column_payloads(parsed, width)
+        column_payloads = _column_payloads(parsed, width, target_registry)
         row_payloads = _row_payloads(parsed, width, column_payloads)
 
         ImportColumn.objects.bulk_create(
@@ -568,3 +895,713 @@ def discard_import_batch(*, batch: ImportBatch, employee: Employee) -> ImportBat
         },
     )
     return batch
+
+
+def _mapping_payload(batch: ImportBatch) -> dict[int, str]:
+    return {column.position: column.mapped_key for column in batch.columns.all()}
+
+
+def _required_field_keys(target_registry: str) -> set[str]:
+    return {spec.key for spec in registry_field_specs(target_registry) if spec.required}
+
+
+def validate_column_mapping(
+    batch: ImportBatch,
+    mapping: dict[int, str],
+) -> dict[int, str]:
+    allowed = _field_spec_map(batch.target_registry)
+    columns = list(batch.columns.all())
+    expected_positions = {column.position for column in columns}
+    if set(mapping) != expected_positions:
+        raise ValidationError("Сопоставление должно содержать решение для каждой колонки.")
+
+    cleaned: dict[int, str] = {}
+    used: dict[str, int] = {}
+    for position, raw_key in mapping.items():
+        key = raw_key.strip()
+        if key and key not in allowed:
+            raise ValidationError(f"Поле {key!r} не относится к выбранному справочнику.")
+        if key and key in used:
+            raise ValidationError(
+                f"Поле «{allowed[key].label}» назначено колонкам {used[key]} и {position}."
+            )
+        if key:
+            used[key] = position
+        cleaned[position] = key
+
+    missing = _required_field_keys(batch.target_registry) - set(used)
+    if missing:
+        labels = ", ".join(allowed[key].label for key in sorted(missing))
+        raise ValidationError(f"Не сопоставлены обязательные поля: {labels}.")
+    return cleaned
+
+
+def _normalize_date(value: str) -> str | None:
+    for pattern in ("%Y-%m-%d", "%d.%m.%Y", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(value, pattern).date().isoformat()
+        except ValueError:
+            continue
+    return None
+
+
+def _choice_aliases(spec: ImportFieldSpec) -> dict[str, str]:
+    aliases: dict[str, str] = {}
+    for code, label in spec.choices:
+        aliases[normalize_header(code)] = code
+        aliases[normalize_header(label)] = code
+    if spec.key == "status":
+        aliases.update(
+            {
+                "работа": "ACTIVE",
+                "в работе": "ACTIVE",
+                "резерв": "RESERVE",
+                "выведено": "OUT_OF_SERVICE",
+                "не в работе": "OUT_OF_SERVICE",
+                "демонтировано": "DECOMMISSIONED",
+                "проект": "PROJECT",
+            }
+        )
+    if spec.key == "relation_kind":
+        aliases.update(
+            {
+                "управление": "MANAGEMENT",
+                "оперативное управление": "MANAGEMENT",
+                "ведение": "SUPERVISION",
+                "оперативное ведение": "SUPERVISION",
+            }
+        )
+    return aliases
+
+
+def normalize_field_value(spec: ImportFieldSpec, value: str) -> tuple[str, list[str]]:
+    normalized = normalize_cell(value)
+    issues: list[str] = []
+    if not normalized:
+        if spec.required:
+            issues.append(f"Поле «{spec.label}» обязательно.")
+        return "", issues
+    if len(normalized) > spec.max_length:
+        issues.append(
+            f"Поле «{spec.label}» длиннее допустимых {spec.max_length} символов."
+        )
+    if spec.kind == "code":
+        normalized = normalized.upper()
+    elif spec.kind == "date":
+        parsed = _normalize_date(normalized)
+        if parsed is None:
+            issues.append(
+                f"Поле «{spec.label}» должно быть датой ГГГГ-ММ-ДД или ДД.ММ.ГГГГ."
+            )
+        else:
+            normalized = parsed
+    elif spec.kind == "boolean":
+        lookup = normalize_header(normalized)
+        if lookup in TRUE_VALUES:
+            normalized = "Да"
+        elif lookup in FALSE_VALUES:
+            normalized = "Нет"
+        else:
+            issues.append(f"Поле «{spec.label}» должно содержать Да или Нет.")
+    elif spec.kind == "choice":
+        canonical = _choice_aliases(spec).get(normalize_header(normalized))
+        if canonical is None:
+            labels = ", ".join(label for _code, label in spec.choices)
+            issues.append(f"Поле «{spec.label}» допускает значения: {labels}.")
+        else:
+            normalized = canonical
+    return normalized, issues
+
+
+def validate_mapped_values(
+    target_registry: str,
+    values: dict[str, str],
+) -> tuple[dict[str, str], list[str]]:
+    result: dict[str, str] = {}
+    issues: list[str] = []
+    for spec in registry_field_specs(target_registry):
+        normalized, field_issues = normalize_field_value(spec, str(values.get(spec.key, "")))
+        result[spec.key] = normalized
+        issues.extend(field_issues)
+
+    if target_registry == ImportBatch.TargetRegistry.DISPATCHING:
+        start = result.get("effective_from", "")
+        end = result.get("effective_until", "")
+        if start and end and end < start:
+            issues.append("Дата окончания не может быть раньше даты начала.")
+    return result, issues
+
+
+def _lookup_token(value: str) -> str:
+    return normalize_header(value)
+
+
+def _validation_context(batch: ImportBatch) -> dict[str, object]:
+    organization = batch.organization
+    if batch.target_registry == ImportBatch.TargetRegistry.ORGANIZATION:
+        from apps.organizations.models import Division, Employee, Position
+
+        division_tokens: set[str] = set()
+        for item in Division.objects.filter(organization=organization, is_active=True):
+            division_tokens.update({_lookup_token(item.code), _lookup_token(item.name)})
+        position_tokens: set[str] = set()
+        for item in Position.objects.filter(organization=organization, is_active=True):
+            position_tokens.update({_lookup_token(item.code), _lookup_token(item.name)})
+        return {
+            "division_tokens": division_tokens,
+            "position_tokens": position_tokens,
+            "employee_numbers": {
+                _lookup_token(value)
+                for value in Employee.objects.filter(organization=organization).values_list(
+                    "personnel_number", flat=True
+                )
+            },
+        }
+
+    if batch.target_registry == ImportBatch.TargetRegistry.EQUIPMENT:
+        from apps.equipment.models import EnergySite, EquipmentAsset, EquipmentType
+
+        site_tokens: set[str] = set()
+        for item in EnergySite.objects.filter(organization=organization, is_active=True):
+            site_tokens.update(
+                {
+                    _lookup_token(item.code),
+                    _lookup_token(item.name),
+                    _lookup_token(item.short_name),
+                }
+            )
+        type_tokens: set[str] = set()
+        for item in EquipmentType.objects.filter(is_active=True):
+            type_tokens.update({_lookup_token(item.code), _lookup_token(item.name)})
+        return {
+            "site_tokens": site_tokens,
+            "type_tokens": type_tokens,
+            "asset_codes": {
+                _lookup_token(value)
+                for value in EquipmentAsset.objects.filter(organization=organization).values_list(
+                    "code", flat=True
+                )
+            },
+        }
+
+    if batch.target_registry == ImportBatch.TargetRegistry.DISPATCHING:
+        from apps.dispatching.models import (
+            DispatchLevel,
+            DispatchSubject,
+            ManagementRevision,
+            PublicationStatus,
+            SupervisionRevision,
+        )
+        from apps.equipment.models import EquipmentAsset
+
+        equipment = {
+            _lookup_token(code): pk
+            for pk, code in EquipmentAsset.objects.filter(organization=organization).values_list(
+                "pk", "code"
+            )
+        }
+        subject_tokens: set[str] = set()
+        for item in DispatchSubject.objects.filter(organization=organization, is_active=True):
+            subject_tokens.update(
+                {
+                    _lookup_token(item.code),
+                    _lookup_token(item.name),
+                    _lookup_token(item.short_name),
+                }
+            )
+        level_tokens: set[str] = set()
+        for item in DispatchLevel.objects.filter(organization=organization, is_active=True):
+            level_tokens.update({_lookup_token(item.code), _lookup_token(item.name)})
+        today = timezone.localdate()
+        current_window = Q(effective_until__isnull=True) | Q(effective_until__gte=today)
+        management_codes = {
+            _lookup_token(value)
+            for value in ManagementRevision.objects.filter(
+                management_object__organization=organization,
+                status=PublicationStatus.PUBLISHED,
+                effective_from__lte=today,
+            )
+            .filter(current_window)
+            .values_list("management_object__equipment__code", flat=True)
+        }
+        supervision_codes = {
+            _lookup_token(value)
+            for value in SupervisionRevision.objects.filter(
+                supervision_object__organization=organization,
+                status=PublicationStatus.PUBLISHED,
+                effective_from__lte=today,
+            )
+            .filter(current_window)
+            .values_list("supervision_object__equipment__code", flat=True)
+        }
+        return {
+            "equipment": equipment,
+            "subject_tokens": subject_tokens,
+            "level_tokens": level_tokens,
+            "management_codes": management_codes,
+            "supervision_codes": supervision_codes,
+        }
+    return {}
+
+
+def _reference_issues(
+    batch: ImportBatch,
+    values: dict[str, str],
+    context: dict[str, object],
+) -> list[str]:
+    issues: list[str] = []
+    if batch.target_registry == ImportBatch.TargetRegistry.ORGANIZATION:
+        if _lookup_token(values.get("division", "")) not in context["division_tokens"]:
+            issues.append("Подразделение не найдено в действующем справочнике организации.")
+        if _lookup_token(values.get("position", "")) not in context["position_tokens"]:
+            issues.append("Должность не найдена в действующем справочнике организации.")
+    elif batch.target_registry == ImportBatch.TargetRegistry.EQUIPMENT:
+        if _lookup_token(values.get("site", "")) not in context["site_tokens"]:
+            issues.append("Энергообъект не найден в действующем справочнике.")
+        if _lookup_token(values.get("type", "")) not in context["type_tokens"]:
+            issues.append("Вид оборудования не найден в действующем справочнике.")
+    elif batch.target_registry == ImportBatch.TargetRegistry.DISPATCHING:
+        if _lookup_token(values.get("equipment_code", "")) not in context["equipment"]:
+            issues.append("Оборудование не найдено в действующем реестре.")
+        if _lookup_token(values.get("subject", "")) not in context["subject_tokens"]:
+            issues.append("Субъект управления или ведения не найден в справочнике.")
+        if _lookup_token(values.get("level", "")) not in context["level_tokens"]:
+            issues.append("Уровень управления или ведения не найден в справочнике.")
+    return issues
+
+
+def _active_registry_conflicts(
+    batch: ImportBatch,
+    values: dict[str, str],
+    context: dict[str, object],
+) -> list[str]:
+    conflicts: list[str] = []
+    if batch.target_registry == ImportBatch.TargetRegistry.ORGANIZATION:
+        number = _lookup_token(values.get("personnel_number", ""))
+        if number and number in context["employee_numbers"]:
+            conflicts.append("Сотрудник с таким табельным номером уже существует.")
+    elif batch.target_registry == ImportBatch.TargetRegistry.EQUIPMENT:
+        code = _lookup_token(values.get("code", ""))
+        if code and code in context["asset_codes"]:
+            conflicts.append("Оборудование с таким стабильным кодом уже существует.")
+    elif batch.target_registry == ImportBatch.TargetRegistry.DISPATCHING:
+        code = _lookup_token(values.get("equipment_code", ""))
+        relation = values.get("relation_kind", "")
+        if relation == "MANAGEMENT" and code in context["management_codes"]:
+            conflicts.append("Для оборудования уже действует опубликованное управление.")
+        if relation == "SUPERVISION" and code in context["supervision_codes"]:
+            conflicts.append("Для оборудования уже действует опубликованное ведение.")
+    return conflicts
+
+
+def _record_key(target_registry: str, values: dict[str, str]) -> str:
+    if target_registry == ImportBatch.TargetRegistry.ORGANIZATION:
+        return _lookup_token(values.get("personnel_number", ""))
+    if target_registry == ImportBatch.TargetRegistry.EQUIPMENT:
+        return _lookup_token(values.get("code", ""))
+    if target_registry == ImportBatch.TargetRegistry.DISPATCHING:
+        return "|".join(
+            (
+                _lookup_token(values.get("equipment_code", "")),
+                values.get("relation_kind", ""),
+                _lookup_token(values.get("level", "")),
+            )
+        )
+    return _lookup_token(values.get("key", ""))
+
+
+def _review_status(
+    row: ImportRow,
+    validation_issues: list[str],
+    conflicts: list[str],
+) -> str:
+    if validation_issues:
+        return ImportRow.ReviewStatus.INVALID
+    if conflicts:
+        return ImportRow.ReviewStatus.CONFLICT
+    if row.status == ImportRow.Status.REVIEW or row.issues:
+        return ImportRow.ReviewStatus.REVIEW
+    return ImportRow.ReviewStatus.VALID
+
+
+def _review_counts(batch: ImportBatch) -> dict[str, int | bool]:
+    rows = batch.rows.all()
+    pending = rows.filter(decision=ImportRow.Decision.PENDING).count()
+    accepted = rows.filter(decision=ImportRow.Decision.ACCEPTED).count()
+    rejected = rows.filter(decision=ImportRow.Decision.REJECTED).count()
+    blocked = rows.filter(
+        decision=ImportRow.Decision.PENDING,
+        review_status__in=(
+            ImportRow.ReviewStatus.CONFLICT,
+            ImportRow.ReviewStatus.INVALID,
+        ),
+    ).count()
+    return {
+        "total": rows.count(),
+        "pending": pending,
+        "accepted": accepted,
+        "rejected": rejected,
+        "blocked": blocked,
+        "ready": pending == 0 and accepted > 0,
+    }
+
+
+def _save_review_counts(batch: ImportBatch) -> None:
+    batch.review_counts = _review_counts(batch)
+    batch.save(update_fields=("review_counts", "updated_at"))
+
+
+@transaction.atomic
+def recalculate_batch_review(
+    *,
+    batch: ImportBatch,
+    employee: Employee,
+    reset_decisions: bool = False,
+    create_event: bool = True,
+) -> ImportBatch:
+    batch = ImportBatch.objects.select_for_update().get(pk=batch.pk)
+    if batch.organization_id != employee.organization_id:
+        raise ValidationError("Загрузка относится к другой организации.")
+    if batch.status != ImportBatch.Status.READY:
+        raise ValidationError("Проверка строк доступна только для разобранной загрузки.")
+    if batch.mapping_completed_at is None:
+        raise ValidationError("Сначала подтвердите сопоставление колонок.")
+
+    columns = list(batch.columns.order_by("position"))
+    mapped_columns = [column for column in columns if column.mapped_key]
+    specs = _field_spec_map(batch.target_registry)
+    context = _validation_context(batch)
+    rows = list(batch.rows.order_by("row_number"))
+    record_keys: dict[str, list[ImportRow]] = {}
+
+    for row in rows:
+        raw_values = {
+            column.mapped_key: (
+                row.normalized_values[column.position - 1]
+                if column.position - 1 < len(row.normalized_values)
+                else ""
+            )
+            for column in mapped_columns
+        }
+        values, validation_issues = validate_mapped_values(batch.target_registry, raw_values)
+        validation_issues.extend(_reference_issues(batch, values, context))
+        if row.status == ImportRow.Status.REJECTED:
+            validation_issues.append("Исходная строка была отклонена при разборе файла.")
+        conflicts = _active_registry_conflicts(batch, values, context)
+        row.mapped_values = {key: values.get(key, "") for key in specs}
+        row.validation_issues = validation_issues
+        row.registry_conflicts = conflicts
+        row.review_status = _review_status(row, validation_issues, conflicts)
+        if reset_decisions:
+            row.decision = ImportRow.Decision.PENDING
+            row.decision_values = {}
+            row.decision_note = ""
+            row.decided_by = None
+            row.decided_at = None
+        key = _record_key(batch.target_registry, values)
+        if key and not validation_issues:
+            record_keys.setdefault(key, []).append(row)
+
+    for duplicate_rows in record_keys.values():
+        if len(duplicate_rows) < 2:
+            continue
+        numbers = ", ".join(str(row.row_number) for row in duplicate_rows)
+        for row in duplicate_rows:
+            message = f"Дублирующая запись внутри файла: строки {numbers}."
+            if message not in row.registry_conflicts:
+                row.registry_conflicts.append(message)
+            row.review_status = ImportRow.ReviewStatus.CONFLICT
+
+    ImportRow.objects.bulk_update(
+        rows,
+        (
+            "mapped_values",
+            "validation_issues",
+            "registry_conflicts",
+            "review_status",
+            "decision",
+            "decision_values",
+            "decision_note",
+            "decided_by",
+            "decided_at",
+        ),
+    )
+    batch.review_recalculated_at = timezone.now()
+    batch.review_counts = _review_counts(batch)
+    batch.save(
+        update_fields=(
+            "review_recalculated_at",
+            "review_counts",
+            "updated_at",
+        )
+    )
+    if create_event:
+        ImportEvent.objects.create(
+            batch=batch,
+            event_type=ImportEvent.EventType.REVIEW_RECALCULATED,
+            actor=employee,
+            details={
+                "mapping_revision": batch.mapping_revision,
+                "review_counts": batch.review_counts,
+                "decisions_reset": reset_decisions,
+            },
+        )
+    return batch
+
+
+@transaction.atomic
+def save_column_mapping(
+    *,
+    batch: ImportBatch,
+    employee: Employee,
+    mapping: dict[int, str],
+) -> ImportBatch:
+    batch = ImportBatch.objects.select_for_update().get(pk=batch.pk)
+    if batch.organization_id != employee.organization_id:
+        raise ValidationError("Загрузка относится к другой организации.")
+    if batch.status != ImportBatch.Status.READY:
+        raise ValidationError("Сопоставление доступно только для разобранной загрузки.")
+    cleaned = validate_column_mapping(batch, mapping)
+    columns = list(batch.columns.order_by("position"))
+    previous = _mapping_payload(batch)
+    for column in columns:
+        column.mapped_key = cleaned[column.position]
+        column.mapping_origin = (
+            ImportColumn.MappingOrigin.MANUAL
+            if column.mapped_key
+            else ImportColumn.MappingOrigin.IGNORED
+        )
+    ImportColumn.objects.bulk_update(columns, ("mapped_key", "mapping_origin"))
+    batch.mapping_revision += 1
+    batch.mapping_completed_at = timezone.now()
+    batch.save(
+        update_fields=(
+            "mapping_revision",
+            "mapping_completed_at",
+            "updated_at",
+        )
+    )
+    ImportEvent.objects.create(
+        batch=batch,
+        event_type=ImportEvent.EventType.MAPPING_UPDATED,
+        actor=employee,
+        details={
+            "revision": batch.mapping_revision,
+            "previous": previous,
+            "current": cleaned,
+            "publication_performed": False,
+        },
+    )
+    return recalculate_batch_review(
+        batch=batch,
+        employee=employee,
+        reset_decisions=True,
+    )
+
+
+def _ensure_decision_allowed(batch: ImportBatch, employee: Employee) -> None:
+    if batch.organization_id != employee.organization_id:
+        raise ValidationError("Загрузка относится к другой организации.")
+    if batch.status != ImportBatch.Status.READY or batch.mapping_completed_at is None:
+        raise ValidationError("Решения доступны после разбора файла и сопоставления колонок.")
+
+
+def _decision_event(
+    *,
+    row: ImportRow,
+    employee: Employee,
+    action: str,
+    changed_fields: list[str] | None = None,
+) -> None:
+    ImportEvent.objects.create(
+        batch=row.batch,
+        event_type=ImportEvent.EventType.ROW_DECISION,
+        actor=employee,
+        details={
+            "row_number": row.row_number,
+            "action": action,
+            "decision": row.decision,
+            "changed_fields": changed_fields or [],
+            "publication_performed": False,
+        },
+    )
+
+
+@transaction.atomic
+def decide_import_row(
+    *,
+    row: ImportRow,
+    employee: Employee,
+    action: str,
+    note: str = "",
+) -> ImportRow:
+    row = (
+        ImportRow.objects.select_for_update()
+        .select_related("batch")
+        .get(pk=row.pk)
+    )
+    _ensure_decision_allowed(row.batch, employee)
+    action = action.strip().upper()
+    if action == "ACCEPT":
+        if row.review_status in {
+            ImportRow.ReviewStatus.CONFLICT,
+            ImportRow.ReviewStatus.INVALID,
+            ImportRow.ReviewStatus.NOT_MAPPED,
+        }:
+            raise ValidationError("Строку с ошибками или конфликтами нельзя принять.")
+        row.decision = ImportRow.Decision.ACCEPTED
+        row.decision_values = {}
+    elif action == "REJECT":
+        row.decision = ImportRow.Decision.REJECTED
+        row.decision_values = {}
+    elif action == "RESET":
+        row.decision = ImportRow.Decision.PENDING
+        row.decision_values = {}
+        row.decision_note = ""
+        row.decided_by = None
+        row.decided_at = None
+        row.save(
+            update_fields=(
+                "decision",
+                "decision_values",
+                "decision_note",
+                "decided_by",
+                "decided_at",
+            )
+        )
+        _decision_event(row=row, employee=employee, action=action)
+        _save_review_counts(row.batch)
+        return row
+    else:
+        raise ValidationError("Неизвестное решение по строке.")
+
+    row.decision_note = normalize_cell(note)[:2000]
+    row.decided_by = employee
+    row.decided_at = timezone.now()
+    row.save(
+        update_fields=(
+            "decision",
+            "decision_values",
+            "decision_note",
+            "decided_by",
+            "decided_at",
+        )
+    )
+    _decision_event(row=row, employee=employee, action=action)
+    _save_review_counts(row.batch)
+    return row
+
+
+def _edited_row_conflicts(
+    row: ImportRow,
+    values: dict[str, str],
+    context: dict[str, object],
+) -> list[str]:
+    conflicts = _active_registry_conflicts(row.batch, values, context)
+    key = _record_key(row.batch.target_registry, values)
+    if not key:
+        return conflicts
+    for other in row.batch.rows.exclude(pk=row.pk):
+        other_values = other.effective_values
+        if _record_key(row.batch.target_registry, other_values) == key:
+            conflicts.append(
+                f"Исправленная запись совпадает со строкой {other.row_number} этого файла."
+            )
+            break
+    return conflicts
+
+
+@transaction.atomic
+def save_row_correction(
+    *,
+    row: ImportRow,
+    employee: Employee,
+    values: dict[str, str],
+    note: str = "",
+) -> ImportRow:
+    row = (
+        ImportRow.objects.select_for_update()
+        .select_related("batch")
+        .get(pk=row.pk)
+    )
+    _ensure_decision_allowed(row.batch, employee)
+    allowed = _field_spec_map(row.batch.target_registry)
+    unknown = set(values) - set(allowed)
+    if unknown:
+        raise ValidationError("Переданы неизвестные поля исправления.")
+    canonical, issues = validate_mapped_values(row.batch.target_registry, values)
+    context = _validation_context(row.batch)
+    issues.extend(_reference_issues(row.batch, canonical, context))
+    conflicts = _edited_row_conflicts(row, canonical, context)
+    if issues or conflicts:
+        raise ValidationError(issues + conflicts)
+
+    changed_fields = [
+        key for key, value in canonical.items() if value != row.mapped_values.get(key, "")
+    ]
+    row.decision = ImportRow.Decision.ACCEPTED
+    row.decision_values = canonical
+    row.decision_note = normalize_cell(note)[:2000]
+    row.decided_by = employee
+    row.decided_at = timezone.now()
+    row.save(
+        update_fields=(
+            "decision",
+            "decision_values",
+            "decision_note",
+            "decided_by",
+            "decided_at",
+        )
+    )
+    _decision_event(
+        row=row,
+        employee=employee,
+        action="EDIT_AND_ACCEPT",
+        changed_fields=changed_fields,
+    )
+    _save_review_counts(row.batch)
+    return row
+
+
+@transaction.atomic
+def bulk_decide_import_rows(
+    *,
+    batch: ImportBatch,
+    employee: Employee,
+    row_ids: list[int],
+    action: str,
+) -> dict[str, int]:
+    batch = ImportBatch.objects.select_for_update().get(pk=batch.pk)
+    _ensure_decision_allowed(batch, employee)
+    unique_ids = list(dict.fromkeys(row_ids))
+    if not unique_ids:
+        raise ValidationError("Не выбрана ни одна строка.")
+    if len(unique_ids) > 100:
+        raise ValidationError("За одну операцию можно обработать не более 100 строк.")
+    rows = list(
+        batch.rows.filter(pk__in=unique_ids).select_related("batch").order_by("row_number")
+    )
+    if len(rows) != len(unique_ids):
+        raise ValidationError("Часть выбранных строк не относится к этой загрузке.")
+
+    result = {"processed": 0, "skipped": 0}
+    for row in rows:
+        try:
+            decide_import_row(row=row, employee=employee, action=action)
+        except ValidationError:
+            result["skipped"] += 1
+        else:
+            result["processed"] += 1
+    ImportEvent.objects.create(
+        batch=batch,
+        event_type=ImportEvent.EventType.BULK_DECISION,
+        actor=employee,
+        details={
+            "action": action.strip().upper(),
+            "selected": len(unique_ids),
+            **result,
+            "publication_performed": False,
+        },
+    )
+    _save_review_counts(batch)
+    return result
