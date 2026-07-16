@@ -105,14 +105,25 @@ class Command(BaseCommand):
                 "is_active": True,
             },
         )
+        _kuzminskaya_site, _ = EnergySite.objects.update_or_create(
+            organization=organization,
+            code="demo-kuzminskaya-wpp",
+            defaults={
+                "name": "Кузьминская ВЭС — презентационный профиль",
+                "short_name": "Кузьминская ВЭС",
+                "site_type": EnergySite.SiteType.WIND_POWER_PLANT,
+                "is_external": False,
+                "is_active": True,
+            },
+        )
         grid_site, _ = EnergySite.objects.update_or_create(
             organization=organization,
             code="demo-grid-substation",
             defaults={
-                "name": "ПС 330 кВ Северная — презентационный смежный объект",
-                "short_name": "ПС 330 кВ Северная",
+                "name": "ПС 330 кВ Барсуки — презентационный профиль",
+                "short_name": "ПС 330 кВ Барсуки",
                 "site_type": EnergySite.SiteType.SUBSTATION,
-                "is_external": True,
+                "is_external": False,
                 "is_active": True,
             },
         )
@@ -214,9 +225,9 @@ class Command(BaseCommand):
             "DEMO-GRID-BAY-01",
             site=grid_site,
             type_code="substation-bay",
-            technical_name="Присоединение демонстрационной ВЭС на смежной ПС",
+            technical_name="Присоединение Кочубеевской ВЭС на ПС 330 кВ Барсуки",
             voltage="330 кВ",
-            external=True,
+            external=False,
         )
 
         name_rows = {
@@ -255,7 +266,7 @@ class Command(BaseCommand):
             ),
             "DEMO-GRID-BAY-01": (
                 (1, "присоединение Демо-ВЭС на Демо-ПС 330 кВ", date(2024, 1, 1)),
-                (2, "присоединение Кочубеевской ВЭС на ПС 330 кВ Северная", date(2026, 7, 16)),
+                (2, "Присоединение Кочубеевской ВЭС на ПС 330 кВ Барсуки", date(2026, 7, 16)),
             ),
         }
         for equipment_code, revisions in name_rows.items():
@@ -358,7 +369,7 @@ class Command(BaseCommand):
                 "DEMO-CELL-01",
                 "DEMO-GRID-BAY-01",
                 EquipmentRelation.RelationType.RELATED,
-                "Смежные точки выдачи мощности демонстрационного объекта.",
+                "Связанные точки выдачи мощности презентационного объекта.",
             ),
         )
         for source_code, target_code, relation_type, description in relation_rows:
@@ -406,6 +417,8 @@ class Command(BaseCommand):
                 revision=configuration,
                 actor=actor,
             )
+
+        call_command("seed_demo_organization_relations", verbosity=0)
 
         self.stdout.write(
             self.style.SUCCESS(

@@ -140,7 +140,7 @@ class PresentationUxTests(TestCase):
 
     def test_presentation_seed_uses_recognizable_safe_names(self):
         organization = Organization.objects.get(code="DEMO")
-        self.assertIn("Кочубеевская ВЭС", organization.name)
+        self.assertEqual(organization.short_name, "АО «Росатом Возобновляемая энергия»")
         self.assertEqual(self.employee.last_name, "Кузнецов")
         self.assertNotIn("Операторов", self.employee.full_name)
 
@@ -153,16 +153,25 @@ class PresentationUxTests(TestCase):
     def test_presentation_labels_preserve_published_dispatching_records(self):
         level = DispatchLevel.objects.get(code="station-operational")
         subject = DispatchSubject.objects.get(code="demo-station-shift")
-        self.assertEqual(level.name, "Оперативно-технологический уровень Демо-ВЭС")
+        self.assertEqual(
+            level.name,
+            "Оперативно-технологический уровень ЦОТУиЭ ВЭС Невинномысск",
+        )
         self.assertEqual(
             level.presentation_label,
-            "Оперативно-технологический уровень Кочубеевской ВЭС",
+            "Оперативно-технологический уровень ЦОТУиЭ ВЭС Невинномысск",
         )
-        self.assertEqual(subject.short_name, "Смена Демо-ВЭС")
-        self.assertEqual(subject.presentation_label, "Смена Кочубеевской ВЭС")
+        self.assertEqual(
+            subject.short_name,
+            "Оперативный персонал ЦОТУиЭ ВЭС Невинномысск",
+        )
+        self.assertEqual(
+            subject.presentation_label,
+            "Оперативный персонал ЦОТУиЭ ВЭС Невинномысск",
+        )
 
         response = self.client.get(reverse("dispatching:registry"))
-        self.assertContains(response, "Смена Кочубеевской ВЭС")
+        self.assertContains(response, "Оперативный персонал ЦОТУиЭ ВЭС Невинномысск")
         self.assertNotContains(response, ">Смена Демо-ВЭС<")
 
     def test_icon_sprite_contains_required_symbols(self):

@@ -31,7 +31,7 @@ from apps.organizations.models import (  # noqa: E402
 
 organization = Organization.objects.get(code="DEMO")
 operator = Employee.objects.select_related("user").get(user__username="operator.demo")
-if "Кочубеевская ВЭС" not in organization.name:
+if organization.short_name != "АО «Росатом Возобновляемая энергия»":
     raise SystemExit("Презентационное наименование организации не применено.")
 if operator.full_name != "Кузнецов Илья Андреевич":
     raise SystemExit("Безопасное естественное демонстрационное ФИО не применено.")
@@ -48,13 +48,13 @@ station_subject = DispatchSubject.objects.get(
     organization=organization,
     code="demo-station-shift",
 )
-if level.name != "Оперативно-технологический уровень Демо-ВЭС":
-    raise SystemExit("Опубликованный уровень был неожиданно изменён.")
-if level.presentation_label != "Оперативно-технологический уровень Кочубеевской ВЭС":
+if level.name != "Оперативно-технологический уровень ЦОТУиЭ ВЭС Невинномысск":
+    raise SystemExit("Технологический уровень ЦОТУиЭ не создан.")
+if level.presentation_label != "Оперативно-технологический уровень ЦОТУиЭ ВЭС Невинномысск":
     raise SystemExit("Презентационная подпись уровня не применяется.")
-if station_subject.short_name != "Смена Демо-ВЭС":
-    raise SystemExit("Опубликованный субъект был неожиданно изменён.")
-if station_subject.presentation_label != "Смена Кочубеевской ВЭС":
+if station_subject.short_name != "Оперативный персонал ЦОТУиЭ ВЭС Невинномысск":
+    raise SystemExit("Субъект оперативного персонала не создан.")
+if station_subject.presentation_label != "Оперативный персонал ЦОТУиЭ ВЭС Невинномысск":
     raise SystemExit("Презентационная подпись субъекта не применяется.")
 
 supervisor = Employee.objects.select_related("user").get(user__username="supervisor.demo")
@@ -91,7 +91,7 @@ for marker in (
     "Ведение",
     "Диспетчерское управление",
     "Технологическое ведение",
-    "Смена Кочубеевской ВЭС",
+    "Оперативный персонал ЦОТУиЭ ВЭС Невинномысск",
 ):
     if marker not in registry:
         raise SystemExit(f"Не найден маркер упрощённого реестра: {marker}")

@@ -18,6 +18,9 @@ $env:PYTHONIOENCODING = "utf-8"
 $Root = Split-Path -Parent $PSScriptRoot
 Set-Location $Root
 $env:DB_ENGINE = "sqlite"
+$env:EOD_DATABASE_PROFILE = "presentation"
+$env:EOD_ALLOW_SQLITE_PATH_OVERRIDE = "0"
+Remove-Item Env:SQLITE_PATH -ErrorAction SilentlyContinue
 
 function Test-LocalPort {
     param([int]$Candidate)
@@ -54,6 +57,8 @@ $BaseUrl = "http://127.0.0.1:$Port"
 Write-Host ""
 Write-Host "Электронная оперативная документация" -ForegroundColor Cyan
 Write-Host "Локальный профиль: SQLite" -ForegroundColor DarkYellow
+Write-Host "Профиль базы: презентационный" -ForegroundColor DarkYellow
+Write-Host "Файл базы: data\presentation.sqlite3" -ForegroundColor DarkYellow
 Write-Host "Постоянный адрес: $BaseUrl/" -ForegroundColor Green
 Write-Host "Проверка состояния: $BaseUrl/health/" -ForegroundColor Green
 Write-Host ""

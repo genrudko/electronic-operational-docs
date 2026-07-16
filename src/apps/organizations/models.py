@@ -448,6 +448,222 @@ class Substitution(models.Model):
         current = day or timezone.localdate()
         return self.is_active and self.valid_from <= current <= self.valid_until
 
+class DivisionServiceProfile(models.Model):
+    division = models.OneToOneField(
+        Division,
+        on_delete=models.PROTECT,
+        related_name="service_profile",
+        verbose_name="Подразделение",
+    )
+    territorial_base = models.CharField("Территориальная база", max_length=255, blank=True)
+    service_scope = models.TextField("Область обслуживания", blank=True)
+    is_cross_territory = models.BooleanField(
+        "Работает на нескольких территориях",
+        default=False,
+    )
+
+    class Meta:
+        verbose_name = "профиль обслуживания подразделения"
+        verbose_name_plural = "профили обслуживания подразделений"
+
+    def __str__(self) -> str:
+        return f"Профиль обслуживания: {self.division.name}"
+
+    def save(self, *args, **kwargs) -> None:
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+
+class DivisionEnergySiteService(models.Model):
+    class ServiceKind(models.TextChoices):
+        OPERATING_CENTER = "OPERATING_CENTER", "Эксплуатационный контур"
+        OPERATIONAL = "OPERATIONAL", "Оперативное обслуживание"
+        MAINTENANCE = "MAINTENANCE", "Техническое обслуживание и ремонт"
+        ENGINEERING = "ENGINEERING", "Инженерное сопровождение"
+        SPECIALIZED = "SPECIALIZED", "Специализированное обслуживание"
+
+    division = models.ForeignKey(
+        Division,
+        on_delete=models.PROTECT,
+        related_name="energy_site_services",
+        verbose_name="Подразделение",
+    )
+    energy_site = models.ForeignKey(
+        "equipment.EnergySite",
+        on_delete=models.PROTECT,
+        related_name="servicing_divisions",
+        verbose_name="Энергообъект",
+    )
+    service_kind = models.CharField(
+        "Вид обслуживания",
+        max_length=24,
+        choices=ServiceKind.choices,
+    )
+    valid_from = models.DateField("Действует с")
+    valid_until = models.DateField("Действует по", null=True, blank=True)
+    note = models.CharField("Примечание", max_length=500, blank=True)
+    is_active = models.BooleanField("Действующая связь", default=True)
+
+    class Meta:
+        ordering = ("energy_site__name", "division__name", "service_kind")
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(valid_until__isnull=True) | Q(valid_until__gte=F("valid_from")),
+                name="division_site_service_valid_window",
+            ),
+            models.UniqueConstraint(
+                fields=("division", "energy_site", "service_kind", "valid_from"),
+                name="uniq_division_site_service_start",
+            ),
+        ]
+        verbose_name = "обслуживание энергообъекта подразделением"
+        verbose_name_plural = "обслуживание энергообъектов подразделениями"
+
+    def __str__(self) -> str:
+        return f"{self.division.name} — {self.energy_site}: {self.get_service_kind_display()}"
+
+    def save(self, *args, **kwargs) -> None:
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def clean(self) -> None:
+        super().clean()
+        _validate_window(self.valid_from, self.valid_until)
+        if (
+            self.division_id
+            and self.energy_site_id
+            and self.division.organization_id != self.energy_site.organization_id
+        ):
+            raise ValidationError(
+                {"energy_site": "Подразделение и энергообъект относятся к разным организациям."}
+            )
+
+
+class EmployeeEnergySiteAuthorization(models.Model):
+    class OperationalRole(models.TextChoices):
+        SHIFT_SUPERVISOR = "SHIFT_SUPERVISOR", "Начальник смены"
+        DUTY_ELECTRICIAN = "DUTY_ELECTRICIAN", "Дежурный электромонтёр"
+        MAINTENANCE = "MAINTENANCE", "Персонал ТОиР"
+        SPECIALIST = "SPECIALIST", "Специалист"
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        related_name="energy_site_authorizations",
+        verbose_name="Сотрудник",
+    )
+    energy_site = models.ForeignKey(
+        "equipment.EnergySite",
+        on_delete=models.PROTECT,
+        related_name="authorized_employees",
+        verbose_name="Энергообъект",
+    )
+    operational_role = models.CharField(
+        "Роль на энергообъекте",
+        max_length=24,
+        choices=OperationalRole.choices,
+    )
+    valid_from = models.DateField("Допущен с")
+    valid_until = models.DateField("Допущен по", null=True, blank=True)
+    note = models.CharField("Примечание", max_length=500, blank=True)
+    is_active = models.BooleanField("Действующий допуск", default=True)
+
+    class Meta:
+        ordering = ("employee__last_name", "energy_site__name", "operational_role")
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(valid_until__isnull=True) | Q(valid_until__gte=F("valid_from")),
+                name="employee_site_authorization_valid_window",
+            ),
+            models.UniqueConstraint(
+                fields=("employee", "energy_site", "operational_role", "valid_from"),
+                name="uniq_employee_site_authorization_start",
+            ),
+        ]
+        verbose_name = "допуск сотрудника к энергообъекту"
+        verbose_name_plural = "допуски сотрудников к энергообъектам"
+
+    def __str__(self) -> str:
+        return f"{self.employee} — {self.energy_site}: {self.get_operational_role_display()}"
+
+    def save(self, *args, **kwargs) -> None:
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def clean(self) -> None:
+        super().clean()
+        _validate_window(self.valid_from, self.valid_until)
+        if (
+            self.employee_id
+            and self.energy_site_id
+            and self.employee.organization_id != self.energy_site.organization_id
+        ):
+            raise ValidationError(
+                {"energy_site": "Сотрудник и энергообъект относятся к разным организациям."}
+            )
+
+
+class OperationalReportingLine(models.Model):
+    class RelationType(models.TextChoices):
+        DIRECT = "DIRECT", "Непосредственное оперативное руководство"
+        FUNCTIONAL = "FUNCTIONAL", "Функциональное оперативное руководство"
+
+    supervisor = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        related_name="operationally_supervised_divisions",
+        verbose_name="Оперативный руководитель",
+    )
+    subordinate_division = models.ForeignKey(
+        Division,
+        on_delete=models.PROTECT,
+        related_name="operational_reporting_lines",
+        verbose_name="Подчинённое подразделение",
+    )
+    relation_type = models.CharField(
+        "Вид подчинённости",
+        max_length=16,
+        choices=RelationType.choices,
+        default=RelationType.DIRECT,
+    )
+    valid_from = models.DateField("Действует с")
+    valid_until = models.DateField("Действует по", null=True, blank=True)
+    note = models.CharField("Примечание", max_length=500, blank=True)
+    is_active = models.BooleanField("Действующая связь", default=True)
+
+    class Meta:
+        ordering = ("subordinate_division__name", "relation_type", "valid_from")
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(valid_until__isnull=True) | Q(valid_until__gte=F("valid_from")),
+                name="operational_reporting_valid_window",
+            ),
+            models.UniqueConstraint(
+                fields=("supervisor", "subordinate_division", "relation_type", "valid_from"),
+                name="uniq_operational_reporting_start",
+            ),
+        ]
+        verbose_name = "оперативная подчинённость"
+        verbose_name_plural = "оперативная подчинённость"
+
+    def __str__(self) -> str:
+        return f"{self.subordinate_division.name} — {self.supervisor.full_name}"
+
+    def save(self, *args, **kwargs) -> None:
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def clean(self) -> None:
+        super().clean()
+        _validate_window(self.valid_from, self.valid_until)
+        if (
+            self.supervisor_id
+            and self.subordinate_division_id
+            and self.supervisor.organization_id != self.subordinate_division.organization_id
+        ):
+            raise ValidationError(
+                {"subordinate_division": "Руководитель и подразделение относятся к разным организациям."}
+            )
 
 class InterfacePreference(models.Model):
     class Theme(models.TextChoices):

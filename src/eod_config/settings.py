@@ -87,16 +87,26 @@ TEMPLATES = [
 WSGI_APPLICATION = "eod_config.wsgi.application"
 ASGI_APPLICATION = "eod_config.asgi.application"
 
+EOD_ALLOW_SQLITE_PATH_OVERRIDE = env_bool("EOD_ALLOW_SQLITE_PATH_OVERRIDE", False)
+EOD_DATABASE_PROFILE = os.getenv("EOD_DATABASE_PROFILE", "presentation").strip().lower() or "presentation"
+
 DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").strip().lower()
 if DB_ENGINE == "sqlite":
     requested_sqlite_path = os.getenv("SQLITE_PATH", "").strip()
-    if requested_sqlite_path:
-        sqlite_path = BASE_DIR / requested_sqlite_path
+    entry_point = Path(sys.argv[0]).name.lower()
+    if requested_sqlite_path and EOD_ALLOW_SQLITE_PATH_OVERRIDE:
+        requested_path = Path(requested_sqlite_path)
+        sqlite_path = requested_path if requested_path.is_absolute() else BASE_DIR / requested_path
+        EOD_DATABASE_PROFILE = "explicit"
     else:
-        entry_point = Path(sys.argv[0]).name.lower()
         default_name = "presentation.sqlite3"
-        if entry_point.startswith("gate_"):
+        if EOD_DATABASE_PROFILE == "development":
+            default_name = "dev.sqlite3"
+        elif EOD_DATABASE_PROFILE == "gate" or entry_point.startswith("gate_"):
             default_name = "gate_runtime.sqlite3"
+            EOD_DATABASE_PROFILE = "gate"
+        else:
+            EOD_DATABASE_PROFILE = "presentation"
         sqlite_path = BASE_DIR / "data" / default_name
     sqlite_path.parent.mkdir(parents=True, exist_ok=True)
     DATABASES = {

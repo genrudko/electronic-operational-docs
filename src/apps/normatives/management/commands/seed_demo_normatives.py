@@ -156,10 +156,10 @@ class Command(BaseCommand):
             organization=organization,
             valid_from=date(2024, 1, 1),
             defaults={
-                "full_name": "Акционерное общество «Демонстрационная ветроэнергетика»",
-                "short_name": "АО «ДемоВетер»",
+                "full_name": "Акционерное общество «НоваВетер» — исторический презентационный профиль",
+                "short_name": "АО «НоваВетер»",
                 "valid_until": date(2025, 12, 31),
-                "basis_reference": "Учебное решение о переименовании № 1",
+                "basis_reference": "Презентационное решение о переименовании № 1",
                 "created_by": actor,
             },
         )
@@ -170,10 +170,10 @@ class Command(BaseCommand):
             organization=organization,
             valid_from=date(2026, 1, 1),
             defaults={
-                "full_name": "Акционерное общество «Демонстрационная энергия»",
-                "short_name": "АО «ДемоЭнергия»",
+                "full_name": "АО «Росатом Возобновляемая энергия» — презентационный профиль",
+                "short_name": "АО «Росатом Возобновляемая энергия»",
                 "valid_until": None,
-                "basis_reference": "Учебное решение о переименовании № 2",
+                "basis_reference": "Презентационное решение о переименовании № 2",
                 "created_by": actor,
             },
         )

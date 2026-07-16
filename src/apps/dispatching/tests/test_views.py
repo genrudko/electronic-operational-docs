@@ -31,5 +31,5 @@ class DispatchingViewTests(DispatchingDemoMixin, TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("dispatching:subjects"))
         self.assertContains(response, "Взаимодействие субъектов")
-        self.assertContains(response, "Смежный ДЦ ПС 330 кВ")
+        self.assertContains(response, "Смежный диспетчерский центр")
         self.assertContains(response, "Правила и основание")

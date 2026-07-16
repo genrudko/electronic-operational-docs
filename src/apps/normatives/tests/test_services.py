@@ -68,8 +68,8 @@ class NormativeRegistryServiceTests(NormativeDemoMixin, TestCase):
     def test_current_organization_name_uses_effective_window(self):
         old = organization_name_on(self.employee.organization, date(2025, 6, 1))
         current = organization_name_on(self.employee.organization, date(2026, 6, 1))
-        self.assertIn("Демонстрационная ветроэнергетика", old.full_name)
-        self.assertIn("Демонстрационная энергия", current.full_name)
+        self.assertIn("НоваВетер", old.full_name)
+        self.assertIn("Росатом Возобновляемая энергия", current.full_name)
 
     def test_publish_configuration_creates_digest(self):
         configuration = OrganizationConfigurationRevision.objects.create(

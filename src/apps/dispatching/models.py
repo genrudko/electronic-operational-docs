@@ -107,7 +107,7 @@ class DispatchLevel(models.Model):
             return self.name
         return {
             "regional-dispatch": "Региональный диспетчерский уровень",
-            "station-operational": "Оперативно-технологический уровень Кочубеевской ВЭС",
+            "station-operational": "Оперативно-технологический уровень ЦОТУиЭ ВЭС Невинномысск",
         }.get(self.code, self.name)
 
 
@@ -187,9 +187,9 @@ class DispatchSubject(models.Model):
         if self.organization.code != "DEMO":
             return stored_label
         return {
-            "demo-station-shift": "Смена Кочубеевской ВЭС",
+            "demo-station-shift": "Оперативный персонал ЦОТУиЭ ВЭС Невинномысск",
             "demo-regional-center": "Региональный ДЦ",
-            "demo-adjacent-center": "Смежный ДЦ ПС 330 кВ",
+            "demo-adjacent-center": "Смежный диспетчерский центр",
         }.get(self.code, stored_label)
 
 

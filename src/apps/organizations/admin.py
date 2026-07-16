@@ -3,9 +3,13 @@ from django.contrib import admin
 from .models import (
     AuthenticationEvent,
     Division,
+    DivisionEnergySiteService,
+    DivisionServiceProfile,
     Employee,
+    EmployeeEnergySiteAuthorization,
     InterfacePreference,
     OperationalArea,
+    OperationalReportingLine,
     Organization,
     Position,
     ResponsibilityScope,
@@ -112,6 +116,65 @@ class SubstitutionAdmin(admin.ModelAdmin):
         "reason",
     )
 
+@admin.register(DivisionServiceProfile)
+class DivisionServiceProfileAdmin(admin.ModelAdmin):
+    list_display = (
+        "division",
+        "territorial_base",
+        "is_cross_territory",
+    )
+    list_filter = ("is_cross_territory",)
+    search_fields = ("division__name", "territorial_base", "service_scope")
+
+
+@admin.register(DivisionEnergySiteService)
+class DivisionEnergySiteServiceAdmin(admin.ModelAdmin):
+    list_display = (
+        "division",
+        "energy_site",
+        "service_kind",
+        "valid_from",
+        "valid_until",
+        "is_active",
+    )
+    list_filter = ("service_kind", "is_active", "energy_site")
+    search_fields = ("division__name", "energy_site__name", "note")
+
+
+@admin.register(EmployeeEnergySiteAuthorization)
+class EmployeeEnergySiteAuthorizationAdmin(admin.ModelAdmin):
+    list_display = (
+        "employee",
+        "energy_site",
+        "operational_role",
+        "valid_from",
+        "valid_until",
+        "is_active",
+    )
+    list_filter = ("operational_role", "is_active", "energy_site")
+    search_fields = (
+        "employee__last_name",
+        "employee__first_name",
+        "energy_site__name",
+    )
+
+
+@admin.register(OperationalReportingLine)
+class OperationalReportingLineAdmin(admin.ModelAdmin):
+    list_display = (
+        "subordinate_division",
+        "supervisor",
+        "relation_type",
+        "valid_from",
+        "valid_until",
+        "is_active",
+    )
+    list_filter = ("relation_type", "is_active")
+    search_fields = (
+        "subordinate_division__name",
+        "supervisor__last_name",
+        "supervisor__first_name",
+    )
 
 @admin.register(InterfacePreference)
 class InterfacePreferenceAdmin(admin.ModelAdmin):

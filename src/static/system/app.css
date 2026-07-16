@@ -1498,3 +1498,146 @@ html[data-theme="light"] .message { background: var(--surface); color: var(--sur
 @media (max-width: 760px) {
     .presentation-topbar .brand-copy strong { color: var(--topbar-text) !important; }
 }
+/* Patch 007.4 — organizational structure and multi-site service profile */
+.organization-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.85fr);
+    gap: 18px;
+    margin-bottom: 18px;
+}
+.organization-tree {
+    display: grid;
+    gap: 8px;
+    margin-top: 18px;
+}
+.organization-node {
+    margin-left: calc(var(--tree-depth, 0) * 24px);
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-soft);
+}
+.organization-node-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+.organization-node-note {
+    margin-top: 7px;
+    color: var(--surface-secondary-text);
+    font-size: 13px;
+    line-height: 1.5;
+}
+.organization-node.center-node {
+    border-left: 3px solid var(--accent);
+}
+.organization-node.external-service-node {
+    border-left: 3px solid var(--success);
+}
+.reporting-line-card {
+    display: grid;
+    gap: 12px;
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-soft);
+}
+.reporting-line-card div:not(.reporting-arrow) {
+    display: grid;
+    gap: 4px;
+}
+.reporting-line-card span,
+.reporting-line-card small {
+    color: var(--surface-secondary-text);
+}
+.reporting-arrow {
+    color: var(--success);
+    font-size: 22px;
+    font-weight: 800;
+}
+.serviced-sites-card,
+.authorization-card {
+    margin-bottom: 18px;
+}
+.site-service-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 18px;
+}
+.site-service-card {
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-soft);
+}
+.site-service-card header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.site-service-card header div {
+    display: grid;
+    gap: 4px;
+}
+.site-service-card small,
+.service-unit-list span,
+.authorization-card td small {
+    display: block;
+    color: var(--surface-secondary-text);
+}
+.service-unit-list {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.service-unit-list li {
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+.authorization-sites {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.authorization-sites span {
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface-soft);
+    font-size: 12px;
+}
+.personnel-directory {
+    margin-bottom: 20px;
+}
+@media (max-width: 980px) {
+    .organization-layout,
+    .site-service-grid {
+        grid-template-columns: 1fr;
+    }
+}
+@media (max-width: 640px) {
+    .organization-node {
+        margin-left: calc(var(--tree-depth, 0) * 10px);
+    }
+}
+.organization-node-leadership {
+    display: grid;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+.organization-node-leadership > span,
+.organization-node-leadership small {
+    color: var(--surface-secondary-text);
+}
+.organization-node-leadership > div {
+    display: grid;
+    gap: 2px;
+}

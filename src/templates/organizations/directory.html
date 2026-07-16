@@ -6,67 +6,211 @@
 <section class="page-heading compact presentation-heading">
     <div>
         <div class="section-kicker">Организационный справочник</div>
-        <h1>Организация и персонал</h1>
-        <p>Презентационная структура предприятия без реальных персональных и производственных данных.</p>
+        <h1>Организация, подразделения и персонал</h1>
+        <p>
+            Презентационная модель организационной принадлежности, обслуживания энергообъектов,
+            оперативной подчинённости и допусков персонала.
+        </p>
     </div>
 </section>
 
-{% for organization in organizations %}
-<section class="directory-card">
+{% for card in organization_cards %}
+<section class="directory-card organization-overview">
     <div class="directory-header">
         <div>
-            <span class="code-chip technical-only">{{ organization.code }}</span>
-            <h2>{{ organization.name }}</h2>
-            <p>{{ organization.short_name }}</p>
+            <span class="code-chip technical-only">{{ card.organization.code }}</span>
+            <h2>{{ card.organization.short_name|default:card.organization.name }}</h2>
+            <p>Все ФИО и персональные реквизиты в профиле являются вымышленными.</p>
         </div>
-        <div class="metric inline"><span>Сотрудников</span><strong>{{ organization.employee_count }}</strong></div>
-    </div>
-    <div class="directory-columns">
-        <div>
-            <h3>Подразделения</h3>
-            <ul class="clean-list">
-                {% for division in organization.divisions.all %}
-                    <li><span class="technical-only">{{ division.code }}</span>{{ division.name }}</li>
-                {% empty %}<li class="muted">Нет данных</li>{% endfor %}
-            </ul>
-        </div>
-        <div>
-            <h3>Рабочие места</h3>
-            <ul class="clean-list">
-                {% for workplace in organization.workplaces.all %}
-                    <li><span class="technical-only">{{ workplace.code }}</span>{{ workplace.name }}</li>
-                {% empty %}<li class="muted">Нет данных</li>{% endfor %}
-            </ul>
-        </div>
-        <div>
-            <h3>Оперативные области</h3>
-            <ul class="clean-list">
-                {% for area in organization.operational_areas.all %}
-                    <li><span class="technical-only">{{ area.code }}</span>{{ area.name }}</li>
-                {% empty %}<li class="muted">Нет данных</li>{% endfor %}
-            </ul>
+        <div class="metric inline">
+            <span>Вымышленных сотрудников</span>
+            <strong>{{ card.employee_count }}</strong>
         </div>
     </div>
+</section>
+
+<div class="organization-layout">
+    <section class="profile-card organization-tree-card">
+        <div class="eyebrow">СТРУКТУРНЫЕ ПОДРАЗДЕЛЕНИЯ</div>
+        <h2>Организационная иерархия</h2>
+        <p class="muted">
+            Иерархия показывает административную принадлежность. Обслуживание энергообъектов
+            учитывается отдельными связями и не меняет место подразделения в структуре.
+        </p>
+        <div class="organization-tree">
+            {% for row in card.division_tree %}
+                <article
+                    class="organization-node{% if row.is_center %} center-node{% endif %}{% if row.is_blade_service %} external-service-node{% endif %}"
+                    style="--tree-depth: {{ row.depth }}"
+                >
+                    <div class="organization-node-main">
+                        <span class="technical-only"><code>{{ row.division.code }}</code></span>
+                        <strong>{{ row.division.name }}</strong>
+                        {% if row.is_blade_service %}
+                            <span class="semantic-badge supervision">Отдельное подразделение</span>
+                        {% elif row.is_center %}
+                            <span class="semantic-badge management">Центр эксплуатации</span>
+                        {% endif %}
+                    </div>
+                    {% if row.service_profile %}
+                        <div class="organization-node-note">
+                            {% if row.service_profile.territorial_base %}
+                                Территориальная база: {{ row.service_profile.territorial_base }}.
+                            {% endif %}
+                            {{ row.service_profile.service_scope }}
+                        </div>
+                    {% endif %}
+                    {% if row.is_center and row.direct_employees %}
+                        <div class="organization-node-leadership">
+                            <span>Руководство центра</span>
+                            {% for employee in row.direct_employees %}
+                                <div>
+                                    <strong>{{ employee.full_name }}</strong>
+                                    <small>{{ employee.position.name }}</small>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </article>
+            {% empty %}
+                <p class="muted">Подразделения не заведены.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="profile-card operational-reporting-card">
+        <div class="eyebrow">ОПЕРАТИВНАЯ ПОДЧИНЁННОСТЬ</div>
+        <h2>Непосредственное оперативное руководство</h2>
+        <p class="muted">
+            Эта связь хранится отдельно от административного дерева и от управления оборудованием.
+        </p>
+        {% for line in card.reporting_lines %}
+            <article class="reporting-line-card">
+                <div>
+                    <span>Оперативный руководитель</span>
+                    <strong>{{ line.supervisor.full_name }}</strong>
+                    <small>{{ line.supervisor.position.name }}</small>
+                </div>
+                <div class="reporting-arrow" aria-hidden="true">↓</div>
+                <div>
+                    <span>Подчинённое подразделение</span>
+                    <strong>{{ line.subordinate_division.name }}</strong>
+                    <small>{{ line.get_relation_type_display }}</small>
+                </div>
+            </article>
+        {% empty %}
+            <p class="muted">Оперативная подчинённость не задана.</p>
+        {% endfor %}
+    </section>
+</div>
+
+<section class="profile-card serviced-sites-card">
+    <div class="eyebrow">ЗОНА ОБСЛУЖИВАНИЯ</div>
+    <h2>Энергообъекты и обслуживающие подразделения</h2>
+    <p class="muted">
+        Кочубеевская ВЭС, Кузьминская ВЭС и ПС 330 кВ Барсуки являются энергообъектами,
+        а не подразделениями. Одно подразделение может обслуживать несколько объектов.
+    </p>
+    <div class="site-service-grid">
+        {% for site in card.sites %}
+            <article class="site-service-card">
+                <header>
+                    <div>
+                        <strong>{{ site.short_name|default:site.name }}</strong>
+                        <small>{{ site.get_site_type_display }}</small>
+                    </div>
+                    <span class="technical-only"><code>{{ site.code }}</code></span>
+                </header>
+                <ul class="service-unit-list">
+                    {% for service in site.servicing_divisions.all %}
+                        <li>
+                            <strong>{{ service.division.name }}</strong>
+                            <span>{{ service.get_service_kind_display }}</span>
+                        </li>
+                    {% empty %}
+                        <li class="muted">Обслуживающие подразделения не назначены.</li>
+                    {% endfor %}
+                </ul>
+            </article>
+        {% empty %}
+            <p class="muted">Энергообъекты не заведены.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="profile-card authorization-card">
+    <div class="eyebrow">ОПЕРАТИВНЫЙ ПЕРСОНАЛ</div>
+    <h2>Допуски к работе на энергообъектах</h2>
+    <p class="muted">
+        Сотрудник хранится один раз. Допуски показывают, на каких объектах он может выполнять
+        соответствующую роль; фактический выход в смену будет учитываться отдельным модулем.
+    </p>
     <div class="table-wrap">
         <table>
-            <thead><tr><th>Сотрудник</th><th class="technical-only">Табельный номер</th><th>Подразделение</th><th>Должность</th><th class="technical-only">Учётная запись</th></tr></thead>
-            <tbody>
-            {% for employee in organization.employees.all %}
+            <thead>
                 <tr>
-                    <td>{{ employee.full_name }}</td>
-                    <td class="technical-only"><code>{{ employee.personnel_number }}</code></td>
-                    <td>{{ employee.division.name }}</td>
-                    <td>{{ employee.position.name }}</td>
-                    <td class="technical-only">{% if employee.user %}<code>{{ employee.user.username }}</code>{% else %}<span class="muted">не назначена</span>{% endif %}</td>
+                    <th>Сотрудник</th>
+                    <th>Роль на объекте</th>
+                    <th>Энергообъекты</th>
                 </tr>
-            {% empty %}
-                <tr><td colspan="5" class="muted">Сотрудники не заведены.</td></tr>
-            {% endfor %}
+            </thead>
+            <tbody>
+                {% for row in card.authorization_rows %}
+                    <tr>
+                        <td>
+                            <strong>{{ row.employee.full_name }}</strong>
+                            <small>{{ row.employee.position.name }}</small>
+                        </td>
+                        <td>{{ row.role }}</td>
+                        <td>
+                            <div class="authorization-sites">
+                                {% for site_name in row.sites %}<span>{{ site_name }}</span>{% endfor %}
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="3" class="muted">Допуски не заведены.</td></tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
 </section>
+
+<details class="technical-disclosure personnel-directory">
+    <summary>Справочник вымышленных сотрудников · {{ card.employee_count }} записей</summary>
+    <div class="technical-disclosure-body table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Сотрудник</th>
+                    <th>Подразделение</th>
+                    <th>Должность</th>
+                    <th class="technical-only">Табельный номер</th>
+                    <th class="technical-only">Учётная запись</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for employee in card.employees %}
+                    <tr>
+                        <td>{{ employee.full_name }}</td>
+                        <td>{{ employee.division.name }}</td>
+                        <td>{{ employee.position.name }}</td>
+                        <td class="technical-only"><code>{{ employee.personnel_number }}</code></td>
+                        <td class="technical-only">
+                            {% if employee.user %}<code>{{ employee.user.username }}</code>{% else %}<span class="muted">не назначена</span>{% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" class="muted">Сотрудники не заведены.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</details>
 {% empty %}
-<section class="empty-state"><h2>Организации ещё не созданы</h2><p>В презентационном профиле пока нет организационных данных.</p></section>
+<section class="empty-state">
+    <h2>Организации ещё не созданы</h2>
+    <p>В презентационном профиле пока нет организационных данных.</p>
+</section>
 {% endfor %}
 {% endblock %}

@@ -55,7 +55,7 @@ else:
 
 organization = Organization.objects.get(code="DEMO")
 current_name = organization_name_on(organization)
-if current_name is None or "Демонстрационная энергия" not in current_name.full_name:
+if current_name is None or "Росатом Возобновляемая энергия" not in current_name.full_name:
     raise SystemExit("Current historical organization name was not resolved.")
 if OrganizationNameRevision.objects.filter(
     organization=organization,

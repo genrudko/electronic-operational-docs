@@ -34,7 +34,7 @@
     <article class="metric"><span>Черновики</span><strong>{{ system_stats.drafts }}</strong></article>
     <article class="metric"><span>Зарегистрировано</span><strong>{{ system_stats.registered }}</strong></article>
     <article class="metric"><span>Оборудование</span><strong>{{ system_stats.equipment }}</strong></article>
-    <article class="metric"><span>Назначения управления</span><strong>{{ system_stats.management }}</strong></article>
+    <article class="metric"><span>Действующие назначения управления</span><strong>{{ system_stats.management }}</strong></article>
 </section>
 {% else %}
 <section class="login-callout">
@@ -98,7 +98,9 @@
     <summary>Технические сведения прототипа</summary>
     <div class="technical-panel-body">
         <span>Версия: {{ project_version }}</span>
-        <span>База данных: {{ database_vendor }}</span>
+        <span>Профиль базы: {{ database_profile }}</span>
+        <span>Файл базы: {{ database_file }}</span>
+        <span>СУБД: {{ database_vendor }}</span>
         <span>Серверное время: {{ server_time|date:"d.m.Y H:i:s T" }}</span>
     </div>
 </details>

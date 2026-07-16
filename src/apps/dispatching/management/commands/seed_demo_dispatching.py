@@ -51,10 +51,10 @@ class Command(BaseCommand):
             organization=organization,
             code="station-operational",
             defaults={
-                "name": "Оперативно-технологический уровень Демо-ВЭС",
+                "name": "Оперативно-технологический уровень ЦОТУиЭ ВЭС Невинномысск",
                 "level_type": DispatchLevel.LevelType.TECHNOLOGICAL,
                 "rank": 20,
-                "description": "Вымышленный уровень оперативного персонала станции.",
+                "description": "Технологический уровень оперативного персонала трёх энергообъектов.",
                 "is_active": True,
             },
         )
@@ -63,11 +63,11 @@ class Command(BaseCommand):
             organization=organization,
             code="demo-station-shift",
             defaults={
-                "name": "Оперативная смена демонстрационной ВЭС",
-                "short_name": "Смена Демо-ВЭС",
+                "name": "Оперативный персонал ЦОТУиЭ ВЭС Невинномысск",
+                "short_name": "Оперативный персонал ЦОТУиЭ ВЭС Невинномысск",
                 "subject_type": DispatchSubject.SubjectType.INTERNAL,
                 "is_external": False,
-                "description": "Вымышленный внутренний субъект.",
+                "description": "Вымышленный общий оперативный персонал обслуживаемых энергообъектов.",
                 "is_active": True,
             },
         )
@@ -87,8 +87,8 @@ class Command(BaseCommand):
             organization=organization,
             code="demo-adjacent-center",
             defaults={
-                "name": "Демонстрационный смежный диспетчерский центр",
-                "short_name": "Демо-смежный ДЦ",
+                "name": "Смежный диспетчерский центр — презентационный профиль",
+                "short_name": "Смежный диспетчерский центр",
                 "subject_type": DispatchSubject.SubjectType.ADJACENT,
                 "is_external": True,
                 "description": "Вымышленный смежный субъект.",
