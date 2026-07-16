@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -88,7 +89,15 @@ ASGI_APPLICATION = "eod_config.asgi.application"
 
 DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").strip().lower()
 if DB_ENGINE == "sqlite":
-    sqlite_path = BASE_DIR / os.getenv("SQLITE_PATH", "data/dev.sqlite3")
+    requested_sqlite_path = os.getenv("SQLITE_PATH", "").strip()
+    if requested_sqlite_path:
+        sqlite_path = BASE_DIR / requested_sqlite_path
+    else:
+        entry_point = Path(sys.argv[0]).name.lower()
+        default_name = "presentation.sqlite3"
+        if entry_point.startswith("gate_"):
+            default_name = "gate_runtime.sqlite3"
+        sqlite_path = BASE_DIR / "data" / default_name
     sqlite_path.parent.mkdir(parents=True, exist_ok=True)
     DATABASES = {
         "default": {

@@ -3,11 +3,11 @@
 {% block title %}Организация и персонал · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading compact">
+<section class="page-heading compact presentation-heading">
     <div>
-        <div class="eyebrow">ОРГАНИЗАЦИОННЫЙ СПРАВОЧНИК</div>
+        <div class="section-kicker">Организационный справочник</div>
         <h1>Организация и персонал</h1>
-        <p>Тестовая структура предприятия без реальных персональных и производственных данных.</p>
+        <p>Презентационная структура предприятия без реальных персональных и производственных данных.</p>
     </div>
 </section>
 
@@ -15,7 +15,7 @@
 <section class="directory-card">
     <div class="directory-header">
         <div>
-            <span class="code-chip">{{ organization.code }}</span>
+            <span class="code-chip technical-only">{{ organization.code }}</span>
             <h2>{{ organization.name }}</h2>
             <p>{{ organization.short_name }}</p>
         </div>
@@ -26,7 +26,7 @@
             <h3>Подразделения</h3>
             <ul class="clean-list">
                 {% for division in organization.divisions.all %}
-                    <li><span>{{ division.code }}</span>{{ division.name }}</li>
+                    <li><span class="technical-only">{{ division.code }}</span>{{ division.name }}</li>
                 {% empty %}<li class="muted">Нет данных</li>{% endfor %}
             </ul>
         </div>
@@ -34,7 +34,7 @@
             <h3>Рабочие места</h3>
             <ul class="clean-list">
                 {% for workplace in organization.workplaces.all %}
-                    <li><span>{{ workplace.code }}</span>{{ workplace.name }}</li>
+                    <li><span class="technical-only">{{ workplace.code }}</span>{{ workplace.name }}</li>
                 {% empty %}<li class="muted">Нет данных</li>{% endfor %}
             </ul>
         </div>
@@ -42,22 +42,22 @@
             <h3>Оперативные области</h3>
             <ul class="clean-list">
                 {% for area in organization.operational_areas.all %}
-                    <li><span>{{ area.code }}</span>{{ area.name }}</li>
+                    <li><span class="technical-only">{{ area.code }}</span>{{ area.name }}</li>
                 {% empty %}<li class="muted">Нет данных</li>{% endfor %}
             </ul>
         </div>
     </div>
     <div class="table-wrap">
         <table>
-            <thead><tr><th>Сотрудник</th><th>Табельный номер</th><th>Подразделение</th><th>Должность</th><th>Учётная запись</th></tr></thead>
+            <thead><tr><th>Сотрудник</th><th class="technical-only">Табельный номер</th><th>Подразделение</th><th>Должность</th><th class="technical-only">Учётная запись</th></tr></thead>
             <tbody>
             {% for employee in organization.employees.all %}
                 <tr>
                     <td>{{ employee.full_name }}</td>
-                    <td><code>{{ employee.personnel_number }}</code></td>
+                    <td class="technical-only"><code>{{ employee.personnel_number }}</code></td>
                     <td>{{ employee.division.name }}</td>
                     <td>{{ employee.position.name }}</td>
-                    <td>{% if employee.user %}<code>{{ employee.user.username }}</code>{% else %}<span class="muted">не назначена</span>{% endif %}</td>
+                    <td class="technical-only">{% if employee.user %}<code>{{ employee.user.username }}</code>{% else %}<span class="muted">не назначена</span>{% endif %}</td>
                 </tr>
             {% empty %}
                 <tr><td colspan="5" class="muted">Сотрудники не заведены.</td></tr>
@@ -67,6 +67,6 @@
     </div>
 </section>
 {% empty %}
-<section class="empty-state"><h2>Организации ещё не созданы</h2><p>Запустите демонстрационное заполнение из Patch 002.</p></section>
+<section class="empty-state"><h2>Организации ещё не созданы</h2><p>В презентационном профиле пока нет организационных данных.</p></section>
 {% endfor %}
 {% endblock %}

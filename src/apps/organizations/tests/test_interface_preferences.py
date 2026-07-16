@@ -122,8 +122,12 @@ class PresentationUxTests(TestCase):
     def test_dispatching_registry_uses_semantic_cards(self):
         response = self.client.get(reverse("dispatching:registry"))
         self.assertContains(response, "dispatching-object-card")
-        self.assertContains(response, "Управляет")
-        self.assertContains(response, "Ведёт режим")
+        self.assertContains(response, "Управление")
+        self.assertContains(response, "Ведение")
+        self.assertContains(response, "Диспетчерское управление")
+        self.assertContains(response, "Технологическое ведение")
+        self.assertNotContains(response, ">Управляет<")
+        self.assertNotContains(response, ">Ведёт режим<")
         self.assertNotContains(response, "ДОВЕРЕННОЕ СИСТЕМНОЕ ЯДРО")
 
     def test_dispatching_detail_collapses_history_and_digest(self):

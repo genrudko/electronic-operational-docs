@@ -40,94 +40,35 @@
 {% if integrity %}
 <section class="profile-card integrity-panel status-{{ integrity.status.value|lower }}">
     <div class="eyebrow">КОНТРОЛЬ ЦЕЛОСТНОСТИ</div>
-    <span class="integrity-badge">{{ integrity.status.label }}</span>
-    <p>{{ integrity.message }}</p>
-
+    <div class="integrity-summary-row">
+        <span class="integrity-badge">{{ integrity.status.label }}</span>
+        <strong>{{ integrity.message }}</strong>
+        <details class="help-tip"><summary>?</summary><div>Проверяется соответствие зарегистрированного содержания неизменяемому снимку.</div></details>
+    </div>
     <details class="help-panel">
         <summary>Что означает этот раздел?</summary>
         <div>
-            <p>
-                Система сравнивает зарегистрированное содержимое с неизменяемым снимком,
-                проверяет SHA-256 снимка и контрольную сумму системного подтверждения.
-            </p>
-            <ul>
-                <li><strong>Целостность подтверждена</strong> — проверяемые сведения совпадают.</li>
-                <li><strong>Целостность нарушена</strong> — найдено расхождение или повреждение.</li>
-                <li><strong>Наследованный документ</strong> — документ существовал до механизма повторной аутентификации.</li>
-                <li><strong>Подтверждение отсутствует</strong> — обязательного снимка или подтверждения нет.</li>
-            </ul>
-            <p>
-                Это контроль прототипа, а не заявление о применении УКЭП или УНЭП.
-                При нарушении целостности документ нельзя считать достоверным до разбирательства.
-            </p>
+            <p><strong>Целостность подтверждена</strong> означает, что зарегистрированное содержание совпадает с зафиксированным снимком. Это системный контроль прототипа, а не электронная подпись.</p>
         </div>
     </details>
-
-    {% if integrity.snapshot %}
-        <dl>
-            <dt>
-                <span class="help-label">SHA-256 снимка
-                    <details class="help-tip"><summary>?</summary><div>Контрольная сумма точного содержимого, зафиксированного при регистрации. Любое изменение приведёт к другому значению.</div></details>
-                </span>
-            </dt>
-            <dd class="hash-value">{{ integrity.snapshot.digest }}</dd>
-            <dt>
-                <span class="help-label">Формат снимка
-                    <details class="help-tip"><summary>?</summary><div>Версия правил, по которым документ преобразован в проверяемый неизменяемый снимок.</div></details>
-                </span>
-            </dt>
-            <dd>
-                {% if integrity.snapshot.schema_version == "eod.document.registration.v1" %}
-                    Регистрация документа, версия 1
-                {% elif integrity.snapshot.schema_version == "eod.document.registration.v2" %}
-                    Регистрация документа с оборудованием, версия 2
-                {% else %}
-                    Неизвестный формат снимка
+    <details class="technical-disclosure technical-only">
+        <summary>Технические сведения о проверке</summary>
+        <div class="technical-disclosure-body">
+            <dl>
+                {% if integrity.snapshot %}
+                    <dt>SHA-256 снимка</dt><dd class="hash-value">{{ integrity.snapshot.digest }}</dd>
+                    <dt>Формат снимка</dt><dd>{{ integrity.snapshot.schema_version }}</dd>
+                    <dt>Снимок создан</dt><dd>{{ integrity.snapshot.created_at|date:"d.m.Y H:i:s T" }}</dd>
                 {% endif %}
-            </dd>
-            <dt>
-                <span class="help-label">Снимок создан
-                    <details class="help-tip"><summary>?</summary><div>Серверное время создания неизменяемого снимка документа.</div></details>
-                </span>
-            </dt>
-            <dd>{{ integrity.snapshot.created_at|date:"d.m.Y H:i:s T" }}</dd>
-        </dl>
-    {% endif %}
-    {% if integrity.signature %}
-        <dl>
-            <dt><span class="help-label">Способ подтверждения
-                <details class="help-tip"><summary>?</summary><div>Показывает, как было создано подтверждение: повторным вводом пароля, демонстрационным заполнением или переносом старого документа.</div></details>
-            </span></dt>
-            <dd>{{ integrity.signature.get_confirmation_method_display }}</dd>
-            <dt><span class="help-label">Подтвердил
-                <details class="help-tip"><summary>?</summary><div>Ф.И.О., зафиксированное в момент подтверждения. Последующее изменение карточки сотрудника не меняет этот снимок.</div></details>
-            </span></dt>
-            <dd>{{ integrity.signature.full_name_snapshot|default:"—" }}</dd>
-            <dt><span class="help-label">Должность
-                <details class="help-tip"><summary>?</summary><div>Должность пользователя на момент подтверждения документа.</div></details>
-            </span></dt>
-            <dd>{{ integrity.signature.position_snapshot|default:"—" }}</dd>
-            <dt><span class="help-label">Подразделение
-                <details class="help-tip"><summary>?</summary><div>Подразделение пользователя на момент подтверждения документа.</div></details>
-            </span></dt>
-            <dd>{{ integrity.signature.division_snapshot|default:"—" }}</dd>
-            <dt><span class="help-label">Рабочее место
-                <details class="help-tip"><summary>?</summary><div>Основное рабочее место пользователя, зафиксированное при подтверждении.</div></details>
-            </span></dt>
-            <dd>{{ integrity.signature.workplace_snapshot|default:"—" }}</dd>
-            <dt><span class="help-label">Серверное время
-                <details class="help-tip"><summary>?</summary><div>Время сервера приложения. Время компьютера пользователя для подтверждения не используется.</div></details>
-            </span></dt>
-            <dd>{{ integrity.signature.signed_at|date:"d.m.Y H:i:s T" }}</dd>
-            <dt><span class="help-label">Контрольная сумма подтверждения
-                <details class="help-tip"><summary>?</summary><div>SHA-256 сведений о снимке, подписанте, способе подтверждения и серверном времени.</div></details>
-            </span></dt>
-            <dd class="hash-value">{{ integrity.signature.checksum }}</dd>
-        </dl>
-    {% endif %}
-    <p class="muted">
-        Это системное подтверждение и SHA-256 прототипа, а не заявление о наличии УКЭП или УНЭП.
-    </p>
+                {% if integrity.signature %}
+                    <dt>Способ подтверждения</dt><dd>{{ integrity.signature.get_confirmation_method_display }}</dd>
+                    <dt>Подтвердил</dt><dd>{{ integrity.signature.full_name_snapshot|default:"—" }}</dd>
+                    <dt>Серверное время</dt><dd>{{ integrity.signature.signed_at|date:"d.m.Y H:i:s T" }}</dd>
+                    <dt>Контрольная сумма подтверждения</dt><dd class="hash-value">{{ integrity.signature.checksum }}</dd>
+                {% endif %}
+            </dl>
+        </div>
+    </details>
 </section>
 {% endif %}
 
@@ -168,11 +109,11 @@
                 <a href="{% url 'equipment:detail' row.public_id %}">
                     <strong>{{ row.display_name }}</strong>
                 </a>
-                <div class="muted">{{ row.technical_name }}</div>
+                <div class="muted technical-only">{{ row.technical_name }}</div>
             </div>
-            <code>{{ row.code }}</code>
+            <code class="technical-only">{{ row.code }}</code>
             <span>{{ row.type_name }}</span>
-            <small>{{ row.site_name }}{% if row.hierarchy_path %} · {{ row.hierarchy_path }}{% endif %}</small>
+            <small class="technical-only">{{ row.site_name }}{% if row.hierarchy_path %} · {{ row.hierarchy_path }}{% endif %}</small>
             {% if row.frozen %}
                 <span class="snapshot-label">Снимок на момент регистрации</span>
             {% endif %}
@@ -183,33 +124,19 @@
     </div>
 </section>
 
-<section class="profile-card">
-    <h2>Версии</h2>
-    <div class="table-wrap">
+<details class="history-disclosure profile-card">
+    <summary><span>История версий</span><small>{{ versions|length }} записей</small></summary>
+    <div class="table-wrap disclosure-body">
         <table>
-            <thead>
-                <tr>
-                    <th>Версия</th>
-                    <th>Статус</th>
-                    <th>Автор</th>
-                    <th>Создана</th>
-                    <th>Зафиксирована</th>
-                </tr>
-            </thead>
+            <thead><tr><th>Версия</th><th>Статус</th><th>Автор</th><th>Создана</th><th>Зафиксирована</th></tr></thead>
             <tbody>
             {% for version in versions %}
-                <tr>
-                    <td>№ {{ version.version_number }}</td>
-                    <td>{{ version.get_status_display }}</td>
-                    <td>{{ version.created_by.full_name }}</td>
-                    <td>{{ version.created_at|date:"d.m.Y H:i:s" }}</td>
-                    <td>{{ version.registered_at|date:"d.m.Y H:i:s"|default:"—" }}</td>
-                </tr>
+                <tr><td>№ {{ version.version_number }}</td><td>{{ version.get_status_display }}</td><td>{{ version.created_by.full_name }}</td><td>{{ version.created_at|date:"d.m.Y H:i:s" }}</td><td>{{ version.registered_at|date:"d.m.Y H:i:s"|default:"—" }}</td></tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
-</section>
+</details>
 
 <section class="profile-grid document-profile-grid">
     <article class="profile-card">
@@ -264,21 +191,17 @@
 </section>
 {% endif %}
 
-<section class="profile-card">
-    <h2>Базовый аудит</h2>
-    <div class="audit-timeline">
+<details class="history-disclosure profile-card technical-only">
+    <summary><span>Системный аудит</span><small>{{ audit_events|length }} событий</small></summary>
+    <div class="audit-timeline disclosure-body">
         {% for event in audit_events %}
             <article>
                 <time>{{ event.occurred_at|date:"d.m.Y H:i:s T" }}</time>
                 <strong>{{ event.get_event_type_display }}</strong>
                 <span>{{ event.actor_employee.full_name|default:"системное действие" }}</span>
-                {% if event.payload.registration_number %}
-                    <code>{{ event.payload.registration_number }}</code>
-                {% endif %}
+                {% if event.payload.registration_number %}<code>{{ event.payload.registration_number }}</code>{% endif %}
             </article>
-        {% empty %}
-            <p class="muted">Событий аудита нет.</p>
-        {% endfor %}
+        {% empty %}<p class="muted">Событий аудита нет.</p>{% endfor %}
     </div>
-</section>
+</details>
 {% endblock %}

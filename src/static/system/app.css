@@ -1289,3 +1289,212 @@ html[data-theme="light"] .semantic-badge.information { color: #7046a4; }
     .interaction-card header span:last-child { text-align: left; }
     .interaction-arrow { transform: rotate(90deg); }
 }
+/* Patch 007.3: theme surface repair and presentation contrast contract. */
+:root {
+    --surface: #111a26;
+    --surface-soft: #172231;
+    --surface-muted: #1d2b3d;
+    --surface-text: #edf4fb;
+    --surface-secondary-text: #9cafc3;
+    --field-bg: #0c141f;
+    --link: #b8d2ff;
+    --topbar-bg: #08111d;
+    --topbar-border: #26384c;
+    --topbar-text: #f1f6fb;
+    --topbar-muted: #a8b8ca;
+}
+html[data-theme="light"] {
+    --surface: #ffffff;
+    --surface-soft: #f6f9fc;
+    --surface-muted: #e7eef6;
+    --surface-text: #142033;
+    --surface-secondary-text: #5b6e82;
+    --field-bg: #ffffff;
+    --link: #245fae;
+    --topbar-bg: #0b1522;
+    --topbar-border: #26384c;
+    --topbar-text: #f4f7fb;
+    --topbar-muted: #b5c2d1;
+}
+@media (prefers-color-scheme: light) {
+    html[data-theme="system"] {
+        --surface: #ffffff;
+        --surface-soft: #f6f9fc;
+        --surface-muted: #e7eef6;
+        --surface-text: #142033;
+        --surface-secondary-text: #5b6e82;
+        --field-bg: #ffffff;
+        --link: #245fae;
+        --topbar-bg: #0b1522;
+        --topbar-border: #26384c;
+        --topbar-text: #f4f7fb;
+        --topbar-muted: #b5c2d1;
+    }
+}
+
+body { color: var(--surface-text); }
+a { color: var(--link); }
+a:hover { color: var(--surface-text); }
+
+.presentation-topbar {
+    background: color-mix(in srgb, var(--topbar-bg) 96%, transparent) !important;
+    border-color: var(--topbar-border) !important;
+    color: var(--topbar-text) !important;
+}
+.presentation-topbar .brand,
+.presentation-topbar .brand:hover,
+.presentation-topbar .brand strong,
+.presentation-topbar .brand-copy,
+.presentation-topbar .user-avatar,
+.presentation-topbar .presentation-nav > a.active,
+.presentation-topbar .nav-menu[open] > summary,
+.presentation-topbar .nav-menu > summary:hover {
+    color: var(--topbar-text) !important;
+}
+.presentation-topbar .presentation-nav > a,
+.presentation-topbar .nav-menu > summary {
+    color: var(--topbar-muted) !important;
+}
+.presentation-topbar .presentation-nav > a:hover {
+    color: var(--topbar-text) !important;
+}
+.presentation-topbar .nav-toggle {
+    border-color: var(--topbar-border);
+    background: rgba(255, 255, 255, .06);
+    color: var(--topbar-text);
+}
+
+.hero,
+.login-callout,
+.directory-card,
+.profile-card,
+.principles,
+.empty-state,
+.metric,
+.module-tile,
+.function-card,
+.dispatching-object-card,
+.filter-disclosure,
+.history-disclosure,
+.help-overview,
+.help-panel,
+.document-state,
+.auth-card {
+    background: var(--surface) !important;
+    color: var(--surface-text) !important;
+    border-color: var(--border) !important;
+}
+.module-tile,
+.function-card,
+.dispatching-object-card {
+    background: linear-gradient(150deg, var(--surface-soft), var(--surface)) !important;
+}
+.assignment-lane,
+.current-assignment-card,
+.subject-card,
+.interaction-card,
+.role-list li,
+.directory-columns > div,
+.audit-timeline article,
+.revision-list li,
+.trace-card,
+.document-equipment-item {
+    background: var(--surface-soft) !important;
+    color: var(--surface-text) !important;
+}
+
+.hero-title,
+.metric strong,
+.module-copy strong,
+.card-heading-with-icon h2,
+.profile-card h2,
+.function-card h2,
+.assignment-person strong,
+.assignment-subject,
+.object-title,
+.subject-card strong,
+.interaction-card strong,
+.document-body,
+td,
+dd,
+.setting-field label {
+    color: var(--surface-text) !important;
+}
+.hero p,
+.metric span,
+.module-copy small,
+.assignment-person small,
+.assignment-level,
+.object-context,
+.assignment-period,
+.information-note,
+.subject-card span,
+.subject-card em,
+.interaction-card > p,
+.settings-heading > p,
+.setting-field small,
+.muted,
+dt,
+th {
+    color: var(--surface-secondary-text) !important;
+}
+.help-panel summary,
+.concept-note strong,
+.revision-list strong,
+.interaction-card header,
+.clean-list li,
+.document-subject {
+    color: var(--surface-text) !important;
+}
+
+input,
+select,
+textarea,
+.document-form input,
+.document-form select,
+.document-form textarea,
+.inline-form select,
+.setting-field select,
+.auth-form input {
+    background: var(--field-bg) !important;
+    color: var(--surface-text) !important;
+    border-color: var(--border) !important;
+}
+
+html[data-theme="light"] .button { color: #14304f; }
+@media (prefers-color-scheme: light) {
+    html[data-theme="system"] .button { color: #14304f; }
+}
+html[data-theme="light"] .status-registered,
+html[data-theme="light"] .module-status.ready { color: #087454; }
+html[data-theme="light"] .status-draft { color: #805500; }
+html[data-theme="light"] .semantic-badge.management { color: #245fae; }
+html[data-theme="light"] .semantic-badge.supervision { color: #087454; }
+
+.authority-kind { margin: 0 0 3px; font-weight: 750; }
+.assignment-level { color: var(--surface-secondary-text); font-size: 13px; }
+.information-note { display: block; line-height: 1.45; }
+.terminology-note { background: var(--surface-soft) !important; }
+
+.technical-disclosure {
+    margin-top: 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-soft);
+}
+.technical-disclosure > summary {
+    padding: 12px 14px;
+    color: var(--surface-secondary-text);
+    font-weight: 700;
+    cursor: pointer;
+}
+.technical-disclosure-body { padding: 0 14px 14px; }
+.integrity-summary-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+
+html[data-theme="light"] footer,
+html[data-theme="light"] footer a { color: #50657a; }
+html[data-theme="light"] .message { background: var(--surface); color: var(--surface-text); }
+
+@media (max-width: 760px) {
+    .presentation-topbar .brand-copy strong { color: var(--topbar-text) !important; }
+}

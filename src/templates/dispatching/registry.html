@@ -8,7 +8,7 @@
     <div>
         <div class="section-kicker">Распределение оперативных функций</div>
         <h1>Управление и ведение</h1>
-        <p>Кто управляет оборудованием, кто ведёт его режим и на каком уровне действует назначение.</p>
+        <p>Действующее распределение оборудования по управлению и ведению с указанием диспетчерского или технологического контура.</p>
     </div>
     <a class="button secondary-action" href="{% url 'dispatching:subjects' %}">
         <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-subjects"></use></svg>
@@ -16,15 +16,18 @@
     </a>
 </section>
 
-<section class="concept-note">
+<section class="concept-note terminology-note">
     <span class="section-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-info"></use></svg></span>
-    <div><strong>Управление и ведение — разные функции</strong><p>Информационное ведение обозначается отдельно и не предоставляет права управления.</p></div>
+    <div>
+        <strong>Управление и ведение учитываются раздельно</strong>
+        <p>Для диспетчерских центров используется диспетчерский контур, для оперативного персонала владельца — технологический. Информационное ведение является характеристикой ведения, а не отдельным правом управления.</p>
+    </div>
 </section>
 
 <section class="summary-grid presentation-summary dispatching-summary">
     <article class="metric"><span>Назначения управления</span><strong>{{ management_count }}</strong></article>
     <article class="metric"><span>Назначения ведения</span><strong>{{ supervision_count }}</strong></article>
-    <article class="metric"><span>Информационное ведение</span><strong>{{ information_count }}</strong></article>
+    <article class="metric"><span>Информационный характер ведения</span><strong>{{ information_count }}</strong></article>
 </section>
 
 <details class="filter-disclosure" {% if query or level_type %}open{% endif %}>
@@ -35,9 +38,9 @@
             <input id="dispatching-search" type="search" name="q" value="{{ query }}" placeholder="Например: КЛ 35 кВ или Региональный ДЦ">
         </div>
         <div>
-            <label for="dispatching-level-type">Тип уровня</label>
+            <label for="dispatching-level-type">Контур управления</label>
             <select id="dispatching-level-type" name="level_type">
-                <option value="">Все уровни</option>
+                <option value="">Все контуры</option>
                 {% for value, label in level_types %}<option value="{{ value }}" {% if level_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
             </select>
         </div>
@@ -60,19 +63,25 @@
             </header>
             <div class="assignment-columns">
                 <section class="assignment-lane management-lane">
-                    <div class="lane-heading"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-management"></use></svg><span>Управляет</span></div>
+                    <div class="lane-heading"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-management"></use></svg><span>Управление</span></div>
                     {% for item in row.management %}
-                        <div class="assignment-person"><strong>{{ item.subject.presentation_label }}</strong><small>{{ item.level.presentation_label }}</small></div>
-                    {% empty %}<div class="friendly-empty">Управляющий субъект не указан</div>{% endfor %}
+                        <div class="assignment-person">
+                            <span class="semantic-badge management authority-kind">{% if item.level.level_type == "DISPATCH" %}Диспетчерское управление{% else %}Технологическое управление{% endif %}</span>
+                            <strong>{{ item.subject.presentation_label }}</strong>
+                            <small>{{ item.level.presentation_label }}</small>
+                        </div>
+                    {% empty %}<div class="friendly-empty">Назначение управления отсутствует</div>{% endfor %}
                 </section>
                 <section class="assignment-lane supervision-lane">
-                    <div class="lane-heading"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-supervision"></use></svg><span>Ведёт режим</span></div>
+                    <div class="lane-heading"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-supervision"></use></svg><span>Ведение</span></div>
                     {% for item in row.supervision %}
                         <div class="assignment-person">
-                            <strong>{{ item.subject.presentation_label }}</strong><small>{{ item.level.presentation_label }}</small>
-                            {% if item.is_information_only %}<span class="semantic-badge information">Только информационное ведение</span>{% endif %}
+                            <span class="semantic-badge supervision authority-kind">{% if item.level.level_type == "DISPATCH" %}Диспетчерское ведение{% else %}Технологическое ведение{% endif %}</span>
+                            <strong>{{ item.subject.presentation_label }}</strong>
+                            <small>{{ item.level.presentation_label }}</small>
+                            {% if item.is_information_only %}<span class="semantic-badge information" title="Без права выдачи команд управления">Информационное ведение</span>{% endif %}
                         </div>
-                    {% empty %}<div class="friendly-empty">Ведение режима не назначено</div>{% endfor %}
+                    {% empty %}<div class="friendly-empty">Назначение ведения отсутствует</div>{% endfor %}
                 </section>
             </div>
             <details class="record-details technical-only">
@@ -81,11 +90,13 @@
                     <span>Код оборудования</span><code>{{ row.equipment.code }}</code>
                     <span>Основание управления</span>
                     <div>{% for item in row.management %}{{ item.basis_reference }}{% if not forloop.last %}<br>{% endif %}{% empty %}—{% endfor %}</div>
+                    <span>Основание ведения</span>
+                    <div>{% for item in row.supervision %}{{ item.basis_reference }}{% if not forloop.last %}<br>{% endif %}{% empty %}—{% endfor %}</div>
                 </div>
             </details>
         </article>
     {% empty %}
-        <section class="empty-state"><h2>Записи не найдены</h2><p>Измените строку поиска или снимите фильтр уровня.</p></section>
+        <section class="empty-state"><h2>Записи не найдены</h2><p>Измените строку поиска или снимите фильтр контура.</p></section>
     {% endfor %}
 </section>
 {% endblock %}

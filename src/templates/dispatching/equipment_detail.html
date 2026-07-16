@@ -6,7 +6,7 @@
 {% block content %}
 <section class="page-heading compact presentation-heading object-page-heading">
     <div>
-        <div class="section-kicker">Карточка объекта</div>
+        <div class="section-kicker">Распределение оперативных функций</div>
         <h1>{{ display_name }}</h1>
         <p>{{ equipment.equipment_type.name }} · {{ equipment.site }}</p>
         <code class="technical-only object-code">{{ equipment.code }}</code>
@@ -16,14 +16,15 @@
 
 <section class="dispatching-current-grid presentation-current-grid">
     <article class="function-card management-function-card">
-        <header><span class="function-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-management"></use></svg></span><div><span class="card-label">Действующее назначение</span><h2>Управление</h2></div></header>
+        <header><span class="function-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-management"></use></svg></span><div><span class="card-label">Действующие назначения</span><h2>Управление</h2></div></header>
         {% for item in current_management %}
             <div class="current-assignment-card">
+                <span class="semantic-badge management authority-kind">{% if item.level.level_type == "DISPATCH" %}Диспетчерское управление{% else %}Технологическое управление{% endif %}</span>
                 <strong class="assignment-subject">{{ item.subject.presentation_label }}</strong>
-                <span class="semantic-badge management">{{ item.level.presentation_label }}</span>
-                <div class="assignment-period">Действует с {{ item.effective_from|date:"d.m.Y" }}{% if item.effective_until %} по {{ item.effective_until|date:"d.m.Y" }}{% endif %}</div>
+                <span class="assignment-level">{{ item.level.presentation_label }}</span>
+                <div class="assignment-period">с {{ item.effective_from|date:"d.m.Y" }}{% if item.effective_until %} по {{ item.effective_until|date:"d.m.Y" }}{% else %}, без установленной даты окончания{% endif %}</div>
                 <details class="record-details">
-                    <summary>Основание и реквизиты</summary>
+                    <summary>Основание</summary>
                     <div class="record-detail-grid">
                         <span>Документ-основание</span><div>{{ item.basis_reference }}</div>
                         <span class="technical-only">SHA-256</span><code class="technical-only digest">{{ item.digest }}</code>
@@ -32,20 +33,24 @@
                 </details>
             </div>
         {% empty %}
-            <div class="friendly-empty large"><strong>Управляющий субъект не указан</strong><span>Для объекта нет действующего опубликованного назначения управления.</span></div>
+            <div class="friendly-empty large"><strong>Назначение управления отсутствует</strong><span>Для объекта нет действующей опубликованной записи управления.</span></div>
         {% endfor %}
     </article>
 
     <article class="function-card supervision-function-card">
-        <header><span class="function-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-supervision"></use></svg></span><div><span class="card-label">Действующее назначение</span><h2>Ведение режима</h2></div></header>
+        <header><span class="function-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-supervision"></use></svg></span><div><span class="card-label">Действующие назначения</span><h2>Ведение</h2></div></header>
         {% for item in current_supervision %}
             <div class="current-assignment-card">
+                <span class="semantic-badge supervision authority-kind">{% if item.level.level_type == "DISPATCH" %}Диспетчерское ведение{% else %}Технологическое ведение{% endif %}</span>
                 <strong class="assignment-subject">{{ item.subject.presentation_label }}</strong>
-                <span class="semantic-badge supervision">{{ item.level.presentation_label }}</span>
-                {% if item.is_information_only %}<span class="semantic-badge information">Только информационное ведение</span>{% endif %}
-                <div class="assignment-period">Действует с {{ item.effective_from|date:"d.m.Y" }}{% if item.effective_until %} по {{ item.effective_until|date:"d.m.Y" }}{% endif %}</div>
+                <span class="assignment-level">{{ item.level.presentation_label }}</span>
+                {% if item.is_information_only %}
+                    <span class="semantic-badge information">Информационное ведение</span>
+                    <small class="information-note">Информационный характер ведения не предоставляет права управления объектом.</small>
+                {% endif %}
+                <div class="assignment-period">с {{ item.effective_from|date:"d.m.Y" }}{% if item.effective_until %} по {{ item.effective_until|date:"d.m.Y" }}{% else %}, без установленной даты окончания{% endif %}</div>
                 <details class="record-details">
-                    <summary>Основание и реквизиты</summary>
+                    <summary>Основание</summary>
                     <div class="record-detail-grid">
                         <span>Документ-основание</span><div>{{ item.basis_reference }}</div>
                         <span class="technical-only">SHA-256</span><code class="technical-only digest">{{ item.digest }}</code>
@@ -54,7 +59,7 @@
                 </details>
             </div>
         {% empty %}
-            <div class="friendly-empty large"><strong>Ведение режима не назначено</strong><span>Для объекта нет действующего опубликованного назначения ведения.</span></div>
+            <div class="friendly-empty large"><strong>Назначение ведения отсутствует</strong><span>Для объекта нет действующей опубликованной записи ведения.</span></div>
         {% endfor %}
     </article>
 </section>
@@ -63,10 +68,10 @@
     <summary><span><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-history"></use></svg> История управления</span><small>{{ management_history|length }} редакций</small></summary>
     <div class="table-wrap disclosure-body">
         <table>
-            <thead><tr><th class="technical-only">Редакция</th><th>Период</th><th>Уровень</th><th>Субъект</th><th class="technical-only">Статус</th></tr></thead>
+            <thead><tr><th class="technical-only">Редакция</th><th>Период</th><th>Вид управления</th><th>Уровень</th><th>Субъект</th><th class="technical-only">Статус</th></tr></thead>
             <tbody>
-            {% for item in management_history %}<tr><td class="technical-only">№ {{ item.revision_number }}</td><td>{{ item.effective_from|date:"d.m.Y" }} — {{ item.effective_until|date:"d.m.Y"|default:"по настоящее время" }}</td><td>{{ item.level.presentation_label }}</td><td>{{ item.subject.presentation_label }}</td><td class="technical-only">{{ item.get_status_display }}</td></tr>
-            {% empty %}<tr><td colspan="5">История управления пока отсутствует.</td></tr>{% endfor %}
+            {% for item in management_history %}<tr><td class="technical-only">№ {{ item.revision_number }}</td><td>{{ item.effective_from|date:"d.m.Y" }} — {{ item.effective_until|date:"d.m.Y"|default:"по настоящее время" }}</td><td>{% if item.level.level_type == "DISPATCH" %}Диспетчерское управление{% else %}Технологическое управление{% endif %}</td><td>{{ item.level.presentation_label }}</td><td>{{ item.subject.presentation_label }}</td><td class="technical-only">{{ item.get_status_display }}</td></tr>
+            {% empty %}<tr><td colspan="6">История управления пока отсутствует.</td></tr>{% endfor %}
             </tbody>
         </table>
     </div>
@@ -76,10 +81,10 @@
     <summary><span><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-history"></use></svg> История ведения</span><small>{{ supervision_history|length }} редакций</small></summary>
     <div class="table-wrap disclosure-body">
         <table>
-            <thead><tr><th class="technical-only">Редакция</th><th>Период</th><th>Уровень</th><th>Субъект</th><th>Вид</th></tr></thead>
+            <thead><tr><th class="technical-only">Редакция</th><th>Период</th><th>Вид ведения</th><th>Уровень</th><th>Субъект</th><th>Характер</th></tr></thead>
             <tbody>
-            {% for item in supervision_history %}<tr><td class="technical-only">№ {{ item.revision_number }}</td><td>{{ item.effective_from|date:"d.m.Y" }} — {{ item.effective_until|date:"d.m.Y"|default:"по настоящее время" }}</td><td>{{ item.level.presentation_label }}</td><td>{{ item.subject.presentation_label }}</td><td>{% if item.is_information_only %}Информационное ведение{% else %}Оперативное ведение{% endif %}</td></tr>
-            {% empty %}<tr><td colspan="5">История ведения пока отсутствует.</td></tr>{% endfor %}
+            {% for item in supervision_history %}<tr><td class="technical-only">№ {{ item.revision_number }}</td><td>{{ item.effective_from|date:"d.m.Y" }} — {{ item.effective_until|date:"d.m.Y"|default:"по настоящее время" }}</td><td>{% if item.level.level_type == "DISPATCH" %}Диспетчерское ведение{% else %}Технологическое ведение{% endif %}</td><td>{{ item.level.presentation_label }}</td><td>{{ item.subject.presentation_label }}</td><td>{% if item.is_information_only %}Информационное{% else %}Полное{% endif %}</td></tr>
+            {% empty %}<tr><td colspan="6">История ведения пока отсутствует.</td></tr>{% endfor %}
             </tbody>
         </table>
     </div>

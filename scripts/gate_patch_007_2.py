@@ -87,19 +87,27 @@ for marker in ("module-launcher", "icons.svg#icon-home", 'data-theme="light"'):
         raise SystemExit(f"Не найден маркер презентационного интерфейса: {marker}")
 for marker in (
     "dispatching-object-card",
-    "Управляет",
-    "Ведёт режим",
+    "Управление",
+    "Ведение",
+    "Диспетчерское управление",
+    "Технологическое ведение",
     "Смена Кочубеевской ВЭС",
 ):
     if marker not in registry:
         raise SystemExit(f"Не найден маркер упрощённого реестра: {marker}")
+if "Управляет" in registry or "Ведёт режим" in registry:
+    raise SystemExit("В пользовательском интерфейсе остались разговорные глагольные подписи.")
 if "Показывать технические реквизиты" not in account:
     raise SystemExit("Персональные настройки интерфейса недоступны.")
 
 css = (ROOT / "src/static/system/app.css").read_text(encoding="utf-8")
 script = (ROOT / "src/static/system/app.js").read_text(encoding="utf-8")
 sprite = (ROOT / "src/static/system/icons.svg").read_text(encoding="utf-8")
-for marker in ('[data-technical="false"] .technical-only', 'html[data-theme="light"]'):
+for marker in (
+    '[data-technical="false"] .technical-only',
+    'html[data-theme="light"]',
+    "Patch 007.3: theme surface repair",
+):
     if marker not in css:
         raise SystemExit(f"CSS-контракт настроек не выполнен: {marker}")
 if "data-nav-toggle" not in script:

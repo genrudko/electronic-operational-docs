@@ -35,12 +35,15 @@ class Command(BaseCommand):
             code="demo-electronic-documentation",
             defaults={
                 "organization": None,
-                "title": "Демонстрационные требования к электронной документации",
-                "short_title": "Демо-требования ЭОД",
+                "title": (
+                    "Правила технической эксплуатации электрических станций "
+                    "и сетей Российской Федерации"
+                ),
+                "short_title": "ПТЭ электрических станций и сетей",
                 "scope": NormativeDocument.Scope.FEDERAL,
-                "issuer": "Учебный нормативный источник",
-                "document_number": "ДЕМО-001",
-                "document_date": date(2026, 1, 1),
+                "issuer": "Министерство энергетики Российской Федерации (Минэнерго России)",
+                "document_number": "Приказ Минэнерго России от 04.10.2022 № 1070",
+                "document_date": date(2022, 10, 4),
                 "is_active": True,
             },
         )
@@ -48,35 +51,51 @@ class Command(BaseCommand):
             document=document,
             revision_number=1,
             defaults={
-                "effective_from": date(2026, 1, 1),
-                "source_reference": "Демонстрационный источник без производственных данных",
-                "change_summary": "Первая учебная редакция нормативной матрицы.",
+                "effective_from": date(2023, 3, 1),
+                "source_reference": (
+                    "Публичное наименование ПТЭ; требования профиля "
+                    "сформулированы для демонстрации"
+                ),
+                "change_summary": (
+                    "Презентационная нормативная матрица "
+                    "оперативно-технологического управления."
+                ),
             },
         )
         if revision.status == PublicationStatus.DRAFT:
             requirements = (
                 (
-                    "EOD-IDENTITY",
-                    "п. 1",
-                    "Персональная идентификация",
-                    "Каждое значимое действие должно быть связано с конкретным пользователем.",
-                    "Все модули электронной оперативной документации.",
+                    "PTE-57-OPTECH",
+                    "п. 57",
+                    "Организация оперативно-технологического управления",
+                    (
+                        "В отношении каждого объекта электроэнергетики владельцем "
+                        "должно быть организовано оперативно-технологическое управление."
+                    ),
+                    "Объекты электроэнергетики презентационного профиля.",
                     10,
                 ),
                 (
-                    "EOD-IMMUTABILITY",
-                    "п. 2",
-                    "Неизменяемость зарегистрированных записей",
-                    "Зарегистрированная версия не должна незаметно изменяться или удаляться.",
-                    "Зарегистрированные документы и записи.",
+                    "PTE-67-METHODS",
+                    "п. 67",
+                    "Способы оперативно-технологического управления",
+                    (
+                        "ЛЭП, оборудование и устройства распределяются по "
+                        "технологическому управлению и технологическому ведению."
+                    ),
+                    "Реестр управления и ведения оборудования.",
                     20,
                 ),
                 (
-                    "EOD-TRACEABILITY",
-                    "п. 3",
-                    "Трассируемость требований",
-                    "Для требования должны быть указаны функция, тест и приёмочный сценарий.",
-                    "Нормативная матрица первой очереди.",
+                    "PTE-68-DISTRIBUTION",
+                    "п. 68",
+                    "Единственность управления и допустимость ведения",
+                    (
+                        "Для объекта допускается одно технологическое управление "
+                        "соответствующего уровня; технологическое ведение может быть "
+                        "назначено нескольким субъектам в установленных случаях."
+                    ),
+                    "Проверка конфликтов опубликованных назначений.",
                     30,
                 ),
             )
@@ -97,22 +116,22 @@ class Command(BaseCommand):
 
         trace_data = (
             (
-                "EOD-IDENTITY",
-                "CORE-AUTH",
-                "Персональная учётная запись и повторная аутентификация",
-                "apps.documents.tests.test_signatures.DocumentSignatureTests",
+                "PTE-57-OPTECH",
+                "DISPATCH-REGISTRY",
+                "Реестр оперативно-технологического управления",
+                "apps.dispatching.tests.test_views.DispatchingViewTests",
             ),
             (
-                "EOD-IMMUTABILITY",
-                "CORE-IMMUTABILITY",
-                "Неизменяемые документы, версии, снимки и подтверждения",
-                "apps.documents.tests.test_models.DocumentCoreModelTests",
+                "PTE-67-METHODS",
+                "DISPATCH-METHODS",
+                "Раздельное моделирование управления и ведения",
+                "apps.dispatching.tests.test_models.DispatchingModelTests",
             ),
             (
-                "EOD-TRACEABILITY",
-                "NORM-TRACE",
-                "Связь требования с функцией, тестом и приёмочным сценарием",
-                "apps.normatives.tests.test_services.NormativeRegistryServiceTests",
+                "PTE-68-DISTRIBUTION",
+                "DISPATCH-CONFLICTS",
+                "Контроль единственного активного управления на уровне",
+                "apps.dispatching.tests.test_services.DispatchingServiceTests",
             ),
         )
         for requirement_code, function_code, function_name, test_reference in trace_data:

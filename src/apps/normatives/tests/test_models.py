@@ -50,7 +50,7 @@ class NormativeRegistryModelTests(NormativeDemoMixin, TestCase):
             NormativeRevision.objects.filter(pk=revision.pk).update(revision_number=2)
 
     def test_published_requirement_is_immutable(self):
-        requirement = NormativeRequirement.objects.get(code="EOD-IDENTITY")
+        requirement = NormativeRequirement.objects.get(code="PTE-57-OPTECH")
         requirement.title = "Попытка изменения"
         with self.assertRaises(ValidationError):
             requirement.save()
