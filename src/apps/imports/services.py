@@ -8,8 +8,9 @@ import posixpath
 import re
 import unicodedata
 import zipfile
-from dataclasses import dataclass
-from datetime import date, datetime
+from dataclasses import dataclass, field
+from datetime import date, datetime, time, timedelta
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -92,6 +93,13 @@ class ParsedTable:
     encoding: str = ""
     delimiter: str = ""
     formula_cells: frozenset[tuple[int, int]] = frozenset()
+    normalized_cells: dict[tuple[int, int], str] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class XlsxStyleCatalog:
+    custom_formats: dict[int, str] = field(default_factory=dict)
+    cell_format_ids: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -426,6 +434,7 @@ def _xlsx_column_index(reference: str) -> int:
     return result - 1
 
 
+
 def _xlsx_shared_strings(archive: zipfile.ZipFile) -> list[str]:
     path = "xl/sharedStrings.xml"
     if path not in archive.namelist():
@@ -442,24 +451,230 @@ def _xlsx_shared_strings(archive: zipfile.ZipFile) -> list[str]:
     return strings
 
 
+XLSX_BUILTIN_DATE_FORMATS = frozenset(
+    {
+        14,
+        15,
+        16,
+        17,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+    }
+)
+XLSX_BUILTIN_TIME_FORMATS = frozenset({18, 19, 20, 21, 45, 46, 47})
+XLSX_BUILTIN_DATETIME_FORMATS = frozenset({22})
+MICROSECONDS_PER_DAY = 86_400_000_000
+
+
+def _xlsx_style_catalog(archive: zipfile.ZipFile) -> XlsxStyleCatalog:
+    path = "xl/styles.xml"
+    if path not in archive.namelist():
+        return XlsxStyleCatalog()
+
+    root = ElementTree.fromstring(archive.read(path))
+    custom_formats: dict[int, str] = {}
+    number_formats = root.find(f"{{{SPREADSHEET_NS}}}numFmts")
+    if number_formats is not None:
+        for item in number_formats.findall(f"{{{SPREADSHEET_NS}}}numFmt"):
+            try:
+                number_format_id = int(item.attrib.get("numFmtId", ""))
+            except ValueError:
+                continue
+            custom_formats[number_format_id] = item.attrib.get("formatCode", "")
+
+    cell_format_ids: list[int] = []
+    cell_formats = root.find(f"{{{SPREADSHEET_NS}}}cellXfs")
+    if cell_formats is not None:
+        for item in cell_formats.findall(f"{{{SPREADSHEET_NS}}}xf"):
+            try:
+                cell_format_ids.append(int(item.attrib.get("numFmtId", "0")))
+            except ValueError:
+                cell_format_ids.append(0)
+
+    return XlsxStyleCatalog(
+        custom_formats=custom_formats,
+        cell_format_ids=tuple(cell_format_ids),
+    )
+
+
+def _xlsx_date_system_1904(workbook: ElementTree.Element) -> bool:
+    properties = workbook.find(f"{{{SPREADSHEET_NS}}}workbookPr")
+    if properties is None:
+        return False
+    return properties.attrib.get("date1904", "").strip().casefold() in {
+        "1",
+        "true",
+        "yes",
+    }
+
+
+def _xlsx_clean_format_code(format_code: str) -> tuple[str, tuple[str, ...]]:
+    lowered = format_code.casefold()
+    duration_tokens = tuple(
+        token.casefold()
+        for token in re.findall(r"\[([hms]+)\]", lowered, flags=re.IGNORECASE)
+    )
+    lowered = re.sub(r'"(?:[^"]|"")*"', "", lowered)
+    lowered = re.sub(r"\\.", "", lowered)
+    lowered = re.sub(r"_.", "", lowered)
+    lowered = re.sub(r"\*.", "", lowered)
+    lowered = re.sub(r"\[[^\]]+\]", "", lowered)
+    return lowered, duration_tokens
+
+
+def _xlsx_temporal_kind(number_format_id: int, format_code: str) -> str:
+    if number_format_id in XLSX_BUILTIN_DATETIME_FORMATS:
+        return "datetime"
+    if number_format_id in XLSX_BUILTIN_DATE_FORMATS:
+        return "date"
+    if number_format_id in XLSX_BUILTIN_TIME_FORMATS:
+        return "time"
+    if not format_code:
+        return ""
+
+    cleaned, duration_tokens = _xlsx_clean_format_code(format_code)
+    has_date = bool(re.search(r"[yd]", cleaned))
+    has_time = (
+        bool(re.search(r"[hs]", cleaned))
+        or bool(duration_tokens)
+        or (has_date and "m" in cleaned and ":" in cleaned)
+    )
+    if has_date and has_time:
+        return "datetime"
+    if has_date:
+        return "date"
+    if has_time:
+        return "time"
+    return ""
+
+
+def _xlsx_cell_temporal_kind(
+    cell: ElementTree.Element,
+    styles: XlsxStyleCatalog,
+) -> str:
+    try:
+        style_index = int(cell.attrib.get("s", "0"))
+    except ValueError:
+        return ""
+    if style_index < 0 or style_index >= len(styles.cell_format_ids):
+        return ""
+    number_format_id = styles.cell_format_ids[style_index]
+    return _xlsx_temporal_kind(
+        number_format_id,
+        styles.custom_formats.get(number_format_id, ""),
+    )
+
+
+def _xlsx_serial_datetime(raw: str, *, date_system_1904: bool) -> datetime | None:
+    try:
+        serial = Decimal(raw)
+    except InvalidOperation:
+        return None
+    if not serial.is_finite() or serial < 0:
+        return None
+
+    whole_days = int(serial)
+    fraction = serial - Decimal(whole_days)
+    if date_system_1904:
+        epoch = datetime(1904, 1, 1)
+    else:
+        if whole_days == 60:
+            return None
+        epoch = datetime(1899, 12, 31) if whole_days < 60 else datetime(1899, 12, 30)
+
+    microseconds = int(
+        (fraction * Decimal(MICROSECONDS_PER_DAY)).to_integral_value()
+    )
+    return epoch + timedelta(days=whole_days, microseconds=microseconds)
+
+
+def _xlsx_temporal_values(
+    raw: str,
+    *,
+    kind: str,
+    date_system_1904: bool,
+) -> tuple[str, str] | None:
+    value = _xlsx_serial_datetime(raw, date_system_1904=date_system_1904)
+    if value is None:
+        return None
+    if kind == "date":
+        return value.strftime("%d.%m.%Y"), value.date().isoformat()
+    if kind == "time":
+        clock = time(
+            value.hour,
+            value.minute,
+            value.second,
+            value.microsecond,
+        )
+        display = clock.isoformat(timespec="seconds")
+        normalized = clock.isoformat(timespec="microseconds").rstrip("0").rstrip(".")
+        return display, normalized
+    if kind == "datetime":
+        display = value.strftime("%d.%m.%Y %H:%M:%S")
+        normalized = value.isoformat(timespec="microseconds").rstrip("0").rstrip(".")
+        return display, normalized
+    return None
+
+
+def _xlsx_iso_date_value(raw: str) -> tuple[str, str] | None:
+    token = raw.strip()
+    if not token:
+        return None
+    try:
+        parsed = datetime.fromisoformat(token.replace("Z", "+00:00"))
+    except ValueError:
+        try:
+            parsed_date = date.fromisoformat(token)
+        except ValueError:
+            return None
+        return parsed_date.strftime("%d.%m.%Y"), parsed_date.isoformat()
+    if parsed.time() == time.min:
+        return parsed.strftime("%d.%m.%Y"), parsed.date().isoformat()
+    return (
+        parsed.strftime("%d.%m.%Y %H:%M:%S"),
+        parsed.isoformat(timespec="microseconds").rstrip("0").rstrip("."),
+    )
+
+
 def _xlsx_cell_value(
     cell: ElementTree.Element,
     shared_strings: list[str],
-) -> tuple[str, bool]:
+    styles: XlsxStyleCatalog,
+    *,
+    date_system_1904: bool,
+) -> tuple[str, str | None, bool]:
     formula = cell.find(f"{{{SPREADSHEET_NS}}}f")
     if formula is not None:
-        return "=" + (formula.text or ""), True
+        return "=" + (formula.text or ""), None, True
 
     cell_type = cell.attrib.get("t", "")
     if cell_type == "inlineStr":
         inline = cell.find(f"{{{SPREADSHEET_NS}}}is")
         if inline is None:
-            return "", False
+            return "", None, False
         return (
             "".join(
                 node.text or ""
                 for node in inline.iter(f"{{{SPREADSHEET_NS}}}t")
             ),
+            None,
             False,
         )
 
@@ -467,14 +682,31 @@ def _xlsx_cell_value(
     raw = "" if value_node is None else value_node.text or ""
     if cell_type == "s":
         try:
-            return shared_strings[int(raw)], False
+            return shared_strings[int(raw)], None, False
         except (ValueError, IndexError) as exc:
             raise ImportParseError(
                 "XLSX содержит некорректную ссылку на общую строку."
             ) from exc
     if cell_type == "b":
-        return ("ИСТИНА" if raw == "1" else "ЛОЖЬ"), False
-    return raw, False
+        if raw == "1":
+            return "ИСТИНА", "Да", False
+        return "ЛОЖЬ", "Нет", False
+    if cell_type == "d":
+        converted = _xlsx_iso_date_value(raw)
+        if converted is not None:
+            return converted[0], converted[1], False
+        return raw, None, False
+    if cell_type in {"", "n"}:
+        temporal_kind = _xlsx_cell_temporal_kind(cell, styles)
+        if temporal_kind:
+            converted = _xlsx_temporal_values(
+                raw,
+                kind=temporal_kind,
+                date_system_1904=date_system_1904,
+            )
+            if converted is not None:
+                return converted[0], converted[1], False
+    return raw, None, False
 
 
 def _xlsx_sheet_path(target: str) -> str:
@@ -512,6 +744,8 @@ def _parse_xlsx(data: bytes) -> ParsedTable:
             )
         }
         shared_strings = _xlsx_shared_strings(archive)
+        styles = _xlsx_style_catalog(archive)
+        date_system_1904 = _xlsx_date_system_1904(workbook)
 
         sheets = workbook.find(f"{{{SPREADSHEET_NS}}}sheets")
         if sheets is None:
@@ -534,6 +768,7 @@ def _parse_xlsx(data: bytes) -> ParsedTable:
             rows: list[list[str]] = []
             widths: list[int] = []
             formula_cells: set[tuple[int, int]] = set()
+            normalized_cells: dict[tuple[int, int], str] = {}
             for source_row_index, row_node in enumerate(
                 sheet_data.findall(f"{{{SPREADSHEET_NS}}}row"),
                 start=1,
@@ -552,8 +787,17 @@ def _parse_xlsx(data: bytes) -> ParsedTable:
                         )
                     while len(row_values) <= column_index:
                         row_values.append("")
-                    value, is_formula = _xlsx_cell_value(cell, shared_strings)
+                    value, normalized_value, is_formula = _xlsx_cell_value(
+                        cell,
+                        shared_strings,
+                        styles,
+                        date_system_1904=date_system_1904,
+                    )
                     row_values[column_index] = value
+                    if normalized_value is not None:
+                        normalized_cells[(source_row_index, column_index)] = (
+                            normalized_value
+                        )
                     if is_formula:
                         formula_cells.add((source_row_index, column_index))
                 rows.append(row_values)
@@ -566,6 +810,7 @@ def _parse_xlsx(data: bytes) -> ParsedTable:
                     source_format=ImportBatch.SourceFormat.XLSX,
                     sheet_name=sheet.attrib.get("name", "")[:255],
                     formula_cells=frozenset(formula_cells),
+                    normalized_cells=normalized_cells,
                 )
 
     raise ImportParseError("В XLSX не найден лист с данными.")
@@ -712,7 +957,12 @@ def _row_payloads(
         source_values = list(source_row)
         original_width = parsed.row_widths[offset - 1]
         source_values.extend("" for _ in range(width - len(source_values)))
-        normalized_values = [normalize_cell(value) for value in source_values]
+        normalized_values = [
+            normalize_cell(
+                parsed.normalized_cells.get((offset, column_index), value)
+            )
+            for column_index, value in enumerate(source_values)
+        ]
         issues: list[str] = []
 
         if not any(normalized_values):
