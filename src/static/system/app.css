@@ -2372,3 +2372,107 @@ details[data-default-collapsed="true"]:not([open])
         grid-template-columns: 1fr;
     }
 }
+
+
+/* Patch 010.1: неизменяемое ядро оперативного журнала */
+.operational-log-summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-bottom: 18px;
+}
+.operational-timeline {
+    display: grid;
+    gap: 12px;
+    margin-top: 16px;
+}
+.operational-entry {
+    display: grid;
+    gap: 13px;
+    padding: 17px 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(10, 15, 23, .35);
+}
+.operational-entry-invalid {
+    border-color: rgba(255, 127, 143, .62);
+}
+.operational-entry-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+}
+.operational-entry-header h2 {
+    margin: 3px 0 0;
+    font-size: 17px;
+}
+.operational-entry-number {
+    color: var(--accent-2);
+    font: 800 12px Consolas, "Cascadia Mono", monospace;
+}
+.operational-entry-times {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(145px, auto));
+    gap: 4px 18px;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: right;
+}
+.operational-entry-times strong {
+    color: #dce6ef;
+}
+.operational-entry-content {
+    margin: 0;
+    color: #e6eef6;
+    line-height: 1.58;
+    white-space: pre-wrap;
+}
+.operational-entry-author {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    color: var(--muted);
+    font-size: 12px;
+}
+.operational-entry-links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+.operational-entry-link-group {
+    padding: 11px 12px;
+    border: 1px solid rgba(41, 56, 75, .72);
+    border-radius: 9px;
+    background: rgba(17, 26, 38, .58);
+}
+.operational-entry-link-group strong {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 12px;
+}
+.operational-entry-link-group ul {
+    display: grid;
+    gap: 5px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--muted);
+    font-size: 12px;
+}
+.operational-entry-link-group small {
+    display: block;
+    color: var(--muted);
+}
+
+@media (max-width: 760px) {
+    .operational-log-summary,
+    .operational-entry-links {
+        grid-template-columns: 1fr;
+    }
+    .operational-entry-header {
+        flex-direction: column;
+    }
+    .operational-entry-times {
+        grid-template-columns: 1fr;
+        text-align: left;
+    }
+}

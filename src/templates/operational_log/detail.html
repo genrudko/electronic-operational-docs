@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}{{ journal.title }} · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">ХРОНОЛОГИЧЕСКАЯ ЛЕНТА</div>
+        <h1>{{ journal.title }}</h1>
+        <p>
+            {{ journal.workplace.name }}{% if journal.workplace.division %} · {{ journal.workplace.division.name }}{% endif %}
+        </p>
+    </div>
+    <a href="{% url 'operational_log:registry' %}">К журналам</a>
+</section>
+
+<section class="notice-card success-notice">
+    <strong>Каждая запись зарегистрирована отдельно и защищена SHA-256</strong>
+    <p>
+        Время события отражает фактический момент, а время регистрации назначается сервером.
+        Снимки автора, оборудования и документов сохраняются вместе с оригиналом.
+    </p>
+</section>
+
+<section class="summary-grid operational-log-summary">
+    <article class="metric"><span>Всего записей</span><strong>{{ summary.total }}</strong></article>
+    <article class="metric"><span>Типизированных</span><strong>{{ summary.typed }}</strong></article>
+    <article class="metric"><span>Свободных</span><strong>{{ summary.free }}</strong></article>
+    <article class="metric"><span>Нарушений целостности</span><strong>{{ summary.integrity_failures }}</strong></article>
+</section>
+
+<section class="operational-timeline" aria-label="Записи оперативного журнала">
+{% for row in rows %}
+    <article class="profile-card operational-entry{% if not row.integrity_ok %} operational-entry-invalid{% endif %}">
+        <header class="operational-entry-header">
+            <div>
+                <div class="eyebrow">ЗАПИСЬ № {{ row.entry.sequence_number }}</div>
+                <h2>
+                    {% if row.entry.entry_form == 'TYPED' %}{{ row.entry.type_title }}{% else %}Свободная запись{% endif %}
+                </h2>
+            </div>
+            {% if row.integrity_ok %}
+                <span class="import-status status-ready">Целостность подтверждена</span>
+            {% else %}
+                <span class="import-status status-conflict">Нарушена целостность</span>
+            {% endif %}
+        </header>
+
+        <div class="operational-entry-times">
+            <span><strong>Событие:</strong> {{ row.entry.event_at|date:"d.m.Y H:i:s" }}</span>
+            <span><strong>Регистрация:</strong> {{ row.entry.registered_at|date:"d.m.Y H:i:s" }}</span>
+        </div>
+        <p class="operational-entry-content">{{ row.entry.content }}</p>
+        <div class="operational-entry-author">
+            {{ row.entry.author_full_name_snapshot }} · {{ row.entry.author_position_snapshot }}
+            {% if row.entry.author_workplace_snapshot %} · {{ row.entry.author_workplace_snapshot }}{% endif %}
+        </div>
+
+        {% if row.entry.equipment_links.all or row.entry.document_links.all %}
+        <div class="operational-entry-links">
+            {% for link in row.entry.equipment_links.all %}
+                <span class="code-chip">{{ link.dispatcher_name_snapshot }} · {{ link.equipment_code_snapshot }}</span>
+            {% endfor %}
+            {% for link in row.entry.document_links.all %}
+                <a class="code-chip" href="{% url 'documents:detail' link.document.public_id %}">
+                    {{ link.registration_number_snapshot }} · {{ link.title_snapshot }}
+                </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <details class="technical-details">
+            <summary>Технические реквизиты записи</summary>
+            <dl>
+                <dt>Форма</dt><dd>{{ row.entry.get_entry_form_display }}</dd>
+                <dt>Код типа</dt><dd>{{ row.entry.type_code|default:"—" }}</dd>
+                <dt>SHA-256</dt><dd><code>{{ row.entry.digest }}</code></dd>
+            </dl>
+        </details>
+    </article>
+{% empty %}
+    <section class="empty-state"><p>В журнале пока нет зарегистрированных записей.</p></section>
+{% endfor %}
+</section>
+{% endblock %}
