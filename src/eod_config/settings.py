@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     "apps.equipment.apps.EquipmentConfig",
     "apps.dispatching.apps.DispatchingConfig",
     "apps.imports.apps.ImportsConfig",
+    "apps.workplace_docs.apps.WorkplaceDocsConfig",
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}{{ document_list.title }} · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+    <div>
+        <div class="eyebrow">УТВЕРЖДЁННАЯ РЕДАКЦИЯ ПЕРЕЧНЯ</div>
+        <h1>{{ document_list.title }}</h1>
+        <p>{{ document_list.workplace.name }} · редакция № {{ revision.revision_number }}</p>
+    </div>
+    <a href="{% url 'workplace_docs:registry' %}">К перечням</a>
+</section>
+
+<section class="notice-card success-notice">
+    <strong>Редакция утверждена и неизменяема</strong>
+    <p>
+        Состав позиций, применимость, формы хранения и нормативные основания зафиксированы
+        контрольной суммой. Изменения оформляются новой редакцией перечня.
+    </p>
+</section>
+
+<section class="summary-grid">
+    <article class="metric"><span>Всего позиций</span><strong>{{ summary.total }}</strong></article>
+    <article class="metric"><span>Обязательных</span><strong>{{ summary.mandatory }}</strong></article>
+    <article class="metric"><span>Типовых</span><strong>{{ summary.typical }}</strong></article>
+    <article class="metric"><span>Локальных</span><strong>{{ summary.local }}</strong></article>
+</section>
+
+<section class="profile-card">
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow">РЕКВИЗИТЫ РЕДАКЦИИ</div>
+            <h2>Действие и пересмотр</h2>
+        </div>
+        {% if review_state == 'OVERDUE' %}
+            <span class="import-status status-conflict">Пересмотр просрочен</span>
+        {% elif review_state == 'DUE_SOON' %}
+            <span class="import-status status-review">Срок пересмотра приближается</span>
+        {% else %}
+            <span class="import-status status-ready">Действует</span>
+        {% endif %}
+    </div>
+    <dl class="detail-list">
+        <dt>Рабочее место</dt><dd>{{ document_list.workplace.name }}</dd>
+        <dt>Подразделение</dt><dd>{{ document_list.workplace.division.name|default:"Не указано" }}</dd>
+        <dt>Действует с</dt><dd>{{ revision.effective_from|date:"d.m.Y" }}</dd>
+        <dt>Действует по</dt><dd>{{ revision.effective_until|date:"d.m.Y"|default:"Без ограничения" }}</dd>
+        <dt>Периодичность пересмотра</dt><dd>{{ revision.review_period_months }} мес.</dd>
+        <dt>Следующий пересмотр</dt><dd>{{ revision.next_review_date|date:"d.m.Y" }}</dd>
+        <dt>Утвердил</dt><dd>{{ revision.approved_by.full_name }} · {{ revision.approved_by.position.name }}</dd>
+        <dt>Утверждено</dt><dd>{{ revision.approved_at|date:"d.m.Y H:i:s" }}</dd>
+        {% if revision.change_summary %}<dt>Описание редакции</dt><dd>{{ revision.change_summary }}</dd>{% endif %}
+    </dl>
+    <details class="technical-only">
+        <summary>Технические реквизиты редакции</summary>
+        <div class="technical-panel">
+            <dl class="detail-list">
+                <dt>Код перечня</dt><dd><code>{{ document_list.code }}</code></dd>
+                <dt>SHA-256</dt><dd><code class="breakable">{{ revision.digest }}</code></dd>
+                <dt>Идентификатор перечня</dt><dd><code>{{ document_list.pk }}</code></dd>
+                <dt>Идентификатор редакции</dt><dd><code>{{ revision.pk }}</code></dd>
+            </dl>
+        </div>
+    </details>
+</section>
+
+<section class="profile-card">
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow">СОСТАВ ДОКУМЕНТАЦИИ</div>
+            <h2>Позиции перечня</h2>
+        </div>
+        <span class="count-badge">{{ entries|length }} позиций</span>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Документация</th>
+                    <th>Происхождение</th>
+                    <th>Обязательность и применимость</th>
+                    <th>Форма хранения</th>
+                    <th>Нормативное основание</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for entry in entries %}
+                <tr>
+                    <td>
+                        <strong>{{ entry.title }}</strong>
+                        <small><code>{{ entry.code }}</code></small>
+                        {% if entry.notes %}<small>{{ entry.notes }}</small>{% endif %}
+                    </td>
+                    <td>{{ entry.get_source_kind_display }}</td>
+                    <td>
+                        <strong>{{ entry.get_requirement_kind_display }}</strong>
+                        {% if entry.applicability_text %}<small>{{ entry.applicability_text }}</small>{% endif %}
+                    </td>
+                    <td>{{ entry.get_storage_form_display }}</td>
+                    <td>
+                        {% if entry.normative_document %}
+                            <a href="{% url 'normatives:document_detail' entry.normative_document.code %}">
+                                {{ entry.normative_document }}
+                            </a>
+                            {% if entry.normative_clause %}<small>{{ entry.normative_clause }}</small>{% endif %}
+                        {% else %}
+                            {{ entry.basis_text }}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% if history|length > 1 %}
+<section class="profile-card">
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow">ИСТОРИЯ</div>
+            <h2>Утверждённые редакции</h2>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Редакция</th><th>Период действия</th><th>Утвердил</th></tr></thead>
+            <tbody>
+            {% for item in history %}
+                <tr>
+                    <td>
+                        <a href="{% url 'workplace_docs:revision_detail' document_list.pk item.revision_number %}">
+                            Редакция № {{ item.revision_number }}
+                        </a>
+                    </td>
+                    <td>{{ item.effective_from|date:"d.m.Y" }} — {{ item.effective_until|date:"d.m.Y"|default:"по настоящее время" }}</td>
+                    <td>{{ item.approved_by.full_name }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+{% endblock %}
