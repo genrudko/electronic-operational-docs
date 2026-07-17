@@ -41,13 +41,18 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         )
         self.assertEqual(workspace.status_code, 200)
         for marker in (
-            "Черновик текущей смены",
-            "Автосохранение включено",
-            "Рабочая хронология",
-            "Состав смены",
+            "РАБОЧИЙ ЧЕРНОВИК СМЕНЫ",
+            "Автосохранение",
+            "Одна страница",
+            "Разворот",
+            "Поиск по записям",
+            "data-quick-time",
             "draft_workspace.js",
         ):
             self.assertContains(workspace, marker)
+        self.assertNotContains(workspace, "Сохранить сейчас")
+        self.assertNotContains(workspace, "↑ Выше")
+        self.assertNotContains(workspace, "↓ Ниже")
 
     def test_open_shift_for_journal_without_active_shift(self) -> None:
         journal = OperationalJournal.objects.create(

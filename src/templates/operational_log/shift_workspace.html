@@ -2,313 +2,137 @@
 {% load static %}
 
 {% block title %}Рабочая смена · {{ journal.title }} · ЭОД{% endblock %}
-{% block main_class %}shift-draft-main{% endblock %}
+{% block main_class %}shift-draft-main shift-draft-main-paged{% endblock %}
 
 {% block content %}
-<section class="shift-draft-heading">
+<section class="shift-compact-header">
     <div>
         <div class="section-kicker">РАБОЧИЙ ЧЕРНОВИК СМЕНЫ</div>
         <h1>{{ journal.title }}</h1>
-        <p>
-            Черновик автоматически сохраняется, но пока не является
-            зарегистрированной записью оперативного журнала.
-        </p>
+        {% if shift %}
+        <div class="shift-compact-meta">
+            <span>{{ shift.planned_start_at|date:"d.m.Y H:i" }} — {{ shift.planned_end_at|date:"d.m.Y H:i" }}</span>
+            <span>{{ drafts|length }} записей</span>
+            <span class="shift-autosave-indicator">● Автосохранение</span>
+        </div>
+        {% endif %}
     </div>
-    <div class="shift-draft-heading-actions">
-        <a href="{% url 'operational_log:detail' journal.pk %}">
-            Открыть зарегистрированный журнал
-        </a>
+    <div class="shift-compact-actions">
+        <a href="{% url 'operational_log:detail' journal.pk %}">Чистовик</a>
+        {% if shift %}<button class="button secondary compact-button" type="button" data-toggle-shift-panel>Смена</button>{% endif %}
     </div>
 </section>
 
 {% if not shift %}
 <section class="profile-card shift-open-card">
-    <div class="card-heading-with-icon">
-        <span class="section-icon" aria-hidden="true">↗</span>
-        <div>
-            <span class="card-label">Новая рабочая смена</span>
-            <h2>Открыть сменный черновик</h2>
-        </div>
-    </div>
-    <p class="muted">
-        После открытия появится рабочая область для свободных черновых
-        записей. На этом экране черновик не получает официальные номера
-        и не изменяет зарегистрированный журнал.
-    </p>
-    <form
-        method="post"
-        action="{% url 'operational_log:open_shift' journal.pk %}"
-        class="shift-open-form"
-    >
+    <h2>Открыть сменный черновик</h2>
+    <p class="muted">Черновик сохраняется автоматически и не изменяет зарегистрированный журнал.</p>
+    <form method="post" action="{% url 'operational_log:open_shift' journal.pk %}" class="shift-open-form">
         {% csrf_token %}
         <div class="shift-open-fields">
-            <div class="setting-field">
-                <label for="{{ open_form.planned_start_at.id_for_label }}">
-                    {{ open_form.planned_start_at.label }}
-                </label>
-                {{ open_form.planned_start_at }}
-            </div>
-            <div class="setting-field">
-                <label for="{{ open_form.planned_end_at.id_for_label }}">
-                    {{ open_form.planned_end_at.label }}
-                </label>
-                {{ open_form.planned_end_at }}
-            </div>
+            <div class="setting-field"><label for="{{ open_form.planned_start_at.id_for_label }}">{{ open_form.planned_start_at.label }}</label>{{ open_form.planned_start_at }}</div>
+            <div class="setting-field"><label for="{{ open_form.planned_end_at.id_for_label }}">{{ open_form.planned_end_at.label }}</label>{{ open_form.planned_end_at }}</div>
         </div>
         <button class="button" type="submit">Открыть рабочую смену</button>
     </form>
 </section>
 {% else %}
-<section
-    class="shift-draft-status-bar"
-    data-draft-workspace
-    data-autosave-delay="700"
->
-    <div class="shift-draft-status-main">
-        <span class="shift-status-badge status-open">
-            {{ shift.get_status_display }}
-        </span>
-        <strong>
-            {{ shift.planned_start_at|date:"d.m.Y H:i" }} —
-            {{ shift.planned_end_at|date:"d.m.Y H:i" }}
-        </strong>
-        <span>
-            Открыта {{ shift.opened_at|date:"d.m.Y H:i" }}
-            пользователем {{ shift.opened_by_full_name_snapshot }}
-        </span>
-    </div>
-    <div class="shift-draft-save-legend">
-        <span class="save-dot" aria-hidden="true"></span>
-        Автосохранение включено
-    </div>
-</section>
-
-<div class="shift-draft-layout">
-    <section class="shift-draft-editor-column">
-        <div class="shift-draft-toolbar">
-            <div>
-                <span class="card-label">Черновик текущей смены</span>
-                <h2>Рабочая хронология</h2>
-                <p>
-                    До подписания чистовика время, текст и порядок записей
-                    можно исправлять без оформления пропущенной записи.
-                </p>
-            </div>
-            <form
-                method="post"
-                action="{% url 'operational_log:add_draft' journal.pk %}"
-            >
-                {% csrf_token %}
-                <button class="button" type="submit">Добавить запись</button>
-            </form>
+<section class="paged-draft-workspace" data-draft-workspace data-autosave-delay="700" data-page-size="8">
+    <div class="draft-command-bar screen-only">
+        <div class="draft-view-switch">
+            <button type="button" class="draft-view-button is-active" data-view-mode="single">Одна страница</button>
+            <button type="button" class="draft-view-button" data-view-mode="spread">Разворот</button>
         </div>
+        <div class="draft-compact-search">
+            <input type="search" placeholder="Поиск по записям…" data-draft-search aria-label="Поиск по записям">
+            <select data-draft-filter aria-label="Фильтр записей">
+                <option value="all">Все записи</option>
+                <option value="filled">Заполненные</option>
+                <option value="empty">Пустые</option>
+            </select>
+        </div>
+        <form method="post" action="{% url 'operational_log:add_draft' journal.pk %}">
+            {% csrf_token %}
+            <button class="button compact-button" type="submit">+ Запись</button>
+        </form>
+    </div>
 
-        <div class="draft-entry-list">
+    <div class="draft-paper-stage">
+        <div class="draft-paper-pages">
         {% for draft in drafts %}
-            <article
-                id="draft-{{ draft.public_id }}"
-                class="draft-entry-card"
-                data-draft-card
-                data-draft-id="{{ draft.public_id }}"
-            >
-                <div class="draft-entry-order">
-                    <span>Позиция</span>
-                    <strong>{{ forloop.counter }}</strong>
-                </div>
-
-                <form
-                    method="post"
-                    action="{% url 'operational_log:autosave_draft' journal.pk draft.public_id %}"
-                    class="draft-entry-form"
-                    data-draft-form
-                >
+            <article id="draft-{{ draft.public_id }}" class="draft-ledger-row" data-draft-card data-draft-id="{{ draft.public_id }}" data-entry-filled="{% if draft.content %}true{% else %}false{% endif %}">
+                {% ifchanged draft.event_at|date:"Y-m-d" %}
+                <div class="draft-date-divider">{{ draft.event_at|date:"d.m.Y" }}</div>
+                {% endifchanged %}
+                <form method="post" action="{% url 'operational_log:autosave_draft' journal.pk draft.public_id %}" class="draft-ledger-form" data-draft-form>
                     {% csrf_token %}
-                    <input
-                        type="hidden"
-                        name="public_id"
-                        value="{{ draft.public_id }}"
-                    >
-                    <input
-                        type="hidden"
-                        name="expected_version"
-                        value="{{ draft.version }}"
-                        data-draft-version
-                    >
+                    <input type="hidden" name="public_id" value="{{ draft.public_id }}">
+                    <input type="hidden" name="expected_version" value="{{ draft.version }}" data-draft-version>
+                    <input type="hidden" name="event_at" value="{{ draft.event_at|date:'Y-m-d\TH:i' }}" data-event-at>
 
-                    <div class="draft-entry-fields">
-                        <label class="draft-time-field">
-                            <span>Время события</span>
-                            <input
-                                type="datetime-local"
-                                name="event_at"
-                                value="{{ draft.event_at|date:'Y-m-d\TH:i' }}"
-                                required
-                            >
-                        </label>
-                        <label class="draft-content-field">
-                            <span>Содержание черновой записи</span>
-                            <textarea
-                                name="content"
-                                rows="4"
-                                maxlength="20000"
-                                placeholder="Введите свободную оперативную запись..."
-                            >{{ draft.content }}</textarea>
-                        </label>
+                    <div class="draft-ledger-time">
+                        <input type="text" inputmode="numeric" autocomplete="off" value="{{ draft.event_at|date:'H:i' }}" data-quick-time aria-label="Время события">
+                        <button type="button" class="draft-date-button" data-date-button data-current-date="{{ draft.event_at|date:'d.m.Y' }}" title="Изменить дату">{{ draft.event_at|date:"d.m" }}</button>
                     </div>
 
-                    <div class="draft-entry-save-row">
-                        <span
-                            class="draft-save-status is-saved"
-                            data-save-status
-                            role="status"
-                            aria-live="polite"
-                        >
-                            Сохранено {{ draft.updated_at|date:"H:i:s" }}
-                        </span>
-                        <span class="draft-revision-counter">
-                            Версия <strong data-version-label>{{ draft.version }}</strong>,
-                            редакций: {{ draft.revisions.count }}
-                        </span>
-                        <button
-                            class="button secondary draft-manual-save"
-                            type="submit"
-                        >
-                            Сохранить сейчас
-                        </button>
+                    <div class="draft-ledger-content">
+                        <textarea name="content" rows="1" maxlength="20000" placeholder="Содержание записи…" data-auto-grow>{{ draft.content }}</textarea>
+                        <div class="draft-mini-toolbar" data-mini-toolbar>
+                            <button type="button" data-editor-command="bold" title="Полужирный — следующий этап"><strong>Ж</strong></button>
+                            <button type="button" data-editor-command="underline" title="Подчёркивание — следующий этап"><u>Ч</u></button>
+                            <button type="button" data-editor-command="marks" title="Специальные отметки — следующий этап">⚡</button>
+                            <i></i>
+                            <button type="submit" formaction="{% url 'operational_log:move_draft' journal.pk draft.public_id %}" name="direction" value="up" title="Выше" {% if forloop.first %}disabled{% endif %}>↑</button>
+                            <button type="submit" formaction="{% url 'operational_log:move_draft' journal.pk draft.public_id %}" name="direction" value="down" title="Ниже" {% if forloop.last %}disabled{% endif %}>↓</button>
+                            <button type="submit" formaction="{% url 'operational_log:remove_draft' journal.pk draft.public_id %}" class="danger-text" title="Убрать">×</button>
+                        </div>
+                        <div class="draft-ledger-meta">
+                            <span class="draft-save-status is-saved" data-save-status role="status">✓ {{ draft.updated_at|date:"H:i:s" }}</span>
+                            <span class="draft-sequence-muted">№ {{ forloop.counter }}</span>
+                            <span class="draft-version-muted">v<span data-version-label>{{ draft.version }}</span></span>
+                        </div>
                     </div>
+                    <div class="draft-ledger-visas" aria-label="Визы и замечания"></div>
                 </form>
-
-                <div class="draft-entry-actions">
-                    <form
-                        method="post"
-                        action="{% url 'operational_log:move_draft' journal.pk draft.public_id %}"
-                    >
-                        {% csrf_token %}
-                        <button
-                            class="text-button"
-                            type="submit"
-                            name="direction"
-                            value="up"
-                            {% if forloop.first %}disabled{% endif %}
-                        >
-                            ↑ Выше
-                        </button>
-                    </form>
-                    <form
-                        method="post"
-                        action="{% url 'operational_log:move_draft' journal.pk draft.public_id %}"
-                    >
-                        {% csrf_token %}
-                        <button
-                            class="text-button"
-                            type="submit"
-                            name="direction"
-                            value="down"
-                            {% if forloop.last %}disabled{% endif %}
-                        >
-                            ↓ Ниже
-                        </button>
-                    </form>
-                    <form
-                        method="post"
-                        action="{% url 'operational_log:remove_draft' journal.pk draft.public_id %}"
-                    >
-                        {% csrf_token %}
-                        <button
-                            class="text-button danger-text"
-                            type="submit"
-                        >
-                            Убрать из черновика
-                        </button>
-                    </form>
-                </div>
             </article>
         {% empty %}
-            <div class="empty-state draft-empty-state">
-                <h3>Черновых записей пока нет</h3>
-                <p>
-                    Добавь первую запись. Она получит текущее время,
-                    а текст можно будет набрать и изменить позже.
-                </p>
-            </div>
+            <div class="empty-state"><h3>Черновых записей пока нет</h3><p>Добавь первую запись.</p></div>
         {% endfor %}
         </div>
+    </div>
 
+    <nav class="draft-page-navigation screen-only">
+        <button type="button" data-page-prev>←</button>
+        <span data-page-label>Страница 1 из 1</span>
+        <button type="button" data-page-next>→</button>
+    </nav>
+
+    <aside class="shift-slide-panel screen-only" data-shift-panel hidden>
+        <header><h2>Состав и состояние смены</h2><button type="button" data-close-shift-panel>×</button></header>
+        <h3>Участники</h3>
+        <ul class="shift-member-list">
+        {% for member in members %}
+            <li><div><strong>{{ member.employee_full_name_snapshot }}</strong><span>{{ member.employee_position_snapshot }}</span></div>{% if member.is_shift_lead %}<em>Старший смены</em>{% endif %}</li>
+        {% endfor %}
+        </ul>
+        <h3>Рабочая информация</h3>
+        <dl class="shift-draft-facts">
+            <dt>Активных записей</dt><dd>{{ drafts|length }}</dd>
+            <dt>Убрано</dt><dd>{{ removed_drafts|length }}</dd>
+            <dt>Официальные номера</dt><dd>Не назначены</dd>
+            <dt>Чистовик</dt><dd>Не изменён</dd>
+        </dl>
         {% if removed_drafts %}
-        <details class="profile-card removed-drafts-panel">
-            <summary>
-                Убранные записи
-                <small>{{ removed_drafts|length }}</small>
-            </summary>
-            <div class="removed-drafts-list">
-            {% for draft in removed_drafts %}
-                <article class="removed-draft-row">
-                    <div>
-                        <strong>{{ draft.event_at|date:"d.m.Y H:i" }}</strong>
-                        <p>{{ draft.content|default:"Пустая черновая запись" }}</p>
-                        <small>
-                            Версия {{ draft.version }},
-                            сохранено {{ draft.updated_at|date:"d.m.Y H:i:s" }}
-                        </small>
-                    </div>
-                    <form
-                        method="post"
-                        action="{% url 'operational_log:restore_draft' journal.pk draft.public_id %}"
-                    >
-                        {% csrf_token %}
-                        <button class="button secondary" type="submit">
-                            Восстановить
-                        </button>
-                    </form>
-                </article>
-            {% endfor %}
-            </div>
-        </details>
+        <h3>Убранные записи</h3>
+        {% for draft in removed_drafts %}
+        <article class="removed-draft-row">
+            <div><strong>{{ draft.event_at|date:"d.m.Y H:i" }}</strong><p>{{ draft.content|default:"Пустая запись" }}</p></div>
+            <form method="post" action="{% url 'operational_log:restore_draft' journal.pk draft.public_id %}">{% csrf_token %}<button class="button secondary compact-button" type="submit">Вернуть</button></form>
+        </article>
+        {% endfor %}
         {% endif %}
-    </section>
-
-    <aside class="shift-draft-sidebar">
-        <section class="profile-card shift-members-card">
-            <span class="card-label">Состав смены</span>
-            <h2>Участники</h2>
-            <ul class="shift-member-list">
-            {% for member in members %}
-                <li>
-                    <div>
-                        <strong>{{ member.employee_full_name_snapshot }}</strong>
-                        <span>{{ member.employee_position_snapshot }}</span>
-                    </div>
-                    {% if member.is_shift_lead %}
-                        <em>Старший смены</em>
-                    {% endif %}
-                </li>
-            {% empty %}
-                <li class="muted">Состав смены не определён.</li>
-            {% endfor %}
-            </ul>
-        </section>
-
-        <section class="profile-card shift-draft-rules">
-            <span class="card-label">Состояние черновика</span>
-            <h2>Рабочая информация</h2>
-            <dl class="shift-draft-facts">
-                <dt>Активных записей</dt>
-                <dd>{{ drafts|length }}</dd>
-                <dt>Убрано из черновика</dt>
-                <dd>{{ removed_drafts|length }}</dd>
-                <dt>Официальные номера</dt>
-                <dd>Не назначены</dd>
-                <dt>Зарегистрированный журнал</dt>
-                <dd>Не изменён</dd>
-            </dl>
-            <p>
-                Каждое сохранение создаёт техническую редакцию. При
-                конфликте более новая версия не перезаписывается молча.
-            </p>
-        </section>
     </aside>
-</div>
-
+</section>
 <script src="{% static 'operational_log/draft_workspace.js' %}" defer></script>
 {% endif %}
 {% endblock %}

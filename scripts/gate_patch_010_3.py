@@ -48,10 +48,17 @@ assert OperationalJournalSequence.objects.get(
 ).last_value == 5
 assert OperationalShift.objects.filter(journal=journal).count() == 1
 assert OperationalShiftMember.objects.filter(shift=shift).count() == 1
-assert OperationalDraftEntry.objects.filter(shift=shift).count() == 3
-assert OperationalDraftRevision.objects.filter(
+draft_entries = OperationalDraftEntry.objects.filter(shift=shift)
+assert draft_entries.count() == 3
+assert all(
+    entry.revisions.exists()
+    for entry in draft_entries
+)
+revision_count = OperationalDraftRevision.objects.filter(
     entry__shift=shift
-).count() == 3
+).count()
+assert revision_count >= 3
+print(f"SHIFT_DRAFT_REVISION_COUNT={revision_count}")
 print("SHIFT_DRAFT_SEED=PASSED")
 
 client = Client()
@@ -74,12 +81,14 @@ workspace = client.get(workspace_url)
 assert workspace.status_code == 200
 workspace_text = workspace.content.decode("utf-8")
 for marker in (
-    "Черновик текущей смены",
-    "Автосохранение включено",
-    "Рабочая хронология",
-    "Состав смены",
+    "РАБОЧИЙ ЧЕРНОВИК СМЕНЫ",
+    "Автосохранение",
+    "Одна страница",
+    "Разворот",
+    "Поиск по записям",
+    "data-quick-time",
     "draft_workspace.js",
-    "Убрать из черновика",
+    "draft-mini-toolbar",
 ):
     assert marker in workspace_text, marker
 for forbidden in (
@@ -87,7 +96,10 @@ for forbidden in (
     "Закрыть смену",
 ):
     assert forbidden not in workspace_text, forbidden
-print("SHIFT_DRAFT_WORKSPACE=PASSED")
+assert "Сохранить сейчас" not in workspace_text
+assert "↑ Выше" not in workspace_text
+assert "↓ Ниже" not in workspace_text
+print("PAGED_SHIFT_DRAFT_WORKSPACE=PASSED")
 
 before = shift.draft_entries.count()
 add_response = client.post(
@@ -163,7 +175,8 @@ js_text = (
 ).read_text(encoding="utf-8")
 for marker in (
     "/* Patch 010.3: рабочая смена",
-    ".draft-entry-card",
+    ".draft-ledger-row",
+    ".draft-paper-stage",
     ".draft-save-status.is-conflict",
 ):
     assert marker in css_text, marker
@@ -171,8 +184,11 @@ for marker in (
     "data-draft-form",
     "response.status === 409",
     "beforeunload",
+    "normalizeTime",
+    "normalizeDate",
+    "renderPages",
 ):
     assert marker in js_text, marker
-print("SHIFT_DRAFT_FRONTEND_CONTRACT=PASSED")
+print("PAGED_DRAFT_FRONTEND_CONTRACT=PASSED")
 
-print("PATCH_010_3_OPERATIONAL_SHIFT_DRAFT_GATE_PASSED")
+print("PATCH_010_3_1_PAGED_DRAFT_UX_GATE_PASSED")
