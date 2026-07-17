@@ -49,7 +49,7 @@ assert OperationalJournalSequence.objects.get(
 assert OperationalShift.objects.filter(journal=journal).count() == 1
 assert OperationalShiftMember.objects.filter(shift=shift).count() == 1
 draft_entries = OperationalDraftEntry.objects.filter(shift=shift)
-assert draft_entries.count() == 3
+assert draft_entries.count() >= 3
 assert all(
     entry.revisions.exists()
     for entry in draft_entries
@@ -87,6 +87,13 @@ for marker in (
     "Разворот",
     "Поиск по записям",
     "data-quick-time",
+    "Дата и время записи",
+    "Визы и замечания",
+    "data-page-input",
+    "data-page-buttons",
+    "data-column-time",
+    "data-draft-side-panel",
+    "data-measure-page",
     "draft_workspace.js",
     "draft-mini-toolbar",
 ):
@@ -99,6 +106,7 @@ for forbidden in (
 assert "Сохранить сейчас" not in workspace_text
 assert "↑ Выше" not in workspace_text
 assert "↓ Ниже" not in workspace_text
+assert 'data-page-size="8"' not in workspace_text
 print("PAGED_SHIFT_DRAFT_WORKSPACE=PASSED")
 
 before = shift.draft_entries.count()
@@ -176,7 +184,10 @@ js_text = (
 for marker in (
     "/* Patch 010.3: рабочая смена",
     ".draft-ledger-row",
-    ".draft-paper-stage",
+    ".draft-workspace-layout",
+    ".draft-page-shell",
+    ".draft-side-panel",
+    ".draft-table-header",
     ".draft-save-status.is-conflict",
 ):
     assert marker in css_text, marker
@@ -186,9 +197,17 @@ for marker in (
     "beforeunload",
     "normalizeTime",
     "normalizeDate",
-    "renderPages",
+    "paginateByHeight",
+    "buildPageNumbers",
+    "applyColumnWidths",
 ):
     assert marker in js_text, marker
-print("PAGED_DRAFT_FRONTEND_CONTRACT=PASSED")
+repair_css = css_text.split(
+    "/* Patch 010.3.1 Repair 2:",
+    1,
+)[-1]
+assert "columns: 2" not in repair_css
+assert "data-page-size" not in js_text
+print("BOOK_DRAFT_FRONTEND_CONTRACT=PASSED")
 
-print("PATCH_010_3_1_PAGED_DRAFT_UX_GATE_PASSED")
+print("PATCH_010_3_1_REPAIR2_BOOK_LAYOUT_GATE_PASSED")

@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}Рабочая смена · {{ journal.title }} · ЭОД{% endblock %}
-{% block main_class %}shift-draft-main shift-draft-main-paged{% endblock %}
+{% block main_class %}shift-draft-main shift-draft-main-book{% endblock %}
 
 {% block content %}
 <section class="shift-compact-header">
@@ -11,128 +11,544 @@
         <h1>{{ journal.title }}</h1>
         {% if shift %}
         <div class="shift-compact-meta">
-            <span>{{ shift.planned_start_at|date:"d.m.Y H:i" }} — {{ shift.planned_end_at|date:"d.m.Y H:i" }}</span>
+            <span>
+                {{ shift.planned_start_at|date:"d.m.Y H:i" }} —
+                {{ shift.planned_end_at|date:"d.m.Y H:i" }}
+            </span>
             <span>{{ drafts|length }} записей</span>
             <span class="shift-autosave-indicator">● Автосохранение</span>
         </div>
         {% endif %}
     </div>
     <div class="shift-compact-actions">
-        <a href="{% url 'operational_log:detail' journal.pk %}">Чистовик</a>
-        {% if shift %}<button class="button secondary compact-button" type="button" data-toggle-shift-panel>Смена</button>{% endif %}
+        <a href="{% url 'operational_log:detail' journal.pk %}">
+            Чистовик
+        </a>
+        {% if shift %}
+        <button
+            class="button secondary compact-button"
+            type="button"
+            data-toggle-side-panel
+        >
+            Панель
+        </button>
+        {% endif %}
     </div>
 </section>
 
 {% if not shift %}
 <section class="profile-card shift-open-card">
     <h2>Открыть сменный черновик</h2>
-    <p class="muted">Черновик сохраняется автоматически и не изменяет зарегистрированный журнал.</p>
-    <form method="post" action="{% url 'operational_log:open_shift' journal.pk %}" class="shift-open-form">
+    <p class="muted">
+        Черновик сохраняется автоматически и не изменяет
+        зарегистрированный журнал.
+    </p>
+    <form
+        method="post"
+        action="{% url 'operational_log:open_shift' journal.pk %}"
+        class="shift-open-form"
+    >
         {% csrf_token %}
         <div class="shift-open-fields">
-            <div class="setting-field"><label for="{{ open_form.planned_start_at.id_for_label }}">{{ open_form.planned_start_at.label }}</label>{{ open_form.planned_start_at }}</div>
-            <div class="setting-field"><label for="{{ open_form.planned_end_at.id_for_label }}">{{ open_form.planned_end_at.label }}</label>{{ open_form.planned_end_at }}</div>
+            <div class="setting-field">
+                <label for="{{ open_form.planned_start_at.id_for_label }}">
+                    {{ open_form.planned_start_at.label }}
+                </label>
+                {{ open_form.planned_start_at }}
+            </div>
+            <div class="setting-field">
+                <label for="{{ open_form.planned_end_at.id_for_label }}">
+                    {{ open_form.planned_end_at.label }}
+                </label>
+                {{ open_form.planned_end_at }}
+            </div>
         </div>
-        <button class="button" type="submit">Открыть рабочую смену</button>
+        <button class="button" type="submit">
+            Открыть рабочую смену
+        </button>
     </form>
 </section>
 {% else %}
-<section class="paged-draft-workspace" data-draft-workspace data-autosave-delay="700" data-page-size="8">
+<section
+    class="paged-draft-workspace"
+    data-draft-workspace
+    data-autosave-delay="700"
+    style="
+        --draft-time-column: 14%;
+        --draft-content-column: 66%;
+        --draft-remarks-column: 20%;
+    "
+>
     <div class="draft-command-bar screen-only">
-        <div class="draft-view-switch">
-            <button type="button" class="draft-view-button is-active" data-view-mode="single">Одна страница</button>
-            <button type="button" class="draft-view-button" data-view-mode="spread">Разворот</button>
+        <div
+            class="draft-view-switch"
+            role="group"
+            aria-label="Режим отображения"
+        >
+            <button
+                type="button"
+                class="draft-view-button is-active"
+                data-view-mode="single"
+                aria-pressed="true"
+            >
+                Одна страница
+            </button>
+            <button
+                type="button"
+                class="draft-view-button"
+                data-view-mode="spread"
+                aria-pressed="false"
+            >
+                Разворот
+            </button>
         </div>
+
         <div class="draft-compact-search">
-            <input type="search" placeholder="Поиск по записям…" data-draft-search aria-label="Поиск по записям">
+            <input
+                type="search"
+                placeholder="Поиск по записям…"
+                data-draft-search
+                aria-label="Поиск по записям"
+            >
             <select data-draft-filter aria-label="Фильтр записей">
                 <option value="all">Все записи</option>
                 <option value="filled">Заполненные</option>
                 <option value="empty">Пустые</option>
             </select>
         </div>
-        <form method="post" action="{% url 'operational_log:add_draft' journal.pk %}">
+
+        <form
+            method="post"
+            action="{% url 'operational_log:add_draft' journal.pk %}"
+        >
             {% csrf_token %}
-            <button class="button compact-button" type="submit">+ Запись</button>
+            <button class="button compact-button" type="submit">
+                + Запись
+            </button>
         </form>
     </div>
 
-    <div class="draft-paper-stage">
-        <div class="draft-paper-pages">
-        {% for draft in drafts %}
-            <article id="draft-{{ draft.public_id }}" class="draft-ledger-row" data-draft-card data-draft-id="{{ draft.public_id }}" data-entry-filled="{% if draft.content %}true{% else %}false{% endif %}">
-                {% ifchanged draft.event_at|date:"Y-m-d" %}
-                <div class="draft-date-divider">{{ draft.event_at|date:"d.m.Y" }}</div>
-                {% endifchanged %}
-                <form method="post" action="{% url 'operational_log:autosave_draft' journal.pk draft.public_id %}" class="draft-ledger-form" data-draft-form>
-                    {% csrf_token %}
-                    <input type="hidden" name="public_id" value="{{ draft.public_id }}">
-                    <input type="hidden" name="expected_version" value="{{ draft.version }}" data-draft-version>
-                    <input type="hidden" name="event_at" value="{{ draft.event_at|date:'Y-m-d\TH:i' }}" data-event-at>
-
-                    <div class="draft-ledger-time">
-                        <input type="text" inputmode="numeric" autocomplete="off" value="{{ draft.event_at|date:'H:i' }}" data-quick-time aria-label="Время события">
-                        <button type="button" class="draft-date-button" data-date-button data-current-date="{{ draft.event_at|date:'d.m.Y' }}" title="Изменить дату">{{ draft.event_at|date:"d.m" }}</button>
-                    </div>
-
-                    <div class="draft-ledger-content">
-                        <textarea name="content" rows="1" maxlength="20000" placeholder="Содержание записи…" data-auto-grow>{{ draft.content }}</textarea>
-                        <div class="draft-mini-toolbar" data-mini-toolbar>
-                            <button type="button" data-editor-command="bold" title="Полужирный — следующий этап"><strong>Ж</strong></button>
-                            <button type="button" data-editor-command="underline" title="Подчёркивание — следующий этап"><u>Ч</u></button>
-                            <button type="button" data-editor-command="marks" title="Специальные отметки — следующий этап">⚡</button>
-                            <i></i>
-                            <button type="submit" formaction="{% url 'operational_log:move_draft' journal.pk draft.public_id %}" name="direction" value="up" title="Выше" {% if forloop.first %}disabled{% endif %}>↑</button>
-                            <button type="submit" formaction="{% url 'operational_log:move_draft' journal.pk draft.public_id %}" name="direction" value="down" title="Ниже" {% if forloop.last %}disabled{% endif %}>↓</button>
-                            <button type="submit" formaction="{% url 'operational_log:remove_draft' journal.pk draft.public_id %}" class="danger-text" title="Убрать">×</button>
+    <div class="draft-workspace-layout">
+        <div class="draft-book-column">
+            <div class="draft-paper-stage">
+                <div class="draft-book" data-draft-book>
+                    <section
+                        class="draft-page-shell"
+                        data-page-shell="left"
+                    >
+                        <div class="draft-table-header">
+                            <div>Дата и время записи</div>
+                            <div>
+                                Содержание записей в течение смены,
+                                подписи о приемке и сдаче смены
+                            </div>
+                            <div>
+                                Визы и замечания
+                                административно-технического персонала
+                            </div>
                         </div>
-                        <div class="draft-ledger-meta">
-                            <span class="draft-save-status is-saved" data-save-status role="status">✓ {{ draft.updated_at|date:"H:i:s" }}</span>
-                            <span class="draft-sequence-muted">№ {{ forloop.counter }}</span>
-                            <span class="draft-version-muted">v<span data-version-label>{{ draft.version }}</span></span>
+                        <div
+                            class="draft-page-date"
+                            data-page-date="left"
+                        ></div>
+                        <div
+                            class="draft-page-body"
+                            data-page-body="left"
+                        ></div>
+                        <footer class="draft-page-footer">
+                            <span data-page-number="left"></span>
+                        </footer>
+                    </section>
+
+                    <section
+                        class="draft-page-shell"
+                        data-page-shell="right"
+                    >
+                        <div class="draft-table-header">
+                            <div>Дата и время записи</div>
+                            <div>
+                                Содержание записей в течение смены,
+                                подписи о приемке и сдаче смены
+                            </div>
+                            <div>
+                                Визы и замечания
+                                административно-технического персонала
+                            </div>
                         </div>
-                    </div>
-                    <div class="draft-ledger-visas" aria-label="Визы и замечания"></div>
-                </form>
-            </article>
-        {% empty %}
-            <div class="empty-state"><h3>Черновых записей пока нет</h3><p>Добавь первую запись.</p></div>
-        {% endfor %}
+                        <div
+                            class="draft-page-date"
+                            data-page-date="right"
+                        ></div>
+                        <div
+                            class="draft-page-body"
+                            data-page-body="right"
+                        ></div>
+                        <footer class="draft-page-footer">
+                            <span data-page-number="right"></span>
+                        </footer>
+                    </section>
+
+                    <section
+                        class="draft-page-shell draft-measure-page"
+                        data-measure-page
+                        aria-hidden="true"
+                    >
+                        <div class="draft-table-header">
+                            <div>Дата и время записи</div>
+                            <div>Содержание записей</div>
+                            <div>Визы и замечания</div>
+                        </div>
+                        <div
+                            class="draft-page-date"
+                            data-measure-date
+                        ></div>
+                        <div
+                            class="draft-page-body"
+                            data-measure-body
+                        ></div>
+                        <footer class="draft-page-footer"></footer>
+                    </section>
+                </div>
+            </div>
+
+            <nav
+                class="draft-page-navigation screen-only"
+                aria-label="Навигация по страницам"
+            >
+                <button
+                    type="button"
+                    data-page-prev
+                    aria-label="Предыдущая страница"
+                >
+                    ←
+                </button>
+                <span class="draft-page-jump">
+                    Страница
+                    <input
+                        type="number"
+                        min="1"
+                        value="1"
+                        data-page-input
+                        aria-label="Номер страницы"
+                    >
+                    из <strong data-page-total>1</strong>
+                </span>
+                <div
+                    class="draft-page-buttons"
+                    data-page-buttons
+                    aria-label="Номера страниц"
+                ></div>
+                <button
+                    type="button"
+                    data-page-next
+                    aria-label="Следующая страница"
+                >
+                    →
+                </button>
+            </nav>
+            <div class="draft-page-range" data-page-range>
+                Страница 1 из 1
+            </div>
         </div>
+
+        <aside
+            class="draft-side-panel screen-only"
+            data-draft-side-panel
+        >
+            <section class="draft-side-section">
+                <div class="draft-side-heading">
+                    <span class="card-label">ТЕКУЩАЯ СМЕНА</span>
+                    <strong>
+                        {{ shift.planned_start_at|date:"d.m.Y H:i" }} —
+                        {{ shift.planned_end_at|date:"d.m.Y H:i" }}
+                    </strong>
+                </div>
+                <ul class="shift-member-list compact-member-list">
+                {% for member in members %}
+                    <li>
+                        <div>
+                            <strong>
+                                {{ member.employee_full_name_snapshot }}
+                            </strong>
+                            <span>
+                                {{ member.employee_position_snapshot }}
+                            </span>
+                        </div>
+                        {% if member.is_shift_lead %}
+                        <em>Старший</em>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+                </ul>
+            </section>
+
+            <section class="draft-side-section">
+                <div class="draft-side-heading">
+                    <span class="card-label">ВИД СТРАНИЦЫ</span>
+                    <strong>Пропорции граф</strong>
+                </div>
+
+                <div class="draft-column-values">
+                    <span data-column-values>14 / 66 / 20</span>
+                </div>
+
+                <label class="draft-range-setting">
+                    <span>Дата и время</span>
+                    <input
+                        type="range"
+                        min="10"
+                        max="24"
+                        step="1"
+                        value="14"
+                        data-column-time
+                    >
+                </label>
+
+                <label class="draft-range-setting">
+                    <span>Визы и замечания</span>
+                    <input
+                        type="range"
+                        min="15"
+                        max="30"
+                        step="1"
+                        value="20"
+                        data-column-remarks
+                    >
+                </label>
+
+                <button
+                    type="button"
+                    class="button secondary compact-button"
+                    data-reset-columns
+                >
+                    По форме 14 / 66 / 20
+                </button>
+
+                <p class="draft-side-help">
+                    Количество строк определяется фактической высотой
+                    записей и доступной высотой экрана.
+                </p>
+            </section>
+
+            <section class="draft-side-section">
+                <div class="draft-side-heading">
+                    <span class="card-label">ЧЕРНОВИК</span>
+                    <strong>Рабочее состояние</strong>
+                </div>
+                <dl class="shift-draft-facts">
+                    <dt>Активных записей</dt>
+                    <dd>{{ drafts|length }}</dd>
+                    <dt>Убрано</dt>
+                    <dd>{{ removed_drafts|length }}</dd>
+                    <dt>Официальные номера</dt>
+                    <dd>Не назначены</dd>
+                    <dt>Чистовик</dt>
+                    <dd>Не изменён</dd>
+                </dl>
+            </section>
+
+            {% if removed_drafts %}
+            <details class="draft-side-section removed-drafts-section">
+                <summary>
+                    Убранные записи — {{ removed_drafts|length }}
+                </summary>
+                {% for draft in removed_drafts %}
+                <article class="removed-draft-row">
+                    <div>
+                        <strong>
+                            {{ draft.event_at|date:"d.m.Y H:i" }}
+                        </strong>
+                        <p>{{ draft.content|default:"Пустая запись" }}</p>
+                    </div>
+                    <form
+                        method="post"
+                        action="{% url 'operational_log:restore_draft' journal.pk draft.public_id %}"
+                    >
+                        {% csrf_token %}
+                        <button
+                            class="button secondary compact-button"
+                            type="submit"
+                        >
+                            Вернуть
+                        </button>
+                    </form>
+                </article>
+                {% endfor %}
+            </details>
+            {% endif %}
+        </aside>
     </div>
 
-    <nav class="draft-page-navigation screen-only">
-        <button type="button" data-page-prev>←</button>
-        <span data-page-label>Страница 1 из 1</span>
-        <button type="button" data-page-next>→</button>
-    </nav>
+    <div class="draft-row-store" data-row-store hidden>
+    {% for draft in drafts %}
+        <article
+            id="draft-{{ draft.public_id }}"
+            class="draft-ledger-row"
+            data-draft-card
+            data-draft-id="{{ draft.public_id }}"
+            data-entry-date="{{ draft.event_at|date:'Y-m-d' }}"
+            data-entry-date-label="{{ draft.event_at|date:'d.m.Y' }}"
+            data-entry-filled="{% if draft.content %}true{% else %}false{% endif %}"
+        >
+            {% ifchanged draft.event_at|date:"Y-m-d" %}
+            <div
+                class="draft-inline-date"
+                data-inline-date
+            >
+                {{ draft.event_at|date:"d.m.Y" }}
+            </div>
+            {% endifchanged %}
 
-    <aside class="shift-slide-panel screen-only" data-shift-panel hidden>
-        <header><h2>Состав и состояние смены</h2><button type="button" data-close-shift-panel>×</button></header>
-        <h3>Участники</h3>
-        <ul class="shift-member-list">
-        {% for member in members %}
-            <li><div><strong>{{ member.employee_full_name_snapshot }}</strong><span>{{ member.employee_position_snapshot }}</span></div>{% if member.is_shift_lead %}<em>Старший смены</em>{% endif %}</li>
-        {% endfor %}
-        </ul>
-        <h3>Рабочая информация</h3>
-        <dl class="shift-draft-facts">
-            <dt>Активных записей</dt><dd>{{ drafts|length }}</dd>
-            <dt>Убрано</dt><dd>{{ removed_drafts|length }}</dd>
-            <dt>Официальные номера</dt><dd>Не назначены</dd>
-            <dt>Чистовик</dt><dd>Не изменён</dd>
-        </dl>
-        {% if removed_drafts %}
-        <h3>Убранные записи</h3>
-        {% for draft in removed_drafts %}
-        <article class="removed-draft-row">
-            <div><strong>{{ draft.event_at|date:"d.m.Y H:i" }}</strong><p>{{ draft.content|default:"Пустая запись" }}</p></div>
-            <form method="post" action="{% url 'operational_log:restore_draft' journal.pk draft.public_id %}">{% csrf_token %}<button class="button secondary compact-button" type="submit">Вернуть</button></form>
+            <form
+                method="post"
+                action="{% url 'operational_log:autosave_draft' journal.pk draft.public_id %}"
+                class="draft-ledger-form"
+                data-draft-form
+            >
+                {% csrf_token %}
+                <input
+                    type="hidden"
+                    name="public_id"
+                    value="{{ draft.public_id }}"
+                >
+                <input
+                    type="hidden"
+                    name="expected_version"
+                    value="{{ draft.version }}"
+                    data-draft-version
+                >
+                <input
+                    type="hidden"
+                    name="event_at"
+                    value="{{ draft.event_at|date:'Y-m-d\TH:i' }}"
+                    data-event-at
+                >
+
+                <div class="draft-ledger-time">
+                    <input
+                        type="text"
+                        inputmode="numeric"
+                        autocomplete="off"
+                        value="{{ draft.event_at|date:'H:i' }}"
+                        data-quick-time
+                        aria-label="Время события"
+                    >
+                </div>
+
+                <div class="draft-ledger-content">
+                    <textarea
+                        name="content"
+                        rows="1"
+                        maxlength="20000"
+                        placeholder="Содержание записи…"
+                        data-auto-grow
+                    >{{ draft.content }}</textarea>
+
+                    <div class="draft-ledger-lower">
+                        <div class="draft-ledger-meta">
+                            <span
+                                class="draft-save-status is-saved"
+                                data-save-status
+                                role="status"
+                                aria-live="polite"
+                            >
+                                ✓ {{ draft.updated_at|date:"H:i:s" }}
+                            </span>
+                            <span class="draft-sequence-muted">
+                                № {{ forloop.counter }}
+                            </span>
+                            <span class="draft-version-muted">
+                                v<span data-version-label>
+                                    {{ draft.version }}
+                                </span>
+                            </span>
+                        </div>
+
+                        <div
+                            class="draft-mini-toolbar"
+                            data-mini-toolbar
+                            aria-label="Действия с записью"
+                        >
+                            <button
+                                type="button"
+                                data-editor-command="bold"
+                                title="Полужирный — следующий этап"
+                            >
+                                <strong>Ж</strong>
+                            </button>
+                            <button
+                                type="button"
+                                data-editor-command="underline"
+                                title="Подчёркивание — следующий этап"
+                            >
+                                <u>Ч</u>
+                            </button>
+                            <button
+                                type="button"
+                                data-editor-command="marks"
+                                title="Специальные отметки — следующий этап"
+                            >
+                                ⚡
+                            </button>
+                            <button
+                                type="button"
+                                data-date-button
+                                data-current-date="{{ draft.event_at|date:'d.m.Y' }}"
+                                title="Изменить дату"
+                            >
+                                ◫
+                            </button>
+                            <i></i>
+                            <button
+                                type="submit"
+                                formaction="{% url 'operational_log:move_draft' journal.pk draft.public_id %}"
+                                name="direction"
+                                value="up"
+                                title="Переместить выше"
+                                {% if forloop.first %}disabled{% endif %}
+                            >
+                                ↑
+                            </button>
+                            <button
+                                type="submit"
+                                formaction="{% url 'operational_log:move_draft' journal.pk draft.public_id %}"
+                                name="direction"
+                                value="down"
+                                title="Переместить ниже"
+                                {% if forloop.last %}disabled{% endif %}
+                            >
+                                ↓
+                            </button>
+                            <button
+                                type="submit"
+                                formaction="{% url 'operational_log:remove_draft' journal.pk draft.public_id %}"
+                                class="danger-text"
+                                title="Убрать из черновика"
+                            >
+                                ×
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    class="draft-ledger-visas"
+                    aria-label="Визы и замечания"
+                ></div>
+            </form>
         </article>
-        {% endfor %}
-        {% endif %}
-    </aside>
+    {% empty %}
+        <div class="empty-state" data-empty-draft>
+            <h3>Черновых записей пока нет</h3>
+            <p>Добавь первую запись.</p>
+        </div>
+    {% endfor %}
+    </div>
 </section>
-<script src="{% static 'operational_log/draft_workspace.js' %}" defer></script>
+
+<script
+    src="{% static 'operational_log/draft_workspace.js' %}"
+    defer
+></script>
 {% endif %}
 {% endblock %}
