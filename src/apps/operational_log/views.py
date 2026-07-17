@@ -9,6 +9,7 @@ from django.views.decorators.http import require_POST
 from apps.organizations.models import InterfacePreference
 
 from .form_contracts import OPERATIONAL_JOURNAL_FORM
+from .forms import JournalDisplayPreferenceForm
 from .models import OperationalJournal
 from .services import (
     require_operational_employee,
@@ -49,7 +50,9 @@ def registry(request: HttpRequest) -> HttpResponse:
             {
                 "journal": journal,
                 "entry_count": count,
-                "last_entry": entries.order_by("-sequence_number").first(),
+                "last_entry": entries.order_by(
+                    "-sequence_number"
+                ).first(),
                 "form_contract": OPERATIONAL_JOURNAL_FORM,
             }
         )
@@ -71,7 +74,12 @@ def registry(request: HttpRequest) -> HttpResponse:
 def detail(request: HttpRequest, journal_id: int) -> HttpResponse:
     employee = require_operational_employee(request.user)
     journal = _accessible_journal(employee, journal_id)
-    entries = list(timeline_queryset(journal).order_by("sequence_number"))
+    preferences, _ = InterfacePreference.objects.get_or_create(
+        user=request.user
+    )
+    entries = list(
+        timeline_queryset(journal).order_by("sequence_number")
+    )
     rows: list[dict[str, object]] = []
     integrity_failures = 0
     for entry in entries:
@@ -88,6 +96,9 @@ def detail(request: HttpRequest, journal_id: int) -> HttpResponse:
             "journal": journal,
             "rows": rows,
             "form_contract": OPERATIONAL_JOURNAL_FORM,
+            "display_form": JournalDisplayPreferenceForm(
+                instance=preferences
+            ),
             "first_entry": entries[0] if entries else None,
             "last_entry": entries[-1] if entries else None,
             "summary": {
@@ -100,18 +111,25 @@ def detail(request: HttpRequest, journal_id: int) -> HttpResponse:
 
 @require_POST
 @login_required
-def update_display(request: HttpRequest, journal_id: int) -> HttpResponse:
+def update_display(
+    request: HttpRequest,
+    journal_id: int,
+) -> HttpResponse:
     employee = require_operational_employee(request.user)
     journal = _accessible_journal(employee, journal_id)
-    mode = request.POST.get("journal_heading_mode", "").strip().upper()
-    allowed_modes = {
-        value for value, _label in InterfacePreference.JournalHeadingMode.choices
-    }
-    if mode not in allowed_modes:
-        return HttpResponseBadRequest("Неизвестный режим шапки оперативного журнала.")
-
-    preferences, _ = InterfacePreference.objects.get_or_create(user=request.user)
-    if preferences.journal_heading_mode != mode:
-        preferences.journal_heading_mode = mode
-        preferences.save(update_fields=("journal_heading_mode", "updated_at"))
-    return redirect("operational_log:detail", journal_id=journal.pk)
+    preferences, _ = InterfacePreference.objects.get_or_create(
+        user=request.user
+    )
+    form = JournalDisplayPreferenceForm(
+        request.POST,
+        instance=preferences,
+    )
+    if not form.is_valid():
+        return HttpResponseBadRequest(
+            "Настройки отображения оперативного журнала некорректны."
+        )
+    form.save()
+    return redirect(
+        "operational_log:detail",
+        journal_id=journal.pk,
+    )

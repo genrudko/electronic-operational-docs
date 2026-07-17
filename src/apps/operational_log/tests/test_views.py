@@ -97,28 +97,63 @@ class OperationalLogViewTests(OperationalLogTestCase):
 
     def test_detail_defaults_to_compact_workspace(self) -> None:
         self.client.force_login(self.user)
-        response = self.client.get(reverse("operational_log:detail", args=(self.journal.pk,)))
+        response = self.client.get(
+            reverse("operational_log:detail", args=(self.journal.pk,))
+        )
         self.assertContains(response, "journal-workspace-bar")
         self.assertContains(response, "journal-heading-compact")
-        self.assertContains(response, "Режим шапки")
+        self.assertContains(response, "Настроить вид")
+        self.assertContains(response, "journal-settings-dialog")
+        self.assertContains(response, "Шапка и ширина")
+        self.assertNotContains(response, "journal-heading-mode-form")
         self.assertNotContains(
             response,
             "Просмотр зарегистрированных записей по утверждённой форме.",
         )
 
-    def test_display_mode_requires_authentication(self) -> None:
+    def test_display_settings_require_authentication(self) -> None:
         response = self.client.post(
             reverse("operational_log:update_display", args=(self.journal.pk,)),
-            {"journal_heading_mode": InterfacePreference.JournalHeadingMode.FULL},
+            {
+                "journal_heading_mode": (
+                    InterfacePreference.JournalHeadingMode.FULL
+                ),
+                "journal_width": InterfacePreference.JournalWidth.WIDE,
+                "journal_font_family": (
+                    InterfacePreference.JournalFontFamily.SYSTEM
+                ),
+                "journal_font_size": (
+                    InterfacePreference.JournalFontSize.NORMAL
+                ),
+                "journal_density": InterfacePreference.JournalDensity.NORMAL,
+                "journal_show_authors": "on",
+                "journal_show_links": "on",
+            },
         )
         self.assertEqual(response.status_code, 302)
         self.assertIn("/login/", response.url)
 
-    def test_display_mode_post_saves_and_applies_preferences(self) -> None:
+    def test_display_settings_post_saves_and_applies_all_preferences(
+        self,
+    ) -> None:
         self.client.force_login(self.user)
         response = self.client.post(
             reverse("operational_log:update_display", args=(self.journal.pk,)),
-            {"journal_heading_mode": InterfacePreference.JournalHeadingMode.FULL},
+            {
+                "journal_heading_mode": (
+                    InterfacePreference.JournalHeadingMode.FULL
+                ),
+                "journal_width": InterfacePreference.JournalWidth.FULL,
+                "journal_font_family": (
+                    InterfacePreference.JournalFontFamily.ARIAL
+                ),
+                "journal_font_size": (
+                    InterfacePreference.JournalFontSize.LARGE
+                ),
+                "journal_density": (
+                    InterfacePreference.JournalDensity.RELAXED
+                ),
+            },
         )
         self.assertRedirects(
             response,
@@ -129,15 +164,28 @@ class OperationalLogViewTests(OperationalLogTestCase):
             preference.journal_heading_mode,
             InterfacePreference.JournalHeadingMode.FULL,
         )
-        preference.journal_font_family = InterfacePreference.JournalFontFamily.ARIAL
-        preference.journal_font_size = InterfacePreference.JournalFontSize.LARGE
-        preference.journal_density = InterfacePreference.JournalDensity.RELAXED
-        preference.journal_width = InterfacePreference.JournalWidth.FULL
-        preference.journal_show_authors = False
-        preference.journal_show_links = False
-        preference.save()
+        self.assertEqual(
+            preference.journal_font_family,
+            InterfacePreference.JournalFontFamily.ARIAL,
+        )
+        self.assertEqual(
+            preference.journal_font_size,
+            InterfacePreference.JournalFontSize.LARGE,
+        )
+        self.assertEqual(
+            preference.journal_density,
+            InterfacePreference.JournalDensity.RELAXED,
+        )
+        self.assertEqual(
+            preference.journal_width,
+            InterfacePreference.JournalWidth.FULL,
+        )
+        self.assertFalse(preference.journal_show_authors)
+        self.assertFalse(preference.journal_show_links)
 
-        detail = self.client.get(reverse("operational_log:detail", args=(self.journal.pk,)))
+        detail = self.client.get(
+            reverse("operational_log:detail", args=(self.journal.pk,))
+        )
         for marker in (
             "journal-heading-full",
             "journal-font-arial",
@@ -149,12 +197,24 @@ class OperationalLogViewTests(OperationalLogTestCase):
         ):
             self.assertContains(detail, marker)
 
-    def test_display_mode_post_rejects_unknown_choice(self) -> None:
+    def test_display_settings_post_rejects_unknown_choice(self) -> None:
         self.client.force_login(self.user)
         InterfacePreference.objects.get_or_create(user=self.user)
         response = self.client.post(
             reverse("operational_log:update_display", args=(self.journal.pk,)),
-            {"journal_heading_mode": "FLOATING"},
+            {
+                "journal_heading_mode": "FLOATING",
+                "journal_width": InterfacePreference.JournalWidth.WIDE,
+                "journal_font_family": (
+                    InterfacePreference.JournalFontFamily.SYSTEM
+                ),
+                "journal_font_size": (
+                    InterfacePreference.JournalFontSize.NORMAL
+                ),
+                "journal_density": InterfacePreference.JournalDensity.NORMAL,
+                "journal_show_authors": "on",
+                "journal_show_links": "on",
+            },
         )
         self.assertEqual(response.status_code, 400)
         preference = InterfacePreference.objects.get(user=self.user)

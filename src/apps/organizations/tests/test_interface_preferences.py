@@ -61,26 +61,30 @@ class InterfacePreferenceViewTests(TestCase):
             "font_scale": InterfacePreference.FontScale.LARGE,
             "content_width": InterfacePreference.ContentWidth.WIDE,
             "show_technical_details": "on",
-            "journal_heading_mode": InterfacePreference.JournalHeadingMode.HIDDEN,
-            "journal_font_family": InterfacePreference.JournalFontFamily.ARIAL,
-            "journal_font_size": InterfacePreference.JournalFontSize.LARGE,
-            "journal_density": InterfacePreference.JournalDensity.COMPACT,
-            "journal_width": InterfacePreference.JournalWidth.FULL,
-            "journal_show_authors": "on",
-            "journal_show_links": "on",
         }
 
-    def test_account_page_contains_interface_form(self):
+    def test_account_page_contains_only_general_interface_form(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("organizations:account"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Настройки интерфейса")
+        self.assertContains(response, "Общий интерфейс системы")
         self.assertContains(response, "Показывать технические реквизиты")
-        self.assertContains(response, "Отображение оперативного журнала")
-        self.assertContains(response, "Режим шапки журнала")
-        self.assertContains(response, "Шрифт записей")
+        self.assertContains(response, "Открыть настройки журнала")
+        self.assertNotContains(response, "Отображение оперативного журнала")
+        self.assertNotContains(response, "Режим шапки журнала")
+        self.assertNotContains(response, "Шрифт записей")
 
-    def test_post_saves_personal_preferences(self):
+    def test_post_saves_general_preferences_and_preserves_journal_settings(self):
+        InterfacePreference.objects.create(
+            user=self.user,
+            journal_heading_mode=InterfacePreference.JournalHeadingMode.HIDDEN,
+            journal_font_family=InterfacePreference.JournalFontFamily.ARIAL,
+            journal_font_size=InterfacePreference.JournalFontSize.LARGE,
+            journal_density=InterfacePreference.JournalDensity.COMPACT,
+            journal_width=InterfacePreference.JournalWidth.FULL,
+            journal_show_authors=False,
+            journal_show_links=False,
+        )
         self.client.force_login(self.user)
         response = self.client.post(
             reverse("organizations:account"),
@@ -112,8 +116,8 @@ class InterfacePreferenceViewTests(TestCase):
             preference.journal_width,
             InterfacePreference.JournalWidth.FULL,
         )
-        self.assertTrue(preference.journal_show_authors)
-        self.assertTrue(preference.journal_show_links)
+        self.assertFalse(preference.journal_show_authors)
+        self.assertFalse(preference.journal_show_links)
 
     def test_invalid_post_does_not_save_unknown_choice(self):
         self.client.force_login(self.user)

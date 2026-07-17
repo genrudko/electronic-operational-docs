@@ -10,9 +10,16 @@
         <h1>{{ journal.title }}</h1>
         <div class="journal-workspace-meta">
             <span><strong>{{ summary.total }}</strong> записей</span>
-            {% if first_entry and last_entry %}<span>{{ first_entry.event_at|date:"d.m.Y H:i" }} — {{ last_entry.event_at|date:"d.m.Y H:i" }}</span>{% endif %}
+            {% if first_entry and last_entry %}
+                <span>
+                    {{ first_entry.event_at|date:"d.m.Y H:i" }} —
+                    {{ last_entry.event_at|date:"d.m.Y H:i" }}
+                </span>
+            {% endif %}
             {% if summary.integrity_failures %}
-                <span class="journal-integrity-error">{{ summary.integrity_failures }} записей требуют проверки</span>
+                <span class="journal-integrity-error">
+                    {{ summary.integrity_failures }} записей требуют проверки
+                </span>
             {% else %}
                 <span>Целостность: без нарушений</span>
             {% endif %}
@@ -21,18 +28,151 @@
 
     <div class="journal-workspace-actions">
         <a href="{% url 'operational_log:registry' %}">К журналам</a>
-        <div class="journal-heading-mode-control">
-            <span>Режим шапки</span>
-            <form method="post" action="{% url 'operational_log:update_display' journal.pk %}" class="journal-heading-mode-form">
-                {% csrf_token %}
-                <button type="submit" name="journal_heading_mode" value="HIDDEN" class="journal-mode-button{% if ui_preferences.journal_heading_mode == 'HIDDEN' %} active{% endif %}" aria-pressed="{% if ui_preferences.journal_heading_mode == 'HIDDEN' %}true{% else %}false{% endif %}">Скрыта</button>
-                <button type="submit" name="journal_heading_mode" value="COMPACT" class="journal-mode-button{% if ui_preferences.journal_heading_mode == 'COMPACT' %} active{% endif %}" aria-pressed="{% if ui_preferences.journal_heading_mode == 'COMPACT' %}true{% else %}false{% endif %}">Компактная</button>
-                <button type="submit" name="journal_heading_mode" value="FULL" class="journal-mode-button{% if ui_preferences.journal_heading_mode == 'FULL' %} active{% endif %}" aria-pressed="{% if ui_preferences.journal_heading_mode == 'FULL' %}true{% else %}false{% endif %}">Полная</button>
-            </form>
-        </div>
-        <button class="button journal-print-button" type="button" onclick="window.print()">Печать формы</button>
+        <button
+            class="button journal-settings-trigger"
+            type="button"
+            aria-haspopup="dialog"
+            onclick="document.getElementById('journal-display-settings').showModal()"
+        >
+            Настроить вид
+        </button>
+        <button
+            class="button journal-print-button"
+            type="button"
+            onclick="window.print()"
+        >
+            Печать формы
+        </button>
     </div>
 </section>
+
+<dialog
+    id="journal-display-settings"
+    class="journal-settings-dialog screen-only"
+    aria-labelledby="journal-settings-title"
+>
+    <form
+        method="post"
+        action="{% url 'operational_log:update_display' journal.pk %}"
+        class="journal-settings-form"
+    >
+        {% csrf_token %}
+        <header class="journal-settings-header">
+            <div>
+                <div class="eyebrow">ПЕРСОНАЛЬНОЕ ОТОБРАЖЕНИЕ</div>
+                <h2 id="journal-settings-title">Настройки журнала</h2>
+                <p>
+                    Меняется только рабочий экран. Утверждённая форма
+                    и печать остаются неизменными.
+                </p>
+            </div>
+            <button
+                class="journal-settings-close"
+                type="button"
+                aria-label="Закрыть настройки"
+                onclick="this.closest('dialog').close()"
+            >
+                ×
+            </button>
+        </header>
+
+        <div class="journal-settings-body">
+            <fieldset class="journal-settings-section">
+                <legend>Шапка и ширина</legend>
+                <div class="journal-heading-choice-grid">
+                    {% for option in display_form.journal_heading_mode %}
+                        <label class="journal-heading-choice">
+                            {{ option.tag }}
+                            <span>{{ option.choice_label }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+                <small class="journal-settings-help">
+                    {{ display_form.journal_heading_mode.help_text }}
+                </small>
+
+                <div class="journal-setting-field">
+                    <label for="{{ display_form.journal_width.id_for_label }}">
+                        {{ display_form.journal_width.label }}
+                    </label>
+                    {{ display_form.journal_width }}
+                </div>
+            </fieldset>
+
+            <fieldset class="journal-settings-section">
+                <legend>Текст записей</legend>
+                <div class="journal-settings-grid">
+                    <div class="journal-setting-field">
+                        <label for="{{ display_form.journal_font_family.id_for_label }}">
+                            {{ display_form.journal_font_family.label }}
+                        </label>
+                        {{ display_form.journal_font_family }}
+                    </div>
+                    <div class="journal-setting-field">
+                        <label for="{{ display_form.journal_font_size.id_for_label }}">
+                            {{ display_form.journal_font_size.label }}
+                        </label>
+                        {{ display_form.journal_font_size }}
+                    </div>
+                    <div class="journal-setting-field">
+                        <label for="{{ display_form.journal_density.id_for_label }}">
+                            {{ display_form.journal_density.label }}
+                        </label>
+                        {{ display_form.journal_density }}
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="journal-settings-section">
+                <legend>Служебные сведения</legend>
+                <label class="journal-setting-toggle">
+                    {{ display_form.journal_show_authors }}
+                    <span>
+                        <strong>
+                            {{ display_form.journal_show_authors.label }}
+                        </strong>
+                        <small>
+                            {{ display_form.journal_show_authors.help_text }}
+                        </small>
+                    </span>
+                </label>
+                <label class="journal-setting-toggle">
+                    {{ display_form.journal_show_links }}
+                    <span>
+                        <strong>
+                            {{ display_form.journal_show_links.label }}
+                        </strong>
+                        <small>
+                            {{ display_form.journal_show_links.help_text }}
+                        </small>
+                    </span>
+                </label>
+            </fieldset>
+
+            <aside class="journal-settings-future">
+                <strong>Дальнейшее расширение</strong>
+                <p>
+                    Здесь появятся настройки специальных значков,
+                    нормативных цветов, подчёркиваний и других средств
+                    редактора сменного черновика.
+                </p>
+            </aside>
+        </div>
+
+        <footer class="journal-settings-footer">
+            <button class="button" type="submit">
+                Сохранить отображение
+            </button>
+            <button
+                class="button secondary"
+                type="button"
+                onclick="this.closest('dialog').close()"
+            >
+                Отмена
+            </button>
+        </footer>
+    </form>
+</dialog>
 
 <section
     class="approved-journal-shell journal-heading-{{ ui_preferences.journal_heading_mode|lower }} journal-font-{{ ui_preferences.journal_font_family|lower }} journal-size-{{ ui_preferences.journal_font_size|lower }} journal-density-{{ ui_preferences.journal_density|lower }}{% if not ui_preferences.journal_show_authors %} journal-authors-hidden{% endif %}{% if not ui_preferences.journal_show_links %} journal-links-hidden{% endif %}"
@@ -42,28 +182,46 @@
 >
     <header class="approved-journal-heading">
         <div class="approved-journal-heading-full">
-            <div class="approved-journal-form-label screen-only">УТВЕРЖДЁННАЯ ФОРМА</div>
+            <div class="approved-journal-form-label screen-only">
+                УТВЕРЖДЁННАЯ ФОРМА
+            </div>
             <h2>{{ form_contract.title|upper }}</h2>
             <p>{{ journal.workplace.name }}</p>
-            {% if journal.workplace.division %}<p>{{ journal.workplace.division.name }}</p>{% endif %}
-            <small class="screen-only">{{ form_contract.source_reference }}</small>
+            {% if journal.workplace.division %}
+                <p>{{ journal.workplace.division.name }}</p>
+            {% endif %}
+            <small class="screen-only">
+                {{ form_contract.source_reference }}
+            </small>
         </div>
         <div class="approved-journal-heading-compact screen-only">
             <strong>{{ form_contract.title|upper }}</strong>
             <span>{{ journal.workplace.name }}</span>
-            {% if journal.workplace.division %}<small>{{ journal.workplace.division.name }}</small>{% endif %}
+            {% if journal.workplace.division %}
+                <small>{{ journal.workplace.division.name }}</small>
+            {% endif %}
         </div>
     </header>
 
     <div class="approved-journal-table-wrap">
-        <table class="approved-journal-table" aria-label="{{ form_contract.title }}">
+        <table
+            class="approved-journal-table"
+            aria-label="{{ form_contract.title }}"
+        >
             <colgroup>
                 {% for column in form_contract.columns %}
-                    <col data-approved-column="{{ column.key }}" style="width: {{ column.width_percent }}%;">
+                    <col
+                        data-approved-column="{{ column.key }}"
+                        style="width: {{ column.width_percent }}%;"
+                    >
                 {% endfor %}
             </colgroup>
             <thead>
-                <tr>{% for column in form_contract.columns %}<th scope="col">{{ column.title }}</th>{% endfor %}</tr>
+                <tr>
+                {% for column in form_contract.columns %}
+                    <th scope="col">{{ column.title }}</th>
+                {% endfor %}
+                </tr>
             </thead>
             <tbody>
             {% for row in rows %}
@@ -77,17 +235,42 @@
                         <p>{{ row.entry.content }}</p>
                         {% if row.entry.equipment_links.all or row.entry.document_links.all %}
                         <div class="approved-journal-links">
-                            {% for link in row.entry.equipment_links.all %}<span>Оборудование: {{ link.dispatcher_name_snapshot }}</span>{% endfor %}
-                            {% for link in row.entry.document_links.all %}<a href="{% url 'documents:detail' link.document.public_id %}">Документ: {{ link.registration_number_snapshot }} — {{ link.title_snapshot }}</a>{% endfor %}
+                            {% for link in row.entry.equipment_links.all %}
+                                <span>
+                                    Оборудование:
+                                    {{ link.dispatcher_name_snapshot }}
+                                </span>
+                            {% endfor %}
+                            {% for link in row.entry.document_links.all %}
+                                <a href="{% url 'documents:detail' link.document.public_id %}">
+                                    Документ:
+                                    {{ link.registration_number_snapshot }}
+                                    — {{ link.title_snapshot }}
+                                </a>
+                            {% endfor %}
                         </div>
                         {% endif %}
-                        <div class="approved-journal-author">Автор записи: {{ row.entry.author_full_name_snapshot }}, {{ row.entry.author_position_snapshot }}</div>
-                        {% if not row.integrity_ok %}<strong class="approved-journal-integrity-warning screen-only">Нарушена целостность зарегистрированной записи</strong>{% endif %}
+                        <div class="approved-journal-author">
+                            Автор записи:
+                            {{ row.entry.author_full_name_snapshot }},
+                            {{ row.entry.author_position_snapshot }}
+                        </div>
+                        {% if not row.integrity_ok %}
+                            <strong class="approved-journal-integrity-warning screen-only">
+                                Нарушена целостность зарегистрированной записи
+                            </strong>
+                        {% endif %}
                     </td>
-                    <td class="approved-journal-visas"><span aria-hidden="true">&nbsp;</span></td>
+                    <td class="approved-journal-visas">
+                        <span aria-hidden="true">&nbsp;</span>
+                    </td>
                 </tr>
             {% empty %}
-                <tr><td class="approved-journal-empty" colspan="3">В журнале пока нет зарегистрированных записей.</td></tr>
+                <tr>
+                    <td class="approved-journal-empty" colspan="3">
+                        В журнале пока нет зарегистрированных записей.
+                    </td>
+                </tr>
             {% endfor %}
             </tbody>
         </table>
@@ -95,14 +278,32 @@
 </section>
 
 {% if ui_preferences.show_technical_details %}
-<details class="technical-panel journal-technical-register technical-only screen-only">
-    <summary>Технические реквизиты зарегистрированных записей</summary>
+<details
+    class="technical-panel journal-technical-register technical-only screen-only"
+>
+    <summary>
+        Технические реквизиты зарегистрированных записей
+    </summary>
     <div class="table-wrap">
         <table>
-            <thead><tr><th>№</th><th>Время регистрации</th><th>Внутренний тип</th><th>SHA-256</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>№</th>
+                    <th>Время регистрации</th>
+                    <th>Внутренний тип</th>
+                    <th>SHA-256</th>
+                </tr>
+            </thead>
             <tbody>
             {% for row in rows %}
-                <tr><td>{{ row.entry.sequence_number }}</td><td>{{ row.entry.registered_at|date:"d.m.Y H:i:s" }}</td><td>{{ row.entry.type_code|default:"—" }}</td><td><code>{{ row.entry.digest }}</code></td></tr>
+                <tr>
+                    <td>{{ row.entry.sequence_number }}</td>
+                    <td>
+                        {{ row.entry.registered_at|date:"d.m.Y H:i:s" }}
+                    </td>
+                    <td>{{ row.entry.type_code|default:"—" }}</td>
+                    <td><code>{{ row.entry.digest }}</code></td>
+                </tr>
             {% endfor %}
             </tbody>
         </table>
