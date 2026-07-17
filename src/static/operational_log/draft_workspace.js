@@ -78,23 +78,25 @@
         "[data-draft-filter]",
     );
 
-    const sidePanel = workspace.querySelector(
-        "[data-draft-side-panel]",
+    const drawer = workspace.querySelector("[data-view-drawer]");
+    const drawerBackdrop = workspace.querySelector(
+        "[data-view-drawer-backdrop]",
     );
-    const timeColumnInput = workspace.querySelector(
-        "[data-column-time]",
+    const timeNumberInput = workspace.querySelector(
+        "[data-column-time-number]",
     );
-    const remarksColumnInput = workspace.querySelector(
-        "[data-column-remarks]",
+    const contentNumberInput = workspace.querySelector(
+        "[data-column-content-number]",
     );
-    const columnValues = workspace.querySelector(
-        "[data-column-values]",
+    const remarksNumberInput = workspace.querySelector(
+        "[data-column-remarks-number]",
     );
 
     let pages = [];
     let currentPage = 0;
     let paginationTimer = null;
     let resizeTimer = null;
+    let activeColumnDrag = null;
     let viewMode = readPreference(
         "eod-draft-view-mode",
         "single",
@@ -112,8 +114,12 @@
         try {
             window.localStorage.setItem(key, String(value));
         } catch (error) {
-            // Настройка продолжает работать в текущей вкладке.
+            // Настройка действует в текущей вкладке.
         }
+    }
+
+    function clamp(value, minimum, maximum) {
+        return Math.min(maximum, Math.max(minimum, value));
     }
 
     function statusNode(form) {
@@ -163,6 +169,7 @@
         const day = digits.slice(0, 2);
         const month = digits.slice(2, 4);
         let year = String(today.getFullYear());
+
         if (digits.length === 6) {
             year = `20${digits.slice(4, 6)}`;
         }
@@ -221,7 +228,7 @@
         }
         textarea.style.height = "auto";
         textarea.style.height = (
-            `${Math.max(34, textarea.scrollHeight)}px`
+            `${Math.max(36, textarea.scrollHeight)}px`
         );
     }
 
@@ -296,10 +303,12 @@
         if (form.dataset.conflict === "true") {
             return;
         }
+
         const activeTimer = timers.get(form);
         if (activeTimer) {
             window.clearTimeout(activeTimer);
         }
+
         setStatus(form, "●", "is-dirty");
         const timer = window.setTimeout(() => {
             timers.delete(form);
@@ -358,10 +367,9 @@
         restoreRowsToStore();
 
         const visibleRows = filteredRows();
-        const pageWidth = leftShell.getBoundingClientRect().width;
-        const pageHeight = leftShell.getBoundingClientRect().height;
-        measurePage.style.width = `${pageWidth}px`;
-        measurePage.style.height = `${pageHeight}px`;
+        const pageRect = leftShell.getBoundingClientRect();
+        measurePage.style.width = `${pageRect.width}px`;
+        measurePage.style.height = `${pageRect.height}px`;
 
         pages = [];
         let pageRows = [];
@@ -421,12 +429,12 @@
             pages = [[]];
         }
 
-        const visiblePageCount = (
+        const pagesPerScreen = (
             viewMode === "spread" ? 2 : 1
         );
         const lastStart = Math.max(
             0,
-            pages.length - visiblePageCount,
+            pages.length - pagesPerScreen,
         );
         currentPage = Math.min(currentPage, lastStart);
         if (viewMode === "spread") {
@@ -461,6 +469,7 @@
             body.append(row);
             autoGrow(row.querySelector("[data-auto-grow]"));
         });
+
         dateNode.textContent = (
             pageRows[0]?.dataset.entryDateLabel || ""
         );
@@ -488,6 +497,7 @@
 
     function buildPageNumbers() {
         pageButtons.replaceChildren();
+
         const total = pages.length;
         const activePages = new Set(
             viewMode === "spread"
@@ -508,6 +518,7 @@
             (left, right) => left - right,
         );
         let previous = 0;
+
         ordered.forEach((number) => {
             if (number - previous > 1) {
                 appendEllipsis();
@@ -573,6 +584,7 @@
             total,
             Math.max(1, Number(pageNumber) || 1),
         );
+
         currentPage = normalized - 1;
         if (viewMode === "spread") {
             currentPage = (
@@ -589,21 +601,29 @@
         paginationTimer = window.setTimeout(() => {
             paginationTimer = null;
             paginateByHeight();
-        }, 260);
+        }, 220);
     }
 
-    function applyColumnWidths(timeValue, remarksValue) {
-        let time = Number(timeValue);
-        let remarks = Number(remarksValue);
-        if (!Number.isFinite(time)) {
-            time = 14;
-        }
-        if (!Number.isFinite(remarks)) {
-            remarks = 20;
+    function updateColumnWidths(
+        timeValue,
+        remarksValue,
+        persist = true,
+    ) {
+        let time = clamp(Number(timeValue) || 14, 10, 25);
+        let remarks = clamp(
+            Number(remarksValue) || 20,
+            15,
+            30,
+        );
+
+        if (100 - time - remarks < 45) {
+            if (activeColumnDrag?.kind === "time") {
+                time = 100 - remarks - 45;
+            } else {
+                remarks = 100 - time - 45;
+            }
         }
 
-        time = Math.min(24, Math.max(10, time));
-        remarks = Math.min(30, Math.max(15, remarks));
         const content = 100 - time - remarks;
 
         workspace.style.setProperty(
@@ -619,18 +639,102 @@
             `${remarks}%`,
         );
 
-        timeColumnInput.value = String(time);
-        remarksColumnInput.value = String(remarks);
-        columnValues.textContent = (
-            `${time} / ${content} / ${remarks}`
+        timeNumberInput.value = String(Math.round(time));
+        contentNumberInput.value = String(Math.round(content));
+        remarksNumberInput.value = String(Math.round(remarks));
+
+        if (persist) {
+            writePreference("eod-draft-column-time", time);
+            writePreference(
+                "eod-draft-column-remarks",
+                remarks,
+            );
+        }
+
+        schedulePagination();
+    }
+
+    function startColumnResize(event, handle) {
+        const header = handle.closest(".draft-table-header");
+        const kind = handle.dataset.columnResizer;
+        if (!header || !kind) {
+            return;
+        }
+
+        event.preventDefault();
+        handle.setPointerCapture(event.pointerId);
+        activeColumnDrag = {
+            kind,
+            handle,
+            pointerId: event.pointerId,
+            header,
+        };
+        document.body.classList.add("is-resizing-draft-columns");
+    }
+
+    function moveColumnResize(event) {
+        if (
+            !activeColumnDrag
+            || event.pointerId !== activeColumnDrag.pointerId
+        ) {
+            return;
+        }
+
+        const rect = (
+            activeColumnDrag.header.getBoundingClientRect()
+        );
+        const position = clamp(
+            ((event.clientX - rect.left) / rect.width) * 100,
+            0,
+            100,
         );
 
-        writePreference("eod-draft-column-time", time);
-        writePreference(
-            "eod-draft-column-remarks",
-            remarks,
+        const currentTime = Number(timeNumberInput.value) || 14;
+        const currentRemarks = (
+            Number(remarksNumberInput.value) || 20
+        );
+
+        if (activeColumnDrag.kind === "time") {
+            updateColumnWidths(
+                clamp(position, 10, 25),
+                currentRemarks,
+            );
+        } else {
+            updateColumnWidths(
+                currentTime,
+                clamp(100 - position, 15, 30),
+            );
+        }
+    }
+
+    function stopColumnResize(event) {
+        if (
+            !activeColumnDrag
+            || event.pointerId !== activeColumnDrag.pointerId
+        ) {
+            return;
+        }
+
+        activeColumnDrag.handle.releasePointerCapture(
+            event.pointerId,
+        );
+        activeColumnDrag = null;
+        document.body.classList.remove(
+            "is-resizing-draft-columns",
         );
         schedulePagination();
+    }
+
+    function openDrawer() {
+        drawer.hidden = false;
+        drawerBackdrop.hidden = false;
+        document.body.classList.add("draft-view-drawer-open");
+    }
+
+    function closeDrawer() {
+        drawer.hidden = true;
+        drawerBackdrop.hidden = true;
+        document.body.classList.remove("draft-view-drawer-open");
     }
 
     rows.forEach((row) => {
@@ -691,6 +795,7 @@
             if (entered === null) {
                 return;
             }
+
             const normalized = normalizeDate(entered);
             if (!normalized) {
                 setStatus(
@@ -700,6 +805,7 @@
                 );
                 return;
             }
+
             dateButton.dataset.currentDate = normalized;
             syncHiddenDateTime(form);
             scheduleSave(form);
@@ -748,6 +854,7 @@
                     "eod-draft-view-mode",
                     viewMode,
                 );
+
                 workspace
                     .querySelectorAll("[data-view-mode]")
                     .forEach((item) => {
@@ -763,11 +870,32 @@
                             String(itemActive),
                         );
                     });
+
                 currentPage = 0;
                 window.requestAnimationFrame(
                     paginateByHeight,
                 );
             });
+        });
+
+    workspace
+        .querySelectorAll("[data-column-resizer]")
+        .forEach((handle) => {
+            handle.addEventListener("pointerdown", (event) => {
+                startColumnResize(event, handle);
+            });
+            handle.addEventListener(
+                "pointermove",
+                moveColumnResize,
+            );
+            handle.addEventListener(
+                "pointerup",
+                stopColumnResize,
+            );
+            handle.addEventListener(
+                "pointercancel",
+                stopColumnResize,
+            );
         });
 
     previousButton.addEventListener("click", () => {
@@ -810,62 +938,38 @@
         schedulePagination();
     });
 
-    const initialTimeColumn = readPreference(
-        "eod-draft-column-time",
-        "14",
-    );
-    const initialRemarksColumn = readPreference(
-        "eod-draft-column-remarks",
-        "20",
-    );
-    applyColumnWidths(
-        initialTimeColumn,
-        initialRemarksColumn,
-    );
+    timeNumberInput.addEventListener("change", () => {
+        updateColumnWidths(
+            timeNumberInput.value,
+            remarksNumberInput.value,
+        );
+    });
+    remarksNumberInput.addEventListener("change", () => {
+        updateColumnWidths(
+            timeNumberInput.value,
+            remarksNumberInput.value,
+        );
+    });
 
-    timeColumnInput.addEventListener("input", () => {
-        applyColumnWidths(
-            timeColumnInput.value,
-            remarksColumnInput.value,
-        );
-    });
-    remarksColumnInput.addEventListener("input", () => {
-        applyColumnWidths(
-            timeColumnInput.value,
-            remarksColumnInput.value,
-        );
-    });
     workspace
         .querySelector("[data-reset-columns]")
         .addEventListener("click", () => {
-            applyColumnWidths(14, 20);
+            updateColumnWidths(14, 20);
         });
-
-    const panelHidden = (
-        readPreference(
-            "eod-draft-side-panel-hidden",
-            "false",
-        ) === "true"
-    );
-    workspace.classList.toggle(
-        "side-panel-hidden",
-        panelHidden,
-    );
 
     workspace
-        .querySelector("[data-toggle-side-panel]")
-        ?.addEventListener("click", () => {
-            const hidden = workspace.classList.toggle(
-                "side-panel-hidden",
-            );
-            writePreference(
-                "eod-draft-side-panel-hidden",
-                hidden,
-            );
-            window.requestAnimationFrame(
-                paginateByHeight,
-            );
-        });
+        .querySelector("[data-open-view-drawer]")
+        .addEventListener("click", openDrawer);
+    workspace
+        .querySelector("[data-close-view-drawer]")
+        .addEventListener("click", closeDrawer);
+    drawerBackdrop.addEventListener("click", closeDrawer);
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !drawer.hidden) {
+            closeDrawer();
+        }
+    });
 
     window.addEventListener("resize", () => {
         if (resizeTimer) {
@@ -889,6 +993,12 @@
         event.preventDefault();
         event.returnValue = "";
     });
+
+    updateColumnWidths(
+        readPreference("eod-draft-column-time", "14"),
+        readPreference("eod-draft-column-remarks", "20"),
+        false,
+    );
 
     window.requestAnimationFrame(paginateByHeight);
 })();

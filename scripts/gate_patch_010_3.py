@@ -91,8 +91,9 @@ for marker in (
     "Визы и замечания",
     "data-page-input",
     "data-page-buttons",
-    "data-column-time",
-    "data-draft-side-panel",
+    "data-column-time-number",
+    "data-view-drawer",
+    "data-column-resizer",
     "data-measure-page",
     "draft_workspace.js",
     "draft-mini-toolbar",
@@ -107,6 +108,8 @@ assert "Сохранить сейчас" not in workspace_text
 assert "↑ Выше" not in workspace_text
 assert "↓ Ниже" not in workspace_text
 assert 'data-page-size="8"' not in workspace_text
+assert 'type="range"' not in workspace_text
+assert "draft-workspace-layout" not in workspace_text
 print("PAGED_SHIFT_DRAFT_WORKSPACE=PASSED")
 
 before = shift.draft_entries.count()
@@ -184,9 +187,10 @@ js_text = (
 for marker in (
     "/* Patch 010.3: рабочая смена",
     ".draft-ledger-row",
-    ".draft-workspace-layout",
+    ".draft-command-bar",
     ".draft-page-shell",
-    ".draft-side-panel",
+    ".draft-view-drawer",
+    ".draft-column-resizer",
     ".draft-table-header",
     ".draft-save-status.is-conflict",
 ):
@@ -199,15 +203,23 @@ for marker in (
     "normalizeDate",
     "paginateByHeight",
     "buildPageNumbers",
-    "applyColumnWidths",
+    "updateColumnWidths",
+    "startColumnResize",
+    "openDrawer",
 ):
     assert marker in js_text, marker
 repair_css = css_text.split(
-    "/* Patch 010.3.1 Repair 2:",
+    "/* Patch 010.3.1 Repair 3:",
     1,
 )[-1]
-assert "columns: 2" not in repair_css
+assert "aspect-ratio: 210 / 297" in repair_css
+assert "max-width: 1650px" in repair_css
+assert ".draft-view-drawer" in repair_css
+assert ".draft-column-resizer" in repair_css
+assert "draft-workspace-layout" not in repair_css
+assert "type=\"range\"" not in workspace_text
 assert "data-page-size" not in js_text
-print("BOOK_DRAFT_FRONTEND_CONTRACT=PASSED")
+print("LARGE_BOOK_WORKSPACE=PASSED")
+print("WORD_COLUMN_RESIZE_CONTRACT=PASSED")
 
-print("PATCH_010_3_1_REPAIR2_BOOK_LAYOUT_GATE_PASSED")
+print("PATCH_010_3_1_REPAIR3_LARGE_BOOK_GATE_PASSED")
