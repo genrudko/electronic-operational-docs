@@ -66,7 +66,7 @@
 <section
     class="paged-draft-workspace large-book-workspace"
     data-draft-workspace
-    data-autosave-delay="700"
+    data-autosave-delay="1000"
     style="
         --draft-time-column: 14%;
         --draft-content-column: 66%;
@@ -130,6 +130,45 @@
             </button>
         </div>
     </div>
+
+    <nav
+        class="draft-page-navigation screen-only"
+        aria-label="Навигация по страницам"
+    >
+        <button
+            type="button"
+            data-page-prev
+            aria-label="Предыдущая страница"
+        >
+            ←
+        </button>
+        <span class="draft-page-jump">
+            Страница
+            <input
+                type="number"
+                min="1"
+                value="1"
+                data-page-input
+                aria-label="Номер страницы"
+            >
+            из <strong data-page-total>1</strong>
+        </span>
+        <div
+            class="draft-page-buttons"
+            data-page-buttons
+            aria-label="Номера страниц"
+        ></div>
+        <button
+            type="button"
+            data-page-next
+            aria-label="Следующая страница"
+        >
+            →
+        </button>
+        <span class="draft-page-range" data-page-range>
+            Страница 1 из 1
+        </span>
+    </nav>
 
     <div class="draft-paper-stage">
         <div class="draft-book" data-draft-book>
@@ -240,44 +279,6 @@
         </div>
     </div>
 
-    <nav
-        class="draft-page-navigation screen-only"
-        aria-label="Навигация по страницам"
-    >
-        <button
-            type="button"
-            data-page-prev
-            aria-label="Предыдущая страница"
-        >
-            ←
-        </button>
-        <span class="draft-page-jump">
-            Страница
-            <input
-                type="number"
-                min="1"
-                value="1"
-                data-page-input
-                aria-label="Номер страницы"
-            >
-            из <strong data-page-total>1</strong>
-        </span>
-        <div
-            class="draft-page-buttons"
-            data-page-buttons
-            aria-label="Номера страниц"
-        ></div>
-        <button
-            type="button"
-            data-page-next
-            aria-label="Следующая страница"
-        >
-            →
-        </button>
-        <span class="draft-page-range" data-page-range>
-            Страница 1 из 1
-        </span>
-    </nav>
 
     <div
         class="draft-view-drawer-backdrop screen-only"
@@ -385,6 +386,40 @@
                 вертикальных границ прямо в заголовке таблицы.
             </p>
         </section>
+
+
+<section class="draft-drawer-section">
+    <div class="draft-side-heading">
+        <span class="card-label">СТРОК НА СТРАНИЦЕ</span>
+        <strong data-lines-summary>30 строк</strong>
+    </div>
+
+    <div class="draft-line-presets" role="group" aria-label="Количество строк на странице">
+        <button type="button" data-lines-preset="auto">Авто</button>
+        <button type="button" data-lines-preset="15">15</button>
+        <button type="button" data-lines-preset="20">20</button>
+        <button type="button" data-lines-preset="25">25</button>
+        <button type="button" data-lines-preset="30">30</button>
+        <button type="button" data-lines-preset="35">35</button>
+        <button type="button" data-lines-preset="40">40</button>
+    </div>
+
+    <div class="draft-custom-lines">
+        <label>
+            <span>Своё значение</span>
+            <input type="number" min="10" max="60" step="1" value="30" data-lines-custom>
+        </label>
+        <button type="button" class="button secondary compact-button" data-apply-custom-lines>
+            Применить
+        </button>
+    </div>
+
+    <p class="draft-side-help">
+        Короткая запись занимает одну номинальную строку.
+        Длинная запись автоматически занимает несколько.
+        Остаток страницы показывается пустыми разграфлёнными строками.
+    </p>
+</section>
 
         <section class="draft-drawer-section">
             <div class="draft-side-heading">

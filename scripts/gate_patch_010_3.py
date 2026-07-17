@@ -94,6 +94,9 @@ for marker in (
     "data-column-time-number",
     "data-view-drawer",
     "data-column-resizer",
+    "data-lines-preset",
+    "data-lines-custom",
+    "data-apply-custom-lines",
     "data-measure-page",
     "draft_workspace.js",
     "draft-mini-toolbar",
@@ -206,20 +209,45 @@ for marker in (
     "updateColumnWidths",
     "startColumnResize",
     "openDrawer",
+    "normalizeLineSetting",
+    "selectedLineCapacity",
+    "isDraftEditing",
+    "flushDeferredPagination",
+    "compositionstart",
+    "compositionend",
+    "createBlankLine",
 ):
     assert marker in js_text, marker
 repair_css = css_text.split(
-    "/* Patch 010.3.1 Repair 3:",
+    "/* Patch 010.3.1 Repair 4:",
     1,
 )[-1]
 assert "aspect-ratio: 210 / 297" in repair_css
 assert "max-width: 1650px" in repair_css
 assert ".draft-view-drawer" in repair_css
 assert ".draft-column-resizer" in repair_css
+assert ".draft-empty-line" in repair_css
+assert ".draft-line-presets" in repair_css
+navigation_css = repair_css.split(
+    ".draft-page-navigation",
+    1,
+)[1].split("}", 1)[0]
+assert "position: fixed" not in navigation_css
 assert "draft-workspace-layout" not in repair_css
 assert "type=\"range\"" not in workspace_text
 assert "data-page-size" not in js_text
+assert 'data-autosave-delay="1000"' in workspace_text
+assert 'readPreference("eod-draft-lines-per-page", "30")' in js_text
+assert 'textarea.addEventListener("input"' in js_text
+input_contract = js_text.split(
+    'textarea.addEventListener("input"',
+    1,
+)[1].split("});", 1)[0]
+assert "schedulePagination" not in input_contract
+assert "markPaginationPending" in input_contract
 print("LARGE_BOOK_WORKSPACE=PASSED")
 print("WORD_COLUMN_RESIZE_CONTRACT=PASSED")
+print("STABLE_CONTINUOUS_INPUT=PASSED")
+print("CONFIGURABLE_PAGE_LINES=PASSED")
 
-print("PATCH_010_3_1_REPAIR3_LARGE_BOOK_GATE_PASSED")
+print("PATCH_010_3_1_REPAIR4_STABLE_INPUT_GATE_PASSED")

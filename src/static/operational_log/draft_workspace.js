@@ -92,11 +92,30 @@
         "[data-column-remarks-number]",
     );
 
+    const linePresetButtons = Array.from(
+        workspace.querySelectorAll("[data-lines-preset]"),
+    );
+    const customLinesInput = workspace.querySelector(
+        "[data-lines-custom]",
+    );
+    const applyCustomLinesButton = workspace.querySelector(
+        "[data-apply-custom-lines]",
+    );
+    const lineSummary = workspace.querySelector(
+        "[data-lines-summary]",
+    );
+
     let pages = [];
     let currentPage = 0;
     let paginationTimer = null;
     let resizeTimer = null;
     let activeColumnDrag = null;
+    let activeDraftForm = null;
+    let compositionDepth = 0;
+    let paginationPending = false;
+    let lineSetting = normalizeLineSetting(
+        readPreference("eod-draft-lines-per-page", "30"),
+    );
     let viewMode = readPreference(
         "eod-draft-view-mode",
         "single",
@@ -120,6 +139,72 @@
 
     function clamp(value, minimum, maximum) {
         return Math.min(maximum, Math.max(minimum, value));
+    }
+
+    function normalizeLineSetting(value) {
+        if (String(value).toLowerCase() === "auto") {
+            return "auto";
+        }
+        const numeric = Number.parseInt(String(value), 10);
+        if (!Number.isFinite(numeric)) {
+            return "30";
+        }
+        return String(clamp(numeric, 10, 60));
+    }
+
+    function selectedLineCapacity() {
+        if (lineSetting === "auto") {
+            return null;
+        }
+        return Number.parseInt(lineSetting, 10);
+    }
+
+    function isDraftEditing() {
+        if (compositionDepth > 0) {
+            return true;
+        }
+        if (!activeDraftForm) {
+            return false;
+        }
+        const active = document.activeElement;
+        return Boolean(active && activeDraftForm.contains(active));
+    }
+
+    function updateLineControls() {
+        linePresetButtons.forEach((button) => {
+            const active = (
+                button.dataset.linesPreset === lineSetting
+            );
+            button.classList.toggle("is-active", active);
+            button.setAttribute("aria-pressed", String(active));
+        });
+        if (lineSetting !== "auto") {
+            customLinesInput.value = lineSetting;
+        }
+        lineSummary.textContent = (
+            lineSetting === "auto"
+                ? "Автоматическая вместимость"
+                : `${lineSetting} строк`
+        );
+    }
+
+    function setLineSetting(value) {
+        lineSetting = normalizeLineSetting(value);
+        writePreference("eod-draft-lines-per-page", lineSetting);
+        currentPage = 0;
+        updateLineControls();
+        schedulePagination(20);
+    }
+
+    function markPaginationPending() {
+        paginationPending = true;
+    }
+
+    function flushDeferredPagination() {
+        if (!paginationPending || isDraftEditing()) {
+            return;
+        }
+        schedulePagination(80);
     }
 
     function statusNode(form) {
@@ -288,6 +373,7 @@
                 `✓ ${payload.saved_at}`,
                 "is-saved",
             );
+            flushDeferredPagination();
         } catch (error) {
             if (error.name !== "AbortError") {
                 setStatus(form, "Нет связи", "is-error");
@@ -363,7 +449,13 @@
         );
     }
 
-    function paginateByHeight() {
+    function paginateByHeight(force = false) {
+        if (!force && isDraftEditing()) {
+            markPaginationPending();
+            return;
+        }
+
+        paginationPending = false;
         restoreRowsToStore();
 
         const visibleRows = filteredRows();
@@ -371,51 +463,125 @@
         measurePage.style.width = `${pageRect.width}px`;
         measurePage.style.height = `${pageRect.height}px`;
 
+        const fixedCapacity = selectedLineCapacity();
+        const measuredBodyHeight = Math.max(
+            1,
+            measureBody.clientHeight,
+        );
+        const baseLineHeight = fixedCapacity
+            ? measuredBodyHeight / fixedCapacity
+            : 48;
+
+        workspace.style.setProperty(
+            "--draft-base-line-height",
+            `${baseLineHeight}px`,
+        );
+
         pages = [];
-        let pageRows = [];
 
-        visibleRows.forEach((row) => {
-            row.hidden = false;
-            row.classList.remove("is-page-first");
+        if (fixedCapacity) {
+            let page = {
+                rows: [],
+                usedUnits: 0,
+                capacity: fixedCapacity,
+            };
 
-            if (pageRows.length === 0) {
-                row.classList.add("is-page-first");
-                measureDate.textContent = (
-                    row.dataset.entryDateLabel || ""
+            visibleRows.forEach((row) => {
+                row.hidden = false;
+                row.classList.remove("is-page-first");
+                measureBody.replaceChildren(row);
+                autoGrow(row.querySelector("[data-auto-grow]"));
+
+                const rowHeight = Math.max(
+                    baseLineHeight,
+                    row.getBoundingClientRect().height,
                 );
+                const units = Math.max(
+                    1,
+                    Math.ceil(
+                        (rowHeight - 0.5) / baseLineHeight,
+                    ),
+                );
+                row.dataset.lineUnits = String(units);
+
+                if (
+                    page.rows.length > 0
+                    && page.usedUnits + units > fixedCapacity
+                ) {
+                    pages.push(page);
+                    page = {
+                        rows: [],
+                        usedUnits: 0,
+                        capacity: fixedCapacity,
+                    };
+                }
+
+                if (page.rows.length === 0) {
+                    row.classList.add("is-page-first");
+                }
+
+                page.rows.push(row);
+                page.usedUnits += units;
+                rowStore.append(row);
+            });
+
+            if (page.rows.length > 0) {
+                pages.push(page);
             }
+        } else {
+            let pageRows = [];
 
-            measureBody.append(row);
-            autoGrow(row.querySelector("[data-auto-grow]"));
+            visibleRows.forEach((row) => {
+                row.hidden = false;
+                row.classList.remove("is-page-first");
 
-            if (
-                rowOverflowsMeasurePage()
-                && pageRows.length > 0
-            ) {
-                measureBody.removeChild(row);
+                if (pageRows.length === 0) {
+                    row.classList.add("is-page-first");
+                    measureDate.textContent = (
+                        row.dataset.entryDateLabel || ""
+                    );
+                }
+
+                measureBody.append(row);
+                autoGrow(row.querySelector("[data-auto-grow]"));
+
+                if (
+                    rowOverflowsMeasurePage()
+                    && pageRows.length > 0
+                ) {
+                    measureBody.removeChild(row);
+                    pageRows.forEach((pageRow) => {
+                        rowStore.append(pageRow);
+                    });
+                    pages.push({
+                        rows: pageRows,
+                        usedUnits: null,
+                        capacity: null,
+                    });
+
+                    pageRows = [];
+                    measureBody.replaceChildren();
+                    row.classList.add("is-page-first");
+                    measureDate.textContent = (
+                        row.dataset.entryDateLabel || ""
+                    );
+                    measureBody.append(row);
+                    autoGrow(row.querySelector("[data-auto-grow]"));
+                }
+
+                pageRows.push(row);
+            });
+
+            if (pageRows.length > 0) {
                 pageRows.forEach((pageRow) => {
                     rowStore.append(pageRow);
                 });
-                pages.push(pageRows);
-
-                pageRows = [];
-                measureBody.replaceChildren();
-                row.classList.add("is-page-first");
-                measureDate.textContent = (
-                    row.dataset.entryDateLabel || ""
-                );
-                measureBody.append(row);
-                autoGrow(row.querySelector("[data-auto-grow]"));
+                pages.push({
+                    rows: pageRows,
+                    usedUnits: null,
+                    capacity: null,
+                });
             }
-
-            pageRows.push(row);
-        });
-
-        if (pageRows.length > 0) {
-            pageRows.forEach((pageRow) => {
-                rowStore.append(pageRow);
-            });
-            pages.push(pageRows);
         }
 
         rows
@@ -426,7 +592,11 @@
             });
 
         if (pages.length === 0) {
-            pages = [[]];
+            pages = [{
+                rows: [],
+                usedUnits: 0,
+                capacity: fixedCapacity,
+            }];
         }
 
         const pagesPerScreen = (
@@ -437,6 +607,7 @@
             pages.length - pagesPerScreen,
         );
         currentPage = Math.min(currentPage, lastStart);
+
         if (viewMode === "spread") {
             currentPage = (
                 Math.floor(currentPage / 2) * 2
@@ -444,6 +615,23 @@
         }
 
         renderCurrentPages();
+    }
+
+    function createBlankLine() {
+        const line = document.createElement("div");
+        line.className = "draft-empty-line";
+        line.setAttribute("aria-hidden", "true");
+
+        for (let column = 0; column < 3; column += 1) {
+            line.append(document.createElement("span"));
+        }
+        return line;
+    }
+
+    function appendBlankLines(body, count) {
+        for (let index = 0; index < count; index += 1) {
+            body.append(createBlankLine());
+        }
     }
 
     function renderPage(
@@ -456,23 +644,38 @@
         body.replaceChildren();
         shell.classList.remove("is-empty-page");
 
-        const pageRows = pages[pageIndex];
-        if (!pageRows) {
+        const pageData = pages[pageIndex];
+        if (!pageData) {
             shell.classList.add("is-empty-page");
             dateNode.textContent = "";
             numberNode.textContent = "";
+            const emptyCapacity = selectedLineCapacity();
+            if (emptyCapacity) {
+                appendBlankLines(body, emptyCapacity);
+            }
             return;
         }
 
-        pageRows.forEach((row) => {
+        pageData.rows.forEach((row) => {
             row.hidden = false;
             body.append(row);
             autoGrow(row.querySelector("[data-auto-grow]"));
         });
 
         dateNode.textContent = (
-            pageRows[0]?.dataset.entryDateLabel || ""
+            pageData.rows[0]?.dataset.entryDateLabel || ""
         );
+
+        if (pageData.capacity) {
+            appendBlankLines(
+                body,
+                Math.max(
+                    0,
+                    pageData.capacity - pageData.usedUnits,
+                ),
+            );
+        }
+
         numberNode.textContent = `— ${pageIndex + 1} —`;
     }
 
@@ -594,14 +797,21 @@
         renderCurrentPages();
     }
 
-    function schedulePagination() {
+    function schedulePagination(delay = 220) {
+        markPaginationPending();
+
+        if (isDraftEditing()) {
+            return;
+        }
+
         if (paginationTimer) {
             window.clearTimeout(paginationTimer);
         }
+
         paginationTimer = window.setTimeout(() => {
             paginationTimer = null;
-            paginateByHeight();
-        }, 220);
+            paginateByHeight(true);
+        }, delay);
     }
 
     function updateColumnWidths(
@@ -745,22 +955,46 @@
 
         autoGrow(textarea);
 
+        form.addEventListener("focusin", () => {
+            activeDraftForm = form;
+            form.classList.add("has-focus");
+        });
+
+        form.addEventListener("focusout", () => {
+            window.setTimeout(() => {
+                if (form.contains(document.activeElement)) {
+                    return;
+                }
+                form.classList.remove("has-focus");
+                if (activeDraftForm === form) {
+                    activeDraftForm = null;
+                }
+                flushDeferredPagination();
+            }, 180);
+        });
+
+        textarea.addEventListener("compositionstart", () => {
+            compositionDepth += 1;
+            activeDraftForm = form;
+        });
+
+        textarea.addEventListener("compositionend", () => {
+            compositionDepth = Math.max(
+                0,
+                compositionDepth - 1,
+            );
+            autoGrow(textarea);
+            markPaginationPending();
+            scheduleSave(form);
+        });
+
         textarea.addEventListener("input", () => {
             autoGrow(textarea);
             row.dataset.entryFilled = (
                 textarea.value.trim() ? "true" : "false"
             );
+            markPaginationPending();
             scheduleSave(form);
-            schedulePagination();
-        });
-
-        textarea.addEventListener("focus", () => {
-            form.classList.add("has-focus");
-        });
-        textarea.addEventListener("blur", () => {
-            window.setTimeout(() => {
-                form.classList.remove("has-focus");
-            }, 160);
         });
 
         timeInput.addEventListener("focus", () => {
@@ -808,8 +1042,8 @@
 
             dateButton.dataset.currentDate = normalized;
             syncHiddenDateTime(form);
+            markPaginationPending();
             scheduleSave(form);
-            schedulePagination();
         });
 
         form.addEventListener("submit", (event) => {
@@ -957,6 +1191,23 @@
             updateColumnWidths(14, 20);
         });
 
+    linePresetButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            setLineSetting(button.dataset.linesPreset);
+        });
+    });
+
+    applyCustomLinesButton.addEventListener("click", () => {
+        setLineSetting(customLinesInput.value);
+    });
+
+    customLinesInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            setLineSetting(customLinesInput.value);
+        }
+    });
+
     workspace
         .querySelector("[data-open-view-drawer]")
         .addEventListener("click", openDrawer);
@@ -977,7 +1228,7 @@
         }
         resizeTimer = window.setTimeout(() => {
             resizeTimer = null;
-            paginateByHeight();
+            schedulePagination(20);
         }, 180);
     });
 
@@ -994,11 +1245,15 @@
         event.returnValue = "";
     });
 
+    updateLineControls();
+
     updateColumnWidths(
         readPreference("eod-draft-column-time", "14"),
         readPreference("eod-draft-column-remarks", "20"),
         false,
     );
 
-    window.requestAnimationFrame(paginateByHeight);
+    window.requestAnimationFrame(() => {
+        paginateByHeight(true);
+    });
 })();

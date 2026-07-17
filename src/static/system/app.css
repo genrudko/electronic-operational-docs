@@ -3705,11 +3705,11 @@ details[data-default-collapsed="true"]:not([open])
     }
 }
 
-/* Patch 010.3.1 Repair 3: крупная A4-книга и границы как в Word */
+/* Patch 010.3.1 Repair 4: стабильный ввод и настраиваемые строки */
 .shift-draft-main-large-book {
     width: calc(100% - 24px);
     max-width: none;
-    padding: 10px 0 90px;
+    padding: 10px 0 24px;
 }
 
 .shift-book-header {
@@ -4040,7 +4040,7 @@ details[data-default-collapsed="true"]:not([open])
 }
 
 .draft-ledger-form {
-    min-height: 48px;
+    min-height: var(--draft-base-line-height, 48px);
 }
 
 .draft-ledger-time,
@@ -4175,16 +4175,17 @@ details[data-default-collapsed="true"]:not([open])
 }
 
 .draft-page-navigation {
-    position: fixed;
-    z-index: 60;
-    right: 50%;
-    bottom: 14px;
+    position: sticky;
+    z-index: 34;
+    top: 94px;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
     gap: 6px;
+    width: max-content;
     max-width: min(900px, calc(100vw - 28px));
+    margin: 0 auto 8px;
     padding: 6px 8px;
     border: 1px solid var(--border);
     border-radius: 10px;
@@ -4193,8 +4194,7 @@ details[data-default-collapsed="true"]:not([open])
         var(--panel) 96%,
         transparent
     );
-    box-shadow: 0 9px 26px rgb(15 23 42 / 18%);
-    transform: translateX(50%);
+    box-shadow: 0 7px 20px rgb(15 23 42 / 14%);
     backdrop-filter: blur(12px);
 }
 
@@ -4448,4 +4448,91 @@ body.draft-view-drawer-open {
     .draft-page-buttons {
         display: none;
     }
+}
+
+
+.draft-empty-line {
+    display: grid;
+    grid-template-columns:
+        var(--draft-time-column)
+        var(--draft-content-column)
+        var(--draft-remarks-column);
+    min-height: var(--draft-base-line-height, 48px);
+    border-bottom: 1px solid #d4d9df;
+    background: #fff;
+}
+
+.draft-empty-line:last-child {
+    border-bottom: 0;
+}
+
+.draft-empty-line > span {
+    border-right: 1px solid #c5ccd4;
+}
+
+.draft-empty-line > span:last-child {
+    border-right: 0;
+}
+
+.draft-line-presets {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.draft-line-presets button {
+    min-height: 32px;
+    padding: 4px 6px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--panel-2);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 10px;
+}
+
+.draft-line-presets button.is-active {
+    border-color: var(--accent);
+    background: color-mix(
+        in srgb,
+        var(--accent) 14%,
+        var(--panel)
+    );
+    color: var(--text);
+    font-weight: 800;
+}
+
+.draft-custom-lines {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 8px;
+}
+
+.draft-custom-lines label {
+    display: grid;
+    gap: 4px;
+    color: var(--muted);
+    font-size: 9px;
+}
+
+.draft-custom-lines input {
+    width: 100%;
+    min-height: 34px;
+    padding: 5px 7px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--panel-2);
+    color: var(--text);
+    text-align: center;
+}
+
+.draft-ledger-form.has-focus {
+    position: relative;
+    z-index: 4;
+}
+
+.draft-ledger-form.has-focus .draft-ledger-content {
+    background: #fbfdff;
 }
