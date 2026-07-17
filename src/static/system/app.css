@@ -3705,7 +3705,7 @@ details[data-default-collapsed="true"]:not([open])
     }
 }
 
-/* Patch 010.3.1 Repair 4: стабильный ввод и настраиваемые строки */
+/* Patch 010.3.1 Repair 5: стабильная геометрия электронных страниц */
 .shift-draft-main-large-book {
     width: calc(100% - 24px);
     max-width: none;
@@ -3877,7 +3877,12 @@ details[data-default-collapsed="true"]:not([open])
     width: 100%;
     max-width: 1650px;
     min-width: 0;
-    aspect-ratio: 210 / 297;
+    height: calc(
+        52px
+        + 28px
+        + var(--draft-page-body-height, 1440px)
+        + 28px
+    );
     border: 1px solid #9ca6b2;
     background: #fff;
     color: #111827;
@@ -3986,7 +3991,8 @@ details[data-default-collapsed="true"]:not([open])
 
 .draft-page-body {
     overflow: hidden;
-    flex: 1 1 auto;
+    flex: 0 0 var(--draft-page-body-height, 1440px);
+    height: var(--draft-page-body-height, 1440px);
     min-height: 0;
 }
 
@@ -4175,9 +4181,8 @@ details[data-default-collapsed="true"]:not([open])
 }
 
 .draft-page-navigation {
-    position: sticky;
-    z-index: 34;
-    top: 94px;
+    position: relative;
+    z-index: 20;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -4262,14 +4267,6 @@ details[data-default-collapsed="true"]:not([open])
     font-size: 9px;
 }
 
-.draft-view-drawer-backdrop {
-    position: fixed;
-    z-index: 84;
-    inset: 0;
-    background: rgb(15 23 42 / 38%);
-    backdrop-filter: blur(1px);
-}
-
 .draft-view-drawer {
     position: fixed;
     z-index: 85;
@@ -4277,14 +4274,14 @@ details[data-default-collapsed="true"]:not([open])
     right: 0;
     bottom: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
     width: min(390px, 94vw);
     border-left: 1px solid var(--border);
     background: var(--panel);
     box-shadow: -18px 0 42px rgb(15 23 42 / 28%);
 }
 
-.draft-view-drawer[hidden],
-.draft-view-drawer-backdrop[hidden] {
+.draft-view-drawer[hidden] {
     display: none;
 }
 
@@ -4383,10 +4380,6 @@ details[data-default-collapsed="true"]:not([open])
     cursor: pointer;
     font-size: 11px;
     font-weight: 700;
-}
-
-body.draft-view-drawer-open {
-    overflow: hidden;
 }
 
 @media (max-width: 1100px) {
@@ -4535,4 +4528,22 @@ body.draft-view-drawer-open {
 
 .draft-ledger-form.has-focus .draft-ledger-content {
     background: #fbfdff;
+}
+
+.stable-page-layout-workspace .draft-page-shell {
+    contain: layout paint;
+}
+
+.stable-page-layout-workspace .draft-page-body {
+    background: #fff;
+}
+
+.stable-page-layout-workspace .draft-empty-line {
+    box-sizing: border-box;
+    height: var(--draft-base-line-height, 48px);
+    min-height: var(--draft-base-line-height, 48px);
+}
+
+body.draft-view-drawer-visible .draft-view-drawer {
+    isolation: isolate;
 }

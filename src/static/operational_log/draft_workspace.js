@@ -79,9 +79,6 @@
     );
 
     const drawer = workspace.querySelector("[data-view-drawer]");
-    const drawerBackdrop = workspace.querySelector(
-        "[data-view-drawer-backdrop]",
-    );
     const timeNumberInput = workspace.querySelector(
         "[data-column-time-number]",
     );
@@ -113,6 +110,8 @@
     let activeDraftForm = null;
     let compositionDepth = 0;
     let paginationPending = false;
+    let resolvedPageCapacity = 30;
+    const nominalLineHeight = 48;
     let lineSetting = normalizeLineSetting(
         readPreference("eod-draft-lines-per-page", "30"),
     );
@@ -152,11 +151,44 @@
         return String(clamp(numeric, 10, 60));
     }
 
+    function automaticLineCapacity() {
+        const chromeReserve = viewMode === "spread" ? 238 : 220;
+        const usableHeight = Math.max(
+            760,
+            window.innerHeight - chromeReserve,
+        );
+        return clamp(
+            Math.floor(usableHeight / nominalLineHeight),
+            16,
+            30,
+        );
+    }
+
     function selectedLineCapacity() {
         if (lineSetting === "auto") {
-            return null;
+            return automaticLineCapacity();
         }
-        return Number.parseInt(lineSetting, 10);
+        return clamp(
+            Number.parseInt(lineSetting, 10),
+            10,
+            60,
+        );
+    }
+
+    function applyPageGeometry(capacity) {
+        resolvedPageCapacity = clamp(capacity, 10, 60);
+        workspace.style.setProperty(
+            "--draft-base-line-height",
+            `${nominalLineHeight}px`,
+        );
+        workspace.style.setProperty(
+            "--draft-page-body-height",
+            `${resolvedPageCapacity * nominalLineHeight}px`,
+        );
+        workspace.style.setProperty(
+            "--draft-page-capacity",
+            String(resolvedPageCapacity),
+        );
     }
 
     function isDraftEditing() {
@@ -171,6 +203,8 @@
     }
 
     function updateLineControls() {
+        const capacity = selectedLineCapacity();
+
         linePresetButtons.forEach((button) => {
             const active = (
                 button.dataset.linesPreset === lineSetting
@@ -178,13 +212,15 @@
             button.classList.toggle("is-active", active);
             button.setAttribute("aria-pressed", String(active));
         });
+
         if (lineSetting !== "auto") {
             customLinesInput.value = lineSetting;
         }
+
         lineSummary.textContent = (
             lineSetting === "auto"
-                ? "Автоматическая вместимость"
-                : `${lineSetting} строк`
+                ? `Авто · ${capacity} строк`
+                : `${capacity} строк`
         );
     }
 
@@ -459,129 +495,69 @@
         restoreRowsToStore();
 
         const visibleRows = filteredRows();
+        const capacity = selectedLineCapacity();
+        applyPageGeometry(capacity);
+        updateLineControls();
+
         const pageRect = leftShell.getBoundingClientRect();
         measurePage.style.width = `${pageRect.width}px`;
-        measurePage.style.height = `${pageRect.height}px`;
-
-        const fixedCapacity = selectedLineCapacity();
-        const measuredBodyHeight = Math.max(
-            1,
-            measureBody.clientHeight,
-        );
-        const baseLineHeight = fixedCapacity
-            ? measuredBodyHeight / fixedCapacity
-            : 48;
-
-        workspace.style.setProperty(
-            "--draft-base-line-height",
-            `${baseLineHeight}px`,
-        );
+        measurePage.style.height = "auto";
 
         pages = [];
+        let page = {
+            rows: [],
+            usedUnits: 0,
+            capacity,
+        };
 
-        if (fixedCapacity) {
-            let page = {
-                rows: [],
-                usedUnits: 0,
-                capacity: fixedCapacity,
-            };
+        visibleRows.forEach((row) => {
+            row.hidden = false;
+            row.classList.remove("is-page-first");
+            measureBody.replaceChildren(row);
+            autoGrow(row.querySelector("[data-auto-grow]"));
 
-            visibleRows.forEach((row) => {
-                row.hidden = false;
-                row.classList.remove("is-page-first");
-                measureBody.replaceChildren(row);
-                autoGrow(row.querySelector("[data-auto-grow]"));
+            const rowHeight = Math.max(
+                nominalLineHeight,
+                row.getBoundingClientRect().height,
+            );
+            const units = Math.max(
+                1,
+                Math.ceil(
+                    (rowHeight - 0.5) / nominalLineHeight,
+                ),
+            );
+            row.dataset.lineUnits = String(units);
 
-                const rowHeight = Math.max(
-                    baseLineHeight,
-                    row.getBoundingClientRect().height,
-                );
-                const units = Math.max(
-                    1,
-                    Math.ceil(
-                        (rowHeight - 0.5) / baseLineHeight,
-                    ),
-                );
-                row.dataset.lineUnits = String(units);
-
-                if (
-                    page.rows.length > 0
-                    && page.usedUnits + units > fixedCapacity
-                ) {
-                    pages.push(page);
-                    page = {
-                        rows: [],
-                        usedUnits: 0,
-                        capacity: fixedCapacity,
-                    };
-                }
-
-                if (page.rows.length === 0) {
-                    row.classList.add("is-page-first");
-                }
-
-                page.rows.push(row);
-                page.usedUnits += units;
-                rowStore.append(row);
-            });
-
-            if (page.rows.length > 0) {
+            if (
+                page.rows.length > 0
+                && page.usedUnits + units > page.capacity
+            ) {
                 pages.push(page);
+                page = {
+                    rows: [],
+                    usedUnits: 0,
+                    capacity,
+                };
             }
-        } else {
-            let pageRows = [];
 
-            visibleRows.forEach((row) => {
-                row.hidden = false;
-                row.classList.remove("is-page-first");
-
-                if (pageRows.length === 0) {
-                    row.classList.add("is-page-first");
-                    measureDate.textContent = (
-                        row.dataset.entryDateLabel || ""
-                    );
-                }
-
-                measureBody.append(row);
-                autoGrow(row.querySelector("[data-auto-grow]"));
-
-                if (
-                    rowOverflowsMeasurePage()
-                    && pageRows.length > 0
-                ) {
-                    measureBody.removeChild(row);
-                    pageRows.forEach((pageRow) => {
-                        rowStore.append(pageRow);
-                    });
-                    pages.push({
-                        rows: pageRows,
-                        usedUnits: null,
-                        capacity: null,
-                    });
-
-                    pageRows = [];
-                    measureBody.replaceChildren();
-                    row.classList.add("is-page-first");
-                    measureDate.textContent = (
-                        row.dataset.entryDateLabel || ""
-                    );
-                    measureBody.append(row);
-                    autoGrow(row.querySelector("[data-auto-grow]"));
-                }
-
-                pageRows.push(row);
-            });
-
-            if (pageRows.length > 0) {
-                pageRows.forEach((pageRow) => {
-                    rowStore.append(pageRow);
-                });
-                pages.push({
-                    rows: pageRows,
-                    usedUnits: null,
-                    capacity: null,
-                });
+            if (
+                page.rows.length === 0
+                && units > page.capacity
+            ) {
+                page.capacity = units;
             }
+
+            if (page.rows.length === 0) {
+                row.classList.add("is-page-first");
+            }
+
+            page.rows.push(row);
+            page.usedUnits += units;
+            rowStore.append(row);
+        });
+
+        if (page.rows.length > 0) {
+            pages.push(page);
         }
 
         rows
@@ -595,7 +571,7 @@
             pages = [{
                 rows: [],
                 usedUnits: 0,
-                capacity: fixedCapacity,
+                capacity,
             }];
         }
 
@@ -645,14 +621,20 @@
         shell.classList.remove("is-empty-page");
 
         const pageData = pages[pageIndex];
+        const capacity = (
+            pageData?.capacity || resolvedPageCapacity
+        );
+
+        shell.style.setProperty(
+            "--draft-page-body-height",
+            `${capacity * nominalLineHeight}px`,
+        );
+
         if (!pageData) {
             shell.classList.add("is-empty-page");
             dateNode.textContent = "";
             numberNode.textContent = "";
-            const emptyCapacity = selectedLineCapacity();
-            if (emptyCapacity) {
-                appendBlankLines(body, emptyCapacity);
-            }
+            appendBlankLines(body, capacity);
             return;
         }
 
@@ -666,15 +648,13 @@
             pageData.rows[0]?.dataset.entryDateLabel || ""
         );
 
-        if (pageData.capacity) {
-            appendBlankLines(
-                body,
-                Math.max(
-                    0,
-                    pageData.capacity - pageData.usedUnits,
-                ),
-            );
-        }
+        appendBlankLines(
+            body,
+            Math.max(
+                0,
+                capacity - pageData.usedUnits,
+            ),
+        );
 
         numberNode.textContent = `— ${pageIndex + 1} —`;
     }
@@ -937,14 +917,16 @@
 
     function openDrawer() {
         drawer.hidden = false;
-        drawerBackdrop.hidden = false;
-        document.body.classList.add("draft-view-drawer-open");
+        document.body.classList.add(
+            "draft-view-drawer-visible",
+        );
     }
 
     function closeDrawer() {
         drawer.hidden = true;
-        drawerBackdrop.hidden = true;
-        document.body.classList.remove("draft-view-drawer-open");
+        document.body.classList.remove(
+            "draft-view-drawer-visible",
+        );
     }
 
     rows.forEach((row) => {
@@ -1214,8 +1196,6 @@
     workspace
         .querySelector("[data-close-view-drawer]")
         .addEventListener("click", closeDrawer);
-    drawerBackdrop.addEventListener("click", closeDrawer);
-
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && !drawer.hidden) {
             closeDrawer();
@@ -1228,6 +1208,7 @@
         }
         resizeTimer = window.setTimeout(() => {
             resizeTimer = null;
+            updateLineControls();
             schedulePagination(20);
         }, 180);
     });

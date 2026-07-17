@@ -56,6 +56,7 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             "data-lines-preset",
             "data-lines-custom",
             "data-apply-custom-lines",
+            "stable-page-layout-workspace",
             "data-measure-page",
             "data-quick-time",
             "draft_workspace.js",
@@ -68,6 +69,7 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         self.assertNotContains(workspace, 'type="range"')
         self.assertNotContains(workspace, "draft-workspace-layout")
         self.assertContains(workspace, "30 строк")
+        self.assertNotContains(workspace, "data-view-drawer-backdrop")
 
     def test_open_shift_for_journal_without_active_shift(self) -> None:
         journal = OperationalJournal.objects.create(

@@ -97,6 +97,7 @@ for marker in (
     "data-lines-preset",
     "data-lines-custom",
     "data-apply-custom-lines",
+    "stable-page-layout-workspace",
     "data-measure-page",
     "draft_workspace.js",
     "draft-mini-toolbar",
@@ -210,7 +211,9 @@ for marker in (
     "startColumnResize",
     "openDrawer",
     "normalizeLineSetting",
+    "automaticLineCapacity",
     "selectedLineCapacity",
+    "applyPageGeometry",
     "isDraftEditing",
     "flushDeferredPagination",
     "compositionstart",
@@ -219,11 +222,12 @@ for marker in (
 ):
     assert marker in js_text, marker
 repair_css = css_text.split(
-    "/* Patch 010.3.1 Repair 4:",
+    "/* Patch 010.3.1 Repair 5:",
     1,
 )[-1]
-assert "aspect-ratio: 210 / 297" in repair_css
+assert "aspect-ratio: 210 / 297" not in repair_css
 assert "max-width: 1650px" in repair_css
+assert "--draft-page-body-height" in repair_css
 assert ".draft-view-drawer" in repair_css
 assert ".draft-column-resizer" in repair_css
 assert ".draft-empty-line" in repair_css
@@ -233,11 +237,16 @@ navigation_css = repair_css.split(
     1,
 )[1].split("}", 1)[0]
 assert "position: fixed" not in navigation_css
+assert "position: sticky" not in navigation_css
 assert "draft-workspace-layout" not in repair_css
 assert "type=\"range\"" not in workspace_text
+assert "data-view-drawer-backdrop" not in workspace_text
 assert "data-page-size" not in js_text
 assert 'data-autosave-delay="1000"' in workspace_text
 assert 'readPreference("eod-draft-lines-per-page", "30")' in js_text
+assert "automaticLineCapacity" in js_text
+assert "applyPageGeometry" in js_text
+assert "resolvedPageCapacity" in js_text
 assert 'textarea.addEventListener("input"' in js_text
 input_contract = js_text.split(
     'textarea.addEventListener("input"',
@@ -249,5 +258,7 @@ print("LARGE_BOOK_WORKSPACE=PASSED")
 print("WORD_COLUMN_RESIZE_CONTRACT=PASSED")
 print("STABLE_CONTINUOUS_INPUT=PASSED")
 print("CONFIGURABLE_PAGE_LINES=PASSED")
+print("CAPACITY_DRIVEN_PAGE_HEIGHT=PASSED")
+print("NON_MODAL_VIEW_DRAWER=PASSED")
 
-print("PATCH_010_3_1_REPAIR4_STABLE_INPUT_GATE_PASSED")
+print("PATCH_010_3_1_REPAIR5_LAYOUT_STABILIZATION_GATE_PASSED")
