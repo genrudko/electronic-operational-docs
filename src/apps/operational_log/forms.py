@@ -46,3 +46,49 @@ class JournalDisplayPreferenceForm(forms.ModelForm):
                 "Настройка влияет только на рабочий экран."
             ),
         }
+
+
+class ShiftOpenForm(forms.Form):
+    planned_start_at = forms.DateTimeField(
+        label="Плановое начало",
+        input_formats=("%Y-%m-%dT%H:%M",),
+        widget=forms.DateTimeInput(
+            format="%Y-%m-%dT%H:%M",
+            attrs={"type": "datetime-local"},
+        ),
+    )
+    planned_end_at = forms.DateTimeField(
+        label="Плановое окончание",
+        input_formats=("%Y-%m-%dT%H:%M",),
+        widget=forms.DateTimeInput(
+            format="%Y-%m-%dT%H:%M",
+            attrs={"type": "datetime-local"},
+        ),
+    )
+
+    def clean(self) -> dict[str, object]:
+        cleaned = super().clean()
+        start_at = cleaned.get("planned_start_at")
+        end_at = cleaned.get("planned_end_at")
+        if start_at and end_at and end_at <= start_at:
+            self.add_error(
+                "planned_end_at",
+                "Окончание смены должно быть позже её начала.",
+            )
+        return cleaned
+
+
+class DraftEntryAutoSaveForm(forms.Form):
+    public_id = forms.UUIDField()
+    expected_version = forms.IntegerField(min_value=1)
+    event_at = forms.DateTimeField(
+        input_formats=(
+            "%Y-%m-%dT%H:%M",
+            "%Y-%m-%dT%H:%M:%S",
+        )
+    )
+    content = forms.CharField(
+        required=False,
+        max_length=20000,
+        widget=forms.Textarea(),
+    )

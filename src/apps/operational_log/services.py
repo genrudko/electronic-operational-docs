@@ -8,7 +8,7 @@ from typing import Any
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import Prefetch, QuerySet
+from django.db.models import Max, Prefetch, QuerySet
 from django.utils import timezone
 
 from apps.documents.models import Document
@@ -17,13 +17,19 @@ from apps.equipment.services import dispatcher_name_on
 from apps.organizations.models import Employee
 
 from .models import (
+    DraftRevisionAction,
     EntryForm,
+    OperationalDraftEntry,
+    OperationalDraftRevision,
     OperationalJournal,
     OperationalJournalSequence,
     OperationalLogAuditEvent,
     OperationalLogDocumentLink,
     OperationalLogEntry,
     OperationalLogEquipmentLink,
+    OperationalShift,
+    OperationalShiftMember,
+    ShiftStatus,
 )
 
 
@@ -407,3 +413,408 @@ def timeline_queryset(journal: OperationalJournal) -> QuerySet[OperationalLogEnt
         )
         .order_by("-sequence_number")
     )
+
+
+
+class DraftConflictError(ValidationError):
+    def __init__(self, current_entry: OperationalDraftEntry) -> None:
+        self.current_entry = current_entry
+        super().__init__(
+            "Черновая запись была изменена в другой вкладке или на другом устройстве."
+        )
+
+
+ACTIVE_SHIFT_STATUSES = (
+    ShiftStatus.OPEN,
+    ShiftStatus.HANDOVER_PREPARATION,
+)
+
+
+def active_shift_for_journal(
+    journal: OperationalJournal,
+) -> OperationalShift | None:
+    return (
+        OperationalShift.objects.filter(
+            journal=journal,
+            status__in=ACTIVE_SHIFT_STATUSES,
+        )
+        .select_related(
+            "journal",
+            "journal__workplace",
+            "opened_by",
+            "opened_by__position",
+        )
+        .order_by("-planned_start_at", "-pk")
+        .first()
+    )
+
+
+def _require_shift_actor(
+    shift: OperationalShift,
+    actor: Employee,
+) -> None:
+    if not actor.is_active:
+        raise ValidationError(
+            "Недействующий сотрудник не может работать с черновиком."
+        )
+    if actor.organization_id != shift.journal.organization_id:
+        raise PermissionDenied(
+            "Нельзя работать с черновиком смены другой организации."
+        )
+    if shift.status != ShiftStatus.OPEN:
+        raise ValidationError(
+            "Черновик можно менять только в открытой смене."
+        )
+
+
+def _draft_snapshot(
+    entry: OperationalDraftEntry,
+    actor: Employee,
+) -> dict[str, Any]:
+    return {
+        "schema_version": "operational-draft-entry.v1",
+        "shift": {
+            "id": entry.shift_id,
+            "public_id": str(entry.shift.public_id),
+            "journal_id": entry.shift.journal_id,
+            "journal_code": entry.shift.journal.code,
+            "status": entry.shift.status,
+        },
+        "draft": {
+            "id": entry.pk,
+            "public_id": str(entry.public_id),
+            "position": entry.position,
+            "event_at": utc_iso(entry.event_at),
+            "content": entry.content,
+            "version": entry.version,
+            "is_removed": entry.is_removed,
+        },
+        "actor": {
+            "employee_id": actor.pk,
+            "full_name": actor.full_name,
+            "position": actor.position.name,
+        },
+    }
+
+
+def _append_draft_revision(
+    *,
+    entry: OperationalDraftEntry,
+    actor: Employee,
+    action: str,
+) -> OperationalDraftRevision:
+    last_number = (
+        entry.revisions.aggregate(value=Max("revision_number"))["value"]
+        or 0
+    )
+    snapshot = _draft_snapshot(entry, actor)
+    return OperationalDraftRevision.objects.create(
+        entry=entry,
+        revision_number=last_number + 1,
+        action=action,
+        snapshot=snapshot,
+        digest=sha256_text(canonical_json(snapshot)),
+        changed_by=actor,
+    )
+
+
+@transaction.atomic
+def open_shift(
+    *,
+    journal: OperationalJournal,
+    actor: Employee,
+    planned_start_at: datetime,
+    planned_end_at: datetime,
+) -> OperationalShift:
+    locked_journal = (
+        OperationalJournal.objects.select_for_update()
+        .select_related("organization", "workplace")
+        .get(pk=journal.pk)
+    )
+    if not locked_journal.is_active:
+        raise ValidationError(
+            "Нельзя открыть смену для недействующего журнала."
+        )
+    if not actor.is_active:
+        raise ValidationError(
+            "Недействующий сотрудник не может открыть смену."
+        )
+    if actor.organization_id != locked_journal.organization_id:
+        raise PermissionDenied(
+            "Нельзя открыть смену в журнале другой организации."
+        )
+    if active_shift_for_journal(locked_journal) is not None:
+        raise ValidationError(
+            "Для этого журнала уже существует открытая смена."
+        )
+
+    start_at = _aware_event_time(planned_start_at)
+    end_at = _aware_event_time(planned_end_at)
+    if end_at <= start_at:
+        raise ValidationError(
+            {"planned_end_at": "Окончание должно быть позже начала."}
+        )
+
+    shift = OperationalShift.objects.create(
+        journal=locked_journal,
+        status=ShiftStatus.OPEN,
+        planned_start_at=start_at,
+        planned_end_at=end_at,
+        opened_by=actor,
+        opened_by_full_name_snapshot=actor.full_name,
+        opened_by_position_snapshot=actor.position.name,
+    )
+    OperationalShiftMember.objects.create(
+        shift=shift,
+        employee=actor,
+        employee_full_name_snapshot=actor.full_name,
+        employee_position_snapshot=actor.position.name,
+        is_shift_lead=True,
+    )
+    return shift
+
+
+def draft_entries_queryset(
+    shift: OperationalShift,
+    *,
+    include_removed: bool = False,
+) -> QuerySet[OperationalDraftEntry]:
+    queryset = (
+        shift.draft_entries.select_related(
+            "shift",
+            "shift__journal",
+            "created_by",
+            "created_by__position",
+            "updated_by",
+            "updated_by__position",
+        )
+        .prefetch_related("revisions")
+        .order_by("position", "pk")
+    )
+    if not include_removed:
+        queryset = queryset.filter(is_removed=False)
+    return queryset
+
+
+@transaction.atomic
+def create_draft_entry(
+    *,
+    shift: OperationalShift,
+    actor: Employee,
+    event_at: datetime | None = None,
+    content: str = "",
+) -> OperationalDraftEntry:
+    locked_shift = (
+        OperationalShift.objects.select_for_update()
+        .select_related("journal")
+        .get(pk=shift.pk)
+    )
+    _require_shift_actor(locked_shift, actor)
+    last_position = (
+        OperationalDraftEntry.objects.filter(
+            shift=locked_shift,
+            is_removed=False,
+        ).aggregate(value=Max("position"))["value"]
+        or 0
+    )
+    entry = OperationalDraftEntry.objects.create(
+        shift=locked_shift,
+        position=last_position + 10,
+        event_at=_aware_event_time(event_at or timezone.now()),
+        content=content,
+        version=1,
+        created_by=actor,
+        updated_by=actor,
+    )
+    _append_draft_revision(
+        entry=entry,
+        actor=actor,
+        action=DraftRevisionAction.CREATED,
+    )
+    return entry
+
+
+@transaction.atomic
+def update_draft_entry(
+    *,
+    entry: OperationalDraftEntry,
+    actor: Employee,
+    expected_version: int,
+    event_at: datetime,
+    content: str,
+) -> OperationalDraftEntry:
+    locked_entry = (
+        OperationalDraftEntry.objects.select_for_update()
+        .select_related(
+            "shift",
+            "shift__journal",
+            "created_by",
+            "updated_by",
+        )
+        .get(pk=entry.pk)
+    )
+    _require_shift_actor(locked_entry.shift, actor)
+    if expected_version != locked_entry.version:
+        raise DraftConflictError(locked_entry)
+
+    normalized_event_at = _aware_event_time(event_at)
+    normalized_content = content.replace("\r\n", "\n").replace(
+        "\r",
+        "\n",
+    )
+    if (
+        normalized_event_at == locked_entry.event_at
+        and normalized_content == locked_entry.content
+    ):
+        return locked_entry
+
+    locked_entry.event_at = normalized_event_at
+    locked_entry.content = normalized_content
+    locked_entry.version += 1
+    locked_entry.updated_by = actor
+    locked_entry.save(
+        update_fields=(
+            "event_at",
+            "content",
+            "version",
+            "updated_by",
+            "updated_at",
+        )
+    )
+    _append_draft_revision(
+        entry=locked_entry,
+        actor=actor,
+        action=DraftRevisionAction.UPDATED,
+    )
+    return locked_entry
+
+
+@transaction.atomic
+def move_draft_entry(
+    *,
+    entry: OperationalDraftEntry,
+    actor: Employee,
+    direction: str,
+) -> OperationalDraftEntry:
+    locked_shift = (
+        OperationalShift.objects.select_for_update()
+        .select_related("journal")
+        .get(pk=entry.shift_id)
+    )
+    _require_shift_actor(locked_shift, actor)
+    items = list(
+        OperationalDraftEntry.objects.select_for_update()
+        .filter(shift=locked_shift, is_removed=False)
+        .select_related("shift", "shift__journal")
+        .order_by("position", "pk")
+    )
+    current = next(
+        (item for item in items if item.pk == entry.pk),
+        None,
+    )
+    if current is None:
+        raise ValidationError(
+            "Убранную запись нельзя перемещать."
+        )
+    if direction not in {"up", "down"}:
+        raise ValidationError("Неизвестное направление перемещения.")
+
+    index = items.index(current)
+    target_index = index - 1 if direction == "up" else index + 1
+    if target_index < 0 or target_index >= len(items):
+        return current
+
+    target = items[target_index]
+    current.position, target.position = target.position, current.position
+    for item in (current, target):
+        item.version += 1
+        item.updated_by = actor
+        item.save(
+            update_fields=(
+                "position",
+                "version",
+                "updated_by",
+                "updated_at",
+            )
+        )
+        _append_draft_revision(
+            entry=item,
+            actor=actor,
+            action=DraftRevisionAction.REORDERED,
+        )
+    return current
+
+
+@transaction.atomic
+def remove_draft_entry(
+    *,
+    entry: OperationalDraftEntry,
+    actor: Employee,
+) -> OperationalDraftEntry:
+    locked_entry = (
+        OperationalDraftEntry.objects.select_for_update()
+        .select_related("shift", "shift__journal")
+        .get(pk=entry.pk)
+    )
+    _require_shift_actor(locked_entry.shift, actor)
+    if locked_entry.is_removed:
+        return locked_entry
+    locked_entry.is_removed = True
+    locked_entry.version += 1
+    locked_entry.updated_by = actor
+    locked_entry.save(
+        update_fields=(
+            "is_removed",
+            "version",
+            "updated_by",
+            "updated_at",
+        )
+    )
+    _append_draft_revision(
+        entry=locked_entry,
+        actor=actor,
+        action=DraftRevisionAction.REMOVED,
+    )
+    return locked_entry
+
+
+@transaction.atomic
+def restore_draft_entry(
+    *,
+    entry: OperationalDraftEntry,
+    actor: Employee,
+) -> OperationalDraftEntry:
+    locked_entry = (
+        OperationalDraftEntry.objects.select_for_update()
+        .select_related("shift", "shift__journal")
+        .get(pk=entry.pk)
+    )
+    _require_shift_actor(locked_entry.shift, actor)
+    if not locked_entry.is_removed:
+        return locked_entry
+    last_position = (
+        OperationalDraftEntry.objects.filter(
+            shift=locked_entry.shift,
+            is_removed=False,
+        ).aggregate(value=Max("position"))["value"]
+        or 0
+    )
+    locked_entry.is_removed = False
+    locked_entry.position = last_position + 10
+    locked_entry.version += 1
+    locked_entry.updated_by = actor
+    locked_entry.save(
+        update_fields=(
+            "is_removed",
+            "position",
+            "version",
+            "updated_by",
+            "updated_at",
+        )
+    )
+    _append_draft_revision(
+        entry=locked_entry,
+        actor=actor,
+        action=DraftRevisionAction.RESTORED,
+    )
+    return locked_entry

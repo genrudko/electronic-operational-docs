@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from typing import Any
 
 from django.core.exceptions import ValidationError
@@ -30,6 +31,21 @@ ImmutableManager = models.Manager.from_queryset(ImmutableQuerySet)
 class EntryForm(models.TextChoices):
     FREE_TEXT = "FREE_TEXT", "Свободная запись"
     TYPED = "TYPED", "Типизированная запись"
+
+
+
+class ShiftStatus(models.TextChoices):
+    OPEN = "OPEN", "Открыта"
+    HANDOVER_PREPARATION = "HANDOVER_PREPARATION", "Подготовка к сдаче"
+    CLOSED = "CLOSED", "Закрыта"
+
+
+class DraftRevisionAction(models.TextChoices):
+    CREATED = "CREATED", "Создана"
+    UPDATED = "UPDATED", "Изменена"
+    REORDERED = "REORDERED", "Изменён порядок"
+    REMOVED = "REMOVED", "Убрана из черновика"
+    RESTORED = "RESTORED", "Восстановлена"
 
 
 class OperationalJournal(models.Model):
@@ -107,6 +123,437 @@ class OperationalJournalSequence(models.Model):
 
     def __str__(self) -> str:
         return f"{self.journal}: {self.last_value}"
+
+
+
+class OperationalShift(models.Model):
+    public_id = models.UUIDField(
+        "Публичный идентификатор",
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
+    journal = models.ForeignKey(
+        OperationalJournal,
+        on_delete=models.PROTECT,
+        related_name="shifts",
+        verbose_name="Оперативный журнал",
+    )
+    status = models.CharField(
+        "Состояние смены",
+        max_length=32,
+        choices=ShiftStatus.choices,
+        default=ShiftStatus.OPEN,
+        db_index=True,
+    )
+    planned_start_at = models.DateTimeField("Плановое начало")
+    planned_end_at = models.DateTimeField("Плановое окончание")
+    opened_at = models.DateTimeField(
+        "Фактическое открытие",
+        default=timezone.now,
+        editable=False,
+    )
+    opened_by = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        related_name="opened_operational_shifts",
+        verbose_name="Смену открыл",
+    )
+    opened_by_full_name_snapshot = models.CharField(
+        "Ф.И.О. открывшего смену",
+        max_length=500,
+        editable=False,
+    )
+    opened_by_position_snapshot = models.CharField(
+        "Должность открывшего смену",
+        max_length=500,
+        editable=False,
+    )
+    closed_at = models.DateTimeField(
+        "Фактическое закрытие",
+        null=True,
+        blank=True,
+        editable=False,
+    )
+    version = models.PositiveBigIntegerField("Версия смены", default=1)
+    created_at = models.DateTimeField("Создана", auto_now_add=True)
+    updated_at = models.DateTimeField("Изменена", auto_now=True)
+
+    class Meta:
+        ordering = ("-planned_start_at", "-pk")
+        indexes = [
+            models.Index(
+                fields=("journal", "status"),
+                name="op_shift_journal_status_idx",
+            )
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(planned_end_at__gt=F("planned_start_at")),
+                name="op_shift_end_after_start",
+            ),
+            models.UniqueConstraint(
+                fields=("journal",),
+                condition=Q(
+                    status__in=(
+                        ShiftStatus.OPEN,
+                        ShiftStatus.HANDOVER_PREPARATION,
+                    )
+                ),
+                name="uniq_active_operational_shift",
+            ),
+        ]
+        verbose_name = "оперативная смена"
+        verbose_name_plural = "оперативные смены"
+
+    def __str__(self) -> str:
+        return (
+            f"{self.journal} · "
+            f"{timezone.localtime(self.planned_start_at):%d.%m.%Y %H:%M}"
+        )
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.pk:
+            original = type(self).objects.get(pk=self.pk)
+            protected = (
+                "public_id",
+                "journal_id",
+                "opened_at",
+                "opened_by_id",
+                "opened_by_full_name_snapshot",
+                "opened_by_position_snapshot",
+            )
+            if any(
+                getattr(original, field) != getattr(self, field)
+                for field in protected
+            ):
+                raise ValidationError(
+                    "Идентификационные реквизиты открытой смены неизменяемы."
+                )
+        self.opened_by_full_name_snapshot = (
+            self.opened_by_full_name_snapshot.strip()
+        )
+        self.opened_by_position_snapshot = (
+            self.opened_by_position_snapshot.strip()
+        )
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
+        raise ValidationError(
+            "Физическое удаление оперативной смены запрещено."
+        )
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if (
+            self.journal_id
+            and self.opened_by_id
+            and self.journal.organization_id
+            != self.opened_by.organization_id
+        ):
+            errors["opened_by"] = (
+                "Сотрудник относится к другой организации."
+            )
+        if (
+            self.planned_start_at
+            and self.planned_end_at
+            and self.planned_end_at <= self.planned_start_at
+        ):
+            errors["planned_end_at"] = (
+                "Окончание смены должно быть позже её начала."
+            )
+        if self.status == ShiftStatus.CLOSED and self.closed_at is None:
+            errors["closed_at"] = (
+                "Для закрытой смены требуется фактическое время закрытия."
+            )
+        if self.status != ShiftStatus.CLOSED and self.closed_at is not None:
+            errors["closed_at"] = (
+                "Время закрытия допускается только для закрытой смены."
+            )
+        if self.version < 1:
+            errors["version"] = "Версия смены должна быть положительной."
+        if errors:
+            raise ValidationError(errors)
+
+
+class OperationalShiftMember(models.Model):
+    shift = models.ForeignKey(
+        OperationalShift,
+        on_delete=models.PROTECT,
+        related_name="members",
+        verbose_name="Оперативная смена",
+    )
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        related_name="operational_shift_memberships",
+        verbose_name="Сотрудник",
+    )
+    employee_full_name_snapshot = models.CharField(
+        "Ф.И.О. сотрудника",
+        max_length=500,
+        editable=False,
+    )
+    employee_position_snapshot = models.CharField(
+        "Должность сотрудника",
+        max_length=500,
+        editable=False,
+    )
+    is_shift_lead = models.BooleanField("Старший смены", default=False)
+    joined_at = models.DateTimeField(
+        "Включён в смену",
+        default=timezone.now,
+        editable=False,
+    )
+
+    class Meta:
+        ordering = (
+            "-is_shift_lead",
+            "employee_full_name_snapshot",
+            "pk",
+        )
+        constraints = [
+            models.UniqueConstraint(
+                fields=("shift", "employee"),
+                name="uniq_operational_shift_member",
+            )
+        ]
+        verbose_name = "участник оперативной смены"
+        verbose_name_plural = "участники оперативной смены"
+
+    def __str__(self) -> str:
+        return f"{self.shift} · {self.employee_full_name_snapshot}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.pk:
+            raise ValidationError(
+                "Снимок участника открытой смены неизменяем."
+            )
+        self.employee_full_name_snapshot = (
+            self.employee_full_name_snapshot.strip()
+        )
+        self.employee_position_snapshot = (
+            self.employee_position_snapshot.strip()
+        )
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
+        raise ValidationError(
+            "Физическое удаление участника смены запрещено."
+        )
+
+    def clean(self) -> None:
+        super().clean()
+        if (
+            self.shift_id
+            and self.employee_id
+            and self.shift.journal.organization_id
+            != self.employee.organization_id
+        ):
+            raise ValidationError(
+                {"employee": "Сотрудник относится к другой организации."}
+            )
+
+
+class OperationalDraftEntry(models.Model):
+    public_id = models.UUIDField(
+        "Публичный идентификатор",
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
+    shift = models.ForeignKey(
+        OperationalShift,
+        on_delete=models.PROTECT,
+        related_name="draft_entries",
+        verbose_name="Оперативная смена",
+    )
+    position = models.PositiveIntegerField("Позиция в черновике")
+    event_at = models.DateTimeField(
+        "Время события",
+        default=timezone.now,
+        db_index=True,
+    )
+    content = models.TextField("Содержание", blank=True)
+    version = models.PositiveBigIntegerField("Версия записи", default=1)
+    is_removed = models.BooleanField(
+        "Убрана из черновика",
+        default=False,
+        db_index=True,
+    )
+    created_by = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        related_name="created_operational_drafts",
+        verbose_name="Создал",
+    )
+    updated_by = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        related_name="updated_operational_drafts",
+        verbose_name="Последним изменил",
+    )
+    created_at = models.DateTimeField("Создана", auto_now_add=True)
+    updated_at = models.DateTimeField("Сохранена", auto_now=True)
+
+    class Meta:
+        ordering = ("position", "pk")
+        indexes = [
+            models.Index(
+                fields=("shift", "is_removed", "position"),
+                name="op_draft_shift_order_idx",
+            )
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(position__gte=1),
+                name="op_draft_position_positive",
+            ),
+            models.CheckConstraint(
+                condition=Q(version__gte=1),
+                name="op_draft_version_positive",
+            ),
+        ]
+        verbose_name = "черновая запись смены"
+        verbose_name_plural = "черновые записи смены"
+
+    def __str__(self) -> str:
+        return f"{self.shift} · черновик {self.public_id}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        self.content = self.content.replace("\r\n", "\n").replace(
+            "\r",
+            "\n",
+        )
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
+        raise ValidationError(
+            "Физическое удаление черновой записи запрещено."
+        )
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if self.shift_id and self.shift.status != ShiftStatus.OPEN:
+            errors["shift"] = (
+                "Черновик можно менять только в открытой смене."
+            )
+        for field_name in ("created_by", "updated_by"):
+            employee = getattr(self, field_name, None)
+            if (
+                self.shift_id
+                and employee is not None
+                and employee.organization_id
+                != self.shift.journal.organization_id
+            ):
+                errors[field_name] = (
+                    "Сотрудник относится к другой организации."
+                )
+        if self.position < 1:
+            errors["position"] = "Позиция должна быть положительной."
+        if self.version < 1:
+            errors["version"] = "Версия записи должна быть положительной."
+        if errors:
+            raise ValidationError(errors)
+
+
+class OperationalDraftRevision(models.Model):
+    entry = models.ForeignKey(
+        OperationalDraftEntry,
+        on_delete=models.PROTECT,
+        related_name="revisions",
+        verbose_name="Черновая запись",
+    )
+    revision_number = models.PositiveIntegerField("Номер редакции")
+    action = models.CharField(
+        "Действие",
+        max_length=16,
+        choices=DraftRevisionAction.choices,
+    )
+    snapshot = models.JSONField(
+        "Снимок редакции",
+        default=dict,
+        editable=False,
+    )
+    digest = models.CharField(
+        "SHA-256 редакции",
+        max_length=64,
+        editable=False,
+    )
+    changed_by = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        related_name="operational_draft_revisions",
+        verbose_name="Изменил",
+    )
+    changed_at = models.DateTimeField(
+        "Время изменения",
+        default=timezone.now,
+        editable=False,
+    )
+
+    objects = ImmutableManager()
+
+    class Meta:
+        ordering = ("entry", "revision_number")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("entry", "revision_number"),
+                name="uniq_operational_draft_revision",
+            ),
+            models.CheckConstraint(
+                condition=Q(revision_number__gte=1),
+                name="op_revision_number_positive",
+            ),
+        ]
+        verbose_name = "редакция черновой записи"
+        verbose_name_plural = "редакции черновых записей"
+
+    def __str__(self) -> str:
+        return (
+            f"{self.entry} · редакция {self.revision_number}"
+        )
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.pk:
+            raise ValidationError(
+                "Редакция черновой записи неизменяема."
+            )
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
+        raise ValidationError(
+            "Физическое удаление редакции черновика запрещено."
+        )
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if (
+            self.entry_id
+            and self.changed_by_id
+            and self.entry.shift.journal.organization_id
+            != self.changed_by.organization_id
+        ):
+            errors["changed_by"] = (
+                "Сотрудник относится к другой организации."
+            )
+        if not isinstance(self.snapshot, dict):
+            errors["snapshot"] = "Снимок должен быть JSON-объектом."
+        if len(self.digest) != 64:
+            errors["digest"] = "Требуется SHA-256 редакции."
+        if self.revision_number < 1:
+            errors["revision_number"] = (
+                "Номер редакции должен быть положительным."
+            )
+        if errors:
+            raise ValidationError(errors)
 
 
 class OperationalLogEntry(models.Model):

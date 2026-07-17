@@ -28,6 +28,12 @@
 
     <div class="journal-workspace-actions">
         <a href="{% url 'operational_log:registry' %}">К журналам</a>
+        <a
+            class="button secondary shift-workspace-link"
+            href="{% url 'operational_log:shift_workspace' journal.pk %}"
+        >
+            {% if active_shift %}Рабочая смена{% else %}Открыть смену{% endif %}
+        </a>
         <button
             class="button journal-settings-trigger"
             type="button"
