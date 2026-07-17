@@ -20,6 +20,11 @@ from django.urls import reverse  # noqa: E402
 
 django.setup()
 
+from apps.operational_log.form_contracts import (  # noqa: E402
+    OPERATIONAL_JOURNAL_FORM,
+    OPERATIONAL_JOURNAL_FORM_CODE,
+    approved_journal_form,
+)
 from apps.operational_log.models import (  # noqa: E402
     EntryForm,
     OperationalJournal,
@@ -48,9 +53,7 @@ assert all(len(entry.digest) == 64 for entry in entries)
 print("EVENT_AND_REGISTRATION_TIME=PASSED")
 
 assert {entry.entry_form for entry in entries} == {EntryForm.FREE_TEXT, EntryForm.TYPED}
-assert any(
-    entry.typed_payload for entry in entries if entry.entry_form == EntryForm.TYPED
-)
+assert any(entry.typed_payload for entry in entries if entry.entry_form == EntryForm.TYPED)
 print("TYPED_AND_FREE_ENTRIES=PASSED")
 
 assert all(entry.author_full_name_snapshot for entry in entries)
@@ -59,13 +62,8 @@ print("AUTHOR_ROLE_SNAPSHOT=PASSED")
 
 assert OperationalLogEquipmentLink.objects.filter(entry__journal=journal).count() == 4
 assert OperationalLogDocumentLink.objects.filter(entry__journal=journal).count() == 2
-assert all(
-    link.dispatcher_name_snapshot for link in OperationalLogEquipmentLink.objects.all()
-)
-assert all(
-    link.registration_number_snapshot
-    for link in OperationalLogDocumentLink.objects.all()
-)
+assert all(link.dispatcher_name_snapshot for link in OperationalLogEquipmentLink.objects.all())
+assert all(link.registration_number_snapshot for link in OperationalLogDocumentLink.objects.all())
 print("EQUIPMENT_AND_DOCUMENT_SNAPSHOTS=PASSED")
 
 assert OperationalLogAuditEvent.objects.filter(entry__journal=journal).count() == 5
@@ -81,6 +79,22 @@ else:
 entries[0].content = original
 print("IMMUTABLE_ENTRY_AND_AUDIT=PASSED")
 
+form_contract = approved_journal_form(OPERATIONAL_JOURNAL_FORM_CODE)
+assert form_contract is OPERATIONAL_JOURNAL_FORM
+form_contract.validate()
+assert tuple(column.title for column in form_contract.columns) == (
+    "Дата, время",
+    ("Содержание сообщений в течение смены, подписи о сдаче и приемке смены"),
+    "Визы, замечания",
+)
+assert tuple(column.key for column in form_contract.columns) == (
+    "date_time",
+    "message",
+    "visas",
+)
+assert sum(column.width_percent for column in form_contract.columns) == 100
+print("APPROVED_JOURNAL_FORM_CONTRACT=PASSED")
+
 user = get_user_model().objects.get(username="operator.demo")
 client = Client()
 client.force_login(user)
@@ -89,26 +103,41 @@ assert registry.status_code == 200
 registry_text = registry.content.decode("utf-8")
 for marker in (
     "Оперативные журналы",
-    "Зарегистрированные записи неизменяемы",
+    "Утверждённая форма является обязательным контрактом",
     "Оперативный журнал сменного персонала",
+    "№ 42-6/35-ЭТ",
 ):
     assert marker in registry_text, marker
+
 
 detail = client.get(reverse("operational_log:detail", args=(journal.pk,)))
 assert detail.status_code == 200
 detail_text = detail.content.decode("utf-8")
 for marker in (
-    "ХРОНОЛОГИЧЕСКАЯ ЛЕНТА",
-    "Событие:",
-    "Регистрация:",
-    "Целостность подтверждена",
+    "Дата, время",
+    "Содержание сообщений в течение смены, подписи о сдаче и приемке смены",
+    "Визы, замечания",
+    "approved-journal-table",
+    "data-approved-journal-form=",
     "КТП-01",
     "ДЕМО-2026-000001",
 ):
     assert marker in detail_text, marker
-for forbidden in ("Создать запись", "Редактировать запись", "Аннулировать запись"):
+assert detail_text.count('<th scope="col">') == 3
+assert detail_text.index("Демонстрационное дежурство начато") < detail_text.index(
+    "Получена вымышленная информация"
+)
+for forbidden in (
+    "ХРОНОЛОГИЧЕСКАЯ ЛЕНТА",
+    "Целостность подтверждена",
+    "operational-entry",
+    "Создать запись",
+    "Редактировать запись",
+    "Аннулировать запись",
+):
     assert forbidden not in detail_text, forbidden
-print("READ_ONLY_CHRONOLOGICAL_UI=PASSED")
+print("READ_ONLY_APPROVED_FORM_UI=PASSED")
 
 assert OperationalLogEntry.objects.count() >= 5
 print("PATCH_010_1_OPERATIONAL_LOG_CORE_GATE_PASSED")
+print("PATCH_010_1_1_APPROVED_FORM_UX_GATE_PASSED")

@@ -5,31 +5,30 @@
 {% block content %}
 <section class="page-heading">
     <div>
-        <div class="eyebrow">ОПЕРАТИВНАЯ РАБОТА</div>
+        <div class="eyebrow">ОПЕРАТИВНАЯ ДОКУМЕНТАЦИЯ</div>
         <h1>Оперативные журналы</h1>
         <p>
-            Хронологические журналы рабочих мест с автоматической нумерацией,
-            раздельным временем события и регистрации и неизменяемыми снимками связей.
+            Каждый журнал открывается и печатается по закреплённой утверждённой форме.
+            Автоматизация не изменяет состав, названия и порядок граф.
         </p>
     </div>
 </section>
 
-<section class="notice-card success-notice">
-    <strong>Зарегистрированные записи неизменяемы</strong>
+<section class="notice-card success-notice approved-form-notice">
+    <strong>Утверждённая форма является обязательным контрактом журнала</strong>
     <p>
-        Patch 010.1 предоставляет просмотр ленты. Исправление, аннулирование и пропущенная запись
-        будут оформляться отдельными связанными событиями без изменения оригинала.
+        Поиск, связи, серверное время и контроль целостности работают вне формы
+        и не подменяют её собственными карточками или произвольными колонками.
     </p>
 </section>
 
-<section class="summary-grid">
-    <article class="metric"><span>Действующих журналов</span><strong>{{ summary.journals }}</strong></article>
-    <article class="metric"><span>Зарегистрированных записей</span><strong>{{ summary.entries }}</strong></article>
-    <article class="metric"><span>Типизированных</span><strong>{{ summary.typed }}</strong></article>
-    <article class="metric"><span>Свободных</span><strong>{{ summary.free }}</strong></article>
+<section class="journal-registry-facts" aria-label="Сводка оперативных журналов">
+    <span><strong>{{ summary.journals }}</strong> действующий журнал</span>
+    <span><strong>{{ summary.entries }}</strong> зарегистрированных записей</span>
+    <span><strong>{{ form_contract.columns|length }}</strong> графы утверждённой формы</span>
 </section>
 
-<section class="profile-card">
+<section class="profile-card journal-registry-card">
     <div class="section-heading">
         <div>
             <div class="eyebrow">РАБОЧИЕ МЕСТА</div>
@@ -37,11 +36,12 @@
         </div>
     </div>
     <div class="table-wrap">
-        <table>
+        <table class="journal-registry-table">
             <thead>
                 <tr>
                     <th>Рабочее место</th>
                     <th>Журнал</th>
+                    <th>Закреплённая форма</th>
                     <th>Записей</th>
                     <th>Последняя запись</th>
                     <th>Последнее событие</th>
@@ -55,12 +55,16 @@
                         {% if row.journal.workplace.division %}<small>{{ row.journal.workplace.division.name }}</small>{% endif %}
                     </td>
                     <td><a href="{% url 'operational_log:detail' row.journal.pk %}">{{ row.journal.title }}</a></td>
+                    <td>
+                        <strong>{{ row.form_contract.title }}</strong>
+                        <small>{{ row.form_contract.source_reference }}</small>
+                    </td>
                     <td>{{ row.entry_count }}</td>
                     <td>{% if row.last_entry %}№ {{ row.last_entry.sequence_number }}{% else %}—{% endif %}</td>
-                    <td>{% if row.last_entry %}{{ row.last_entry.event_at|date:"d.m.Y H:i:s" }}{% else %}—{% endif %}</td>
+                    <td>{% if row.last_entry %}{{ row.last_entry.event_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
                 </tr>
             {% empty %}
-                <tr><td colspan="5" class="muted">Для организации пока не создан оперативный журнал.</td></tr>
+                <tr><td colspan="6" class="muted">Для организации пока не создан оперативный журнал.</td></tr>
             {% endfor %}
             </tbody>
         </table>

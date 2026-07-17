@@ -5,7 +5,8 @@ from django.core.exceptions import ValidationError
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render
 
-from .models import EntryForm, OperationalJournal
+from .form_contracts import OPERATIONAL_JOURNAL_FORM
+from .models import OperationalJournal
 from .services import (
     require_operational_employee,
     timeline_queryset,
@@ -24,20 +25,16 @@ def registry(request: HttpRequest) -> HttpResponse:
     )
     rows: list[dict[str, object]] = []
     total_entries = 0
-    typed_entries = 0
-    free_entries = 0
     for journal in journals:
         entries = journal.entries.all()
         count = entries.count()
-        typed = entries.filter(entry_form=EntryForm.TYPED).count()
         total_entries += count
-        typed_entries += typed
-        free_entries += count - typed
         rows.append(
             {
                 "journal": journal,
                 "entry_count": count,
                 "last_entry": entries.order_by("-sequence_number").first(),
+                "form_contract": OPERATIONAL_JOURNAL_FORM,
             }
         )
     return render(
@@ -45,11 +42,10 @@ def registry(request: HttpRequest) -> HttpResponse:
         "operational_log/registry.html",
         {
             "rows": rows,
+            "form_contract": OPERATIONAL_JOURNAL_FORM,
             "summary": {
                 "journals": len(journals),
                 "entries": total_entries,
-                "typed": typed_entries,
-                "free": free_entries,
             },
         },
     )
@@ -68,7 +64,7 @@ def detail(request: HttpRequest, journal_id: int) -> HttpResponse:
         organization=employee.organization,
         is_active=True,
     )
-    entries = list(timeline_queryset(journal))
+    entries = list(timeline_queryset(journal).order_by("sequence_number"))
     rows: list[dict[str, object]] = []
     integrity_failures = 0
     for entry in entries:
@@ -84,14 +80,11 @@ def detail(request: HttpRequest, journal_id: int) -> HttpResponse:
         {
             "journal": journal,
             "rows": rows,
+            "form_contract": OPERATIONAL_JOURNAL_FORM,
+            "first_entry": entries[0] if entries else None,
+            "last_entry": entries[-1] if entries else None,
             "summary": {
                 "total": len(entries),
-                "typed": sum(
-                    1 for entry in entries if entry.entry_form == EntryForm.TYPED
-                ),
-                "free": sum(
-                    1 for entry in entries if entry.entry_form == EntryForm.FREE_TEXT
-                ),
                 "integrity_failures": integrity_failures,
             },
         },
