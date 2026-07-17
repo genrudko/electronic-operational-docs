@@ -2486,9 +2486,7 @@ details[data-default-collapsed="true"]:not([open])
     border-bottom: 0;
 }
 .approved-journal-table th {
-    position: sticky;
-    top: 62px;
-    z-index: 2;
+    position: static;
     padding: 11px 10px;
     background: var(--panel-2);
     color: var(--text);

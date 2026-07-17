@@ -138,6 +138,13 @@ for forbidden in (
     assert forbidden not in detail_text, forbidden
 print("READ_ONLY_APPROVED_FORM_UI=PASSED")
 
+css_text = (ROOT / "src/static/system/app.css").read_text(encoding="utf-8")
+header_rule = css_text.split(".approved-journal-table th {", 1)[1].split("}", 1)[0]
+assert "position: sticky" not in header_rule
+assert "top: 62px" not in header_rule
+assert "position: static" in header_rule
+print("APPROVED_FORM_HEADER_FLOW=PASSED")
+
 assert OperationalLogEntry.objects.count() >= 5
 print("PATCH_010_1_OPERATIONAL_LOG_CORE_GATE_PASSED")
 print("PATCH_010_1_1_APPROVED_FORM_UX_GATE_PASSED")
