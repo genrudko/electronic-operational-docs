@@ -38,14 +38,10 @@
                 <li class="role-assignment {% if item.is_substituted %}substituted{% else %}direct{% endif %}">
                     <div class="role-assignment-heading">
                         <strong>{{ item.assignment.role.name }}</strong>
-                        <em class="role-assignment-basis">
-                            {% if item.is_substituted %}По замещению{% else %}Прямое назначение{% endif %}
-                        </em>
+                        <em class="role-assignment-basis">{% if item.is_substituted %}По замещению{% else %}Прямое назначение{% endif %}</em>
                     </div>
                     <span class="role-assignment-scope-label">Область действия</span>
-                    <span class="role-assignment-scope">
-                        {{ item.assignment.scope|default:"Вся организация" }}
-                    </span>
+                    <span class="role-assignment-scope">{{ item.assignment.scope|default:"Вся организация" }}</span>
                 </li>
             {% empty %}<li class="muted">Действующих ролей нет.</li>{% endfor %}
         </ul>
@@ -62,19 +58,42 @@
     </div>
     <form method="post" class="interface-settings-form" data-interface-settings-form>
         {% csrf_token %}
-        <div class="settings-grid">
-            {% for field in preference_form %}
-                <div class="setting-field {% if field.name == 'show_technical_details' %}setting-toggle{% endif %}">
-                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
-                    {% for error in field.errors %}<span class="field-errors">{{ error }}</span>{% endfor %}
-                </div>
-            {% endfor %}
-        </div>
+        <fieldset class="settings-group">
+            <legend>Общие настройки системы</legend>
+            <div class="settings-grid">
+                {% for field in preference_form %}
+                    {% if field.name == "theme" or field.name == "density" or field.name == "font_scale" or field.name == "content_width" or field.name == "show_technical_details" %}
+                        <div class="setting-field {% if field.name == 'show_technical_details' %}setting-toggle{% endif %}">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                            {% for error in field.errors %}<span class="field-errors">{{ error }}</span>{% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <fieldset class="settings-group journal-settings-group">
+            <legend>Отображение оперативного журнала</legend>
+            <p class="settings-group-description">Эти параметры меняют только рабочий экран. Утверждённая форма и печать остаются неизменными.</p>
+            <div class="settings-grid">
+                {% for field in preference_form %}
+                    {% if field.name == "journal_heading_mode" or field.name == "journal_font_family" or field.name == "journal_font_size" or field.name == "journal_density" or field.name == "journal_width" or field.name == "journal_show_authors" or field.name == "journal_show_links" %}
+                        <div class="setting-field {% if field.name == 'journal_show_authors' or field.name == 'journal_show_links' %}setting-toggle{% endif %}">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                            {% for error in field.errors %}<span class="field-errors">{{ error }}</span>{% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </fieldset>
+
         <div class="settings-actions">
             <button class="button" type="submit">Сохранить настройки</button>
-            <span class="muted">Технические реквизиты по умолчанию скрыты.</span>
+            <span class="muted">Полная шапка всегда используется при печати журнала.</span>
         </div>
     </form>
 </section>

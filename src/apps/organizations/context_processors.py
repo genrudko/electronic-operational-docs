@@ -10,6 +10,13 @@ DEFAULT_INTERFACE_PREFERENCES = SimpleNamespace(
     font_scale=InterfacePreference.FontScale.NORMAL,
     content_width=InterfacePreference.ContentWidth.STANDARD,
     show_technical_details=False,
+    journal_heading_mode=InterfacePreference.JournalHeadingMode.COMPACT,
+    journal_font_family=InterfacePreference.JournalFontFamily.SYSTEM,
+    journal_font_size=InterfacePreference.JournalFontSize.NORMAL,
+    journal_density=InterfacePreference.JournalDensity.NORMAL,
+    journal_width=InterfacePreference.JournalWidth.WIDE,
+    journal_show_authors=True,
+    journal_show_links=True,
 )
 
 

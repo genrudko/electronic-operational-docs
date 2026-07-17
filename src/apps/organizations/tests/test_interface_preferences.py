@@ -19,6 +19,28 @@ class InterfacePreferenceModelTests(TestCase):
         self.assertEqual(preference.density, InterfacePreference.Density.COMFORTABLE)
         self.assertEqual(preference.font_scale, InterfacePreference.FontScale.NORMAL)
         self.assertFalse(preference.show_technical_details)
+        self.assertEqual(
+            preference.journal_heading_mode,
+            InterfacePreference.JournalHeadingMode.COMPACT,
+        )
+        self.assertEqual(
+            preference.journal_font_family,
+            InterfacePreference.JournalFontFamily.SYSTEM,
+        )
+        self.assertEqual(
+            preference.journal_font_size,
+            InterfacePreference.JournalFontSize.NORMAL,
+        )
+        self.assertEqual(
+            preference.journal_density,
+            InterfacePreference.JournalDensity.NORMAL,
+        )
+        self.assertEqual(
+            preference.journal_width,
+            InterfacePreference.JournalWidth.WIDE,
+        )
+        self.assertTrue(preference.journal_show_authors)
+        self.assertTrue(preference.journal_show_links)
 
     def test_preference_is_one_to_one_with_user(self):
         user = get_user_model().objects.create_user(username="ui-unique")
@@ -32,24 +54,37 @@ class InterfacePreferenceViewTests(TestCase):
     def setUpTestData(cls):
         cls.employee, cls.user = employee_with_user(username="ui-user")
 
+    def _valid_payload(self) -> dict[str, str]:
+        return {
+            "theme": InterfacePreference.Theme.LIGHT,
+            "density": InterfacePreference.Density.COMPACT,
+            "font_scale": InterfacePreference.FontScale.LARGE,
+            "content_width": InterfacePreference.ContentWidth.WIDE,
+            "show_technical_details": "on",
+            "journal_heading_mode": InterfacePreference.JournalHeadingMode.HIDDEN,
+            "journal_font_family": InterfacePreference.JournalFontFamily.ARIAL,
+            "journal_font_size": InterfacePreference.JournalFontSize.LARGE,
+            "journal_density": InterfacePreference.JournalDensity.COMPACT,
+            "journal_width": InterfacePreference.JournalWidth.FULL,
+            "journal_show_authors": "on",
+            "journal_show_links": "on",
+        }
+
     def test_account_page_contains_interface_form(self):
         self.client.force_login(self.user)
         response = self.client.get(reverse("organizations:account"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Настройки интерфейса")
         self.assertContains(response, "Показывать технические реквизиты")
+        self.assertContains(response, "Отображение оперативного журнала")
+        self.assertContains(response, "Режим шапки журнала")
+        self.assertContains(response, "Шрифт записей")
 
     def test_post_saves_personal_preferences(self):
         self.client.force_login(self.user)
         response = self.client.post(
             reverse("organizations:account"),
-            {
-                "theme": InterfacePreference.Theme.LIGHT,
-                "density": InterfacePreference.Density.COMPACT,
-                "font_scale": InterfacePreference.FontScale.LARGE,
-                "content_width": InterfacePreference.ContentWidth.WIDE,
-                "show_technical_details": "on",
-            },
+            self._valid_payload(),
         )
         self.assertRedirects(response, reverse("organizations:account"))
         preference = InterfacePreference.objects.get(user=self.user)
@@ -57,18 +92,34 @@ class InterfacePreferenceViewTests(TestCase):
         self.assertEqual(preference.density, InterfacePreference.Density.COMPACT)
         self.assertEqual(preference.font_scale, InterfacePreference.FontScale.LARGE)
         self.assertTrue(preference.show_technical_details)
+        self.assertEqual(
+            preference.journal_heading_mode,
+            InterfacePreference.JournalHeadingMode.HIDDEN,
+        )
+        self.assertEqual(
+            preference.journal_font_family,
+            InterfacePreference.JournalFontFamily.ARIAL,
+        )
+        self.assertEqual(
+            preference.journal_font_size,
+            InterfacePreference.JournalFontSize.LARGE,
+        )
+        self.assertEqual(
+            preference.journal_density,
+            InterfacePreference.JournalDensity.COMPACT,
+        )
+        self.assertEqual(
+            preference.journal_width,
+            InterfacePreference.JournalWidth.FULL,
+        )
+        self.assertTrue(preference.journal_show_authors)
+        self.assertTrue(preference.journal_show_links)
 
     def test_invalid_post_does_not_save_unknown_choice(self):
         self.client.force_login(self.user)
-        response = self.client.post(
-            reverse("organizations:account"),
-            {
-                "theme": "NEON",
-                "density": InterfacePreference.Density.COMFORTABLE,
-                "font_scale": InterfacePreference.FontScale.NORMAL,
-                "content_width": InterfacePreference.ContentWidth.STANDARD,
-            },
-        )
+        payload = self._valid_payload()
+        payload["theme"] = "NEON"
+        response = self.client.post(reverse("organizations:account"), payload)
         self.assertEqual(response.status_code, 200)
         preference = InterfacePreference.objects.get(user=self.user)
         self.assertEqual(preference.theme, InterfacePreference.Theme.DARK)
@@ -81,12 +132,24 @@ class InterfacePreferenceViewTests(TestCase):
             font_scale=InterfacePreference.FontScale.LARGE,
             content_width=InterfacePreference.ContentWidth.WIDE,
             show_technical_details=True,
+            journal_heading_mode=InterfacePreference.JournalHeadingMode.FULL,
+            journal_font_family=InterfacePreference.JournalFontFamily.TIMES,
+            journal_font_size=InterfacePreference.JournalFontSize.EXTRA_LARGE,
+            journal_density=InterfacePreference.JournalDensity.RELAXED,
+            journal_width=InterfacePreference.JournalWidth.FULL,
+            journal_show_authors=False,
+            journal_show_links=False,
         )
         self.client.force_login(self.user)
         response = self.client.get(reverse("system:home"))
         self.assertContains(response, 'data-theme="light"')
         self.assertContains(response, 'data-density="compact"')
         self.assertContains(response, 'data-technical="true"')
+        self.assertContains(response, 'data-journal-heading="full"')
+        self.assertContains(response, 'data-journal-font="times"')
+        self.assertContains(response, 'data-journal-size="extra_large"')
+        self.assertContains(response, 'data-journal-density="relaxed"')
+        self.assertContains(response, 'data-journal-width="full"')
 
     def test_context_processor_creates_default_for_authenticated_user(self):
         request = RequestFactory().get("/")
@@ -100,7 +163,9 @@ class PresentationUxTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         call_command("seed_demo_dispatching", verbosity=0)
-        cls.employee = Employee.objects.select_related("user").get(user__username="operator.demo")
+        cls.employee = Employee.objects.select_related("user").get(
+            user__username="operator.demo"
+        )
         cls.user = cls.employee.user
 
     def setUp(self):
@@ -133,14 +198,19 @@ class PresentationUxTests(TestCase):
     def test_dispatching_detail_collapses_history_and_digest(self):
         response = self.client.get(reverse("dispatching:registry"))
         detail_url = response.context["rows"][0]["equipment"].public_id
-        detail = self.client.get(reverse("dispatching:equipment_detail", args=[detail_url]))
+        detail = self.client.get(
+            reverse("dispatching:equipment_detail", args=[detail_url])
+        )
         self.assertContains(detail, "history-disclosure")
         self.assertContains(detail, "record-details")
         self.assertContains(detail, "technical-only")
 
     def test_presentation_seed_uses_recognizable_safe_names(self):
         organization = Organization.objects.get(code="DEMO")
-        self.assertEqual(organization.short_name, "АО «Росатом Возобновляемая энергия»")
+        self.assertEqual(
+            organization.short_name,
+            "АО «Росатом Возобновляемая энергия»",
+        )
         self.assertEqual(self.employee.last_name, "Кузнецов")
         self.assertNotIn("Операторов", self.employee.full_name)
 
@@ -169,14 +239,23 @@ class PresentationUxTests(TestCase):
             subject.presentation_label,
             "Оперативный персонал ЦОТУиЭ ВЭС Невинномысск",
         )
-
         response = self.client.get(reverse("dispatching:registry"))
-        self.assertContains(response, "Оперативный персонал ЦОТУиЭ ВЭС Невинномысск")
+        self.assertContains(
+            response,
+            "Оперативный персонал ЦОТУиЭ ВЭС Невинномысск",
+        )
         self.assertNotContains(response, ">Смена Демо-ВЭС<")
 
     def test_icon_sprite_contains_required_symbols(self):
         from django.conf import settings
 
-        sprite = (settings.BASE_DIR / "src/static/system/icons.svg").read_text(encoding="utf-8")
-        for symbol in ("icon-management", "icon-supervision", "icon-settings", "icon-menu"):
+        sprite = (settings.BASE_DIR / "src/static/system/icons.svg").read_text(
+            encoding="utf-8"
+        )
+        for symbol in (
+            "icon-management",
+            "icon-supervision",
+            "icon-settings",
+            "icon-menu",
+        ):
             self.assertIn(f'id="{symbol}"', sprite)

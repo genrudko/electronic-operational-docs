@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import get_object_or_404, render
+from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
+
+from apps.organizations.models import InterfacePreference
 
 from .form_contracts import OPERATIONAL_JOURNAL_FORM
 from .models import OperationalJournal
@@ -12,6 +15,19 @@ from .services import (
     timeline_queryset,
     verify_entry_integrity,
 )
+
+
+def _accessible_journal(employee, journal_id: int) -> OperationalJournal:
+    return get_object_or_404(
+        OperationalJournal.objects.select_related(
+            "organization",
+            "workplace",
+            "workplace__division",
+        ),
+        pk=journal_id,
+        organization=employee.organization,
+        is_active=True,
+    )
 
 
 @login_required
@@ -54,16 +70,7 @@ def registry(request: HttpRequest) -> HttpResponse:
 @login_required
 def detail(request: HttpRequest, journal_id: int) -> HttpResponse:
     employee = require_operational_employee(request.user)
-    journal = get_object_or_404(
-        OperationalJournal.objects.select_related(
-            "organization",
-            "workplace",
-            "workplace__division",
-        ),
-        pk=journal_id,
-        organization=employee.organization,
-        is_active=True,
-    )
+    journal = _accessible_journal(employee, journal_id)
     entries = list(timeline_queryset(journal).order_by("sequence_number"))
     rows: list[dict[str, object]] = []
     integrity_failures = 0
@@ -89,3 +96,22 @@ def detail(request: HttpRequest, journal_id: int) -> HttpResponse:
             },
         },
     )
+
+
+@require_POST
+@login_required
+def update_display(request: HttpRequest, journal_id: int) -> HttpResponse:
+    employee = require_operational_employee(request.user)
+    journal = _accessible_journal(employee, journal_id)
+    mode = request.POST.get("journal_heading_mode", "").strip().upper()
+    allowed_modes = {
+        value for value, _label in InterfacePreference.JournalHeadingMode.choices
+    }
+    if mode not in allowed_modes:
+        return HttpResponseBadRequest("Неизвестный режим шапки оперативного журнала.")
+
+    preferences, _ = InterfacePreference.objects.get_or_create(user=request.user)
+    if preferences.journal_heading_mode != mode:
+        preferences.journal_heading_mode = mode
+        preferences.save(update_fields=("journal_heading_mode", "updated_at"))
+    return redirect("operational_log:detail", journal_id=journal.pk)

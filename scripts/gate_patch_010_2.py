@@ -1,0 +1,144 @@
+from __future__ import annotations
+
+import os
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+os.environ.setdefault("DB_ENGINE", "sqlite")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "eod_config.settings")
+os.environ.setdefault("PYTHONUTF8", "1")
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+
+import django  # noqa: E402
+from django.contrib.auth import get_user_model  # noqa: E402
+from django.core.management import call_command  # noqa: E402
+from django.test import Client  # noqa: E402
+from django.urls import reverse  # noqa: E402
+
+django.setup()
+
+from apps.operational_log.form_contracts import (  # noqa: E402
+    OPERATIONAL_JOURNAL_FORM,
+)
+from apps.operational_log.models import OperationalJournal  # noqa: E402
+from apps.organizations.models import InterfacePreference  # noqa: E402
+
+call_command("seed_demo_operational_log", verbosity=0)
+
+user = get_user_model().objects.get(username="operator.demo")
+journal = OperationalJournal.objects.get(
+    organization__code="DEMO",
+    code="shift-operational-log",
+)
+preferences, _ = InterfacePreference.objects.get_or_create(user=user)
+preferences.journal_heading_mode = InterfacePreference.JournalHeadingMode.COMPACT
+preferences.journal_font_family = InterfacePreference.JournalFontFamily.SYSTEM
+preferences.journal_font_size = InterfacePreference.JournalFontSize.NORMAL
+preferences.journal_density = InterfacePreference.JournalDensity.NORMAL
+preferences.journal_width = InterfacePreference.JournalWidth.WIDE
+preferences.journal_show_authors = True
+preferences.journal_show_links = True
+preferences.save()
+
+assert tuple(column.title for column in OPERATIONAL_JOURNAL_FORM.columns) == (
+    "Дата и время записи",
+    (
+        "Содержание записей в течение смены, подписи "
+        "о приемке и сдаче смены"
+    ),
+    "Визы и замечания административно-технического персонала",
+)
+assert tuple(
+    column.width_percent for column in OPERATIONAL_JOURNAL_FORM.columns
+) == (14, 66, 20)
+assert "И-00-007-ОР-2025" in OPERATIONAL_JOURNAL_FORM.source_reference
+assert "приложение № 2" in OPERATIONAL_JOURNAL_FORM.source_reference
+print("LOCAL_APPROVED_FORM_SOURCE=PASSED")
+
+client = Client()
+client.force_login(user)
+detail_url = reverse("operational_log:detail", args=(journal.pk,))
+update_url = reverse("operational_log:update_display", args=(journal.pk,))
+
+detail = client.get(detail_url)
+assert detail.status_code == 200
+detail_text = detail.content.decode("utf-8")
+for marker in (
+    "journal-workspace-bar",
+    "journal-heading-compact",
+    "journal-main-width-wide",
+    'data-journal-heading-mode="compact"',
+    "Дата и время записи",
+    "Визы и замечания административно-технического персонала",
+):
+    assert marker in detail_text, marker
+assert "Просмотр зарегистрированных записей по утверждённой форме." not in detail_text
+print("COMPACT_JOURNAL_WORKSPACE=PASSED")
+
+response = client.post(update_url, {"journal_heading_mode": "FULL"})
+assert response.status_code == 302
+preferences.refresh_from_db()
+assert preferences.journal_heading_mode == InterfacePreference.JournalHeadingMode.FULL
+assert "journal-heading-full" in client.get(detail_url).content.decode("utf-8")
+
+response = client.post(update_url, {"journal_heading_mode": "HIDDEN"})
+assert response.status_code == 302
+preferences.refresh_from_db()
+assert preferences.journal_heading_mode == InterfacePreference.JournalHeadingMode.HIDDEN
+assert "journal-heading-hidden" in client.get(detail_url).content.decode("utf-8")
+
+response = client.post(update_url, {"journal_heading_mode": "UNKNOWN"})
+assert response.status_code == 400
+preferences.refresh_from_db()
+assert preferences.journal_heading_mode == InterfacePreference.JournalHeadingMode.HIDDEN
+print("PERSISTENT_HEADER_MODE=PASSED")
+
+preferences.journal_heading_mode = InterfacePreference.JournalHeadingMode.COMPACT
+preferences.journal_font_family = InterfacePreference.JournalFontFamily.TIMES
+preferences.journal_font_size = InterfacePreference.JournalFontSize.EXTRA_LARGE
+preferences.journal_density = InterfacePreference.JournalDensity.RELAXED
+preferences.journal_width = InterfacePreference.JournalWidth.FULL
+preferences.journal_show_authors = False
+preferences.journal_show_links = False
+preferences.save()
+
+customized = client.get(detail_url).content.decode("utf-8")
+for marker in (
+    "journal-font-times",
+    "journal-size-extra_large",
+    "journal-density-relaxed",
+    "journal-main-width-full",
+    "journal-authors-hidden",
+    "journal-links-hidden",
+):
+    assert marker in customized, marker
+print("PERSONAL_JOURNAL_DISPLAY_SETTINGS=PASSED")
+
+account = client.get(reverse("organizations:account"))
+account_text = account.content.decode("utf-8")
+for marker in (
+    "Отображение оперативного журнала",
+    "Режим шапки журнала",
+    "Шрифт записей",
+    "Плотность строк журнала",
+    "Ширина журнала",
+):
+    assert marker in account_text, marker
+print("ACCOUNT_JOURNAL_SETTINGS=PASSED")
+
+css_text = (ROOT / "src/static/system/app.css").read_text(encoding="utf-8")
+for marker in (
+    "/* Patch 010.2: компактное рабочее представление журнала */",
+    ".journal-heading-hidden > .approved-journal-heading",
+    ".journal-main-width-full",
+    ".journal-font-times",
+    ".journal-density-compact",
+    "@media print",
+    "display: block !important;",
+):
+    assert marker in css_text, marker
+print("SCREEN_AND_PRINT_SEPARATION=PASSED")
+
+print("PATCH_010_2_JOURNAL_PRESENTATION_PREFERENCES_GATE_PASSED")

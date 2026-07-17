@@ -16,9 +16,9 @@ class ApprovedJournalFormContractTests(SimpleTestCase):
         self.assertEqual(
             tuple(column.title for column in OPERATIONAL_JOURNAL_FORM.columns),
             (
-                "Дата, время",
-                ("Содержание сообщений в течение смены, подписи о сдаче и приемке смены"),
-                "Визы, замечания",
+                "Дата и время записи",
+                "Содержание записей в течение смены, подписи о приемке и сдаче смены",
+                "Визы и замечания административно-технического персонала",
             ),
         )
 
@@ -28,9 +28,17 @@ class ApprovedJournalFormContractTests(SimpleTestCase):
             ("date_time", "message", "visas"),
         )
         self.assertEqual(
+            tuple(column.width_percent for column in OPERATIONAL_JOURNAL_FORM.columns),
+            (14, 66, 20),
+        )
+        self.assertEqual(
             sum(column.width_percent for column in OPERATIONAL_JOURNAL_FORM.columns),
             100,
         )
+
+    def test_local_instruction_is_the_form_source(self) -> None:
+        self.assertIn("И-00-007-ОР-2025", OPERATIONAL_JOURNAL_FORM.source_reference)
+        self.assertIn("приложение № 2", OPERATIONAL_JOURNAL_FORM.source_reference)
 
     def test_registered_contract_is_resolved_by_stable_code(self) -> None:
         self.assertIs(

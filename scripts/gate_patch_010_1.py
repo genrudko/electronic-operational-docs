@@ -83,9 +83,9 @@ form_contract = approved_journal_form(OPERATIONAL_JOURNAL_FORM_CODE)
 assert form_contract is OPERATIONAL_JOURNAL_FORM
 form_contract.validate()
 assert tuple(column.title for column in form_contract.columns) == (
-    "Дата, время",
-    ("Содержание сообщений в течение смены, подписи о сдаче и приемке смены"),
-    "Визы, замечания",
+    "Дата и время записи",
+    "Содержание записей в течение смены, подписи о приемке и сдаче смены",
+    "Визы и замечания административно-технического персонала",
 )
 assert tuple(column.key for column in form_contract.columns) == (
     "date_time",
@@ -105,18 +105,17 @@ for marker in (
     "Оперативные журналы",
     "Утверждённая форма является обязательным контрактом",
     "Оперативный журнал сменного персонала",
-    "№ 42-6/35-ЭТ",
+    "И-00-007-ОР-2025",
 ):
     assert marker in registry_text, marker
-
 
 detail = client.get(reverse("operational_log:detail", args=(journal.pk,)))
 assert detail.status_code == 200
 detail_text = detail.content.decode("utf-8")
 for marker in (
-    "Дата, время",
-    "Содержание сообщений в течение смены, подписи о сдаче и приемке смены",
-    "Визы, замечания",
+    "Дата и время записи",
+    "Содержание записей в течение смены, подписи о приемке и сдаче смены",
+    "Визы и замечания административно-технического персонала",
     "approved-journal-table",
     "data-approved-journal-form=",
     "КТП-01",

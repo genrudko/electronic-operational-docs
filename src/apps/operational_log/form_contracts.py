@@ -34,7 +34,9 @@ class ApprovedJournalForm:
         if len(keys) != len(set(keys)):
             raise ValueError("Ключи граф утверждённой формы не должны повторяться.")
         if any(
-            not column.key.strip() or not column.title.strip() or column.width_percent <= 0
+            not column.key.strip()
+            or not column.title.strip()
+            or column.width_percent <= 0
             for column in self.columns
         ):
             raise ValueError("Каждая графа должна иметь ключ, заголовок и ширину.")
@@ -44,28 +46,33 @@ class ApprovedJournalForm:
             raise ValueError("Неизвестная ориентация печатной формы.")
 
 
-OPERATIONAL_JOURNAL_FORM_CODE: Final = "operational-journal.standard-three-column.v1"
+OPERATIONAL_JOURNAL_FORM_CODE: Final = "operational-journal.i-00-007-or-2025.v2"
 
 OPERATIONAL_JOURNAL_FORM: Final = ApprovedJournalForm(
     code=OPERATIONAL_JOURNAL_FORM_CODE,
     title="Оперативный журнал",
-    source_title="Утверждённая форма оперативного журнала",
-    source_reference=("Инструктивное письмо Минтопэнерго России от 09.11.1995 № 42-6/35-ЭТ, приложение 1"),
+    source_title="Локальная инструкция по оперативной документации",
+    source_reference=("И-00-007-ОР-2025, версия 2, пункт 5.16, приложение № 2"),
     columns=(
         ApprovedFormColumn(
             key="date_time",
-            title="Дата, время",
-            width_percent=16,
+            title="Дата и время записи",
+            width_percent=14,
         ),
         ApprovedFormColumn(
             key="message",
-            title=("Содержание сообщений в течение смены, подписи о сдаче и приемке смены"),
-            width_percent=68,
+            title=(
+                "Содержание записей в течение смены, подписи "
+                "о приемке и сдаче смены"
+            ),
+            width_percent=66,
         ),
         ApprovedFormColumn(
             key="visas",
-            title="Визы, замечания",
-            width_percent=16,
+            title=(
+                "Визы и замечания административно-технического персонала"
+            ),
+            width_percent=20,
         ),
     ),
 )

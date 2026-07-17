@@ -684,13 +684,42 @@ class InterfacePreference(models.Model):
         STANDARD = "STANDARD", "Стандартная"
         WIDE = "WIDE", "Широкая"
 
+    class JournalHeadingMode(models.TextChoices):
+        COMPACT = "COMPACT", "Компактная"
+        FULL = "FULL", "Полная"
+        HIDDEN = "HIDDEN", "Скрытая"
+
+    class JournalFontFamily(models.TextChoices):
+        SYSTEM = "SYSTEM", "Системный"
+        ARIAL = "ARIAL", "Arial"
+        PT_SANS = "PT_SANS", "PT Sans"
+        TIMES = "TIMES", "Times New Roman"
+
+    class JournalFontSize(models.TextChoices):
+        SMALL = "SMALL", "Мелкий"
+        NORMAL = "NORMAL", "Обычный"
+        LARGE = "LARGE", "Крупный"
+        EXTRA_LARGE = "EXTRA_LARGE", "Очень крупный"
+
+    class JournalDensity(models.TextChoices):
+        COMPACT = "COMPACT", "Компактная"
+        NORMAL = "NORMAL", "Обычная"
+        RELAXED = "RELAXED", "Увеличенная"
+
+    class JournalWidth(models.TextChoices):
+        STANDARD = "STANDARD", "Стандартная"
+        WIDE = "WIDE", "Широкая"
+        FULL = "FULL", "На всю доступную ширину"
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="interface_preference",
         verbose_name="Учётная запись",
     )
-    theme = models.CharField("Цветовая схема", max_length=16, choices=Theme.choices, default=Theme.DARK)
+    theme = models.CharField(
+        "Цветовая схема", max_length=16, choices=Theme.choices, default=Theme.DARK
+    )
     density = models.CharField(
         "Плотность интерфейса",
         max_length=16,
@@ -709,7 +738,45 @@ class InterfacePreference(models.Model):
         choices=ContentWidth.choices,
         default=ContentWidth.STANDARD,
     )
-    show_technical_details = models.BooleanField("Показывать технические реквизиты", default=False)
+    show_technical_details = models.BooleanField(
+        "Показывать технические реквизиты", default=False
+    )
+    journal_heading_mode = models.CharField(
+        "Режим шапки журнала",
+        max_length=16,
+        choices=JournalHeadingMode.choices,
+        default=JournalHeadingMode.COMPACT,
+    )
+    journal_font_family = models.CharField(
+        "Шрифт записей журнала",
+        max_length=16,
+        choices=JournalFontFamily.choices,
+        default=JournalFontFamily.SYSTEM,
+    )
+    journal_font_size = models.CharField(
+        "Размер текста записей",
+        max_length=16,
+        choices=JournalFontSize.choices,
+        default=JournalFontSize.NORMAL,
+    )
+    journal_density = models.CharField(
+        "Плотность строк журнала",
+        max_length=16,
+        choices=JournalDensity.choices,
+        default=JournalDensity.NORMAL,
+    )
+    journal_width = models.CharField(
+        "Ширина журнала",
+        max_length=16,
+        choices=JournalWidth.choices,
+        default=JournalWidth.WIDE,
+    )
+    journal_show_authors = models.BooleanField(
+        "Показывать авторов записей", default=True
+    )
+    journal_show_links = models.BooleanField(
+        "Показывать связи записей", default=True
+    )
     updated_at = models.DateTimeField("Обновлено", auto_now=True)
 
     class Meta:
@@ -722,7 +789,6 @@ class InterfacePreference(models.Model):
     def save(self, *args, **kwargs) -> None:
         self.full_clean()
         super().save(*args, **kwargs)
-
 
 class AuthenticationEvent(models.Model):
     class EventType(models.TextChoices):

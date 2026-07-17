@@ -2,6 +2,8 @@ from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 
+from apps.organizations.models import InterfacePreference
+
 from .base import OperationalLogTestCase
 
 
@@ -21,20 +23,28 @@ class OperationalLogViewTests(OperationalLogTestCase):
         self.assertContains(response, "Оперативные журналы")
         self.assertContains(response, "Оперативный журнал сменного персонала")
         self.assertContains(response, "Утверждённая форма является обязательным контрактом")
-        self.assertContains(response, "№ 42-6/35-ЭТ")
+        self.assertContains(response, "И-00-007-ОР-2025")
+        self.assertContains(response, "приложение № 2")
 
     def test_detail_uses_exact_three_column_approved_form(self) -> None:
         self.client.force_login(self.user)
         response = self.client.get(reverse("operational_log:detail", args=(self.journal.pk,)))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Дата, время")
+        self.assertContains(response, "Дата и время записи")
         self.assertContains(
             response,
-            ("Содержание сообщений в течение смены, подписи о сдаче и приемке смены"),
+            "Содержание записей в течение смены, подписи о приемке и сдаче смены",
         )
-        self.assertContains(response, "Визы, замечания")
+        self.assertContains(
+            response,
+            "Визы и замечания административно-технического персонала",
+        )
         self.assertEqual(response.content.count(b'<th scope="col">'), 3)
         self.assertEqual(len(response.context["form_contract"].columns), 3)
+        self.assertContains(response, 'data-approved-column="date_time"')
+        self.assertContains(response, "width: 14%")
+        self.assertContains(response, "width: 66%")
+        self.assertContains(response, "width: 20%")
 
     def test_detail_preserves_chronological_order_and_links(self) -> None:
         self.client.force_login(self.user)
@@ -44,13 +54,7 @@ class OperationalLogViewTests(OperationalLogTestCase):
             text.index("Демонстрационное дежурство начато"),
             text.index("Получена вымышленная информация"),
         )
-        for marker in (
-            "КТП-01",
-            "ДЕМО-2026-000001",
-            "Автор записи:",
-            "№ 1",
-            "№ 5",
-        ):
+        for marker in ("КТП-01", "ДЕМО-2026-000001", "Автор записи:", "№ 1", "№ 5"):
             self.assertIn(marker, text)
 
     def test_detail_does_not_replace_form_with_audit_cards(self) -> None:
@@ -80,9 +84,9 @@ class OperationalLogViewTests(OperationalLogTestCase):
     def test_ui_remains_read_only(self) -> None:
         self.client.force_login(self.user)
         registry = self.client.get(reverse("operational_log:registry")).content.decode("utf-8")
-        detail = self.client.get(reverse("operational_log:detail", args=(self.journal.pk,))).content.decode(
-            "utf-8"
-        )
+        detail = self.client.get(
+            reverse("operational_log:detail", args=(self.journal.pk,))
+        ).content.decode("utf-8")
         for forbidden in (
             "Создать запись",
             "Редактировать запись",
@@ -90,3 +94,71 @@ class OperationalLogViewTests(OperationalLogTestCase):
             "Исправить запись",
         ):
             self.assertNotIn(forbidden, registry + detail)
+
+    def test_detail_defaults_to_compact_workspace(self) -> None:
+        self.client.force_login(self.user)
+        response = self.client.get(reverse("operational_log:detail", args=(self.journal.pk,)))
+        self.assertContains(response, "journal-workspace-bar")
+        self.assertContains(response, "journal-heading-compact")
+        self.assertContains(response, "Режим шапки")
+        self.assertNotContains(
+            response,
+            "Просмотр зарегистрированных записей по утверждённой форме.",
+        )
+
+    def test_display_mode_requires_authentication(self) -> None:
+        response = self.client.post(
+            reverse("operational_log:update_display", args=(self.journal.pk,)),
+            {"journal_heading_mode": InterfacePreference.JournalHeadingMode.FULL},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response.url)
+
+    def test_display_mode_post_saves_and_applies_preferences(self) -> None:
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse("operational_log:update_display", args=(self.journal.pk,)),
+            {"journal_heading_mode": InterfacePreference.JournalHeadingMode.FULL},
+        )
+        self.assertRedirects(
+            response,
+            reverse("operational_log:detail", args=(self.journal.pk,)),
+        )
+        preference = InterfacePreference.objects.get(user=self.user)
+        self.assertEqual(
+            preference.journal_heading_mode,
+            InterfacePreference.JournalHeadingMode.FULL,
+        )
+        preference.journal_font_family = InterfacePreference.JournalFontFamily.ARIAL
+        preference.journal_font_size = InterfacePreference.JournalFontSize.LARGE
+        preference.journal_density = InterfacePreference.JournalDensity.RELAXED
+        preference.journal_width = InterfacePreference.JournalWidth.FULL
+        preference.journal_show_authors = False
+        preference.journal_show_links = False
+        preference.save()
+
+        detail = self.client.get(reverse("operational_log:detail", args=(self.journal.pk,)))
+        for marker in (
+            "journal-heading-full",
+            "journal-font-arial",
+            "journal-size-large",
+            "journal-density-relaxed",
+            "journal-main-width-full",
+            "journal-authors-hidden",
+            "journal-links-hidden",
+        ):
+            self.assertContains(detail, marker)
+
+    def test_display_mode_post_rejects_unknown_choice(self) -> None:
+        self.client.force_login(self.user)
+        InterfacePreference.objects.get_or_create(user=self.user)
+        response = self.client.post(
+            reverse("operational_log:update_display", args=(self.journal.pk,)),
+            {"journal_heading_mode": "FLOATING"},
+        )
+        self.assertEqual(response.status_code, 400)
+        preference = InterfacePreference.objects.get(user=self.user)
+        self.assertEqual(
+            preference.journal_heading_mode,
+            InterfacePreference.JournalHeadingMode.COMPACT,
+        )
