@@ -99,6 +99,10 @@ for marker in (
     "data-editor-fallback",
     "data-editor-payload",
     "data-rich-editor-host",
+    "draft-editor-payload-field",
+    "data-editor-ribbon",
+    "data-editor-ribbon-status",
+    "data-editor-floating-toolbar",
     'data-editor-command="bold"',
     'data-editor-command="underline"',
     'data-editor-command="bullet_list"',
@@ -108,7 +112,11 @@ for marker in (
     "draft_editor.js",
 ):
     assert marker in template_text, marker
+assert template_text.count('data-editor-command="bold"') == 2
+assert template_text.count('data-editor-command="undo"') == 1
+assert 'aria-label="Редактор и действия с записью"' not in template_text
 print("EDITOR_TOOLBAR_AND_HOST=PASSED")
+print("WORD_LIKE_MINI_RIBBON=PASSED")
 
 for marker in (
     "window.EODDraftEditor",
@@ -118,15 +126,21 @@ for marker in (
     'getData("text/plain")',
     'document.execCommand("insertText"',
     "selectionchange",
+    "savedRange",
+    "positionFloatingToolbar",
+    "data-editor-floating-toolbar",
+    "bindToolbar(document)",
     'event.code === "KeyB"',
     'event.code === "KeyI"',
     'document.execCommand("styleWithCSS"',
     'event.code === "Digit7"',
     'event.code === "Digit8"',
+    '"display",\n                "none",\n                "important"',
 ):
     assert marker in editor_js, marker
 assert "innerHTML" not in editor_js
 print("PLAIN_PASTE_AND_SAFE_DOM=PASSED")
+print("CONTEXTUAL_SELECTION_TOOLBAR=PASSED")
 
 for marker in (
     "EODDraftEditor?.syncForm",
@@ -140,12 +154,19 @@ print("AUTOSAVE_EDITOR_BRIDGE=PASSED")
 
 for marker in (
     "/* Patch 011.2: контролируемое ядро редактора журнала. */",
+    "/* Patch 011.2 Repair 1: Word-like mini-ribbon and contextual toolbar. */",
     ".draft-rich-editor",
-    ".draft-mini-toolbar button.is-active",
+    ".draft-editor-ribbon",
+    ".draft-editor-ribbon-button",
+    ".draft-editor-floating-toolbar",
+    ".draft-editor-payload-field",
+    "display: none !important;",
     ".is-rich-editor-ready",
 ):
     assert marker in css_text, marker
 print("CONTROLLED_EDITOR_CSS=PASSED")
+print("TECHNICAL_EDITOR_PAYLOAD_HIDDEN=PASSED")
+print("LARGE_EDITOR_CONTROLS=PASSED")
 
 user = get_user_model().objects.get(username="operator.demo")
 journal = OperationalJournal.objects.get(code="shift-operational-log")

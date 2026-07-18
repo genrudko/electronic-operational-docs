@@ -145,6 +145,142 @@
                 Панель
             </button>
         </div>
+
+        <div
+            class="draft-editor-ribbon"
+            data-editor-ribbon
+            role="toolbar"
+            aria-label="Мини-лента редактора записи"
+        >
+            <div class="draft-editor-ribbon-context">
+                <span>РЕДАКТОР ЗАПИСИ</span>
+                <strong data-editor-ribbon-status>
+                    Щёлкните по тексту записи
+                </strong>
+            </div>
+
+            <div class="draft-editor-ribbon-groups">
+                <section
+                    class="draft-editor-ribbon-group"
+                    aria-label="Шрифт"
+                >
+                    <div class="draft-editor-ribbon-buttons">
+                        <button
+                            type="button"
+                            class="draft-editor-ribbon-button"
+                            data-editor-command="bold"
+                            title="Полужирный (Ctrl+B)"
+                            aria-label="Полужирный"
+                            aria-pressed="false"
+                            disabled
+                        >
+                            <span class="draft-editor-tool-icon is-bold" aria-hidden="true">Ж</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="draft-editor-ribbon-button"
+                            data-editor-command="underline"
+                            title="Подчёркивание (Ctrl+U)"
+                            aria-label="Подчёркивание"
+                            aria-pressed="false"
+                            disabled
+                        >
+                            <span class="draft-editor-tool-icon is-underline" aria-hidden="true">Ч</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="draft-editor-ribbon-button"
+                            data-editor-command="clear"
+                            title="Очистить форматирование (Ctrl+\)"
+                            aria-label="Очистить форматирование"
+                            disabled
+                        >
+                            <span class="draft-editor-tool-icon is-clear" aria-hidden="true">Tx</span>
+                        </button>
+                    </div>
+                    <small>Шрифт</small>
+                </section>
+
+                <section
+                    class="draft-editor-ribbon-group"
+                    aria-label="Абзац"
+                >
+                    <div class="draft-editor-ribbon-buttons">
+                        <button
+                            type="button"
+                            class="draft-editor-ribbon-button"
+                            data-editor-command="bullet_list"
+                            title="Маркированный список (Ctrl+Shift+8)"
+                            aria-label="Маркированный список"
+                            aria-pressed="false"
+                            disabled
+                        >
+                            <span class="draft-editor-tool-icon is-list" aria-hidden="true">•≡</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="draft-editor-ribbon-button"
+                            data-editor-command="ordered_list"
+                            title="Нумерованный список (Ctrl+Shift+7)"
+                            aria-label="Нумерованный список"
+                            aria-pressed="false"
+                            disabled
+                        >
+                            <span class="draft-editor-tool-icon is-list" aria-hidden="true">1≡</span>
+                        </button>
+                    </div>
+                    <small>Абзац</small>
+                </section>
+
+                <section
+                    class="draft-editor-ribbon-group"
+                    aria-label="История"
+                >
+                    <div class="draft-editor-ribbon-buttons">
+                        <button
+                            type="button"
+                            class="draft-editor-ribbon-button"
+                            data-editor-command="undo"
+                            title="Отменить (Ctrl+Z)"
+                            aria-label="Отменить"
+                            disabled
+                        >
+                            <span class="draft-editor-tool-icon is-history" aria-hidden="true">↶</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="draft-editor-ribbon-button"
+                            data-editor-command="redo"
+                            title="Повторить (Ctrl+Y)"
+                            aria-label="Повторить"
+                            disabled
+                        >
+                            <span class="draft-editor-tool-icon is-history" aria-hidden="true">↷</span>
+                        </button>
+                    </div>
+                    <small>История</small>
+                </section>
+
+                <section
+                    class="draft-editor-ribbon-group"
+                    aria-label="Вставка"
+                >
+                    <div class="draft-editor-ribbon-buttons">
+                        <button
+                            type="button"
+                            class="draft-editor-ribbon-button"
+                            data-editor-command="marks"
+                            title="Семантические отметки появятся в Patch 011.3"
+                            aria-label="Семантические отметки — следующий этап"
+                            disabled
+                        >
+                            <span class="draft-editor-tool-icon is-semantic" aria-hidden="true">⚡</span>
+                        </button>
+                    </div>
+                    <small>Отметки</small>
+                </section>
+            </div>
+        </div>
     </div>
 
     <nav
@@ -644,6 +780,52 @@
         {% endif %}
     </aside>
 
+
+    <div
+        class="draft-editor-floating-toolbar screen-only"
+        data-editor-floating-toolbar
+        role="toolbar"
+        aria-label="Форматирование выделенного текста"
+        hidden
+    >
+        <button
+            type="button"
+            data-editor-command="bold"
+            title="Полужирный (Ctrl+B)"
+            aria-label="Полужирный"
+            aria-pressed="false"
+        ><strong>Ж</strong></button>
+        <button
+            type="button"
+            data-editor-command="underline"
+            title="Подчёркивание (Ctrl+U)"
+            aria-label="Подчёркивание"
+            aria-pressed="false"
+        ><u>Ч</u></button>
+        <span class="draft-editor-floating-separator" aria-hidden="true"></span>
+        <button
+            type="button"
+            data-editor-command="bullet_list"
+            title="Маркированный список"
+            aria-label="Маркированный список"
+            aria-pressed="false"
+        >•≡</button>
+        <button
+            type="button"
+            data-editor-command="ordered_list"
+            title="Нумерованный список"
+            aria-label="Нумерованный список"
+            aria-pressed="false"
+        >1≡</button>
+        <span class="draft-editor-floating-separator" aria-hidden="true"></span>
+        <button
+            type="button"
+            data-editor-command="clear"
+            title="Очистить форматирование"
+            aria-label="Очистить форматирование"
+        >Tx</button>
+    </div>
+
     <div class="draft-row-store" data-row-store hidden>
     {% for draft in drafts %}
         <article
@@ -718,8 +900,12 @@
                     >{{ draft.content }}</textarea>
                     <textarea
                         name="editor_payload"
+                        class="draft-editor-payload-field"
                         data-editor-payload
                         hidden
+                        aria-hidden="true"
+                        tabindex="-1"
+                        autocomplete="off"
                     >{{ draft.editor_payload_json }}</textarea>
                     <div
                         class="draft-rich-editor-host"
@@ -747,67 +933,10 @@
                         </div>
 
                         <div
-                            class="draft-mini-toolbar"
+                            class="draft-mini-toolbar draft-row-action-toolbar"
                             data-mini-toolbar
-                            aria-label="Редактор и действия с записью"
+                            aria-label="Действия с записью"
                         >
-                            <button
-                                type="button"
-                                data-editor-command="bold"
-                                title="Полужирный (Ctrl+B)"
-                                aria-label="Полужирный"
-                                aria-pressed="false"
-                            ><strong>Ж</strong></button>
-                            <button
-                                type="button"
-                                data-editor-command="underline"
-                                title="Подчёркивание (Ctrl+U)"
-                                aria-label="Подчёркивание"
-                                aria-pressed="false"
-                            ><u>Ч</u></button>
-                            <button
-                                type="button"
-                                data-editor-command="bullet_list"
-                                title="Маркированный список (Ctrl+Shift+8)"
-                                aria-label="Маркированный список"
-                                aria-pressed="false"
-                            >•</button>
-                            <button
-                                type="button"
-                                data-editor-command="ordered_list"
-                                title="Нумерованный список (Ctrl+Shift+7)"
-                                aria-label="Нумерованный список"
-                                aria-pressed="false"
-                            >1.</button>
-                            <span
-                                class="draft-editor-separator"
-                                aria-hidden="true"
-                            ></span>
-                            <button
-                                type="button"
-                                data-editor-command="undo"
-                                title="Отменить (Ctrl+Z)"
-                                aria-label="Отменить"
-                            >↶</button>
-                            <button
-                                type="button"
-                                data-editor-command="redo"
-                                title="Повторить (Ctrl+Y)"
-                                aria-label="Повторить"
-                            >↷</button>
-                            <button
-                                type="button"
-                                data-editor-command="clear"
-                                title="Очистить форматирование (Ctrl+\)"
-                                aria-label="Очистить форматирование"
-                            >Tx</button>
-                            <button
-                                type="button"
-                                data-editor-command="marks"
-                                title="Семантические отметки появятся в Patch 011.3"
-                                aria-label="Семантические отметки — следующий этап"
-                                disabled
-                            >⚡</button>
                             <button
                                 type="button"
                                 data-date-button

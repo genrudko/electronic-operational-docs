@@ -3,7 +3,15 @@
 
     const SCHEMA_VERSION = "operational-draft-editor.v1";
     const controllers = new WeakMap();
+    const ribbon = document.querySelector("[data-editor-ribbon]");
+    const ribbonStatus = document.querySelector(
+        "[data-editor-ribbon-status]",
+    );
+    const floatingToolbar = document.querySelector(
+        "[data-editor-floating-toolbar]",
+    );
     let activeController = null;
+    let selectionFrame = null;
 
     function emptyDocument() {
         return {
@@ -338,31 +346,230 @@
         }
     }
 
+    function commandButtons() {
+        return Array.from(
+            document.querySelectorAll("[data-editor-command]"),
+        );
+    }
+
+    function isRangeInsideEditor(range, editor) {
+        if (!range || !editor?.isConnected) {
+            return false;
+        }
+        return (
+            editor.contains(range.startContainer)
+            && editor.contains(range.endContainer)
+        );
+    }
+
+    function selectionController() {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) {
+            return null;
+        }
+        const range = selection.getRangeAt(0);
+        const node = range.commonAncestorContainer;
+        const element = (
+            node.nodeType === Node.ELEMENT_NODE
+                ? node
+                : node.parentElement
+        );
+        const editor = element?.closest?.("[data-rich-editor]");
+        if (!editor) {
+            return null;
+        }
+        const form = editor.closest("[data-draft-form]");
+        const controller = form ? controllers.get(form) : null;
+        if (!controller || !isRangeInsideEditor(range, controller.editor)) {
+            return null;
+        }
+        return {controller, range};
+    }
+
+    function recordLabel(controller) {
+        const time = (
+            controller.row.querySelector("[data-quick-time]")?.value
+            || "—"
+        );
+        const sequence = (
+            controller.row.querySelector(".draft-sequence-muted")
+                ?.textContent.trim()
+            || ""
+        );
+        return `Запись ${time}${sequence ? ` · ${sequence}` : ""}`;
+    }
+
+    function setActiveController(controller) {
+        if (activeController === controller) {
+            return;
+        }
+        activeController?.row.classList.remove("is-editor-active");
+        activeController = controller || null;
+        activeController?.row.classList.add("is-editor-active");
+        if (ribbonStatus) {
+            ribbonStatus.textContent = activeController
+                ? recordLabel(activeController)
+                : "Щёлкните по тексту записи";
+        }
+        updateToolbarState(activeController);
+    }
+
+    function restoreSelection(controller) {
+        const selection = window.getSelection();
+        if (!selection) {
+            return false;
+        }
+        if (
+            controller.savedRange
+            && isRangeInsideEditor(
+                controller.savedRange,
+                controller.editor,
+            )
+        ) {
+            selection.removeAllRanges();
+            selection.addRange(controller.savedRange.cloneRange());
+            return true;
+        }
+        const range = document.createRange();
+        range.selectNodeContents(controller.editor);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        controller.savedRange = range.cloneRange();
+        return true;
+    }
+
+    function captureSelection(controller = null) {
+        const resolved = selectionController();
+        if (!resolved) {
+            return null;
+        }
+        const target = controller || resolved.controller;
+        if (resolved.controller !== target) {
+            return null;
+        }
+        target.savedRange = resolved.range.cloneRange();
+        setActiveController(target);
+        return resolved;
+    }
+
+    function hideFloatingToolbar() {
+        if (!floatingToolbar) {
+            return;
+        }
+        floatingToolbar.hidden = true;
+        floatingToolbar.style.removeProperty("left");
+        floatingToolbar.style.removeProperty("top");
+    }
+
+    function positionFloatingToolbar(range) {
+        if (!floatingToolbar || range.collapsed) {
+            hideFloatingToolbar();
+            return;
+        }
+        const rectangles = Array.from(range.getClientRects());
+        const targetRect = rectangles[0] || range.getBoundingClientRect();
+        if (
+            !targetRect
+            || (!targetRect.width && !targetRect.height)
+        ) {
+            hideFloatingToolbar();
+            return;
+        }
+
+        floatingToolbar.hidden = false;
+        window.requestAnimationFrame(() => {
+            if (floatingToolbar.hidden) {
+                return;
+            }
+            const toolbarRect = floatingToolbar.getBoundingClientRect();
+            const margin = 8;
+            let left = (
+                targetRect.left
+                + (targetRect.width / 2)
+                - (toolbarRect.width / 2)
+            );
+            left = Math.max(
+                margin,
+                Math.min(
+                    left,
+                    window.innerWidth - toolbarRect.width - margin,
+                ),
+            );
+            let top = targetRect.top - toolbarRect.height - 10;
+            if (top < margin) {
+                top = targetRect.bottom + 10;
+            }
+            top = Math.max(
+                margin,
+                Math.min(
+                    top,
+                    window.innerHeight - toolbarRect.height - margin,
+                ),
+            );
+            floatingToolbar.style.left = `${Math.round(left)}px`;
+            floatingToolbar.style.top = `${Math.round(top)}px`;
+        });
+    }
+
+    function refreshSelectionUi() {
+        selectionFrame = null;
+        const resolved = captureSelection();
+        if (!resolved || resolved.range.collapsed) {
+            hideFloatingToolbar();
+            if (activeController) {
+                updateToolbarState(activeController);
+            }
+            return;
+        }
+        positionFloatingToolbar(resolved.range);
+        updateToolbarState(resolved.controller);
+    }
+
+    function scheduleSelectionUi() {
+        if (selectionFrame !== null) {
+            window.cancelAnimationFrame(selectionFrame);
+        }
+        selectionFrame = window.requestAnimationFrame(
+            refreshSelectionUi,
+        );
+    }
+
     function updateToolbarState(controller) {
-        controller.form
-            .querySelectorAll("[data-editor-command]")
-            .forEach((button) => {
-                const command = button.dataset.editorCommand;
-                let active = false;
+        commandButtons().forEach((button) => {
+            const command = button.dataset.editorCommand;
+            const semanticPlaceholder = command === "marks";
+            button.disabled = !controller || semanticPlaceholder;
+            let active = false;
+            if (controller) {
                 if (command === "bold") {
                     active = queryCommandState("bold");
                 } else if (command === "underline") {
                     active = queryCommandState("underline");
                 } else if (command === "bullet_list") {
-                    active = queryCommandState("insertUnorderedList");
+                    active = queryCommandState(
+                        "insertUnorderedList",
+                    );
                 } else if (command === "ordered_list") {
-                    active = queryCommandState("insertOrderedList");
+                    active = queryCommandState(
+                        "insertOrderedList",
+                    );
                 }
-                button.classList.toggle("is-active", active);
-                if ([
-                    "bold",
-                    "underline",
-                    "bullet_list",
-                    "ordered_list",
-                ].includes(command)) {
-                    button.setAttribute("aria-pressed", String(active));
-                }
-            });
+            }
+            button.classList.toggle("is-active", active);
+            if ([
+                "bold",
+                "underline",
+                "bullet_list",
+                "ordered_list",
+            ].includes(command)) {
+                button.setAttribute(
+                    "aria-pressed",
+                    String(active),
+                );
+            }
+        });
+        ribbon?.classList.toggle("has-active-editor", Boolean(controller));
     }
 
     function executeEditorCommand(controller, command) {
@@ -379,12 +586,16 @@
         if (!nativeCommand) {
             return;
         }
-        controller.editor.focus();
+        setActiveController(controller);
+        restoreSelection(controller);
+        controller.editor.focus({preventScroll: true});
         if (["bold", "underline"].includes(command)) {
             document.execCommand("styleWithCSS", false, false);
         }
         document.execCommand(nativeCommand, false, null);
+        captureSelection(controller);
         syncController(controller, true);
+        scheduleSelectionUi();
     }
 
     function insertPlainText(editor, text) {
@@ -427,15 +638,31 @@
             host,
             editor,
             composing: false,
+            savedRange: null,
         };
         controllers.set(form, controller);
+        const payload = payloadField(form);
+        if (payload) {
+            payload.hidden = true;
+            payload.setAttribute("aria-hidden", "true");
+            payload.setAttribute("tabindex", "-1");
+            payload.style.setProperty(
+                "display",
+                "none",
+                "important",
+            );
+        }
         renderDocument(editor, parseStoredDocument(form));
         form.classList.add("is-rich-editor-ready");
 
         editor.addEventListener("focus", () => {
-            activeController = controller;
-            updateToolbarState(controller);
+            setActiveController(controller);
+            window.requestAnimationFrame(() => {
+                captureSelection(controller);
+            });
         });
+        editor.addEventListener("mouseup", scheduleSelectionUi);
+        editor.addEventListener("keyup", scheduleSelectionUi);
         editor.addEventListener("compositionstart", () => {
             controller.composing = true;
             dispatchFallbackEvent(controller, "compositionstart");
@@ -447,7 +674,11 @@
             dispatchFallbackEvent(controller, "input");
         });
         editor.addEventListener("input", () => {
+            hideFloatingToolbar();
             syncController(controller, !controller.composing);
+            window.requestAnimationFrame(() => {
+                captureSelection(controller);
+            });
         });
         editor.addEventListener("paste", (event) => {
             event.preventDefault();
@@ -526,26 +757,49 @@
             button.dataset.editorBound = "true";
             button.addEventListener("mousedown", (event) => {
                 event.preventDefault();
+                if (activeController) {
+                    restoreSelection(activeController);
+                }
             });
             button.addEventListener("click", () => {
-                const form = button.closest("[data-draft-form]");
-                const controller = form ? controllers.get(form) : null;
-                if (!controller || button.disabled) {
+                if (!activeController || button.disabled) {
                     return;
                 }
                 executeEditorCommand(
-                    controller,
+                    activeController,
                     button.dataset.editorCommand,
                 );
             });
         });
     }
 
-    document.addEventListener("selectionchange", () => {
-        if (activeController) {
-            updateToolbarState(activeController);
+    document.addEventListener("selectionchange", scheduleSelectionUi);
+    document.addEventListener("mouseup", scheduleSelectionUi);
+    document.addEventListener("keyup", scheduleSelectionUi);
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            hideFloatingToolbar();
         }
     });
+    document.addEventListener("mousedown", (event) => {
+        if (
+            floatingToolbar?.contains(event.target)
+            || ribbon?.contains(event.target)
+            || event.target.closest?.("[data-rich-editor]")
+        ) {
+            return;
+        }
+        hideFloatingToolbar();
+    });
+    window.addEventListener(
+        "scroll",
+        hideFloatingToolbar,
+        true,
+    );
+    window.addEventListener("resize", hideFloatingToolbar);
+
+    bindToolbar(document);
+    updateToolbarState(null);
 
     window.EODDraftEditor = Object.freeze({
         schemaVersion: SCHEMA_VERSION,
@@ -568,6 +822,7 @@
             if (!controller) {
                 return false;
             }
+            setActiveController(controller);
             controller.editor.focus();
             if (position === "end") {
                 const selection = window.getSelection();
@@ -576,6 +831,9 @@
                 range.collapse(false);
                 selection.removeAllRanges();
                 selection.addRange(range);
+                controller.savedRange = range.cloneRange();
+            } else {
+                captureSelection(controller);
             }
             return true;
         },

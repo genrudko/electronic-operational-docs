@@ -93,6 +93,10 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             "data-editor-fallback",
             "data-editor-payload",
             "data-rich-editor-host",
+            "data-editor-ribbon",
+            "data-editor-ribbon-status",
+            "data-editor-floating-toolbar",
+            "draft-editor-payload-field",
             "draft_editor.js",
             "draft_workspace.js",
         ):
@@ -194,6 +198,76 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             preferences.journal_time_font_size,
             "NORMAL",
         )
+
+    def test_workspace_uses_word_like_editor_controls(self) -> None:
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse(
+                "operational_log:shift_workspace",
+                args=(self.journal.pk,),
+            )
+        )
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode("utf-8")
+        for marker in (
+            "Мини-лента редактора записи",
+            "РЕДАКТОР ЗАПИСИ",
+            "Щёлкните по тексту записи",
+            'data-editor-ribbon-status',
+            'data-editor-floating-toolbar',
+            "Форматирование выделенного текста",
+            "Шрифт",
+            "Абзац",
+            "История",
+            "Отметки",
+        ):
+            self.assertIn(marker, html)
+        self.assertEqual(
+            html.count('data-editor-command="bold"'),
+            2,
+        )
+        self.assertEqual(
+            html.count('data-editor-command="underline"'),
+            2,
+        )
+        self.assertEqual(
+            html.count('data-editor-command="undo"'),
+            1,
+        )
+        self.assertNotIn(
+            'aria-label="Редактор и действия с записью"',
+            html,
+        )
+        self.assertIn(
+            'aria-label="Действия с записью"',
+            html,
+        )
+
+    def test_editor_payload_is_a_non_visual_form_field(self) -> None:
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse(
+                "operational_log:shift_workspace",
+                args=(self.journal.pk,),
+            )
+        )
+        self.assertEqual(response.status_code, 200)
+        html = response.content.decode("utf-8")
+        expected = self.shift.draft_entries.filter(
+            is_removed=False
+        ).count()
+        self.assertEqual(
+            html.count('class="draft-editor-payload-field"'),
+            expected,
+        )
+        for occurrence in html.split(
+            'class="draft-editor-payload-field"'
+        )[1:]:
+            field_head = occurrence[:260]
+            self.assertIn("data-editor-payload", field_head)
+            self.assertIn("hidden", field_head)
+            self.assertIn('aria-hidden="true"', field_head)
+            self.assertIn('tabindex="-1"', field_head)
 
     def test_open_shift_for_journal_without_active_shift(self) -> None:
         journal = OperationalJournal.objects.create(
