@@ -759,6 +759,30 @@ class InterfacePreference(models.Model):
         choices=JournalFontSize.choices,
         default=JournalFontSize.NORMAL,
     )
+    journal_time_font_size = models.CharField(
+        "Размер времени записи",
+        max_length=16,
+        choices=JournalFontSize.choices,
+        default=JournalFontSize.NORMAL,
+    )
+    journal_date_font_size = models.CharField(
+        "Размер заголовков дат",
+        max_length=16,
+        choices=JournalFontSize.choices,
+        default=JournalFontSize.NORMAL,
+    )
+    journal_table_header_font_size = models.CharField(
+        "Размер шапки таблицы",
+        max_length=16,
+        choices=JournalFontSize.choices,
+        default=JournalFontSize.NORMAL,
+    )
+    journal_title_font_size = models.CharField(
+        "Размер заголовка журнала",
+        max_length=16,
+        choices=JournalFontSize.choices,
+        default=JournalFontSize.NORMAL,
+    )
     journal_density = models.CharField(
         "Плотность строк журнала",
         max_length=16,

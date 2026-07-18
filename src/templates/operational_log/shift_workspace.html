@@ -5,7 +5,10 @@
 {% block main_class %}shift-draft-main shift-draft-main-large-book{% endblock %}
 
 {% block content %}
-<section class="shift-book-header">
+<section
+    class="shift-book-header"
+    data-journal-title-size="{{ ui_preferences.journal_title_font_size|lower }}"
+>
     <div class="shift-book-title">
         <div class="section-kicker">РАБОЧИЙ ЧЕРНОВИК СМЕНЫ</div>
         <h1>{{ journal.title }}</h1>
@@ -73,6 +76,11 @@
     data-shift-end="{{ shift.planned_end_at|date:'Y-m-d\TH:i' }}"
     data-initial-theme="{{ ui_preferences.theme|lower }}"
     data-initial-page-width="{{ ui_preferences.journal_width|lower }}"
+    data-initial-journal-entry-size="{{ ui_preferences.journal_font_size|lower }}"
+    data-initial-journal-time-size="{{ ui_preferences.journal_time_font_size|lower }}"
+    data-initial-journal-date-size="{{ ui_preferences.journal_date_font_size|lower }}"
+    data-initial-journal-table-header-size="{{ ui_preferences.journal_table_header_font_size|lower }}"
+    data-initial-journal-title-size="{{ ui_preferences.journal_title_font_size|lower }}"
     data-display-settings-url="{% url 'operational_log:update_display' journal.pk %}"
     style="
         --draft-time-column: 14%;
@@ -277,7 +285,7 @@
         <header class="draft-view-drawer-header">
             <div>
                 <span class="card-label">РАБОЧИЙ ЖУРНАЛ</span>
-                <h2>Смена и отображение</h2>
+                <h2>Смена и редактор</h2>
             </div>
             <button
                 type="button"
@@ -318,7 +326,7 @@
         <section class="draft-drawer-section draft-quick-view-section">
             <div class="draft-side-heading">
                 <span class="card-label">ОТОБРАЖЕНИЕ</span>
-                <strong>Тема и ширина страницы</strong>
+                <strong>Тема, ширина и типографика</strong>
             </div>
 
             <div class="draft-quick-setting">
@@ -392,6 +400,129 @@
                         <span class="draft-width-icon is-full" aria-hidden="true"></span>
                         <small>Полная</small>
                     </button>
+                </div>
+            </div>
+
+
+            <div class="draft-typography-panel" data-typography-panel>
+                <div class="draft-typography-heading">
+                    <span class="draft-quick-setting-label">
+                        Размеры текста
+                    </span>
+                    <small>
+                        Экранная настройка. Печатная форма не меняется.
+                    </small>
+                </div>
+
+                <div
+                    class="draft-typography-preset-group"
+                    role="group"
+                    aria-label="Общий размер текста журнала"
+                >
+                    <button
+                        type="button"
+                        data-typography-preset="small"
+                        aria-label="Мелкий размер всего журнала"
+                        title="Мелкий размер всего журнала"
+                    >
+                        <span aria-hidden="true">А−</span>
+                        <small>Мелкий</small>
+                    </button>
+                    <button
+                        type="button"
+                        data-typography-preset="normal"
+                        aria-label="Обычный размер всего журнала"
+                        title="Обычный размер всего журнала"
+                    >
+                        <span aria-hidden="true">А</span>
+                        <small>Обычный</small>
+                    </button>
+                    <button
+                        type="button"
+                        data-typography-preset="large"
+                        aria-label="Крупный размер всего журнала"
+                        title="Крупный размер всего журнала"
+                    >
+                        <span aria-hidden="true">А+</span>
+                        <small>Крупный</small>
+                    </button>
+                    <button
+                        type="button"
+                        data-typography-preset="extra_large"
+                        aria-label="Очень крупный размер всего журнала"
+                        title="Очень крупный размер всего журнала"
+                    >
+                        <span aria-hidden="true">А++</span>
+                        <small>Очень крупный</small>
+                    </button>
+                </div>
+
+                <div class="draft-typography-rows">
+                    <div class="draft-typography-row">
+                        <span>Записи</span>
+                        <div
+                            class="draft-typography-size-group"
+                            role="group"
+                            aria-label="Размер текста записей"
+                        >
+                            <button type="button" data-typography-target="entry" data-typography-size="small" aria-label="Мелкий текст записей">А−</button>
+                            <button type="button" data-typography-target="entry" data-typography-size="normal" aria-label="Обычный текст записей">А</button>
+                            <button type="button" data-typography-target="entry" data-typography-size="large" aria-label="Крупный текст записей">А+</button>
+                            <button type="button" data-typography-target="entry" data-typography-size="extra_large" aria-label="Очень крупный текст записей">А++</button>
+                        </div>
+                    </div>
+                    <div class="draft-typography-row">
+                        <span>Время</span>
+                        <div
+                            class="draft-typography-size-group"
+                            role="group"
+                            aria-label="Размер времени записи"
+                        >
+                            <button type="button" data-typography-target="time" data-typography-size="small" aria-label="Мелкое время записи">А−</button>
+                            <button type="button" data-typography-target="time" data-typography-size="normal" aria-label="Обычное время записи">А</button>
+                            <button type="button" data-typography-target="time" data-typography-size="large" aria-label="Крупное время записи">А+</button>
+                            <button type="button" data-typography-target="time" data-typography-size="extra_large" aria-label="Очень крупное время записи">А++</button>
+                        </div>
+                    </div>
+                    <div class="draft-typography-row">
+                        <span>Даты</span>
+                        <div
+                            class="draft-typography-size-group"
+                            role="group"
+                            aria-label="Размер заголовков дат"
+                        >
+                            <button type="button" data-typography-target="date" data-typography-size="small" aria-label="Мелкие заголовки дат">А−</button>
+                            <button type="button" data-typography-target="date" data-typography-size="normal" aria-label="Обычные заголовки дат">А</button>
+                            <button type="button" data-typography-target="date" data-typography-size="large" aria-label="Крупные заголовки дат">А+</button>
+                            <button type="button" data-typography-target="date" data-typography-size="extra_large" aria-label="Очень крупные заголовки дат">А++</button>
+                        </div>
+                    </div>
+                    <div class="draft-typography-row">
+                        <span>Шапка</span>
+                        <div
+                            class="draft-typography-size-group"
+                            role="group"
+                            aria-label="Размер шапки таблицы"
+                        >
+                            <button type="button" data-typography-target="tableHeader" data-typography-size="small" aria-label="Мелкая шапка таблицы">А−</button>
+                            <button type="button" data-typography-target="tableHeader" data-typography-size="normal" aria-label="Обычная шапка таблицы">А</button>
+                            <button type="button" data-typography-target="tableHeader" data-typography-size="large" aria-label="Крупная шапка таблицы">А+</button>
+                            <button type="button" data-typography-target="tableHeader" data-typography-size="extra_large" aria-label="Очень крупная шапка таблицы">А++</button>
+                        </div>
+                    </div>
+                    <div class="draft-typography-row">
+                        <span>Заголовок</span>
+                        <div
+                            class="draft-typography-size-group"
+                            role="group"
+                            aria-label="Размер заголовка журнала"
+                        >
+                            <button type="button" data-typography-target="title" data-typography-size="small" aria-label="Мелкий заголовок журнала">А−</button>
+                            <button type="button" data-typography-target="title" data-typography-size="normal" aria-label="Обычный заголовок журнала">А</button>
+                            <button type="button" data-typography-target="title" data-typography-size="large" aria-label="Крупный заголовок журнала">А+</button>
+                            <button type="button" data-typography-target="title" data-typography-size="extra_large" aria-label="Очень крупный заголовок журнала">А++</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 

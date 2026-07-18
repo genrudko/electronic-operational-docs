@@ -32,6 +32,22 @@ class InterfacePreferenceModelTests(TestCase):
             InterfacePreference.JournalFontSize.NORMAL,
         )
         self.assertEqual(
+            preference.journal_time_font_size,
+            InterfacePreference.JournalFontSize.NORMAL,
+        )
+        self.assertEqual(
+            preference.journal_date_font_size,
+            InterfacePreference.JournalFontSize.NORMAL,
+        )
+        self.assertEqual(
+            preference.journal_table_header_font_size,
+            InterfacePreference.JournalFontSize.NORMAL,
+        )
+        self.assertEqual(
+            preference.journal_title_font_size,
+            InterfacePreference.JournalFontSize.NORMAL,
+        )
+        self.assertEqual(
             preference.journal_density,
             InterfacePreference.JournalDensity.NORMAL,
         )
@@ -80,6 +96,10 @@ class InterfacePreferenceViewTests(TestCase):
             journal_heading_mode=InterfacePreference.JournalHeadingMode.HIDDEN,
             journal_font_family=InterfacePreference.JournalFontFamily.ARIAL,
             journal_font_size=InterfacePreference.JournalFontSize.LARGE,
+            journal_time_font_size=InterfacePreference.JournalFontSize.SMALL,
+            journal_date_font_size=InterfacePreference.JournalFontSize.EXTRA_LARGE,
+            journal_table_header_font_size=InterfacePreference.JournalFontSize.LARGE,
+            journal_title_font_size=InterfacePreference.JournalFontSize.EXTRA_LARGE,
             journal_density=InterfacePreference.JournalDensity.COMPACT,
             journal_width=InterfacePreference.JournalWidth.FULL,
             journal_show_authors=False,
@@ -107,6 +127,22 @@ class InterfacePreferenceViewTests(TestCase):
         self.assertEqual(
             preference.journal_font_size,
             InterfacePreference.JournalFontSize.LARGE,
+        )
+        self.assertEqual(
+            preference.journal_time_font_size,
+            InterfacePreference.JournalFontSize.SMALL,
+        )
+        self.assertEqual(
+            preference.journal_date_font_size,
+            InterfacePreference.JournalFontSize.EXTRA_LARGE,
+        )
+        self.assertEqual(
+            preference.journal_table_header_font_size,
+            InterfacePreference.JournalFontSize.LARGE,
+        )
+        self.assertEqual(
+            preference.journal_title_font_size,
+            InterfacePreference.JournalFontSize.EXTRA_LARGE,
         )
         self.assertEqual(
             preference.journal_density,
@@ -139,6 +175,10 @@ class InterfacePreferenceViewTests(TestCase):
             journal_heading_mode=InterfacePreference.JournalHeadingMode.FULL,
             journal_font_family=InterfacePreference.JournalFontFamily.TIMES,
             journal_font_size=InterfacePreference.JournalFontSize.EXTRA_LARGE,
+            journal_time_font_size=InterfacePreference.JournalFontSize.LARGE,
+            journal_date_font_size=InterfacePreference.JournalFontSize.SMALL,
+            journal_table_header_font_size=InterfacePreference.JournalFontSize.LARGE,
+            journal_title_font_size=InterfacePreference.JournalFontSize.EXTRA_LARGE,
             journal_density=InterfacePreference.JournalDensity.RELAXED,
             journal_width=InterfacePreference.JournalWidth.FULL,
             journal_show_authors=False,
@@ -152,6 +192,16 @@ class InterfacePreferenceViewTests(TestCase):
         self.assertContains(response, 'data-journal-heading="full"')
         self.assertContains(response, 'data-journal-font="times"')
         self.assertContains(response, 'data-journal-size="extra_large"')
+        self.assertContains(response, 'data-journal-time-size="large"')
+        self.assertContains(response, 'data-journal-date-size="small"')
+        self.assertContains(
+            response,
+            'data-journal-table-header-size="large"',
+        )
+        self.assertContains(
+            response,
+            'data-journal-title-size="extra_large"',
+        )
         self.assertContains(response, 'data-journal-density="relaxed"')
         self.assertContains(response, 'data-journal-width="full"')
 

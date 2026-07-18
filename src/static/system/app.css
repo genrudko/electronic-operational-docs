@@ -5184,3 +5184,402 @@ body.draft-view-drawer-visible .draft-view-drawer {
         display: none !important;
     }
 }
+/* Patch 011.1: типографика журнала и основа панели редактора. */
+.screen-journal-theme {
+    --journal-entry-font-size: 12px;
+    --journal-time-font-size: 15px;
+    --journal-date-font-size: 11px;
+    --journal-table-header-font-size: 10px;
+}
+
+.screen-journal-theme[data-journal-entry-size="small"] {
+    --journal-entry-font-size: 11px;
+}
+
+.screen-journal-theme[data-journal-entry-size="normal"] {
+    --journal-entry-font-size: 12px;
+}
+
+.screen-journal-theme[data-journal-entry-size="large"] {
+    --journal-entry-font-size: 14px;
+}
+
+.screen-journal-theme[data-journal-entry-size="extra_large"] {
+    --journal-entry-font-size: 16px;
+}
+
+.screen-journal-theme[data-journal-time-size="small"] {
+    --journal-time-font-size: 13px;
+}
+
+.screen-journal-theme[data-journal-time-size="normal"] {
+    --journal-time-font-size: 15px;
+}
+
+.screen-journal-theme[data-journal-time-size="large"] {
+    --journal-time-font-size: 17px;
+}
+
+.screen-journal-theme[data-journal-time-size="extra_large"] {
+    --journal-time-font-size: 19px;
+}
+
+.screen-journal-theme[data-journal-date-size="small"] {
+    --journal-date-font-size: 10px;
+}
+
+.screen-journal-theme[data-journal-date-size="normal"] {
+    --journal-date-font-size: 11px;
+}
+
+.screen-journal-theme[data-journal-date-size="large"] {
+    --journal-date-font-size: 13px;
+}
+
+.screen-journal-theme[data-journal-date-size="extra_large"] {
+    --journal-date-font-size: 15px;
+}
+
+.screen-journal-theme[data-journal-table-header-size="small"] {
+    --journal-table-header-font-size: 9px;
+}
+
+.screen-journal-theme[data-journal-table-header-size="normal"] {
+    --journal-table-header-font-size: 10px;
+}
+
+.screen-journal-theme[data-journal-table-header-size="large"] {
+    --journal-table-header-font-size: 12px;
+}
+
+.screen-journal-theme[data-journal-table-header-size="extra_large"] {
+    --journal-table-header-font-size: 14px;
+}
+
+.shift-book-header[data-journal-title-size="small"] {
+    --journal-title-font-size: clamp(16px, 1.2vw, 20px);
+}
+
+.shift-book-header[data-journal-title-size="normal"] {
+    --journal-title-font-size: clamp(18px, 1.45vw, 24px);
+}
+
+.shift-book-header[data-journal-title-size="large"] {
+    --journal-title-font-size: clamp(21px, 1.7vw, 28px);
+}
+
+.shift-book-header[data-journal-title-size="extra_large"] {
+    --journal-title-font-size: clamp(24px, 2vw, 32px);
+}
+
+.shift-book-header .shift-book-title h1 {
+    font-size: var(
+        --journal-title-font-size,
+        clamp(18px, 1.45vw, 24px)
+    );
+}
+
+.screen-journal-theme .draft-table-header {
+    min-height: max(
+        52px,
+        calc(var(--journal-table-header-font-size) * 4.9)
+    );
+    font-size: var(--journal-table-header-font-size);
+}
+
+.screen-journal-theme .draft-page-date,
+.screen-journal-theme .draft-inline-date {
+    font-size: var(--journal-date-font-size);
+    line-height: 1.3;
+}
+
+.screen-journal-theme .draft-ledger-time input,
+.screen-journal-theme .draft-inline-create-time input {
+    font-size: var(--journal-time-font-size);
+    line-height: 1.3;
+}
+
+.screen-journal-theme .draft-ledger-content textarea,
+.screen-journal-theme .draft-inline-create-content textarea {
+    font-size: var(--journal-entry-font-size);
+    line-height: 1.45;
+}
+
+.screen-journal-theme .draft-ledger-form,
+.screen-journal-theme .draft-empty-record {
+    min-height: max(
+        48px,
+        calc(var(--journal-entry-font-size) * 3.8)
+    );
+}
+
+.draft-typography-panel {
+    display: grid;
+    gap: 10px;
+    padding-top: 2px;
+}
+
+.draft-typography-heading {
+    display: grid;
+    gap: 2px;
+}
+
+.draft-typography-heading small {
+    color: var(--muted);
+    font-size: 8px;
+    line-height: 1.4;
+}
+
+.draft-typography-preset-group {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+}
+
+.draft-typography-preset-group button,
+.draft-typography-size-group button {
+    border: 1px solid var(--border);
+    background: var(--panel-2);
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.draft-typography-preset-group button {
+    display: grid;
+    min-width: 0;
+    min-height: 47px;
+    place-items: center;
+    gap: 1px;
+    padding: 5px 3px;
+    border-radius: 8px;
+}
+
+.draft-typography-preset-group button > span {
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.draft-typography-preset-group button small {
+    overflow: hidden;
+    max-width: 100%;
+    font-size: 7px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.draft-typography-rows {
+    display: grid;
+    gap: 6px;
+}
+
+.draft-typography-row {
+    display: grid;
+    grid-template-columns: minmax(76px, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+}
+
+.draft-typography-row > span {
+    color: var(--text);
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.draft-typography-size-group {
+    display: grid;
+    grid-template-columns: repeat(4, 34px);
+    gap: 3px;
+}
+
+.draft-typography-size-group button {
+    display: grid;
+    width: 34px;
+    min-height: 29px;
+    place-items: center;
+    padding: 2px;
+    border-radius: 6px;
+    font-size: 9px;
+    font-weight: 800;
+}
+
+.draft-typography-preset-group button:hover,
+.draft-typography-size-group button:hover,
+.draft-typography-preset-group button:focus-visible,
+.draft-typography-size-group button:focus-visible {
+    border-color: var(--accent-2);
+    color: var(--text);
+    outline: 0;
+}
+
+.draft-typography-preset-group button.is-active,
+.draft-typography-size-group button.is-active {
+    border-color: var(--accent);
+    background: color-mix(
+        in srgb,
+        var(--accent) 14%,
+        var(--panel-2)
+    );
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px color-mix(
+        in srgb,
+        var(--accent) 22%,
+        transparent
+    );
+}
+
+.journal-typography-settings-grid {
+    grid-template-columns: 1fr 1fr;
+}
+
+.approved-journal-shell {
+    --journal-approved-entry-size: 13px;
+    --journal-approved-time-size: 16px;
+    --journal-approved-date-size: 13px;
+    --journal-approved-table-header-size: 11px;
+    --journal-approved-title-size: 24px;
+}
+
+.approved-journal-shell.journal-entry-size-small {
+    --journal-approved-entry-size: 11px;
+}
+
+.approved-journal-shell.journal-entry-size-normal {
+    --journal-approved-entry-size: 13px;
+}
+
+.approved-journal-shell.journal-entry-size-large {
+    --journal-approved-entry-size: 15px;
+}
+
+.approved-journal-shell.journal-entry-size-extra_large {
+    --journal-approved-entry-size: 17px;
+}
+
+.approved-journal-shell.journal-time-size-small {
+    --journal-approved-time-size: 14px;
+}
+
+.approved-journal-shell.journal-time-size-normal {
+    --journal-approved-time-size: 16px;
+}
+
+.approved-journal-shell.journal-time-size-large {
+    --journal-approved-time-size: 18px;
+}
+
+.approved-journal-shell.journal-time-size-extra_large {
+    --journal-approved-time-size: 20px;
+}
+
+.approved-journal-shell.journal-date-size-small {
+    --journal-approved-date-size: 11px;
+}
+
+.approved-journal-shell.journal-date-size-normal {
+    --journal-approved-date-size: 13px;
+}
+
+.approved-journal-shell.journal-date-size-large {
+    --journal-approved-date-size: 15px;
+}
+
+.approved-journal-shell.journal-date-size-extra_large {
+    --journal-approved-date-size: 17px;
+}
+
+.approved-journal-shell.journal-table-header-size-small {
+    --journal-approved-table-header-size: 9px;
+}
+
+.approved-journal-shell.journal-table-header-size-normal {
+    --journal-approved-table-header-size: 11px;
+}
+
+.approved-journal-shell.journal-table-header-size-large {
+    --journal-approved-table-header-size: 13px;
+}
+
+.approved-journal-shell.journal-table-header-size-extra_large {
+    --journal-approved-table-header-size: 15px;
+}
+
+.approved-journal-shell.journal-title-size-small {
+    --journal-approved-title-size: 20px;
+}
+
+.approved-journal-shell.journal-title-size-normal {
+    --journal-approved-title-size: 24px;
+}
+
+.approved-journal-shell.journal-title-size-large {
+    --journal-approved-title-size: 28px;
+}
+
+.approved-journal-shell.journal-title-size-extra_large {
+    --journal-approved-title-size: 32px;
+}
+
+.approved-journal-shell .approved-journal-message p {
+    font-size: var(--journal-approved-entry-size);
+}
+
+.approved-journal-shell .approved-journal-date-time span {
+    font-size: var(--journal-approved-date-size);
+}
+
+.approved-journal-shell .approved-journal-date-time strong {
+    font-size: var(--journal-approved-time-size);
+}
+
+.approved-journal-shell .approved-journal-table th {
+    font-size: var(--journal-approved-table-header-size);
+}
+
+.approved-journal-shell .approved-journal-heading h2 {
+    font-size: var(--journal-approved-title-size);
+}
+
+@media (max-width: 520px) {
+    .journal-typography-settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .draft-typography-row {
+        grid-template-columns: 1fr;
+    }
+
+    .draft-typography-size-group {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .draft-typography-size-group button {
+        width: auto;
+    }
+}
+
+/* Печатная типографика фиксирована утверждённой формой. */
+@media print {
+    .approved-journal-shell .approved-journal-heading h2 {
+        font-size: 16pt !important;
+    }
+
+    .approved-journal-shell .approved-journal-table th,
+    .approved-journal-shell .approved-journal-table td,
+    .approved-journal-shell .approved-journal-message p {
+        font-size: 9pt !important;
+    }
+
+    .approved-journal-shell .approved-journal-date-time span,
+    .approved-journal-shell .approved-journal-date-time strong {
+        font-size: 9pt !important;
+    }
+
+    .screen-journal-theme .draft-table-header,
+    .screen-journal-theme .draft-page-date,
+    .screen-journal-theme .draft-inline-date,
+    .screen-journal-theme .draft-ledger-time input,
+    .screen-journal-theme .draft-ledger-content textarea {
+        font-size: 9pt !important;
+    }
+}

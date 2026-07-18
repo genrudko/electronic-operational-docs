@@ -106,7 +106,7 @@
             </fieldset>
 
             <fieldset class="journal-settings-section">
-                <legend>Текст записей</legend>
+                <legend>Шрифт и плотность</legend>
                 <div class="journal-settings-grid">
                     <div class="journal-setting-field">
                         <label for="{{ display_form.journal_font_family.id_for_label }}">
@@ -115,18 +115,51 @@
                         {{ display_form.journal_font_family }}
                     </div>
                     <div class="journal-setting-field">
-                        <label for="{{ display_form.journal_font_size.id_for_label }}">
-                            {{ display_form.journal_font_size.label }}
-                        </label>
-                        {{ display_form.journal_font_size }}
-                    </div>
-                    <div class="journal-setting-field">
                         <label for="{{ display_form.journal_density.id_for_label }}">
                             {{ display_form.journal_density.label }}
                         </label>
                         {{ display_form.journal_density }}
                     </div>
                 </div>
+            </fieldset>
+
+            <fieldset class="journal-settings-section">
+                <legend>Размеры текста</legend>
+                <div class="journal-settings-grid journal-typography-settings-grid">
+                    <div class="journal-setting-field">
+                        <label for="{{ display_form.journal_font_size.id_for_label }}">
+                            {{ display_form.journal_font_size.label }}
+                        </label>
+                        {{ display_form.journal_font_size }}
+                    </div>
+                    <div class="journal-setting-field">
+                        <label for="{{ display_form.journal_time_font_size.id_for_label }}">
+                            {{ display_form.journal_time_font_size.label }}
+                        </label>
+                        {{ display_form.journal_time_font_size }}
+                    </div>
+                    <div class="journal-setting-field">
+                        <label for="{{ display_form.journal_date_font_size.id_for_label }}">
+                            {{ display_form.journal_date_font_size.label }}
+                        </label>
+                        {{ display_form.journal_date_font_size }}
+                    </div>
+                    <div class="journal-setting-field">
+                        <label for="{{ display_form.journal_table_header_font_size.id_for_label }}">
+                            {{ display_form.journal_table_header_font_size.label }}
+                        </label>
+                        {{ display_form.journal_table_header_font_size }}
+                    </div>
+                    <div class="journal-setting-field">
+                        <label for="{{ display_form.journal_title_font_size.id_for_label }}">
+                            {{ display_form.journal_title_font_size.label }}
+                        </label>
+                        {{ display_form.journal_title_font_size }}
+                    </div>
+                </div>
+                <small class="journal-settings-help">
+                    Экранные размеры не изменяют утверждённую печатную форму.
+                </small>
             </fieldset>
 
             <fieldset class="journal-settings-section">
@@ -181,10 +214,15 @@
 </dialog>
 
 <section
-    class="approved-journal-shell journal-heading-{{ ui_preferences.journal_heading_mode|lower }} journal-font-{{ ui_preferences.journal_font_family|lower }} journal-size-{{ ui_preferences.journal_font_size|lower }} journal-density-{{ ui_preferences.journal_density|lower }}{% if not ui_preferences.journal_show_authors %} journal-authors-hidden{% endif %}{% if not ui_preferences.journal_show_links %} journal-links-hidden{% endif %}"
+    class="approved-journal-shell journal-heading-{{ ui_preferences.journal_heading_mode|lower }} journal-font-{{ ui_preferences.journal_font_family|lower }} journal-size-{{ ui_preferences.journal_font_size|lower }} journal-entry-size-{{ ui_preferences.journal_font_size|lower }} journal-time-size-{{ ui_preferences.journal_time_font_size|lower }} journal-date-size-{{ ui_preferences.journal_date_font_size|lower }} journal-table-header-size-{{ ui_preferences.journal_table_header_font_size|lower }} journal-title-size-{{ ui_preferences.journal_title_font_size|lower }} journal-density-{{ ui_preferences.journal_density|lower }}{% if not ui_preferences.journal_show_authors %} journal-authors-hidden{% endif %}{% if not ui_preferences.journal_show_links %} journal-links-hidden{% endif %}"
     data-approved-journal-form="{{ form_contract.code }}"
     data-approved-journal-columns="{{ form_contract.columns|length }}"
     data-journal-heading-mode="{{ ui_preferences.journal_heading_mode|lower }}"
+    data-journal-entry-size="{{ ui_preferences.journal_font_size|lower }}"
+    data-journal-time-size="{{ ui_preferences.journal_time_font_size|lower }}"
+    data-journal-date-size="{{ ui_preferences.journal_date_font_size|lower }}"
+    data-journal-table-header-size="{{ ui_preferences.journal_table_header_font_size|lower }}"
+    data-journal-title-size="{{ ui_preferences.journal_title_font_size|lower }}"
 >
     <header class="approved-journal-heading">
         <div class="approved-journal-heading-full">

@@ -540,39 +540,63 @@ def update_display(
         request.headers.get("X-Requested-With") == "XMLHttpRequest"
         and request.POST.get("workspace_quick_settings") == "1"
     ):
-        theme = request.POST.get("theme", "").upper()
-        journal_width = request.POST.get(
-            "journal_width",
-            "",
-        ).upper()
-        if theme not in InterfacePreference.Theme.values:
-            return JsonResponse(
-                {"ok": False, "message": "Неизвестная тема."},
-                status=400,
+        choice_fields = {
+            "theme": (
+                InterfacePreference.Theme,
+                "Неизвестная тема.",
+            ),
+            "journal_width": (
+                InterfacePreference.JournalWidth,
+                "Неизвестная ширина страницы.",
+            ),
+            "journal_font_size": (
+                InterfacePreference.JournalFontSize,
+                "Неизвестный размер текста записей.",
+            ),
+            "journal_time_font_size": (
+                InterfacePreference.JournalFontSize,
+                "Неизвестный размер времени записи.",
+            ),
+            "journal_date_font_size": (
+                InterfacePreference.JournalFontSize,
+                "Неизвестный размер заголовков дат.",
+            ),
+            "journal_table_header_font_size": (
+                InterfacePreference.JournalFontSize,
+                "Неизвестный размер шапки таблицы.",
+            ),
+            "journal_title_font_size": (
+                InterfacePreference.JournalFontSize,
+                "Неизвестный размер заголовка журнала.",
+            ),
+        }
+        values: dict[str, str] = {}
+        for field_name, (choices, error_message) in choice_fields.items():
+            raw_value = request.POST.get(
+                field_name,
+                getattr(preferences, field_name),
             )
-        if journal_width not in InterfacePreference.JournalWidth.values:
-            return JsonResponse(
-                {
-                    "ok": False,
-                    "message": "Неизвестная ширина страницы.",
-                },
-                status=400,
-            )
-        preferences.theme = theme
-        preferences.journal_width = journal_width
+            value = str(raw_value).upper()
+            if value not in choices.values:
+                return JsonResponse(
+                    {"ok": False, "message": error_message},
+                    status=400,
+                )
+            values[field_name] = value
+
+        for field_name, value in values.items():
+            setattr(preferences, field_name, value)
         preferences.full_clean()
         preferences.save(
-            update_fields=(
-                "theme",
-                "journal_width",
-                "updated_at",
-            )
+            update_fields=tuple(values) + ("updated_at",)
         )
         return JsonResponse(
             {
                 "ok": True,
-                "theme": preferences.theme.lower(),
-                "journal_width": preferences.journal_width.lower(),
+                **{
+                    field_name: value.lower()
+                    for field_name, value in values.items()
+                },
             }
         )
 

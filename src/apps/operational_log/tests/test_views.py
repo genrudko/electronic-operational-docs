@@ -125,6 +125,18 @@ class OperationalLogViewTests(OperationalLogTestCase):
                 "journal_font_size": (
                     InterfacePreference.JournalFontSize.NORMAL
                 ),
+                "journal_time_font_size": (
+                    InterfacePreference.JournalFontSize.NORMAL
+                ),
+                "journal_date_font_size": (
+                    InterfacePreference.JournalFontSize.NORMAL
+                ),
+                "journal_table_header_font_size": (
+                    InterfacePreference.JournalFontSize.NORMAL
+                ),
+                "journal_title_font_size": (
+                    InterfacePreference.JournalFontSize.NORMAL
+                ),
                 "journal_density": InterfacePreference.JournalDensity.NORMAL,
                 "journal_show_authors": "on",
                 "journal_show_links": "on",
@@ -150,6 +162,18 @@ class OperationalLogViewTests(OperationalLogTestCase):
                 "journal_font_size": (
                     InterfacePreference.JournalFontSize.LARGE
                 ),
+                "journal_time_font_size": (
+                    InterfacePreference.JournalFontSize.SMALL
+                ),
+                "journal_date_font_size": (
+                    InterfacePreference.JournalFontSize.EXTRA_LARGE
+                ),
+                "journal_table_header_font_size": (
+                    InterfacePreference.JournalFontSize.LARGE
+                ),
+                "journal_title_font_size": (
+                    InterfacePreference.JournalFontSize.EXTRA_LARGE
+                ),
                 "journal_density": (
                     InterfacePreference.JournalDensity.RELAXED
                 ),
@@ -173,6 +197,22 @@ class OperationalLogViewTests(OperationalLogTestCase):
             InterfacePreference.JournalFontSize.LARGE,
         )
         self.assertEqual(
+            preference.journal_time_font_size,
+            InterfacePreference.JournalFontSize.SMALL,
+        )
+        self.assertEqual(
+            preference.journal_date_font_size,
+            InterfacePreference.JournalFontSize.EXTRA_LARGE,
+        )
+        self.assertEqual(
+            preference.journal_table_header_font_size,
+            InterfacePreference.JournalFontSize.LARGE,
+        )
+        self.assertEqual(
+            preference.journal_title_font_size,
+            InterfacePreference.JournalFontSize.EXTRA_LARGE,
+        )
+        self.assertEqual(
             preference.journal_density,
             InterfacePreference.JournalDensity.RELAXED,
         )
@@ -190,6 +230,11 @@ class OperationalLogViewTests(OperationalLogTestCase):
             "journal-heading-full",
             "journal-font-arial",
             "journal-size-large",
+            "journal-entry-size-large",
+            "journal-time-size-small",
+            "journal-date-size-extra_large",
+            "journal-table-header-size-large",
+            "journal-title-size-extra_large",
             "journal-density-relaxed",
             "journal-main-width-full",
             "journal-authors-hidden",
@@ -209,6 +254,18 @@ class OperationalLogViewTests(OperationalLogTestCase):
                     InterfacePreference.JournalFontFamily.SYSTEM
                 ),
                 "journal_font_size": (
+                    InterfacePreference.JournalFontSize.NORMAL
+                ),
+                "journal_time_font_size": (
+                    InterfacePreference.JournalFontSize.NORMAL
+                ),
+                "journal_date_font_size": (
+                    InterfacePreference.JournalFontSize.NORMAL
+                ),
+                "journal_table_header_font_size": (
+                    InterfacePreference.JournalFontSize.NORMAL
+                ),
+                "journal_title_font_size": (
                     InterfacePreference.JournalFontSize.NORMAL
                 ),
                 "journal_density": InterfacePreference.JournalDensity.NORMAL,

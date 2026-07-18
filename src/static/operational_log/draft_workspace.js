@@ -92,6 +92,17 @@
     const pageWidthChoiceButtons = Array.from(
         workspace.querySelectorAll("[data-page-width-choice]"),
     );
+    const typographySizeButtons = Array.from(
+        workspace.querySelectorAll(
+            "[data-typography-target][data-typography-size]",
+        ),
+    );
+    const typographyPresetButtons = Array.from(
+        workspace.querySelectorAll("[data-typography-preset]"),
+    );
+    const journalTitleNode = document.querySelector(
+        ".shift-book-header[data-journal-title-size]",
+    );
     const recordPresetButtons = Array.from(
         workspace.querySelectorAll("[data-records-preset]"),
     );
@@ -125,6 +136,23 @@
     let pageWidthPreference = normalizePageWidthChoice(
         workspace.dataset.initialPageWidth || "wide",
     );
+    let typographyPreferences = {
+        entry: normalizeJournalFontSize(
+            workspace.dataset.initialJournalEntrySize,
+        ),
+        time: normalizeJournalFontSize(
+            workspace.dataset.initialJournalTimeSize,
+        ),
+        date: normalizeJournalFontSize(
+            workspace.dataset.initialJournalDateSize,
+        ),
+        tableHeader: normalizeJournalFontSize(
+            workspace.dataset.initialJournalTableHeaderSize,
+        ),
+        title: normalizeJournalFontSize(
+            workspace.dataset.initialJournalTitleSize,
+        ),
+    };
     let currentColumnWidths = {
         time: 14,
         content: 66,
@@ -171,6 +199,18 @@
             : "wide";
     }
 
+    function normalizeJournalFontSize(value) {
+        const normalized = String(value || "").toLowerCase();
+        return [
+            "small",
+            "normal",
+            "large",
+            "extra_large",
+        ].includes(normalized)
+            ? normalized
+            : "normal";
+    }
+
     function resolvedTheme(value) {
         if (value !== "system") {
             return value;
@@ -193,6 +233,23 @@
             button.classList.toggle("is-active", active);
             button.setAttribute("aria-pressed", String(active));
         });
+        typographySizeButtons.forEach((button) => {
+            const target = button.dataset.typographyTarget;
+            const active = (
+                typographyPreferences[target]
+                === button.dataset.typographySize
+            );
+            button.classList.toggle("is-active", active);
+            button.setAttribute("aria-pressed", String(active));
+        });
+        typographyPresetButtons.forEach((button) => {
+            const size = button.dataset.typographyPreset;
+            const active = Object.values(
+                typographyPreferences,
+            ).every((value) => value === size);
+            button.classList.toggle("is-active", active);
+            button.setAttribute("aria-pressed", String(active));
+        });
     }
 
     function applyQuickDisplayPreferences() {
@@ -201,6 +258,36 @@
             themePreference,
         );
         workspace.dataset.pageWidth = pageWidthPreference;
+        workspace.dataset.journalEntrySize = typographyPreferences.entry;
+        workspace.dataset.journalTimeSize = typographyPreferences.time;
+        workspace.dataset.journalDateSize = typographyPreferences.date;
+        workspace.dataset.journalTableHeaderSize = (
+            typographyPreferences.tableHeader
+        );
+        workspace.dataset.journalTitleSize = typographyPreferences.title;
+        document.documentElement.dataset.journalSize = (
+            typographyPreferences.entry
+        );
+        document.documentElement.dataset.journalTimeSize = (
+            typographyPreferences.time
+        );
+        document.documentElement.dataset.journalDateSize = (
+            typographyPreferences.date
+        );
+        document.documentElement.dataset.journalTableHeaderSize = (
+            typographyPreferences.tableHeader
+        );
+        document.documentElement.dataset.journalTitleSize = (
+            typographyPreferences.title
+        );
+        if (journalTitleNode) {
+            journalTitleNode.dataset.journalTitleSize = (
+                typographyPreferences.title
+            );
+        }
+        rows.forEach((row) => {
+            autoGrow(row.querySelector("[data-auto-grow]"));
+        });
         updateQuickSettingButtons();
         schedulePagination(20);
     }
@@ -218,6 +305,26 @@
         const data = new FormData(quickDisplayForm);
         data.set("theme", themePreference.toUpperCase());
         data.set("journal_width", pageWidthPreference.toUpperCase());
+        data.set(
+            "journal_font_size",
+            typographyPreferences.entry.toUpperCase(),
+        );
+        data.set(
+            "journal_time_font_size",
+            typographyPreferences.time.toUpperCase(),
+        );
+        data.set(
+            "journal_date_font_size",
+            typographyPreferences.date.toUpperCase(),
+        );
+        data.set(
+            "journal_table_header_font_size",
+            typographyPreferences.tableHeader.toUpperCase(),
+        );
+        data.set(
+            "journal_title_font_size",
+            typographyPreferences.title.toUpperCase(),
+        );
 
         try {
             const response = await fetch(quickDisplayForm.action, {
@@ -237,6 +344,23 @@
             pageWidthPreference = normalizePageWidthChoice(
                 payload.journal_width,
             );
+            typographyPreferences = {
+                entry: normalizeJournalFontSize(
+                    payload.journal_font_size,
+                ),
+                time: normalizeJournalFontSize(
+                    payload.journal_time_font_size,
+                ),
+                date: normalizeJournalFontSize(
+                    payload.journal_date_font_size,
+                ),
+                tableHeader: normalizeJournalFontSize(
+                    payload.journal_table_header_font_size,
+                ),
+                title: normalizeJournalFontSize(
+                    payload.journal_title_font_size,
+                ),
+            };
             applyQuickDisplayPreferences();
             quickSettingStatus.textContent = "✓ Сохранено";
         } catch (error) {
@@ -245,6 +369,9 @@
             }
             themePreference = previous.theme;
             pageWidthPreference = previous.pageWidth;
+            typographyPreferences = {
+                ...previous.typography,
+            };
             applyQuickDisplayPreferences();
             quickSettingStatus.textContent = "Не удалось сохранить";
         } finally {
@@ -258,12 +385,51 @@
         const previous = {
             theme: themePreference,
             pageWidth: pageWidthPreference,
+            typography: {
+                ...typographyPreferences,
+            },
         };
         if (kind === "theme") {
             themePreference = normalizeThemeChoice(value);
         } else {
             pageWidthPreference = normalizePageWidthChoice(value);
         }
+        applyQuickDisplayPreferences();
+        void persistQuickDisplayPreferences(previous);
+    }
+
+    function selectTypographyPreference(target, value) {
+        if (!(target in typographyPreferences)) {
+            return;
+        }
+        const previous = {
+            theme: themePreference,
+            pageWidth: pageWidthPreference,
+            typography: {
+                ...typographyPreferences,
+            },
+        };
+        typographyPreferences[target] = normalizeJournalFontSize(value);
+        applyQuickDisplayPreferences();
+        void persistQuickDisplayPreferences(previous);
+    }
+
+    function selectTypographyPreset(value) {
+        const normalized = normalizeJournalFontSize(value);
+        const previous = {
+            theme: themePreference,
+            pageWidth: pageWidthPreference,
+            typography: {
+                ...typographyPreferences,
+            },
+        };
+        typographyPreferences = {
+            entry: normalized,
+            time: normalized,
+            date: normalized,
+            tableHeader: normalized,
+            title: normalized,
+        };
         applyQuickDisplayPreferences();
         void persistQuickDisplayPreferences(previous);
     }
@@ -321,34 +487,7 @@
     function updateRecordControls() {
         const capacity = selectedRecordCapacity();
 
-        themeChoiceButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-            selectQuickDisplayPreference(
-                "theme",
-                button.dataset.themeChoice,
-            );
-        });
-    });
-
-    pageWidthChoiceButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-            selectQuickDisplayPreference(
-                "pageWidth",
-                button.dataset.pageWidthChoice,
-            );
-        });
-    });
-
-    const systemThemeQuery = window.matchMedia(
-        "(prefers-color-scheme: dark)",
-    );
-    systemThemeQuery.addEventListener?.("change", () => {
-        if (themePreference === "system") {
-            applyQuickDisplayPreferences();
-        }
-    });
-
-    recordPresetButtons.forEach((button) => {
+        recordPresetButtons.forEach((button) => {
             const active = (
                 button.dataset.recordsPreset === recordSetting
             );
@@ -2104,6 +2243,50 @@
     filterSelect.addEventListener("change", () => {
         currentPage = 0;
         schedulePagination();
+    });
+
+    themeChoiceButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            selectQuickDisplayPreference(
+                "theme",
+                button.dataset.themeChoice,
+            );
+        });
+    });
+
+    pageWidthChoiceButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            selectQuickDisplayPreference(
+                "pageWidth",
+                button.dataset.pageWidthChoice,
+            );
+        });
+    });
+
+    const systemThemeQuery = window.matchMedia(
+        "(prefers-color-scheme: dark)",
+    );
+    systemThemeQuery.addEventListener?.("change", () => {
+        if (themePreference === "system") {
+            applyQuickDisplayPreferences();
+        }
+    });
+
+    typographySizeButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            selectTypographyPreference(
+                button.dataset.typographyTarget,
+                button.dataset.typographySize,
+            );
+        });
+    });
+
+    typographyPresetButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            selectTypographyPreset(
+                button.dataset.typographyPreset,
+            );
+        });
     });
 
     recordPresetButtons.forEach((button) => {

@@ -35,6 +35,19 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             )
         )
         self.assertContains(detail, "Рабочая смена")
+        for marker in (
+            "id_journal_font_size",
+            "id_journal_time_font_size",
+            "id_journal_date_font_size",
+            "id_journal_table_header_font_size",
+            "id_journal_title_font_size",
+            "journal-entry-size-normal",
+            "journal-time-size-normal",
+            "journal-date-size-normal",
+            "journal-table-header-size-normal",
+            "journal-title-size-normal",
+        ):
+            self.assertContains(detail, marker)
         workspace = self.client.get(
             reverse(
                 "operational_log:shift_workspace",
@@ -65,6 +78,15 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             "data-apply-custom-records",
             "data-theme-choice",
             "data-page-width-choice",
+            "data-initial-journal-entry-size",
+            "data-initial-journal-time-size",
+            "data-initial-journal-date-size",
+            "data-initial-journal-table-header-size",
+            "data-initial-journal-title-size",
+            "data-typography-panel",
+            "data-typography-preset",
+            "data-typography-target",
+            "data-typography-size",
             "data-quick-display-form",
             "stable-page-layout-workspace",
             "data-quick-time",
@@ -101,6 +123,11 @@ class OperationalShiftViewTests(OperationalLogTestCase):
                 "workspace_quick_settings": "1",
                 "theme": "LIGHT",
                 "journal_width": "FULL",
+                "journal_font_size": "LARGE",
+                "journal_time_font_size": "SMALL",
+                "journal_date_font_size": "EXTRA_LARGE",
+                "journal_table_header_font_size": "LARGE",
+                "journal_title_font_size": "EXTRA_LARGE",
             },
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
@@ -110,6 +137,59 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         preferences.refresh_from_db()
         self.assertEqual(preferences.theme, "LIGHT")
         self.assertEqual(preferences.journal_width, "FULL")
+        self.assertEqual(preferences.journal_font_size, "LARGE")
+        self.assertEqual(preferences.journal_time_font_size, "SMALL")
+        self.assertEqual(
+            preferences.journal_date_font_size,
+            "EXTRA_LARGE",
+        )
+        self.assertEqual(
+            preferences.journal_table_header_font_size,
+            "LARGE",
+        )
+        self.assertEqual(
+            preferences.journal_title_font_size,
+            "EXTRA_LARGE",
+        )
+
+        detail_after = self.client.get(
+            reverse(
+                "operational_log:detail",
+                args=(self.journal.pk,),
+            )
+        )
+        for marker in (
+            "journal-entry-size-large",
+            "journal-time-size-small",
+            "journal-date-size-extra_large",
+            "journal-table-header-size-large",
+            "journal-title-size-extra_large",
+        ):
+            self.assertContains(detail_after, marker)
+
+    def test_quick_typography_rejects_unknown_size(self) -> None:
+        self.client.force_login(self.user)
+        response = self.client.post(
+            reverse(
+                "operational_log:update_display",
+                args=(self.journal.pk,),
+            ),
+            {
+                "workspace_quick_settings": "1",
+                "journal_time_font_size": "GIANT",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.json()["ok"])
+        self.assertIn("времени", response.json()["message"])
+
+        preferences = self.user.interface_preference
+        preferences.refresh_from_db()
+        self.assertEqual(
+            preferences.journal_time_font_size,
+            "NORMAL",
+        )
 
     def test_open_shift_for_journal_without_active_shift(self) -> None:
         journal = OperationalJournal.objects.create(
