@@ -269,10 +269,11 @@
                         <button
                             type="button"
                             class="draft-editor-ribbon-button"
-                            data-editor-command="marks"
-                            title="Семантические отметки появятся в Patch 011.3"
-                            aria-label="Семантические отметки — следующий этап"
-                            disabled
+                            data-editor-semantic-trigger
+                            title="Семантические элементы (Ctrl+Shift+M)"
+                            aria-label="Открыть семантические элементы"
+                            aria-haspopup="menu"
+                            aria-expanded="false"
                         >
                             <span class="draft-editor-tool-icon is-semantic" aria-hidden="true">⚡</span>
                         </button>
@@ -281,6 +282,81 @@
                 </section>
             </div>
         </div>
+
+        <div
+            class="draft-semantic-palette screen-only"
+            data-semantic-palette
+            role="menu"
+            aria-label="Семантические элементы"
+            hidden
+        >
+            <header>
+                <strong>Семантические элементы</strong>
+                <span>Выдели текст или создай новый элемент</span>
+            </header>
+            <div class="draft-semantic-palette-grid">
+                <button type="button" role="menuitem" data-semantic-option="command"><b>К</b><span>Команда</span></button>
+                <button type="button" role="menuitem" data-semantic-option="permission"><b>Р</b><span>Разрешение</span></button>
+                <button type="button" role="menuitem" data-semantic-option="message"><b>С</b><span>Сообщение</span></button>
+                <button type="button" role="menuitem" data-semantic-option="warning"><b>!</b><span>Предупреждение</span></button>
+                <button type="button" role="menuitem" data-semantic-option="equipment"><b>Э</b><span>Оборудование</span></button>
+                <button type="button" role="menuitem" data-semantic-option="document"><b>Д</b><span>Документ</span></button>
+                <button type="button" role="menuitem" data-semantic-option="person"><b>Л</b><span>Сотрудник / должность</span></button>
+                <button type="button" role="menuitem" data-semantic-option="event_time"><b>В</b><span>Время события</span></button>
+                <button type="button" role="menuitem" data-semantic-option="related_entry"><b>№</b><span>Связанная запись</span></button>
+                <button type="button" role="menuitem" data-semantic-option="carryover"><b>→</b><span>На следующую смену</span></button>
+            </div>
+        </div>
+
+        <div
+            class="draft-semantic-dialog screen-only"
+            data-semantic-dialog
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="draft-semantic-dialog-title"
+            hidden
+        >
+            <form data-semantic-dialog-form>
+                <header>
+                    <div>
+                        <span>СЕМАНТИЧЕСКИЙ ЭЛЕМЕНТ</span>
+                        <h3 id="draft-semantic-dialog-title" data-semantic-dialog-title>
+                            Вставить семантический элемент
+                        </h3>
+                    </div>
+                    <button type="button" data-semantic-cancel aria-label="Закрыть">×</button>
+                </header>
+                <input type="hidden" data-semantic-kind>
+                <label>
+                    <span>Вид</span>
+                    <strong data-semantic-kind-label>—</strong>
+                </label>
+                <label>
+                    <span>Текст элемента</span>
+                    <input
+                        type="text"
+                        maxlength="500"
+                        autocomplete="off"
+                        data-semantic-label
+                        required
+                    >
+                </label>
+                <label>
+                    <span>Номер или идентификатор — необязательно</span>
+                    <input
+                        type="text"
+                        maxlength="200"
+                        autocomplete="off"
+                        data-semantic-reference
+                    >
+                </label>
+                <footer>
+                    <button type="button" class="button secondary" data-semantic-cancel>Отмена</button>
+                    <button type="submit" class="button">Вставить</button>
+                </footer>
+            </form>
+        </div>
+
     </div>
 
     <nav
@@ -817,6 +893,15 @@
             aria-label="Нумерованный список"
             aria-pressed="false"
         >1≡</button>
+        <span class="draft-editor-floating-separator" aria-hidden="true"></span>
+        <button
+            type="button"
+            data-editor-semantic-trigger
+            title="Семантический элемент"
+            aria-label="Открыть семантические элементы"
+            aria-haspopup="menu"
+            aria-expanded="false"
+        >⚡</button>
         <span class="draft-editor-floating-separator" aria-hidden="true"></span>
         <button
             type="button"

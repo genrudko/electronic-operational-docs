@@ -5,6 +5,7 @@ from apps.organizations.models import InterfacePreference
 
 from .editor import (
     EDITOR_SCHEMA_VERSION,
+    SUPPORTED_EDITOR_SCHEMA_VERSIONS,
     normalize_editor_document,
 )
 
@@ -130,7 +131,7 @@ class DraftEntryAutoSaveForm(forms.Form):
             self.cleaned_data.get("editor_schema_version")
             or EDITOR_SCHEMA_VERSION
         )
-        if value != EDITOR_SCHEMA_VERSION:
+        if value not in SUPPORTED_EDITOR_SCHEMA_VERSIONS:
             raise ValidationError(
                 "Неизвестная версия структуры редактора."
             )

@@ -6,17 +6,48 @@ from typing import Any
 
 from django.core.exceptions import ValidationError
 
-EDITOR_SCHEMA_VERSION = "operational-draft-editor.v1"
+EDITOR_SCHEMA_VERSION = "operational-draft-editor.v2"
+LEGACY_EDITOR_SCHEMA_VERSIONS = frozenset({"operational-draft-editor.v1"})
+SUPPORTED_EDITOR_SCHEMA_VERSIONS = frozenset(
+    {EDITOR_SCHEMA_VERSION, *LEGACY_EDITOR_SCHEMA_VERSIONS}
+)
 MAX_EDITOR_TEXT_LENGTH = 20_000
 MAX_EDITOR_JSON_LENGTH = 100_000
 MAX_BLOCKS = 250
 MAX_LIST_ITEMS = 500
 MAX_SEGMENTS = 4_000
+MAX_SEMANTIC_LABEL_LENGTH = 500
+MAX_SEMANTIC_REFERENCE_LENGTH = 200
 ALLOWED_BLOCK_TYPES = frozenset(
     {"paragraph", "bullet_list", "ordered_list"}
 )
 ALLOWED_MARKS = frozenset({"bold", "underline"})
 MARK_ORDER = {"bold": 0, "underline": 1}
+SEMANTIC_KIND_LABELS = {
+    "command": "Команда",
+    "permission": "Разрешение",
+    "message": "Сообщение",
+    "warning": "Предупреждение",
+    "equipment": "Оборудование",
+    "document": "Документ",
+    "person": "Сотрудник или должность",
+    "event_time": "Время события",
+    "related_entry": "Связанная запись",
+    "carryover": "На следующую смену",
+}
+SEMANTIC_PROJECTION_PREFIXES = {
+    "command": "Команда: ",
+    "permission": "Разрешение: ",
+    "message": "Сообщение: ",
+    "warning": "Предупреждение: ",
+    "equipment": "",
+    "document": "",
+    "person": "",
+    "event_time": "",
+    "related_entry": "",
+    "carryover": "На следующую смену: ",
+}
+ALLOWED_SEMANTIC_KINDS = frozenset(SEMANTIC_KIND_LABELS)
 
 
 def _validation_error(message: str) -> ValidationError:
@@ -54,6 +85,66 @@ def _normalize_marks(value: Any) -> list[str]:
     return sorted(result, key=MARK_ORDER.__getitem__)
 
 
+def _normalize_single_line(
+    value: Any,
+    *,
+    label: str,
+    max_length: int,
+    required: bool,
+) -> str:
+    if not isinstance(value, str):
+        raise _validation_error(f"{label} должно быть строкой.")
+    normalized = " ".join(
+        value.replace("\r\n", "\n").replace("\r", "\n").split()
+    ).strip()
+    if "\x00" in normalized:
+        raise _validation_error(f"{label} содержит недопустимый символ.")
+    if required and not normalized:
+        raise _validation_error(f"{label} не должно быть пустым.")
+    if len(normalized) > max_length:
+        raise _validation_error(
+            f"{label} не должно превышать {max_length} символов."
+        )
+    return normalized
+
+
+def semantic_projection(value: Mapping[str, Any]) -> str:
+    kind = str(value.get("kind", ""))
+    label = str(value.get("label", ""))
+    return SEMANTIC_PROJECTION_PREFIXES.get(kind, "") + label
+
+
+def _normalize_semantic(value: Any) -> dict[str, str]:
+    if not isinstance(value, Mapping):
+        raise _validation_error(
+            "Семантическая отметка должна быть JSON-объектом."
+        )
+    _assert_exact_keys(
+        value,
+        {"kind", "label", "reference"},
+        "Семантическая отметка",
+    )
+    kind = value.get("kind")
+    if not isinstance(kind, str) or kind not in ALLOWED_SEMANTIC_KINDS:
+        raise _validation_error("Неизвестный вид семантической отметки.")
+    label = _normalize_single_line(
+        value.get("label", ""),
+        label="Подпись семантической отметки",
+        max_length=MAX_SEMANTIC_LABEL_LENGTH,
+        required=True,
+    )
+    reference = _normalize_single_line(
+        value.get("reference", ""),
+        label="Ссылка семантической отметки",
+        max_length=MAX_SEMANTIC_REFERENCE_LENGTH,
+        required=False,
+    )
+    result = {"kind": kind, "label": label}
+    if reference:
+        result["reference"] = reference
+    return result
+
+
 def _normalize_segments(value: Any) -> list[dict[str, Any]]:
     if value in (None, ""):
         return []
@@ -73,9 +164,22 @@ def _normalize_segments(value: Any) -> list[dict[str, Any]]:
             )
         _assert_exact_keys(
             raw_segment,
-            {"text", "marks"},
+            {"text", "marks", "semantic"},
             "Сегмент текста",
         )
+        marks = _normalize_marks(raw_segment.get("marks", []))
+        semantic_value = raw_segment.get("semantic")
+        if semantic_value not in (None, "", {}):
+            semantic = _normalize_semantic(semantic_value)
+            result.append(
+                {
+                    "text": semantic_projection(semantic),
+                    "marks": marks,
+                    "semantic": semantic,
+                }
+            )
+            continue
+
         text = raw_segment.get("text", "")
         if not isinstance(text, str):
             raise _validation_error("Текст сегмента должен быть строкой.")
@@ -84,10 +188,13 @@ def _normalize_segments(value: Any) -> list[dict[str, Any]]:
             raise _validation_error(
                 "Текст содержит недопустимый нулевой символ."
             )
-        marks = _normalize_marks(raw_segment.get("marks", []))
         if not text:
             continue
-        if result and result[-1]["marks"] == marks:
+        if (
+            result
+            and "semantic" not in result[-1]
+            and result[-1]["marks"] == marks
+        ):
             result[-1]["text"] += text
         else:
             result.append({"text": text, "marks": marks})
@@ -186,7 +293,7 @@ def normalize_editor_document(
             {"schema_version", "blocks"},
             "Документ редактора",
         )
-        if value.get("schema_version") != EDITOR_SCHEMA_VERSION:
+        if value.get("schema_version") not in SUPPORTED_EDITOR_SCHEMA_VERSIONS:
             raise _validation_error("Неизвестная версия структуры редактора.")
         blocks = value.get("blocks")
         if (
