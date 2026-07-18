@@ -42,16 +42,6 @@
         '[data-page-number="right"]',
     );
 
-    const measurePage = workspace.querySelector(
-        "[data-measure-page]",
-    );
-    const measureBody = workspace.querySelector(
-        "[data-measure-body]",
-    );
-    const measureDate = workspace.querySelector(
-        "[data-measure-date]",
-    );
-
     const previousButton = workspace.querySelector(
         "[data-page-prev]",
     );
@@ -79,27 +69,17 @@
     );
 
     const drawer = workspace.querySelector("[data-view-drawer]");
-    const timeNumberInput = workspace.querySelector(
-        "[data-column-time-number]",
+    const recordPresetButtons = Array.from(
+        workspace.querySelectorAll("[data-records-preset]"),
     );
-    const contentNumberInput = workspace.querySelector(
-        "[data-column-content-number]",
+    const customRecordsInput = workspace.querySelector(
+        "[data-records-custom]",
     );
-    const remarksNumberInput = workspace.querySelector(
-        "[data-column-remarks-number]",
+    const applyCustomRecordsButton = workspace.querySelector(
+        "[data-apply-custom-records]",
     );
-
-    const linePresetButtons = Array.from(
-        workspace.querySelectorAll("[data-lines-preset]"),
-    );
-    const customLinesInput = workspace.querySelector(
-        "[data-lines-custom]",
-    );
-    const applyCustomLinesButton = workspace.querySelector(
-        "[data-apply-custom-lines]",
-    );
-    const lineSummary = workspace.querySelector(
-        "[data-lines-summary]",
+    const recordSummary = workspace.querySelector(
+        "[data-records-summary]",
     );
 
     let pages = [];
@@ -110,10 +90,16 @@
     let activeDraftForm = null;
     let compositionDepth = 0;
     let paginationPending = false;
-    let resolvedPageCapacity = 30;
-    const nominalLineHeight = 48;
-    let lineSetting = normalizeLineSetting(
-        readPreference("eod-draft-lines-per-page", "30"),
+    let currentColumnWidths = {
+        time: 14,
+        content: 66,
+        remarks: 20,
+    };
+    let recordSetting = normalizeRecordSetting(
+        readPreference(
+            "eod-draft-records-per-page",
+            "15",
+        ),
     );
     let viewMode = readPreference(
         "eod-draft-view-mode",
@@ -140,54 +126,38 @@
         return Math.min(maximum, Math.max(minimum, value));
     }
 
-    function normalizeLineSetting(value) {
+    function normalizeRecordSetting(value) {
         if (String(value).toLowerCase() === "auto") {
             return "auto";
         }
         const numeric = Number.parseInt(String(value), 10);
         if (!Number.isFinite(numeric)) {
-            return "30";
+            return "15";
         }
-        return String(clamp(numeric, 10, 60));
+        return String(clamp(numeric, 5, 50));
     }
 
-    function automaticLineCapacity() {
-        const chromeReserve = viewMode === "spread" ? 238 : 220;
+    function automaticRecordCapacity() {
+        const chromeReserve = viewMode === "spread" ? 310 : 280;
         const usableHeight = Math.max(
-            760,
+            520,
             window.innerHeight - chromeReserve,
         );
         return clamp(
-            Math.floor(usableHeight / nominalLineHeight),
-            16,
-            30,
+            Math.floor(usableHeight / 58),
+            8,
+            20,
         );
     }
 
-    function selectedLineCapacity() {
-        if (lineSetting === "auto") {
-            return automaticLineCapacity();
+    function selectedRecordCapacity() {
+        if (recordSetting === "auto") {
+            return automaticRecordCapacity();
         }
         return clamp(
-            Number.parseInt(lineSetting, 10),
-            10,
-            60,
-        );
-    }
-
-    function applyPageGeometry(capacity) {
-        resolvedPageCapacity = clamp(capacity, 10, 60);
-        workspace.style.setProperty(
-            "--draft-base-line-height",
-            `${nominalLineHeight}px`,
-        );
-        workspace.style.setProperty(
-            "--draft-page-body-height",
-            `${resolvedPageCapacity * nominalLineHeight}px`,
-        );
-        workspace.style.setProperty(
-            "--draft-page-capacity",
-            String(resolvedPageCapacity),
+            Number.parseInt(recordSetting, 10),
+            5,
+            50,
         );
     }
 
@@ -202,33 +172,36 @@
         return Boolean(active && activeDraftForm.contains(active));
     }
 
-    function updateLineControls() {
-        const capacity = selectedLineCapacity();
+    function updateRecordControls() {
+        const capacity = selectedRecordCapacity();
 
-        linePresetButtons.forEach((button) => {
+        recordPresetButtons.forEach((button) => {
             const active = (
-                button.dataset.linesPreset === lineSetting
+                button.dataset.recordsPreset === recordSetting
             );
             button.classList.toggle("is-active", active);
             button.setAttribute("aria-pressed", String(active));
         });
 
-        if (lineSetting !== "auto") {
-            customLinesInput.value = lineSetting;
+        if (recordSetting !== "auto") {
+            customRecordsInput.value = recordSetting;
         }
 
-        lineSummary.textContent = (
-            lineSetting === "auto"
-                ? `Авто · ${capacity} строк`
-                : `${capacity} строк`
+        recordSummary.textContent = (
+            recordSetting === "auto"
+                ? `Авто · ${capacity} записей`
+                : `${capacity} записей`
         );
     }
 
-    function setLineSetting(value) {
-        lineSetting = normalizeLineSetting(value);
-        writePreference("eod-draft-lines-per-page", lineSetting);
+    function setRecordSetting(value) {
+        recordSetting = normalizeRecordSetting(value);
+        writePreference(
+            "eod-draft-records-per-page",
+            recordSetting,
+        );
         currentPage = 0;
-        updateLineControls();
+        updateRecordControls();
         schedulePagination(20);
     }
 
@@ -475,17 +448,9 @@
         });
         leftBody.replaceChildren();
         rightBody.replaceChildren();
-        measureBody.replaceChildren();
     }
 
-    function rowOverflowsMeasurePage() {
-        return (
-            measureBody.scrollHeight
-            > measureBody.clientHeight + 1
-        );
-    }
-
-    function paginateByHeight(force = false) {
+    function paginateByRecordCount(force = false) {
         if (!force && isDraftEditing()) {
             markPaginationPending();
             return;
@@ -495,82 +460,45 @@
         restoreRowsToStore();
 
         const visibleRows = filteredRows();
-        const capacity = selectedLineCapacity();
-        applyPageGeometry(capacity);
-        updateLineControls();
-
-        const pageRect = leftShell.getBoundingClientRect();
-        measurePage.style.width = `${pageRect.width}px`;
-        measurePage.style.height = "auto";
-
+        const capacity = selectedRecordCapacity();
+        updateRecordControls();
         pages = [];
-        let page = {
-            rows: [],
-            usedUnits: 0,
-            capacity,
-        };
 
-        visibleRows.forEach((row) => {
-            row.hidden = false;
-            row.classList.remove("is-page-first");
-            measureBody.replaceChildren(row);
-            autoGrow(row.querySelector("[data-auto-grow]"));
-
-            const rowHeight = Math.max(
-                nominalLineHeight,
-                row.getBoundingClientRect().height,
+        for (
+            let start = 0;
+            start < visibleRows.length;
+            start += capacity
+        ) {
+            const pageRows = visibleRows.slice(
+                start,
+                start + capacity,
             );
-            const units = Math.max(
-                1,
-                Math.ceil(
-                    (rowHeight - 0.5) / nominalLineHeight,
-                ),
-            );
-            row.dataset.lineUnits = String(units);
 
-            if (
-                page.rows.length > 0
-                && page.usedUnits + units > page.capacity
-            ) {
-                pages.push(page);
-                page = {
-                    rows: [],
-                    usedUnits: 0,
-                    capacity,
-                };
-            }
+            pageRows.forEach((row, index) => {
+                row.hidden = false;
+                row.classList.toggle(
+                    "is-page-first",
+                    index === 0,
+                );
+            });
 
-            if (
-                page.rows.length === 0
-                && units > page.capacity
-            ) {
-                page.capacity = units;
-            }
-
-            if (page.rows.length === 0) {
-                row.classList.add("is-page-first");
-            }
-
-            page.rows.push(row);
-            page.usedUnits += units;
-            rowStore.append(row);
-        });
-
-        if (page.rows.length > 0) {
-            pages.push(page);
+            pages.push({
+                rows: pageRows,
+                capacity,
+            });
         }
 
         rows
             .filter((row) => !visibleRows.includes(row))
             .forEach((row) => {
                 row.hidden = true;
+                row.classList.remove("is-page-first");
                 rowStore.append(row);
             });
 
         if (pages.length === 0) {
             pages = [{
                 rows: [],
-                usedUnits: 0,
                 capacity,
             }];
         }
@@ -593,20 +521,20 @@
         renderCurrentPages();
     }
 
-    function createBlankLine() {
-        const line = document.createElement("div");
-        line.className = "draft-empty-line";
-        line.setAttribute("aria-hidden", "true");
+    function createBlankRecord() {
+        const record = document.createElement("div");
+        record.className = "draft-empty-record";
+        record.setAttribute("aria-hidden", "true");
 
         for (let column = 0; column < 3; column += 1) {
-            line.append(document.createElement("span"));
+            record.append(document.createElement("span"));
         }
-        return line;
+        return record;
     }
 
-    function appendBlankLines(body, count) {
+    function appendBlankRecords(body, count) {
         for (let index = 0; index < count; index += 1) {
-            body.append(createBlankLine());
+            body.append(createBlankRecord());
         }
     }
 
@@ -619,22 +547,18 @@
     ) {
         body.replaceChildren();
         shell.classList.remove("is-empty-page");
+        shell.style.removeProperty("--draft-page-body-height");
 
         const pageData = pages[pageIndex];
         const capacity = (
-            pageData?.capacity || resolvedPageCapacity
-        );
-
-        shell.style.setProperty(
-            "--draft-page-body-height",
-            `${capacity * nominalLineHeight}px`,
+            pageData?.capacity || selectedRecordCapacity()
         );
 
         if (!pageData) {
             shell.classList.add("is-empty-page");
             dateNode.textContent = "";
             numberNode.textContent = "";
-            appendBlankLines(body, capacity);
+            appendBlankRecords(body, capacity);
             return;
         }
 
@@ -648,11 +572,11 @@
             pageData.rows[0]?.dataset.entryDateLabel || ""
         );
 
-        appendBlankLines(
+        appendBlankRecords(
             body,
             Math.max(
                 0,
-                capacity - pageData.usedUnits,
+                capacity - pageData.rows.length,
             ),
         );
 
@@ -790,7 +714,7 @@
 
         paginationTimer = window.setTimeout(() => {
             paginationTimer = null;
-            paginateByHeight(true);
+            paginateByRecordCount(true);
         }, delay);
     }
 
@@ -815,6 +739,11 @@
         }
 
         const content = 100 - time - remarks;
+        currentColumnWidths = {
+            time,
+            content,
+            remarks,
+        };
 
         workspace.style.setProperty(
             "--draft-time-column",
@@ -828,10 +757,6 @@
             "--draft-remarks-column",
             `${remarks}%`,
         );
-
-        timeNumberInput.value = String(Math.round(time));
-        contentNumberInput.value = String(Math.round(content));
-        remarksNumberInput.value = String(Math.round(remarks));
 
         if (persist) {
             writePreference("eod-draft-column-time", time);
@@ -879,10 +804,8 @@
             100,
         );
 
-        const currentTime = Number(timeNumberInput.value) || 14;
-        const currentRemarks = (
-            Number(remarksNumberInput.value) || 20
-        );
+        const currentTime = currentColumnWidths.time;
+        const currentRemarks = currentColumnWidths.remarks;
 
         if (activeColumnDrag.kind === "time") {
             updateColumnWidths(
@@ -915,7 +838,43 @@
         schedulePagination();
     }
 
+    function updateOverlayOffsets() {
+        const candidates = Array.from(
+            document.querySelectorAll(
+                "body > header,"
+                + " body > nav,"
+                + " [data-app-shell-header],"
+                + " .site-header,"
+                + " .app-header",
+            ),
+        );
+
+        const topHeader = candidates.find((element) => {
+            const rect = element.getBoundingClientRect();
+            const style = window.getComputedStyle(element);
+            return (
+                rect.height > 0
+                && rect.top <= 2
+                && rect.width >= window.innerWidth * 0.6
+                && ["fixed", "sticky"].includes(style.position)
+            );
+        });
+
+        const offset = topHeader
+            ? Math.max(
+                0,
+                Math.ceil(topHeader.getBoundingClientRect().bottom),
+            )
+            : 50;
+
+        workspace.style.setProperty(
+            "--draft-overlay-top",
+            `${offset}px`,
+        );
+    }
+
     function openDrawer() {
+        updateOverlayOffsets();
         drawer.hidden = false;
         document.body.classList.add(
             "draft-view-drawer-visible",
@@ -1089,7 +1048,7 @@
 
                 currentPage = 0;
                 window.requestAnimationFrame(
-                    paginateByHeight,
+                    paginateByRecordCount,
                 );
             });
         });
@@ -1112,6 +1071,10 @@
                 "pointercancel",
                 stopColumnResize,
             );
+            handle.addEventListener("dblclick", (event) => {
+                event.preventDefault();
+                updateColumnWidths(14, 20);
+            });
         });
 
     previousButton.addEventListener("click", () => {
@@ -1154,39 +1117,20 @@
         schedulePagination();
     });
 
-    timeNumberInput.addEventListener("change", () => {
-        updateColumnWidths(
-            timeNumberInput.value,
-            remarksNumberInput.value,
-        );
-    });
-    remarksNumberInput.addEventListener("change", () => {
-        updateColumnWidths(
-            timeNumberInput.value,
-            remarksNumberInput.value,
-        );
-    });
-
-    workspace
-        .querySelector("[data-reset-columns]")
-        .addEventListener("click", () => {
-            updateColumnWidths(14, 20);
-        });
-
-    linePresetButtons.forEach((button) => {
+    recordPresetButtons.forEach((button) => {
         button.addEventListener("click", () => {
-            setLineSetting(button.dataset.linesPreset);
+            setRecordSetting(button.dataset.recordsPreset);
         });
     });
 
-    applyCustomLinesButton.addEventListener("click", () => {
-        setLineSetting(customLinesInput.value);
+    applyCustomRecordsButton.addEventListener("click", () => {
+        setRecordSetting(customRecordsInput.value);
     });
 
-    customLinesInput.addEventListener("keydown", (event) => {
+    customRecordsInput.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
             event.preventDefault();
-            setLineSetting(customLinesInput.value);
+            setRecordSetting(customRecordsInput.value);
         }
     });
 
@@ -1208,7 +1152,8 @@
         }
         resizeTimer = window.setTimeout(() => {
             resizeTimer = null;
-            updateLineControls();
+            updateOverlayOffsets();
+            updateRecordControls();
             schedulePagination(20);
         }, 180);
     });
@@ -1226,7 +1171,8 @@
         event.returnValue = "";
     });
 
-    updateLineControls();
+    updateOverlayOffsets();
+    updateRecordControls();
 
     updateColumnWidths(
         readPreference("eod-draft-column-time", "14"),
@@ -1235,6 +1181,6 @@
     );
 
     window.requestAnimationFrame(() => {
-        paginateByHeight(true);
+        paginateByRecordCount(true);
     });
 })();

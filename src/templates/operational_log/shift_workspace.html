@@ -191,14 +191,14 @@
                         class="draft-column-resizer"
                         data-column-resizer="time"
                         aria-label="Изменить ширину графы даты и времени"
-                        title="Перетащить границу графы"
+                        title="Перетащить границу графы; двойной щелчок — вернуть 14 / 66 / 20"
                     ></button>
                     <button
                         type="button"
                         class="draft-column-resizer"
                         data-column-resizer="remarks"
                         aria-label="Изменить ширину графы виз и замечаний"
-                        title="Перетащить границу графы"
+                        title="Перетащить границу графы; двойной щелчок — вернуть 14 / 66 / 20"
                     ></button>
                 </div>
                 <div
@@ -233,14 +233,14 @@
                         class="draft-column-resizer"
                         data-column-resizer="time"
                         aria-label="Изменить ширину графы даты и времени"
-                        title="Перетащить границу графы"
+                        title="Перетащить границу графы; двойной щелчок — вернуть 14 / 66 / 20"
                     ></button>
                     <button
                         type="button"
                         class="draft-column-resizer"
                         data-column-resizer="remarks"
                         aria-label="Изменить ширину графы виз и замечаний"
-                        title="Перетащить границу графы"
+                        title="Перетащить границу графы; двойной щелчок — вернуть 14 / 66 / 20"
                     ></button>
                 </div>
                 <div
@@ -256,26 +256,6 @@
                 </footer>
             </section>
 
-            <section
-                class="draft-page-shell draft-measure-page"
-                data-measure-page
-                aria-hidden="true"
-            >
-                <div class="draft-table-header">
-                    <div>Дата и время записи</div>
-                    <div>Содержание записей</div>
-                    <div>Визы и замечания</div>
-                </div>
-                <div
-                    class="draft-page-date"
-                    data-measure-date
-                ></div>
-                <div
-                    class="draft-page-body"
-                    data-measure-body
-                ></div>
-                <footer class="draft-page-footer"></footer>
-            </section>
         </div>
     </div>
 
@@ -327,91 +307,56 @@
             </ul>
         </section>
 
-        <section class="draft-drawer-section">
-            <div class="draft-side-heading">
-                <span class="card-label">ШИРИНА ГРАФ</span>
-                <strong>Точное значение, %</strong>
-            </div>
-
-            <div class="draft-column-number-grid">
-                <label>
-                    <span>Дата и время</span>
-                    <input
-                        type="number"
-                        min="10"
-                        max="25"
-                        step="1"
-                        value="14"
-                        data-column-time-number
-                    >
-                </label>
-                <label>
-                    <span>Содержание</span>
-                    <input
-                        type="number"
-                        value="66"
-                        data-column-content-number
-                        readonly
-                    >
-                </label>
-                <label>
-                    <span>Визы</span>
-                    <input
-                        type="number"
-                        min="15"
-                        max="30"
-                        step="1"
-                        value="20"
-                        data-column-remarks-number
-                    >
-                </label>
-            </div>
-
-            <button
-                type="button"
-                class="button secondary compact-button"
-                data-reset-columns
-            >
-                Вернуть 14 / 66 / 20
-            </button>
-
-            <p class="draft-side-help">
-                Основной способ настройки — перетаскивание
-                вертикальных границ прямо в заголовке таблицы.
-            </p>
-        </section>
-
 
 <section class="draft-drawer-section">
     <div class="draft-side-heading">
-        <span class="card-label">СТРОК НА СТРАНИЦЕ</span>
-        <strong data-lines-summary>30 строк</strong>
+        <span class="card-label">ЗАПИСЕЙ НА СТРАНИЦЕ</span>
+        <strong data-records-summary>15 записей</strong>
     </div>
 
-    <div class="draft-line-presets" role="group" aria-label="Количество строк на странице">
-        <button type="button" data-lines-preset="auto">Авто</button>
-        <button type="button" data-lines-preset="15">15</button>
-        <button type="button" data-lines-preset="20">20</button>
-        <button type="button" data-lines-preset="25">25</button>
-        <button type="button" data-lines-preset="30">30</button>
-        <button type="button" data-lines-preset="35">35</button>
-        <button type="button" data-lines-preset="40">40</button>
+    <div
+        class="draft-record-presets"
+        role="group"
+        aria-label="Количество записей на странице"
+    >
+        <button
+            type="button"
+            data-records-preset="auto"
+        >
+            Авто
+        </button>
+        <button type="button" data-records-preset="10">10</button>
+        <button type="button" data-records-preset="15">15</button>
+        <button type="button" data-records-preset="20">20</button>
+        <button type="button" data-records-preset="25">25</button>
+        <button type="button" data-records-preset="30">30</button>
     </div>
 
-    <div class="draft-custom-lines">
+    <div class="draft-custom-records">
         <label>
             <span>Своё значение</span>
-            <input type="number" min="10" max="60" step="1" value="30" data-lines-custom>
+            <input
+                type="number"
+                min="5"
+                max="50"
+                step="1"
+                value="15"
+                data-records-custom
+            >
         </label>
-        <button type="button" class="button secondary compact-button" data-apply-custom-lines>
+        <button
+            type="button"
+            class="button secondary compact-button"
+            data-apply-custom-records
+        >
             Применить
         </button>
     </div>
 
     <p class="draft-side-help">
-        Короткая запись занимает одну номинальную строку.
-        Длинная запись автоматически занимает несколько.
-        Остаток страницы показывается пустыми разграфлёнными строками.
+        Значение определяет именно количество журнальных
+        записей. Многострочная запись считается одной и
+        никогда не разрывается между страницами.
     </p>
 </section>
 
