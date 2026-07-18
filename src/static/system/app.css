@@ -3705,7 +3705,7 @@ details[data-default-collapsed="true"]:not([open])
     }
 }
 
-/* Patch 010.3.1 Repair 7.1: дата inline-записи и гибридная тёмная тема */
+/* Patch 010.3.1 Repair 7.2 Repair 1: тёмная тема, редактор даты и допустимое время черновика */
 .shift-draft-main-large-book {
     width: calc(100% - 24px);
     max-width: none;
@@ -4641,81 +4641,333 @@ body.draft-view-drawer-visible .draft-view-drawer {
     pointer-events: none;
 }
 
-/* Бумажный журнал остаётся светлым в любой теме приложения. */
-.hybrid-paper-theme .draft-page-shell,
-.hybrid-paper-theme .draft-page-header,
-.hybrid-paper-theme .draft-page-date,
-.hybrid-paper-theme .draft-page-body,
-.hybrid-paper-theme .draft-page-footer,
-.hybrid-paper-theme .draft-ledger-row,
-.hybrid-paper-theme .draft-empty-record,
-.hybrid-paper-theme .draft-inline-create-visas {
-    color-scheme: light;
+/* Встроенный редактор даты записи. */
+.draft-date-editor {
+    display: grid;
+    gap: 7px;
+    margin: 5px 0 4px;
+    padding: 8px 9px;
+    border: 1px solid #93c5fd;
+    border-radius: 6px;
+    background: #f8fbff;
+    box-shadow: 0 5px 14px rgb(37 99 235 / 10%);
 }
 
-.hybrid-paper-theme .draft-ledger-row,
-.hybrid-paper-theme .draft-empty-record,
-.hybrid-paper-theme .draft-ledger-visas,
-.hybrid-paper-theme .draft-inline-create-visas {
+.draft-date-editor-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 5px 12px;
+}
+
+.draft-date-editor-heading strong {
+    color: #1e3a5f;
+    font-size: 10px;
+}
+
+.draft-date-editor-heading span {
+    color: #64748b;
+    font-size: 8px;
+}
+
+.draft-date-editor-controls {
+    display: grid;
+    grid-template-columns: minmax(150px, 210px) auto auto;
+    align-items: end;
+    gap: 8px;
+}
+
+.draft-date-editor-controls label,
+.draft-date-editor-time {
+    display: grid;
+    gap: 3px;
+    color: #64748b;
+    font-size: 8px;
+}
+
+.draft-date-editor-controls input {
+    min-height: 32px;
+    padding: 5px 7px;
+    border: 1px solid #94a3b8;
+    border-radius: 5px;
     background: #fff;
     color: #111827;
-}
-
-.hybrid-paper-theme .draft-ledger-time input,
-.hybrid-paper-theme .draft-ledger-content textarea,
-.hybrid-paper-theme .draft-inline-create-time input {
-    background: transparent !important;
-    color: #111827 !important;
-    -webkit-text-fill-color: #111827;
-    caret-color: #111827;
     color-scheme: light;
 }
 
-.hybrid-paper-theme .draft-ledger-content textarea::placeholder,
-.hybrid-paper-theme .draft-inline-create-time input::placeholder,
-.hybrid-paper-theme .draft-inline-create-content textarea::placeholder {
-    color: #7c8797 !important;
-    -webkit-text-fill-color: #7c8797;
+.draft-date-editor-time strong {
+    min-height: 32px;
+    padding: 7px 9px;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    background: #fff;
+    color: #111827;
+    font-size: 11px;
+}
+
+.draft-date-editor-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+}
+
+.draft-date-editor-actions button.secondary {
+    min-height: 32px;
+    padding: 5px 9px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #fff;
+    color: #334155;
+    cursor: pointer;
+}
+
+.draft-date-editor-message {
+    min-height: 13px;
+    margin: 0;
+    color: #64748b;
+    font-size: 8px;
+    line-height: 1.35;
+}
+
+.draft-date-editor.has-error {
+    border-color: #ef4444;
+    background: #fff7f7;
+}
+
+.draft-date-editor.has-error .draft-date-editor-message {
+    color: #b91c1c;
+}
+
+/* Полноценная экранная тёмная тема журнала. */
+[data-theme="dark"] .screen-journal-theme {
+    color-scheme: dark;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-paper-stage {
+    background: #07101a;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-page-shell {
+    border-color: #435267;
+    background: #0e1723;
+    color: #e6edf5;
+    box-shadow: 0 14px 38px rgb(0 0 0 / 42%);
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-table-header {
+    border-bottom-color: #536276;
+    background: #1a2635;
+    color: #e3ebf5;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-table-header > div,
+[data-theme="dark"] .screen-journal-theme .draft-ledger-time,
+[data-theme="dark"] .screen-journal-theme .draft-ledger-content,
+[data-theme="dark"] .screen-journal-theme .draft-inline-create-time,
+[data-theme="dark"] .screen-journal-theme .draft-inline-create-content {
+    border-right-color: #435267;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-page-date,
+[data-theme="dark"] .screen-journal-theme .draft-inline-date {
+    border-bottom-color: #435267;
+    background: #152130;
+    color: #dce6f2;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-page-body,
+[data-theme="dark"] .screen-journal-theme .draft-ledger-row,
+[data-theme="dark"] .screen-journal-theme .draft-empty-record,
+[data-theme="dark"] .screen-journal-theme .draft-ledger-visas,
+[data-theme="dark"] .screen-journal-theme .draft-inline-create-visas {
+    background: #0e1723;
+    color: #e6edf5;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-ledger-row,
+[data-theme="dark"] .screen-journal-theme .draft-empty-record {
+    border-bottom-color: #3d4c60;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-empty-record > span {
+    border-right-color: #3d4c60;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-page-footer {
+    border-top-color: #435267;
+    background: #0e1723;
+    color: #8392a6;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-ledger-time input,
+[data-theme="dark"] .screen-journal-theme .draft-ledger-content textarea,
+[data-theme="dark"] .screen-journal-theme .draft-inline-create-time input,
+[data-theme="dark"] .screen-journal-theme .draft-inline-create-content textarea {
+    background: #111d2a !important;
+    color: #e8eef6 !important;
+    -webkit-text-fill-color: #e8eef6;
+    caret-color: #7db4ff;
+    color-scheme: dark;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-ledger-time input,
+[data-theme="dark"] .screen-journal-theme .draft-inline-create-time input {
+    border-bottom-color: #718096;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-ledger-content textarea {
+    border-color: #2c3b4f;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-ledger-content textarea:focus,
+[data-theme="dark"] .screen-journal-theme .draft-inline-create-content textarea:focus {
+    border-color: #5d9cec;
+    background: #18283a !important;
+    box-shadow: 0 0 0 2px rgb(93 156 236 / 15%);
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-ledger-content textarea::placeholder,
+[data-theme="dark"] .screen-journal-theme .draft-inline-create-time input::placeholder,
+[data-theme="dark"] .screen-journal-theme .draft-inline-create-content textarea::placeholder {
+    color: #8494a8 !important;
+    -webkit-text-fill-color: #8494a8;
     opacity: 1;
 }
 
-.hybrid-paper-theme .draft-ledger-content textarea:focus {
-    background: #f8fbff !important;
-    color: #111827 !important;
-    -webkit-text-fill-color: #111827;
+[data-theme="dark"] .screen-journal-theme .draft-ledger-form.has-focus .draft-ledger-content {
+    background: #101c29;
 }
 
-.hybrid-paper-theme
-.draft-empty-record.is-inline-creating {
-    background: #eef6ff;
+[data-theme="dark"] .screen-journal-theme .draft-empty-record-time:hover,
+[data-theme="dark"] .screen-journal-theme .draft-empty-record-time:focus-visible {
+    background: #172b40;
+    box-shadow: inset 0 0 0 1px #466d98;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-empty-record-time::after {
+    color: #7fa8d3;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-empty-record.is-inline-creating {
+    background: #13253a;
     box-shadow:
-        inset 0 0 0 2px #60a5fa,
-        0 0 0 1px rgb(37 99 235 / 12%);
+        inset 0 0 0 2px #4f91dc,
+        0 0 0 1px rgb(79 145 220 / 18%);
 }
 
-.hybrid-paper-theme
-.draft-inline-create-content textarea {
-    background: #fff !important;
-    color: #111827 !important;
-    -webkit-text-fill-color: #111827;
-    caret-color: #111827;
-    color-scheme: light;
+[data-theme="dark"] .screen-journal-theme .draft-inline-create-status,
+[data-theme="dark"] .screen-journal-theme .draft-ledger-meta {
+    color: #8fa0b5;
 }
 
-.hybrid-paper-theme
-.draft-inline-create-content textarea:focus {
-    background: #f8fbff !important;
+[data-theme="dark"] .screen-journal-theme .draft-save-status.is-saved {
+    color: #5dd393;
 }
 
-.hybrid-paper-theme .draft-inline-create-status {
-    color: #475569;
+[data-theme="dark"] .screen-journal-theme .draft-save-status.is-dirty,
+[data-theme="dark"] .screen-journal-theme .draft-save-status.is-saving {
+    color: #f0bd62;
 }
 
-.hybrid-paper-theme .draft-mini-toolbar button {
-    color: #475569;
+[data-theme="dark"] .screen-journal-theme .draft-save-status.is-error,
+[data-theme="dark"] .screen-journal-theme .draft-save-status.is-conflict {
+    color: #ff8c98;
 }
 
-.hybrid-paper-theme .draft-mini-toolbar button:hover {
-    background: #e8edf3;
-    color: #0f172a;
+[data-theme="dark"] .screen-journal-theme .draft-mini-toolbar button {
+    color: #9fb0c4;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-mini-toolbar button:hover {
+    background: #253448;
+    color: #f3f7fb;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-mini-toolbar i {
+    background: #435267;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-date-editor {
+    border-color: #4f91dc;
+    background: #132238;
+    box-shadow: 0 7px 18px rgb(0 0 0 / 24%);
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-date-editor-heading strong {
+    color: #dce9f8;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-date-editor-heading span,
+[data-theme="dark"] .screen-journal-theme .draft-date-editor-controls label,
+[data-theme="dark"] .screen-journal-theme .draft-date-editor-time,
+[data-theme="dark"] .screen-journal-theme .draft-date-editor-message {
+    color: #93a5ba;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-date-editor-controls input,
+[data-theme="dark"] .screen-journal-theme .draft-date-editor-time strong,
+[data-theme="dark"] .screen-journal-theme .draft-date-editor-actions button.secondary {
+    border-color: #465970;
+    background: #0d1825;
+    color: #e5edf6;
+    color-scheme: dark;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-date-editor.has-error {
+    border-color: #e56b78;
+    background: #301a24;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-date-editor.has-error .draft-date-editor-message {
+    color: #ff9aa5;
+}
+
+@media (max-width: 760px) {
+    .draft-date-editor-controls {
+        grid-template-columns: 1fr;
+    }
+
+    .draft-date-editor-actions {
+        justify-content: flex-start;
+    }
+}
+
+/* Печать и чистовик остаются белыми независимо от экранной темы. */
+@media print {
+    [data-theme] .screen-journal-theme .draft-paper-stage,
+    [data-theme] .screen-journal-theme .draft-page-shell,
+    [data-theme] .screen-journal-theme .draft-page-body,
+    [data-theme] .screen-journal-theme .draft-ledger-row,
+    [data-theme] .screen-journal-theme .draft-empty-record,
+    [data-theme] .screen-journal-theme .draft-ledger-visas {
+        background: #fff !important;
+        color: #111827 !important;
+        color-scheme: light;
+    }
+
+    [data-theme] .screen-journal-theme .draft-table-header {
+        background: #eef2f7 !important;
+        color: #243244 !important;
+    }
+
+    [data-theme] .screen-journal-theme .draft-page-date,
+    [data-theme] .screen-journal-theme .draft-inline-date {
+        background: #f8fafc !important;
+        color: #1f2937 !important;
+    }
+
+    [data-theme] .screen-journal-theme .draft-ledger-time input,
+    [data-theme] .screen-journal-theme .draft-ledger-content textarea {
+        background: transparent !important;
+        color: #111827 !important;
+        -webkit-text-fill-color: #111827;
+        box-shadow: none !important;
+        color-scheme: light;
+    }
+
+    [data-theme] .screen-journal-theme .draft-date-editor {
+        display: none !important;
+    }
 }

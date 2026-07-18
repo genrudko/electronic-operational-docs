@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+from datetime import timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -98,7 +99,9 @@ for marker in (
     "data-add-draft-form",
     "data-default-entry-date",
     "data-default-entry-date-iso",
-    "hybrid-paper-theme",
+    "data-shift-start",
+    "data-shift-end",
+    "screen-journal-theme",
     "data-apply-custom-records",
     "stable-page-layout-workspace",
     "draft_workspace.js",
@@ -130,6 +133,9 @@ assert shift.draft_entries.count() == before + 1
 draft = shift.draft_entries.order_by("-pk").first()
 assert draft.version == 1
 assert draft.revisions.count() == 1
+assert shift.planned_start_at <= draft.event_at
+assert draft.event_at <= shift.planned_end_at
+print("DEFAULT_DRAFT_TIME_WITHIN_SHIFT=PASSED")
 
 autosave_url = reverse(
     "operational_log:autosave_draft",
@@ -225,6 +231,9 @@ for marker in (
     "materializeInlineDraft",
     "defaultEntryDateIso",
     "isoDateToLabel",
+    "openDateEditor",
+    "validateShiftDateTime",
+    "refreshInlineDateMarkers",
     'formData.set(\n            "event_at"',
     "parseCreatedDraftRow",
     "bindDraftRow",
@@ -237,10 +246,42 @@ assert "parse_datetime" in views_text
 assert 'request.POST.get("event_at", "")' in views_text
 assert "event_at=requested_event_at" in views_text
 assert "Некорректная дата и время новой записи." in views_text
+assert "_event_at_within_shift" in views_text
+assert "_shift_event_at_error" in views_text
+assert "_default_event_at_for_shift" in views_text
+assert "requested_event_at = _default_event_at_for_shift(shift)" in views_text
+assert "window.prompt" not in js_text
+
+outside_event_at = shift.planned_end_at + timedelta(minutes=1)
+outside_value = timezone.localtime(outside_event_at).strftime(
+    "%Y-%m-%dT%H:%M"
+)
+before_outside = shift.draft_entries.count()
+outside_add = client.post(
+    reverse(
+        "operational_log:add_draft",
+        args=(journal.pk,),
+    ),
+    {"event_at": outside_value},
+)
+assert outside_add.status_code == 400
+assert shift.draft_entries.count() == before_outside
+outside_save = client.post(
+    autosave_url,
+    {
+        "public_id": str(draft.public_id),
+        "expected_version": draft.version,
+        "event_at": outside_value,
+        "content": draft.content,
+    },
+)
+assert outside_save.status_code == 400
+assert "event_at" in outside_save.json()["errors"]
 print("INLINE_ENTRY_DATE_INHERITANCE=PASSED")
+print("SHIFT_BOUND_DATE_VALIDATION=PASSED")
 
 repair_css = css_text.split(
-    "/* Patch 010.3.1 Repair 7.1:",
+    "/* Patch 010.3.1 Repair 7.2 Repair 1:",
     1,
 )[-1]
 assert "aspect-ratio: 210 / 297" not in repair_css
@@ -299,12 +340,18 @@ print("RECORD_COUNT_PAGINATION=PASSED")
 print("UNCUT_PAGE_BOTTOM=PASSED")
 print("DOCKED_DRAWER_LAYERING=PASSED")
 print("REDUNDANT_COLUMN_PANEL_REMOVED=PASSED")
-assert ".hybrid-paper-theme" in repair_css
-assert "color-scheme: light" in repair_css
-assert "-webkit-text-fill-color: #111827" in repair_css
-assert "background: transparent !important" in repair_css
+assert ".screen-journal-theme" in repair_css
+assert '[data-theme="dark"]' in repair_css
+assert ".draft-date-editor" in repair_css
+assert "@media print" in repair_css
+assert "color-scheme: dark" in repair_css
+assert "hybrid-paper-theme" not in workspace_text
+assert "window.prompt" not in js_text
+assert "openDateEditor" in js_text
+assert "validateShiftDateTime" in js_text
 print("INLINE_BLANK_RECORD_CREATION=PASSED")
 print("ADD_RECORD_BUTTON_PRESERVED=PASSED")
-print("HYBRID_DARK_PAPER_THEME=PASSED")
+print("FULL_DARK_JOURNAL_THEME=PASSED")
+print("INLINE_DATE_EDITOR=PASSED")
 
-print("PATCH_010_3_1_REPAIR7_1_DATE_DARK_THEME_GATE_PASSED")
+print("PATCH_010_3_1_REPAIR7_2_REPAIR1_DARK_DATE_EDITOR_GATE_PASSED")

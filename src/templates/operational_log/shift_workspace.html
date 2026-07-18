@@ -64,11 +64,13 @@
 </section>
 {% else %}
 <section
-    class="paged-draft-workspace large-book-workspace stable-page-layout-workspace hybrid-paper-theme"
+    class="paged-draft-workspace large-book-workspace stable-page-layout-workspace screen-journal-theme"
     data-draft-workspace
     data-autosave-delay="1000"
     data-default-entry-date="{{ shift.planned_start_at|date:'d.m.Y' }}"
     data-default-entry-date-iso="{{ shift.planned_start_at|date:'Y-m-d' }}"
+    data-shift-start="{{ shift.planned_start_at|date:'Y-m-d\TH:i' }}"
+    data-shift-end="{{ shift.planned_end_at|date:'Y-m-d\TH:i' }}"
     style="
         --draft-time-column: 14%;
         --draft-content-column: 66%;
@@ -523,7 +525,9 @@
                                 type="button"
                                 data-date-button
                                 data-current-date="{{ draft.event_at|date:'d.m.Y' }}"
-                                title="Изменить дату"
+                                title="Изменить дату записи"
+                                aria-label="Изменить дату записи"
+                                aria-expanded="false"
                             >
                                 ◫
                             </button>

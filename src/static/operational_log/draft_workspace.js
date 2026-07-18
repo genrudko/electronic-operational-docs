@@ -25,6 +25,8 @@
     const defaultEntryDateIso = (
         workspace.dataset.defaultEntryDateIso || ""
     );
+    const shiftStartAt = workspace.dataset.shiftStart || "";
+    const shiftEndAt = workspace.dataset.shiftEnd || "";
 
     const leftShell = workspace.querySelector(
         '[data-page-shell="left"]',
@@ -101,6 +103,7 @@
     let paginationPending = false;
     let inlineCreation = null;
     let inlineCreationTimer = null;
+    let activeDateEditor = null;
     let currentColumnWidths = {
         time: 14,
         content: 66,
@@ -296,6 +299,315 @@
         return `${day}.${month}.${year}`;
     }
 
+    function dateLabelToIso(value) {
+        const normalized = normalizeDate(value || "");
+        if (!normalized) {
+            return null;
+        }
+        const [day, month, year] = normalized.split(".");
+        return `${year}-${month}-${day}`;
+    }
+
+    function parseLocalDateTime(value) {
+        const match = String(value || "").match(
+            /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/,
+        );
+        if (!match) {
+            return null;
+        }
+        const [, year, month, day, hours, minutes] = match;
+        const parsed = new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day),
+            Number(hours),
+            Number(minutes),
+            0,
+            0,
+        );
+        if (
+            parsed.getFullYear() !== Number(year)
+            || parsed.getMonth() + 1 !== Number(month)
+            || parsed.getDate() !== Number(day)
+            || parsed.getHours() !== Number(hours)
+            || parsed.getMinutes() !== Number(minutes)
+        ) {
+            return null;
+        }
+        return parsed;
+    }
+
+    function formatShiftBoundary(value) {
+        const parsed = parseLocalDateTime(value);
+        if (!parsed) {
+            return value;
+        }
+        return new Intl.DateTimeFormat("ru-RU", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+        }).format(parsed).replace(",", "");
+    }
+
+    function shiftRangeLabel() {
+        return (
+            `${formatShiftBoundary(shiftStartAt)} — `
+            + formatShiftBoundary(shiftEndAt)
+        );
+    }
+
+    function validateShiftDateTime(dateIso, timeValue) {
+        const normalizedTime = normalizeTime(timeValue || "");
+        const candidate = parseLocalDateTime(
+            `${dateIso}T${normalizedTime || ""}`,
+        );
+        const start = parseLocalDateTime(shiftStartAt);
+        const end = parseLocalDateTime(shiftEndAt);
+        if (!candidate || !normalizedTime) {
+            return {
+                ok: false,
+                message: "Укажите корректные дату и время.",
+            };
+        }
+        if (
+            start
+            && end
+            && (candidate < start || candidate > end)
+        ) {
+            return {
+                ok: false,
+                message: (
+                    "Дата и время должны входить в интервал смены: "
+                    + shiftRangeLabel()
+                ),
+            };
+        }
+        return {
+            ok: true,
+            dateTime: `${dateIso}T${normalizedTime}`,
+            normalizedTime,
+        };
+    }
+
+    function refreshInlineDateMarkers() {
+        let previousDate = null;
+        rows.forEach((row) => {
+            const rowDate = row.dataset.entryDate || "";
+            const rowLabel = row.dataset.entryDateLabel || "";
+            let marker = row.querySelector("[data-inline-date]");
+            const needsMarker = Boolean(
+                rowDate && rowDate !== previousDate,
+            );
+            if (needsMarker) {
+                if (!marker) {
+                    marker = document.createElement("div");
+                    marker.className = "draft-inline-date";
+                    marker.dataset.inlineDate = "true";
+                    row.prepend(marker);
+                }
+                marker.textContent = rowLabel;
+            } else if (marker) {
+                marker.remove();
+            }
+            previousDate = rowDate || previousDate;
+        });
+    }
+
+    function closeDateEditor(restoreFocus = false) {
+        if (!activeDateEditor) {
+            return;
+        }
+        const { editor, button } = activeDateEditor;
+        editor.remove();
+        button.setAttribute("aria-expanded", "false");
+        activeDateEditor = null;
+        if (restoreFocus) {
+            button.focus();
+        }
+    }
+
+    function openDateEditor(form, dateButton) {
+        if (
+            activeDateEditor
+            && activeDateEditor.form === form
+        ) {
+            activeDateEditor.dateInput.focus();
+            return;
+        }
+        closeDateEditor();
+
+        const contentCell = form.querySelector(
+            ".draft-ledger-content",
+        );
+        const lower = form.querySelector(
+            ".draft-ledger-lower",
+        );
+        const timeInput = form.querySelector(
+            "[data-quick-time]",
+        );
+        if (!contentCell || !lower || !timeInput) {
+            return;
+        }
+
+        const editor = document.createElement("section");
+        editor.className = "draft-date-editor";
+        editor.dataset.dateEditor = "true";
+        editor.setAttribute("aria-label", "Редактор даты записи");
+
+        const heading = document.createElement("div");
+        heading.className = "draft-date-editor-heading";
+        const title = document.createElement("strong");
+        title.textContent = "Дата записи";
+        const range = document.createElement("span");
+        range.textContent = `Смена: ${shiftRangeLabel()}`;
+        heading.append(title, range);
+
+        const controls = document.createElement("div");
+        controls.className = "draft-date-editor-controls";
+        const dateLabel = document.createElement("label");
+        dateLabel.textContent = "Дата";
+        const dateInput = document.createElement("input");
+        dateInput.type = "date";
+        dateInput.value = (
+            dateLabelToIso(dateButton.dataset.currentDate)
+            || form.querySelector("[data-event-at]")
+                ?.value.slice(0, 10)
+            || defaultEntryDateIso
+        );
+        if (shiftStartAt) {
+            dateInput.min = shiftStartAt.slice(0, 10);
+        }
+        if (shiftEndAt) {
+            dateInput.max = shiftEndAt.slice(0, 10);
+        }
+        dateLabel.append(dateInput);
+
+        const timePreview = document.createElement("div");
+        timePreview.className = "draft-date-editor-time";
+        timePreview.innerHTML = (
+            "<span>Время записи</span>"
+            + `<strong>${normalizeTime(timeInput.value) || "—"}</strong>`
+        );
+
+        const actions = document.createElement("div");
+        actions.className = "draft-date-editor-actions";
+        const cancelButton = document.createElement("button");
+        cancelButton.type = "button";
+        cancelButton.className = "secondary";
+        cancelButton.textContent = "Отмена";
+        const applyButton = document.createElement("button");
+        applyButton.type = "button";
+        applyButton.className = "button compact-button";
+        applyButton.textContent = "Применить";
+        actions.append(cancelButton, applyButton);
+        controls.append(dateLabel, timePreview, actions);
+
+        const message = document.createElement("p");
+        message.className = "draft-date-editor-message";
+        message.setAttribute("role", "status");
+        message.setAttribute("aria-live", "polite");
+        editor.append(heading, controls, message);
+        contentCell.insertBefore(editor, lower);
+        dateButton.setAttribute("aria-expanded", "true");
+        activeDateEditor = {
+            form,
+            button: dateButton,
+            editor,
+            dateInput,
+            message,
+        };
+
+        const applySelection = async () => {
+            const validation = validateShiftDateTime(
+                dateInput.value,
+                timeInput.value,
+            );
+            if (!validation.ok) {
+                message.textContent = validation.message;
+                editor.classList.add("has-error");
+                dateInput.focus();
+                return;
+            }
+
+            editor.classList.remove("has-error");
+            message.textContent = "Сохранение…";
+            const dateText = isoDateToLabel(dateInput.value);
+            const hidden = form.querySelector("[data-event-at]");
+            const row = form.closest("[data-draft-card]");
+            const original = {
+                dateText: dateButton.dataset.currentDate || "",
+                title: dateButton.title,
+                hiddenValue: hidden?.value || "",
+                timeValue: timeInput.value,
+                rowDate: row?.dataset.entryDate || "",
+                rowDateLabel: row?.dataset.entryDateLabel || "",
+            };
+            if (!hidden) {
+                message.textContent = "Не найдено поле даты записи.";
+                editor.classList.add("has-error");
+                return;
+            }
+
+            dateButton.dataset.currentDate = dateText;
+            dateButton.title = `Дата записи: ${dateText}`;
+            hidden.value = validation.dateTime;
+            timeInput.value = validation.normalizedTime;
+            if (row) {
+                row.dataset.entryDate = dateInput.value;
+                row.dataset.entryDateLabel = dateText;
+            }
+
+            const saved = await save(form);
+            if (!saved) {
+                dateButton.dataset.currentDate = original.dateText;
+                dateButton.title = original.title;
+                hidden.value = original.hiddenValue;
+                timeInput.value = original.timeValue;
+                if (row) {
+                    row.dataset.entryDate = original.rowDate;
+                    row.dataset.entryDateLabel = original.rowDateLabel;
+                }
+                message.textContent = (
+                    "Не удалось сохранить дату. Проверьте интервал смены."
+                );
+                editor.classList.add("has-error");
+                return;
+            }
+
+            refreshInlineDateMarkers();
+            closeDateEditor(true);
+            markPaginationPending();
+            flushDeferredPagination();
+        };
+
+        cancelButton.addEventListener("click", () => {
+            closeDateEditor(true);
+        });
+        applyButton.addEventListener("click", () => {
+            void applySelection();
+        });
+        editor.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") {
+                event.preventDefault();
+                closeDateEditor(true);
+            }
+            if (
+                event.key === "Enter"
+                && event.target === dateInput
+            ) {
+                event.preventDefault();
+                void applySelection();
+            }
+        });
+
+        window.requestAnimationFrame(() => {
+            dateInput.focus();
+        });
+    }
+
     function syncHiddenDateTime(form) {
         const hidden = form.querySelector("[data-event-at]");
         const time = form.querySelector("[data-quick-time]");
@@ -312,16 +624,22 @@
             return false;
         }
 
-        const [day, month, year] = normalizedDate.split(".");
-        time.value = normalizedTime;
-        hidden.value = (
-            `${year}-${month}-${day}T${normalizedTime}`
+        const dateIso = dateLabelToIso(normalizedDate);
+        const validation = validateShiftDateTime(
+            dateIso,
+            normalizedTime,
         );
+        if (!validation.ok) {
+            return false;
+        }
+
+        time.value = validation.normalizedTime;
+        hidden.value = validation.dateTime;
         dateButton.dataset.currentDate = normalizedDate;
 
         const row = form.closest("[data-draft-card]");
         if (row) {
-            row.dataset.entryDate = `${year}-${month}-${day}`;
+            row.dataset.entryDate = dateIso;
             row.dataset.entryDateLabel = normalizedDate;
         }
         return true;
@@ -339,8 +657,12 @@
 
     async function save(form) {
         if (!syncHiddenDateTime(form)) {
-            setStatus(form, "Некорректные дата или время", "is-error");
-            return;
+            setStatus(
+                form,
+                "Дата и время вне интервала смены",
+                "is-error",
+            );
+            return false;
         }
 
         const previous = controllers.get(form);
@@ -367,11 +689,19 @@
             if (response.status === 409 && payload.conflict) {
                 form.dataset.conflict = "true";
                 setStatus(form, "Конфликт версии", "is-conflict");
-                return;
+                return false;
             }
             if (!response.ok || !payload.ok) {
-                setStatus(form, "Не сохранено", "is-error");
-                return;
+                const eventErrors = payload.errors?.event_at;
+                const firstError = Array.isArray(eventErrors)
+                    ? (eventErrors[0]?.message || eventErrors[0])
+                    : null;
+                setStatus(
+                    form,
+                    firstError || "Не сохранено",
+                    "is-error",
+                );
+                return false;
             }
 
             const versionInput = form.querySelector(
@@ -394,10 +724,12 @@
                 "is-saved",
             );
             flushDeferredPagination();
+            return true;
         } catch (error) {
             if (error.name !== "AbortError") {
                 setStatus(form, "Нет связи", "is-error");
             }
+            return false;
         } finally {
             if (controllers.get(form) === controller) {
                 controllers.delete(form);
@@ -715,6 +1047,7 @@
             bindDraftRow(row);
             bindEditorCommands(row);
             inlineCreation = null;
+            refreshInlineDateMarkers();
             markPaginationPending();
 
             activeDraftForm = form;
@@ -1407,28 +1740,7 @@
         });
 
         dateButton.addEventListener("click", () => {
-            const entered = window.prompt(
-                "Дата: 1707, 170726 или 17072026",
-                dateButton.dataset.currentDate || "",
-            );
-            if (entered === null) {
-                return;
-            }
-
-            const normalized = normalizeDate(entered);
-            if (!normalized) {
-                setStatus(
-                    form,
-                    "Некорректная дата",
-                    "is-error",
-                );
-                return;
-            }
-
-            dateButton.dataset.currentDate = normalized;
-            syncHiddenDateTime(form);
-            markPaginationPending();
-            scheduleSave(form);
+            openDateEditor(form, dateButton);
         });
 
         form.addEventListener("submit", (event) => {

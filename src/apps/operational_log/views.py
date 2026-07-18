@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any
 
 from django.contrib import messages
@@ -96,6 +96,36 @@ def _validation_payload(error: ValidationError) -> Any:
     if hasattr(error, "message_dict"):
         return error.message_dict
     return error.messages
+
+
+def _event_at_within_shift(
+    *,
+    shift: OperationalShift,
+    event_at: datetime,
+) -> bool:
+    return (
+        shift.planned_start_at
+        <= event_at
+        <= shift.planned_end_at
+    )
+
+
+def _shift_event_at_error(shift: OperationalShift) -> str:
+    start = timezone.localtime(shift.planned_start_at)
+    end = timezone.localtime(shift.planned_end_at)
+    return (
+        "Дата и время записи должны входить в интервал смены: "
+        f"{start:%d.%m.%Y %H:%M} — {end:%d.%m.%Y %H:%M}."
+    )
+
+
+def _default_event_at_for_shift(shift: OperationalShift) -> datetime:
+    now = timezone.now()
+    if now < shift.planned_start_at:
+        return shift.planned_start_at
+    if now > shift.planned_end_at:
+        return shift.planned_end_at
+    return now
 
 
 @login_required
@@ -275,7 +305,7 @@ def add_draft_entry(
     journal = _accessible_journal(employee, journal_id)
     shift = _active_shift_or_404(journal=journal)
 
-    requested_event_at = None
+    requested_event_at = _default_event_at_for_shift(shift)
     event_at_raw = request.POST.get("event_at", "").strip()
     if event_at_raw:
         requested_event_at = parse_datetime(event_at_raw)
@@ -287,6 +317,13 @@ def add_draft_entry(
             requested_event_at = timezone.make_aware(
                 requested_event_at,
                 timezone.get_current_timezone(),
+            )
+        if not _event_at_within_shift(
+            shift=shift,
+            event_at=requested_event_at,
+        ):
+            return HttpResponseBadRequest(
+                _shift_event_at_error(shift)
             )
 
     entry = create_draft_entry(
@@ -333,6 +370,19 @@ def autosave_draft_entry(
                 "ok": False,
                 "errors": {
                     "public_id": ["Идентификатор записи не совпадает."]
+                },
+            },
+            status=400,
+        )
+    if not _event_at_within_shift(
+        shift=shift,
+        event_at=form.cleaned_data["event_at"],
+    ):
+        return JsonResponse(
+            {
+                "ok": False,
+                "errors": {
+                    "event_at": [_shift_event_at_error(shift)],
                 },
             },
             status=400,

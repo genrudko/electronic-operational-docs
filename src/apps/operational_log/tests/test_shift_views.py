@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
@@ -57,7 +59,9 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             "data-add-draft-form",
             "data-default-entry-date",
             "data-default-entry-date-iso",
-            "hybrid-paper-theme",
+            "data-shift-start",
+            "data-shift-end",
+            "screen-journal-theme",
             "data-apply-custom-records",
             "stable-page-layout-workspace",
             "data-quick-time",
@@ -83,6 +87,7 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         )
         self.assertNotContains(workspace, "data-measure-page")
         self.assertNotContains(workspace, "data-view-drawer-backdrop")
+        self.assertNotContains(workspace, "hybrid-paper-theme")
 
     def test_open_shift_for_journal_without_active_shift(self) -> None:
         journal = OperationalJournal.objects.create(
@@ -139,6 +144,14 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         self.assertEqual(entry.content, "")
         self.assertEqual(entry.version, 1)
         self.assertEqual(entry.revisions.count(), 1)
+        self.assertGreaterEqual(
+            entry.event_at,
+            self.shift.planned_start_at,
+        )
+        self.assertLessEqual(
+            entry.event_at,
+            self.shift.planned_end_at,
+        )
 
         target_event_at = timezone.localtime(
             self.shift.planned_start_at
@@ -183,6 +196,31 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             before + 2,
         )
 
+        outside_event_at = (
+            self.shift.planned_end_at + timedelta(minutes=1)
+        )
+        response = self.client.post(
+            reverse(
+                "operational_log:add_draft",
+                args=(self.journal.pk,),
+            ),
+            {
+                "event_at": timezone.localtime(
+                    outside_event_at
+                ).strftime("%Y-%m-%dT%H:%M"),
+            },
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertContains(
+            response,
+            "интервал смены",
+            status_code=400,
+        )
+        self.assertEqual(
+            self.shift.draft_entries.count(),
+            before + 2,
+        )
+
     def test_autosave_updates_draft_and_returns_version(self) -> None:
         self.client.force_login(self.user)
         entry = self.shift.draft_entries.filter(
@@ -211,6 +249,30 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             entry.content,
             "Текст сохранён через автосохранение",
         )
+
+        saved_event_at = entry.event_at
+        outside_event_at = (
+            self.shift.planned_end_at + timedelta(minutes=1)
+        )
+        outside = self.client.post(
+            reverse(
+                "operational_log:autosave_draft",
+                args=(self.journal.pk, entry.public_id),
+            ),
+            {
+                "public_id": str(entry.public_id),
+                "expected_version": payload["version"],
+                "event_at": timezone.localtime(
+                    outside_event_at
+                ).strftime("%Y-%m-%dT%H:%M"),
+                "content": entry.content,
+            },
+        )
+        self.assertEqual(outside.status_code, 400)
+        self.assertIn("event_at", outside.json()["errors"])
+        entry.refresh_from_db()
+        self.assertEqual(entry.event_at, saved_event_at)
+        self.assertEqual(entry.version, payload["version"])
 
     def test_autosave_returns_conflict_for_stale_version(self) -> None:
         self.client.force_login(self.user)
