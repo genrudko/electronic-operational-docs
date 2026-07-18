@@ -5583,3 +5583,131 @@ body.draft-view-drawer-visible .draft-view-drawer {
         font-size: 9pt !important;
     }
 }
+/* Patch 011.2: контролируемое ядро редактора журнала. */
+.draft-rich-editor-host {
+    min-width: 0;
+}
+
+.draft-rich-editor {
+    display: block;
+    overflow: hidden;
+    width: 100%;
+    min-height: 36px;
+    padding: 4px 5px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    color: #111827;
+    font-family: inherit;
+    font-size: var(--journal-entry-font-size, 12px);
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.draft-rich-editor:focus {
+    border-color: #93c5fd;
+    background: #f8fbff;
+    outline: 0;
+    box-shadow: 0 0 0 2px rgb(37 99 235 / 10%);
+}
+
+.draft-rich-editor[data-empty="true"]::before {
+    color: #8a98aa;
+    content: attr(data-placeholder);
+    pointer-events: none;
+}
+
+.draft-rich-editor p,
+.draft-rich-editor > div {
+    margin: 0;
+    min-height: 1.45em;
+}
+
+.draft-rich-editor p + p,
+.draft-rich-editor > div + div,
+.draft-rich-editor ul + p,
+.draft-rich-editor ol + p,
+.draft-rich-editor p + ul,
+.draft-rich-editor p + ol {
+    margin-top: 3px;
+}
+
+.draft-rich-editor ul,
+.draft-rich-editor ol {
+    margin: 2px 0 2px 1.35em;
+    padding: 0;
+}
+
+.draft-rich-editor li {
+    margin: 1px 0;
+    padding-left: 2px;
+}
+
+.draft-ledger-form.is-rich-editor-ready [data-editor-fallback] {
+    display: none;
+}
+
+.draft-ledger-lower {
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.draft-mini-toolbar {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 100%;
+}
+
+.draft-mini-toolbar button.is-active {
+    background: color-mix(
+        in srgb,
+        var(--accent) 18%,
+        var(--panel-2)
+    );
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.draft-mini-toolbar button[disabled] {
+    cursor: not-allowed;
+    opacity: .38;
+}
+
+.draft-editor-separator {
+    width: 1px;
+    height: 18px;
+    margin: 0 2px;
+    background: var(--border);
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-rich-editor {
+    color: #e8eef6;
+    caret-color: #7db4ff;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-rich-editor:focus {
+    border-color: #5d9cec;
+    background: #18283a;
+    box-shadow: 0 0 0 2px rgb(93 156 236 / 15%);
+}
+
+[data-theme="dark"] .screen-journal-theme
+.draft-rich-editor[data-empty="true"]::before {
+    color: #8494a8;
+}
+
+@media print {
+    .draft-ledger-form.is-rich-editor-ready [data-editor-fallback] {
+        display: none !important;
+    }
+
+    .draft-rich-editor {
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+        color: #111827 !important;
+        box-shadow: none !important;
+        font-size: 9pt !important;
+    }
+}

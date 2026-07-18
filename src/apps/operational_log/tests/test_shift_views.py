@@ -90,6 +90,10 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             "data-quick-display-form",
             "stable-page-layout-workspace",
             "data-quick-time",
+            "data-editor-fallback",
+            "data-editor-payload",
+            "data-rich-editor-host",
+            "draft_editor.js",
             "draft_workspace.js",
         ):
             self.assertContains(workspace, marker)
@@ -400,6 +404,41 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             html.index(str(earlier.public_id)),
             html.index(str(later.public_id)),
         )
+
+    def test_autosave_rejects_unknown_editor_mark(self) -> None:
+        self.client.force_login(self.user)
+        entry = self.shift.draft_entries.filter(
+            is_removed=False
+        ).first()
+        before_version = entry.version
+        response = self.client.post(
+            reverse(
+                "operational_log:autosave_draft",
+                args=(self.journal.pk, entry.public_id),
+            ),
+            {
+                "public_id": str(entry.public_id),
+                "expected_version": entry.version,
+                "event_at": timezone.localtime(
+                    entry.event_at
+                ).strftime("%Y-%m-%dT%H:%M"),
+                "content": entry.content,
+                "editor_schema_version": (
+                    "operational-draft-editor.v1"
+                ),
+                "editor_payload": (
+                    '{"schema_version":'
+                    '"operational-draft-editor.v1",'
+                    '"blocks":[{"type":"paragraph",'
+                    '"segments":[{"text":"x",'
+                    '"marks":["html"]}]}]}'
+                ),
+            },
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("editor_payload", response.json()["errors"])
+        entry.refresh_from_db()
+        self.assertEqual(entry.version, before_version)
 
     def test_autosave_returns_conflict_for_stale_version(self) -> None:
         self.client.force_login(self.user)

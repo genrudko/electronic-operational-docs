@@ -12,6 +12,12 @@ from apps.documents.models import Document
 from apps.equipment.models import EquipmentAsset
 from apps.organizations.models import Employee, Organization, Workplace
 
+from .editor import (
+    EDITOR_SCHEMA_VERSION,
+    editor_document_to_text,
+    normalize_editor_document,
+)
+
 
 class ImmutableQuerySet(models.QuerySet):
     def update(self, **kwargs: Any) -> int:
@@ -378,6 +384,17 @@ class OperationalDraftEntry(models.Model):
         db_index=True,
     )
     content = models.TextField("Содержание", blank=True)
+    editor_schema_version = models.CharField(
+        "Версия структуры редактора",
+        max_length=64,
+        default=EDITOR_SCHEMA_VERSION,
+        editable=False,
+    )
+    editor_payload = models.JSONField(
+        "Структура редактора",
+        default=dict,
+        blank=True,
+    )
     version = models.PositiveBigIntegerField("Версия записи", default=1)
     is_removed = models.BooleanField(
         "Убрана из черновика",
@@ -424,10 +441,13 @@ class OperationalDraftEntry(models.Model):
         return f"{self.shift} · черновик {self.public_id}"
 
     def save(self, *args: Any, **kwargs: Any) -> None:
-        self.content = self.content.replace("\r\n", "\n").replace(
-            "\r",
-            "\n",
+        document = normalize_editor_document(
+            self.editor_payload,
+            fallback_text=self.content,
         )
+        self.editor_schema_version = document["schema_version"]
+        self.editor_payload = document
+        self.content = editor_document_to_text(document)
         self.full_clean()
         super().save(*args, **kwargs)
 
@@ -458,6 +478,26 @@ class OperationalDraftEntry(models.Model):
             errors["position"] = "Позиция должна быть положительной."
         if self.version < 1:
             errors["version"] = "Версия записи должна быть положительной."
+        if self.editor_schema_version != EDITOR_SCHEMA_VERSION:
+            errors["editor_schema_version"] = (
+                "Неизвестная версия структуры редактора."
+            )
+        try:
+            document = normalize_editor_document(
+                self.editor_payload,
+                fallback_text=self.content,
+            )
+        except ValidationError as error:
+            errors["editor_payload"] = "; ".join(error.messages)
+        else:
+            if document != self.editor_payload:
+                errors["editor_payload"] = (
+                    "Структура редактора должна быть канонической."
+                )
+            if editor_document_to_text(document) != self.content:
+                errors["content"] = (
+                    "Текстовая проекция не соответствует редактору."
+                )
         if errors:
             raise ValidationError(errors)
 

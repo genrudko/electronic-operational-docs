@@ -1,6 +1,12 @@
 from django import forms
+from django.core.exceptions import ValidationError
 
 from apps.organizations.models import InterfacePreference
+
+from .editor import (
+    EDITOR_SCHEMA_VERSION,
+    normalize_editor_document,
+)
 
 
 class JournalDisplayPreferenceForm(forms.ModelForm):
@@ -104,3 +110,28 @@ class DraftEntryAutoSaveForm(forms.Form):
         max_length=20000,
         widget=forms.Textarea(),
     )
+    editor_schema_version = forms.CharField(
+        required=False,
+        max_length=64,
+    )
+    editor_payload = forms.JSONField(required=False)
+
+    def clean_editor_payload(self):
+        value = self.cleaned_data.get("editor_payload")
+        if value in (None, "", {}):
+            return None
+        try:
+            return normalize_editor_document(value)
+        except ValidationError as error:
+            raise ValidationError(error.messages) from error
+
+    def clean_editor_schema_version(self) -> str:
+        value = (
+            self.cleaned_data.get("editor_schema_version")
+            or EDITOR_SCHEMA_VERSION
+        )
+        if value != EDITOR_SCHEMA_VERSION:
+            raise ValidationError(
+                "Неизвестная версия структуры редактора."
+            )
+        return value

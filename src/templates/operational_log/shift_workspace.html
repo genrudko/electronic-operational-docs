@@ -688,6 +688,12 @@
                     value="{{ draft.event_at|date:'Y-m-d\TH:i' }}"
                     data-event-at
                 >
+                <input
+                    type="hidden"
+                    name="editor_schema_version"
+                    value="{{ draft.editor_schema_version }}"
+                    data-editor-schema-version
+                >
 
                 <div class="draft-ledger-time">
                     <input
@@ -706,8 +712,19 @@
                         rows="1"
                         maxlength="20000"
                         placeholder="Содержание записи…"
+                        aria-label="Содержание записи"
                         data-auto-grow
+                        data-editor-fallback
                     >{{ draft.content }}</textarea>
+                    <textarea
+                        name="editor_payload"
+                        data-editor-payload
+                        hidden
+                    >{{ draft.editor_payload_json }}</textarea>
+                    <div
+                        class="draft-rich-editor-host"
+                        data-rich-editor-host
+                    ></div>
 
                     <div class="draft-ledger-lower">
                         <div class="draft-ledger-meta">
@@ -732,29 +749,65 @@
                         <div
                             class="draft-mini-toolbar"
                             data-mini-toolbar
-                            aria-label="Действия с записью"
+                            aria-label="Редактор и действия с записью"
                         >
                             <button
                                 type="button"
                                 data-editor-command="bold"
-                                title="Полужирный — следующий этап"
-                            >
-                                <strong>Ж</strong>
-                            </button>
+                                title="Полужирный (Ctrl+B)"
+                                aria-label="Полужирный"
+                                aria-pressed="false"
+                            ><strong>Ж</strong></button>
                             <button
                                 type="button"
                                 data-editor-command="underline"
-                                title="Подчёркивание — следующий этап"
-                            >
-                                <u>Ч</u>
-                            </button>
+                                title="Подчёркивание (Ctrl+U)"
+                                aria-label="Подчёркивание"
+                                aria-pressed="false"
+                            ><u>Ч</u></button>
+                            <button
+                                type="button"
+                                data-editor-command="bullet_list"
+                                title="Маркированный список (Ctrl+Shift+8)"
+                                aria-label="Маркированный список"
+                                aria-pressed="false"
+                            >•</button>
+                            <button
+                                type="button"
+                                data-editor-command="ordered_list"
+                                title="Нумерованный список (Ctrl+Shift+7)"
+                                aria-label="Нумерованный список"
+                                aria-pressed="false"
+                            >1.</button>
+                            <span
+                                class="draft-editor-separator"
+                                aria-hidden="true"
+                            ></span>
+                            <button
+                                type="button"
+                                data-editor-command="undo"
+                                title="Отменить (Ctrl+Z)"
+                                aria-label="Отменить"
+                            >↶</button>
+                            <button
+                                type="button"
+                                data-editor-command="redo"
+                                title="Повторить (Ctrl+Y)"
+                                aria-label="Повторить"
+                            >↷</button>
+                            <button
+                                type="button"
+                                data-editor-command="clear"
+                                title="Очистить форматирование (Ctrl+\)"
+                                aria-label="Очистить форматирование"
+                            >Tx</button>
                             <button
                                 type="button"
                                 data-editor-command="marks"
-                                title="Специальные отметки — следующий этап"
-                            >
-                                ⚡
-                            </button>
+                                title="Семантические отметки появятся в Patch 011.3"
+                                aria-label="Семантические отметки — следующий этап"
+                                disabled
+                            >⚡</button>
                             <button
                                 type="button"
                                 data-date-button
@@ -813,6 +866,10 @@
     </div>
 </section>
 
+<script
+    src="{% static 'operational_log/draft_editor.js' %}"
+    defer
+></script>
 <script
     src="{% static 'operational_log/draft_workspace.js' %}"
     defer

@@ -16,6 +16,10 @@ from apps.equipment.models import EquipmentAsset
 from apps.equipment.services import dispatcher_name_on
 from apps.organizations.models import Employee
 
+from .editor import (
+    editor_document_to_text,
+    normalize_editor_document,
+)
 from .models import (
     DraftRevisionAction,
     EntryForm,
@@ -472,7 +476,7 @@ def _draft_snapshot(
     actor: Employee,
 ) -> dict[str, Any]:
     return {
-        "schema_version": "operational-draft-entry.v1",
+        "schema_version": "operational-draft-entry.v2",
         "shift": {
             "id": entry.shift_id,
             "public_id": str(entry.shift.public_id),
@@ -486,6 +490,8 @@ def _draft_snapshot(
             "position": entry.position,
             "event_at": utc_iso(entry.event_at),
             "content": entry.content,
+            "editor_schema_version": entry.editor_schema_version,
+            "editor_payload": entry.editor_payload,
             "version": entry.version,
             "is_removed": entry.is_removed,
         },
@@ -603,6 +609,7 @@ def create_draft_entry(
     actor: Employee,
     event_at: datetime | None = None,
     content: str = "",
+    editor_payload: dict[str, Any] | None = None,
 ) -> OperationalDraftEntry:
     locked_shift = (
         OperationalShift.objects.select_for_update()
@@ -617,11 +624,17 @@ def create_draft_entry(
         ).aggregate(value=Max("position"))["value"]
         or 0
     )
+    document = normalize_editor_document(
+        editor_payload,
+        fallback_text=content,
+    )
     entry = OperationalDraftEntry.objects.create(
         shift=locked_shift,
         position=last_position + 10,
         event_at=_aware_event_time(event_at or timezone.now()),
-        content=content,
+        content=editor_document_to_text(document),
+        editor_schema_version=document["schema_version"],
+        editor_payload=document,
         version=1,
         created_by=actor,
         updated_by=actor,
@@ -642,6 +655,7 @@ def update_draft_entry(
     expected_version: int,
     event_at: datetime,
     content: str,
+    editor_payload: dict[str, Any] | None = None,
 ) -> OperationalDraftEntry:
     locked_entry = (
         OperationalDraftEntry.objects.select_for_update()
@@ -658,24 +672,42 @@ def update_draft_entry(
         raise DraftConflictError(locked_entry)
 
     normalized_event_at = _aware_event_time(event_at)
-    normalized_content = content.replace("\r\n", "\n").replace(
+    legacy_content = content.replace("\r\n", "\n").replace(
         "\r",
         "\n",
     )
+    if editor_payload is None and legacy_content == locked_entry.content:
+        document = normalize_editor_document(
+            locked_entry.editor_payload,
+            fallback_text=locked_entry.content,
+        )
+    else:
+        document = normalize_editor_document(
+            editor_payload,
+            fallback_text=legacy_content,
+        )
+    normalized_content = editor_document_to_text(document)
     if (
         normalized_event_at == locked_entry.event_at
         and normalized_content == locked_entry.content
+        and document == locked_entry.editor_payload
+        and document["schema_version"]
+        == locked_entry.editor_schema_version
     ):
         return locked_entry
 
     locked_entry.event_at = normalized_event_at
     locked_entry.content = normalized_content
+    locked_entry.editor_schema_version = document["schema_version"]
+    locked_entry.editor_payload = document
     locked_entry.version += 1
     locked_entry.updated_by = actor
     locked_entry.save(
         update_fields=(
             "event_at",
             "content",
+            "editor_schema_version",
+            "editor_payload",
             "version",
             "updated_by",
             "updated_at",

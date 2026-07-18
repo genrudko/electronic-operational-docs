@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -234,6 +235,13 @@ def shift_workspace(
                 "pk",
             )
         )
+        for draft in drafts:
+            draft.editor_payload_json = json.dumps(
+                draft.editor_payload,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
         removed_drafts = list(
             draft_entries_queryset(
                 shift,
@@ -400,6 +408,9 @@ def autosave_draft_entry(
             expected_version=form.cleaned_data["expected_version"],
             event_at=form.cleaned_data["event_at"],
             content=form.cleaned_data["content"],
+            editor_payload=form.cleaned_data.get(
+                "editor_payload"
+            ),
         )
     except DraftConflictError as error:
         current = error.current_entry
@@ -414,6 +425,10 @@ def autosave_draft_entry(
                         current.event_at
                     ).strftime("%Y-%m-%dT%H:%M"),
                     "content": current.content,
+                    "editor_schema_version": (
+                        current.editor_schema_version
+                    ),
+                    "editor_payload": current.editor_payload,
                 },
             },
             status=409,
@@ -435,6 +450,11 @@ def autosave_draft_entry(
                 saved.updated_at
             ).strftime("%H:%M:%S"),
             "revision_count": saved.revisions.count(),
+            "content": saved.content,
+            "editor_schema_version": (
+                saved.editor_schema_version
+            ),
+            "editor_payload": saved.editor_payload,
             "event_at": timezone.localtime(
                 saved.event_at
             ).strftime("%Y-%m-%dT%H:%M"),

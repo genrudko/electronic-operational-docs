@@ -548,6 +548,35 @@
         node.classList.add(state);
     }
 
+    function firstFormError(errors) {
+        const source = errors || {};
+        const priority = [
+            "event_at",
+            "editor_payload",
+            "content",
+            "editor_schema_version",
+        ];
+        const keys = [
+            ...priority,
+            ...Object.keys(source).filter(
+                (key) => !priority.includes(key),
+            ),
+        ];
+        for (const key of keys) {
+            const values = Array.isArray(source[key])
+                ? source[key]
+                : [source[key]];
+            const first = values.find(Boolean);
+            if (typeof first === "string") {
+                return first;
+            }
+            if (first?.message) {
+                return first.message;
+            }
+        }
+        return "Не сохранено";
+    }
+
     function normalizeTime(value) {
         const digits = value.replace(/\D/g, "").slice(0, 4);
         if (!digits) {
@@ -1041,6 +1070,7 @@
         const controller = new AbortController();
         controllers.set(form, controller);
         setStatus(form, "…", "is-saving");
+        window.EODDraftEditor?.syncForm(form);
 
         try {
             const response = await fetch(form.action, {
@@ -1060,13 +1090,9 @@
                 return false;
             }
             if (!response.ok || !payload.ok) {
-                const eventErrors = payload.errors?.event_at;
-                const firstError = Array.isArray(eventErrors)
-                    ? (eventErrors[0]?.message || eventErrors[0])
-                    : null;
                 setStatus(
                     form,
-                    firstError || "Не сохранено",
+                    firstFormError(payload.errors),
                     "is-error",
                 );
                 return false;
@@ -1086,6 +1112,7 @@
             }
 
             delete form.dataset.conflict;
+            window.EODDraftEditor?.acceptSaved(form, payload);
             setStatus(
                 form,
                 `✓ ${payload.saved_at}`,
@@ -1140,7 +1167,9 @@
     }
 
     function rowText(row) {
-        const textarea = row.querySelector("textarea");
+        const textarea = row.querySelector(
+            "[data-editor-fallback]",
+        );
         return (
             `${row.textContent} ${textarea?.value || ""}`
         ).toLowerCase();
@@ -1408,6 +1437,7 @@
             );
             timeInput.value = normalizedTime;
             contentInput.value = content;
+            window.EODDraftEditor?.seedPlainText(form, content);
             row.dataset.entryFilled = (
                 content.trim() ? "true" : "false"
             );
@@ -1441,11 +1471,13 @@
             autoGrow(contentInput);
 
             if (focusContent) {
-                contentInput.focus();
-                contentInput.setSelectionRange(
-                    contentInput.value.length,
-                    contentInput.value.length,
-                );
+                if (!window.EODDraftEditor?.focus(form, "end")) {
+                    contentInput.focus();
+                    contentInput.setSelectionRange(
+                        contentInput.value.length,
+                        contentInput.value.length,
+                    );
+                }
             }
 
             await save(form);
@@ -2020,20 +2052,7 @@
     }
 
     function bindEditorCommands(scope) {
-        scope
-            .querySelectorAll("[data-editor-command]")
-            .forEach((button) => {
-                if (button.dataset.bound === "true") {
-                    return;
-                }
-                button.dataset.bound = "true";
-                button.addEventListener("click", () => {
-                    button
-                        .closest("[data-draft-form]")
-                        ?.querySelector("textarea")
-                        ?.focus();
-                });
-            });
+        window.EODDraftEditor?.bindToolbar(scope);
     }
 
     function bindDraftRow(row) {
@@ -2043,11 +2062,16 @@
         row.dataset.bound = "true";
 
         const form = row.querySelector("[data-draft-form]");
-        const textarea = form.querySelector("[data-auto-grow]");
+        const textarea = form.querySelector("[data-editor-fallback]");
         const timeInput = form.querySelector("[data-quick-time]");
         const dateButton = form.querySelector("[data-date-button]");
+        const richEditor = (
+            window.EODDraftEditor?.initializeRow(row) || null
+        );
 
-        autoGrow(textarea);
+        if (!richEditor) {
+            autoGrow(textarea);
+        }
 
         form.addEventListener("focusin", () => {
             activeDraftForm = form;
@@ -2100,7 +2124,9 @@
             if (event.key === "Enter") {
                 event.preventDefault();
                 timeInput.blur();
-                textarea.focus();
+                if (!window.EODDraftEditor?.focus(form)) {
+                    textarea.focus();
+                }
             }
         });
         timeInput.addEventListener("blur", () => {
