@@ -67,6 +67,7 @@
     class="paged-draft-workspace large-book-workspace stable-page-layout-workspace"
     data-draft-workspace
     data-autosave-delay="1000"
+    data-default-entry-date="{{ shift.planned_start_at|date:'d.m.Y' }}"
     style="
         --draft-time-column: 14%;
         --draft-content-column: 66%;
@@ -115,6 +116,7 @@
             <form
                 method="post"
                 action="{% url 'operational_log:add_draft' journal.pk %}"
+                data-add-draft-form
             >
                 {% csrf_token %}
                 <button class="button compact-button" type="submit">

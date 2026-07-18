@@ -3705,7 +3705,7 @@ details[data-default-collapsed="true"]:not([open])
     }
 }
 
-/* Patch 010.3.1 Repair 6: пагинация по записям и целые страницы */
+/* Patch 010.3.1 Repair 7: создание записи из пустой строки */
 .shift-draft-main-large-book {
     width: calc(100% - 24px);
     max-width: none;
@@ -4524,4 +4524,119 @@ body.draft-view-drawer-visible .draft-view-drawer {
     .draft-view-drawer {
         width: min(390px, 94vw);
     }
+}
+
+.draft-empty-record-time {
+    position: relative;
+    cursor: default;
+    transition:
+        background 120ms ease,
+        box-shadow 120ms ease;
+}
+
+.draft-empty-record-time:hover,
+.draft-empty-record-time:focus-visible {
+    background: #f0f7ff;
+    box-shadow: inset 0 0 0 1px #bfdbfe;
+    cursor: pointer;
+    outline: 0;
+}
+
+.draft-empty-record-time::after {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #93a4b8;
+    content: "＋";
+    font-size: 15px;
+    opacity: 0;
+    transition: opacity 120ms ease;
+}
+
+.draft-empty-record-time:hover::after,
+.draft-empty-record-time:focus-visible::after {
+    opacity: 0.72;
+}
+
+.draft-empty-record.is-inline-creating {
+    grid-template-columns:
+        var(--draft-time-column)
+        var(--draft-content-column)
+        var(--draft-remarks-column);
+    min-height: 58px;
+    background: #fbfdff;
+    box-shadow: inset 0 0 0 1px #93c5fd;
+}
+
+.draft-inline-create-time,
+.draft-inline-create-content {
+    min-width: 0;
+    border-right: 1px solid #aab2bd;
+}
+
+.draft-inline-create-time {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 8px 5px 5px;
+}
+
+.draft-inline-create-time input {
+    width: min(76px, calc(100% - 8px));
+    padding: 2px 3px;
+    border: 0;
+    border-bottom: 1px dashed #2563eb;
+    border-radius: 0;
+    background: transparent;
+    color: #111827;
+    font-size: 15px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.draft-inline-create-time input:focus {
+    outline: 0;
+}
+
+.draft-inline-create-content {
+    padding: 5px 8px 4px;
+}
+
+.draft-inline-create-content textarea {
+    display: block;
+    overflow: hidden;
+    width: 100%;
+    min-height: 36px;
+    padding: 4px 5px;
+    resize: none;
+    border: 1px solid #93c5fd;
+    border-radius: 4px;
+    background: #f8fbff;
+    color: #111827;
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.draft-inline-create-content textarea:focus {
+    outline: 0;
+}
+
+.draft-inline-create-status {
+    display: block;
+    min-height: 14px;
+    margin-top: 2px;
+    color: #64748b;
+    font-size: 8px;
+}
+
+.draft-inline-create-visas {
+    min-width: 0;
+    background: #fff;
+}
+
+.draft-empty-record.is-materializing {
+    opacity: 0.72;
+    pointer-events: none;
 }

@@ -16,6 +16,12 @@
     const rows = Array.from(
         workspace.querySelectorAll("[data-draft-card]"),
     );
+    const addDraftForm = workspace.querySelector(
+        "[data-add-draft-form]",
+    );
+    const defaultEntryDate = (
+        workspace.dataset.defaultEntryDate || ""
+    );
 
     const leftShell = workspace.querySelector(
         '[data-page-shell="left"]',
@@ -90,6 +96,8 @@
     let activeDraftForm = null;
     let compositionDepth = 0;
     let paginationPending = false;
+    let inlineCreation = null;
+    let inlineCreationTimer = null;
     let currentColumnWidths = {
         time: 14,
         content: 66,
@@ -521,20 +529,367 @@
         renderCurrentPages();
     }
 
-    function createBlankRecord() {
+    function activeRowIdentifiers() {
+        return new Set(
+            rows.map((row) => row.dataset.draftId),
+        );
+    }
+
+    function parseCreatedDraftRow(html, knownIds) {
+        const documentFragment = new DOMParser().parseFromString(
+            html,
+            "text/html",
+        );
+        const candidates = Array.from(
+            documentFragment.querySelectorAll(
+                "[data-draft-card]",
+            ),
+        ).filter(
+            (row) => !knownIds.has(row.dataset.draftId),
+        );
+        return candidates.at(-1) || null;
+    }
+
+    function cancelInlineCreation() {
+        if (!inlineCreation || inlineCreation.materializing) {
+            return;
+        }
+        const { record, dateLabel } = inlineCreation;
+        inlineCreation = null;
+        if (inlineCreationTimer) {
+            window.clearTimeout(inlineCreationTimer);
+            inlineCreationTimer = null;
+        }
+        const replacement = createBlankRecord(dateLabel);
+        record.replaceWith(replacement);
+    }
+
+    function inlineCreationHasMeaningfulInput(state) {
+        return Boolean(
+            normalizeTime(state.timeInput.value)
+            || state.contentInput.value.trim(),
+        );
+    }
+
+    function queueInlineMaterialization() {
+        if (!inlineCreation || inlineCreation.materializing) {
+            return;
+        }
+        if (inlineCreationTimer) {
+            window.clearTimeout(inlineCreationTimer);
+        }
+        inlineCreationTimer = window.setTimeout(() => {
+            inlineCreationTimer = null;
+            if (
+                inlineCreation
+                && inlineCreationHasMeaningfulInput(
+                    inlineCreation,
+                )
+            ) {
+                void materializeInlineDraft(true);
+            }
+        }, 320);
+    }
+
+    async function materializeInlineDraft(focusContent) {
+        const state = inlineCreation;
+        if (!state || state.materializing) {
+            return;
+        }
+
+        const normalizedTime = normalizeTime(
+            state.timeInput.value,
+        );
+        const content = state.contentInput.value;
+
+        if (!normalizedTime) {
+            state.status.textContent = "Укажите корректное время";
+            state.timeInput.focus();
+            state.timeInput.select();
+            return;
+        }
+
+        state.materializing = true;
+        state.record.classList.add("is-materializing");
+        state.status.textContent = "Создание…";
+
+        const knownIds = activeRowIdentifiers();
+        const formData = new FormData(addDraftForm);
+
+        try {
+            const response = await fetch(addDraftForm.action, {
+                method: "POST",
+                body: formData,
+                credentials: "same-origin",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+            });
+            const html = await response.text();
+
+            if (!response.ok) {
+                throw new Error("create_failed");
+            }
+
+            const parsedRow = parseCreatedDraftRow(
+                html,
+                knownIds,
+            );
+            if (!parsedRow) {
+                throw new Error("created_row_not_found");
+            }
+
+            const row = document.importNode(parsedRow, true);
+            const form = row.querySelector("[data-draft-form]");
+            const timeInput = form.querySelector(
+                "[data-quick-time]",
+            );
+            const contentInput = form.querySelector(
+                "[data-auto-grow]",
+            );
+            const hiddenDateTime = form.querySelector(
+                "[data-event-at]",
+            );
+            const dateButton = form.querySelector(
+                "[data-date-button]",
+            );
+            const dateLabel = state.dateLabel || defaultEntryDate;
+            const normalizedDate = normalizeDate(dateLabel);
+
+            timeInput.value = normalizedTime;
+            contentInput.value = content;
+            row.dataset.entryFilled = (
+                content.trim() ? "true" : "false"
+            );
+
+            if (normalizedDate) {
+                const [day, month, year] = (
+                    normalizedDate.split(".")
+                );
+                hiddenDateTime.value = (
+                    `${year}-${month}-${day}T${normalizedTime}`
+                );
+                dateButton.dataset.currentDate = normalizedDate;
+                row.dataset.entryDate = (
+                    `${year}-${month}-${day}`
+                );
+                row.dataset.entryDateLabel = normalizedDate;
+            }
+
+            state.record.replaceWith(row);
+            rows.push(row);
+            bindDraftRow(row);
+            bindEditorCommands(row);
+            inlineCreation = null;
+            markPaginationPending();
+
+            activeDraftForm = form;
+            form.classList.add("has-focus");
+            autoGrow(contentInput);
+
+            if (focusContent) {
+                contentInput.focus();
+                contentInput.setSelectionRange(
+                    contentInput.value.length,
+                    contentInput.value.length,
+                );
+            }
+
+            await save(form);
+        } catch (error) {
+            state.materializing = false;
+            state.record.classList.remove("is-materializing");
+            state.status.textContent = (
+                "Не удалось создать запись. Повторите."
+            );
+        }
+    }
+
+    function beginInlineCreation(record, dateLabel) {
+        if (inlineCreation) {
+            if (inlineCreation.record === record) {
+                inlineCreation.timeInput.focus();
+                return;
+            }
+            if (
+                inlineCreationHasMeaningfulInput(inlineCreation)
+            ) {
+                inlineCreation.timeInput.focus();
+                return;
+            }
+            cancelInlineCreation();
+        }
+
+        const timeCell = document.createElement("div");
+        timeCell.className = "draft-inline-create-time";
+        const timeInput = document.createElement("input");
+        timeInput.type = "text";
+        timeInput.inputMode = "numeric";
+        timeInput.autocomplete = "off";
+        timeInput.placeholder = "ЧЧ:ММ";
+        timeInput.value = "";
+        timeInput.setAttribute(
+            "aria-label",
+            "Время новой записи",
+        );
+        timeCell.append(timeInput);
+
+        const contentCell = document.createElement("div");
+        contentCell.className = "draft-inline-create-content";
+        const contentInput = document.createElement("textarea");
+        contentInput.rows = 1;
+        contentInput.maxLength = 20000;
+        contentInput.placeholder = "Содержание записи…";
+        contentInput.setAttribute(
+            "aria-label",
+            "Содержание новой записи",
+        );
+        const status = document.createElement("span");
+        status.className = "draft-inline-create-status";
+        status.textContent = "Esc — отмена";
+        contentCell.append(contentInput, status);
+
+        const visasCell = document.createElement("div");
+        visasCell.className = "draft-inline-create-visas";
+
+        record.replaceChildren(
+            timeCell,
+            contentCell,
+            visasCell,
+        );
+        record.classList.add("is-inline-creating");
+        record.removeAttribute("aria-hidden");
+
+        inlineCreation = {
+            record,
+            dateLabel: dateLabel || defaultEntryDate,
+            timeInput,
+            contentInput,
+            status,
+            materializing: false,
+        };
+
+        const cancelOnEscape = (event) => {
+            if (event.key === "Escape") {
+                event.preventDefault();
+                cancelInlineCreation();
+            }
+        };
+
+        timeInput.addEventListener("keydown", (event) => {
+            cancelOnEscape(event);
+            if (
+                event.key === "Enter"
+                || event.key === "Tab"
+            ) {
+                const normalized = normalizeTime(
+                    timeInput.value,
+                );
+                if (!normalized) {
+                    event.preventDefault();
+                    status.textContent = (
+                        "Некорректное время"
+                    );
+                    return;
+                }
+                timeInput.value = normalized;
+                event.preventDefault();
+                contentInput.focus();
+            }
+        });
+
+        contentInput.addEventListener(
+            "keydown",
+            cancelOnEscape,
+        );
+        contentInput.addEventListener("input", () => {
+            contentInput.style.height = "auto";
+            contentInput.style.height = (
+                `${Math.max(
+                    36,
+                    contentInput.scrollHeight,
+                )}px`
+            );
+            if (contentInput.value.trim()) {
+                queueInlineMaterialization();
+            }
+        });
+
+        record.addEventListener("focusout", () => {
+            window.setTimeout(() => {
+                if (
+                    !inlineCreation
+                    || inlineCreation.record !== record
+                    || record.contains(document.activeElement)
+                ) {
+                    return;
+                }
+                if (
+                    inlineCreationHasMeaningfulInput(
+                        inlineCreation,
+                    )
+                ) {
+                    void materializeInlineDraft(false);
+                } else {
+                    cancelInlineCreation();
+                }
+            }, 180);
+        });
+
+        window.requestAnimationFrame(() => {
+            timeInput.focus();
+            timeInput.select();
+        });
+    }
+
+    function createBlankRecord(dateLabel) {
         const record = document.createElement("div");
         record.className = "draft-empty-record";
-        record.setAttribute("aria-hidden", "true");
+        record.dataset.blankRecord = "true";
+        record.dataset.entryDateLabel = (
+            dateLabel || defaultEntryDate
+        );
 
-        for (let column = 0; column < 3; column += 1) {
-            record.append(document.createElement("span"));
-        }
+        const timeCell = document.createElement("span");
+        timeCell.className = "draft-empty-record-time";
+        timeCell.dataset.inlineCreateTrigger = "true";
+        timeCell.tabIndex = 0;
+        timeCell.setAttribute("role", "button");
+        timeCell.setAttribute(
+            "aria-label",
+            "Добавить запись в эту строку",
+        );
+        timeCell.title = (
+            "Двойной щелчок — добавить запись"
+        );
+
+        timeCell.addEventListener("dblclick", () => {
+            beginInlineCreation(
+                record,
+                record.dataset.entryDateLabel,
+            );
+        });
+        timeCell.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                beginInlineCreation(
+                    record,
+                    record.dataset.entryDateLabel,
+                );
+            }
+        });
+
+        record.append(
+            timeCell,
+            document.createElement("span"),
+            document.createElement("span"),
+        );
         return record;
     }
 
-    function appendBlankRecords(body, count) {
+    function appendBlankRecords(body, count, dateLabel) {
         for (let index = 0; index < count; index += 1) {
-            body.append(createBlankRecord());
+            body.append(createBlankRecord(dateLabel));
         }
     }
 
@@ -558,7 +913,11 @@
             shell.classList.add("is-empty-page");
             dateNode.textContent = "";
             numberNode.textContent = "";
-            appendBlankRecords(body, capacity);
+            appendBlankRecords(
+                body,
+                capacity,
+                defaultEntryDate,
+            );
             return;
         }
 
@@ -572,12 +931,17 @@
             pageData.rows[0]?.dataset.entryDateLabel || ""
         );
 
+        const blankDateLabel = (
+            pageData.rows.at(-1)?.dataset.entryDateLabel
+            || defaultEntryDate
+        );
         appendBlankRecords(
             body,
             Math.max(
                 0,
                 capacity - pageData.rows.length,
             ),
+            blankDateLabel,
         );
 
         numberNode.textContent = `— ${pageIndex + 1} —`;
@@ -888,7 +1252,29 @@
         );
     }
 
-    rows.forEach((row) => {
+    function bindEditorCommands(scope) {
+        scope
+            .querySelectorAll("[data-editor-command]")
+            .forEach((button) => {
+                if (button.dataset.bound === "true") {
+                    return;
+                }
+                button.dataset.bound = "true";
+                button.addEventListener("click", () => {
+                    button
+                        .closest("[data-draft-form]")
+                        ?.querySelector("textarea")
+                        ?.focus();
+                });
+            });
+    }
+
+    function bindDraftRow(row) {
+        if (row.dataset.bound === "true") {
+            return;
+        }
+        row.dataset.bound = "true";
+
         const form = row.querySelector("[data-draft-form]");
         const textarea = form.querySelector("[data-auto-grow]");
         const timeInput = form.querySelector("[data-quick-time]");
@@ -998,18 +1384,12 @@
             event.preventDefault();
             void save(form);
         });
-    });
+    }
 
-    workspace
-        .querySelectorAll("[data-editor-command]")
-        .forEach((button) => {
-            button.addEventListener("click", () => {
-                button
-                    .closest("[data-draft-form]")
-                    ?.querySelector("textarea")
-                    ?.focus();
-            });
-        });
+    rows.forEach((row) => {
+        bindDraftRow(row);
+        bindEditorCommands(row);
+    });
 
     workspace
         .querySelectorAll("[data-view-mode]")

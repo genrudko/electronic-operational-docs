@@ -95,6 +95,8 @@ for marker in (
     "data-column-resizer",
     "data-records-preset",
     "data-records-custom",
+    "data-add-draft-form",
+    "data-default-entry-date",
     "data-apply-custom-records",
     "stable-page-layout-workspace",
     "draft_workspace.js",
@@ -217,10 +219,14 @@ for marker in (
     "compositionstart",
     "compositionend",
     "createBlankRecord",
+    "beginInlineCreation",
+    "materializeInlineDraft",
+    "parseCreatedDraftRow",
+    "bindDraftRow",
 ):
     assert marker in js_text, marker
 repair_css = css_text.split(
-    "/* Patch 010.3.1 Repair 6:",
+    "/* Patch 010.3.1 Repair 7:",
     1,
 )[-1]
 assert "aspect-ratio: 210 / 297" not in repair_css
@@ -229,6 +235,8 @@ assert "--draft-page-body-height" not in repair_css
 assert ".draft-view-drawer" in repair_css
 assert ".draft-column-resizer" in repair_css
 assert ".draft-empty-record" in repair_css
+assert ".draft-empty-record-time" in repair_css
+assert ".draft-inline-create-content" in repair_css
 assert ".draft-record-presets" in repair_css
 assert "overflow: hidden" not in repair_css.split(
     ".draft-page-shell",
@@ -247,11 +255,20 @@ assert "data-measure-page" not in workspace_text
 assert "ШИРИНА ГРАФ" not in workspace_text
 assert "ЗАПИСЕЙ НА СТРАНИЦЕ" in workspace_text
 assert 'data-autosave-delay="1000"' in workspace_text
+assert "data-add-draft-form" in workspace_text
+assert "data-default-entry-date" in workspace_text
+assert "+ Запись" in workspace_text
 assert "eod-draft-records-per-page" in js_text
 assert "paginateByRecordCount" in js_text
 assert "visibleRows.slice" in js_text
 assert "start += capacity" in js_text
 assert "capacity - pageData.rows.length" in js_text
+assert "beginInlineCreation" in js_text
+assert "materializeInlineDraft" in js_text
+assert "parseCreatedDraftRow" in js_text
+assert "bindDraftRow" in js_text
+assert "new DOMParser()" in js_text
+assert "new FormData(addDraftForm)" in js_text
 assert "updateOverlayOffsets" in js_text
 assert 'handle.addEventListener("dblclick"' in js_text
 assert 'textarea.addEventListener("input"' in js_text
@@ -268,5 +285,7 @@ print("RECORD_COUNT_PAGINATION=PASSED")
 print("UNCUT_PAGE_BOTTOM=PASSED")
 print("DOCKED_DRAWER_LAYERING=PASSED")
 print("REDUNDANT_COLUMN_PANEL_REMOVED=PASSED")
+print("INLINE_BLANK_RECORD_CREATION=PASSED")
+print("ADD_RECORD_BUTTON_PRESERVED=PASSED")
 
-print("PATCH_010_3_1_REPAIR6_RECORD_PAGINATION_GATE_PASSED")
+print("PATCH_010_3_1_REPAIR7_INLINE_CREATION_GATE_PASSED")

@@ -54,6 +54,8 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             "data-column-resizer",
             "data-records-preset",
             "data-records-custom",
+            "data-add-draft-form",
+            "data-default-entry-date",
             "data-apply-custom-records",
             "stable-page-layout-workspace",
             "data-quick-time",
@@ -67,6 +69,7 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         self.assertNotContains(workspace, 'type="range"')
         self.assertNotContains(workspace, "draft-workspace-layout")
         self.assertContains(workspace, "15 записей")
+        self.assertContains(workspace, "+ Запись")
         self.assertContains(
             workspace,
             "ЗАПИСЕЙ НА СТРАНИЦЕ",
