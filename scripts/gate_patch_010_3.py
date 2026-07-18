@@ -97,6 +97,8 @@ for marker in (
     "data-records-custom",
     "data-add-draft-form",
     "data-default-entry-date",
+    "data-default-entry-date-iso",
+    "hybrid-paper-theme",
     "data-apply-custom-records",
     "stable-page-layout-workspace",
     "draft_workspace.js",
@@ -221,12 +223,24 @@ for marker in (
     "createBlankRecord",
     "beginInlineCreation",
     "materializeInlineDraft",
+    "defaultEntryDateIso",
+    "isoDateToLabel",
+    'formData.set(\n            "event_at"',
     "parseCreatedDraftRow",
     "bindDraftRow",
 ):
     assert marker in js_text, marker
+views_text = (
+    ROOT / "src/apps/operational_log/views.py"
+).read_text(encoding="utf-8")
+assert "parse_datetime" in views_text
+assert 'request.POST.get("event_at", "")' in views_text
+assert "event_at=requested_event_at" in views_text
+assert "Некорректная дата и время новой записи." in views_text
+print("INLINE_ENTRY_DATE_INHERITANCE=PASSED")
+
 repair_css = css_text.split(
-    "/* Patch 010.3.1 Repair 7:",
+    "/* Patch 010.3.1 Repair 7.1:",
     1,
 )[-1]
 assert "aspect-ratio: 210 / 297" not in repair_css
@@ -285,7 +299,12 @@ print("RECORD_COUNT_PAGINATION=PASSED")
 print("UNCUT_PAGE_BOTTOM=PASSED")
 print("DOCKED_DRAWER_LAYERING=PASSED")
 print("REDUNDANT_COLUMN_PANEL_REMOVED=PASSED")
+assert ".hybrid-paper-theme" in repair_css
+assert "color-scheme: light" in repair_css
+assert "-webkit-text-fill-color: #111827" in repair_css
+assert "background: transparent !important" in repair_css
 print("INLINE_BLANK_RECORD_CREATION=PASSED")
 print("ADD_RECORD_BUTTON_PRESERVED=PASSED")
+print("HYBRID_DARK_PAPER_THEME=PASSED")
 
-print("PATCH_010_3_1_REPAIR7_INLINE_CREATION_GATE_PASSED")
+print("PATCH_010_3_1_REPAIR7_1_DATE_DARK_THEME_GATE_PASSED")

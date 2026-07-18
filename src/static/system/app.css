@@ -3705,7 +3705,7 @@ details[data-default-collapsed="true"]:not([open])
     }
 }
 
-/* Patch 010.3.1 Repair 7: создание записи из пустой строки */
+/* Patch 010.3.1 Repair 7.1: дата inline-записи и гибридная тёмная тема */
 .shift-draft-main-large-book {
     width: calc(100% - 24px);
     max-width: none;
@@ -4639,4 +4639,83 @@ body.draft-view-drawer-visible .draft-view-drawer {
 .draft-empty-record.is-materializing {
     opacity: 0.72;
     pointer-events: none;
+}
+
+/* Бумажный журнал остаётся светлым в любой теме приложения. */
+.hybrid-paper-theme .draft-page-shell,
+.hybrid-paper-theme .draft-page-header,
+.hybrid-paper-theme .draft-page-date,
+.hybrid-paper-theme .draft-page-body,
+.hybrid-paper-theme .draft-page-footer,
+.hybrid-paper-theme .draft-ledger-row,
+.hybrid-paper-theme .draft-empty-record,
+.hybrid-paper-theme .draft-inline-create-visas {
+    color-scheme: light;
+}
+
+.hybrid-paper-theme .draft-ledger-row,
+.hybrid-paper-theme .draft-empty-record,
+.hybrid-paper-theme .draft-ledger-visas,
+.hybrid-paper-theme .draft-inline-create-visas {
+    background: #fff;
+    color: #111827;
+}
+
+.hybrid-paper-theme .draft-ledger-time input,
+.hybrid-paper-theme .draft-ledger-content textarea,
+.hybrid-paper-theme .draft-inline-create-time input {
+    background: transparent !important;
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827;
+    caret-color: #111827;
+    color-scheme: light;
+}
+
+.hybrid-paper-theme .draft-ledger-content textarea::placeholder,
+.hybrid-paper-theme .draft-inline-create-time input::placeholder,
+.hybrid-paper-theme .draft-inline-create-content textarea::placeholder {
+    color: #7c8797 !important;
+    -webkit-text-fill-color: #7c8797;
+    opacity: 1;
+}
+
+.hybrid-paper-theme .draft-ledger-content textarea:focus {
+    background: #f8fbff !important;
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827;
+}
+
+.hybrid-paper-theme
+.draft-empty-record.is-inline-creating {
+    background: #eef6ff;
+    box-shadow:
+        inset 0 0 0 2px #60a5fa,
+        0 0 0 1px rgb(37 99 235 / 12%);
+}
+
+.hybrid-paper-theme
+.draft-inline-create-content textarea {
+    background: #fff !important;
+    color: #111827 !important;
+    -webkit-text-fill-color: #111827;
+    caret-color: #111827;
+    color-scheme: light;
+}
+
+.hybrid-paper-theme
+.draft-inline-create-content textarea:focus {
+    background: #f8fbff !important;
+}
+
+.hybrid-paper-theme .draft-inline-create-status {
+    color: #475569;
+}
+
+.hybrid-paper-theme .draft-mini-toolbar button {
+    color: #475569;
+}
+
+.hybrid-paper-theme .draft-mini-toolbar button:hover {
+    background: #e8edf3;
+    color: #0f172a;
 }

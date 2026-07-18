@@ -14,6 +14,7 @@ from django.http import (
 )
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django.views.decorators.http import require_POST
 
 from apps.organizations.models import InterfacePreference
@@ -273,9 +274,25 @@ def add_draft_entry(
     employee = require_operational_employee(request.user)
     journal = _accessible_journal(employee, journal_id)
     shift = _active_shift_or_404(journal=journal)
+
+    requested_event_at = None
+    event_at_raw = request.POST.get("event_at", "").strip()
+    if event_at_raw:
+        requested_event_at = parse_datetime(event_at_raw)
+        if requested_event_at is None:
+            return HttpResponseBadRequest(
+                "Некорректная дата и время новой записи."
+            )
+        if timezone.is_naive(requested_event_at):
+            requested_event_at = timezone.make_aware(
+                requested_event_at,
+                timezone.get_current_timezone(),
+            )
+
     entry = create_draft_entry(
         shift=shift,
         actor=employee,
+        event_at=requested_event_at,
     )
     response = redirect(
         "operational_log:shift_workspace",

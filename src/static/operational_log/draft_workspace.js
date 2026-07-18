@@ -22,6 +22,9 @@
     const defaultEntryDate = (
         workspace.dataset.defaultEntryDate || ""
     );
+    const defaultEntryDateIso = (
+        workspace.dataset.defaultEntryDateIso || ""
+    );
 
     const leftShell = workspace.querySelector(
         '[data-page-shell="left"]',
@@ -529,6 +532,16 @@
         renderCurrentPages();
     }
 
+    function isoDateToLabel(value) {
+        const match = String(value || "").match(
+            /^(\d{4})-(\d{2})-(\d{2})$/,
+        );
+        if (!match) {
+            return "";
+        }
+        return `${match[3]}.${match[2]}.${match[1]}`;
+    }
+
     function activeRowIdentifiers() {
         return new Set(
             rows.map((row) => row.dataset.draftId),
@@ -554,13 +567,16 @@
         if (!inlineCreation || inlineCreation.materializing) {
             return;
         }
-        const { record, dateLabel } = inlineCreation;
+        const { record, dateLabel, dateIso } = inlineCreation;
         inlineCreation = null;
         if (inlineCreationTimer) {
             window.clearTimeout(inlineCreationTimer);
             inlineCreationTimer = null;
         }
-        const replacement = createBlankRecord(dateLabel);
+        const replacement = createBlankRecord(
+            dateLabel,
+            dateIso,
+        );
         record.replaceWith(replacement);
     }
 
@@ -613,8 +629,29 @@
         state.record.classList.add("is-materializing");
         state.status.textContent = "Создание…";
 
+        const dateIso = (
+            state.dateIso || defaultEntryDateIso
+        );
+        const dateLabel = (
+            state.dateLabel
+            || isoDateToLabel(dateIso)
+            || defaultEntryDate
+        );
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateIso)) {
+            state.materializing = false;
+            state.record.classList.remove("is-materializing");
+            state.status.textContent = (
+                "Не удалось определить дату записи"
+            );
+            return;
+        }
+
         const knownIds = activeRowIdentifiers();
         const formData = new FormData(addDraftForm);
+        formData.set(
+            "event_at",
+            `${dateIso}T${normalizedTime}`,
+        );
 
         try {
             const response = await fetch(addDraftForm.action, {
@@ -653,27 +690,24 @@
             const dateButton = form.querySelector(
                 "[data-date-button]",
             );
-            const dateLabel = state.dateLabel || defaultEntryDate;
-            const normalizedDate = normalizeDate(dateLabel);
-
             timeInput.value = normalizedTime;
             contentInput.value = content;
             row.dataset.entryFilled = (
                 content.trim() ? "true" : "false"
             );
 
-            if (normalizedDate) {
-                const [day, month, year] = (
-                    normalizedDate.split(".")
-                );
-                hiddenDateTime.value = (
-                    `${year}-${month}-${day}T${normalizedTime}`
-                );
-                dateButton.dataset.currentDate = normalizedDate;
-                row.dataset.entryDate = (
-                    `${year}-${month}-${day}`
-                );
-                row.dataset.entryDateLabel = normalizedDate;
+            hiddenDateTime.value = (
+                `${dateIso}T${normalizedTime}`
+            );
+            dateButton.dataset.currentDate = dateLabel;
+            row.dataset.entryDate = dateIso;
+            row.dataset.entryDateLabel = dateLabel;
+
+            const serverDateMarker = row.querySelector(
+                "[data-inline-date]",
+            );
+            if (serverDateMarker) {
+                serverDateMarker.remove();
             }
 
             state.record.replaceWith(row);
@@ -705,7 +739,11 @@
         }
     }
 
-    function beginInlineCreation(record, dateLabel) {
+    function beginInlineCreation(
+        record,
+        dateLabel,
+        dateIso,
+    ) {
         if (inlineCreation) {
             if (inlineCreation.record === record) {
                 inlineCreation.timeInput.focus();
@@ -763,6 +801,7 @@
         inlineCreation = {
             record,
             dateLabel: dateLabel || defaultEntryDate,
+            dateIso: dateIso || defaultEntryDateIso,
             timeInput,
             contentInput,
             status,
@@ -842,12 +881,15 @@
         });
     }
 
-    function createBlankRecord(dateLabel) {
+    function createBlankRecord(dateLabel, dateIso) {
         const record = document.createElement("div");
         record.className = "draft-empty-record";
         record.dataset.blankRecord = "true";
         record.dataset.entryDateLabel = (
             dateLabel || defaultEntryDate
+        );
+        record.dataset.entryDate = (
+            dateIso || defaultEntryDateIso
         );
 
         const timeCell = document.createElement("span");
@@ -867,6 +909,7 @@
             beginInlineCreation(
                 record,
                 record.dataset.entryDateLabel,
+                record.dataset.entryDate,
             );
         });
         timeCell.addEventListener("keydown", (event) => {
@@ -875,6 +918,7 @@
                 beginInlineCreation(
                     record,
                     record.dataset.entryDateLabel,
+                    record.dataset.entryDate,
                 );
             }
         });
@@ -887,9 +931,16 @@
         return record;
     }
 
-    function appendBlankRecords(body, count, dateLabel) {
+    function appendBlankRecords(
+        body,
+        count,
+        dateLabel,
+        dateIso,
+    ) {
         for (let index = 0; index < count; index += 1) {
-            body.append(createBlankRecord(dateLabel));
+            body.append(
+                createBlankRecord(dateLabel, dateIso),
+            );
         }
     }
 
@@ -917,6 +968,7 @@
                 body,
                 capacity,
                 defaultEntryDate,
+                defaultEntryDateIso,
             );
             return;
         }
@@ -931,9 +983,14 @@
             pageData.rows[0]?.dataset.entryDateLabel || ""
         );
 
+        const lastRow = pageData.rows.at(-1);
         const blankDateLabel = (
-            pageData.rows.at(-1)?.dataset.entryDateLabel
+            lastRow?.dataset.entryDateLabel
             || defaultEntryDate
+        );
+        const blankDateIso = (
+            lastRow?.dataset.entryDate
+            || defaultEntryDateIso
         );
         appendBlankRecords(
             body,
@@ -942,6 +999,7 @@
                 capacity - pageData.rows.length,
             ),
             blankDateLabel,
+            blankDateIso,
         );
 
         numberNode.textContent = `— ${pageIndex + 1} —`;

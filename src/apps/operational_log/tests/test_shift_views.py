@@ -56,6 +56,8 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             "data-records-custom",
             "data-add-draft-form",
             "data-default-entry-date",
+            "data-default-entry-date-iso",
+            "hybrid-paper-theme",
             "data-apply-custom-records",
             "stable-page-layout-workspace",
             "data-quick-time",
@@ -137,6 +139,49 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         self.assertEqual(entry.content, "")
         self.assertEqual(entry.version, 1)
         self.assertEqual(entry.revisions.count(), 1)
+
+        target_event_at = timezone.localtime(
+            self.shift.planned_start_at
+        ).replace(
+            hour=17,
+            minute=20,
+            second=0,
+            microsecond=0,
+        )
+        response = self.client.post(
+            reverse(
+                "operational_log:add_draft",
+                args=(self.journal.pk,),
+            ),
+            {
+                "event_at": target_event_at.strftime(
+                    "%Y-%m-%dT%H:%M"
+                ),
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        dated_entry = self.shift.draft_entries.order_by(
+            "-pk"
+        ).first()
+        self.assertEqual(
+            timezone.localtime(dated_entry.event_at),
+            target_event_at,
+        )
+        self.assertEqual(dated_entry.version, 1)
+        self.assertEqual(dated_entry.revisions.count(), 1)
+
+        response = self.client.post(
+            reverse(
+                "operational_log:add_draft",
+                args=(self.journal.pk,),
+            ),
+            {"event_at": "not-a-date"},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            self.shift.draft_entries.count(),
+            before + 2,
+        )
 
     def test_autosave_updates_draft_and_returns_version(self) -> None:
         self.client.force_login(self.user)
