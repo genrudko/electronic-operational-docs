@@ -80,6 +80,18 @@
     );
 
     const drawer = workspace.querySelector("[data-view-drawer]");
+    const quickDisplayForm = workspace.querySelector(
+        "[data-quick-display-form]",
+    );
+    const quickSettingStatus = workspace.querySelector(
+        "[data-quick-setting-status]",
+    );
+    const themeChoiceButtons = Array.from(
+        workspace.querySelectorAll("[data-theme-choice]"),
+    );
+    const pageWidthChoiceButtons = Array.from(
+        workspace.querySelectorAll("[data-page-width-choice]"),
+    );
     const recordPresetButtons = Array.from(
         workspace.querySelectorAll("[data-records-preset]"),
     );
@@ -104,6 +116,15 @@
     let inlineCreation = null;
     let inlineCreationTimer = null;
     let activeDateEditor = null;
+    let quickSettingsController = null;
+    let themePreference = normalizeThemeChoice(
+        workspace.dataset.initialTheme
+        || document.documentElement.dataset.theme
+        || "system",
+    );
+    let pageWidthPreference = normalizePageWidthChoice(
+        workspace.dataset.initialPageWidth || "wide",
+    );
     let currentColumnWidths = {
         time: 14,
         content: 66,
@@ -134,6 +155,117 @@
         } catch (error) {
             // Настройка действует в текущей вкладке.
         }
+    }
+
+    function normalizeThemeChoice(value) {
+        const normalized = String(value || "").toLowerCase();
+        return ["system", "light", "dark"].includes(normalized)
+            ? normalized
+            : "system";
+    }
+
+    function normalizePageWidthChoice(value) {
+        const normalized = String(value || "").toLowerCase();
+        return ["standard", "wide", "full"].includes(normalized)
+            ? normalized
+            : "wide";
+    }
+
+    function resolvedTheme(value) {
+        if (value !== "system") {
+            return value;
+        }
+        return window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
+    }
+
+    function updateQuickSettingButtons() {
+        themeChoiceButtons.forEach((button) => {
+            const active = button.dataset.themeChoice === themePreference;
+            button.classList.toggle("is-active", active);
+            button.setAttribute("aria-pressed", String(active));
+        });
+        pageWidthChoiceButtons.forEach((button) => {
+            const active = (
+                button.dataset.pageWidthChoice === pageWidthPreference
+            );
+            button.classList.toggle("is-active", active);
+            button.setAttribute("aria-pressed", String(active));
+        });
+    }
+
+    function applyQuickDisplayPreferences() {
+        document.documentElement.dataset.themePreference = themePreference;
+        document.documentElement.dataset.theme = resolvedTheme(
+            themePreference,
+        );
+        workspace.dataset.pageWidth = pageWidthPreference;
+        updateQuickSettingButtons();
+        schedulePagination(20);
+    }
+
+    async function persistQuickDisplayPreferences(previous) {
+        if (!quickDisplayForm) {
+            return;
+        }
+        if (quickSettingsController) {
+            quickSettingsController.abort();
+        }
+        const controller = new AbortController();
+        quickSettingsController = controller;
+        quickSettingStatus.textContent = "Сохранение…";
+        const data = new FormData(quickDisplayForm);
+        data.set("theme", themePreference.toUpperCase());
+        data.set("journal_width", pageWidthPreference.toUpperCase());
+
+        try {
+            const response = await fetch(quickDisplayForm.action, {
+                method: "POST",
+                body: data,
+                credentials: "same-origin",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+                signal: controller.signal,
+            });
+            const payload = await response.json();
+            if (!response.ok || !payload.ok) {
+                throw new Error(payload.message || "save_failed");
+            }
+            themePreference = normalizeThemeChoice(payload.theme);
+            pageWidthPreference = normalizePageWidthChoice(
+                payload.journal_width,
+            );
+            applyQuickDisplayPreferences();
+            quickSettingStatus.textContent = "✓ Сохранено";
+        } catch (error) {
+            if (error.name === "AbortError") {
+                return;
+            }
+            themePreference = previous.theme;
+            pageWidthPreference = previous.pageWidth;
+            applyQuickDisplayPreferences();
+            quickSettingStatus.textContent = "Не удалось сохранить";
+        } finally {
+            if (quickSettingsController === controller) {
+                quickSettingsController = null;
+            }
+        }
+    }
+
+    function selectQuickDisplayPreference(kind, value) {
+        const previous = {
+            theme: themePreference,
+            pageWidth: pageWidthPreference,
+        };
+        if (kind === "theme") {
+            themePreference = normalizeThemeChoice(value);
+        } else {
+            pageWidthPreference = normalizePageWidthChoice(value);
+        }
+        applyQuickDisplayPreferences();
+        void persistQuickDisplayPreferences(previous);
     }
 
     function clamp(value, minimum, maximum) {
@@ -189,7 +321,34 @@
     function updateRecordControls() {
         const capacity = selectedRecordCapacity();
 
-        recordPresetButtons.forEach((button) => {
+        themeChoiceButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            selectQuickDisplayPreference(
+                "theme",
+                button.dataset.themeChoice,
+            );
+        });
+    });
+
+    pageWidthChoiceButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            selectQuickDisplayPreference(
+                "pageWidth",
+                button.dataset.pageWidthChoice,
+            );
+        });
+    });
+
+    const systemThemeQuery = window.matchMedia(
+        "(prefers-color-scheme: dark)",
+    );
+    systemThemeQuery.addEventListener?.("change", () => {
+        if (themePreference === "system") {
+            applyQuickDisplayPreferences();
+        }
+    });
+
+    recordPresetButtons.forEach((button) => {
             const active = (
                 button.dataset.recordsPreset === recordSetting
             );
@@ -392,6 +551,69 @@
         };
     }
 
+    function compareDraftRows(left, right) {
+        const timeCompare = String(left.dataset.entryAt || "").localeCompare(
+            String(right.dataset.entryAt || ""),
+        );
+        if (timeCompare !== 0) {
+            return timeCompare;
+        }
+        const positionCompare = (
+            Number(left.dataset.entryPosition || 0)
+            - Number(right.dataset.entryPosition || 0)
+        );
+        if (positionCompare !== 0) {
+            return positionCompare;
+        }
+        return String(left.dataset.draftId || "").localeCompare(
+            String(right.dataset.draftId || ""),
+        );
+    }
+
+    function sortRowsChronologically() {
+        rows.sort(compareDraftRows);
+        rows.forEach((row) => rowStore.append(row));
+        refreshInlineDateMarkers();
+    }
+
+    function revealChronologicalRow(row) {
+        sortRowsChronologically();
+        paginateByRecordCount(true);
+        const pageIndex = pages.findIndex((page) => (
+            page.rows.includes(row)
+        ));
+        if (pageIndex >= 0) {
+            currentPage = viewMode === "spread"
+                ? Math.floor(pageIndex / 2) * 2
+                : pageIndex;
+            renderCurrentPages();
+        }
+        row.classList.remove("is-chronology-moved");
+        void row.offsetWidth;
+        row.classList.add("is-chronology-moved");
+        window.setTimeout(() => {
+            row.classList.remove("is-chronology-moved");
+        }, 1600);
+        window.requestAnimationFrame(() => {
+            row.scrollIntoView({
+                block: "center",
+                behavior: "smooth",
+            });
+        });
+    }
+
+    function applyPendingChronology(form) {
+        if (form.dataset.chronologyPending !== "true") {
+            return false;
+        }
+        delete form.dataset.chronologyPending;
+        const row = form.closest("[data-draft-card]");
+        if (row) {
+            revealChronologicalRow(row);
+        }
+        return true;
+    }
+
     function refreshInlineDateMarkers() {
         let previousDate = null;
         rows.forEach((row) => {
@@ -544,6 +766,7 @@
                 timeValue: timeInput.value,
                 rowDate: row?.dataset.entryDate || "",
                 rowDateLabel: row?.dataset.entryDateLabel || "",
+                rowEntryAt: row?.dataset.entryAt || "",
             };
             if (!hidden) {
                 message.textContent = "Не найдено поле даты записи.";
@@ -569,6 +792,7 @@
                 if (row) {
                     row.dataset.entryDate = original.rowDate;
                     row.dataset.entryDateLabel = original.rowDateLabel;
+                    row.dataset.entryAt = original.rowEntryAt;
                 }
                 message.textContent = (
                     "Не удалось сохранить дату. Проверьте интервал смены."
@@ -577,10 +801,13 @@
                 return;
             }
 
-            refreshInlineDateMarkers();
-            closeDateEditor(true);
-            markPaginationPending();
-            flushDeferredPagination();
+            closeDateEditor(false);
+            form.classList.remove("has-focus");
+            if (activeDraftForm === form) {
+                activeDraftForm = null;
+            }
+            applyPendingChronology(form);
+            window.requestAnimationFrame(() => dateButton.focus());
         };
 
         cancelButton.addEventListener("click", () => {
@@ -656,6 +883,8 @@
     }
 
     async function save(form) {
+        const row = form.closest("[data-draft-card]");
+        const previousEntryAt = row?.dataset.entryAt || "";
         if (!syncHiddenDateTime(form)) {
             setStatus(
                 form,
@@ -723,6 +952,22 @@
                 `✓ ${payload.saved_at}`,
                 "is-saved",
             );
+
+            const savedEntryAt = (
+                payload.event_at
+                || form.querySelector("[data-event-at]")?.value
+                || previousEntryAt
+            );
+            if (row) {
+                row.dataset.entryAt = savedEntryAt;
+                if (savedEntryAt !== previousEntryAt) {
+                    form.dataset.chronologyPending = "true";
+                    markPaginationPending();
+                    if (!form.contains(document.activeElement)) {
+                        applyPendingChronology(form);
+                    }
+                }
+            }
             flushDeferredPagination();
             return true;
         } catch (error) {
@@ -1034,6 +1279,7 @@
             dateButton.dataset.currentDate = dateLabel;
             row.dataset.entryDate = dateIso;
             row.dataset.entryDateLabel = dateLabel;
+            row.dataset.entryAt = `${dateIso}T${normalizedTime}`;
 
             const serverDateMarker = row.querySelector(
                 "[data-inline-date]",
@@ -1044,6 +1290,7 @@
 
             state.record.replaceWith(row);
             rows.push(row);
+            form.dataset.chronologyPending = "true";
             bindDraftRow(row);
             bindEditorCommands(row);
             inlineCreation = null;
@@ -1227,34 +1474,24 @@
 
         const timeCell = document.createElement("span");
         timeCell.className = "draft-empty-record-time";
-        timeCell.dataset.inlineCreateTrigger = "true";
-        timeCell.tabIndex = 0;
-        timeCell.setAttribute("role", "button");
-        timeCell.setAttribute(
+        const addButton = document.createElement("button");
+        addButton.type = "button";
+        addButton.className = "draft-empty-record-add";
+        addButton.dataset.inlineCreateTrigger = "true";
+        addButton.textContent = "+";
+        addButton.setAttribute(
             "aria-label",
             "Добавить запись в эту строку",
         );
-        timeCell.title = (
-            "Двойной щелчок — добавить запись"
-        );
-
-        timeCell.addEventListener("dblclick", () => {
+        addButton.title = "Добавить запись";
+        addButton.addEventListener("click", () => {
             beginInlineCreation(
                 record,
                 record.dataset.entryDateLabel,
                 record.dataset.entryDate,
             );
         });
-        timeCell.addEventListener("keydown", (event) => {
-            if (event.key === "Enter") {
-                event.preventDefault();
-                beginInlineCreation(
-                    record,
-                    record.dataset.entryDateLabel,
-                    record.dataset.entryDate,
-                );
-            }
-        });
+        timeCell.append(addButton);
 
         record.append(
             timeCell,
@@ -1687,7 +1924,9 @@
                 if (activeDraftForm === form) {
                     activeDraftForm = null;
                 }
-                flushDeferredPagination();
+                if (!applyPendingChronology(form)) {
+                    flushDeferredPagination();
+                }
             }, 180);
         });
 
@@ -1922,7 +2161,9 @@
     });
 
     updateOverlayOffsets();
+    applyQuickDisplayPreferences();
     updateRecordControls();
+    sortRowsChronologically();
 
     updateColumnWidths(
         readPreference("eod-draft-column-time", "14"),

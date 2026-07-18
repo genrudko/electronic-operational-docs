@@ -103,6 +103,9 @@ for marker in (
     "data-shift-end",
     "screen-journal-theme",
     "data-apply-custom-records",
+    "data-theme-choice",
+    "data-page-width-choice",
+    "data-quick-display-form",
     "stable-page-layout-workspace",
     "draft_workspace.js",
     "draft-mini-toolbar",
@@ -190,6 +193,43 @@ assert OperationalJournalSequence.objects.get(
 ).last_value == 5
 print("OFFICIAL_JOURNAL_UNCHANGED=PASSED")
 
+quick_settings = client.post(
+    reverse(
+        "operational_log:update_display",
+        args=(journal.pk,),
+    ),
+    {
+        "workspace_quick_settings": "1",
+        "theme": "DARK",
+        "journal_width": "FULL",
+    },
+    HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+)
+assert quick_settings.status_code == 200
+assert quick_settings.json()["ok"] is True
+user.interface_preference.refresh_from_db()
+assert user.interface_preference.theme == "DARK"
+assert user.interface_preference.journal_width == "FULL"
+print("QUICK_VIEW_PREFERENCES=PASSED")
+
+chronology_entries = list(
+    shift.draft_entries.filter(is_removed=False).order_by("pk")[:2]
+)
+earlier, later = chronology_entries
+earlier.event_at = shift.planned_start_at + timedelta(minutes=1)
+earlier.position = 99
+later.event_at = shift.planned_start_at + timedelta(minutes=2)
+later.position = 1
+shift.draft_entries.bulk_update(
+    (earlier, later),
+    ("event_at", "position"),
+)
+chronology_workspace = client.get(workspace_url).content.decode("utf-8")
+assert chronology_workspace.index(str(earlier.public_id)) < (
+    chronology_workspace.index(str(later.public_id))
+)
+print("CHRONOLOGICAL_DRAFT_ORDER=PASSED")
+
 css_text = (ROOT / "src/static/system/app.css").read_text(
     encoding="utf-8"
 )
@@ -237,6 +277,11 @@ for marker in (
     'formData.set(\n            "event_at"',
     "parseCreatedDraftRow",
     "bindDraftRow",
+    "sortRowsChronologically",
+    "revealChronologicalRow",
+    "applyPendingChronology",
+    "selectQuickDisplayPreference",
+    "persistQuickDisplayPreferences",
 ):
     assert marker in js_text, marker
 views_text = (
@@ -281,7 +326,7 @@ print("INLINE_ENTRY_DATE_INHERITANCE=PASSED")
 print("SHIFT_BOUND_DATE_VALIDATION=PASSED")
 
 repair_css = css_text.split(
-    "/* Patch 010.3.1 Repair 7.2 Repair 1:",
+    "/* Patch 010.3.1 Repair 7.3:",
     1,
 )[-1]
 assert "aspect-ratio: 210 / 297" not in repair_css
@@ -353,5 +398,24 @@ print("INLINE_BLANK_RECORD_CREATION=PASSED")
 print("ADD_RECORD_BUTTON_PRESERVED=PASSED")
 print("FULL_DARK_JOURNAL_THEME=PASSED")
 print("INLINE_DATE_EDITOR=PASSED")
+assert "data-theme-choice" in workspace_text
+assert "data-page-width-choice" in workspace_text
+assert "draft-empty-record-add" in js_text
+blank_contract = js_text.split("function createBlankRecord", 1)[1].split(
+    "function appendBlankRecords",
+    1,
+)[0]
+assert 'addButton.addEventListener("click"' in blank_contract
+assert 'timeCell.addEventListener("dblclick"' not in blank_contract
+assert "sortRowsChronologically" in js_text
+assert "draft_entries_queryset(shift).order_by(" in views_text
+assert '"event_at"' in views_text
+assert "workspace_quick_settings" in views_text
+assert ".draft-icon-choice-group" in repair_css
+assert '[data-page-width="standard"]' in repair_css
+assert ".is-chronology-moved" in repair_css
+print("ONE_CLICK_BLANK_ROW_ADD=PASSED")
+print("QUICK_THEME_AND_PAGE_WIDTH=PASSED")
+print("CHRONOLOGICAL_REPOSITION=PASSED")
 
-print("PATCH_010_3_1_REPAIR7_2_REPAIR1_DARK_DATE_EDITOR_GATE_PASSED")
+print("PATCH_010_3_1_REPAIR7_3_QUICK_VIEW_CHRONOLOGY_GATE_PASSED")

@@ -71,6 +71,9 @@
     data-default-entry-date-iso="{{ shift.planned_start_at|date:'Y-m-d' }}"
     data-shift-start="{{ shift.planned_start_at|date:'Y-m-d\TH:i' }}"
     data-shift-end="{{ shift.planned_end_at|date:'Y-m-d\TH:i' }}"
+    data-initial-theme="{{ ui_preferences.theme|lower }}"
+    data-initial-page-width="{{ ui_preferences.journal_width|lower }}"
+    data-display-settings-url="{% url 'operational_log:update_display' journal.pk %}"
     style="
         --draft-time-column: 14%;
         --draft-content-column: 66%;
@@ -312,6 +315,103 @@
             </ul>
         </section>
 
+        <section class="draft-drawer-section draft-quick-view-section">
+            <div class="draft-side-heading">
+                <span class="card-label">ОТОБРАЖЕНИЕ</span>
+                <strong>Тема и ширина страницы</strong>
+            </div>
+
+            <div class="draft-quick-setting">
+                <span class="draft-quick-setting-label">Тема</span>
+                <div
+                    class="draft-icon-choice-group"
+                    role="group"
+                    aria-label="Тема интерфейса"
+                >
+                    <button
+                        type="button"
+                        data-theme-choice="system"
+                        title="Как в системе"
+                        aria-label="Тема как в системе"
+                    >
+                        <span class="draft-theme-icon draft-theme-icon-system" aria-hidden="true"></span>
+                        <small>Авто</small>
+                    </button>
+                    <button
+                        type="button"
+                        data-theme-choice="light"
+                        title="Светлая тема"
+                        aria-label="Светлая тема"
+                    >
+                        <span class="draft-theme-icon draft-theme-icon-light" aria-hidden="true">☀</span>
+                        <small>Светлая</small>
+                    </button>
+                    <button
+                        type="button"
+                        data-theme-choice="dark"
+                        title="Тёмная тема"
+                        aria-label="Тёмная тема"
+                    >
+                        <span class="draft-theme-icon draft-theme-icon-dark" aria-hidden="true">◐</span>
+                        <small>Тёмная</small>
+                    </button>
+                </div>
+            </div>
+
+            <div class="draft-quick-setting">
+                <span class="draft-quick-setting-label">Ширина страницы</span>
+                <div
+                    class="draft-icon-choice-group draft-width-choice-group"
+                    role="group"
+                    aria-label="Ширина страницы журнала"
+                >
+                    <button
+                        type="button"
+                        data-page-width-choice="standard"
+                        title="Стандартная ширина"
+                        aria-label="Стандартная ширина страницы"
+                    >
+                        <span class="draft-width-icon is-standard" aria-hidden="true"></span>
+                        <small>Обычная</small>
+                    </button>
+                    <button
+                        type="button"
+                        data-page-width-choice="wide"
+                        title="Широкая страница"
+                        aria-label="Широкая страница"
+                    >
+                        <span class="draft-width-icon is-wide" aria-hidden="true"></span>
+                        <small>Широкая</small>
+                    </button>
+                    <button
+                        type="button"
+                        data-page-width-choice="full"
+                        title="На всю доступную ширину"
+                        aria-label="Страница на всю ширину"
+                    >
+                        <span class="draft-width-icon is-full" aria-hidden="true"></span>
+                        <small>Полная</small>
+                    </button>
+                </div>
+            </div>
+
+            <form
+                method="post"
+                action="{% url 'operational_log:update_display' journal.pk %}"
+                data-quick-display-form
+                hidden
+            >
+                {% csrf_token %}
+                <input type="hidden" name="workspace_quick_settings" value="1">
+            </form>
+            <p
+                class="draft-quick-setting-status"
+                data-quick-setting-status
+                role="status"
+                aria-live="polite"
+            ></p>
+        </section>
+
 
 <section class="draft-drawer-section">
     <div class="draft-side-heading">
@@ -422,6 +522,9 @@
             data-draft-id="{{ draft.public_id }}"
             data-entry-date="{{ draft.event_at|date:'Y-m-d' }}"
             data-entry-date-label="{{ draft.event_at|date:'d.m.Y' }}"
+            data-entry-at="{{ draft.event_at|date:'Y-m-d\TH:i' }}"
+            data-entry-position="{{ draft.position }}"
+            data-created-at="{{ draft.created_at|date:'c' }}"
             data-entry-filled="{% if draft.content %}true{% else %}false{% endif %}"
         >
             {% ifchanged draft.event_at|date:"Y-m-d" %}

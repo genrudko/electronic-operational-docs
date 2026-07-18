@@ -227,7 +227,13 @@ def shift_workspace(
     removed_drafts = []
     members = []
     if shift is not None:
-        drafts = list(draft_entries_queryset(shift))
+        drafts = list(
+            draft_entries_queryset(shift).order_by(
+                "event_at",
+                "position",
+                "pk",
+            )
+        )
         removed_drafts = list(
             draft_entries_queryset(
                 shift,
@@ -429,6 +435,9 @@ def autosave_draft_entry(
                 saved.updated_at
             ).strftime("%H:%M:%S"),
             "revision_count": saved.revisions.count(),
+            "event_at": timezone.localtime(
+                saved.event_at
+            ).strftime("%Y-%m-%dT%H:%M"),
         }
     )
 
@@ -526,6 +535,47 @@ def update_display(
     preferences, _ = InterfacePreference.objects.get_or_create(
         user=request.user
     )
+
+    if (
+        request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        and request.POST.get("workspace_quick_settings") == "1"
+    ):
+        theme = request.POST.get("theme", "").upper()
+        journal_width = request.POST.get(
+            "journal_width",
+            "",
+        ).upper()
+        if theme not in InterfacePreference.Theme.values:
+            return JsonResponse(
+                {"ok": False, "message": "Неизвестная тема."},
+                status=400,
+            )
+        if journal_width not in InterfacePreference.JournalWidth.values:
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "message": "Неизвестная ширина страницы.",
+                },
+                status=400,
+            )
+        preferences.theme = theme
+        preferences.journal_width = journal_width
+        preferences.full_clean()
+        preferences.save(
+            update_fields=(
+                "theme",
+                "journal_width",
+                "updated_at",
+            )
+        )
+        return JsonResponse(
+            {
+                "ok": True,
+                "theme": preferences.theme.lower(),
+                "journal_width": preferences.journal_width.lower(),
+            }
+        )
+
     form = JournalDisplayPreferenceForm(
         request.POST,
         instance=preferences,

@@ -63,6 +63,9 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             "data-shift-end",
             "screen-journal-theme",
             "data-apply-custom-records",
+            "data-theme-choice",
+            "data-page-width-choice",
+            "data-quick-display-form",
             "stable-page-layout-workspace",
             "data-quick-time",
             "draft_workspace.js",
@@ -88,6 +91,25 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         self.assertNotContains(workspace, "data-measure-page")
         self.assertNotContains(workspace, "data-view-drawer-backdrop")
         self.assertNotContains(workspace, "hybrid-paper-theme")
+
+        quick_settings = self.client.post(
+            reverse(
+                "operational_log:update_display",
+                args=(self.journal.pk,),
+            ),
+            {
+                "workspace_quick_settings": "1",
+                "theme": "LIGHT",
+                "journal_width": "FULL",
+            },
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(quick_settings.status_code, 200)
+        self.assertTrue(quick_settings.json()["ok"])
+        preferences = self.user.interface_preference
+        preferences.refresh_from_db()
+        self.assertEqual(preferences.theme, "LIGHT")
+        self.assertEqual(preferences.journal_width, "FULL")
 
     def test_open_shift_for_journal_without_active_shift(self) -> None:
         journal = OperationalJournal.objects.create(
@@ -273,6 +295,31 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         entry.refresh_from_db()
         self.assertEqual(entry.event_at, saved_event_at)
         self.assertEqual(entry.version, payload["version"])
+
+        ordered_entries = list(
+            self.shift.draft_entries.filter(is_removed=False)
+            .order_by("pk")[:2]
+        )
+        earlier, later = ordered_entries
+        earlier.event_at = self.shift.planned_start_at + timedelta(minutes=1)
+        earlier.position = 99
+        later.event_at = self.shift.planned_start_at + timedelta(minutes=2)
+        later.position = 1
+        self.shift.draft_entries.bulk_update(
+            (earlier, later),
+            ("event_at", "position"),
+        )
+        workspace = self.client.get(
+            reverse(
+                "operational_log:shift_workspace",
+                args=(self.journal.pk,),
+            )
+        )
+        html = workspace.content.decode("utf-8")
+        self.assertLess(
+            html.index(str(earlier.public_id)),
+            html.index(str(later.public_id)),
+        )
 
     def test_autosave_returns_conflict_for_stale_version(self) -> None:
         self.client.force_login(self.user)
