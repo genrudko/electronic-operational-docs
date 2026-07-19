@@ -261,101 +261,109 @@
                     <small>История</small>
                 </section>
 
-                <section
-                    class="draft-editor-ribbon-group"
-                    aria-label="Вставка"
+
+        <section
+            class="draft-editor-ribbon-group draft-entry-kind-ribbon-group"
+            aria-label="Тип записи"
+        >
+            <div class="draft-editor-ribbon-buttons">
+                <button
+                    type="button"
+                    class="draft-editor-ribbon-button draft-entry-kind-trigger"
+                    data-entry-kind-trigger
+                    title="Тип всей записи"
+                    aria-label="Выбрать тип записи"
+                    aria-haspopup="menu"
+                    aria-expanded="false"
+                    disabled
                 >
-                    <div class="draft-editor-ribbon-buttons">
-                        <button
-                            type="button"
-                            class="draft-editor-ribbon-button"
-                            data-editor-semantic-trigger
-                            title="Семантические элементы (Ctrl+Shift+M)"
-                            aria-label="Открыть семантические элементы"
-                            aria-haspopup="menu"
-                            aria-expanded="false"
-                        >
-                            <span class="draft-editor-tool-icon is-semantic" aria-hidden="true">⚡</span>
-                        </button>
-                    </div>
-                    <small>Отметки</small>
-                </section>
+                    <span class="draft-entry-kind-trigger-icon" aria-hidden="true">◈</span>
+                    <span data-entry-kind-current>Тип записи</span>
+                    <span aria-hidden="true">⌄</span>
+                </button>
             </div>
-        </div>
+            <small>Тип записи</small>
+        </section>
 
-        <div
-            class="draft-semantic-palette screen-only"
-            data-semantic-palette
-            role="menu"
-            aria-label="Семантические элементы"
-            hidden
+        <section
+            class="draft-editor-ribbon-group"
+            aria-label="Связанный объект"
         >
-            <header>
-                <strong>Семантические элементы</strong>
-                <span>Выдели текст или создай новый элемент</span>
-            </header>
-            <div class="draft-semantic-palette-grid">
-                <button type="button" role="menuitem" data-semantic-option="command"><b>К</b><span>Команда</span></button>
-                <button type="button" role="menuitem" data-semantic-option="permission"><b>Р</b><span>Разрешение</span></button>
-                <button type="button" role="menuitem" data-semantic-option="message"><b>С</b><span>Сообщение</span></button>
-                <button type="button" role="menuitem" data-semantic-option="warning"><b>!</b><span>Предупреждение</span></button>
-                <button type="button" role="menuitem" data-semantic-option="equipment"><b>Э</b><span>Оборудование</span></button>
-                <button type="button" role="menuitem" data-semantic-option="document"><b>Д</b><span>Документ</span></button>
-                <button type="button" role="menuitem" data-semantic-option="person"><b>Л</b><span>Сотрудник / должность</span></button>
-                <button type="button" role="menuitem" data-semantic-option="event_time"><b>В</b><span>Время события</span></button>
-                <button type="button" role="menuitem" data-semantic-option="related_entry"><b>№</b><span>Связанная запись</span></button>
-                <button type="button" role="menuitem" data-semantic-option="carryover"><b>→</b><span>На следующую смену</span></button>
+            <div class="draft-editor-ribbon-buttons">
+                <button
+                    type="button"
+                    class="draft-editor-ribbon-button"
+                    data-reference-trigger
+                    title="Связать выделенный текст с объектом (Ctrl+Shift+M)"
+                    aria-label="Вставить связанную ссылку"
+                    aria-haspopup="dialog"
+                    aria-expanded="false"
+                    disabled
+                >
+                    <span class="draft-editor-tool-icon is-reference" aria-hidden="true">↗</span>
+                </button>
             </div>
-        </div>
+            <small>Связь</small>
+        </section>
+    </div>
+</div>
 
-        <div
-            class="draft-semantic-dialog screen-only"
-            data-semantic-dialog
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="draft-semantic-dialog-title"
-            hidden
-        >
-            <form data-semantic-dialog-form>
-                <header>
-                    <div>
-                        <span>СЕМАНТИЧЕСКИЙ ЭЛЕМЕНТ</span>
-                        <h3 id="draft-semantic-dialog-title" data-semantic-dialog-title>
-                            Вставить семантический элемент
-                        </h3>
-                    </div>
-                    <button type="button" data-semantic-cancel aria-label="Закрыть">×</button>
-                </header>
-                <input type="hidden" data-semantic-kind>
-                <label>
-                    <span>Вид</span>
-                    <strong data-semantic-kind-label>—</strong>
-                </label>
-                <label>
-                    <span>Текст элемента</span>
-                    <input
-                        type="text"
-                        maxlength="500"
-                        autocomplete="off"
-                        data-semantic-label
-                        required
-                    >
-                </label>
-                <label>
-                    <span>Номер или идентификатор — необязательно</span>
-                    <input
-                        type="text"
-                        maxlength="200"
-                        autocomplete="off"
-                        data-semantic-reference
-                    >
-                </label>
-                <footer>
-                    <button type="button" class="button secondary" data-semantic-cancel>Отмена</button>
-                    <button type="submit" class="button">Вставить</button>
-                </footer>
-            </form>
+<div
+    class="draft-entry-kind-menu screen-only"
+    data-entry-kind-menu
+    role="menu"
+    aria-label="Тип записи"
+    hidden
+>
+    <button type="button" role="menuitemradio" data-entry-kind-option="normal"><b>○</b><span>Обычная запись</span></button>
+    <button type="button" role="menuitemradio" data-entry-kind-option="command"><b>К</b><span>Команда</span></button>
+    <button type="button" role="menuitemradio" data-entry-kind-option="permission"><b>Р</b><span>Разрешение</span></button>
+    <button type="button" role="menuitemradio" data-entry-kind-option="message"><b>С</b><span>Сообщение</span></button>
+    <button type="button" role="menuitemradio" data-entry-kind-option="warning"><b>!</b><span>Предупреждение</span></button>
+    <button type="button" role="menuitemradio" data-entry-kind-option="carryover"><b>→</b><span>На следующую смену</span></button>
+</div>
+
+<div
+    class="draft-reference-picker screen-only"
+    data-reference-picker
+    role="dialog"
+    aria-label="Связать текст с объектом"
+    hidden
+>
+    <header>
+        <div>
+            <strong>Связать текст с объектом</strong>
+            <span data-reference-selection>Выдели текст или поставь курсор</span>
         </div>
+        <button type="button" data-reference-close aria-label="Закрыть">×</button>
+    </header>
+    <div class="draft-reference-kind-tabs" role="toolbar" aria-label="Вид объекта">
+        <button type="button" data-reference-kind-option="equipment" aria-pressed="true"><b>Э</b><span>Оборудование</span></button>
+        <button type="button" data-reference-kind-option="document" aria-pressed="false"><b>Д</b><span>Документ</span></button>
+        <button type="button" data-reference-kind-option="person" aria-pressed="false"><b>Л</b><span>Сотрудник</span></button>
+        <button type="button" data-reference-kind-option="related_entry" aria-pressed="false"><b>№</b><span>Запись</span></button>
+        <button type="button" data-reference-kind-option="event_time" aria-pressed="false"><b>В</b><span>Время</span></button>
+    </div>
+    <label class="draft-reference-search-label">
+        <span>Поиск в справочнике</span>
+        <input
+            type="search"
+            autocomplete="off"
+            placeholder="Начни вводить наименование…"
+            data-reference-search
+        >
+    </label>
+    <div class="draft-reference-results" data-reference-results></div>
+    <footer>
+        <small data-reference-hint>Выбранное наименование будет вставлено в позицию курсора.</small>
+        <div>
+            <button type="button" class="button danger" data-reference-remove hidden>Снять связь</button>
+            <button type="button" class="button secondary" data-reference-close>Закрыть</button>
+        </div>
+    </footer>
+</div>
+
+{{ semantic_reference_catalog|json_script:"draft-semantic-reference-catalog" }}
 
     </div>
 
@@ -896,12 +904,12 @@
         <span class="draft-editor-floating-separator" aria-hidden="true"></span>
         <button
             type="button"
-            data-editor-semantic-trigger
-            title="Семантический элемент"
-            aria-label="Открыть семантические элементы"
-            aria-haspopup="menu"
+            data-reference-trigger
+            title="Связать выделенный текст с объектом"
+            aria-label="Вставить связанную ссылку"
+            aria-haspopup="dialog"
             aria-expanded="false"
-        >⚡</button>
+        >↗</button>
         <span class="draft-editor-floating-separator" aria-hidden="true"></span>
         <button
             type="button"

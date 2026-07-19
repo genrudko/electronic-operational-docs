@@ -7,6 +7,7 @@ from typing import Any
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
+from django.db.models import Prefetch
 from django.http import (
     HttpRequest,
     HttpResponse,
@@ -18,7 +19,13 @@ from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.views.decorators.http import require_POST
 
-from apps.organizations.models import InterfacePreference
+from apps.documents.models import Document
+from apps.equipment.models import (
+    EquipmentAsset,
+    EquipmentNameRevision,
+    PublicationStatus,
+)
+from apps.organizations.models import Employee, InterfacePreference
 
 from .form_contracts import OPERATIONAL_JOURNAL_FORM
 from .forms import (
@@ -127,6 +134,132 @@ def _default_event_at_for_shift(shift: OperationalShift) -> datetime:
     if now > shift.planned_end_at:
         return shift.planned_end_at
     return now
+
+
+def _equipment_reference_label(
+    asset: EquipmentAsset,
+    effective_date,
+) -> str:
+    for revision in getattr(asset, "published_name_candidates", []):
+        if revision.effective_from > effective_date:
+            continue
+        if (
+            revision.effective_until is not None
+            and revision.effective_until < effective_date
+        ):
+            continue
+        return revision.dispatcher_name
+    return asset.code or asset.technical_name
+
+
+def _semantic_reference_catalog(
+    journal: OperationalJournal,
+    shift: OperationalShift | None,
+    drafts: list[OperationalDraftEntry],
+) -> dict[str, list[dict[str, str]]]:
+    effective_date = (
+        timezone.localtime(shift.planned_start_at).date()
+        if shift is not None
+        else timezone.localdate()
+    )
+    equipment_rows = list(
+        EquipmentAsset.objects.filter(
+            organization=journal.organization,
+        )
+        .select_related("site", "equipment_type")
+        .prefetch_related(
+            Prefetch(
+                "dispatcher_name_revisions",
+                queryset=EquipmentNameRevision.objects.filter(
+                    status=PublicationStatus.PUBLISHED,
+                ).order_by("-effective_from", "-revision_number"),
+                to_attr="published_name_candidates",
+            )
+        )
+        .order_by("site__name", "code")[:200]
+    )
+    document_rows = list(
+        Document.objects.filter(
+            organization=journal.organization,
+        )
+        .select_related("document_type")
+        .order_by("-registered_at", "-updated_at", "-pk")[:150]
+    )
+    employee_rows = list(
+        Employee.objects.filter(
+            organization=journal.organization,
+            is_active=True,
+        )
+        .select_related("position", "division")
+        .order_by("last_name", "first_name", "middle_name")[:150]
+    )
+
+    return {
+        "equipment": [
+            {
+                "label": _equipment_reference_label(
+                    asset,
+                    effective_date,
+                ),
+                "reference": f"equipment:{asset.public_id}",
+                "meta": (
+                    f"{asset.site.short_name or asset.site.name} · "
+                    f"{asset.equipment_type.name}"
+                ),
+                "keywords": (
+                    f"{asset.code} {asset.technical_name} "
+                    f"{asset.voltage_level}"
+                ),
+            }
+            for asset in equipment_rows
+        ],
+        "document": [
+            {
+                "label": document.registration_number
+                or document.title,
+                "reference": f"document:{document.public_id}",
+                "meta": (
+                    f"{document.document_type.name} · "
+                    f"{document.title}"
+                ),
+                "keywords": (
+                    f"{document.registration_number} "
+                    f"{document.title}"
+                ),
+            }
+            for document in document_rows
+        ],
+        "person": [
+            {
+                "label": employee.full_name,
+                "reference": f"employee:{employee.pk}",
+                "meta": employee.position.name,
+                "keywords": (
+                    f"{employee.full_name} "
+                    f"{employee.position.name} "
+                    f"{employee.division.name}"
+                ),
+            }
+            for employee in employee_rows
+        ],
+        "related_entry": [
+            {
+                "label": (
+                    "Запись "
+                    + timezone.localtime(draft.event_at).strftime(
+                        "%d.%m.%Y %H:%M"
+                    )
+                ),
+                "reference": f"draft:{draft.public_id}",
+                "meta": draft.content[:140] or "Пустая черновая запись",
+                "keywords": (
+                    f"{timezone.localtime(draft.event_at):%d.%m.%Y %H:%M} "
+                    f"{draft.content}"
+                ),
+            }
+            for draft in drafts
+        ],
+    }
 
 
 @login_required
@@ -254,6 +387,11 @@ def shift_workspace(
                 "employee__position",
             ).all()
         )
+    semantic_reference_catalog = _semantic_reference_catalog(
+        journal,
+        shift,
+        drafts,
+    )
     return render(
         request,
         "operational_log/shift_workspace.html",
@@ -264,6 +402,7 @@ def shift_workspace(
             "drafts": drafts,
             "removed_drafts": removed_drafts,
             "members": members,
+            "semantic_reference_catalog": semantic_reference_catalog,
         },
     )
 

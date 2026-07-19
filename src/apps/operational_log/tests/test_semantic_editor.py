@@ -5,7 +5,6 @@ from django.test import SimpleTestCase
 
 from ..editor import (
     EDITOR_SCHEMA_VERSION,
-    LEGACY_EDITOR_SCHEMA_VERSIONS,
     editor_document_to_text,
     normalize_editor_document,
 )
@@ -16,36 +15,10 @@ from .base import OperationalLogTestCase
 
 
 class SemanticEditorDocumentTests(SimpleTestCase):
-    def semantic_document(
-        self,
-        kind: str,
-        label: str,
-        reference: str = "",
-    ) -> dict:
-        semantic = {"kind": kind, "label": label}
-        if reference:
-            semantic["reference"] = reference
-        return {
-            "schema_version": EDITOR_SCHEMA_VERSION,
-            "blocks": [
-                {
-                    "type": "paragraph",
-                    "segments": [
-                        {
-                            "text": "клиентская проекция",
-                            "marks": [],
-                            "semantic": semantic,
-                        }
-                    ],
-                }
-            ],
-        }
-
     def test_legacy_v1_document_is_upgraded_without_text_loss(self) -> None:
-        legacy_version = next(iter(LEGACY_EDITOR_SCHEMA_VERSIONS))
         document = normalize_editor_document(
             {
-                "schema_version": legacy_version,
+                "schema_version": "operational-draft-editor.v1",
                 "blocks": [
                     {
                         "type": "paragraph",
@@ -57,65 +30,162 @@ class SemanticEditorDocumentTests(SimpleTestCase):
             }
         )
         self.assertEqual(document["schema_version"], EDITOR_SCHEMA_VERSION)
+        self.assertEqual(document["entry_kind"], "normal")
         self.assertEqual(editor_document_to_text(document), "Старая запись")
 
-    def test_command_has_authoritative_plain_text_projection(self) -> None:
+    def test_legacy_v2_command_becomes_record_type(self) -> None:
         document = normalize_editor_document(
-            self.semantic_document("command", "включить В-35")
+            {
+                "schema_version": "operational-draft-editor.v2",
+                "blocks": [
+                    {
+                        "type": "paragraph",
+                        "segments": [
+                            {
+                                "text": "клиентская проекция",
+                                "marks": [],
+                                "semantic": {
+                                    "kind": "command",
+                                    "label": "отключить В-35",
+                                },
+                            }
+                        ],
+                    }
+                ],
+            }
+        )
+        self.assertEqual(document["entry_kind"], "command")
+        self.assertEqual(
+            document["blocks"][0]["segments"][0]["text"],
+            "отключить В-35",
         )
         self.assertEqual(
             editor_document_to_text(document),
-            "Команда: включить В-35",
-        )
-        segment = document["blocks"][0]["segments"][0]
-        self.assertEqual(segment["text"], "Команда: включить В-35")
-
-    def test_reference_semantic_preserves_normalized_reference(self) -> None:
-        document = normalize_editor_document(
-            self.semantic_document(
-                "equipment",
-                "В-35 Т-1-8",
-                "equipment:demo-35",
-            )
-        )
-        segment = document["blocks"][0]["segments"][0]
-        self.assertEqual(editor_document_to_text(document), "В-35 Т-1-8")
-        self.assertEqual(
-            segment["semantic"]["reference"],
-            "equipment:demo-35",
+            "Команда: отключить В-35",
         )
 
-    def test_unknown_semantic_kind_is_rejected(self) -> None:
-        with self.assertRaises(ValidationError):
-            normalize_editor_document(
-                self.semantic_document("dangerous_html", "текст")
-            )
-
-    def test_unknown_semantic_field_is_rejected(self) -> None:
-        document = self.semantic_document("message", "текст")
-        document["blocks"][0]["segments"][0]["semantic"]["html"] = "<b>x</b>"
-        with self.assertRaises(ValidationError):
-            normalize_editor_document(document)
-
-    def test_empty_semantic_label_is_rejected(self) -> None:
-        with self.assertRaises(ValidationError):
-            normalize_editor_document(
-                self.semantic_document("warning", "   ")
-            )
-
-    def test_plain_segments_do_not_merge_through_semantic_token(self) -> None:
+    def test_v3_record_type_has_authoritative_projection(self) -> None:
         document = normalize_editor_document(
             {
                 "schema_version": EDITOR_SCHEMA_VERSION,
+                "entry_kind": "warning",
+                "blocks": [
+                    {
+                        "type": "paragraph",
+                        "segments": [{"text": "Не включать В-35", "marks": []}],
+                    }
+                ],
+            }
+        )
+        self.assertEqual(
+            editor_document_to_text(document),
+            "Предупреждение: Не включать В-35",
+        )
+
+    def test_inline_equipment_reference_preserves_plain_text(self) -> None:
+        document = normalize_editor_document(
+            {
+                "schema_version": EDITOR_SCHEMA_VERSION,
+                "entry_kind": "command",
                 "blocks": [
                     {
                         "type": "paragraph",
                         "segments": [
                             {"text": "Отключить ", "marks": []},
                             {
-                                "text": "неавторитетно",
+                                "text": "подмена клиента",
+                                "marks": ["bold"],
+                                "reference": {
+                                    "kind": "equipment",
+                                    "label": "В-35 Т-1",
+                                    "reference": "equipment:demo-35",
+                                },
+                            },
+                        ],
+                    }
+                ],
+            }
+        )
+        segment = document["blocks"][0]["segments"][1]
+        self.assertEqual(segment["text"], "В-35 Т-1")
+        self.assertEqual(segment["reference"]["reference"], "equipment:demo-35")
+        self.assertEqual(
+            editor_document_to_text(document),
+            "Команда: Отключить В-35 Т-1",
+        )
+
+    def test_unknown_entry_kind_is_rejected(self) -> None:
+        with self.assertRaises(ValidationError):
+            normalize_editor_document(
+                {
+                    "schema_version": EDITOR_SCHEMA_VERSION,
+                    "entry_kind": "dangerous_html",
+                    "blocks": [{"type": "paragraph", "segments": []}],
+                }
+            )
+
+    def test_unknown_reference_kind_is_rejected(self) -> None:
+        with self.assertRaises(ValidationError):
+            normalize_editor_document(
+                {
+                    "schema_version": EDITOR_SCHEMA_VERSION,
+                    "entry_kind": "normal",
+                    "blocks": [
+                        {
+                            "type": "paragraph",
+                            "segments": [
+                                {
+                                    "text": "x",
+                                    "marks": [],
+                                    "reference": {
+                                        "kind": "script",
+                                        "label": "x",
+                                    },
+                                }
+                            ],
+                        }
+                    ],
+                }
+            )
+
+    def test_unknown_reference_field_is_rejected(self) -> None:
+        payload = {
+            "schema_version": EDITOR_SCHEMA_VERSION,
+            "entry_kind": "normal",
+            "blocks": [
+                {
+                    "type": "paragraph",
+                    "segments": [
+                        {
+                            "text": "В-35",
+                            "marks": [],
+                            "reference": {
+                                "kind": "equipment",
+                                "label": "В-35",
+                                "html": "<b>x</b>",
+                            },
+                        }
+                    ],
+                }
+            ],
+        }
+        with self.assertRaises(ValidationError):
+            normalize_editor_document(payload)
+
+    def test_plain_segments_do_not_merge_through_reference(self) -> None:
+        document = normalize_editor_document(
+            {
+                "schema_version": EDITOR_SCHEMA_VERSION,
+                "entry_kind": "normal",
+                "blocks": [
+                    {
+                        "type": "paragraph",
+                        "segments": [
+                            {"text": "Отключить ", "marks": []},
+                            {
+                                "text": "В-35",
                                 "marks": [],
-                                "semantic": {
+                                "reference": {
                                     "kind": "equipment",
                                     "label": "В-35",
                                 },
@@ -132,31 +202,28 @@ class SemanticEditorDocumentTests(SimpleTestCase):
             "Отключить В-35 для ремонта",
         )
 
-    def test_carryover_projection_is_explicit(self) -> None:
-        document = normalize_editor_document(
-            self.semantic_document("carryover", "контроль заявки № 15")
-        )
-        self.assertEqual(
-            editor_document_to_text(document),
-            "На следующую смену: контроль заявки № 15",
-        )
-
-    def test_autosave_form_accepts_legacy_schema_and_normalizes_payload(self) -> None:
-        legacy_version = next(iter(LEGACY_EDITOR_SCHEMA_VERSIONS))
+    def test_autosave_form_accepts_legacy_v2_and_normalizes_to_v3(self) -> None:
         form = DraftEntryAutoSaveForm(
             data={
                 "public_id": "00000000-0000-0000-0000-000000000001",
                 "expected_version": 1,
                 "event_at": "2026-07-19T00:00",
-                "content": "старое содержание",
-                "editor_schema_version": legacy_version,
+                "content": "Команда: отключить В-35",
+                "editor_schema_version": "operational-draft-editor.v2",
                 "editor_payload": {
-                    "schema_version": legacy_version,
+                    "schema_version": "operational-draft-editor.v2",
                     "blocks": [
                         {
                             "type": "paragraph",
                             "segments": [
-                                {"text": "старое содержание", "marks": []}
+                                {
+                                    "text": "x",
+                                    "marks": [],
+                                    "semantic": {
+                                        "kind": "command",
+                                        "label": "отключить В-35",
+                                    },
+                                }
                             ],
                         }
                     ],
@@ -168,25 +235,30 @@ class SemanticEditorDocumentTests(SimpleTestCase):
             form.cleaned_data["editor_payload"]["schema_version"],
             EDITOR_SCHEMA_VERSION,
         )
+        self.assertEqual(
+            form.cleaned_data["editor_payload"]["entry_kind"],
+            "command",
+        )
 
 
 class SemanticEditorPersistenceTests(OperationalLogTestCase):
-    def test_service_persists_semantic_payload_and_revision(self) -> None:
+    def test_service_persists_record_type_reference_and_revision(self) -> None:
         entry = self.shift.draft_entries.filter(is_removed=False).first()
         document = {
             "schema_version": EDITOR_SCHEMA_VERSION,
+            "entry_kind": "permission",
             "blocks": [
                 {
                     "type": "paragraph",
                     "segments": [
-                        {"text": "Получено ", "marks": []},
+                        {"text": "На включение ", "marks": []},
                         {
-                            "text": "клиентская проекция",
+                            "text": "В-35",
                             "marks": ["bold"],
-                            "semantic": {
-                                "kind": "permission",
-                                "label": "на включение В-35",
-                                "reference": "permission:demo-1",
+                            "reference": {
+                                "kind": "equipment",
+                                "label": "В-35",
+                                "reference": "equipment:demo-1",
                             },
                         },
                     ],
@@ -201,12 +273,10 @@ class SemanticEditorPersistenceTests(OperationalLogTestCase):
             content="неавторитетная проекция",
             editor_payload=document,
         )
-        self.assertEqual(
-            saved.content,
-            "Получено Разрешение: на включение В-35",
-        )
-        semantic = saved.editor_payload["blocks"][0]["segments"][1]
-        self.assertEqual(semantic["semantic"]["kind"], "permission")
+        self.assertEqual(saved.content, "Разрешение: На включение В-35")
+        self.assertEqual(saved.editor_payload["entry_kind"], "permission")
+        reference = saved.editor_payload["blocks"][0]["segments"][1]
+        self.assertEqual(reference["reference"]["kind"], "equipment")
         revision = saved.revisions.order_by("-revision_number").first()
         self.assertEqual(revision.action, DraftRevisionAction.UPDATED)
         self.assertEqual(

@@ -135,9 +135,21 @@ for marker in (
     'document.execCommand("styleWithCSS"',
     'event.code === "Digit7"',
     'event.code === "Digit8"',
-    '"display",\n                "none",\n                "important"',
 ):
     assert marker in editor_js, marker
+old_visibility_guard = (
+    '"display",\n                "none",\n                "important"'
+    in editor_js
+)
+if EDITOR_SCHEMA_VERSION in {
+    "operational-draft-editor.v1",
+    "operational-draft-editor.v2",
+}:
+    assert old_visibility_guard
+else:
+    assert "data-semantic-dialog" not in template_text
+    assert "openSemanticDialog" not in editor_js
+print("TECHNICAL_PAYLOAD_VISIBILITY_COMPATIBILITY=PASSED")
 assert "innerHTML" not in editor_js
 print("PLAIN_PASTE_AND_SAFE_DOM=PASSED")
 print("CONTEXTUAL_SELECTION_TOOLBAR=PASSED")

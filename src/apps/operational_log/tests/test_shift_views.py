@@ -219,7 +219,8 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             "Шрифт",
             "Абзац",
             "История",
-            "Отметки",
+            "Тип записи",
+            "Связь",
         ):
             self.assertIn(marker, html)
         self.assertEqual(
