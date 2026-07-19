@@ -6368,3 +6368,122 @@ body.draft-view-drawer-visible .draft-view-drawer {
         display: none !important;
     }
 }
+
+/* Patch 011.3 Repair 3: stable popovers and reference navigation. */
+.draft-reference-preview {
+    position: fixed;
+    z-index: 86;
+    display: grid;
+    gap: 12px;
+    max-height: min(430px, calc(100vh - 24px));
+    padding: 15px;
+    overflow: auto;
+    border: 1px solid color-mix(in srgb, var(--accent-2) 42%, var(--border));
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--panel) 96%, transparent);
+    color: var(--text);
+    box-shadow: 0 22px 60px rgba(0, 0, 0, .32);
+    backdrop-filter: blur(18px);
+}
+
+.draft-reference-preview[hidden] {
+    display: none !important;
+}
+
+.draft-reference-preview > header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.draft-reference-preview > header > div {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.draft-reference-preview-kind {
+    color: var(--accent-2);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.draft-reference-preview > header strong {
+    overflow-wrap: anywhere;
+    font-size: 15px;
+    line-height: 1.35;
+}
+
+.draft-reference-preview-close {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--panel-2);
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.draft-reference-preview-close:hover,
+.draft-reference-preview-close:focus-visible {
+    border-color: var(--accent-2);
+    color: var(--text);
+    outline: none;
+}
+
+.draft-reference-preview-meta {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.draft-reference-preview-identity {
+    display: block;
+    padding: 8px 10px;
+    overflow-wrap: anywhere;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--panel-2) 82%, transparent);
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.draft-reference-preview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.draft-reference-token {
+    cursor: pointer;
+}
+
+.draft-reference-token:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent-2) 72%, transparent);
+    outline-offset: 2px;
+}
+
+@media (max-width: 620px) {
+    .draft-reference-preview {
+        right: 10px !important;
+        left: 10px !important;
+        width: auto !important;
+    }
+
+    .draft-reference-preview-actions {
+        justify-content: stretch;
+    }
+
+    .draft-reference-preview-actions .button {
+        flex: 1 1 150px;
+    }
+}

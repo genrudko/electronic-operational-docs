@@ -124,6 +124,7 @@
     let activeDraftForm = null;
     let compositionDepth = 0;
     let paginationPending = false;
+    let editorOverlayActive = false;
     let inlineCreation = null;
     let inlineCreationTimer = null;
     let activeDateEditor = null;
@@ -473,15 +474,33 @@
         );
     }
 
+    function isEditorOverlayTarget(node) {
+        return Boolean(
+            node?.closest?.(
+                "[data-editor-ribbon], "
+                + "[data-editor-floating-toolbar], "
+                + "[data-entry-kind-menu], "
+                + "[data-reference-picker], "
+                + "[data-reference-preview]",
+            ),
+        );
+    }
+
     function isDraftEditing() {
-        if (compositionDepth > 0) {
+        if (compositionDepth > 0 || editorOverlayActive) {
             return true;
         }
         if (!activeDraftForm) {
             return false;
         }
         const active = document.activeElement;
-        return Boolean(active && activeDraftForm.contains(active));
+        return Boolean(
+            active
+            && (
+                activeDraftForm.contains(active)
+                || isEditorOverlayTarget(active)
+            )
+        );
     }
 
     function updateRecordControls() {
@@ -2080,7 +2099,12 @@
 
         form.addEventListener("focusout", () => {
             window.setTimeout(() => {
-                if (form.contains(document.activeElement)) {
+                const active = document.activeElement;
+                if (
+                    form.contains(active)
+                    || editorOverlayActive
+                    || isEditorOverlayTarget(active)
+                ) {
                     return;
                 }
                 form.classList.remove("has-focus");
@@ -2159,6 +2183,29 @@
             void save(form);
         });
     }
+
+    workspace.addEventListener("eod:editor-overlay-state", (event) => {
+        editorOverlayActive = Boolean(event.detail?.active);
+        if (!editorOverlayActive) {
+            flushDeferredPagination();
+        }
+    });
+
+    workspace.addEventListener("eod:reveal-draft-reference", (event) => {
+        const draftId = String(event.detail?.draftId || "");
+        if (!draftId) {
+            return;
+        }
+        const row = rows.find((candidate) => (
+            candidate.dataset.draftId === draftId
+        ));
+        if (!row) {
+            return;
+        }
+        editorOverlayActive = false;
+        activeDraftForm = null;
+        revealChronologicalRow(row);
+    });
 
     rows.forEach((row) => {
         bindDraftRow(row);

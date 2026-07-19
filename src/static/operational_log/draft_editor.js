@@ -1301,8 +1301,15 @@
         hideEntryKindMenu();
         hideReferencePicker();
     });
-    window.addEventListener("scroll", () => {
+    window.addEventListener("scroll", (event) => {
         hideFloatingToolbar();
+        const target = event.target;
+        if (
+            target instanceof Element
+            && target.closest("[data-reference-picker]")
+        ) {
+            return;
+        }
         hideEntryKindMenu();
         hideReferencePicker();
     }, true);
