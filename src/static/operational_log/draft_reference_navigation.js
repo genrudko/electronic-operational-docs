@@ -1,6 +1,7 @@
 (() => {
     "use strict";
 
+    const RUNTIME_REVISION = "0113-r4";
     const workspace = document.querySelector("[data-draft-workspace]");
     if (!workspace) {
         return;
@@ -94,12 +95,16 @@
         previewIdentity,
         previewActions,
     );
+    preview.dataset.runtimeRevision = RUNTIME_REVISION;
     document.body.append(preview);
+    workspace.dataset.referenceNavigationRevision = RUNTIME_REVISION;
 
     function tokenReference(token) {
         return (
-            token.dataset.referenceReference
+            token.dataset.referenceValue
+            || token.dataset.referenceReference
             || token.dataset.reference
+            || token.getAttribute("data-reference-value")
             || token.getAttribute("data-reference-reference")
             || token.getAttribute("data-reference")
             || ""

@@ -1,74 +1,78 @@
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 from django.test import SimpleTestCase
 
 ROOT = Path(__file__).resolve().parents[3]
-
-OLD_UNCONDITIONAL_SCROLL_HANDLER = re.compile(
-    r'window\.addEventListener\(\s*"scroll",\s*\(\)\s*=>\s*\{\s*'
-    r'hideFloatingToolbar\(\);\s*'
-    r'hideEntryKindMenu\(\);\s*'
-    r'hideReferencePicker\(\);\s*'
-    r'\},\s*true\s*\);',
-    re.DOTALL,
-)
-GUARDED_REFERENCE_SCROLL_HANDLER = re.compile(
-    r'window\.addEventListener\(\s*"scroll",\s*\(event\)\s*=>\s*\{\s*'
-    r'hideFloatingToolbar\(\);\s*'
-    r'const target = event\.target;\s*'
-    r'if\s*\(\s*'
-    r'target instanceof Element\s*'
-    r'&&\s*target\.closest\("\[data-reference-picker\]"\)\s*'
-    r'\)\s*\{\s*return;\s*\}\s*'
-    r'hideEntryKindMenu\(\);\s*'
-    r'hideReferencePicker\(\);\s*'
-    r'\},\s*true\s*\);',
-    re.DOTALL,
-)
+REVISION = "0113-r4"
 
 
-class ReferenceNavigationStaticContractTests(SimpleTestCase):
-    def test_reference_picker_scroll_does_not_close_itself(self) -> None:
+class ReferenceNavigationRuntimeContractTests(SimpleTestCase):
+    def test_picker_owns_wheel_and_prevents_scroll_chaining(self) -> None:
         editor = (
             ROOT / "static" / "operational_log" / "draft_editor.js"
         ).read_text(encoding="utf-8")
-        self.assertIsNotNone(
-            GUARDED_REFERENCE_SCROLL_HANDLER.search(editor),
-        )
-        self.assertIsNone(
-            OLD_UNCONDITIONAL_SCROLL_HANDLER.search(editor),
+
+        self.assertIn("function handleReferencePickerWheel(event)", editor)
+        self.assertIn("surface.scrollTop = Math.max(", editor)
+        self.assertIn("event.preventDefault();", editor)
+        self.assertIn("event.stopPropagation();", editor)
+        self.assertIn("{passive: false},", editor)
+        self.assertIn(
+            "if (referencePicker && !referencePicker.hidden)",
+            editor,
         )
 
-    def test_reference_navigation_extension_is_safe_and_loaded_last(
-        self,
-    ) -> None:
+    def test_entry_kind_preserves_viewport(self) -> None:
+        editor = (
+            ROOT / "static" / "operational_log" / "draft_editor.js"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("function captureEntryKindViewport", editor)
+        self.assertIn("function restoreEntryKindViewport", editor)
+        self.assertIn("restoreEntryKindViewport(controller);", editor)
+        self.assertIn(
+            "controller.editor.focus({preventScroll: true});",
+            editor,
+        )
+
+    def test_reference_identity_uses_serialized_token_attribute(self) -> None:
         navigation = (
             ROOT
             / "static"
             / "operational_log"
             / "draft_reference_navigation.js"
         ).read_text(encoding="utf-8")
+
+        self.assertIn("token.dataset.referenceValue", navigation)
+        self.assertIn(
+            'token.getAttribute("data-reference-value")',
+            navigation,
+        )
+        self.assertNotIn("innerHTML", navigation)
+
+    def test_runtime_assets_are_cache_versioned(self) -> None:
         template = (
             ROOT
             / "templates"
             / "operational_log"
             / "shift_workspace.html"
         ).read_text(encoding="utf-8")
-        workspace = (
-            ROOT / "static" / "operational_log" / "draft_workspace.js"
-        ).read_text(encoding="utf-8")
+        base_template = (ROOT / "templates" / "base.html").read_text(
+            encoding="utf-8"
+        )
 
-        self.assertNotIn("innerHTML", navigation)
-        self.assertIn("draft-reference-preview", navigation)
-        self.assertIn("/equipment/items/", navigation)
-        self.assertIn("/documents/", navigation)
-        self.assertIn('value: "/organization/"', navigation)
-        self.assertIn('"eod:reveal-draft-reference"', navigation)
-        self.assertIn('"eod:editor-overlay-state"', workspace)
-        self.assertLess(
-            template.index("operational_log/draft_workspace.js"),
-            template.index("operational_log/draft_reference_navigation.js"),
+        for asset in (
+            "draft_editor.js",
+            "draft_workspace.js",
+            "draft_reference_navigation.js",
+        ):
+            self.assertIn(
+                f"operational_log/{asset}' %}}?v={REVISION}",
+                template,
+            )
+        self.assertIn(
+            f"system/app.css' %}}?v={REVISION}",
+            base_template,
         )

@@ -2,6 +2,7 @@
     "use strict";
 
     const SCHEMA_VERSION = "operational-draft-editor.v3";
+    const RUNTIME_REVISION = "0113-r4";
     const LEGACY_SCHEMA_VERSIONS = new Set([
         "operational-draft-editor.v1",
         "operational-draft-editor.v2",
@@ -48,6 +49,7 @@
     let referenceTrigger = null;
     let referenceState = null;
     let referenceKind = "equipment";
+    let entryKindViewport = null;
 
     function emptyDocument() {
         return {
@@ -630,6 +632,41 @@
         return resolved;
     }
 
+    function captureEntryKindViewport(controller = activeController) {
+        const row = controller?.row;
+        entryKindViewport = {
+            x: window.scrollX,
+            y: window.scrollY,
+            row,
+            rowTop: row?.getBoundingClientRect().top ?? null,
+        };
+    }
+
+    function restoreEntryKindViewport(controller = activeController) {
+        const snapshot = entryKindViewport;
+        entryKindViewport = null;
+        if (!snapshot) {
+            return;
+        }
+        const restore = () => {
+            if (controller?.editor?.isConnected) {
+                controller.editor.focus({preventScroll: true});
+            }
+            if (snapshot.row?.isConnected && snapshot.rowTop !== null) {
+                const delta = snapshot.row.getBoundingClientRect().top - snapshot.rowTop;
+                if (Math.abs(delta) > 0.5) {
+                    window.scrollBy(0, delta);
+                }
+                return;
+            }
+            window.scrollTo(snapshot.x, snapshot.y);
+        };
+        window.requestAnimationFrame(() => {
+            restore();
+            window.requestAnimationFrame(restore);
+        });
+    }
+
     function hideFloatingToolbar() {
         if (!floatingToolbar) {
             return;
@@ -743,13 +780,15 @@
 
     function hideEntryKindMenu() {
         if (!entryKindMenu) {
-            return;
+            return false;
         }
+        const wasOpen = !entryKindMenu.hidden;
         entryKindMenu.hidden = true;
         entryKindMenu.style.removeProperty("left");
         entryKindMenu.style.removeProperty("top");
         entryKindTrigger?.setAttribute("aria-expanded", "false");
         entryKindTrigger = null;
+        return wasOpen;
     }
 
     function openEntryKindMenu(trigger) {
@@ -757,8 +796,12 @@
             return;
         }
         const reopening = !entryKindMenu.hidden && entryKindTrigger === trigger;
+        if (!entryKindViewport) {
+            captureEntryKindViewport(activeController);
+        }
         hideEntryKindMenu();
         if (reopening) {
+            restoreEntryKindViewport(activeController);
             return;
         }
         entryKindTrigger = trigger;
@@ -771,12 +814,14 @@
         const normalized = normalizeEntryKind(kind);
         if (!controller || controller.entryKind === normalized) {
             hideEntryKindMenu();
+            restoreEntryKindViewport(controller);
             return;
         }
         controller.entryKind = normalized;
         syncController(controller, true);
         hideEntryKindMenu();
         controller.editor.focus({preventScroll: true});
+        restoreEntryKindViewport(controller);
     }
 
     function hideReferencePicker() {
@@ -902,6 +947,7 @@
             return;
         }
         hideEntryKindMenu();
+        entryKindViewport = null;
         let range = null;
         if (token) {
             range = document.createRange();
@@ -952,6 +998,37 @@
                 referenceSearch?.select();
             }
         });
+    }
+
+    function referenceWheelPixels(event) {
+        if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+            return event.deltaY * 32;
+        }
+        if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+            return event.deltaY * Math.max(120, window.innerHeight * 0.75);
+        }
+        return event.deltaY;
+    }
+
+    function handleReferencePickerWheel(event) {
+        if (!referencePicker || referencePicker.hidden) {
+            return;
+        }
+        const target = event.target;
+        const results = target.closest?.("[data-reference-results]");
+        const surface = results || referencePicker;
+        const maximum = Math.max(0, surface.scrollHeight - surface.clientHeight);
+        if (maximum > 0) {
+            surface.scrollTop = Math.max(
+                0,
+                Math.min(
+                    maximum,
+                    surface.scrollTop + referenceWheelPixels(event),
+                ),
+            );
+        }
+        event.preventDefault();
+        event.stopPropagation();
     }
 
     function placeCaretAfter(node) {
@@ -1216,6 +1293,12 @@
                 return;
             }
             button.dataset.entryKindBound = "true";
+            button.addEventListener("mousedown", (event) => {
+                event.preventDefault();
+                if (!entryKindViewport) {
+                    captureEntryKindViewport(activeController);
+                }
+            });
             button.addEventListener("click", () => openEntryKindMenu(button));
         });
         scope.querySelectorAll("[data-entry-kind-option]").forEach((button) => {
@@ -1261,6 +1344,11 @@
         });
     });
     referenceSearch?.addEventListener("input", renderReferenceResults);
+    referencePicker?.addEventListener(
+        "wheel",
+        handleReferencePickerWheel,
+        {passive: false},
+    );
     referenceResults?.addEventListener("click", (event) => {
         const button = event.target.closest?.("[data-reference-result]");
         if (!button) {
@@ -1274,7 +1362,7 @@
     });
     referenceRemove?.addEventListener("click", removeReference);
     referencePicker?.querySelectorAll("[data-reference-close]").forEach((button) => {
-        button.addEventListener("click", hideReferencePicker);
+        button.addEventListener("click", () => hideReferencePicker());
     });
 
     document.addEventListener("selectionchange", scheduleSelectionUi);
@@ -1283,8 +1371,11 @@
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
             hideFloatingToolbar();
-            hideEntryKindMenu();
+            const menuClosed = hideEntryKindMenu();
             hideReferencePicker();
+            if (menuClosed) {
+                restoreEntryKindViewport(activeController);
+            }
         }
     });
     document.addEventListener("mousedown", (event) => {
@@ -1298,32 +1389,39 @@
             return;
         }
         hideFloatingToolbar();
-        hideEntryKindMenu();
+        const menuClosed = hideEntryKindMenu();
         hideReferencePicker();
+        if (menuClosed) {
+            restoreEntryKindViewport(activeController);
+        }
     });
-    window.addEventListener("scroll", (event) => {
+    window.addEventListener("scroll", () => {
         hideFloatingToolbar();
-        const target = event.target;
-        if (
-            target instanceof Element
-            && target.closest("[data-reference-picker]")
-        ) {
+        if (referencePicker && !referencePicker.hidden) {
             return;
         }
-        hideEntryKindMenu();
+        const menuClosed = hideEntryKindMenu();
         hideReferencePicker();
+        if (menuClosed) {
+            restoreEntryKindViewport(activeController);
+        }
     }, true);
     window.addEventListener("resize", () => {
         hideFloatingToolbar();
-        hideEntryKindMenu();
+        const menuClosed = hideEntryKindMenu();
         hideReferencePicker();
+        if (menuClosed) {
+            restoreEntryKindViewport(activeController);
+        }
     });
 
     bindToolbar(document);
     updateToolbarState(null);
+    document.documentElement.dataset.eodDraftEditorRevision = RUNTIME_REVISION;
 
     window.EODDraftEditor = Object.freeze({
         schemaVersion: SCHEMA_VERSION,
+        runtimeRevision: RUNTIME_REVISION,
         initializeRow,
         bindToolbar,
         syncForm(form) {

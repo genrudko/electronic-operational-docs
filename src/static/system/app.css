@@ -6487,3 +6487,18 @@ body.draft-view-drawer-visible .draft-view-drawer {
         flex: 1 1 150px;
     }
 }
+
+
+/* Patch 011.3 Repair 4: validated runtime fixes from exact diagnostics. */
+.draft-reference-picker,
+.draft-reference-results {
+    overscroll-behavior: contain;
+}
+
+.draft-reference-preview {
+    z-index: 170;
+}
+
+.draft-reference-preview-actions > [hidden] {
+    display: none !important;
+}
