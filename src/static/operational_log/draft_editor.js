@@ -2,7 +2,7 @@
     "use strict";
 
     const SCHEMA_VERSION = "operational-draft-editor.v3";
-    const RUNTIME_REVISION = "0113-r4";
+    const RUNTIME_REVISION = "01131";
     const LEGACY_SCHEMA_VERSIONS = new Set([
         "operational-draft-editor.v1",
         "operational-draft-editor.v2",
@@ -593,10 +593,6 @@
     }
 
     function setActiveController(controller) {
-        if (activeController === controller) {
-            updateToolbarState(controller);
-            return;
-        }
         document.querySelectorAll("[data-draft-card].is-editor-active").forEach((row) => {
             row.classList.remove("is-editor-active");
         });
@@ -627,9 +623,46 @@
         if (!resolved || (controller && resolved.controller !== controller)) {
             return null;
         }
+        if (resolved.controller.deactivated) {
+            return null;
+        }
         resolved.controller.savedRange = resolved.range.cloneRange();
         setActiveController(resolved.controller);
         return resolved;
+    }
+
+    function selectEntireEditor(controller) {
+        if (!controller?.editor?.isConnected) {
+            return false;
+        }
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(controller.editor);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        controller.savedRange = range.cloneRange();
+        setActiveController(controller);
+        scheduleSelectionUi();
+        return true;
+    }
+
+    function finishEditorInteraction(controller, shortcut) {
+        if (!controller) {
+            return;
+        }
+        syncController(controller, false);
+        hideFloatingToolbar();
+        hideEntryKindMenu();
+        hideReferencePicker();
+        controller.form.dispatchEvent(
+            new CustomEvent("eod:finish-draft-edit", {
+                bubbles: true,
+                detail: {
+                    shortcut,
+                    save: true,
+                },
+            }),
+        );
     }
 
     function captureEntryKindViewport(controller = activeController) {
@@ -758,6 +791,18 @@
         ribbon?.classList.toggle("has-active-editor", Boolean(controller));
     }
 
+    function isEditorOverlayTarget(node) {
+        return Boolean(
+            node?.closest?.(
+                "[data-editor-ribbon], "
+                + "[data-editor-floating-toolbar], "
+                + "[data-entry-kind-menu], "
+                + "[data-reference-picker], "
+                + "[data-reference-preview]",
+            ),
+        );
+    }
+
     function positionPopover(popover, anchorRect, preferredWidth = 360) {
         if (!popover || !anchorRect) {
             return;
@@ -783,7 +828,9 @@
             return false;
         }
         const wasOpen = !entryKindMenu.hidden;
-        entryKindMenu.hidden = true;
+        if (wasOpen) {
+            entryKindMenu.hidden = true;
+        }
         entryKindMenu.style.removeProperty("left");
         entryKindMenu.style.removeProperty("top");
         entryKindTrigger?.setAttribute("aria-expanded", "false");
@@ -828,7 +875,9 @@
         if (!referencePicker) {
             return;
         }
-        referencePicker.hidden = true;
+        if (!referencePicker.hidden) {
+            referencePicker.hidden = true;
+        }
         referencePicker.style.removeProperty("left");
         referencePicker.style.removeProperty("top");
         referenceTrigger?.setAttribute("aria-expanded", "false");
@@ -1161,6 +1210,7 @@
             editor,
             composing: false,
             savedRange: null,
+            deactivated: false,
             entryKind: "normal",
             documentPayload: emptyDocument(),
         };
@@ -1177,6 +1227,7 @@
         form.classList.add("is-rich-editor-ready");
 
         editor.addEventListener("focus", () => {
+            controller.deactivated = false;
             setActiveController(controller);
             window.requestAnimationFrame(() => captureSelection(controller));
         });
@@ -1230,6 +1281,27 @@
             }
             const modifier = event.ctrlKey || event.metaKey;
             const key = event.key.toLowerCase();
+            if (modifier && event.key === "Enter") {
+                event.preventDefault();
+                event.stopPropagation();
+                finishEditorInteraction(controller, "ctrl-enter");
+                return;
+            }
+            if (
+                event.key === "Escape"
+                && (referencePicker?.hidden ?? true)
+                && (entryKindMenu?.hidden ?? true)
+            ) {
+                event.preventDefault();
+                event.stopPropagation();
+                finishEditorInteraction(controller, "escape");
+                return;
+            }
+            if (modifier && (event.code === "KeyA" || key === "a")) {
+                event.preventDefault();
+                selectEntireEditor(controller);
+                return;
+            }
             if (modifier && (event.code === "KeyB" || key === "b")) {
                 event.preventDefault();
                 executeEditorCommand(controller, "bold");
@@ -1394,6 +1466,24 @@
         if (menuClosed) {
             restoreEntryKindViewport(activeController);
         }
+        const previousController = activeController;
+        window.setTimeout(() => {
+            if (
+                previousController
+                && previousController === activeController
+                && !previousController.form.contains(document.activeElement)
+                && !isEditorOverlayTarget(document.activeElement)
+            ) {
+                previousController.deactivated = true;
+                previousController.savedRange = null;
+                previousController.form.dispatchEvent(
+                    new CustomEvent("eod:editor-deactivate", {
+                        bubbles: true,
+                    }),
+                );
+                setActiveController(null);
+            }
+        }, 0);
     });
     window.addEventListener("scroll", () => {
         hideFloatingToolbar();
@@ -1446,6 +1536,7 @@
             if (!controller) {
                 return false;
             }
+            controller.deactivated = false;
             setActiveController(controller);
             controller.editor.focus();
             if (position === "end") {
@@ -1460,6 +1551,50 @@
                 captureSelection(controller);
             }
             return true;
+        },
+        deactivate(form) {
+            const controller = controllers.get(form);
+            if (!controller) {
+                return false;
+            }
+            controller.deactivated = true;
+            controller.form.dispatchEvent(
+                new CustomEvent("eod:editor-deactivate", {
+                    bubbles: true,
+                }),
+            );
+            hideFloatingToolbar();
+            hideEntryKindMenu();
+            hideReferencePicker();
+            if (document.activeElement === controller.editor) {
+                controller.editor.blur();
+            }
+            const selection = window.getSelection();
+            if (selection && selection.rangeCount) {
+                const range = selection.getRangeAt(0);
+                if (isRangeInsideEditor(range, controller.editor)) {
+                    selection.removeAllRanges();
+                }
+            }
+            controller.savedRange = null;
+            if (activeController === controller) {
+                setActiveController(null);
+            }
+            window.requestAnimationFrame(() => {
+                if (!controller.deactivated) {
+                    return;
+                }
+                controller.row.classList.remove("is-editor-active");
+                if (activeController === controller) {
+                    activeController = null;
+                    updateToolbarState(null);
+                }
+            });
+            return true;
+        },
+        selectAll(form) {
+            const controller = controllers.get(form);
+            return selectEntireEditor(controller);
         },
         acceptSaved(form, payload) {
             if (!payload?.editor_payload) {

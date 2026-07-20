@@ -824,21 +824,12 @@ def restore_draft_entry(
     _require_shift_actor(locked_entry.shift, actor)
     if not locked_entry.is_removed:
         return locked_entry
-    last_position = (
-        OperationalDraftEntry.objects.filter(
-            shift=locked_entry.shift,
-            is_removed=False,
-        ).aggregate(value=Max("position"))["value"]
-        or 0
-    )
     locked_entry.is_removed = False
-    locked_entry.position = last_position + 10
     locked_entry.version += 1
     locked_entry.updated_by = actor
     locked_entry.save(
         update_fields=(
             "is_removed",
-            "position",
             "version",
             "updated_by",
             "updated_at",

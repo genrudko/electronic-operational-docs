@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const RUNTIME_REVISION = "0113-r4";
+    const RUNTIME_REVISION = "01131";
     const workspace = document.querySelector("[data-draft-workspace]");
     if (!workspace) {
         return;
@@ -47,6 +47,7 @@
     let viewportSnapshot = null;
     let overlayActive = false;
     let restoreGeneration = 0;
+    let tokenPointerGesture = null;
     let suppressNextRestore = false;
 
     function createButton(label, className = "") {
@@ -372,6 +373,15 @@
         window.requestAnimationFrame(synchronizeOverlayState);
     });
 
+    workspace.addEventListener("eod:editor-deactivate", () => {
+        suppressNextRestore = true;
+        restoreGeneration += 1;
+        activeToken = null;
+        lastEditorContext = null;
+        viewportSnapshot = null;
+        notifyOverlayState(false);
+    });
+
     document.addEventListener("focusin", (event) => {
         if (event.target.closest?.("[data-draft-form] [data-rich-editor]")) {
             rememberEditorContext(event.target);
@@ -379,6 +389,15 @@
     }, true);
 
     document.addEventListener("pointerdown", (event) => {
+        const token = event.target.closest?.(".draft-reference-token");
+        tokenPointerGesture = token
+            ? {
+                token,
+                pointerId: event.pointerId,
+                x: event.clientX,
+                y: event.clientY,
+            }
+            : null;
         const interactiveOverlay = event.target.closest?.(
             "[data-entry-kind-trigger], "
             + "[data-reference-trigger], "
@@ -391,9 +410,26 @@
         }
     }, true);
 
+    document.addEventListener("pointermove", (event) => {
+        if (
+            !tokenPointerGesture
+            || tokenPointerGesture.pointerId !== event.pointerId
+        ) {
+            return;
+        }
+        const distance = Math.hypot(
+            event.clientX - tokenPointerGesture.x,
+            event.clientY - tokenPointerGesture.y,
+        );
+        if (distance > 4) {
+            tokenPointerGesture.dragged = true;
+        }
+    }, true);
+
     document.addEventListener("click", (event) => {
         const token = event.target.closest?.(".draft-reference-token");
         if (!token) {
+            tokenPointerGesture = null;
             if (
                 !preview.hidden
                 && !preview.contains(event.target)
@@ -401,6 +437,17 @@
             ) {
                 hidePreview();
             }
+            return;
+        }
+        const selection = window.getSelection();
+        const selectingText = Boolean(
+            event.shiftKey
+            || tokenPointerGesture?.dragged
+            || (selection && !selection.isCollapsed),
+        );
+        tokenPointerGesture = null;
+        if (selectingText) {
+            hidePreview({restore: false});
             return;
         }
         event.preventDefault();

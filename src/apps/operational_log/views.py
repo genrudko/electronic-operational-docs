@@ -100,6 +100,10 @@ def _draft_or_404(
     )
 
 
+def _json_requested(request: HttpRequest) -> bool:
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+
 def _validation_payload(error: ValidationError) -> Any:
     if hasattr(error, "message_dict"):
         return error.message_dict
@@ -644,12 +648,31 @@ def remove_draft_entry_view(
         public_id=public_id,
     )
     try:
-        remove_draft_entry(
+        removed = remove_draft_entry(
             entry=entry,
             actor=employee,
         )
     except ValidationError as error:
+        if _json_requested(request):
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "errors": _validation_payload(error),
+                },
+                status=400,
+            )
         messages.error(request, "; ".join(error.messages))
+    else:
+        if _json_requested(request):
+            return JsonResponse(
+                {
+                    "ok": True,
+                    "public_id": str(removed.public_id),
+                    "version": removed.version,
+                    "position": removed.position,
+                    "is_removed": removed.is_removed,
+                }
+            )
     return redirect(
         "operational_log:shift_workspace",
         journal_id=journal.pk,
@@ -671,12 +694,31 @@ def restore_draft_entry_view(
         public_id=public_id,
     )
     try:
-        restore_draft_entry(
+        restored = restore_draft_entry(
             entry=entry,
             actor=employee,
         )
     except ValidationError as error:
+        if _json_requested(request):
+            return JsonResponse(
+                {
+                    "ok": False,
+                    "errors": _validation_payload(error),
+                },
+                status=400,
+            )
         messages.error(request, "; ".join(error.messages))
+    else:
+        if _json_requested(request):
+            return JsonResponse(
+                {
+                    "ok": True,
+                    "public_id": str(restored.public_id),
+                    "version": restored.version,
+                    "position": restored.position,
+                    "is_removed": restored.is_removed,
+                }
+            )
     return redirect(
         "operational_log:shift_workspace",
         journal_id=journal.pk,
