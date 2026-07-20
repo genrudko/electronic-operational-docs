@@ -61,7 +61,7 @@ def main() -> None:
     require(
         "data-remove-draft" in template
         and "data-restore-url" in template
-        and "data-draft-undo-stack" in template
+        and "data-inline-undo" in template
         and "removeDraftRow(" in workspace
         and "undoRemovedDraft(" in workspace
         and "10000" in workspace,
@@ -87,15 +87,15 @@ def main() -> None:
     require(
         "draft-row-action-toolbar" in css
         and "draft-row-action.is-danger" in css
-        and "draft-undo-toast" in css
+        and "draft-inline-undo" in css
         and "draft-row-restored" in css,
         "POLISHED_RECORD_ACTIONS",
         "record action and undo visual contract is incomplete",
     )
     require(
-        "?v=01131" in template
-        and "?v=01131" in base
-        and 'const RUNTIME_REVISION = "01131";' in editor,
+        "?v=01132" in template
+        and "?v=01132" in base
+        and 'const RUNTIME_REVISION = "01132";' in editor,
         "PATCH_011_3_1_CACHE_REVISION",
         "runtime cache revision is incomplete",
     )

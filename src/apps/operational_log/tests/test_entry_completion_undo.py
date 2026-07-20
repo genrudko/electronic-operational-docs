@@ -59,13 +59,13 @@ class DraftEntryCompletionUndoTests(OperationalLogTestCase):
         self.assertEqual(response.status_code, 200)
         for marker in (
             "Ctrl+Enter — сохранить и завершить",
-            "data-draft-undo-stack",
+            "data-inline-undo",
             "data-remove-draft",
             "data-restore-url",
             "draft-floating-kind-trigger",
             "Сохранено ·",
             "Запись №",
             "Версия&nbsp;",
-            "?v=01131",
+            "?v=01132",
         ):
             self.assertContains(response, marker)

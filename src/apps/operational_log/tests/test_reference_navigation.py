@@ -5,7 +5,7 @@ from pathlib import Path
 from django.test import SimpleTestCase
 
 ROOT = Path(__file__).resolve().parents[3]
-REVISION = "01131"
+REVISION = "01132"
 
 
 class ReferenceNavigationRuntimeContractTests(SimpleTestCase):

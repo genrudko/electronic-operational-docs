@@ -13,7 +13,6 @@
     const timers = new WeakMap();
     const controllers = new WeakMap();
     const rowStore = workspace.querySelector("[data-row-store]");
-    const undoStack = document.querySelector("[data-draft-undo-stack]");
     const rows = Array.from(
         workspace.querySelectorAll("[data-draft-card]"),
     );
@@ -1197,15 +1196,44 @@
         });
     }
 
-    function clearPendingRemovalNotice() {
-        if (!pendingRemoval) {
-            undoStack?.replaceChildren();
+    function stopRemovalTimers(state) {
+        if (!state) {
             return;
         }
-        window.clearTimeout(pendingRemoval.timeout);
-        window.clearInterval(pendingRemoval.interval);
-        pendingRemoval = null;
-        undoStack?.replaceChildren();
+        window.clearTimeout(state.timeout);
+        window.clearInterval(state.interval);
+        state.timeout = null;
+        state.interval = null;
+    }
+
+    function clearInlineRemovalState(state) {
+        stopRemovalTimers(state);
+        if (pendingRemoval === state) {
+            pendingRemoval = null;
+        }
+    }
+
+    function finalizeRemovedDraft(state, animate = true) {
+        if (!state || state.restoring || state.finalized) {
+            return;
+        }
+        state.finalized = true;
+        clearInlineRemovalState(state);
+        const index = rows.indexOf(state.row);
+        if (index >= 0) {
+            rows.splice(index, 1);
+        }
+        const remove = () => {
+            state.row.remove();
+            paginateByRecordCount(true);
+            refreshInlineDateMarkers();
+        };
+        if (!animate) {
+            preserveViewport(remove);
+            return;
+        }
+        state.row.classList.add("is-undo-expiring");
+        window.setTimeout(() => preserveViewport(remove), 180);
     }
 
     async function postDraftAction(url, form) {
@@ -1224,52 +1252,52 @@
         return payload;
     }
 
-    function showRemovalNotice(state) {
-        if (!undoStack) {
-            return;
+    function updateInlineRemovalCountdown(state) {
+        const seconds = Math.max(
+            0,
+            Math.ceil((state.deadline - Date.now()) / 1000),
+        );
+        state.countdown.textContent = `${seconds} с`;
+    }
+
+    function showInlineRemovalPlaceholder(state) {
+        if (pendingRemoval && pendingRemoval !== state) {
+            finalizeRemovedDraft(pendingRemoval, false);
         }
-        clearPendingRemovalNotice();
-        const toast = document.createElement("div");
-        toast.className = "draft-undo-toast";
-        toast.setAttribute("role", "status");
-
-        const message = document.createElement("span");
-        message.className = "draft-undo-message";
-        message.textContent = "Запись удалена";
-
-        const countdown = document.createElement("span");
-        countdown.className = "draft-undo-countdown";
-
-        const undo = document.createElement("button");
-        undo.type = "button";
-        undo.className = "draft-undo-button";
-        undo.textContent = "Восстановить";
-        undo.addEventListener("click", () => {
-            void undoRemovedDraft(state, undo);
-        });
-
-        toast.append(message, undo, countdown);
-        undoStack.replaceChildren(toast);
-
-        const updateCountdown = () => {
-            const seconds = Math.max(
-                0,
-                Math.ceil((state.deadline - Date.now()) / 1000),
-            );
-            countdown.textContent = `${seconds} с`;
-        };
-        updateCountdown();
-        state.interval = window.setInterval(updateCountdown, 250);
-        state.timeout = window.setTimeout(() => {
-            if (pendingRemoval === state) {
-                clearPendingRemovalNotice();
-            }
-        }, 10000);
         pendingRemoval = state;
+        state.form.hidden = true;
+        state.placeholder.hidden = false;
+        state.placeholder.style.minHeight = `${Math.max(
+            48,
+            Math.round(state.formHeight),
+        )}px`;
+        state.row.classList.remove("is-removing");
+        state.row.classList.add("is-undo-pending");
+        state.deadline = Date.now() + 10000;
+        updateInlineRemovalCountdown(state);
+        state.interval = window.setInterval(
+            () => updateInlineRemovalCountdown(state),
+            250,
+        );
+        state.timeout = window.setTimeout(
+            () => finalizeRemovedDraft(state, true),
+            10000,
+        );
+    }
+
+    function restoreInlineRemovalPresentation(state) {
+        state.placeholder.hidden = true;
+        state.placeholder.style.removeProperty("min-height");
+        state.form.hidden = false;
+        state.row.classList.remove(
+            "is-removing",
+            "is-undo-pending",
+            "is-undo-expiring",
+        );
     }
 
     async function undoRemovedDraft(state, button) {
-        if (pendingRemoval !== state || state.restoring) {
+        if (pendingRemoval !== state || state.restoring || state.finalized) {
             return;
         }
         state.restoring = true;
@@ -1292,41 +1320,32 @@
             if (versionLabel) {
                 versionLabel.textContent = String(payload.version);
             }
-            const insertionIndex = Math.min(state.index, rows.length);
-            rows.splice(insertionIndex, 0, state.row);
-            state.row.classList.remove("is-removing", "is-removed");
+            clearInlineRemovalState(state);
+            restoreInlineRemovalPresentation(state);
             state.row.classList.add("is-restoring");
-            state.row.hidden = false;
-            preserveViewport(() => {
-                paginateByRecordCount(true);
-                refreshInlineDateMarkers();
-            });
             window.setTimeout(() => {
                 state.row.classList.remove("is-restoring");
             }, 700);
-            setStatus(
-                state.form,
-                "Восстановлено",
-                "is-saved",
-            );
-            clearPendingRemovalNotice();
+            setStatus(state.form, "Восстановлено", "is-saved");
+            button.disabled = false;
+            button.textContent = "Восстановить";
         } catch (error) {
             state.restoring = false;
             button.disabled = false;
             button.textContent = "Восстановить";
-            const message = undoStack?.querySelector(
-                ".draft-undo-message",
+            state.message.textContent = (
+                error.message || "Не удалось восстановить запись"
             );
-            if (message) {
-                message.textContent = (
-                    error.message || "Не удалось восстановить запись"
-                );
-            }
         }
     }
 
     async function removeDraftRow(form, row, removeUrl, restoreUrl) {
-        if (!form || !row || row.classList.contains("is-removing")) {
+        if (
+            !form
+            || !row
+            || row.classList.contains("is-removing")
+            || row.classList.contains("is-undo-pending")
+        ) {
             return;
         }
         const activeTimer = timers.get(form);
@@ -1345,55 +1364,46 @@
             }
         }
 
-        clearPendingRemovalNotice();
         window.EODDraftEditor?.deactivate(form);
         form.classList.remove("has-focus");
         if (activeDraftForm === form) {
             activeDraftForm = null;
         }
-        const controller = controllers.get(form);
-        controller?.abort();
-        controllers.delete(form);
 
-        const index = rows.indexOf(row);
+        const placeholder = row.querySelector("[data-inline-undo]");
+        const button = row.querySelector("[data-inline-undo-button]");
+        const countdown = row.querySelector("[data-inline-undo-countdown]");
+        const message = row.querySelector(".draft-inline-undo-message");
+        if (!placeholder || !button || !countdown || !message) {
+            setStatus(form, "Не удалось открыть восстановление", "is-error");
+            return;
+        }
         const state = {
             row,
             form,
-            index: index < 0 ? rows.length : index,
             restoreUrl,
-            deadline: Date.now() + 10000,
+            placeholder,
+            button,
+            countdown,
+            message,
+            formHeight: form.getBoundingClientRect().height,
+            deadline: 0,
             timeout: null,
             interval: null,
             restoring: false,
+            finalized: false,
         };
-        if (index >= 0) {
-            rows.splice(index, 1);
-        }
+        button.onclick = () => void undoRemovedDraft(state, button);
+        message.textContent = "Запись удалена";
+        button.disabled = false;
+        button.textContent = "Восстановить";
 
-        const removalRequest = postDraftAction(removeUrl, form);
         row.classList.add("is-removing");
-        await new Promise((resolve) => {
-            window.requestAnimationFrame(() => {
-                window.setTimeout(resolve, 165);
-            });
-        });
-        preserveViewport(() => {
-            row.remove();
-            paginateByRecordCount(true);
-            refreshInlineDateMarkers();
-        });
-
         try {
-            await removalRequest;
-            row.classList.add("is-removed");
-            showRemovalNotice(state);
+            await postDraftAction(removeUrl, form);
+            showInlineRemovalPlaceholder(state);
         } catch (error) {
-            rows.splice(Math.min(state.index, rows.length), 0, row);
-            row.classList.remove("is-removing", "is-removed");
-            preserveViewport(() => {
-                paginateByRecordCount(true);
-                refreshInlineDateMarkers();
-            });
+            restoreInlineRemovalPresentation(state);
             setStatus(
                 form,
                 error.message || "Не удалось удалить запись",

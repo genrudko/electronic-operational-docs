@@ -2,7 +2,7 @@
     "use strict";
 
     const SCHEMA_VERSION = "operational-draft-editor.v3";
-    const RUNTIME_REVISION = "01131";
+    const RUNTIME_REVISION = "01132";
     const LEGACY_SCHEMA_VERSIONS = new Set([
         "operational-draft-editor.v1",
         "operational-draft-editor.v2",
@@ -34,6 +34,15 @@
     const referenceSelection = referencePicker?.querySelector("[data-reference-selection]");
     const referenceHint = referencePicker?.querySelector("[data-reference-hint]");
     const referenceRemove = referencePicker?.querySelector("[data-reference-remove]");
+    const autoReferenceToggle = document.querySelector(
+        "[data-auto-reference-toggle]",
+    );
+    const autoReferenceScan = document.querySelector(
+        "[data-auto-reference-scan]",
+    );
+    const autoReferenceLabel = document.querySelector(
+        "[data-auto-reference-label]",
+    );
     const catalogNode = document.getElementById("draft-semantic-reference-catalog");
     let referenceCatalog = {};
     try {
@@ -50,6 +59,8 @@
     let referenceState = null;
     let referenceKind = "equipment";
     let entryKindViewport = null;
+    const autoReferenceTimers = new WeakMap();
+    let autoReferencesEnabled = readAutoReferencePreference();
 
     function emptyDocument() {
         return {
@@ -87,6 +98,177 @@
             .join(" ")
             .trim()
             .slice(0, maxLength);
+    }
+
+    function readAutoReferencePreference() {
+        try {
+            return window.localStorage.getItem("eod-auto-references") !== "off";
+        } catch (error) {
+            return true;
+        }
+    }
+
+    function writeAutoReferencePreference(value) {
+        try {
+            window.localStorage.setItem(
+                "eod-auto-references",
+                value ? "on" : "off",
+            );
+        } catch (error) {
+            // Настройка остаётся действующей в текущей вкладке.
+        }
+    }
+
+    function normalizeSearchText(value) {
+        return String(value || "")
+            .toLocaleLowerCase("ru-RU")
+            .replaceAll("ё", "е")
+            .replace(/[^\p{L}\p{N}№]+/gu, " ")
+            .trim()
+            .replace(/\s+/g, " ");
+    }
+
+    function russianSearchStem(value) {
+        let token = normalizeSearchText(value).replace(/\s+/g, "");
+        if (token.length < 4) {
+            return token;
+        }
+        const surnameEndings = [
+            "овыми", "евыми", "инами", "ыными",
+            "ового", "евого", "иного", "ыного",
+            "овому", "евому", "иному", "ыному",
+            "овыми", "евыми", "иными", "ыными",
+            "овой", "евой", "иной", "ыной",
+            "овым", "евым", "иным", "ыным",
+            "овою", "евою", "иною", "ыною",
+            "ова", "ева", "ина", "ына",
+            "ову", "еву", "ину", "ыну",
+            "ове", "еве", "ине", "ыне",
+        ];
+        const matched = surnameEndings.find((ending) => (
+            token.endsWith(ending)
+            && token.length - ending.length >= 3
+        ));
+        if (matched) {
+            const baseEnding = matched.slice(0, 2);
+            return token.slice(0, token.length - matched.length) + baseEnding;
+        }
+        const adjectiveEndings = [
+            "ского", "скому", "ским", "ских", "ская", "скую", "ской",
+            "цкого", "цкому", "цким", "цких", "цкая", "цкую", "цкой",
+        ];
+        const adjective = adjectiveEndings.find((ending) => token.endsWith(ending));
+        if (adjective) {
+            return token.slice(0, token.length - adjective.length + 2);
+        }
+        return token;
+    }
+
+    function searchTokens(value) {
+        return normalizeSearchText(value)
+            .split(" ")
+            .filter(Boolean);
+    }
+
+    function levenshteinDistance(left, right, limit = 2) {
+        if (Math.abs(left.length - right.length) > limit) {
+            return limit + 1;
+        }
+        const previous = Array.from({length: right.length + 1}, (_, index) => index);
+        for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+            const current = [leftIndex];
+            let rowMinimum = current[0];
+            for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+                const cost = left[leftIndex - 1] === right[rightIndex - 1] ? 0 : 1;
+                current[rightIndex] = Math.min(
+                    previous[rightIndex] + 1,
+                    current[rightIndex - 1] + 1,
+                    previous[rightIndex - 1] + cost,
+                );
+                rowMinimum = Math.min(rowMinimum, current[rightIndex]);
+            }
+            if (rowMinimum > limit) {
+                return limit + 1;
+            }
+            previous.splice(0, previous.length, ...current);
+        }
+        return previous[right.length];
+    }
+
+    function referenceTerms(item) {
+        const terms = Array.isArray(item?.terms) ? item.terms : [];
+        return Array.from(new Set([
+            item?.label,
+            ...terms,
+            item?.keywords,
+            item?.meta,
+        ].map(normalizeSingleLine).filter(Boolean)));
+    }
+
+    function scoreReferenceItem(item, query) {
+        const normalizedQuery = normalizeSearchText(query);
+        if (!normalizedQuery) {
+            return 100;
+        }
+        const terms = referenceTerms(item);
+        const normalizedTerms = terms.map(normalizeSearchText).filter(Boolean);
+        if (normalizedTerms.some((term) => term === normalizedQuery)) {
+            return 0;
+        }
+        if (normalizedTerms.some((term) => term.startsWith(normalizedQuery))) {
+            return 10;
+        }
+        if (normalizedTerms.some((term) => term.includes(normalizedQuery))) {
+            return 20;
+        }
+        const queryTokens = searchTokens(normalizedQuery);
+        const queryStems = queryTokens.map(russianSearchStem);
+        const termTokens = normalizedTerms.flatMap(searchTokens);
+        const termStems = termTokens.map(russianSearchStem);
+        if (
+            queryStems.length
+            && queryStems.every((stem) => termStems.some((candidate) => (
+                candidate === stem
+                || candidate.startsWith(stem)
+                || stem.startsWith(candidate)
+            )))
+        ) {
+            return 30;
+        }
+        if (
+            queryTokens.length === 1
+            && queryTokens[0].length >= 4
+            && termTokens.some((token) => (
+                levenshteinDistance(queryTokens[0], token, 2) <= 2
+            ))
+        ) {
+            return 40;
+        }
+        return null;
+    }
+
+    function updateAutoReferenceControls() {
+        if (autoReferenceToggle) {
+            autoReferenceToggle.classList.toggle(
+                "is-active",
+                autoReferencesEnabled,
+            );
+            autoReferenceToggle.setAttribute(
+                "aria-pressed",
+                String(autoReferencesEnabled),
+            );
+            autoReferenceToggle.title = autoReferencesEnabled
+                ? "Автосвязи включены; нажмите, чтобы отключить"
+                : "Автосвязи выключены; нажмите, чтобы включить";
+        }
+        if (autoReferenceLabel) {
+            autoReferenceLabel.textContent = autoReferencesEnabled
+                ? "Связь · авто включено"
+                : "Связь · авто выключено";
+        }
+        if (autoReferenceScan) {
+            autoReferenceScan.disabled = !activeController;
+        }
     }
 
     function normalizeEntryKind(value) {
@@ -650,6 +832,7 @@
         if (!controller) {
             return;
         }
+        applyAutomaticReferences(controller);
         syncController(controller, false);
         hideFloatingToolbar();
         hideEntryKindMenu();
@@ -789,6 +972,10 @@
             button.setAttribute("aria-checked", String(active));
         });
         ribbon?.classList.toggle("has-active-editor", Boolean(controller));
+        if (autoReferenceScan) {
+            autoReferenceScan.disabled = !controller;
+        }
+        updateAutoReferenceControls();
     }
 
     function isEditorOverlayTarget(node) {
@@ -951,17 +1138,20 @@
             return;
         }
 
-        const query = normalizeSingleLine(referenceSearch?.value || "", 200).toLocaleLowerCase("ru-RU");
+        const query = normalizeSingleLine(referenceSearch?.value || "", 200);
         const items = catalogFor(referenceKind)
-            .filter((item) => {
-                if (!query) {
-                    return true;
-                }
-                const haystack = `${item.label || ""} ${item.meta || ""} ${item.keywords || ""}`
-                    .toLocaleLowerCase("ru-RU");
-                return haystack.includes(query);
-            })
-            .slice(0, 12);
+            .map((item, index) => ({
+                item,
+                index,
+                score: scoreReferenceItem(item, query),
+            }))
+            .filter((row) => row.score !== null)
+            .sort((left, right) => (
+                left.score - right.score
+                || left.index - right.index
+            ))
+            .slice(0, 12)
+            .map((row) => row.item);
         items.forEach((item, index) => {
             const button = document.createElement("button");
             button.type = "button";
@@ -991,7 +1181,348 @@
         }
     }
 
-    function openReferencePicker(trigger, token = null) {
+    function isWordCharacter(value) {
+        return Boolean(value && /[\p{L}\p{N}]/u.test(value));
+    }
+
+    function escapedReferencePattern(term) {
+        return String(term || "")
+            .trim()
+            .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+            .replace(/[её]/giu, "[её]")
+            .replace(/\s+/g, "[\\s\\u00a0]+");
+    }
+
+    function exactTermMatches(textValue, term, candidate) {
+        const pattern = escapedReferencePattern(term);
+        if (!pattern || normalizeSearchText(term).length < 3) {
+            return [];
+        }
+        const matches = [];
+        const expression = new RegExp(pattern, "giu");
+        let match = expression.exec(textValue);
+        while (match) {
+            const start = match.index;
+            const end = start + match[0].length;
+            if (
+                !isWordCharacter(textValue[start - 1])
+                && !isWordCharacter(textValue[end])
+            ) {
+                matches.push({start, end, candidate});
+            }
+            if (match[0].length === 0) {
+                expression.lastIndex += 1;
+            }
+            match = expression.exec(textValue);
+        }
+        return matches;
+    }
+
+    function personSurnameMatches(textValue, candidate) {
+        const surname = searchTokens(candidate.item?.label || "")[0] || "";
+        const surnameStem = russianSearchStem(surname);
+        if (surnameStem.length < 4) {
+            return [];
+        }
+        const matches = [];
+        const expression = /[\p{L}][\p{L}-]*/gu;
+        let match = expression.exec(textValue);
+        while (match) {
+            if (russianSearchStem(match[0]) === surnameStem) {
+                matches.push({
+                    start: match.index,
+                    end: match.index + match[0].length,
+                    candidate,
+                });
+            }
+            match = expression.exec(textValue);
+        }
+        return matches;
+    }
+
+    function automaticReferenceCandidates() {
+        const result = [];
+        ["equipment", "document", "person", "related_entry"].forEach((kind) => {
+            catalogFor(kind).forEach((item) => {
+                if (!item?.reference || !item?.label) {
+                    return;
+                }
+                result.push({kind, item});
+            });
+        });
+        return result;
+    }
+
+    function resolveAutomaticMatches(textValue) {
+        const rawMatches = [];
+        automaticReferenceCandidates().forEach((candidate) => {
+            const terms = referenceTerms(candidate.item)
+                .filter((term) => normalizeSearchText(term).length >= 3);
+            terms.forEach((term) => {
+                rawMatches.push(...exactTermMatches(textValue, term, candidate));
+            });
+            if (candidate.kind === "person") {
+                rawMatches.push(...personSurnameMatches(textValue, candidate));
+            }
+        });
+        const grouped = new Map();
+        rawMatches.forEach((match) => {
+            const key = `${match.start}:${match.end}`;
+            if (!grouped.has(key)) {
+                grouped.set(key, {
+                    start: match.start,
+                    end: match.end,
+                    candidates: new Map(),
+                });
+            }
+            grouped.get(key).candidates.set(
+                match.candidate.item.reference,
+                match.candidate,
+            );
+        });
+        const ordered = Array.from(grouped.values())
+            .map((match) => ({
+                ...match,
+                candidates: Array.from(match.candidates.values()),
+            }))
+            .sort((left, right) => (
+                left.start - right.start
+                || (right.end - right.start) - (left.end - left.start)
+            ));
+        const accepted = [];
+        ordered.forEach((match) => {
+            if (accepted.some((current) => (
+                match.start < current.end && match.end > current.start
+            ))) {
+                return;
+            }
+            accepted.push(match);
+        });
+        return accepted;
+    }
+
+    function automaticReferenceTextNodes(editor) {
+        const nodes = [];
+        const walker = document.createTreeWalker(
+            editor,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode(node) {
+                    if (!node.nodeValue?.trim()) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    const parent = node.parentElement;
+                    if (
+                        parent?.closest?.(
+                            "[data-reference-kind], "
+                            + "[data-auto-reference-suggestion]",
+                        )
+                    ) {
+                        return NodeFilter.FILTER_REJECT;
+                    }
+                    return NodeFilter.FILTER_ACCEPT;
+                },
+            },
+        );
+        let node = walker.nextNode();
+        while (node) {
+            nodes.push(node);
+            node = walker.nextNode();
+        }
+        return nodes;
+    }
+
+    function selectionTextBookmark(editor) {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0 || !selection.isCollapsed) {
+            return null;
+        }
+        const range = selection.getRangeAt(0);
+        if (!isRangeInsideEditor(range, editor)) {
+            return null;
+        }
+        const prefix = document.createRange();
+        prefix.selectNodeContents(editor);
+        prefix.setEnd(range.startContainer, range.startOffset);
+        return prefix.toString().length;
+    }
+
+    function restoreTextBookmark(editor, offset) {
+        if (!Number.isInteger(offset) || offset < 0) {
+            return false;
+        }
+        const walker = document.createTreeWalker(
+            editor,
+            NodeFilter.SHOW_TEXT,
+        );
+        let remaining = offset;
+        let node = walker.nextNode();
+        while (node) {
+            const parentToken = node.parentElement?.closest?.(
+                "[data-reference-kind]",
+            );
+            const visibleValue = parentToken
+                ? parentToken.dataset.referenceLabel || ""
+                : node.nodeValue || "";
+            if (remaining <= visibleValue.length) {
+                const range = document.createRange();
+                if (parentToken) {
+                    if (remaining === 0) {
+                        range.setStartBefore(parentToken);
+                    } else {
+                        range.setStartAfter(parentToken);
+                    }
+                } else {
+                    range.setStart(node, Math.min(remaining, node.length));
+                }
+                range.collapse(true);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                return true;
+            }
+            remaining -= visibleValue.length;
+            if (parentToken) {
+                while (
+                    node
+                    && node.parentElement?.closest?.("[data-reference-kind]") === parentToken
+                ) {
+                    node = walker.nextNode();
+                }
+                continue;
+            }
+            node = walker.nextNode();
+        }
+        const range = document.createRange();
+        range.selectNodeContents(editor);
+        range.collapse(false);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        return true;
+    }
+
+    function automaticReferenceSuggestion(visibleText, candidates) {
+        const suggestion = document.createElement("span");
+        suggestion.className = "draft-reference-suggestion";
+        suggestion.dataset.autoReferenceSuggestion = "true";
+        suggestion.dataset.autoReferenceKind = candidates[0]?.kind || "person";
+        suggestion.dataset.autoReferenceCandidates = JSON.stringify(
+            candidates.map(({kind, item}) => ({
+                kind,
+                label: item.label,
+                reference: item.reference,
+                meta: item.meta || "",
+            })),
+        );
+        suggestion.title = (
+            `Найдено вариантов: ${candidates.length}. `
+            + "Нажмите, чтобы выбрать связь."
+        );
+        suggestion.textContent = visibleText;
+        return suggestion;
+    }
+
+    function applyMatchesToTextNode(node, matches) {
+        if (!matches.length || !node.isConnected) {
+            return false;
+        }
+        const value = node.nodeValue || "";
+        const fragment = document.createDocumentFragment();
+        let cursor = 0;
+        matches.forEach((match) => {
+            if (match.start > cursor) {
+                fragment.append(document.createTextNode(value.slice(cursor, match.start)));
+            }
+            const visibleText = value.slice(match.start, match.end);
+            if (match.candidates.length === 1) {
+                const candidate = match.candidates[0];
+                fragment.append(referenceToken({
+                    kind: candidate.kind,
+                    label: visibleText,
+                    reference: candidate.item.reference,
+                }));
+            } else {
+                fragment.append(
+                    automaticReferenceSuggestion(visibleText, match.candidates),
+                );
+            }
+            cursor = match.end;
+        });
+        if (cursor < value.length) {
+            fragment.append(document.createTextNode(value.slice(cursor)));
+        }
+        node.replaceWith(fragment);
+        return true;
+    }
+
+    function applyAutomaticReferences(controller, {force = false} = {}) {
+        if (
+            !controller?.editor?.isConnected
+            || controller.composing
+            || controller.autoReferenceApplying
+            || (!autoReferencesEnabled && !force)
+        ) {
+            return false;
+        }
+        const bookmark = selectionTextBookmark(controller.editor);
+        controller.autoReferenceApplying = true;
+        let changed = false;
+        try {
+            automaticReferenceTextNodes(controller.editor).forEach((node) => {
+                const matches = resolveAutomaticMatches(node.nodeValue || "");
+                changed = applyMatchesToTextNode(node, matches) || changed;
+            });
+            if (changed) {
+                restoreTextBookmark(controller.editor, bookmark);
+                syncController(controller, true);
+                captureSelection(controller);
+            }
+        } finally {
+            controller.autoReferenceApplying = false;
+        }
+        return changed;
+    }
+
+    function scheduleAutomaticReferences(controller, delay = 850) {
+        const activeTimer = autoReferenceTimers.get(controller);
+        if (activeTimer) {
+            window.clearTimeout(activeTimer);
+        }
+        if (!autoReferencesEnabled) {
+            autoReferenceTimers.delete(controller);
+            return;
+        }
+        const timer = window.setTimeout(() => {
+            autoReferenceTimers.delete(controller);
+            applyAutomaticReferences(controller);
+        }, delay);
+        autoReferenceTimers.set(controller, timer);
+    }
+
+    function openAutomaticReferenceSuggestion(controller, suggestion) {
+        if (!controller || !suggestion?.isConnected) {
+            return;
+        }
+        const range = document.createRange();
+        range.selectNode(suggestion);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        controller.savedRange = range.cloneRange();
+        setActiveController(controller);
+        referenceKind = suggestion.dataset.autoReferenceKind || "person";
+        if (referenceSearch) {
+            referenceSearch.value = suggestion.textContent || "";
+        }
+        openReferencePicker(
+            document.querySelector("[data-reference-trigger]"),
+            null,
+            suggestion.dataset.autoReferenceKind || "person",
+        );
+    }
+
+    function openReferencePicker(trigger, token = null, preferredKind = null) {
         if (!referencePicker || !activeController) {
             return;
         }
@@ -1023,7 +1554,7 @@
             range: range.cloneRange(),
             token,
         };
-        referenceKind = token?.dataset.referenceKind || "equipment";
+        referenceKind = preferredKind || token?.dataset.referenceKind || "equipment";
         referenceTrigger = trigger;
         trigger?.setAttribute("aria-expanded", "true");
         if (referenceSearch) {
@@ -1213,6 +1744,7 @@
             deactivated: false,
             entryKind: "normal",
             documentPayload: emptyDocument(),
+            autoReferenceApplying: false,
         };
         controllers.set(form, controller);
         const payload = payloadField(form);
@@ -1246,7 +1778,21 @@
         editor.addEventListener("input", () => {
             hideFloatingToolbar();
             syncController(controller, !controller.composing);
+            if (!controller.autoReferenceApplying) {
+                scheduleAutomaticReferences(controller);
+            }
             window.requestAnimationFrame(() => captureSelection(controller));
+        });
+        editor.addEventListener("click", (event) => {
+            const suggestion = event.target.closest?.(
+                "[data-auto-reference-suggestion]",
+            );
+            if (!suggestion || !editor.contains(suggestion)) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            openAutomaticReferenceSuggestion(controller, suggestion);
         });
         editor.addEventListener("paste", (event) => {
             event.preventDefault();
@@ -1399,6 +1945,34 @@
                 }
             });
         });
+        scope.querySelectorAll("[data-auto-reference-toggle]").forEach((button) => {
+            if (button.dataset.autoReferenceBound === "true") {
+                return;
+            }
+            button.dataset.autoReferenceBound = "true";
+            button.addEventListener("click", () => {
+                autoReferencesEnabled = !autoReferencesEnabled;
+                writeAutoReferencePreference(autoReferencesEnabled);
+                updateAutoReferenceControls();
+                if (autoReferencesEnabled && activeController) {
+                    applyAutomaticReferences(activeController);
+                }
+            });
+        });
+        scope.querySelectorAll("[data-auto-reference-scan]").forEach((button) => {
+            if (button.dataset.autoReferenceScanBound === "true") {
+                return;
+            }
+            button.dataset.autoReferenceScanBound = "true";
+            button.addEventListener("mousedown", (event) => {
+                event.preventDefault();
+            });
+            button.addEventListener("click", () => {
+                if (activeController) {
+                    applyAutomaticReferences(activeController, {force: true});
+                }
+            });
+        });
     }
 
     referencePicker?.querySelectorAll("[data-reference-kind-option]").forEach((button) => {
@@ -1506,6 +2080,7 @@
     });
 
     bindToolbar(document);
+    updateAutoReferenceControls();
     updateToolbarState(null);
     document.documentElement.dataset.eodDraftEditorRevision = RUNTIME_REVISION;
 
@@ -1514,6 +2089,10 @@
         runtimeRevision: RUNTIME_REVISION,
         initializeRow,
         bindToolbar,
+        applyAutomaticReferences(form, force = false) {
+            const controller = controllers.get(form);
+            return applyAutomaticReferences(controller, {force});
+        },
         syncForm(form) {
             const controller = controllers.get(form);
             if (!controller) {

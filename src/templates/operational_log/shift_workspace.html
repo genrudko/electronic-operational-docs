@@ -289,8 +289,8 @@
         </section>
 
         <section
-            class="draft-editor-ribbon-group"
-            aria-label="Связанный объект"
+            class="draft-editor-ribbon-group draft-auto-reference-group"
+            aria-label="Связанные объекты"
         >
             <div class="draft-editor-ribbon-buttons">
                 <button
@@ -305,8 +305,28 @@
                 >
                     <span class="draft-editor-tool-icon is-reference" aria-hidden="true">↗</span>
                 </button>
+                <button
+                    type="button"
+                    class="draft-editor-ribbon-button draft-auto-reference-toggle"
+                    data-auto-reference-toggle
+                    title="Автоматически находить однозначные связи"
+                    aria-label="Автоматическое определение связей"
+                    aria-pressed="true"
+                >
+                    <span aria-hidden="true">✦</span>
+                </button>
+                <button
+                    type="button"
+                    class="draft-editor-ribbon-button"
+                    data-auto-reference-scan
+                    title="Найти связи в текущей записи"
+                    aria-label="Найти связи в текущей записи"
+                    disabled
+                >
+                    <span aria-hidden="true">⌕</span>
+                </button>
             </div>
-            <small>Связь</small>
+            <small data-auto-reference-label>Связь · авто включено</small>
         </section>
     </div>
 </div>
@@ -1116,6 +1136,27 @@
                     aria-label="Визы и замечания"
                 ></div>
             </form>
+            <div
+                class="draft-inline-undo"
+                data-inline-undo
+                role="status"
+                aria-live="polite"
+                hidden
+            >
+                <span class="draft-inline-undo-icon" aria-hidden="true">↶</span>
+                <span class="draft-inline-undo-message">Запись удалена</span>
+                <button
+                    type="button"
+                    class="draft-inline-undo-button"
+                    data-inline-undo-button
+                >
+                    Восстановить
+                </button>
+                <span
+                    class="draft-inline-undo-countdown"
+                    data-inline-undo-countdown
+                >10 с</span>
+            </div>
         </article>
     {% empty %}
         <div class="empty-state" data-empty-draft>
@@ -1126,23 +1167,17 @@
     </div>
 </section>
 
-<div
-    class="draft-undo-stack screen-only"
-    data-draft-undo-stack
-    aria-live="polite"
-    aria-atomic="true"
-></div>
 
 <script
-    src="{% static 'operational_log/draft_editor.js' %}?v=01131"
+    src="{% static 'operational_log/draft_editor.js' %}?v=01132"
     defer
 ></script>
 <script
-    src="{% static 'operational_log/draft_workspace.js' %}?v=01131"
+    src="{% static 'operational_log/draft_workspace.js' %}?v=01132"
     defer
 ></script>
 <script
-    src="{% static 'operational_log/draft_reference_navigation.js' %}?v=01131"
+    src="{% static 'operational_log/draft_reference_navigation.js' %}?v=01132"
     defer
 ></script>
 {% endif %}

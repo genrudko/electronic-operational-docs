@@ -7,7 +7,7 @@ from typing import Any
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.http import (
     HttpRequest,
     HttpResponse,
@@ -21,6 +21,7 @@ from django.views.decorators.http import require_POST
 
 from apps.documents.models import Document
 from apps.equipment.models import (
+    EquipmentAlias,
     EquipmentAsset,
     EquipmentNameRevision,
     PublicationStatus,
@@ -178,7 +179,21 @@ def _semantic_reference_catalog(
                     status=PublicationStatus.PUBLISHED,
                 ).order_by("-effective_from", "-revision_number"),
                 to_attr="published_name_candidates",
-            )
+            ),
+            Prefetch(
+                "aliases",
+                queryset=(
+                    EquipmentAlias.objects.filter(
+                        valid_from__lte=effective_date,
+                    )
+                    .filter(
+                        Q(valid_until__isnull=True)
+                        | Q(valid_until__gte=effective_date)
+                    )
+                    .order_by("alias")
+                ),
+                to_attr="active_reference_aliases",
+            ),
         )
         .order_by("site__name", "code")[:200]
     )
@@ -214,6 +229,25 @@ def _semantic_reference_catalog(
                     f"{asset.code} {asset.technical_name} "
                     f"{asset.voltage_level}"
                 ),
+                "terms": list(
+                    dict.fromkeys(
+                        filter(
+                            None,
+                            (
+                                _equipment_reference_label(
+                                    asset,
+                                    effective_date,
+                                ),
+                                asset.code,
+                                asset.technical_name,
+                                *(
+                                    alias.alias
+                                    for alias in asset.active_reference_aliases
+                                ),
+                            ),
+                        )
+                    )
+                ),
             }
             for asset in equipment_rows
         ],
@@ -230,6 +264,17 @@ def _semantic_reference_catalog(
                     f"{document.registration_number} "
                     f"{document.title}"
                 ),
+                "terms": list(
+                    dict.fromkeys(
+                        filter(
+                            None,
+                            (
+                                document.registration_number,
+                                document.title,
+                            ),
+                        )
+                    )
+                ),
             }
             for document in document_rows
         ],
@@ -242,6 +287,25 @@ def _semantic_reference_catalog(
                     f"{employee.full_name} "
                     f"{employee.position.name} "
                     f"{employee.division.name}"
+                ),
+                "terms": list(
+                    dict.fromkeys(
+                        filter(
+                            None,
+                            (
+                                employee.full_name,
+                                employee.last_name,
+                                (
+                                    f"{employee.first_name} "
+                                    f"{employee.last_name}"
+                                ),
+                                (
+                                    f"{employee.last_name} "
+                                    f"{employee.first_name}"
+                                ),
+                            ),
+                        )
+                    )
                 ),
             }
             for employee in employee_rows
@@ -260,6 +324,12 @@ def _semantic_reference_catalog(
                     f"{timezone.localtime(draft.event_at):%d.%m.%Y %H:%M} "
                     f"{draft.content}"
                 ),
+                "terms": [
+                    "Запись "
+                    + timezone.localtime(draft.event_at).strftime(
+                        "%d.%m.%Y %H:%M"
+                    )
+                ],
             }
             for draft in drafts
         ],

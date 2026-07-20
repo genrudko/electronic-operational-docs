@@ -6839,3 +6839,241 @@ body.draft-view-drawer-visible .draft-view-drawer {
         display: none !important;
     }
 }
+
+
+/* Patch 011.3.2: inline undo, intelligent references and balanced footer. */
+.draft-undo-stack,
+.draft-undo-toast {
+    display: none !important;
+}
+
+.draft-inline-undo[hidden],
+.draft-ledger-form[hidden] {
+    display: none !important;
+}
+
+.draft-inline-undo {
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 18px;
+    border: 1px dashed color-mix(in srgb, var(--accent) 38%, var(--border));
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--accent) 6%, var(--panel));
+    color: var(--text);
+    animation: draft-inline-undo-enter 180ms ease-out;
+}
+
+.draft-inline-undo-icon {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--accent) 13%, transparent);
+    color: var(--accent);
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.draft-inline-undo-message {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 12px;
+    font-weight: 750;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.draft-inline-undo-button {
+    min-height: 32px;
+    padding: 5px 12px;
+    border: 1px solid color-mix(in srgb, var(--accent) 44%, var(--border));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--accent) 11%, var(--panel));
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.draft-inline-undo-button:hover,
+.draft-inline-undo-button:focus-visible {
+    background: color-mix(in srgb, var(--accent) 19%, var(--panel));
+    outline: 0;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.draft-inline-undo-button:disabled {
+    cursor: wait;
+    opacity: .7;
+}
+
+.draft-inline-undo-countdown {
+    min-width: 30px;
+    color: var(--muted);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.draft-ledger-row.is-undo-pending {
+    opacity: 1;
+    transform: none;
+}
+
+.draft-ledger-row.is-undo-expiring {
+    overflow: hidden;
+    opacity: 0;
+    transform: scaleY(.82);
+    transform-origin: top;
+    transition:
+        opacity 180ms ease,
+        transform 180ms ease;
+}
+
+@keyframes draft-inline-undo-enter {
+    from {
+        opacity: 0;
+        transform: scale(.99);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.draft-ledger-lower {
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 36px;
+    margin-top: 4px;
+    padding: 3px 4px 3px 9px;
+    border: 1px solid color-mix(in srgb, #64748b 16%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, #f8fafc 76%, transparent);
+}
+
+.draft-ledger-meta {
+    display: flex;
+    min-width: 0;
+    min-height: 28px;
+    align-items: center;
+    align-self: stretch;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.draft-save-status,
+.draft-meta-chip {
+    min-height: 20px;
+    padding-block: 2px;
+}
+
+.draft-row-action-toolbar {
+    box-sizing: border-box;
+    min-height: 28px;
+    align-self: center;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    box-shadow: none;
+    opacity: .62;
+}
+
+.draft-ledger-row:hover .draft-row-action-toolbar,
+.draft-ledger-form.has-focus .draft-row-action-toolbar,
+.draft-row-action-toolbar:focus-within {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    opacity: 1;
+}
+
+.draft-auto-reference-group {
+    min-width: 118px;
+}
+
+.draft-auto-reference-group > small {
+    max-width: 132px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.draft-auto-reference-toggle.is-active {
+    border-color: color-mix(in srgb, #22c55e 58%, var(--border));
+    background: color-mix(in srgb, #22c55e 13%, var(--panel));
+    color: #15803d;
+}
+
+.draft-reference-suggestion {
+    padding: 0 2px;
+    border-radius: 3px;
+    background: color-mix(in srgb, #f59e0b 12%, transparent);
+    text-decoration: underline dotted color-mix(in srgb, #d97706 75%, transparent) 1.5px;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.draft-reference-suggestion:hover,
+.draft-reference-suggestion:focus {
+    background: color-mix(in srgb, #f59e0b 21%, transparent);
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-ledger-lower {
+    border-color: #30445b;
+    background: color-mix(in srgb, #17283b 84%, transparent);
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-auto-reference-toggle.is-active {
+    border-color: #2f855a;
+    background: #173a2a;
+    color: #86efac;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-inline-undo {
+    border-color: color-mix(in srgb, #60a5fa 45%, #30445b);
+    background: color-mix(in srgb, #1d4ed8 10%, #142436);
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-reference-suggestion {
+    background: color-mix(in srgb, #f59e0b 16%, transparent);
+    text-decoration-color: #fbbf24;
+}
+
+@media (max-width: 700px) {
+    .draft-inline-undo {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 8px;
+        padding-inline: 12px;
+    }
+
+    .draft-inline-undo-countdown {
+        display: none;
+    }
+
+    .draft-ledger-lower {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 5px 7px;
+    }
+
+    .draft-row-action-toolbar {
+        justify-self: end;
+    }
+}
+
+@media print {
+    .draft-inline-undo,
+    .draft-auto-reference-group {
+        display: none !important;
+    }
+}
