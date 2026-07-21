@@ -5,7 +5,7 @@ from pathlib import Path
 from django.test import SimpleTestCase
 
 ROOT = Path(__file__).resolve().parents[3]
-REVISION = "011350"
+REVISION = "011352"
 
 
 class StableEntryCreationRepair2Tests(SimpleTestCase):

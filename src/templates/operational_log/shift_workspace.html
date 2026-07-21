@@ -186,6 +186,17 @@
                 >
                     Панель
                 </button>
+                <button
+                    class="button secondary compact-button draft-ribbon-mode-toggle"
+                    type="button"
+                    data-ribbon-mode-toggle
+                    aria-controls="draft-editor-ribbon"
+                    aria-expanded="false"
+                    aria-label="Развернуть ленту редактора"
+                >
+                    <span class="draft-ribbon-mode-label">Лента</span>
+                    <span class="draft-ribbon-mode-chevron" aria-hidden="true"></span>
+                </button>
                 <a
                     class="button compact-button draft-clean-copy-action"
                     href="{% url 'operational_log:detail' journal.pk %}"
@@ -465,17 +476,6 @@
             </small>
         </section>
     </div>
-    <button
-        class="draft-ribbon-mode-toggle"
-        type="button"
-        data-ribbon-mode-toggle
-        aria-controls="draft-editor-ribbon"
-        aria-expanded="false"
-        aria-label="Развернуть ленту редактора"
-        title="Развернуть ленту редактора"
-    >
-        <span data-ribbon-mode-icon aria-hidden="true">⌄</span>
-    </button>
 </div>
 
 <div
@@ -1438,15 +1438,15 @@
 
 
 <script
-    src="{% static 'operational_log/draft_editor.js' %}?v=011350"
+    src="{% static 'operational_log/draft_editor.js' %}?v=011352"
     defer
 ></script>
 <script
-    src="{% static 'operational_log/draft_workspace.js' %}?v=011350"
+    src="{% static 'operational_log/draft_workspace.js' %}?v=011352"
     defer
 ></script>
 <script
-    src="{% static 'operational_log/draft_reference_navigation.js' %}?v=011350"
+    src="{% static 'operational_log/draft_reference_navigation.js' %}?v=011352"
     defer
 ></script>
 {% endif %}

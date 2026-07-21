@@ -35,3 +35,21 @@ Patch 011.3.4 Repair 4 already stabilised editor completion and viewport restora
 
 - No changes to models, migrations, autosave API, editor payload schema, semantic references, normative markers, chronology or clean-copy business logic.
 - No Linux deployment profile, PostgreSQL migration or connected-event architecture in this patch.
+
+## Repair 2 — переключатель режима ленты
+
+После визуальной проверки отдельная квадратная кнопка в правой колонке Ribbon
+признана ошибочной компоновкой. Она была визуально оторвана от действий журнала,
+соприкасалась с полосой прокрутки и зависела от системного глифа стрелки.
+
+Решение Repair 2:
+
+- переключатель перенесён в основной ряд действий между «Панель» и «Чистовик»;
+- пользовательская подпись сокращена до «Лента»;
+- направление раскрытия показывается CSS-chevron без шрифтового символа;
+- `aria-expanded` и динамический `aria-label` сохранены;
+- браузерный `title` удалён, чтобы не показывать тяжёлую системную подсказку;
+- третья колонка Ribbon удалена, поэтому его прокрутка больше не сталкивается с переключателем.
+
+Изменение остаётся локальным UI-ремонтом и не затрагивает данные, autosave,
+хронологическую перестройку или восстановление viewport-anchor.

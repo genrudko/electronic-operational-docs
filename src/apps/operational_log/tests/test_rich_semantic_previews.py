@@ -9,7 +9,7 @@ from django.urls import reverse
 from .base import OperationalLogTestCase
 
 ROOT = Path(__file__).resolve().parents[3]
-REVISION = "011350"
+REVISION = "011352"
 
 
 class RichSemanticPreviewCatalogTests(OperationalLogTestCase):

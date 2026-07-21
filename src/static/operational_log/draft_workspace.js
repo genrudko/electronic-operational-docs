@@ -23,9 +23,6 @@
     const ribbonModeToggle = workspace.querySelector(
         "[data-ribbon-mode-toggle]",
     );
-    const ribbonModeIcon = workspace.querySelector(
-        "[data-ribbon-mode-icon]",
-    );
     const defaultEntryDate = (
         workspace.dataset.defaultEntryDate || ""
     );
@@ -228,10 +225,6 @@
                 expanded ? "true" : "false",
             );
             ribbonModeToggle.setAttribute("aria-label", label);
-            ribbonModeToggle.title = label;
-        }
-        if (ribbonModeIcon) {
-            ribbonModeIcon.textContent = expanded ? "⌃" : "⌄";
         }
         if (persist) {
             writePreference(

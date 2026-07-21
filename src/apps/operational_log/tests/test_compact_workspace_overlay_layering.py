@@ -5,7 +5,7 @@ from pathlib import Path
 from django.test import SimpleTestCase
 
 ROOT = Path(__file__).resolve().parents[3]
-REVISION = "011350"
+REVISION = "011352"
 
 
 class CompactWorkspaceOverlayLayeringTests(SimpleTestCase):
@@ -32,10 +32,21 @@ class CompactWorkspaceOverlayLayeringTests(SimpleTestCase):
         self.assertIn('data-ribbon-mode="compact"', template)
         self.assertIn("data-ribbon-mode-toggle", template)
         self.assertIn('aria-expanded="false"', template)
+        self.assertIn("draft-ribbon-mode-label", template)
+        self.assertIn("draft-ribbon-mode-chevron", template)
+        self.assertNotIn("data-ribbon-mode-icon", template)
+        self.assertNotIn('title="Развернуть ленту редактора"', template)
+        panel_index = template.index("data-open-view-drawer")
+        toggle_index = template.index("data-ribbon-mode-toggle")
+        clean_copy_index = template.index("draft-clean-copy-action")
+        self.assertLess(panel_index, toggle_index)
+        self.assertLess(toggle_index, clean_copy_index)
         self.assertIn("eod.operationalJournal.ribbonMode", workspace)
         self.assertIn("function normalizeRibbonMode", workspace)
         self.assertIn("function applyRibbonMode", workspace)
         self.assertIn('ribbonMode === "compact" ? "expanded" : "compact"', workspace)
+        self.assertNotIn("data-ribbon-mode-icon", workspace)
+        self.assertNotIn("ribbonModeToggle.title", workspace)
 
     def test_global_navigation_menu_is_accessible_and_viewport_clamped(self) -> None:
         base = self.source("templates/base.html")
