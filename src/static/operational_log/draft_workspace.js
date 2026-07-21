@@ -876,12 +876,24 @@
                 const currentTop = snapshot.row.getBoundingClientRect().top;
                 const delta = currentTop - snapshot.rowTop;
                 if (Math.abs(delta) > 0.5) {
-                    window.scrollBy(0, delta);
+                    window.scrollBy({
+                        top: delta,
+                        left: 0,
+                        behavior: "auto",
+                    });
                     return;
                 }
             }
-            window.scrollTo(snapshot.x, snapshot.y);
+            window.scrollTo({
+                left: snapshot.x,
+                top: snapshot.y,
+                behavior: "auto",
+            });
         };
+
+        // Rebuild pagination and restore the anchor in the same task so
+        // Chromium cannot paint the temporary row-store position.
+        restore();
         window.requestAnimationFrame(() => {
             restore();
             window.requestAnimationFrame(restore);
@@ -1286,7 +1298,10 @@
                 if (savedEntryAt !== previousEntryAt) {
                     form.dataset.chronologyPending = "true";
                     markPaginationPending();
-                    if (!form.contains(document.activeElement)) {
+                    if (
+                        form.dataset.finishing !== "true"
+                        && !form.contains(document.activeElement)
+                    ) {
                         applyPendingChronology(form);
                     }
                 }

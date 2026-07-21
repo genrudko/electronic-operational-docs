@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const RUNTIME_REVISION = "011343";
+    const RUNTIME_REVISION = "011344";
     const workspace = document.querySelector("[data-draft-workspace]");
     if (!workspace) {
         return;

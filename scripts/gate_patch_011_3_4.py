@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
-REVISION = "011343"
+REVISION = "011344"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "eod_config.settings")
