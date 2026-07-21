@@ -183,6 +183,17 @@
                         <button
                             type="button"
                             class="draft-editor-ribbon-button"
+                            data-editor-command="italic"
+                            title="Курсив (Ctrl+I)"
+                            aria-label="Курсив"
+                            aria-pressed="false"
+                            disabled
+                        >
+                            <span class="draft-editor-tool-icon is-italic" aria-hidden="true">К</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="draft-editor-ribbon-button"
                             data-editor-command="underline"
                             title="Подчёркивание (Ctrl+U)"
                             aria-label="Подчёркивание"
@@ -190,6 +201,39 @@
                             disabled
                         >
                             <span class="draft-editor-tool-icon is-underline" aria-hidden="true">Ч</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="draft-editor-ribbon-button"
+                            data-editor-command="strike"
+                            title="Зачёркивание"
+                            aria-label="Зачёркивание"
+                            aria-pressed="false"
+                            disabled
+                        >
+                            <span class="draft-editor-tool-icon is-strike" aria-hidden="true">abc</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="draft-editor-ribbon-button"
+                            data-editor-command="text_red"
+                            title="Красный текст"
+                            aria-label="Красный текст"
+                            aria-pressed="false"
+                            disabled
+                        >
+                            <span class="draft-editor-tool-icon is-text-red" aria-hidden="true">А</span>
+                        </button>
+                        <button
+                            type="button"
+                            class="draft-editor-ribbon-button"
+                            data-editor-command="text_blue"
+                            title="Синий текст"
+                            aria-label="Синий текст"
+                            aria-pressed="false"
+                            disabled
+                        >
+                            <span class="draft-editor-tool-icon is-text-blue" aria-hidden="true">А</span>
                         </button>
                         <button
                             type="button"
@@ -331,6 +375,27 @@
         </section>
 
         <section
+            class="draft-editor-ribbon-group draft-normative-ribbon-group"
+            aria-label="Нормативные отметки"
+        >
+            <div class="draft-editor-ribbon-buttons">
+                <button
+                    type="button"
+                    class="draft-editor-ribbon-button draft-normative-trigger"
+                    data-normative-trigger
+                    title="Нормативные отметки ПЗ, ЗН и аварий"
+                    aria-label="Открыть нормативные отметки"
+                    aria-haspopup="menu"
+                    aria-expanded="false"
+                    disabled
+                >
+                    <span class="draft-editor-tool-icon is-normative" aria-hidden="true">ϟ</span>
+                </button>
+            </div>
+            <small>Отметки</small>
+        </section>
+
+        <section
             class="draft-editor-ribbon-group draft-simplified-time-group"
             aria-label="Упрощённый ввод времени"
         >
@@ -366,6 +431,43 @@
     <button type="button" role="menuitemradio" data-entry-kind-option="message"><b>С</b><span>Сообщение</span></button>
     <button type="button" role="menuitemradio" data-entry-kind-option="warning"><b>!</b><span>Предупреждение</span></button>
     <button type="button" role="menuitemradio" data-entry-kind-option="carryover"><b>→</b><span>На следующую смену</span></button>
+</div>
+
+<div
+    class="draft-normative-menu screen-only"
+    data-normative-menu
+    role="menu"
+    aria-label="Нормативные отметки оперативного журнала"
+    hidden
+>
+    <header>
+        <div>
+            <strong>Нормативная отметка</strong>
+            <span data-normative-menu-status>Выделите относящийся к операции текст</span>
+        </div>
+        <button type="button" data-normative-close aria-label="Закрыть">×</button>
+    </header>
+    <div class="draft-normative-actions">
+        <button type="button" role="menuitem" data-normative-action="emergency">
+            <b class="is-emergency">!</b><span><strong>Аварийное событие</strong><small>Красная обводка времени</small></span>
+        </button>
+        <button type="button" role="menuitem" data-normative-action="zn_on">
+            <b class="is-red">ϟ</b><span><strong>Включён ЗН</strong><small>Красная молния и линия</small></span>
+        </button>
+        <button type="button" role="menuitem" data-normative-action="pz_install">
+            <b class="is-red">ПЗ<br>ϟ</b><span><strong>Установлено ПЗ</strong><small>Номер будет под молнией</small></span>
+        </button>
+        <button type="button" role="menuitem" data-normative-action="zn_off">
+            <b class="is-blue">ϟ</b><span><strong>Отключён ЗН</strong><small>Синий X на исходной отметке</small></span>
+        </button>
+        <button type="button" role="menuitem" data-normative-action="pz_remove">
+            <b class="is-blue">ПЗ<br>ϟ</b><span><strong>Снято ПЗ</strong><small>Выбор исходного номера ПЗ</small></span>
+        </button>
+    </div>
+    <footer>
+        <button type="button" class="button danger" data-normative-action="remove">Снять отметку с текста</button>
+        <button type="button" class="button secondary" data-normative-close>Закрыть</button>
+    </footer>
 </div>
 
 <div
@@ -926,6 +1028,13 @@
         ><strong>Ж</strong></button>
         <button
             type="button"
+            data-editor-command="italic"
+            title="Курсив (Ctrl+I)"
+            aria-label="Курсив"
+            aria-pressed="false"
+        ><i>К</i></button>
+        <button
+            type="button"
             data-editor-command="underline"
             title="Подчёркивание (Ctrl+U)"
             aria-label="Подчёркивание"
@@ -971,6 +1080,39 @@
         <span class="draft-editor-floating-separator" aria-hidden="true"></span>
         <button
             type="button"
+            data-editor-command="strike"
+            title="Зачёркивание"
+            aria-label="Зачёркивание"
+            aria-pressed="false"
+        ><s>abc</s></button>
+        <button
+            type="button"
+            class="draft-floating-text-red"
+            data-editor-command="text_red"
+            title="Красный текст"
+            aria-label="Красный текст"
+            aria-pressed="false"
+        >А</button>
+        <button
+            type="button"
+            class="draft-floating-text-blue"
+            data-editor-command="text_blue"
+            title="Синий текст"
+            aria-label="Синий текст"
+            aria-pressed="false"
+        >А</button>
+        <span class="draft-editor-floating-separator" aria-hidden="true"></span>
+        <button
+            type="button"
+            data-normative-trigger
+            title="Нормативные отметки ПЗ, ЗН и аварий"
+            aria-label="Нормативные отметки"
+            aria-haspopup="menu"
+            aria-expanded="false"
+        >ϟ</button>
+        <span class="draft-editor-floating-separator" aria-hidden="true"></span>
+        <button
+            type="button"
             data-editor-command="clear"
             title="Очистить форматирование"
             aria-label="Очистить форматирование"
@@ -990,6 +1132,11 @@
             data-entry-position="{{ draft.position }}"
             data-created-at="{{ draft.created_at|date:'c' }}"
             data-entry-filled="{% if draft.content %}true{% else %}false{% endif %}"
+            data-entry-kind="{{ draft.entry_kind }}"
+            data-entry-kind-label="{{ draft.entry_kind_label }}"
+            data-entry-author="{{ draft.updated_by.full_name }}"
+            data-entry-version="{{ draft.version }}"
+            data-entry-status="Сохранена"
         >
             {% ifchanged draft.event_at|date:"Y-m-d" %}
             <div class="draft-inline-date" data-inline-date>
@@ -1155,6 +1302,7 @@
 
                 <div
                     class="draft-ledger-visas"
+                    data-draft-visas
                     aria-label="Визы и замечания"
                 ></div>
             </form>
@@ -1191,15 +1339,15 @@
 
 
 <script
-    src="{% static 'operational_log/draft_editor.js' %}?v=01133"
+    src="{% static 'operational_log/draft_editor.js' %}?v=01134"
     defer
 ></script>
 <script
-    src="{% static 'operational_log/draft_workspace.js' %}?v=01133"
+    src="{% static 'operational_log/draft_workspace.js' %}?v=01134"
     defer
 ></script>
 <script
-    src="{% static 'operational_log/draft_reference_navigation.js' %}?v=01133"
+    src="{% static 'operational_log/draft_reference_navigation.js' %}?v=01134"
     defer
 ></script>
 {% endif %}

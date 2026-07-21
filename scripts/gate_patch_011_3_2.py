@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REVISION = "01133"
+REVISION = "01134"
 
 
 def read(relative: str) -> str:
@@ -86,13 +86,10 @@ def main() -> None:
         "cache revision is incomplete",
     )
     require(
-        not list(
-            (ROOT / "src/apps/operational_log/migrations").glob(
-                "0006*.py"
-            )
-        ),
-        "NO_DATABASE_SCHEMA_CHANGE",
-        "unexpected operational_log migration detected",
+        {path.name for path in (ROOT / "src/apps/operational_log/migrations").glob("0006*.py")}
+        == {"0006_alter_operationaldraftentry_editor_schema_version.py"},
+        "CONTROLLED_EDITOR_SCHEMA_EVOLUTION",
+        "unexpected operational_log schema evolution detected",
     )
     print("PATCH_011_3_2_INLINE_UNDO_INTELLIGENT_REFERENCES_GATE_PASSED")
 

@@ -43,7 +43,7 @@ def main() -> None:
         SRC / "apps" / "operational_log" / "views.py"
     ).read_text(encoding="utf-8")
 
-    require(EDITOR_SCHEMA_VERSION == "operational-draft-editor.v3", "schema v3 missing")
+    require(EDITOR_SCHEMA_VERSION == "operational-draft-editor.v4", "schema v4 missing")
     require(
         {"normal", "command", "permission", "message", "warning", "carryover"}
         <= ALLOWED_ENTRY_KINDS,
@@ -81,7 +81,7 @@ def main() -> None:
         editor_document_to_text(sample) == "Команда: Отключить В-35",
         "canonical projection mismatch",
     )
-    print("SEMANTIC_EDITOR_SCHEMA_V3=PASSED")
+    print("SEMANTIC_EDITOR_SCHEMA_V4=PASSED")
 
     legacy = normalize_editor_document(
         {
@@ -108,7 +108,7 @@ def main() -> None:
         editor_document_to_text(legacy) == "Предупреждение: не включать В-35",
         "v2 text upgrade failed",
     )
-    print("LEGACY_EDITOR_V2_TO_V3=PASSED")
+    print("LEGACY_EDITOR_V2_TO_V4=PASSED")
 
     for marker in (
         "data-entry-kind-trigger",

@@ -93,20 +93,17 @@ def main() -> None:
         "record action and undo visual contract is incomplete",
     )
     require(
-        "?v=01133" in template
-        and "?v=01133" in base
-        and 'const RUNTIME_REVISION = "01133";' in editor,
+        "?v=01134" in template
+        and "?v=01134" in base
+        and 'const RUNTIME_REVISION = "01134";' in editor,
         "PATCH_011_3_1_CACHE_REVISION",
         "runtime cache revision is incomplete",
     )
     require(
-        not list(
-            (ROOT / "src/apps/operational_log/migrations").glob(
-                "0006*.py"
-            )
-        ),
-        "NO_DATABASE_SCHEMA_CHANGE",
-        "unexpected operational_log migration detected",
+        {path.name for path in (ROOT / "src/apps/operational_log/migrations").glob("0006*.py")}
+        == {"0006_alter_operationaldraftentry_editor_schema_version.py"},
+        "CONTROLLED_EDITOR_SCHEMA_EVOLUTION",
+        "unexpected operational_log schema evolution detected",
     )
     print("PATCH_011_3_1_ENTRY_COMPLETION_UNDO_UX_GATE_PASSED")
 

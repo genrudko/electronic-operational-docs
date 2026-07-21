@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
-REVISION = "01133"
+REVISION = "01134"
 
 
 def require(condition: bool, message: str) -> None:
@@ -138,11 +138,18 @@ def main() -> None:
     )
     print("REFERENCE_RUNTIME_VISUAL_CONTRACT=PASSED")
 
-    migrations = list(
-        (SRC / "apps" / "operational_log" / "migrations").glob("0006*.py")
+    migrations = {
+        path.name
+        for path in (
+            SRC / "apps" / "operational_log" / "migrations"
+        ).glob("0006*.py")
+    }
+    require(
+        migrations
+        == {"0006_alter_operationaldraftentry_editor_schema_version.py"},
+        "unexpected operational_log schema evolution detected",
     )
-    require(not migrations, "Repair 4 must not add migration 0006")
-    print("NO_DATABASE_SCHEMA_CHANGE=PASSED")
+    print("CONTROLLED_EDITOR_SCHEMA_EVOLUTION=PASSED")
     print("PATCH_011_3_REPAIR4_VALIDATED_RUNTIME_GATE_PASSED")
 
 

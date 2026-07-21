@@ -29,6 +29,7 @@ from apps.equipment.models import (
 )
 from apps.organizations.models import Employee, InterfacePreference
 
+from .editor import ENTRY_KIND_LABELS
 from .form_contracts import OPERATIONAL_JOURNAL_FORM
 from .forms import (
     DraftEntryAutoSaveForm,
@@ -199,6 +200,16 @@ def _person_reference_terms(employee: Employee) -> list[str]:
     )
 
 
+def _draft_entry_kind(draft: OperationalDraftEntry) -> str:
+    payload = draft.editor_payload if isinstance(draft.editor_payload, dict) else {}
+    kind = str(payload.get("entry_kind", "normal"))
+    return kind if kind in ENTRY_KIND_LABELS else "normal"
+
+
+def _preview_fact(label: str, value: object) -> dict[str, str]:
+    return {"label": label, "value": str(value or "—")}
+
+
 def _semantic_reference_catalog(
     journal: OperationalJournal,
     shift: OperationalShift | None,
@@ -243,7 +254,7 @@ def _semantic_reference_catalog(
         Document.objects.filter(
             organization=journal.organization,
         )
-        .select_related("document_type")
+        .select_related("document_type", "created_by", "registered_by")
         .order_by("-registered_at", "-updated_at", "-pk")[:150]
     )
     employee_rows = list(
@@ -251,17 +262,16 @@ def _semantic_reference_catalog(
             organization=journal.organization,
             is_active=True,
         )
-        .select_related("position", "division")
+        .select_related("position", "division", "workplace")
         .order_by("last_name", "first_name", "middle_name")[:150]
     )
 
-    return {
-        "equipment": [
+    equipment: list[dict[str, Any]] = []
+    for asset in equipment_rows:
+        label = _equipment_reference_label(asset, effective_date)
+        equipment.append(
             {
-                "label": _equipment_reference_label(
-                    asset,
-                    effective_date,
-                ),
+                "label": label,
                 "reference": f"equipment:{asset.public_id}",
                 "meta": (
                     f"{asset.site.short_name or asset.site.name} · "
@@ -276,10 +286,7 @@ def _semantic_reference_catalog(
                         filter(
                             None,
                             (
-                                _equipment_reference_label(
-                                    asset,
-                                    effective_date,
-                                ),
+                                label,
                                 asset.code,
                                 asset.technical_name,
                                 *(
@@ -290,44 +297,78 @@ def _semantic_reference_catalog(
                         )
                     )
                 ),
+                "preview": {
+                    "summary": asset.technical_name,
+                    "status": asset.get_status_display(),
+                    "facts": [
+                        _preview_fact(
+                            "Энергообъект",
+                            asset.site.short_name or asset.site.name,
+                        ),
+                        _preview_fact("Вид", asset.equipment_type.name),
+                        _preview_fact("Код", asset.code),
+                        _preview_fact("Класс напряжения", asset.voltage_level),
+                    ],
+                },
             }
-            for asset in equipment_rows
-        ],
-        "document": [
+        )
+
+    documents: list[dict[str, Any]] = []
+    for document in document_rows:
+        label = document.registration_number or document.title
+        author = (
+            document.registered_by.full_name
+            if document.registered_by_id
+            else document.created_by.full_name
+        )
+        documents.append(
             {
-                "label": document.registration_number
-                or document.title,
+                "label": label,
                 "reference": f"document:{document.public_id}",
-                "meta": (
-                    f"{document.document_type.name} · "
-                    f"{document.title}"
-                ),
+                "meta": f"{document.document_type.name} · {document.title}",
                 "keywords": (
-                    f"{document.registration_number} "
-                    f"{document.title}"
+                    f"{document.registration_number} {document.title}"
                 ),
                 "terms": list(
                     dict.fromkeys(
                         filter(
                             None,
-                            (
-                                document.registration_number,
-                                document.title,
-                            ),
+                            (document.registration_number, document.title),
                         )
                     )
                 ),
+                "preview": {
+                    "summary": document.title,
+                    "status": document.get_status_display(),
+                    "facts": [
+                        _preview_fact("Тип", document.document_type.name),
+                        _preview_fact(
+                            "Регистрационный номер",
+                            document.registration_number or "Не присвоен",
+                        ),
+                        _preview_fact("Автор / регистратор", author),
+                        _preview_fact(
+                            "Дата регистрации",
+                            timezone.localtime(document.registered_at).strftime(
+                                "%d.%m.%Y %H:%M"
+                            )
+                            if document.registered_at
+                            else "Не зарегистрирован",
+                        ),
+                    ],
+                },
             }
-            for document in document_rows
-        ],
-        "person": [
+        )
+
+    people: list[dict[str, Any]] = []
+    for employee in employee_rows:
+        people.append(
             {
                 "label": employee.full_name,
                 "reference": f"employee:{employee.pk}",
                 "meta": employee.position.name,
                 "keywords": (
-                    f"{employee.full_name} "
-                    f"{employee.position.name} "
+                    f"{employee.full_name} {employee.position.name} "
                     f"{employee.division.name}"
                 ),
                 "surname": employee.last_name,
@@ -336,40 +377,62 @@ def _semantic_reference_catalog(
                     employee.position.name
                 ),
                 "terms": _person_reference_terms(employee),
+                "preview": {
+                    "summary": employee.position.name,
+                    "status": "Действующий сотрудник",
+                    "facts": [
+                        _preview_fact("Подразделение", employee.division.name),
+                        _preview_fact(
+                            "Рабочее место",
+                            employee.workplace.name
+                            if employee.workplace_id
+                            else "Не указано",
+                        ),
+                        _preview_fact(
+                            "Трудовые отношения",
+                            f"с {employee.employment_start:%d.%m.%Y}",
+                        ),
+                    ],
+                },
             }
-            for employee in employee_rows
-        ],
-        "related_entry": [
+        )
+
+    related_entries: list[dict[str, Any]] = []
+    for draft in drafts:
+        local_event = timezone.localtime(draft.event_at)
+        kind = _draft_entry_kind(draft)
+        kind_label = ENTRY_KIND_LABELS[kind]
+        related_entries.append(
             {
-                "label": (
-                    "Запись "
-                    + timezone.localtime(draft.event_at).strftime(
-                        "%d.%m.%Y %H:%M"
-                    )
-                ),
+                "label": f"Запись {local_event:%d.%m.%Y %H:%M}",
                 "reference": f"draft:{draft.public_id}",
                 "meta": draft.content[:140] or "Пустая черновая запись",
-                "keywords": (
-                    f"{timezone.localtime(draft.event_at):%d.%m.%Y %H:%M} "
-                    f"{draft.content}"
-                ),
-                "event_date": timezone.localtime(draft.event_at).strftime(
-                    "%Y-%m-%d"
-                ),
-                "event_time": timezone.localtime(draft.event_at).strftime(
-                    "%H:%M"
-                ),
+                "keywords": f"{local_event:%d.%m.%Y %H:%M} {draft.content}",
+                "event_date": local_event.strftime("%Y-%m-%d"),
+                "event_time": local_event.strftime("%H:%M"),
                 "position": draft.position,
                 "terms": [
-                    "Запись "
-                    + timezone.localtime(draft.event_at).strftime(
-                        "%d.%m.%Y %H:%M"
-                    ),
-                    timezone.localtime(draft.event_at).strftime("%H:%M"),
+                    f"Запись {local_event:%d.%m.%Y %H:%M}",
+                    local_event.strftime("%H:%M"),
                 ],
+                "preview": {
+                    "summary": draft.content or "Пустая черновая запись",
+                    "status": f"Сохранена · версия {draft.version}",
+                    "facts": [
+                        _preview_fact("Дата и время", f"{local_event:%d.%m.%Y %H:%M}"),
+                        _preview_fact("Тип записи", kind_label),
+                        _preview_fact("Автор", draft.updated_by.full_name),
+                        _preview_fact("Позиция", draft.position),
+                    ],
+                },
             }
-            for draft in drafts
-        ],
+        )
+
+    return {
+        "equipment": equipment,
+        "document": documents,
+        "person": people,
+        "related_entry": related_entries,
     }
 
 
@@ -486,6 +549,8 @@ def shift_workspace(
                 sort_keys=True,
                 separators=(",", ":"),
             )
+            draft.entry_kind = _draft_entry_kind(draft)
+            draft.entry_kind_label = ENTRY_KIND_LABELS[draft.entry_kind]
         removed_drafts = list(
             draft_entries_queryset(
                 shift,

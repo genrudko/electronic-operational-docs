@@ -5,7 +5,7 @@ from pathlib import Path
 from django.test import SimpleTestCase
 
 ROOT = Path(__file__).resolve().parents[3]
-REVISION = "01133"
+REVISION = "01134"
 
 
 class ContextAwareEntityResolverRuntimeTests(SimpleTestCase):

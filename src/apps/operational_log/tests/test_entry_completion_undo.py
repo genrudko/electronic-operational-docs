@@ -66,6 +66,6 @@ class DraftEntryCompletionUndoTests(OperationalLogTestCase):
             "Сохранено ·",
             "Запись №",
             "Версия&nbsp;",
-            "?v=01133",
+            "?v=01134",
         ):
             self.assertContains(response, marker)

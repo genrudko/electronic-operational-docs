@@ -1,11 +1,12 @@
 (() => {
     "use strict";
 
-    const SCHEMA_VERSION = "operational-draft-editor.v3";
-    const RUNTIME_REVISION = "01133";
+    const SCHEMA_VERSION = "operational-draft-editor.v4";
+    const RUNTIME_REVISION = "01134";
     const LEGACY_SCHEMA_VERSIONS = new Set([
         "operational-draft-editor.v1",
         "operational-draft-editor.v2",
+        "operational-draft-editor.v3",
     ]);
     const ENTRY_KINDS = Object.freeze({
         normal: {label: "Обычная запись", short: "Обычная", prefix: ""},
@@ -15,6 +16,13 @@
         warning: {label: "Предупреждение", short: "Предупреждение", prefix: "Предупреждение: "},
         carryover: {label: "На следующую смену", short: "На смену", prefix: "На следующую смену: "},
     });
+    const NORMATIVE_KINDS = Object.freeze({
+        emergency: {label: "Аварийное событие", tone: "red", scope: "row"},
+        zn_on: {label: "Включён ЗН", tone: "red", scope: "text", family: "zn"},
+        zn_off: {label: "Отключён ЗН", tone: "blue", scope: "text", family: "zn", closes: "zn_on"},
+        pz_install: {label: "Установлено ПЗ", tone: "red", scope: "text", family: "pz"},
+        pz_remove: {label: "Снято ПЗ", tone: "blue", scope: "text", family: "pz", closes: "pz_install"},
+    });
     const REFERENCE_KINDS = Object.freeze({
         equipment: {label: "Оборудование", icon: "Э"},
         document: {label: "Документ", icon: "Д"},
@@ -23,12 +31,15 @@
         event_time: {label: "Время события", icon: "В"},
     });
     const controllers = new WeakMap();
+    const controllerList = [];
     const workspace = document.querySelector("[data-draft-workspace]");
     const ribbon = document.querySelector("[data-editor-ribbon]");
     const ribbonStatus = document.querySelector("[data-editor-ribbon-status]");
     const floatingToolbar = document.querySelector("[data-editor-floating-toolbar]");
     const entryKindMenu = document.querySelector("[data-entry-kind-menu]");
     const referencePicker = document.querySelector("[data-reference-picker]");
+    const normativeMenu = document.querySelector("[data-normative-menu]");
+    const normativeMenuStatus = normativeMenu?.querySelector("[data-normative-menu-status]");
     const referenceSearch = referencePicker?.querySelector("[data-reference-search]");
     const referenceSearchLabel = referenceSearch?.closest(".draft-reference-search-label");
     const referenceResults = referencePicker?.querySelector("[data-reference-results]");
@@ -60,6 +71,7 @@
     let referenceState = null;
     let referenceKind = "equipment";
     let entryKindViewport = null;
+    let normativeState = null;
     const autoReferenceTimers = new WeakMap();
     let autoReferencesEnabled = readAutoReferencePreference();
     let simplifiedTimeEnabled = (
@@ -72,6 +84,7 @@
             schema_version: SCHEMA_VERSION,
             entry_kind: "normal",
             blocks: [{type: "paragraph", segments: []}],
+            annotations: [],
         };
     }
 
@@ -84,14 +97,16 @@
             entry_kind: "normal",
             blocks: text.split("\n").map((line) => ({
                 type: "paragraph",
-                segments: line ? [{text: line, marks: []}] : [],
+                segments: line ? [{text: line, marks: [], annotations: []}] : [],
             })),
+            annotations: [],
         };
     }
 
     function normalizeMarks(value) {
         const source = Array.isArray(value) ? value : [];
-        return ["bold", "underline"].filter((mark) => source.includes(mark));
+        return ["bold", "italic", "underline", "strike", "text_red", "text_blue"]
+            .filter((mark) => source.includes(mark));
     }
 
     function normalizeSingleLine(value, maxLength = 500) {
@@ -103,6 +118,76 @@
             .join(" ")
             .trim()
             .slice(0, maxLength);
+    }
+
+    function normalizeAnnotationId(value) {
+        const normalized = normalizeSingleLine(value, 64);
+        return /^[A-Za-z0-9_-]{8,64}$/.test(normalized) ? normalized : "";
+    }
+
+    function normalizeNormativeAnnotation(value) {
+        if (!value || typeof value !== "object") {
+            return null;
+        }
+        const id = normalizeAnnotationId(value.id);
+        const kind = String(value.kind || "");
+        const label = normalizeSingleLine(value.label, 500);
+        if (!id || !NORMATIVE_KINDS[kind] || !label) {
+            return null;
+        }
+        const pzNumber = normalizeSingleLine(value.pz_number, 32)
+            .replace(/^№\s*/u, "");
+        const sourceEntry = normalizeSingleLine(value.source_entry, 200);
+        const sourceAnnotation = normalizeAnnotationId(value.source_annotation);
+        if (["pz_install", "pz_remove"].includes(kind) && !pzNumber) {
+            return null;
+        }
+        if (["zn_off", "pz_remove"].includes(kind)) {
+            if (!sourceEntry.startsWith("draft:") || !sourceAnnotation) {
+                return null;
+            }
+        }
+        return {
+            id,
+            kind,
+            label,
+            ...(pzNumber ? {pz_number: pzNumber} : {}),
+            ...(sourceEntry ? {source_entry: sourceEntry} : {}),
+            ...(sourceAnnotation ? {source_annotation: sourceAnnotation} : {}),
+        };
+    }
+
+    function normalizeNormativeAnnotations(value) {
+        const result = [];
+        const seen = new Set();
+        (Array.isArray(value) ? value : []).forEach((raw) => {
+            const annotation = normalizeNormativeAnnotation(raw);
+            if (!annotation || seen.has(annotation.id) || result.length >= 100) {
+                return;
+            }
+            seen.add(annotation.id);
+            result.push(annotation);
+        });
+        return result;
+    }
+
+    function normalizeSegmentAnnotations(value, allowedIds = null) {
+        const result = [];
+        (Array.isArray(value) ? value : []).forEach((raw) => {
+            const id = normalizeAnnotationId(raw);
+            if (!id || result.includes(id) || (allowedIds && !allowedIds.has(id))) {
+                return;
+            }
+            result.push(id);
+        });
+        return result;
+    }
+
+    function newAnnotationId() {
+        if (window.crypto?.randomUUID) {
+            return window.crypto.randomUUID();
+        }
+        return `nm_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 12)}`;
     }
 
     function readAutoReferencePreference() {
@@ -319,24 +404,26 @@
         return {kind, label, ...(reference ? {reference} : {})};
     }
 
-    function pushTextSegment(result, text, marks) {
+    function pushTextSegment(result, text, marks, annotations = []) {
         if (!text) {
             return;
         }
         const normalizedMarks = normalizeMarks(marks);
+        const normalizedAnnotations = normalizeSegmentAnnotations(annotations);
         const previous = result.at(-1);
         if (
             previous
             && !previous.reference
             && JSON.stringify(previous.marks) === JSON.stringify(normalizedMarks)
+            && JSON.stringify(previous.annotations || []) === JSON.stringify(normalizedAnnotations)
         ) {
             previous.text += text;
         } else {
-            result.push({text, marks: normalizedMarks});
+            result.push({text, marks: normalizedMarks, annotations: normalizedAnnotations});
         }
     }
 
-    function pushReferenceSegment(result, reference, marks) {
+    function pushReferenceSegment(result, reference, marks, annotations = []) {
         const normalized = normalizeReference(reference);
         if (!normalized) {
             return;
@@ -344,6 +431,7 @@
         result.push({
             text: normalized.label,
             marks: normalizeMarks(marks),
+            annotations: normalizeSegmentAnnotations(annotations),
             reference: normalized,
         });
     }
@@ -358,7 +446,7 @@
             const marks = normalizeMarks(segment.marks);
             const reference = normalizeReference(segment.reference);
             if (reference) {
-                pushReferenceSegment(result, reference, marks);
+                pushReferenceSegment(result, reference, marks, segment.annotations);
                 return;
             }
             if (typeof segment.text !== "string") {
@@ -368,6 +456,7 @@
                 result,
                 segment.text.replace(/\r\n/g, "\n").replace(/\r/g, "\n"),
                 marks,
+                segment.annotations,
             );
         });
         return result;
@@ -422,8 +511,12 @@
         if (sourceVersion !== SCHEMA_VERSION && !LEGACY_SCHEMA_VERSIONS.has(sourceVersion)) {
             return plainTextDocument(fallbackText);
         }
+        const annotations = sourceVersion === SCHEMA_VERSION
+            ? normalizeNormativeAnnotations(value.annotations)
+            : [];
+        const annotationIds = new Set(annotations.map((item) => item.id));
         const state = {
-            entryKind: sourceVersion === SCHEMA_VERSION
+            entryKind: [SCHEMA_VERSION, "operational-draft-editor.v3"].includes(sourceVersion)
                 ? normalizeEntryKind(value.entry_kind)
                 : "normal",
         };
@@ -432,9 +525,20 @@
             if (!block || typeof block !== "object") {
                 return;
             }
-            const segmentNormalizer = sourceVersion === "operational-draft-editor.v2"
-                ? (segments) => upgradeLegacySegments(segments, state)
-                : normalizeSegments;
+            let segmentNormalizer;
+            if (sourceVersion === "operational-draft-editor.v2") {
+                segmentNormalizer = (segments) => upgradeLegacySegments(segments, state);
+            } else if (sourceVersion === SCHEMA_VERSION) {
+                segmentNormalizer = (segments) => normalizeSegments(segments).map((segment) => ({
+                    ...segment,
+                    annotations: normalizeSegmentAnnotations(segment.annotations, annotationIds),
+                }));
+            } else {
+                segmentNormalizer = (segments) => normalizeSegments(segments).map((segment) => ({
+                    ...segment,
+                    annotations: [],
+                }));
+            }
             if (block.type === "paragraph") {
                 blocks.push({
                     type: "paragraph",
@@ -451,10 +555,23 @@
                 });
             }
         });
+        const used = new Set();
+        blocks.forEach((block) => {
+            const groups = block.type === "paragraph"
+                ? [block.segments]
+                : block.items.map((item) => item.segments);
+            groups.forEach((segments) => segments.forEach((segment) => {
+                (segment.annotations || []).forEach((id) => used.add(id));
+            }));
+        });
+        const retainedAnnotations = annotations.filter((item) => (
+            item.kind === "emergency" || used.has(item.id)
+        ));
         return {
             schema_version: SCHEMA_VERSION,
             entry_kind: state.entryKind,
             blocks: blocks.length ? blocks : emptyDocument().blocks,
+            annotations: retainedAnnotations,
         };
     }
 
@@ -519,7 +636,11 @@
         return token;
     }
 
-    function appendSegment(parent, segment) {
+    function annotationDefinition(controller, id) {
+        return controller?.annotationMap?.get(id) || null;
+    }
+
+    function appendSegment(parent, segment, controller) {
         let node = segment.reference
             ? referenceToken(segment.reference)
             : document.createTextNode(segment.text);
@@ -528,10 +649,45 @@
             underline.append(node);
             node = underline;
         }
+        if (segment.marks.includes("strike")) {
+            const strike = document.createElement("s");
+            strike.append(node);
+            node = strike;
+        }
+        if (segment.marks.includes("italic")) {
+            const italic = document.createElement("em");
+            italic.append(node);
+            node = italic;
+        }
         if (segment.marks.includes("bold")) {
             const strong = document.createElement("strong");
             strong.append(node);
             node = strong;
+        }
+        if (segment.marks.includes("text_red") || segment.marks.includes("text_blue")) {
+            const color = document.createElement("span");
+            color.className = segment.marks.includes("text_red")
+                ? "draft-text-red"
+                : "draft-text-blue";
+            color.append(node);
+            node = color;
+        }
+        const annotationIds = normalizeSegmentAnnotations(segment.annotations);
+        if (annotationIds.length) {
+            const wrapper = document.createElement("span");
+            wrapper.className = "draft-normative-text";
+            wrapper.dataset.normativeAnnotationIds = annotationIds.join(" ");
+            const definitions = annotationIds
+                .map((id) => annotationDefinition(controller, id))
+                .filter(Boolean);
+            if (definitions.some((item) => ["zn_on", "pz_install"].includes(item.kind))) {
+                wrapper.classList.add("is-normative-open");
+            }
+            if (definitions.some((item) => ["zn_off", "pz_remove"].includes(item.kind))) {
+                wrapper.classList.add("is-normative-close");
+            }
+            wrapper.append(node);
+            node = wrapper;
         }
         parent.append(node);
     }
@@ -547,6 +703,10 @@
     function renderDocument(controller, documentPayload) {
         const normalized = normalizeDocument(documentPayload);
         controller.documentPayload = normalized;
+        controller.annotations = normalized.annotations;
+        controller.annotationMap = new Map(
+            normalized.annotations.map((item) => [item.id, item]),
+        );
         controller.entryKind = normalized.entry_kind;
         renderEntryKindBadge(controller);
         const editor = controller.editor;
@@ -554,7 +714,7 @@
         normalized.blocks.forEach((block) => {
             if (block.type === "paragraph") {
                 const paragraph = document.createElement("p");
-                block.segments.forEach((segment) => appendSegment(paragraph, segment));
+                block.segments.forEach((segment) => appendSegment(paragraph, segment, controller));
                 if (!paragraph.hasChildNodes()) {
                     paragraph.append(document.createElement("br"));
                 }
@@ -564,7 +724,7 @@
             const list = document.createElement(block.type === "bullet_list" ? "ul" : "ol");
             block.items.forEach((item) => {
                 const listItem = document.createElement("li");
-                item.segments.forEach((segment) => appendSegment(listItem, segment));
+                item.segments.forEach((segment) => appendSegment(listItem, segment, controller));
                 if (!listItem.hasChildNodes()) {
                     listItem.append(document.createElement("br"));
                 }
@@ -578,20 +738,21 @@
             editor.append(list);
         });
         updateEmptyState(editor);
+        window.requestAnimationFrame(refreshNormativePresentation);
     }
 
     function appendSerializedSegment(result, segment) {
         if (segment.reference) {
-            pushReferenceSegment(result, segment.reference, segment.marks);
+            pushReferenceSegment(result, segment.reference, segment.marks, segment.annotations);
         } else {
-            pushTextSegment(result, segment.text, segment.marks);
+            pushTextSegment(result, segment.text, segment.marks, segment.annotations);
         }
     }
 
-    function segmentsFromNode(node, inheritedMarks = []) {
+    function segmentsFromNode(node, inheritedMarks = [], inheritedAnnotations = []) {
         const result = [];
         if (node.nodeType === Node.TEXT_NODE) {
-            pushTextSegment(result, node.nodeValue || "", inheritedMarks);
+            pushTextSegment(result, node.nodeValue || "", inheritedMarks, inheritedAnnotations);
             return result;
         }
         if (node.nodeType !== Node.ELEMENT_NODE) {
@@ -607,22 +768,54 @@
                     reference: node.dataset.referenceValue || "",
                 },
                 inheritedMarks,
+                inheritedAnnotations,
             );
             return result;
         }
         if (tag === "br") {
-            pushTextSegment(result, "\n", inheritedMarks);
+            pushTextSegment(result, "\n", inheritedMarks, inheritedAnnotations);
             return result;
         }
         const marks = [...inheritedMarks];
         if (["strong", "b"].includes(tag) && !marks.includes("bold")) {
             marks.push("bold");
         }
+        if (["em", "i"].includes(tag) && !marks.includes("italic")) {
+            marks.push("italic");
+        }
         if (tag === "u" && !marks.includes("underline")) {
             marks.push("underline");
         }
+        if (["s", "strike"].includes(tag) && !marks.includes("strike")) {
+            marks.push("strike");
+        }
+        const rawColor = String(
+            node.getAttribute?.("color") || node.style.color || "",
+        ).toLocaleLowerCase("ru-RU").replace(/\s+/g, "");
+        const redColor = ["#b42318", "rgb(180,35,24)"].includes(rawColor);
+        const blueColor = ["#175cd3", "rgb(23,92,211)"].includes(rawColor);
+        if (
+            (node.classList.contains("draft-text-red") || redColor)
+            && !marks.includes("text_red")
+        ) {
+            marks.push("text_red");
+        }
+        if (
+            (node.classList.contains("draft-text-blue") || blueColor)
+            && !marks.includes("text_blue")
+        ) {
+            marks.push("text_blue");
+        }
+        const annotations = [...inheritedAnnotations];
+        normalizeSegmentAnnotations(
+            String(node.dataset.normativeAnnotationIds || "").split(/\s+/),
+        ).forEach((id) => {
+            if (!annotations.includes(id)) {
+                annotations.push(id);
+            }
+        });
         node.childNodes.forEach((child) => {
-            segmentsFromNode(child, marks).forEach((segment) => {
+            segmentsFromNode(child, marks, annotations).forEach((segment) => {
                 appendSerializedSegment(result, segment);
             });
         });
@@ -641,7 +834,9 @@
         return segments;
     }
 
-    function editorToDocument(editor, entryKind = "normal") {
+    function editorToDocument(controller) {
+        const editor = controller.editor;
+        const entryKind = controller.entryKind;
         const blocks = [];
         Array.from(editor.childNodes).forEach((node) => {
             if (
@@ -663,6 +858,7 @@
             schema_version: SCHEMA_VERSION,
             entry_kind: normalizeEntryKind(entryKind),
             blocks: blocks.length ? blocks : emptyDocument().blocks,
+            annotations: controller.annotations || [],
         });
     }
 
@@ -723,7 +919,7 @@
     }
 
     function syncController(controller, emitInput = false) {
-        const documentPayload = editorToDocument(controller.editor, controller.entryKind);
+        const documentPayload = editorToDocument(controller);
         controller.documentPayload = writeFormState(controller.form, documentPayload);
         controller.entryKind = controller.documentPayload.entry_kind;
         renderEntryKindBadge(controller);
@@ -732,6 +928,7 @@
             dispatchFallbackEvent(controller, "input");
         }
         updateToolbarState(controller);
+        refreshNormativePresentation();
         return controller.documentPayload;
     }
 
@@ -949,8 +1146,12 @@
             if (controller) {
                 if (command === "bold") {
                     active = queryCommandState("bold");
+                } else if (command === "italic") {
+                    active = queryCommandState("italic");
                 } else if (command === "underline") {
                     active = queryCommandState("underline");
+                } else if (command === "strike") {
+                    active = queryCommandState("strikeThrough");
                 } else if (command === "bullet_list") {
                     active = queryCommandState("insertUnorderedList");
                 } else if (command === "ordered_list") {
@@ -958,9 +1159,12 @@
                 }
             }
             button.classList.toggle("is-active", active);
-            if (["bold", "underline", "bullet_list", "ordered_list"].includes(command)) {
+            if (["bold", "italic", "underline", "strike", "bullet_list", "ordered_list"].includes(command)) {
                 button.setAttribute("aria-pressed", String(active));
             }
+        });
+        document.querySelectorAll("[data-normative-trigger]").forEach((button) => {
+            button.disabled = !controller;
         });
         document.querySelectorAll("[data-reference-trigger]").forEach((button) => {
             button.disabled = !controller;
@@ -992,6 +1196,7 @@
                 "[data-editor-ribbon], "
                 + "[data-editor-floating-toolbar], "
                 + "[data-entry-kind-menu], "
+                + "[data-normative-menu], "
                 + "[data-reference-picker], "
                 + "[data-reference-preview]",
             ),
@@ -1395,19 +1600,40 @@
             const displayDate = dateParts.length === 3
                 ? `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}`
                 : eventDate;
+            const content = rowVisibleText(row) || "Пустая черновая запись";
+            const position = Number.parseInt(
+                row.dataset.entryPosition || "0",
+                10,
+            );
+            const version = Number.parseInt(row.dataset.entryVersion || "1", 10);
             items.push({
                 label: `Запись ${displayDate} ${eventTime}`,
                 reference: `draft:${draftId}`,
-                meta: rowVisibleText(row) || "Пустая черновая запись",
-                keywords: `${displayDate} ${eventTime} ${rowVisibleText(row)}`,
+                meta: content,
+                keywords: `${displayDate} ${eventTime} ${content}`,
                 event_date: eventDate,
                 event_time: eventTime,
                 event_at: eventAt,
-                position: Number.parseInt(row.dataset.entryPosition || "0", 10),
+                position,
                 terms: [`Запись ${displayDate} ${eventTime}`, eventTime],
+                preview: {
+                    summary: content,
+                    status: `${row.dataset.entryStatus || "Сохранена"} · версия ${version}`,
+                    facts: [
+                        {label: "Дата и время", value: `${displayDate} ${eventTime}`},
+                        {label: "Тип записи", value: row.dataset.entryKindLabel || "Обычная запись"},
+                        {label: "Автор", value: row.dataset.entryAuthor || "—"},
+                        {label: "Позиция", value: String(position || "—")},
+                    ],
+                },
             });
         });
         referenceCatalog.related_entry = items;
+        workspace?.dispatchEvent(
+            new CustomEvent("eod:reference-catalog-updated", {
+                detail: {catalog: referenceCatalog},
+            }),
+        );
         return items;
     }
 
@@ -1945,7 +2171,11 @@
     function executeEditorCommand(controller, command) {
         const commandMap = {
             bold: "bold",
+            italic: "italic",
             underline: "underline",
+            strike: "strikeThrough",
+            text_red: "foreColor",
+            text_blue: "foreColor",
             bullet_list: "insertUnorderedList",
             ordered_list: "insertOrderedList",
             undo: "undo",
@@ -1959,10 +2189,19 @@
         setActiveController(controller);
         restoreSelection(controller);
         controller.editor.focus({preventScroll: true});
-        if (["bold", "underline"].includes(command)) {
+        if (["bold", "italic", "underline", "strike"].includes(command)) {
             document.execCommand("styleWithCSS", false, false);
         }
-        document.execCommand(nativeCommand, false, null);
+        if (["text_red", "text_blue"].includes(command)) {
+            document.execCommand("styleWithCSS", false, true);
+            document.execCommand(
+                nativeCommand,
+                false,
+                command === "text_red" ? "#b42318" : "#175cd3",
+            );
+        } else {
+            document.execCommand(nativeCommand, false, null);
+        }
         captureSelection(controller);
         syncController(controller, true);
         scheduleSelectionUi();
@@ -2127,6 +2366,299 @@
         return true;
     }
 
+    function allNormativeAnnotations() {
+        const rows = [];
+        controllerList.forEach((controller) => {
+            (controller.annotations || []).forEach((annotation) => {
+                rows.push({
+                    ...annotation,
+                    entry_reference: `draft:${controller.row.dataset.draftId || ""}`,
+                    entry_time: controller.row.dataset.entryAt?.slice(11, 16) || "",
+                    controller,
+                });
+            });
+        });
+        return rows;
+    }
+
+    function closedNormativeIds() {
+        return new Set(
+            allNormativeAnnotations()
+                .filter((item) => ["zn_off", "pz_remove"].includes(item.kind))
+                .map((item) => item.source_annotation)
+                .filter(Boolean),
+        );
+    }
+
+    function normativeMarker(annotation, isClosed) {
+        const marker = document.createElement("span");
+        marker.className = `draft-normative-marker is-${annotation.kind}`;
+        marker.dataset.normativeMarkerId = annotation.id;
+        marker.title = annotation.label;
+        const top = document.createElement("span");
+        top.className = "draft-normative-marker-top";
+        top.textContent = annotation.kind.startsWith("pz_") ? "ПЗ" : "ЗН";
+        const bolt = document.createElement("span");
+        bolt.className = "draft-normative-marker-bolt";
+        bolt.textContent = "ϟ";
+        const bottom = document.createElement("span");
+        bottom.className = "draft-normative-marker-bottom";
+        bottom.textContent = annotation.pz_number ? `№${annotation.pz_number}` : "";
+        const cross = document.createElement("span");
+        cross.className = "draft-normative-marker-cross";
+        cross.setAttribute("aria-hidden", "true");
+        marker.append(top, bolt, bottom, cross);
+        marker.classList.toggle("is-cleared", Boolean(isClosed));
+        return marker;
+    }
+
+    function renderNormativeVisas(controller, closedIds) {
+        const visas = controller.row.querySelector("[data-draft-visas]");
+        if (!visas) {
+            return;
+        }
+        visas.replaceChildren();
+        (controller.annotations || [])
+            .filter((item) => item.kind !== "emergency")
+            .forEach((annotation) => {
+                visas.append(
+                    normativeMarker(annotation, closedIds.has(annotation.id)),
+                );
+            });
+        visas.classList.toggle("has-normative-markers", visas.childElementCount > 0);
+    }
+
+    function refreshNormativePresentation() {
+        const closedIds = closedNormativeIds();
+        controllerList.forEach((controller) => {
+            const emergency = (controller.annotations || []).some(
+                (item) => item.kind === "emergency",
+            );
+            controller.row.classList.toggle("is-emergency-event", emergency);
+            controller.editor.querySelectorAll("[data-normative-annotation-ids]")
+                .forEach((node) => {
+                    const ids = normalizeSegmentAnnotations(
+                        String(node.dataset.normativeAnnotationIds || "").split(/\s+/),
+                    );
+                    node.classList.toggle(
+                        "is-normative-cleared",
+                        ids.some((id) => closedIds.has(id)),
+                    );
+                });
+            renderNormativeVisas(controller, closedIds);
+        });
+    }
+
+    function activeNormativeSources(closeKind, pzNumber = "") {
+        const sourceKind = NORMATIVE_KINDS[closeKind]?.closes;
+        const closedIds = closedNormativeIds();
+        return allNormativeAnnotations().filter((item) => (
+            item.kind === sourceKind
+            && !closedIds.has(item.id)
+            && (!pzNumber || item.pz_number === pzNumber)
+        ));
+    }
+
+    function chooseNormativeSource(closeKind, pzNumber = "") {
+        const candidates = activeNormativeSources(closeKind, pzNumber);
+        if (!candidates.length) {
+            window.alert("Не найдена действующая исходная отметка для снятия или отключения.");
+            return null;
+        }
+        if (candidates.length === 1) {
+            return candidates[0];
+        }
+        const list = candidates.map((item, index) => (
+            `${index + 1}. ${item.entry_time || "—"} · ${item.label}`
+            + (item.pz_number ? ` · ПЗ №${item.pz_number}` : "")
+        )).join("\n");
+        const raw = window.prompt(
+            `Выберите исходную отметку (1–${candidates.length}):\n${list}`,
+            "1",
+        );
+        const index = Number.parseInt(raw || "", 10) - 1;
+        return candidates[index] || null;
+    }
+
+    function selectionLabel(range) {
+        return normalizeSingleLine(range?.toString() || "", 500);
+    }
+
+    function wrapRangeWithNormativeAnnotation(controller, range, annotation) {
+        if (!range || range.collapsed || !isRangeInsideEditor(range, controller.editor)) {
+            window.alert("Сначала выделите фрагмент записи, к которому относится отметка.");
+            return false;
+        }
+        const wrapper = document.createElement("span");
+        wrapper.className = "draft-normative-text";
+        wrapper.dataset.normativeAnnotationIds = annotation.id;
+        wrapper.classList.add(
+            ["zn_on", "pz_install"].includes(annotation.kind)
+                ? "is-normative-open"
+                : "is-normative-close",
+        );
+        try {
+            wrapper.append(range.extractContents());
+            range.insertNode(wrapper);
+        } catch (_error) {
+            window.alert("Не удалось применить отметку к этому выделению. Выделите текст внутри одной записи повторно.");
+            return false;
+        }
+        controller.annotations = [...(controller.annotations || []), annotation];
+        controller.annotationMap.set(annotation.id, annotation);
+        const selection = window.getSelection();
+        const caret = document.createRange();
+        caret.selectNodeContents(wrapper);
+        caret.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(caret);
+        controller.savedRange = caret.cloneRange();
+        syncController(controller, true);
+        return true;
+    }
+
+    function toggleEmergencyAnnotation(controller) {
+        const existing = (controller.annotations || []).find(
+            (item) => item.kind === "emergency",
+        );
+        if (existing) {
+            controller.annotations = controller.annotations.filter(
+                (item) => item.id !== existing.id,
+            );
+            controller.annotationMap.delete(existing.id);
+        } else {
+            const annotation = {
+                id: newAnnotationId(),
+                kind: "emergency",
+                label: "Аварийное событие",
+            };
+            controller.annotations = [...(controller.annotations || []), annotation];
+            controller.annotationMap.set(annotation.id, annotation);
+        }
+        syncController(controller, true);
+    }
+
+    function removeNormativeFromSelection(controller, range) {
+        const nodes = new Set();
+        controller.editor.querySelectorAll("[data-normative-annotation-ids]")
+            .forEach((node) => {
+                try {
+                    if (range.intersectsNode(node)) {
+                        nodes.add(node);
+                    }
+                } catch (_error) {
+                    // Detached node is ignored.
+                }
+            });
+        if (!nodes.size) {
+            const ancestor = range.startContainer.nodeType === Node.ELEMENT_NODE
+                ? range.startContainer
+                : range.startContainer.parentElement;
+            const wrapper = ancestor?.closest?.("[data-normative-annotation-ids]");
+            if (wrapper && controller.editor.contains(wrapper)) {
+                nodes.add(wrapper);
+            }
+        }
+        const removed = new Set();
+        nodes.forEach((node) => {
+            normalizeSegmentAnnotations(
+                String(node.dataset.normativeAnnotationIds || "").split(/\s+/),
+            ).forEach((id) => removed.add(id));
+            node.replaceWith(...node.childNodes);
+        });
+        if (!removed.size) {
+            window.alert("В выделенном фрагменте нет нормативной отметки.");
+            return;
+        }
+        controller.annotations = (controller.annotations || []).filter(
+            (item) => !removed.has(item.id),
+        );
+        removed.forEach((id) => controller.annotationMap.delete(id));
+        syncController(controller, true);
+    }
+
+    function applyNormativeAction(kind) {
+        const state = normativeState;
+        hideNormativeMenu();
+        if (
+            !state?.controller
+            || (kind !== "remove" && !NORMATIVE_KINDS[kind])
+        ) {
+            return;
+        }
+        const controller = state.controller;
+        const range = state.range?.cloneRange() || controller.savedRange?.cloneRange();
+        if (kind === "emergency") {
+            toggleEmergencyAnnotation(controller);
+            return;
+        }
+        if (kind === "remove") {
+            if (range) {
+                removeNormativeFromSelection(controller, range);
+            }
+            return;
+        }
+        const label = selectionLabel(range);
+        if (!label) {
+            window.alert("Сначала выделите текст включения, установки, отключения или снятия.");
+            return;
+        }
+        let pzNumber = "";
+        if (["pz_install", "pz_remove"].includes(kind)) {
+            const raw = window.prompt("Введите номер ПЗ без знака №:", "");
+            pzNumber = normalizeSingleLine(raw, 32).replace(/^№\s*/u, "");
+            if (!pzNumber) {
+                return;
+            }
+        }
+        let source = null;
+        if (["zn_off", "pz_remove"].includes(kind)) {
+            source = chooseNormativeSource(kind, pzNumber);
+            if (!source) {
+                return;
+            }
+        }
+        const annotation = {
+            id: newAnnotationId(),
+            kind,
+            label,
+            ...(pzNumber ? {pz_number: pzNumber} : {}),
+            ...(source ? {
+                source_entry: source.entry_reference,
+                source_annotation: source.id,
+            } : {}),
+        };
+        wrapRangeWithNormativeAnnotation(controller, range, annotation);
+    }
+
+    function hideNormativeMenu() {
+        if (!normativeMenu) {
+            normativeState = null;
+            return;
+        }
+        normativeMenu.hidden = true;
+        normativeMenu.style.removeProperty("left");
+        normativeMenu.style.removeProperty("top");
+        normativeState?.trigger?.setAttribute("aria-expanded", "false");
+        normativeState = null;
+    }
+
+    function openNormativeMenu(trigger) {
+        if (!normativeMenu || !activeController || !trigger) {
+            return;
+        }
+        captureSelection(activeController);
+        const range = activeController.savedRange?.cloneRange() || null;
+        normativeState = {controller: activeController, range, trigger};
+        if (normativeMenuStatus) {
+            normativeMenuStatus.textContent = range && !range.collapsed
+                ? `Выделено: ${selectionLabel(range)}`
+                : "Для ПЗ/ЗН сначала выделите относящийся к операции текст";
+        }
+        trigger.setAttribute("aria-expanded", "true");
+        positionPopover(normativeMenu, trigger.getBoundingClientRect(), 390);
+    }
+
     function initializeRow(row) {
         const form = row.querySelector("[data-draft-form]");
         if (!form) {
@@ -2169,9 +2701,12 @@
             deactivated: false,
             entryKind: "normal",
             documentPayload: emptyDocument(),
+            annotations: [],
+            annotationMap: new Map(),
             autoReferenceApplying: false,
         };
         controllers.set(form, controller);
+        controllerList.push(controller);
         const payload = payloadField(form);
         if (payload) {
             payload.hidden = true;
@@ -2268,6 +2803,7 @@
                 event.key === "Escape"
                 && (referencePicker?.hidden ?? true)
                 && (entryKindMenu?.hidden ?? true)
+                && (normativeMenu?.hidden ?? true)
             ) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -2291,6 +2827,7 @@
             }
             if (modifier && (event.code === "KeyI" || key === "i")) {
                 event.preventDefault();
+                executeEditorCommand(controller, "italic");
                 return;
             }
             if (modifier && event.shiftKey && event.code === "Digit7") {
@@ -2359,6 +2896,26 @@
                 if (activeController) {
                     setEntryKind(activeController, button.dataset.entryKindOption);
                 }
+            });
+        });
+        scope.querySelectorAll("[data-normative-trigger]").forEach((button) => {
+            if (button.dataset.normativeBound === "true") {
+                return;
+            }
+            button.dataset.normativeBound = "true";
+            button.addEventListener("mousedown", (event) => {
+                event.preventDefault();
+                captureSelection(activeController);
+            });
+            button.addEventListener("click", () => openNormativeMenu(button));
+        });
+        scope.querySelectorAll("[data-normative-action]").forEach((button) => {
+            if (button.dataset.normativeActionBound === "true") {
+                return;
+            }
+            button.dataset.normativeActionBound = "true";
+            button.addEventListener("click", () => {
+                applyNormativeAction(button.dataset.normativeAction);
             });
         });
         scope.querySelectorAll("[data-reference-trigger]").forEach((button) => {
@@ -2445,6 +3002,9 @@
     referencePicker?.querySelectorAll("[data-reference-close]").forEach((button) => {
         button.addEventListener("click", () => hideReferencePicker());
     });
+    normativeMenu?.querySelectorAll("[data-normative-close]").forEach((button) => {
+        button.addEventListener("click", () => hideNormativeMenu());
+    });
 
     document.addEventListener("selectionchange", scheduleSelectionUi);
     document.addEventListener("mouseup", scheduleSelectionUi);
@@ -2454,6 +3014,7 @@
             hideFloatingToolbar();
             const menuClosed = hideEntryKindMenu();
             hideReferencePicker();
+            hideNormativeMenu();
             if (menuClosed) {
                 restoreEntryKindViewport(activeController);
             }
@@ -2464,6 +3025,7 @@
             floatingToolbar?.contains(event.target)
             || entryKindMenu?.contains(event.target)
             || referencePicker?.contains(event.target)
+            || normativeMenu?.contains(event.target)
             || ribbon?.contains(event.target)
             || event.target.closest?.("[data-rich-editor]")
         ) {
@@ -2472,6 +3034,7 @@
         hideFloatingToolbar();
         const menuClosed = hideEntryKindMenu();
         hideReferencePicker();
+        hideNormativeMenu();
         if (menuClosed) {
             restoreEntryKindViewport(activeController);
         }
@@ -2501,6 +3064,7 @@
         }
         const menuClosed = hideEntryKindMenu();
         hideReferencePicker();
+        hideNormativeMenu();
         if (menuClosed) {
             restoreEntryKindViewport(activeController);
         }
@@ -2509,12 +3073,15 @@
         hideFloatingToolbar();
         const menuClosed = hideEntryKindMenu();
         hideReferencePicker();
+        hideNormativeMenu();
         if (menuClosed) {
             restoreEntryKindViewport(activeController);
         }
     });
 
     bindToolbar(document);
+    refreshNormativePresentation();
+    refreshRelatedEntryCatalog();
     updateAutoReferenceControls();
     updateToolbarState(null);
     document.documentElement.dataset.eodDraftEditorRevision = RUNTIME_REVISION;

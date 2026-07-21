@@ -1226,6 +1226,8 @@
             );
             if (row) {
                 row.dataset.entryAt = savedEntryAt;
+                row.dataset.entryVersion = String(payload.version);
+                row.dataset.entryStatus = "Сохранена";
                 if (savedEntryAt !== previousEntryAt) {
                     form.dataset.chronologyPending = "true";
                     markPaginationPending();
@@ -1400,6 +1402,8 @@
             if (versionLabel) {
                 versionLabel.textContent = String(payload.version);
             }
+            state.row.dataset.entryVersion = String(payload.version);
+            state.row.dataset.entryStatus = "Сохранена";
             clearInlineRemovalState(state);
             restoreInlineRemovalPresentation(state);
             state.row.classList.add("is-restoring");

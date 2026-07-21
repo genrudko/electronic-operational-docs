@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const RUNTIME_REVISION = "01133";
+    const RUNTIME_REVISION = "01134";
     const workspace = document.querySelector("[data-draft-workspace]");
     if (!workspace) {
         return;
@@ -9,6 +9,7 @@
 
     const referencePicker = document.querySelector("[data-reference-picker]");
     const entryKindMenu = document.querySelector("[data-entry-kind-menu]");
+    const normativeMenu = document.querySelector("[data-normative-menu]");
     const catalogNode = document.getElementById(
         "draft-semantic-reference-catalog",
     );
@@ -31,16 +32,25 @@
     }
 
     const catalogByReference = new Map();
-    Object.values(catalog).forEach((rows) => {
-        if (!Array.isArray(rows)) {
-            return;
-        }
-        rows.forEach((row) => {
-            if (row && typeof row.reference === "string") {
-                catalogByReference.set(row.reference, row);
+
+    function rebuildCatalogIndex(nextCatalog = catalog) {
+        catalog = nextCatalog && typeof nextCatalog === "object"
+            ? nextCatalog
+            : {};
+        catalogByReference.clear();
+        Object.values(catalog).forEach((rows) => {
+            if (!Array.isArray(rows)) {
+                return;
             }
+            rows.forEach((row) => {
+                if (row && typeof row.reference === "string") {
+                    catalogByReference.set(row.reference, row);
+                }
+            });
         });
-    });
+    }
+
+    rebuildCatalogIndex();
 
     let activeToken = null;
     let lastEditorContext = null;
@@ -79,8 +89,19 @@
 
     const previewMeta = document.createElement("p");
     previewMeta.className = "draft-reference-preview-meta";
+    const previewSummary = document.createElement("p");
+    previewSummary.className = "draft-reference-preview-summary";
+    const previewFacts = document.createElement("dl");
+    previewFacts.className = "draft-reference-preview-facts";
+    const previewStatus = document.createElement("span");
+    previewStatus.className = "draft-reference-preview-status";
+    const previewTechnical = document.createElement("details");
+    previewTechnical.className = "draft-reference-preview-technical";
+    const previewTechnicalSummary = document.createElement("summary");
+    previewTechnicalSummary.textContent = "Технические сведения";
     const previewIdentity = document.createElement("code");
     previewIdentity.className = "draft-reference-preview-identity";
+    previewTechnical.append(previewTechnicalSummary, previewIdentity);
     const previewActions = document.createElement("footer");
     previewActions.className = "draft-reference-preview-actions";
 
@@ -93,7 +114,10 @@
     preview.append(
         previewHeader,
         previewMeta,
-        previewIdentity,
+        previewSummary,
+        previewFacts,
+        previewStatus,
+        previewTechnical,
         previewActions,
     );
     preview.dataset.runtimeRevision = RUNTIME_REVISION;
@@ -174,6 +198,7 @@
         return Boolean(
             (referencePicker && !referencePicker.hidden)
             || (entryKindMenu && !entryKindMenu.hidden)
+            || (normativeMenu && !normativeMenu.hidden)
             || !preview.hidden,
         );
     }
@@ -273,12 +298,42 @@
         }
     }
 
+    function normalizedPreview(item) {
+        const source = item?.preview && typeof item.preview === "object"
+            ? item.preview
+            : {};
+        return {
+            summary: String(source.summary || item?.meta || "").trim(),
+            status: String(source.status || "").trim(),
+            facts: Array.isArray(source.facts)
+                ? source.facts.filter((fact) => (
+                    fact
+                    && typeof fact === "object"
+                    && String(fact.label || "").trim()
+                )).slice(0, 8)
+                : [],
+        };
+    }
+
+    function renderPreviewFacts(facts) {
+        previewFacts.replaceChildren();
+        facts.forEach((fact) => {
+            const term = document.createElement("dt");
+            term.textContent = String(fact.label || "");
+            const value = document.createElement("dd");
+            value.textContent = String(fact.value || "—");
+            previewFacts.append(term, value);
+        });
+        previewFacts.hidden = previewFacts.childElementCount === 0;
+    }
+
     function openReferencePreview(token) {
         const identity = tokenReference(token);
         const kind = tokenKind(token, identity);
         const item = catalogByReference.get(identity) || {};
         const label = item.label || tokenLabel(token);
         const meta = item.meta || "Связанный объект оперативной записи";
+        const details = normalizedPreview(item);
         const target = referenceTarget(kind, identity);
 
         activeToken = token;
@@ -286,8 +341,15 @@
         previewKind.textContent = KIND_LABELS[kind] || "Связанный объект";
         previewLabel.textContent = label;
         previewMeta.textContent = meta;
+        previewMeta.hidden = !meta;
+        previewSummary.textContent = details.summary;
+        previewSummary.hidden = !details.summary || details.summary === meta;
+        renderPreviewFacts(details.facts);
+        previewStatus.textContent = details.status;
+        previewStatus.hidden = !details.status;
         previewIdentity.textContent = identity;
-        previewIdentity.hidden = !identity;
+        previewTechnical.hidden = !identity;
+        previewTechnical.open = false;
 
         if (target?.mode === "draft") {
             openButton.textContent = "Показать запись";
@@ -315,6 +377,7 @@
             && target.closest(
                 "[data-reference-picker], "
                 + "[data-entry-kind-menu], "
+                + "[data-normative-menu], "
                 + "[data-reference-preview]",
             )
         ) {
@@ -402,6 +465,7 @@
             "[data-entry-kind-trigger], "
             + "[data-reference-trigger], "
             + "[data-entry-kind-menu], "
+            + "[data-normative-menu], "
             + "[data-reference-picker], "
             + "[data-reference-preview]",
         );
@@ -486,8 +550,15 @@
         }
     });
 
+    workspace.addEventListener("eod:reference-catalog-updated", (event) => {
+        rebuildCatalogIndex(event.detail?.catalog);
+        if (activeToken && !preview.hidden) {
+            openReferencePreview(activeToken);
+        }
+    });
+
     const overlayObserver = new MutationObserver(synchronizeOverlayState);
-    [referencePicker, entryKindMenu, preview].forEach((node) => {
+    [referencePicker, entryKindMenu, normativeMenu, preview].forEach((node) => {
         if (node) {
             overlayObserver.observe(node, {
                 attributes: true,

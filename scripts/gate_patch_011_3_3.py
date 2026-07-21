@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REVISION = "01133"
+REVISION = "01134"
 
 
 def read(relative: str) -> str:
@@ -104,16 +104,20 @@ def main() -> None:
         "Patch 011.3.3 asset revision or visual contract is incomplete",
     )
     require(
-        not list(
-            (ROOT / "src/apps/operational_log/migrations").glob("0006*.py")
-        )
+        {
+            path.name
+            for path in (
+                ROOT / "src/apps/operational_log/migrations"
+            ).glob("0006*.py")
+        }
+        == {"0006_alter_operationaldraftentry_editor_schema_version.py"}
         and (
             ROOT
             / "src/apps/organizations/migrations/"
             "0006_journal_simplified_time_input.py"
         ).is_file(),
-        "SCOPED_PREFERENCE_MIGRATION",
-        "migration must be limited to the interface preference model",
+        "SCOPED_PREFERENCE_AND_EDITOR_MIGRATIONS",
+        "unexpected migration scope",
     )
     print("PATCH_011_3_3_CONTEXT_AWARE_ENTITY_RESOLVER_GATE_PASSED")
 
