@@ -531,6 +531,7 @@
                 "[data-editor-ribbon], "
                 + "[data-editor-floating-toolbar], "
                 + "[data-entry-kind-menu], "
+                + "[data-normative-menu], "
                 + "[data-reference-picker], "
                 + "[data-reference-preview]",
             ),
@@ -852,7 +853,46 @@
         refreshInlineDateMarkers();
     }
 
-    function revealChronologicalRow(row) {
+    function captureViewportAnchor(row, supplied = null) {
+        return {
+            x: Number.isFinite(supplied?.x) ? supplied.x : window.scrollX,
+            y: Number.isFinite(supplied?.y) ? supplied.y : window.scrollY,
+            row,
+            rowTop: Number.isFinite(supplied?.rowTop)
+                ? supplied.rowTop
+                : row?.getBoundingClientRect().top ?? null,
+        };
+    }
+
+    function restoreViewportAnchor(snapshot) {
+        if (!snapshot) {
+            return;
+        }
+        const restore = () => {
+            if (
+                snapshot.row?.isConnected
+                && Number.isFinite(snapshot.rowTop)
+            ) {
+                const currentTop = snapshot.row.getBoundingClientRect().top;
+                const delta = currentTop - snapshot.rowTop;
+                if (Math.abs(delta) > 0.5) {
+                    window.scrollBy(0, delta);
+                    return;
+                }
+            }
+            window.scrollTo(snapshot.x, snapshot.y);
+        };
+        window.requestAnimationFrame(() => {
+            restore();
+            window.requestAnimationFrame(restore);
+        });
+    }
+
+    function revealChronologicalRow(
+        row,
+        {scroll = true, viewport = null} = {},
+    ) {
+        const snapshot = viewport || captureViewportAnchor(row);
         sortRowsChronologically();
         paginateByRecordCount(true);
         const pageIndex = pages.findIndex((page) => (
@@ -870,22 +910,29 @@
         window.setTimeout(() => {
             row.classList.remove("is-chronology-moved");
         }, 1600);
-        window.requestAnimationFrame(() => {
-            row.scrollIntoView({
-                block: "center",
-                behavior: "smooth",
+        if (scroll) {
+            window.requestAnimationFrame(() => {
+                row.scrollIntoView({
+                    block: "center",
+                    behavior: "smooth",
+                });
             });
-        });
+        } else {
+            restoreViewportAnchor(snapshot);
+        }
     }
 
-    function applyPendingChronology(form) {
+    function applyPendingChronology(
+        form,
+        {scroll = true, viewport = null} = {},
+    ) {
         if (form.dataset.chronologyPending !== "true") {
             return false;
         }
         delete form.dataset.chronologyPending;
         const row = form.closest("[data-draft-card]");
         if (row) {
-            revealChronologicalRow(row);
+            revealChronologicalRow(row, {scroll, viewport});
         }
         return true;
     }
@@ -1557,7 +1604,11 @@
         }
     }
 
-    async function finishDraftEditing(form, shortcut) {
+    async function finishDraftEditing(
+        form,
+        shortcut,
+        suppliedViewport = null,
+    ) {
         if (!form || form.dataset.finishing === "true") {
             return;
         }
@@ -1568,32 +1619,32 @@
             timers.delete(form);
         }
         const row = form.closest("[data-draft-card]");
-        const x = window.scrollX;
-        const y = window.scrollY;
+        const viewport = captureViewportAnchor(row, suppliedViewport);
         const saved = await save(form);
         if (!saved) {
             delete form.dataset.finishing;
             return;
         }
-        const active = document.activeElement;
-        if (form.contains(active)) {
-            active.blur();
-        }
+
         window.EODDraftEditor?.deactivate(form);
         form.classList.remove("has-focus");
         if (activeDraftForm === form) {
             activeDraftForm = null;
         }
-        if (!applyPendingChronology(form)) {
+
+        const chronologyApplied = applyPendingChronology(form, {
+            scroll: false,
+            viewport,
+        });
+        if (!chronologyApplied) {
             flushDeferredPagination();
+            restoreViewportAnchor(viewport);
         }
+
         row?.classList.add("is-edit-complete");
         window.setTimeout(() => {
             row?.classList.remove("is-edit-complete");
         }, 850);
-        window.requestAnimationFrame(() => {
-            window.scrollTo(x, y);
-        });
         delete form.dataset.finishing;
         workspace.dispatchEvent(
             new CustomEvent("eod:draft-edit-finished", {
@@ -2670,6 +2721,7 @@
         void finishDraftEditing(
             form,
             event.detail?.shortcut || "external",
+            event.detail?.viewport || null,
         );
     });
 

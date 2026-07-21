@@ -448,8 +448,17 @@
         <button type="button" data-normative-close aria-label="Закрыть">×</button>
     </header>
     <div class="draft-normative-actions" data-normative-actions>
-        <button type="button" role="menuitem" data-normative-action="emergency">
-            <b class="is-emergency">!</b><span><strong>Аварийное событие</strong><small>Красная обводка времени</small></span>
+        <button
+            type="button"
+            role="menuitem"
+            data-normative-action="emergency"
+            aria-pressed="false"
+        >
+            <b class="is-emergency">!</b>
+            <span>
+                <strong data-emergency-action-title>Аварийное событие</strong>
+                <small data-emergency-action-hint>Красная обводка времени</small>
+            </span>
         </button>
         <button type="button" role="menuitem" data-normative-action="zn_on">
             <b class="is-red">ϟ</b><span><strong>Включён ЗН</strong><small>Красная молния и линия</small></span>
@@ -521,6 +530,12 @@
     </section>
 
     <footer data-normative-main-footer>
+        <button
+            type="button"
+            class="button danger"
+            data-normative-remove-emergency
+            hidden
+        >Снять аварийную отметку с записи</button>
         <button type="button" class="button danger" data-normative-action="remove">Снять отметку с текста</button>
         <button type="button" class="button secondary" data-normative-close>Закрыть</button>
     </footer>
@@ -1403,15 +1418,15 @@
 
 
 <script
-    src="{% static 'operational_log/draft_editor.js' %}?v=011342"
+    src="{% static 'operational_log/draft_editor.js' %}?v=011343"
     defer
 ></script>
 <script
-    src="{% static 'operational_log/draft_workspace.js' %}?v=011342"
+    src="{% static 'operational_log/draft_workspace.js' %}?v=011343"
     defer
 ></script>
 <script
-    src="{% static 'operational_log/draft_reference_navigation.js' %}?v=011342"
+    src="{% static 'operational_log/draft_reference_navigation.js' %}?v=011343"
     defer
 ></script>
 {% endif %}

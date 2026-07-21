@@ -2,7 +2,7 @@
     "use strict";
 
     const SCHEMA_VERSION = "operational-draft-editor.v4";
-    const RUNTIME_REVISION = "011342";
+    const RUNTIME_REVISION = "011343";
     const LEGACY_SCHEMA_VERSIONS = new Set([
         "operational-draft-editor.v1",
         "operational-draft-editor.v2",
@@ -57,6 +57,18 @@
     );
     const normativeSourceError = normativeMenu?.querySelector(
         "[data-normative-source-error]",
+    );
+    const emergencyAction = normativeMenu?.querySelector(
+        '[data-normative-action="emergency"]',
+    );
+    const emergencyActionTitle = emergencyAction?.querySelector(
+        "[data-emergency-action-title]",
+    );
+    const emergencyActionHint = emergencyAction?.querySelector(
+        "[data-emergency-action-hint]",
+    );
+    const emergencyRemoveButton = normativeMenu?.querySelector(
+        "[data-normative-remove-emergency]",
     );
     const referenceSearch = referencePicker?.querySelector("[data-reference-search]");
     const referenceSearchLabel = referenceSearch?.closest(".draft-reference-search-label");
@@ -1052,20 +1064,28 @@
     }
 
     function finishEditorInteraction(controller, shortcut) {
-        if (!controller) {
+        if (!controller || controller.form.dataset.finishing === "true") {
             return;
         }
         applyAutomaticReferences(controller);
+        formatSimplifiedTimeAfterCommit(controller);
         syncController(controller, false);
         hideFloatingToolbar();
         hideEntryKindMenu();
         hideReferencePicker();
+        hideNormativeMenu();
+        const row = controller.row;
         controller.form.dispatchEvent(
             new CustomEvent("eod:finish-draft-edit", {
                 bubbles: true,
                 detail: {
                     shortcut,
                     save: true,
+                    viewport: {
+                        x: window.scrollX,
+                        y: window.scrollY,
+                        rowTop: row?.getBoundingClientRect().top ?? null,
+                    },
                 },
             }),
         );
@@ -2635,9 +2655,43 @@
         });
     }
 
+    function setNormativeMenuMessage(message, tone = "") {
+        if (!normativeMenuStatus) {
+            return;
+        }
+        normativeMenuStatus.textContent = message;
+        normativeMenuStatus.classList.toggle("is-error", tone === "error");
+        normativeMenuStatus.classList.toggle("is-success", tone === "success");
+    }
+
+    function hasEmergencyAnnotation(controller) {
+        return Boolean((controller?.annotations || []).some(
+            (item) => item.kind === "emergency",
+        ));
+    }
+
+    function updateEmergencyActionState(controller) {
+        const active = hasEmergencyAnnotation(controller);
+        emergencyAction?.classList.toggle("is-active", active);
+        emergencyAction?.setAttribute("aria-pressed", String(active));
+        if (emergencyActionTitle) {
+            emergencyActionTitle.textContent = active
+                ? "Снять аварийную отметку"
+                : "Аварийное событие";
+        }
+        if (emergencyActionHint) {
+            emergencyActionHint.textContent = active
+                ? "Убрать красную обводку времени"
+                : "Красная обводка времени";
+        }
+        if (emergencyRemoveButton) {
+            emergencyRemoveButton.hidden = !active;
+        }
+    }
+
     function wrapRangeWithNormativeAnnotation(controller, range, annotation) {
         if (!range || range.collapsed || !isRangeInsideEditor(range, controller.editor)) {
-            window.alert("Сначала выделите фрагмент записи, к которому относится отметка.");
+            setNormativeMenuMessage("Сначала выделите фрагмент записи, к которому относится отметка.", "error");
             return false;
         }
         const wrapper = document.createElement("span");
@@ -2652,7 +2706,7 @@
             wrapper.append(range.extractContents());
             range.insertNode(wrapper);
         } catch (_error) {
-            window.alert("Не удалось применить отметку к этому выделению. Выделите текст внутри одной записи повторно.");
+            setNormativeMenuMessage("Не удалось применить отметку. Выделите текст внутри одной записи повторно.", "error");
             return false;
         }
         controller.annotations = [...(controller.annotations || []), annotation];
@@ -2668,7 +2722,7 @@
         return true;
     }
 
-    function toggleEmergencyAnnotation(controller) {
+    function toggleEmergencyAnnotation(controller, forceRemove = false) {
         const existing = (controller.annotations || []).find(
             (item) => item.kind === "emergency",
         );
@@ -2677,7 +2731,7 @@
                 (item) => item.id !== existing.id,
             );
             controller.annotationMap.delete(existing.id);
-        } else {
+        } else if (!forceRemove) {
             const annotation = {
                 id: newAnnotationId(),
                 kind: "emergency",
@@ -2687,6 +2741,9 @@
             controller.annotationMap.set(annotation.id, annotation);
         }
         syncController(controller, true);
+        refreshNormativePresentation();
+        updateEmergencyActionState(controller);
+        return !existing && !forceRemove;
     }
 
     function removeNormativeFromSelection(controller, range) {
@@ -2718,14 +2775,20 @@
             node.replaceWith(...node.childNodes);
         });
         if (!removed.size) {
-            window.alert("В выделенном фрагменте нет нормативной отметки.");
-            return;
+            setNormativeMenuMessage(
+                "В выделенном фрагменте нет текстовой отметки. Аварийная отметка снимается отдельной командой.",
+                "error",
+            );
+            return false;
         }
         controller.annotations = (controller.annotations || []).filter(
             (item) => !removed.has(item.id),
         );
         removed.forEach((id) => controller.annotationMap.delete(id));
         syncController(controller, true);
+        refreshNormativePresentation();
+        setNormativeMenuMessage("Текстовая отметка снята.", "success");
+        return true;
     }
 
     function commitNormativeAction(kind, pzNumber = "", source = null) {
@@ -2738,7 +2801,7 @@
             || controller.savedRange?.cloneRange();
         const label = selectionLabel(range);
         if (!label) {
-            window.alert("Сначала выделите текст включения, установки, отключения или снятия.");
+            setNormativeMenuMessage("Сначала выделите текст включения, установки, отключения или снятия.", "error");
             return;
         }
         const annotation = {
@@ -2768,7 +2831,7 @@
                         ? `Действующая установка ПЗ №${pzNumber} не найдена.`
                         : "Действующая исходная отметка не найдена.";
                 } else {
-                    window.alert("Не найдена действующая исходная отметка для снятия или отключения.");
+                    setNormativeMenuMessage("Не найдена действующая исходная отметка для снятия или отключения.", "error");
                 }
                 return;
             }
@@ -2794,19 +2857,24 @@
         const range = state.range?.cloneRange()
             || controller.savedRange?.cloneRange();
         if (kind === "emergency") {
-            toggleEmergencyAnnotation(controller);
-            hideNormativeMenu();
+            const enabled = toggleEmergencyAnnotation(controller);
+            setNormativeMenuMessage(
+                enabled
+                    ? "Аварийная отметка установлена."
+                    : "Аварийная отметка снята.",
+                "success",
+            );
+            window.setTimeout(() => hideNormativeMenu(), 180);
             return;
         }
         if (kind === "remove") {
-            if (range) {
-                removeNormativeFromSelection(controller, range);
+            if (range && removeNormativeFromSelection(controller, range)) {
+                window.setTimeout(() => hideNormativeMenu(), 180);
             }
-            hideNormativeMenu();
             return;
         }
         if (!selectionLabel(range)) {
-            window.alert("Сначала выделите текст включения, установки, отключения или снятия.");
+            setNormativeMenuMessage("Сначала выделите текст включения, установки, отключения или снятия.", "error");
             return;
         }
         if (["pz_install", "pz_remove"].includes(kind)) {
@@ -2860,11 +2928,12 @@
             pendingPzNumber: "",
         };
         setNormativeStep("main");
-        if (normativeMenuStatus) {
-            normativeMenuStatus.textContent = range && !range.collapsed
+        updateEmergencyActionState(activeController);
+        setNormativeMenuMessage(
+            range && !range.collapsed
                 ? `Выделено: ${selectionLabel(range)}`
-                : "Для ПЗ/ЗН сначала выделите относящийся к операции текст";
-        }
+                : "Для ПЗ/ЗН сначала выделите относящийся к операции текст",
+        );
         trigger.setAttribute("aria-expanded", "true");
         positionPopover(normativeMenu, trigger.getBoundingClientRect(), 430);
     }
@@ -3246,6 +3315,17 @@
             }
         });
 
+    emergencyRemoveButton?.addEventListener("click", () => {
+        const controller = normativeState?.controller || activeController;
+        if (!controller || !hasEmergencyAnnotation(controller)) {
+            setNormativeMenuMessage("У этой записи нет аварийной отметки.", "error");
+            return;
+        }
+        toggleEmergencyAnnotation(controller, true);
+        setNormativeMenuMessage("Аварийная отметка снята.", "success");
+        window.setTimeout(() => hideNormativeMenu(), 180);
+    });
+
     document.addEventListener("selectionchange", scheduleSelectionUi);
     document.addEventListener("mouseup", scheduleSelectionUi);
     document.addEventListener("keyup", scheduleSelectionUi);
@@ -3267,7 +3347,7 @@
             || referencePicker?.contains(event.target)
             || normativeMenu?.contains(event.target)
             || ribbon?.contains(event.target)
-            || event.target.closest?.("[data-rich-editor]")
+            || activeController?.form.contains(event.target)
         ) {
             return;
         }
@@ -3279,23 +3359,13 @@
             restoreEntryKindViewport(activeController);
         }
         const previousController = activeController;
-        window.setTimeout(() => {
-            if (
-                previousController
-                && previousController === activeController
-                && !previousController.form.contains(document.activeElement)
-                && !isEditorOverlayTarget(document.activeElement)
-            ) {
-                previousController.deactivated = true;
-                previousController.savedRange = null;
-                previousController.form.dispatchEvent(
-                    new CustomEvent("eod:editor-deactivate", {
-                        bubbles: true,
-                    }),
-                );
-                setActiveController(null);
-            }
-        }, 0);
+        if (
+            previousController
+            && !previousController.form.contains(event.target)
+            && !isEditorOverlayTarget(event.target)
+        ) {
+            finishEditorInteraction(previousController, "outside-click");
+        }
     });
     window.addEventListener("scroll", () => {
         hideFloatingToolbar();
