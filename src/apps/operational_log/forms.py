@@ -25,6 +25,7 @@ class JournalDisplayPreferenceForm(forms.ModelForm):
             "journal_density",
             "journal_show_authors",
             "journal_show_links",
+            "journal_simplified_time_input",
         )
         widgets = {
             "journal_heading_mode": forms.RadioSelect(),
@@ -38,6 +39,7 @@ class JournalDisplayPreferenceForm(forms.ModelForm):
             "journal_density": forms.Select(),
             "journal_show_authors": forms.CheckboxInput(),
             "journal_show_links": forms.CheckboxInput(),
+            "journal_simplified_time_input": forms.CheckboxInput(),
         }
         labels = {
             "journal_heading_mode": "Шапка журнала",
@@ -53,6 +55,7 @@ class JournalDisplayPreferenceForm(forms.ModelForm):
             "journal_show_links": (
                 "Показывать связи с оборудованием и документами"
             ),
+            "journal_simplified_time_input": "Упрощённый ввод времени",
         }
         help_texts = {
             "journal_heading_mode": (
@@ -63,6 +66,9 @@ class JournalDisplayPreferenceForm(forms.ModelForm):
             ),
             "journal_show_links": (
                 "Настройка влияет только на рабочий экран."
+            ),
+            "journal_simplified_time_input": (
+                "Позволяет вводить 1120 вместо 11:20 в поле времени и тексте записи."
             ),
         }
 

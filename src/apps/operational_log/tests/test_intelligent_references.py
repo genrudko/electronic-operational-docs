@@ -52,6 +52,38 @@ class IntelligentReferenceCatalogTests(OperationalLogTestCase):
         self.assertIn("Белов", item["terms"])
         self.assertIn(employee.full_name, item["terms"])
 
+
+    def test_person_catalog_contains_position_surname_composites(self) -> None:
+        response = self.workspace_response()
+        self.assertEqual(response.status_code, 200)
+        catalog = response.context["semantic_reference_catalog"]
+        employee = Employee.objects.filter(
+            organization=self.organization,
+            position__name__contains="лектромонт",
+        ).first()
+        self.assertIsNotNone(employee)
+        item = next(
+            row
+            for row in catalog["person"]
+            if row["reference"] == f"employee:{employee.pk}"
+        )
+        self.assertTrue(item["position_terms"])
+        for position_term in item["position_terms"]:
+            self.assertIn(
+                f"{position_term} {employee.last_name}",
+                item["terms"],
+            )
+
+    def test_related_entry_catalog_exposes_time_identity(self) -> None:
+        response = self.workspace_response()
+        self.assertEqual(response.status_code, 200)
+        catalog = response.context["semantic_reference_catalog"]
+        self.assertTrue(catalog["related_entry"])
+        item = catalog["related_entry"][0]
+        self.assertRegex(item["event_date"], r"^\d{4}-\d{2}-\d{2}$")
+        self.assertRegex(item["event_time"], r"^\d{2}:\d{2}$")
+        self.assertIn(item["event_time"], item["terms"])
+
     def test_workspace_exposes_inline_undo_and_auto_reference_mode(self) -> None:
         response = self.workspace_response()
         for marker in (
@@ -60,6 +92,9 @@ class IntelligentReferenceCatalogTests(OperationalLogTestCase):
             "data-auto-reference-toggle",
             "data-auto-reference-scan",
             "Связь · авто включено",
-            "?v=01132",
+            "data-simplified-time-toggle",
+            "data-simplified-time-label",
+            "data-initial-simplified-time",
+            "?v=01133",
         ):
             self.assertContains(response, marker)

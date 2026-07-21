@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -157,11 +158,52 @@ def _equipment_reference_label(
     return asset.code or asset.technical_name
 
 
+def _position_reference_terms(name: str) -> list[str]:
+    normalized = " ".join(str(name or "").split())
+    if not normalized:
+        return []
+    words = re.findall(r"[А-Яа-яЁёA-Za-z]+", normalized)
+    acronym_parts: list[str] = []
+    for word in words:
+        lowered = word.lower().replace("ё", "е")
+        if lowered in {"и", "по", "на", "в", "с", "для"}:
+            continue
+        if lowered.startswith("электромонт"):
+            acronym_parts.append("ЭМ")
+        else:
+            acronym_parts.append(word[0].upper())
+    acronym = "".join(acronym_parts)
+    return list(dict.fromkeys(filter(None, (normalized, acronym))))
+
+
+def _person_reference_terms(employee: Employee) -> list[str]:
+    position_terms = _position_reference_terms(employee.position.name)
+    base_terms = [
+        employee.full_name,
+        employee.last_name,
+        f"{employee.first_name} {employee.last_name}",
+        f"{employee.last_name} {employee.first_name}",
+    ]
+    composite_terms = [
+        f"{position} {employee.last_name}"
+        for position in position_terms
+    ]
+    composite_terms.extend(
+        f"{employee.last_name} {position}"
+        for position in position_terms
+    )
+    return list(
+        dict.fromkeys(
+            filter(None, (*base_terms, *composite_terms))
+        )
+    )
+
+
 def _semantic_reference_catalog(
     journal: OperationalJournal,
     shift: OperationalShift | None,
     drafts: list[OperationalDraftEntry],
-) -> dict[str, list[dict[str, str]]]:
+) -> dict[str, list[dict[str, Any]]]:
     effective_date = (
         timezone.localtime(shift.planned_start_at).date()
         if shift is not None
@@ -288,25 +330,12 @@ def _semantic_reference_catalog(
                     f"{employee.position.name} "
                     f"{employee.division.name}"
                 ),
-                "terms": list(
-                    dict.fromkeys(
-                        filter(
-                            None,
-                            (
-                                employee.full_name,
-                                employee.last_name,
-                                (
-                                    f"{employee.first_name} "
-                                    f"{employee.last_name}"
-                                ),
-                                (
-                                    f"{employee.last_name} "
-                                    f"{employee.first_name}"
-                                ),
-                            ),
-                        )
-                    )
+                "surname": employee.last_name,
+                "position": employee.position.name,
+                "position_terms": _position_reference_terms(
+                    employee.position.name
                 ),
+                "terms": _person_reference_terms(employee),
             }
             for employee in employee_rows
         ],
@@ -324,11 +353,19 @@ def _semantic_reference_catalog(
                     f"{timezone.localtime(draft.event_at):%d.%m.%Y %H:%M} "
                     f"{draft.content}"
                 ),
+                "event_date": timezone.localtime(draft.event_at).strftime(
+                    "%Y-%m-%d"
+                ),
+                "event_time": timezone.localtime(draft.event_at).strftime(
+                    "%H:%M"
+                ),
+                "position": draft.position,
                 "terms": [
                     "Запись "
                     + timezone.localtime(draft.event_at).strftime(
                         "%d.%m.%Y %H:%M"
-                    )
+                    ),
+                    timezone.localtime(draft.event_at).strftime("%H:%M"),
                 ],
             }
             for draft in drafts
@@ -855,11 +892,27 @@ def update_display(
                 )
             values[field_name] = value
 
+        simplified_raw = request.POST.get(
+            "journal_simplified_time_input",
+            "1" if preferences.journal_simplified_time_input else "0",
+        )
+        if simplified_raw not in {"0", "1", "false", "true", "False", "True"}:
+            return JsonResponse(
+                {"ok": False, "message": "Некорректный режим ввода времени."},
+                status=400,
+            )
+        simplified_time = str(simplified_raw).lower() in {"1", "true"}
+
         for field_name, value in values.items():
             setattr(preferences, field_name, value)
+        preferences.journal_simplified_time_input = simplified_time
         preferences.full_clean()
         preferences.save(
-            update_fields=tuple(values) + ("updated_at",)
+            update_fields=(
+                *tuple(values),
+                "journal_simplified_time_input",
+                "updated_at",
+            )
         )
         return JsonResponse(
             {
@@ -868,6 +921,7 @@ def update_display(
                     field_name: value.lower()
                     for field_name, value in values.items()
                 },
+                "journal_simplified_time_input": simplified_time,
             }
         )
 

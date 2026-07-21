@@ -2,7 +2,7 @@
     "use strict";
 
     const SCHEMA_VERSION = "operational-draft-editor.v3";
-    const RUNTIME_REVISION = "01132";
+    const RUNTIME_REVISION = "01133";
     const LEGACY_SCHEMA_VERSIONS = new Set([
         "operational-draft-editor.v1",
         "operational-draft-editor.v2",
@@ -23,6 +23,7 @@
         event_time: {label: "Время события", icon: "В"},
     });
     const controllers = new WeakMap();
+    const workspace = document.querySelector("[data-draft-workspace]");
     const ribbon = document.querySelector("[data-editor-ribbon]");
     const ribbonStatus = document.querySelector("[data-editor-ribbon-status]");
     const floatingToolbar = document.querySelector("[data-editor-floating-toolbar]");
@@ -61,6 +62,10 @@
     let entryKindViewport = null;
     const autoReferenceTimers = new WeakMap();
     let autoReferencesEnabled = readAutoReferencePreference();
+    let simplifiedTimeEnabled = (
+        workspace?.dataset.simplifiedTimeInput === "true"
+        || workspace?.dataset.initialSimplifiedTime === "true"
+    );
 
     function emptyDocument() {
         return {
@@ -195,14 +200,17 @@
         return previous[right.length];
     }
 
-    function referenceTerms(item) {
+    function referenceTerms(item, {includeMetadata = true} = {}) {
         const terms = Array.isArray(item?.terms) ? item.terms : [];
-        return Array.from(new Set([
-            item?.label,
-            ...terms,
-            item?.keywords,
-            item?.meta,
-        ].map(normalizeSingleLine).filter(Boolean)));
+        const source = [item?.label, ...terms];
+        if (includeMetadata) {
+            source.push(item?.keywords, item?.meta);
+        }
+        return Array.from(
+            new Set(
+                source.map((value) => normalizeSingleLine(value)).filter(Boolean),
+            ),
+        );
     }
 
     function scoreReferenceItem(item, query) {
@@ -1094,6 +1102,9 @@
     }
 
     function catalogFor(kind) {
+        if (kind === "related_entry") {
+            refreshRelatedEntryCatalog();
+        }
         const items = referenceCatalog?.[kind];
         return Array.isArray(items) ? items : [];
     }
@@ -1193,7 +1204,7 @@
             .replace(/\s+/g, "[\\s\\u00a0]+");
     }
 
-    function exactTermMatches(textValue, term, candidate) {
+    function exactTermMatches(textValue, term, candidate, priority = 40) {
         const pattern = escapedReferencePattern(term);
         if (!pattern || normalizeSearchText(term).length < 3) {
             return [];
@@ -1208,7 +1219,67 @@
                 !isWordCharacter(textValue[start - 1])
                 && !isWordCharacter(textValue[end])
             ) {
-                matches.push({start, end, candidate});
+                matches.push({start, end, candidate, priority});
+            }
+            if (match[0].length === 0) {
+                expression.lastIndex += 1;
+            }
+            match = expression.exec(textValue);
+        }
+        return matches;
+    }
+
+    function equipmentLetterPattern(character) {
+        const normalized = character.toLocaleLowerCase("ru-RU");
+        const alternatives = {
+            а: "[аa]", в: "[вv]", е: "[еёe]", к: "[кk]",
+            м: "[мm]", н: "[нh]", о: "[оo]", п: "[пp]",
+            р: "[рr]", с: "[сc]", т: "[тt]", у: "[уy]",
+            х: "[хx]",
+        };
+        return alternatives[normalized]
+            || normalized.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    function equipmentTermPattern(term) {
+        const tokens = String(term || "").match(/[\p{L}]+|\d+/gu) || [];
+        if (!tokens.length) {
+            return "";
+        }
+        return tokens.map((token) => {
+            if (/^\d+$/.test(token)) {
+                const numeric = String(Number.parseInt(token, 10));
+                return `0*${numeric}`;
+            }
+            return Array.from(token).map(equipmentLetterPattern).join("");
+        }).join("[\\s\\u00a0№#\\-–—._/]*");
+    }
+
+    function equipmentTermMatches(textValue, term, candidate) {
+        const pattern = equipmentTermPattern(term);
+        if (!pattern || normalizeSearchText(term).length < 3) {
+            return [];
+        }
+        const matches = [];
+        const expression = new RegExp(pattern, "giu");
+        let match = expression.exec(textValue);
+        while (match) {
+            const start = match.index;
+            const end = start + match[0].length;
+            const trailingNumericPart = textValue
+                .slice(end)
+                .match(/^[\s\u00a0№#\-–—._/]*\d/u);
+            if (
+                !isWordCharacter(textValue[start - 1])
+                && !isWordCharacter(textValue[end])
+                && !trailingNumericPart
+            ) {
+                matches.push({
+                    start,
+                    end,
+                    candidate,
+                    priority: 80,
+                });
             }
             if (match[0].length === 0) {
                 expression.lastIndex += 1;
@@ -1219,7 +1290,9 @@
     }
 
     function personSurnameMatches(textValue, candidate) {
-        const surname = searchTokens(candidate.item?.label || "")[0] || "";
+        const surname = candidate.item?.surname
+            || searchTokens(candidate.item?.label || "")[0]
+            || "";
         const surnameStem = russianSearchStem(surname);
         if (surnameStem.length < 4) {
             return [];
@@ -1233,6 +1306,156 @@
                     start: match.index,
                     end: match.index + match[0].length,
                     candidate,
+                    priority: 30,
+                });
+            }
+            match = expression.exec(textValue);
+        }
+        return matches;
+    }
+
+    function personCompositeMatches(textValue, candidate) {
+        const surname = candidate.item?.surname
+            || searchTokens(candidate.item?.label || "")[0]
+            || "";
+        const surnameStem = russianSearchStem(surname);
+        const positionTerms = Array.isArray(candidate.item?.position_terms)
+            ? candidate.item.position_terms
+            : [candidate.item?.position].filter(Boolean);
+        if (surnameStem.length < 4 || !positionTerms.length) {
+            return [];
+        }
+        const matches = [];
+        positionTerms.forEach((position) => {
+            const positionPattern = escapedReferencePattern(position);
+            if (!positionPattern) {
+                return;
+            }
+            const forward = new RegExp(
+                `(${positionPattern})[\\s\\u00a0]+([\\p{L}][\\p{L}-]*)`,
+                "giu",
+            );
+            let match = forward.exec(textValue);
+            while (match) {
+                if (russianSearchStem(match[2]) === surnameStem) {
+                    matches.push({
+                        start: match.index,
+                        end: match.index + match[0].length,
+                        candidate,
+                        priority: 110,
+                    });
+                }
+                match = forward.exec(textValue);
+            }
+            const reverse = new RegExp(
+                `([\\p{L}][\\p{L}-]*)[\\s\\u00a0,]+(${positionPattern})`,
+                "giu",
+            );
+            match = reverse.exec(textValue);
+            while (match) {
+                if (russianSearchStem(match[1]) === surnameStem) {
+                    matches.push({
+                        start: match.index,
+                        end: match.index + match[0].length,
+                        candidate,
+                        priority: 105,
+                    });
+                }
+                match = reverse.exec(textValue);
+            }
+        });
+        return matches;
+    }
+
+    function rowVisibleText(row) {
+        const editor = row.querySelector("[data-rich-editor]");
+        const fallback = row.querySelector("[data-editor-fallback]");
+        return normalizeSingleLine(
+            editor?.innerText || fallback?.value || "",
+            500,
+        );
+    }
+
+    function refreshRelatedEntryCatalog() {
+        const items = [];
+        document.querySelectorAll(
+            "[data-draft-card][data-draft-id]",
+        ).forEach((row) => {
+            if (row.classList.contains("is-undo-pending")) {
+                return;
+            }
+            const draftId = row.dataset.draftId || "";
+            const eventAt = row.dataset.entryAt || "";
+            const eventDate = row.dataset.entryDate || eventAt.slice(0, 10);
+            const eventTime = eventAt.slice(11, 16);
+            if (!draftId || !eventDate || !eventTime) {
+                return;
+            }
+            const dateParts = eventDate.split("-");
+            const displayDate = dateParts.length === 3
+                ? `${dateParts[2]}.${dateParts[1]}.${dateParts[0]}`
+                : eventDate;
+            items.push({
+                label: `Запись ${displayDate} ${eventTime}`,
+                reference: `draft:${draftId}`,
+                meta: rowVisibleText(row) || "Пустая черновая запись",
+                keywords: `${displayDate} ${eventTime} ${rowVisibleText(row)}`,
+                event_date: eventDate,
+                event_time: eventTime,
+                event_at: eventAt,
+                position: Number.parseInt(row.dataset.entryPosition || "0", 10),
+                terms: [`Запись ${displayDate} ${eventTime}`, eventTime],
+            });
+        });
+        referenceCatalog.related_entry = items;
+        return items;
+    }
+
+    function relatedEntryCueBefore(textValue, start) {
+        return textValue.slice(Math.max(0, start - 48), start).match(
+            /(?:за|по\s+записи(?:\s+(?:от|за))?|в\s+записи(?:\s+(?:от|за))?|согласно\s+записи(?:\s+(?:от|за))?|запись\s+(?:от|за))\s*$/iu,
+        );
+    }
+
+    function relatedEntryTimeMatches(textValue, controller) {
+        const matches = [];
+        const rows = refreshRelatedEntryCatalog();
+        const currentReference = controller?.row?.dataset.draftId
+            ? `draft:${controller.row.dataset.draftId}`
+            : "";
+        const currentAt = controller?.row?.dataset.entryAt || "";
+        const expression = /(?:[01]?\d|2[0-3])[:.][0-5]\d/gu;
+        let match = expression.exec(textValue);
+        while (match) {
+            const start = match.index;
+            if (!relatedEntryCueBefore(textValue, start)) {
+                match = expression.exec(textValue);
+                continue;
+            }
+            const digits = match[0].replace(/\D/g, "").padStart(4, "0");
+            const eventTime = `${digits.slice(0, 2)}:${digits.slice(2)}`;
+            let candidates = rows.filter((item) => (
+                item.event_time === eventTime
+                && item.reference !== currentReference
+                && (!currentAt || item.event_at < currentAt)
+            ));
+            const currentDate = controller?.row?.dataset.entryDate || "";
+            const sameDate = candidates.filter(
+                (item) => item.event_date === currentDate,
+            );
+            if (sameDate.length) {
+                candidates = sameDate;
+            }
+            const mapped = candidates.map((item) => ({
+                kind: "related_entry",
+                item,
+            }));
+            if (mapped.length) {
+                matches.push({
+                    start,
+                    end: start + match[0].length,
+                    candidates: mapped,
+                    priority: 130,
                 });
             }
             match = expression.exec(textValue);
@@ -1241,6 +1464,7 @@
     }
 
     function automaticReferenceCandidates() {
+        refreshRelatedEntryCatalog();
         const result = [];
         ["equipment", "document", "person", "related_entry"].forEach((kind) => {
             catalogFor(kind).forEach((item) => {
@@ -1253,31 +1477,74 @@
         return result;
     }
 
-    function resolveAutomaticMatches(textValue) {
-        const rawMatches = [];
+    function resolveAutomaticMatches(textValue, controller) {
+        const rawMatches = relatedEntryTimeMatches(textValue, controller);
         automaticReferenceCandidates().forEach((candidate) => {
-            const terms = referenceTerms(candidate.item)
-                .filter((term) => normalizeSearchText(term).length >= 3);
+            const terms = referenceTerms(
+                candidate.item,
+                {includeMetadata: false},
+            ).filter((term) => normalizeSearchText(term).length >= 3);
             terms.forEach((term) => {
-                rawMatches.push(...exactTermMatches(textValue, term, candidate));
+                if (candidate.kind === "equipment") {
+                    rawMatches.push(
+                        ...equipmentTermMatches(textValue, term, candidate),
+                    );
+                } else if (
+                    candidate.kind !== "related_entry"
+                    || normalizeSearchText(term).startsWith("запись ")
+                ) {
+                    rawMatches.push(
+                        ...exactTermMatches(textValue, term, candidate),
+                    );
+                }
             });
             if (candidate.kind === "person") {
-                rawMatches.push(...personSurnameMatches(textValue, candidate));
+                rawMatches.push(
+                    ...personCompositeMatches(textValue, candidate),
+                    ...personSurnameMatches(textValue, candidate),
+                );
             }
         });
         const grouped = new Map();
         rawMatches.forEach((match) => {
+            if (Array.isArray(match.candidates)) {
+                const key = `${match.start}:${match.end}`;
+                if (!grouped.has(key)) {
+                    grouped.set(key, {
+                        start: match.start,
+                        end: match.end,
+                        priority: match.priority || 0,
+                        candidates: new Map(),
+                    });
+                }
+                match.candidates.forEach((candidate) => {
+                    grouped.get(key).candidates.set(
+                        candidate.item.reference,
+                        candidate,
+                    );
+                });
+                grouped.get(key).priority = Math.max(
+                    grouped.get(key).priority,
+                    match.priority || 0,
+                );
+                return;
+            }
             const key = `${match.start}:${match.end}`;
             if (!grouped.has(key)) {
                 grouped.set(key, {
                     start: match.start,
                     end: match.end,
+                    priority: match.priority || 0,
                     candidates: new Map(),
                 });
             }
             grouped.get(key).candidates.set(
                 match.candidate.item.reference,
                 match.candidate,
+            );
+            grouped.get(key).priority = Math.max(
+                grouped.get(key).priority,
+                match.priority || 0,
             );
         });
         const ordered = Array.from(grouped.values())
@@ -1288,6 +1555,7 @@
             .sort((left, right) => (
                 left.start - right.start
                 || (right.end - right.start) - (left.end - left.start)
+                || right.priority - left.priority
             ));
         const accepted = [];
         ordered.forEach((match) => {
@@ -1470,7 +1738,10 @@
         let changed = false;
         try {
             automaticReferenceTextNodes(controller.editor).forEach((node) => {
-                const matches = resolveAutomaticMatches(node.nodeValue || "");
+                const matches = resolveAutomaticMatches(
+                    node.nodeValue || "",
+                    controller,
+                );
                 changed = applyMatchesToTextNode(node, matches) || changed;
             });
             if (changed) {
@@ -1702,6 +1973,160 @@
         document.execCommand("insertText", false, text);
     }
 
+    function simplifiedTimeValue(value) {
+        const digits = String(value || "").replace(/\D/g, "");
+        if (![3, 4].includes(digits.length)) {
+            return null;
+        }
+        if (digits.length === 4) {
+            const numeric = Number.parseInt(digits, 10);
+            if (numeric >= 1900 && numeric <= 2099) {
+                return null;
+            }
+        }
+        const padded = digits.padStart(4, "0");
+        const hours = Number.parseInt(padded.slice(0, 2), 10);
+        const minutes = Number.parseInt(padded.slice(2), 10);
+        if (hours > 23 || minutes > 59) {
+            return null;
+        }
+        return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+    }
+
+    function simplifiedTimeCommitKey(event) {
+        return [" ", "Enter", "Tab", ",", ";", "."].includes(event.key);
+    }
+
+    function lastEditableTextDescendant(node) {
+        if (!node) {
+            return null;
+        }
+        if (node.nodeType === Node.TEXT_NODE) {
+            return node.parentElement?.closest?.(
+                "[data-reference-kind], [data-auto-reference-suggestion]",
+            ) ? null : node;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) {
+            return null;
+        }
+        if (node.matches?.(
+            "[data-reference-kind], [data-auto-reference-suggestion]",
+        )) {
+            return null;
+        }
+        const walker = document.createTreeWalker(
+            node,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode(candidate) {
+                    return candidate.parentElement?.closest?.(
+                        "[data-reference-kind], [data-auto-reference-suggestion]",
+                    )
+                        ? NodeFilter.FILTER_REJECT
+                        : NodeFilter.FILTER_ACCEPT;
+                },
+            },
+        );
+        let last = null;
+        let candidate = walker.nextNode();
+        while (candidate) {
+            last = candidate;
+            candidate = walker.nextNode();
+        }
+        return last;
+    }
+
+    function editableTextPositionBeforeCaret(range, editor) {
+        if (range.startContainer.nodeType === Node.TEXT_NODE) {
+            return {
+                node: range.startContainer,
+                offset: range.startOffset,
+            };
+        }
+        let container = range.startContainer;
+        let offset = range.startOffset;
+        while (container && editor.contains(container)) {
+            let sibling = container.childNodes?.[offset - 1] || null;
+            while (sibling) {
+                const node = lastEditableTextDescendant(sibling);
+                if (node) {
+                    return {
+                        node,
+                        offset: node.nodeValue?.length || 0,
+                    };
+                }
+                sibling = sibling.previousSibling;
+            }
+            if (container === editor) {
+                break;
+            }
+            const parent = container.parentNode;
+            offset = parent ? Array.prototype.indexOf.call(
+                parent.childNodes,
+                container,
+            ) : 0;
+            container = parent;
+        }
+        return null;
+    }
+
+    function formatSimplifiedTimeBeforeCaret(controller) {
+        if (!simplifiedTimeEnabled || !controller?.editor) {
+            return false;
+        }
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0 || !selection.isCollapsed) {
+            return false;
+        }
+        const range = selection.getRangeAt(0);
+        if (!isRangeInsideEditor(range, controller.editor)) {
+            return false;
+        }
+        const position = editableTextPositionBeforeCaret(
+            range,
+            controller.editor,
+        );
+        if (!position) {
+            return false;
+        }
+        const {node, offset} = position;
+        if (node.parentElement?.closest?.("[data-reference-kind]")) {
+            return false;
+        }
+        const before = (node.nodeValue || "").slice(0, offset);
+        const match = before.match(/(^|[\s(])([0-9]{3,4})$/u);
+        if (!match) {
+            return false;
+        }
+        const start = offset - match[2].length;
+        const preceding = (node.nodeValue || "")[start - 1] || "";
+        const contextBefore = before
+            .slice(0, before.length - match[2].length)
+            .trimEnd();
+        if (
+            /[\p{L}\p{N}№#\-–—./]/u.test(preceding)
+            || /(?:№|#|[-–—./])$/u.test(contextBefore)
+            || /(?:номер|документ|приказ|заявка|распоряжение|наряд|ктп)$/iu.test(
+                contextBefore,
+            )
+        ) {
+            return false;
+        }
+        const formatted = simplifiedTimeValue(match[2]);
+        if (!formatted) {
+            return false;
+        }
+        node.replaceData(start, match[2].length, formatted);
+        const caret = document.createRange();
+        caret.setStart(node, start + formatted.length);
+        caret.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(caret);
+        syncController(controller, true);
+        scheduleAutomaticReferences(controller, 40);
+        return true;
+    }
+
     function initializeRow(row) {
         const form = row.querySelector("[data-draft-form]");
         if (!form) {
@@ -1832,6 +2257,12 @@
                 event.stopPropagation();
                 finishEditorInteraction(controller, "ctrl-enter");
                 return;
+            }
+            if (
+                !modifier
+                && simplifiedTimeCommitKey(event)
+            ) {
+                formatSimplifiedTimeBeforeCaret(controller);
             }
             if (
                 event.key === "Escape"
@@ -1989,6 +2420,10 @@
             renderReferenceResults();
         });
     });
+    workspace?.addEventListener("eod:simplified-time-setting", (event) => {
+        simplifiedTimeEnabled = Boolean(event.detail?.enabled);
+    });
+
     referenceSearch?.addEventListener("input", renderReferenceResults);
     referencePicker?.addEventListener(
         "wheel",

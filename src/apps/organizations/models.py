@@ -801,6 +801,9 @@ class InterfacePreference(models.Model):
     journal_show_links = models.BooleanField(
         "Показывать связи записей", default=True
     )
+    journal_simplified_time_input = models.BooleanField(
+        "Упрощённый ввод времени", default=False
+    )
     updated_at = models.DateTimeField("Обновлено", auto_now=True)
 
     class Meta:

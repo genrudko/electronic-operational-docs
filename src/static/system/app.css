@@ -7071,9 +7071,43 @@ body.draft-view-drawer-visible .draft-view-drawer {
     }
 }
 
+
+/* Patch 011.3.3: user-scoped simplified time input. */
+.draft-simplified-time-group {
+    min-width: 108px;
+}
+
+.draft-simplified-time-group > small {
+    max-width: 128px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.draft-simplified-time-toggle {
+    min-width: 54px;
+    font-size: 12px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .02em;
+}
+
+.draft-simplified-time-toggle.is-active {
+    border-color: color-mix(in srgb, #2563eb 58%, var(--border));
+    background: color-mix(in srgb, #2563eb 13%, var(--panel));
+    color: #1d4ed8;
+}
+
+[data-theme="dark"] .screen-journal-theme .draft-simplified-time-toggle.is-active {
+    border-color: #3b82f6;
+    background: #172e52;
+    color: #bfdbfe;
+}
+
 @media print {
     .draft-inline-undo,
-    .draft-auto-reference-group {
+    .draft-auto-reference-group,
+    .draft-simplified-time-group {
         display: none !important;
     }
 }

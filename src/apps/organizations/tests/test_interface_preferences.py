@@ -57,6 +57,7 @@ class InterfacePreferenceModelTests(TestCase):
         )
         self.assertTrue(preference.journal_show_authors)
         self.assertTrue(preference.journal_show_links)
+        self.assertFalse(preference.journal_simplified_time_input)
 
     def test_preference_is_one_to_one_with_user(self):
         user = get_user_model().objects.create_user(username="ui-unique")

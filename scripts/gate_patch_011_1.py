@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import os
 import sys
 from pathlib import Path
@@ -25,6 +26,82 @@ def require_text(path: str, markers: tuple[str, ...]) -> str:
             f"{path}: отсутствуют обязательные маркеры: {missing}"
         )
     return content
+
+
+def require_immediate_preference_save_contract(path: str) -> None:
+    source = (ROOT / path).read_text(encoding="utf-8")
+    module = ast.parse(source, filename=path)
+
+    update_display = next(
+        (
+            node
+            for node in module.body
+            if isinstance(node, ast.FunctionDef)
+            and node.name == "update_display"
+        ),
+        None,
+    )
+    if update_display is None:
+        raise AssertionError(f"{path}: функция update_display не найдена")
+
+    def inspect_update_fields(expression: ast.AST) -> tuple[bool, set[str]]:
+        has_values_tuple = False
+        names: set[str] = set()
+
+        for node in ast.walk(expression):
+            if isinstance(node, ast.Constant) and isinstance(node.value, str):
+                names.add(node.value)
+            if not isinstance(node, ast.Call):
+                continue
+            if not isinstance(node.func, ast.Name) or node.func.id != "tuple":
+                continue
+            if (
+                len(node.args) == 1
+                and isinstance(node.args[0], ast.Name)
+                and node.args[0].id == "values"
+            ):
+                has_values_tuple = True
+
+        return has_values_tuple, names
+
+    candidates: list[tuple[bool, set[str]]] = []
+    for node in ast.walk(update_display):
+        if not isinstance(node, ast.Call):
+            continue
+        if not isinstance(node.func, ast.Attribute) or node.func.attr != "save":
+            continue
+        if not (
+            isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "preferences"
+        ):
+            continue
+
+        update_fields = next(
+            (
+                keyword.value
+                for keyword in node.keywords
+                if keyword.arg == "update_fields"
+            ),
+            None,
+        )
+        if update_fields is not None:
+            candidates.append(inspect_update_fields(update_fields))
+
+    if not candidates:
+        raise AssertionError(
+            f"{path}: preferences.save(update_fields=...) не найден"
+        )
+
+    if not any(
+        has_values_tuple
+        and "updated_at" in names
+        and "journal_simplified_time_input" in names
+        for has_values_tuple, names in candidates
+    ):
+        raise AssertionError(
+            f"{path}: update_fields должен включать tuple(values), "
+            "journal_simplified_time_input и updated_at"
+        )
 
 
 def main() -> None:
@@ -152,8 +229,10 @@ def main() -> None:
             '"journal_date_font_size": (',
             '"journal_table_header_font_size": (',
             '"journal_title_font_size": (',
-            'tuple(values) + ("updated_at",)',
         ),
+    )
+    require_immediate_preference_save_contract(
+        "src/apps/operational_log/views.py"
     )
     print("TYPOGRAPHY_PREFERENCES_IMMEDIATE_SAVE=PASSED")
 

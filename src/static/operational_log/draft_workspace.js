@@ -86,6 +86,12 @@
     const quickSettingStatus = workspace.querySelector(
         "[data-quick-setting-status]",
     );
+    const simplifiedTimeToggle = workspace.querySelector(
+        "[data-simplified-time-toggle]",
+    );
+    const simplifiedTimeLabel = workspace.querySelector(
+        "[data-simplified-time-label]",
+    );
     const themeChoiceButtons = Array.from(
         workspace.querySelectorAll("[data-theme-choice]"),
     );
@@ -130,6 +136,9 @@
     let activeDateEditor = null;
     let quickSettingsController = null;
     let pendingRemoval = null;
+    let simplifiedTimeEnabled = (
+        workspace.dataset.initialSimplifiedTime === "true"
+    );
     let themePreference = normalizeThemeChoice(
         workspace.dataset.initialTheme
         || document.documentElement.dataset.theme
@@ -252,6 +261,24 @@
             button.classList.toggle("is-active", active);
             button.setAttribute("aria-pressed", String(active));
         });
+        if (simplifiedTimeToggle) {
+            simplifiedTimeToggle.classList.toggle(
+                "is-active",
+                simplifiedTimeEnabled,
+            );
+            simplifiedTimeToggle.setAttribute(
+                "aria-pressed",
+                String(simplifiedTimeEnabled),
+            );
+            simplifiedTimeToggle.title = simplifiedTimeEnabled
+                ? "Упрощённый ввод времени включён"
+                : "Вводить 1120 вместо 11:20";
+        }
+        if (simplifiedTimeLabel) {
+            simplifiedTimeLabel.textContent = simplifiedTimeEnabled
+                ? "Время · упрощённо"
+                : "Время · обычно";
+        }
     }
 
     function applyQuickDisplayPreferences() {
@@ -281,6 +308,14 @@
         );
         document.documentElement.dataset.journalTitleSize = (
             typographyPreferences.title
+        );
+        workspace.dataset.simplifiedTimeInput = String(
+            simplifiedTimeEnabled,
+        );
+        workspace.dispatchEvent(
+            new CustomEvent("eod:simplified-time-setting", {
+                detail: {enabled: simplifiedTimeEnabled},
+            }),
         );
         if (journalTitleNode) {
             journalTitleNode.dataset.journalTitleSize = (
@@ -327,6 +362,10 @@
             "journal_title_font_size",
             typographyPreferences.title.toUpperCase(),
         );
+        data.set(
+            "journal_simplified_time_input",
+            simplifiedTimeEnabled ? "1" : "0",
+        );
 
         try {
             const response = await fetch(quickDisplayForm.action, {
@@ -363,6 +402,9 @@
                     payload.journal_title_font_size,
                 ),
             };
+            simplifiedTimeEnabled = Boolean(
+                payload.journal_simplified_time_input,
+            );
             applyQuickDisplayPreferences();
             quickSettingStatus.textContent = "✓ Сохранено";
         } catch (error) {
@@ -374,6 +416,7 @@
             typographyPreferences = {
                 ...previous.typography,
             };
+            simplifiedTimeEnabled = previous.simplifiedTime;
             applyQuickDisplayPreferences();
             quickSettingStatus.textContent = "Не удалось сохранить";
         } finally {
@@ -390,6 +433,7 @@
             typography: {
                 ...typographyPreferences,
             },
+            simplifiedTime: simplifiedTimeEnabled,
         };
         if (kind === "theme") {
             themePreference = normalizeThemeChoice(value);
@@ -410,6 +454,7 @@
             typography: {
                 ...typographyPreferences,
             },
+            simplifiedTime: simplifiedTimeEnabled,
         };
         typographyPreferences[target] = normalizeJournalFontSize(value);
         applyQuickDisplayPreferences();
@@ -424,6 +469,7 @@
             typography: {
                 ...typographyPreferences,
             },
+            simplifiedTime: simplifiedTimeEnabled,
         };
         typographyPreferences = {
             entry: normalized,
@@ -612,6 +658,40 @@
             `${String(hours).padStart(2, "0")}:`
             + `${String(minutes).padStart(2, "0")}`
         );
+    }
+
+    function applySimplifiedTimeToInput(input, final = false) {
+        if (!simplifiedTimeEnabled || !input) {
+            return false;
+        }
+        const source = String(input.value || "");
+        if (source.includes(":")) {
+            return false;
+        }
+        const digits = source.replace(/\D/g, "");
+        if (digits.length !== 4 && !(final && digits.length === 3)) {
+            return false;
+        }
+        const normalized = normalizeTime(digits);
+        if (!normalized) {
+            return false;
+        }
+        input.value = normalized;
+        return true;
+    }
+
+    function setSimplifiedTimeEnabled(value) {
+        const previous = {
+            theme: themePreference,
+            pageWidth: pageWidthPreference,
+            typography: {
+                ...typographyPreferences,
+            },
+            simplifiedTime: simplifiedTimeEnabled,
+        };
+        simplifiedTimeEnabled = Boolean(value);
+        applyQuickDisplayPreferences();
+        void persistQuickDisplayPreferences(previous);
     }
 
     function normalizeDate(value) {
@@ -1812,6 +1892,7 @@
         timeInput.autocomplete = "off";
         timeInput.placeholder = "ЧЧ:ММ";
         timeInput.value = "";
+        timeInput.dataset.quickTime = "true";
         timeInput.setAttribute(
             "aria-label",
             "Время новой записи",
@@ -2633,6 +2714,26 @@
                 button.dataset.pageWidthChoice,
             );
         });
+    });
+
+    simplifiedTimeToggle?.addEventListener("click", () => {
+        setSimplifiedTimeEnabled(!simplifiedTimeEnabled);
+    });
+
+    workspace.addEventListener("input", (event) => {
+        const input = event.target.closest?.("[data-quick-time]");
+        if (!input || !workspace.contains(input)) {
+            return;
+        }
+        applySimplifiedTimeToInput(input, false);
+    });
+
+    workspace.addEventListener("focusout", (event) => {
+        const input = event.target.closest?.("[data-quick-time]");
+        if (!input || !workspace.contains(input)) {
+            return;
+        }
+        applySimplifiedTimeToInput(input, true);
     });
 
     const systemThemeQuery = window.matchMedia(

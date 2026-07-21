@@ -81,6 +81,7 @@
     data-initial-journal-date-size="{{ ui_preferences.journal_date_font_size|lower }}"
     data-initial-journal-table-header-size="{{ ui_preferences.journal_table_header_font_size|lower }}"
     data-initial-journal-title-size="{{ ui_preferences.journal_title_font_size|lower }}"
+    data-initial-simplified-time="{{ ui_preferences.journal_simplified_time_input|yesno:'true,false' }}"
     data-display-settings-url="{% url 'operational_log:update_display' journal.pk %}"
     style="
         --draft-time-column: 14%;
@@ -327,6 +328,27 @@
                 </button>
             </div>
             <small data-auto-reference-label>Связь · авто включено</small>
+        </section>
+
+        <section
+            class="draft-editor-ribbon-group draft-simplified-time-group"
+            aria-label="Упрощённый ввод времени"
+        >
+            <div class="draft-editor-ribbon-buttons">
+                <button
+                    type="button"
+                    class="draft-editor-ribbon-button draft-simplified-time-toggle"
+                    data-simplified-time-toggle
+                    title="Вводить 1120 вместо 11:20"
+                    aria-label="Упрощённый ввод времени"
+                    aria-pressed="{% if ui_preferences.journal_simplified_time_input %}true{% else %}false{% endif %}"
+                >
+                    <span aria-hidden="true">12:34</span>
+                </button>
+            </div>
+            <small data-simplified-time-label>
+                Время · {% if ui_preferences.journal_simplified_time_input %}упрощённо{% else %}обычно{% endif %}
+            </small>
         </section>
     </div>
 </div>
@@ -1169,15 +1191,15 @@
 
 
 <script
-    src="{% static 'operational_log/draft_editor.js' %}?v=01132"
+    src="{% static 'operational_log/draft_editor.js' %}?v=01133"
     defer
 ></script>
 <script
-    src="{% static 'operational_log/draft_workspace.js' %}?v=01132"
+    src="{% static 'operational_log/draft_workspace.js' %}?v=01133"
     defer
 ></script>
 <script
-    src="{% static 'operational_log/draft_reference_navigation.js' %}?v=01132"
+    src="{% static 'operational_log/draft_reference_navigation.js' %}?v=01133"
     defer
 ></script>
 {% endif %}

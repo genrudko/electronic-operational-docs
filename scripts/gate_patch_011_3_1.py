@@ -93,9 +93,9 @@ def main() -> None:
         "record action and undo visual contract is incomplete",
     )
     require(
-        "?v=01132" in template
-        and "?v=01132" in base
-        and 'const RUNTIME_REVISION = "01132";' in editor,
+        "?v=01133" in template
+        and "?v=01133" in base
+        and 'const RUNTIME_REVISION = "01133";' in editor,
         "PATCH_011_3_1_CACHE_REVISION",
         "runtime cache revision is incomplete",
     )

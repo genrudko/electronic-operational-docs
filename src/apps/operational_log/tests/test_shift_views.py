@@ -136,6 +136,7 @@ class OperationalShiftViewTests(OperationalLogTestCase):
                 "journal_date_font_size": "EXTRA_LARGE",
                 "journal_table_header_font_size": "LARGE",
                 "journal_title_font_size": "EXTRA_LARGE",
+                "journal_simplified_time_input": "1",
             },
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
@@ -158,6 +159,10 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         self.assertEqual(
             preferences.journal_title_font_size,
             "EXTRA_LARGE",
+        )
+        self.assertTrue(preferences.journal_simplified_time_input)
+        self.assertTrue(
+            quick_settings.json()["journal_simplified_time_input"]
         )
 
         detail_after = self.client.get(

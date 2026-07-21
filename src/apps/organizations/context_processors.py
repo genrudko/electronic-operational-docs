@@ -17,6 +17,7 @@ DEFAULT_INTERFACE_PREFERENCES = SimpleNamespace(
     journal_width=InterfacePreference.JournalWidth.WIDE,
     journal_show_authors=True,
     journal_show_links=True,
+    journal_simplified_time_input=False,
 )
 
 
