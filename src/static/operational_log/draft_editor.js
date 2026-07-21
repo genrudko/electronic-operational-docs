@@ -2,7 +2,7 @@
     "use strict";
 
     const SCHEMA_VERSION = "operational-draft-editor.v4";
-    const RUNTIME_REVISION = "011352";
+    const RUNTIME_REVISION = "011360";
     const LEGACY_SCHEMA_VERSIONS = new Set([
         "operational-draft-editor.v1",
         "operational-draft-editor.v2",
@@ -636,6 +636,14 @@
         return lines.join("\n");
     }
 
+    function referenceTokenLabel(token) {
+        return (
+            token?.querySelector?.("[data-reference-token-label]")?.textContent
+            || token?.dataset?.referenceLabel
+            || ""
+        );
+    }
+
     function referenceToken(reference) {
         const definition = REFERENCE_KINDS[reference.kind];
         const token = document.createElement("span");
@@ -645,24 +653,24 @@
         if (reference.reference) {
             token.dataset.referenceValue = reference.reference;
         }
-        token.contentEditable = "false";
-        token.setAttribute("role", "button");
-        token.setAttribute("tabindex", "0");
-        token.setAttribute("aria-label", `${definition.label}: ${reference.label}`);
-        token.title = reference.reference
-            ? `${definition.label}: ${reference.label}`
-            : definition.label;
 
         const label = document.createElement("span");
         label.className = "draft-reference-token-label";
+        label.dataset.referenceTokenLabel = "true";
         label.textContent = reference.label;
         token.append(label);
 
-        const icon = document.createElement("span");
-        icon.className = "draft-reference-token-icon";
-        icon.setAttribute("aria-hidden", "true");
-        icon.textContent = "↗";
-        token.append(icon);
+        const action = document.createElement("span");
+        action.className = "draft-reference-token-action";
+        action.dataset.referenceTokenAction = "true";
+        action.contentEditable = "false";
+        action.setAttribute("role", "button");
+        action.setAttribute("tabindex", "0");
+        action.setAttribute("aria-label", `Открыть связь: ${reference.label}`);
+        action.title = reference.reference
+            ? `${definition.label}: ${reference.label}`
+            : definition.label;
+        token.append(action);
         return token;
     }
 
@@ -789,12 +797,25 @@
             return result;
         }
         const tag = node.tagName.toLowerCase();
+        if (node.matches?.("[data-reference-token-action]")) {
+            return result;
+        }
         if (node.matches?.("[data-reference-kind]")) {
+            const currentLabel = referenceTokenLabel(node);
+            if (currentLabel !== (node.dataset.referenceLabel || "")) {
+                pushTextSegment(
+                    result,
+                    currentLabel,
+                    inheritedMarks,
+                    inheritedAnnotations,
+                );
+                return result;
+            }
             pushReferenceSegment(
                 result,
                 {
                     kind: node.dataset.referenceKind,
-                    label: node.dataset.referenceLabel,
+                    label: currentLabel,
                     reference: node.dataset.referenceValue || "",
                 },
                 inheritedMarks,
@@ -1864,6 +1885,89 @@
         return nodes;
     }
 
+    function editableBlocks(editor) {
+        const blocks = [];
+        Array.from(editor.children).forEach((child) => {
+            const tag = child.tagName.toLowerCase();
+            if (["ul", "ol"].includes(tag)) {
+                Array.from(child.children).forEach((item) => {
+                    if (item.tagName.toLowerCase() === "li") {
+                        blocks.push(item);
+                    }
+                });
+                return;
+            }
+            blocks.push(child);
+        });
+        return blocks.length ? blocks : [editor];
+    }
+
+    function editorBlockForNode(editor, node) {
+        const element = node?.nodeType === Node.ELEMENT_NODE
+            ? node
+            : node?.parentElement;
+        return element?.closest?.("p, li, div") || editor;
+    }
+
+    function editableTextNodes(scope) {
+        const nodes = [];
+        const walker = document.createTreeWalker(
+            scope,
+            NodeFilter.SHOW_TEXT,
+            {
+                acceptNode(node) {
+                    return node.parentElement?.closest?.(
+                        "[data-reference-token-action]",
+                    )
+                        ? NodeFilter.FILTER_REJECT
+                        : NodeFilter.FILTER_ACCEPT;
+                },
+            },
+        );
+        let node = walker.nextNode();
+        while (node) {
+            nodes.push(node);
+            node = walker.nextNode();
+        }
+        return nodes;
+    }
+
+    function selectionEndpointBookmark(editor, container, offset) {
+        if (!editor.contains(container)) {
+            return null;
+        }
+        const blocks = editableBlocks(editor);
+        if (container === editor) {
+            if (offset <= 0) {
+                return {blockIndex: 0, offset: 0};
+            }
+            const directChild = editor.childNodes[
+                Math.min(offset - 1, editor.childNodes.length - 1)
+            ];
+            const block = directChild?.matches?.("ul, ol")
+                ? directChild.querySelector("li:last-child")
+                : directChild;
+            const blockIndex = Math.max(0, blocks.indexOf(block));
+            return {
+                blockIndex,
+                offset: block?.textContent?.length || 0,
+            };
+        }
+        const block = editorBlockForNode(editor, container);
+        const blockIndex = Math.max(0, blocks.indexOf(block));
+        const prefix = document.createRange();
+        prefix.selectNodeContents(block);
+        try {
+            prefix.setEnd(container, offset);
+        } catch (error) {
+            prefix.collapse(false);
+        }
+        return {
+            blockIndex,
+            offset: prefix.toString().length,
+        };
+    }
+
     function selectionTextBookmark(editor) {
         const selection = window.getSelection();
         if (!selection || selection.rangeCount === 0 || !selection.isCollapsed) {
@@ -1873,64 +1977,108 @@
         if (!isRangeInsideEditor(range, editor)) {
             return null;
         }
-        const prefix = document.createRange();
-        prefix.selectNodeContents(editor);
-        prefix.setEnd(range.startContainer, range.startOffset);
-        return prefix.toString().length;
+        return selectionEndpointBookmark(
+            editor,
+            range.startContainer,
+            range.startOffset,
+        );
     }
 
-    function restoreTextBookmark(editor, offset) {
-        if (!Number.isInteger(offset) || offset < 0) {
+    function positionFromTextBookmark(editor, bookmark) {
+        if (
+            !bookmark
+            || !Number.isInteger(bookmark.blockIndex)
+            || !Number.isInteger(bookmark.offset)
+            || bookmark.blockIndex < 0
+            || bookmark.offset < 0
+        ) {
+            return null;
+        }
+        const blocks = editableBlocks(editor);
+        const block = blocks[Math.min(bookmark.blockIndex, blocks.length - 1)] || editor;
+        let remaining = bookmark.offset;
+        for (const node of editableTextNodes(block)) {
+            const length = node.nodeValue?.length || 0;
+            if (remaining <= length) {
+                const token = node.parentElement?.closest?.(
+                    "[data-reference-kind]",
+                );
+                if (token && (remaining === 0 || remaining === length)) {
+                    const parent = token.parentNode;
+                    const tokenIndex = Array.prototype.indexOf.call(
+                        parent.childNodes,
+                        token,
+                    );
+                    return {
+                        node: parent,
+                        offset: tokenIndex + (remaining === length ? 1 : 0),
+                    };
+                }
+                return {node, offset: Math.min(remaining, length)};
+            }
+            remaining -= length;
+        }
+        return {node: block, offset: block.childNodes.length};
+    }
+
+    function restoreTextBookmark(editor, bookmark) {
+        const position = positionFromTextBookmark(editor, bookmark);
+        if (!position) {
             return false;
         }
-        const walker = document.createTreeWalker(
-            editor,
-            NodeFilter.SHOW_TEXT,
-        );
-        let remaining = offset;
-        let node = walker.nextNode();
-        while (node) {
-            const parentToken = node.parentElement?.closest?.(
-                "[data-reference-kind]",
-            );
-            const visibleValue = parentToken
-                ? parentToken.dataset.referenceLabel || ""
-                : node.nodeValue || "";
-            if (remaining <= visibleValue.length) {
-                const range = document.createRange();
-                if (parentToken) {
-                    if (remaining === 0) {
-                        range.setStartBefore(parentToken);
-                    } else {
-                        range.setStartAfter(parentToken);
-                    }
-                } else {
-                    range.setStart(node, Math.min(remaining, node.length));
-                }
-                range.collapse(true);
-                const selection = window.getSelection();
-                selection.removeAllRanges();
-                selection.addRange(range);
-                return true;
-            }
-            remaining -= visibleValue.length;
-            if (parentToken) {
-                while (
-                    node
-                    && node.parentElement?.closest?.("[data-reference-kind]") === parentToken
-                ) {
-                    node = walker.nextNode();
-                }
-                continue;
-            }
-            node = walker.nextNode();
-        }
         const range = document.createRange();
-        range.selectNodeContents(editor);
-        range.collapse(false);
+        range.setStart(position.node, position.offset);
+        range.collapse(true);
         const selection = window.getSelection();
         selection.removeAllRanges();
         selection.addRange(range);
+        return true;
+    }
+
+    function selectionBookmark(editor) {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) {
+            return null;
+        }
+        const range = selection.getRangeAt(0);
+        if (!isRangeInsideEditor(range, editor)) {
+            return null;
+        }
+        return {
+            anchor: selectionEndpointBookmark(
+                editor,
+                selection.anchorNode,
+                selection.anchorOffset,
+            ),
+            focus: selectionEndpointBookmark(
+                editor,
+                selection.focusNode,
+                selection.focusOffset,
+            ),
+        };
+    }
+
+    function restoreSelectionBookmark(editor, bookmark) {
+        const anchor = positionFromTextBookmark(editor, bookmark?.anchor);
+        const focus = positionFromTextBookmark(editor, bookmark?.focus);
+        if (!anchor || !focus) {
+            return false;
+        }
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        if (typeof selection.setBaseAndExtent === "function") {
+            selection.setBaseAndExtent(
+                anchor.node,
+                anchor.offset,
+                focus.node,
+                focus.offset,
+            );
+        } else {
+            const range = document.createRange();
+            range.setStart(anchor.node, anchor.offset);
+            range.setEnd(focus.node, focus.offset);
+            selection.addRange(range);
+        }
         return true;
     }
 
@@ -2146,6 +2294,240 @@
         event.stopPropagation();
     }
 
+    function textMutationInputType(inputType) {
+        return (
+            String(inputType || "").startsWith("insert")
+            || String(inputType || "").startsWith("delete")
+        );
+    }
+
+    function referenceTokensIntersectingSelection(controller) {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0) {
+            return [];
+        }
+        const range = selection.getRangeAt(0);
+        if (!isRangeInsideEditor(range, controller.editor)) {
+            return [];
+        }
+        return Array.from(
+            controller.editor.querySelectorAll("[data-reference-kind]"),
+        ).filter((token) => {
+            if (range.collapsed) {
+                return token.contains(range.startContainer);
+            }
+            try {
+                return range.intersectsNode(token);
+            } catch (error) {
+                return false;
+            }
+        });
+    }
+
+    function detachReferenceTokens(controller, tokens) {
+        const uniqueTokens = Array.from(new Set(tokens)).filter((token) => (
+            token?.isConnected && controller.editor.contains(token)
+        ));
+        if (!uniqueTokens.length) {
+            return false;
+        }
+        const bookmark = selectionBookmark(controller.editor);
+        uniqueTokens.forEach((token) => {
+            token.replaceWith(document.createTextNode(referenceTokenLabel(token)));
+        });
+        restoreSelectionBookmark(controller.editor, bookmark);
+        const selection = window.getSelection();
+        if (selection?.rangeCount) {
+            controller.savedRange = selection.getRangeAt(0).cloneRange();
+        }
+        return true;
+    }
+
+    function detachReferencesForEditing(controller) {
+        return detachReferenceTokens(
+            controller,
+            referenceTokensIntersectingSelection(controller),
+        );
+    }
+
+    function detachStaleReferences(controller) {
+        const stale = Array.from(
+            controller.editor.querySelectorAll("[data-reference-kind]"),
+        ).filter((token) => (
+            referenceTokenLabel(token) !== (token.dataset.referenceLabel || "")
+        ));
+        return detachReferenceTokens(controller, stale);
+    }
+
+    function cleanClipboardText(range) {
+        const container = document.createElement("div");
+        container.className = "draft-clipboard-serializer";
+        container.setAttribute("aria-hidden", "true");
+        container.append(range.cloneContents());
+        container.querySelectorAll("[data-reference-token-action]")
+            .forEach((node) => node.remove());
+        document.body.append(container);
+        const value = container.innerText || container.textContent || "";
+        container.remove();
+        return value.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    }
+
+    function sanitizeClipboardText(value) {
+        return String(value || "")
+            .replace(/\r\n/g, "\n")
+            .replace(/\r/g, "\n")
+            .replace(
+                /([\p{L}\p{N}№)\]])\s*↗(?:\uFE0F)?(?=\s|[.,;:!?)]|$)/gu,
+                "$1",
+            );
+    }
+
+    function currentEditorSelection(controller) {
+        let resolved = selectionController();
+        if (resolved?.controller === controller) {
+            return resolved;
+        }
+        controller.editor.focus({preventScroll: true});
+        restoreSelection(controller);
+        resolved = selectionController();
+        if (resolved?.controller === controller) {
+            return resolved;
+        }
+        const range = document.createRange();
+        range.selectNodeContents(controller.editor);
+        range.collapse(false);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        return {controller, range};
+    }
+
+    function insertPlainText(controller, value) {
+        const text = sanitizeClipboardText(value);
+        currentEditorSelection(controller);
+        detachReferencesForEditing(controller);
+        const resolved = currentEditorSelection(controller);
+        if (!resolved) {
+            return false;
+        }
+        const inserted = document.execCommand("insertText", false, text);
+        if (!inserted) {
+            const range = resolved.range.cloneRange();
+            range.deleteContents();
+            const textNode = document.createTextNode(text);
+            range.insertNode(textNode);
+            range.setStartAfter(textNode);
+            range.collapse(true);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            syncController(controller, true);
+            scheduleAutomaticReferences(controller);
+        }
+        const selection = window.getSelection();
+        if (selection?.rangeCount) {
+            controller.savedRange = selection.getRangeAt(0).cloneRange();
+        }
+        return true;
+    }
+
+    function selectionInsideEditor(selection, editor) {
+        return Boolean(
+            selection?.focusNode
+            && editor.contains(selection.focusNode)
+        );
+    }
+
+    function editorBoundaryPosition(editor, atEnd) {
+        const blocks = editableBlocks(editor);
+        const block = atEnd ? blocks.at(-1) : blocks[0];
+        const nodes = editableTextNodes(block || editor);
+        const node = atEnd ? nodes.at(-1) : nodes[0];
+        if (node) {
+            return {node, offset: atEnd ? node.length : 0};
+        }
+        const container = block || editor;
+        return {
+            node: container,
+            offset: atEnd ? container.childNodes.length : 0,
+        };
+    }
+
+    function setSelectionFocus(controller, position, extend = false) {
+        const selection = window.getSelection();
+        if (!selection || !position) {
+            return false;
+        }
+        if (extend && typeof selection.extend === "function" && selection.anchorNode) {
+            selection.extend(position.node, position.offset);
+        } else {
+            selection.removeAllRanges();
+            const range = document.createRange();
+            range.setStart(position.node, position.offset);
+            range.collapse(true);
+            selection.addRange(range);
+        }
+        controller.savedRange = selection.getRangeAt(0).cloneRange();
+        scheduleSelectionUi();
+        return true;
+    }
+
+    function moveSelectionWithModify(
+        controller,
+        direction,
+        granularity,
+        extend = false,
+    ) {
+        const resolved = currentEditorSelection(controller);
+        const selection = window.getSelection();
+        if (!resolved || typeof selection?.modify !== "function") {
+            return false;
+        }
+        selection.modify(
+            extend ? "extend" : "move",
+            direction,
+            granularity,
+        );
+        if (!selectionInsideEditor(selection, controller.editor)) {
+            setSelectionFocus(
+                controller,
+                editorBoundaryPosition(
+                    controller.editor,
+                    direction === "forward",
+                ),
+                extend,
+            );
+            return true;
+        }
+        controller.savedRange = selection.getRangeAt(0).cloneRange();
+        scheduleSelectionUi();
+        return true;
+    }
+
+    function moveSelectionByPage(controller, direction, extend = false) {
+        const style = window.getComputedStyle(controller.editor);
+        const lineHeight = Number.parseFloat(style.lineHeight)
+            || (Number.parseFloat(style.fontSize) * 1.45)
+            || 18;
+        const lineCount = Math.max(
+            1,
+            Math.floor(controller.editor.clientHeight / lineHeight) - 1,
+        );
+        for (let index = 0; index < lineCount; index += 1) {
+            moveSelectionWithModify(
+                controller,
+                direction,
+                "line",
+                extend,
+            );
+            const selection = window.getSelection();
+            if (!selectionInsideEditor(selection, controller.editor)) {
+                break;
+            }
+        }
+        return true;
+    }
+
     function placeCaretAfter(node) {
         const selection = window.getSelection();
         const range = document.createRange();
@@ -2243,11 +2625,6 @@
         captureSelection(controller);
         syncController(controller, true);
         scheduleSelectionUi();
-    }
-
-    function insertPlainText(editor, text) {
-        editor.focus();
-        document.execCommand("insertText", false, text);
     }
 
     function simplifiedTimeValue(value) {
@@ -3010,11 +3387,18 @@
         });
         editor.addEventListener("compositionend", () => {
             controller.composing = false;
+            detachStaleReferences(controller);
             syncController(controller, false);
             dispatchFallbackEvent(controller, "compositionend");
             dispatchFallbackEvent(controller, "input");
         });
         editor.addEventListener("beforeinput", (event) => {
+            if (
+                !controller.composing
+                && textMutationInputType(event.inputType)
+            ) {
+                detachReferencesForEditing(controller);
+            }
             if (
                 !controller.composing
                 && simplifiedTimeCommitInput(event)
@@ -3025,6 +3409,7 @@
         editor.addEventListener("input", () => {
             hideFloatingToolbar();
             if (!controller.composing) {
+                detachStaleReferences(controller);
                 formatSimplifiedTimeAfterCommit(controller);
             }
             syncController(controller, !controller.composing);
@@ -3044,20 +3429,40 @@
             event.stopPropagation();
             openAutomaticReferenceSuggestion(controller, suggestion);
         });
+        editor.addEventListener("copy", (event) => {
+            const resolved = selectionController();
+            if (
+                resolved?.controller !== controller
+                || resolved.range.collapsed
+                || !event.clipboardData
+            ) {
+                return;
+            }
+            event.preventDefault();
+            event.clipboardData.setData(
+                "text/plain",
+                cleanClipboardText(resolved.range),
+            );
+        });
         editor.addEventListener("paste", (event) => {
             event.preventDefault();
-            insertPlainText(editor, event.clipboardData?.getData("text/plain") || "");
+            insertPlainText(
+                controller,
+                event.clipboardData?.getData("text/plain") || "",
+            );
         });
         editor.addEventListener("drop", (event) => {
             event.preventDefault();
-            insertPlainText(editor, event.dataTransfer?.getData("text/plain") || "");
+            insertPlainText(
+                controller,
+                event.dataTransfer?.getData("text/plain") || "",
+            );
         });
-        editor.addEventListener("dblclick", (event) => {
+        editor.addEventListener("eod:edit-reference-token", (event) => {
             const token = event.target.closest?.("[data-reference-kind]");
             if (!token || !editor.contains(token)) {
                 return;
             }
-            event.preventDefault();
             setActiveController(controller);
             openReferencePicker(
                 document.querySelector("[data-reference-trigger]"),
@@ -3065,18 +3470,65 @@
             );
         });
         editor.addEventListener("keydown", (event) => {
-            const token = event.target.closest?.("[data-reference-kind]");
+            const action = event.target.closest?.("[data-reference-token-action]");
+            const token = action?.closest?.("[data-reference-kind]");
             if (token && ["Enter", " "].includes(event.key)) {
                 event.preventDefault();
                 setActiveController(controller);
-                openReferencePicker(
-                    document.querySelector("[data-reference-trigger]"),
-                    token,
+                token.dispatchEvent(
+                    new CustomEvent("eod:open-reference-preview", {
+                        bubbles: true,
+                    }),
                 );
                 return;
             }
             const modifier = event.ctrlKey || event.metaKey;
             const key = event.key.toLowerCase();
+            const direction = event.key === "ArrowLeft" ? "backward" : "forward";
+            if (modifier && ["ArrowLeft", "ArrowRight"].includes(event.key)) {
+                event.preventDefault();
+                moveSelectionWithModify(
+                    controller,
+                    direction,
+                    "word",
+                    event.shiftKey,
+                );
+                return;
+            }
+            if (!event.altKey && ["Home", "End"].includes(event.key)) {
+                event.preventDefault();
+                if (modifier) {
+                    setSelectionFocus(
+                        controller,
+                        editorBoundaryPosition(
+                            controller.editor,
+                            event.key === "End",
+                        ),
+                        event.shiftKey,
+                    );
+                } else {
+                    moveSelectionWithModify(
+                        controller,
+                        event.key === "End" ? "forward" : "backward",
+                        "lineboundary",
+                        event.shiftKey,
+                    );
+                }
+                return;
+            }
+            if (
+                !modifier
+                && !event.altKey
+                && ["PageUp", "PageDown"].includes(event.key)
+            ) {
+                event.preventDefault();
+                moveSelectionByPage(
+                    controller,
+                    event.key === "PageDown" ? "forward" : "backward",
+                    event.shiftKey,
+                );
+                return;
+            }
             if (modifier && event.key === "Enter") {
                 event.preventDefault();
                 event.stopPropagation();

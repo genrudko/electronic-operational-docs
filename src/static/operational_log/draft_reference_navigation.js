@@ -1,7 +1,7 @@
 (() => {
     "use strict";
 
-    const RUNTIME_REVISION = "011352";
+    const RUNTIME_REVISION = "011360";
     const workspace = document.querySelector("[data-draft-workspace]");
     if (!workspace) {
         return;
@@ -149,7 +149,8 @@
         return (
             token.dataset.referenceLabel
             || token.getAttribute("data-reference-label")
-            || token.textContent.replace("↗", "").trim()
+            || token.querySelector?.("[data-reference-token-label]")?.textContent
+            || token.textContent.trim()
         );
     }
 
@@ -427,10 +428,8 @@
         hidePreview({ restore: false });
         captureViewport(token);
         token.dispatchEvent(
-            new MouseEvent("dblclick", {
+            new CustomEvent("eod:edit-reference-token", {
                 bubbles: true,
-                cancelable: true,
-                view: window,
             }),
         );
         window.requestAnimationFrame(synchronizeOverlayState);
@@ -452,7 +451,11 @@
     }, true);
 
     document.addEventListener("pointerdown", (event) => {
-        const token = event.target.closest?.(".draft-reference-token");
+        const action = event.target.closest?.("[data-reference-token-action]");
+        const token = action?.closest?.(".draft-reference-token")
+            || ((event.ctrlKey || event.metaKey)
+                ? event.target.closest?.(".draft-reference-token")
+                : null);
         tokenPointerGesture = token
             ? {
                 token,
@@ -491,7 +494,11 @@
     }, true);
 
     document.addEventListener("click", (event) => {
-        const token = event.target.closest?.(".draft-reference-token");
+        const action = event.target.closest?.("[data-reference-token-action]");
+        const token = action?.closest?.(".draft-reference-token")
+            || ((event.ctrlKey || event.metaKey)
+                ? event.target.closest?.(".draft-reference-token")
+                : null);
         if (!token) {
             tokenPointerGesture = null;
             if (
@@ -519,18 +526,19 @@
         openReferencePreview(token);
     }, true);
 
-    document.addEventListener("dblclick", (event) => {
+    document.addEventListener("eod:open-reference-preview", (event) => {
         const token = event.target.closest?.(".draft-reference-token");
         if (!token) {
             return;
         }
-        hidePreview({ restore: false });
-        captureViewport(token);
-        window.requestAnimationFrame(synchronizeOverlayState);
+        event.preventDefault();
+        event.stopPropagation();
+        openReferencePreview(token);
     }, true);
 
     document.addEventListener("keydown", (event) => {
-        const token = event.target.closest?.(".draft-reference-token");
+        const action = event.target.closest?.("[data-reference-token-action]");
+        const token = action?.closest?.(".draft-reference-token");
         if (token && (event.key === "Enter" || event.key === " ")) {
             event.preventDefault();
             event.stopImmediatePropagation();

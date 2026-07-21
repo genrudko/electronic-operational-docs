@@ -6129,22 +6129,46 @@ body.draft-view-drawer-visible .draft-view-drawer {
     border-radius: 3px 3px 1px 1px;
     background: color-mix(in srgb, var(--accent) 8%, transparent);
     color: inherit;
-    cursor: pointer;
+    cursor: text;
     white-space: normal;
 }
 
 .draft-reference-token:hover,
-.draft-reference-token:focus {
+.draft-reference-token:focus-within {
     outline: 0;
     background: color-mix(in srgb, var(--accent) 16%, transparent);
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
-.draft-reference-token-icon {
+.draft-reference-token-label {
+    cursor: text;
+}
+
+.draft-reference-token-action {
+    display: inline-grid;
+    width: 1em;
+    height: 1em;
     margin-left: 2px;
+    place-items: center;
+    border-radius: 3px;
     color: var(--accent);
+    cursor: pointer;
     font-size: .72em;
+    line-height: 1;
     vertical-align: super;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.draft-reference-token-action::before {
+    content: "↗";
+}
+
+.draft-reference-token-action:hover,
+.draft-reference-token-action:focus-visible {
+    outline: 1px solid color-mix(in srgb, var(--accent) 54%, transparent);
+    outline-offset: 1px;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
 .draft-reference-picker {
@@ -6380,7 +6404,7 @@ body.draft-view-drawer-visible .draft-view-drawer {
         color: #111827 !important;
     }
 
-    .draft-reference-token-icon {
+    .draft-reference-token-action {
         display: none !important;
     }
 }
@@ -6480,10 +6504,10 @@ body.draft-view-drawer-visible .draft-view-drawer {
 }
 
 .draft-reference-token {
-    cursor: pointer;
+    cursor: text;
 }
 
-.draft-reference-token:focus-visible {
+.draft-reference-token-action:focus-visible {
     outline: 2px solid color-mix(in srgb, var(--accent-2) 72%, transparent);
     outline-offset: 2px;
 }
@@ -8348,4 +8372,27 @@ body.draft-view-drawer-visible .draft-view-drawer {
     .draft-editor-ribbon-context {
         display: none;
     }
+}
+
+
+/* Patch 011.3.6: stable caret, keyboard navigation and editable references. */
+.draft-reference-token-label {
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.draft-reference-token .draft-reference-token-action[contenteditable="false"] {
+    caret-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.draft-clipboard-serializer {
+    position: fixed;
+    left: -100000px;
+    top: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    white-space: pre-wrap;
 }
