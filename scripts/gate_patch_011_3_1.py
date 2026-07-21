@@ -62,6 +62,7 @@ def main() -> None:
         "data-remove-draft" in template
         and "data-restore-url" in template
         and "data-inline-undo" in template
+        and "data-inline-undo-close" in template
         and "removeDraftRow(" in workspace
         and "undoRemovedDraft(" in workspace
         and "10000" in workspace,
@@ -93,9 +94,9 @@ def main() -> None:
         "record action and undo visual contract is incomplete",
     )
     require(
-        "?v=01134" in template
-        and "?v=01134" in base
-        and 'const RUNTIME_REVISION = "01134";' in editor,
+        "?v=011342" in template
+        and "?v=011342" in base
+        and 'const RUNTIME_REVISION = "011342";' in editor,
         "PATCH_011_3_1_CACHE_REVISION",
         "runtime cache revision is incomplete",
     )

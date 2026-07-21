@@ -19,6 +19,10 @@
     const addDraftForm = workspace.querySelector(
         "[data-add-draft-form]",
     );
+    const commandBar = workspace.querySelector(".draft-command-bar");
+    const pageNavigation = workspace.querySelector(
+        "[data-page-navigation]",
+    );
     const defaultEntryDate = (
         workspace.dataset.defaultEntryDate || ""
     );
@@ -534,7 +538,11 @@
     }
 
     function isDraftEditing() {
-        if (compositionDepth > 0 || editorOverlayActive) {
+        if (
+            compositionDepth > 0
+            || editorOverlayActive
+            || Boolean(inlineCreation?.record?.isConnected)
+        ) {
             return true;
         }
         if (!activeDraftForm) {
@@ -1307,7 +1315,7 @@
         }
         const remove = () => {
             state.row.remove();
-            paginateByRecordCount(true);
+            paginateByRecordCount();
             refreshInlineDateMarkers();
         };
         if (!animate) {
@@ -1340,6 +1348,47 @@
             Math.ceil((state.deadline - Date.now()) / 1000),
         );
         state.countdown.textContent = `${seconds} с`;
+        if (seconds === 0 && !state.finalized && !state.restoring) {
+            window.queueMicrotask(() => finalizeRemovedDraft(state, true));
+        }
+    }
+
+    function ensureBlankCreationSlot(anchorRow) {
+        const body = anchorRow?.parentElement;
+        if (!body?.matches?.("[data-page-body]")) {
+            return;
+        }
+        if (
+            body.querySelector(
+                ".draft-empty-record:not(.is-inline-creating)",
+            )
+        ) {
+            return;
+        }
+        const previousRow = anchorRow.previousElementSibling?.matches?.(
+            "[data-draft-card]",
+        )
+            ? anchorRow.previousElementSibling
+            : null;
+        const dateLabel = (
+            previousRow?.dataset.entryDateLabel
+            || anchorRow.dataset.entryDateLabel
+            || defaultEntryDate
+        );
+        const dateIso = (
+            previousRow?.dataset.entryDate
+            || anchorRow.dataset.entryDate
+            || defaultEntryDateIso
+        );
+        body.append(createBlankRecord(dateLabel, dateIso));
+    }
+
+    function dismissInlineRemoval(state) {
+        if (pendingRemoval !== state || state.restoring || state.finalized) {
+            return;
+        }
+        state.closeButton.disabled = true;
+        finalizeRemovedDraft(state, false);
     }
 
     function showInlineRemovalPlaceholder(state) {
@@ -1365,6 +1414,7 @@
             () => finalizeRemovedDraft(state, true),
             10000,
         );
+        ensureBlankCreationSlot(state.row);
     }
 
     function restoreInlineRemovalPresentation(state) {
@@ -1406,6 +1456,7 @@
             state.row.dataset.entryStatus = "Сохранена";
             clearInlineRemovalState(state);
             restoreInlineRemovalPresentation(state);
+            preserveViewport(() => paginateByRecordCount(true));
             state.row.classList.add("is-restoring");
             window.setTimeout(() => {
                 state.row.classList.remove("is-restoring");
@@ -1457,8 +1508,15 @@
         const placeholder = row.querySelector("[data-inline-undo]");
         const button = row.querySelector("[data-inline-undo-button]");
         const countdown = row.querySelector("[data-inline-undo-countdown]");
+        const closeButton = row.querySelector("[data-inline-undo-close]");
         const message = row.querySelector(".draft-inline-undo-message");
-        if (!placeholder || !button || !countdown || !message) {
+        if (
+            !placeholder
+            || !button
+            || !countdown
+            || !closeButton
+            || !message
+        ) {
             setStatus(form, "Не удалось открыть восстановление", "is-error");
             return;
         }
@@ -1469,6 +1527,7 @@
             placeholder,
             button,
             countdown,
+            closeButton,
             message,
             formHeight: form.getBoundingClientRect().height,
             deadline: 0,
@@ -1478,6 +1537,8 @@
             finalized: false,
         };
         button.onclick = () => void undoRemovedDraft(state, button);
+        closeButton.onclick = () => dismissInlineRemoval(state);
+        closeButton.disabled = false;
         message.textContent = "Запись удалена";
         button.disabled = false;
         button.textContent = "Восстановить";
@@ -1702,6 +1763,7 @@
             dateIso,
         );
         record.replaceWith(replacement);
+        flushDeferredPagination();
     }
 
     function inlineCreationHasMeaningfulInput(state) {
@@ -1860,6 +1922,7 @@
             }
 
             await save(form);
+            flushDeferredPagination();
         } catch (error) {
             state.materializing = false;
             state.record.classList.remove("is-materializing");
@@ -2035,12 +2098,16 @@
             "Добавить запись в эту строку",
         );
         addButton.title = "Добавить запись";
-        addButton.addEventListener("click", () => {
+        const activate = () => {
             beginInlineCreation(
                 record,
                 record.dataset.entryDateLabel,
                 record.dataset.entryDate,
             );
+        };
+        addButton.addEventListener("click", (event) => {
+            event.stopPropagation();
+            activate();
         });
         timeCell.append(addButton);
 
@@ -2049,6 +2116,31 @@
             document.createElement("span"),
             document.createElement("span"),
         );
+        record.tabIndex = 0;
+        record.setAttribute("role", "button");
+        record.setAttribute(
+            "aria-label",
+            "Создать запись в этой свободной строке",
+        );
+        record.title = "Щёлкните в строке, чтобы создать запись";
+        record.addEventListener("click", (event) => {
+            if (
+                record.classList.contains("is-inline-creating")
+                || event.target.closest?.("input, textarea, button, a")
+            ) {
+                return;
+            }
+            activate();
+        });
+        record.addEventListener("keydown", (event) => {
+            if (
+                !record.classList.contains("is-inline-creating")
+                && ["Enter", " "].includes(event.key)
+            ) {
+                event.preventDefault();
+                activate();
+            }
+        });
         return record;
     }
 
@@ -2414,6 +2506,19 @@
             "--draft-overlay-top",
             `${offset}px`,
         );
+        const commandBarHeight = commandBar
+            ? Math.max(0, Math.ceil(commandBar.getBoundingClientRect().height))
+            : 0;
+        workspace.style.setProperty(
+            "--draft-command-bar-height",
+            `${commandBarHeight}px`,
+        );
+        if (pageNavigation) {
+            pageNavigation.style.setProperty(
+                "--draft-page-navigation-top",
+                `${offset + commandBarHeight + 8}px`,
+            );
+        }
     }
 
     function openDrawer() {
@@ -2794,6 +2899,13 @@
             closeDrawer();
         }
     });
+
+    const stickyLayoutObserver = typeof ResizeObserver === "function"
+        ? new ResizeObserver(() => updateOverlayOffsets())
+        : null;
+    if (commandBar) {
+        stickyLayoutObserver?.observe(commandBar);
+    }
 
     window.addEventListener("resize", () => {
         if (resizeTimer) {

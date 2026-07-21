@@ -4,7 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
-REVISION = "01134"
+REVISION = "011342"
 
 
 def require(condition: bool, message: str) -> None:

@@ -447,7 +447,7 @@
         </div>
         <button type="button" data-normative-close aria-label="Закрыть">×</button>
     </header>
-    <div class="draft-normative-actions">
+    <div class="draft-normative-actions" data-normative-actions>
         <button type="button" role="menuitem" data-normative-action="emergency">
             <b class="is-emergency">!</b><span><strong>Аварийное событие</strong><small>Красная обводка времени</small></span>
         </button>
@@ -464,7 +464,63 @@
             <b class="is-blue">ПЗ<br>ϟ</b><span><strong>Снято ПЗ</strong><small>Выбор исходного номера ПЗ</small></span>
         </button>
     </div>
-    <footer>
+
+    <section
+        class="draft-normative-step draft-pz-number-step"
+        data-pz-number-panel
+        aria-label="Ввод номера переносного заземления"
+        hidden
+    >
+        <div class="draft-normative-step-heading">
+            <span>ПЕРЕНОСНОЕ ЗАЗЕМЛЕНИЕ</span>
+            <strong data-pz-number-title>Укажите номер ПЗ</strong>
+            <small>Номер будет показан под нормативной молнией.</small>
+        </div>
+        <div class="draft-pz-number-layout">
+            <label class="draft-pz-number-field">
+                <span aria-hidden="true">№</span>
+                <input
+                    type="text"
+                    inputmode="numeric"
+                    maxlength="32"
+                    autocomplete="off"
+                    placeholder="109"
+                    data-pz-number-input
+                    aria-label="Номер ПЗ"
+                >
+            </label>
+            <div class="draft-pz-marker-preview" aria-label="Предпросмотр отметки ПЗ">
+                <span>ПЗ</span>
+                <b aria-hidden="true">ϟ</b>
+                <strong data-pz-number-preview>№—</strong>
+            </div>
+        </div>
+        <p class="draft-normative-step-error" data-pz-number-error role="alert"></p>
+        <div class="draft-normative-step-actions">
+            <button type="button" class="button secondary" data-pz-number-cancel>Назад</button>
+            <button type="button" class="button" data-pz-number-apply>Применить отметку</button>
+        </div>
+    </section>
+
+    <section
+        class="draft-normative-step draft-normative-source-step"
+        data-normative-source-panel
+        aria-label="Выбор исходной нормативной отметки"
+        hidden
+    >
+        <div class="draft-normative-step-heading">
+            <span>СВЯЗАННАЯ ОТМЕТКА</span>
+            <strong>Что именно снимается или отключается?</strong>
+            <small>Выберите действующую исходную отметку.</small>
+        </div>
+        <div class="draft-normative-source-list" data-normative-source-list></div>
+        <p class="draft-normative-step-error" data-normative-source-error role="alert"></p>
+        <div class="draft-normative-step-actions">
+            <button type="button" class="button secondary" data-normative-source-cancel>Назад</button>
+        </div>
+    </section>
+
+    <footer data-normative-main-footer>
         <button type="button" class="button danger" data-normative-action="remove">Снять отметку с текста</button>
         <button type="button" class="button secondary" data-normative-close>Закрыть</button>
     </footer>
@@ -516,6 +572,7 @@
 
     <nav
         class="draft-page-navigation screen-only"
+        data-page-navigation
         aria-label="Навигация по страницам"
     >
         <button
@@ -1326,6 +1383,13 @@
                     class="draft-inline-undo-countdown"
                     data-inline-undo-countdown
                 >10 с</span>
+                <button
+                    type="button"
+                    class="draft-inline-undo-close"
+                    data-inline-undo-close
+                    title="Закрыть без восстановления"
+                    aria-label="Закрыть без восстановления"
+                >×</button>
             </div>
         </article>
     {% empty %}
@@ -1339,15 +1403,15 @@
 
 
 <script
-    src="{% static 'operational_log/draft_editor.js' %}?v=01134"
+    src="{% static 'operational_log/draft_editor.js' %}?v=011342"
     defer
 ></script>
 <script
-    src="{% static 'operational_log/draft_workspace.js' %}?v=01134"
+    src="{% static 'operational_log/draft_workspace.js' %}?v=011342"
     defer
 ></script>
 <script
-    src="{% static 'operational_log/draft_reference_navigation.js' %}?v=01134"
+    src="{% static 'operational_log/draft_reference_navigation.js' %}?v=011342"
     defer
 ></script>
 {% endif %}

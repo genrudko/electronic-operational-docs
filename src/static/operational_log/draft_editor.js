@@ -2,7 +2,7 @@
     "use strict";
 
     const SCHEMA_VERSION = "operational-draft-editor.v4";
-    const RUNTIME_REVISION = "01134";
+    const RUNTIME_REVISION = "011342";
     const LEGACY_SCHEMA_VERSIONS = new Set([
         "operational-draft-editor.v1",
         "operational-draft-editor.v2",
@@ -40,6 +40,24 @@
     const referencePicker = document.querySelector("[data-reference-picker]");
     const normativeMenu = document.querySelector("[data-normative-menu]");
     const normativeMenuStatus = normativeMenu?.querySelector("[data-normative-menu-status]");
+    const normativeActions = normativeMenu?.querySelector("[data-normative-actions]");
+    const normativeMainFooter = normativeMenu?.querySelector(
+        "[data-normative-main-footer]",
+    );
+    const pzNumberPanel = normativeMenu?.querySelector("[data-pz-number-panel]");
+    const pzNumberTitle = normativeMenu?.querySelector("[data-pz-number-title]");
+    const pzNumberInput = normativeMenu?.querySelector("[data-pz-number-input]");
+    const pzNumberPreview = normativeMenu?.querySelector("[data-pz-number-preview]");
+    const pzNumberError = normativeMenu?.querySelector("[data-pz-number-error]");
+    const normativeSourcePanel = normativeMenu?.querySelector(
+        "[data-normative-source-panel]",
+    );
+    const normativeSourceList = normativeMenu?.querySelector(
+        "[data-normative-source-list]",
+    );
+    const normativeSourceError = normativeMenu?.querySelector(
+        "[data-normative-source-error]",
+    );
     const referenceSearch = referencePicker?.querySelector("[data-reference-search]");
     const referenceSearchLabel = referenceSearch?.closest(".draft-reference-search-label");
     const referenceResults = referencePicker?.querySelector("[data-reference-results]");
@@ -2236,6 +2254,16 @@
         return [" ", "Enter", "Tab", ",", ";", "."].includes(event.key);
     }
 
+    function simplifiedTimeCommitInput(event) {
+        return (
+            ["insertParagraph", "insertLineBreak"].includes(event.inputType)
+            || (
+                event.inputType === "insertText"
+                && [" ", ",", ";", "."].includes(event.data)
+            )
+        );
+    }
+
     function lastEditableTextDescendant(node) {
         if (!node) {
             return null;
@@ -2309,7 +2337,43 @@
         return null;
     }
 
-    function formatSimplifiedTimeBeforeCaret(controller) {
+    function simplifiedTimeCandidate(position, trailingCommit = false) {
+        const {node, offset} = position;
+        if (node.parentElement?.closest?.("[data-reference-kind]")) {
+            return null;
+        }
+        const before = (node.nodeValue || "").slice(0, offset);
+        const match = trailingCommit
+            ? before.match(/(^|[\s(])([0-9]{3,4})([ \t,;.])$/u)
+            : before.match(/(^|[\s(])([0-9]{3,4})$/u);
+        if (!match) {
+            return null;
+        }
+        const suffix = trailingCommit ? match[3] : "";
+        const start = offset - suffix.length - match[2].length;
+        const preceding = (node.nodeValue || "")[start - 1] || "";
+        const contextBefore = before
+            .slice(0, before.length - suffix.length - match[2].length)
+            .trimEnd();
+        if (
+            /[\p{L}\p{N}№#\-–—./]/u.test(preceding)
+            || /(?:№|#|[-–—./])$/u.test(contextBefore)
+            || /(?:номер|документ|приказ|заявка|распоряжение|наряд|ктп)$/iu.test(
+                contextBefore,
+            )
+        ) {
+            return null;
+        }
+        const formatted = simplifiedTimeValue(match[2]);
+        return formatted
+            ? {node, offset, start, digits: match[2], formatted}
+            : null;
+    }
+
+    function formatSimplifiedTimeAtCaret(
+        controller,
+        {trailingCommit = false} = {},
+    ) {
         if (!simplifiedTimeEnabled || !controller?.editor) {
             return false;
         }
@@ -2328,42 +2392,36 @@
         if (!position) {
             return false;
         }
-        const {node, offset} = position;
-        if (node.parentElement?.closest?.("[data-reference-kind]")) {
+        const candidate = simplifiedTimeCandidate(position, trailingCommit);
+        if (!candidate) {
             return false;
         }
-        const before = (node.nodeValue || "").slice(0, offset);
-        const match = before.match(/(^|[\s(])([0-9]{3,4})$/u);
-        if (!match) {
-            return false;
-        }
-        const start = offset - match[2].length;
-        const preceding = (node.nodeValue || "")[start - 1] || "";
-        const contextBefore = before
-            .slice(0, before.length - match[2].length)
-            .trimEnd();
-        if (
-            /[\p{L}\p{N}№#\-–—./]/u.test(preceding)
-            || /(?:№|#|[-–—./])$/u.test(contextBefore)
-            || /(?:номер|документ|приказ|заявка|распоряжение|наряд|ктп)$/iu.test(
-                contextBefore,
-            )
-        ) {
-            return false;
-        }
-        const formatted = simplifiedTimeValue(match[2]);
-        if (!formatted) {
-            return false;
-        }
-        node.replaceData(start, match[2].length, formatted);
+        candidate.node.replaceData(
+            candidate.start,
+            candidate.digits.length,
+            candidate.formatted,
+        );
+        const delta = candidate.formatted.length - candidate.digits.length;
         const caret = document.createRange();
-        caret.setStart(node, start + formatted.length);
+        caret.setStart(candidate.node, candidate.offset + delta);
         caret.collapse(true);
         selection.removeAllRanges();
         selection.addRange(caret);
+        controller.savedRange = caret.cloneRange();
         syncController(controller, true);
         scheduleAutomaticReferences(controller, 40);
         return true;
+    }
+
+    function formatSimplifiedTimeBeforeCaret(controller) {
+        return formatSimplifiedTimeAtCaret(controller);
+    }
+
+    function formatSimplifiedTimeAfterCommit(controller) {
+        return formatSimplifiedTimeAtCaret(
+            controller,
+            {trailingCommit: true},
+        );
     }
 
     function allNormativeAnnotations() {
@@ -2459,29 +2517,122 @@
         ));
     }
 
-    function chooseNormativeSource(closeKind, pzNumber = "") {
-        const candidates = activeNormativeSources(closeKind, pzNumber);
-        if (!candidates.length) {
-            window.alert("Не найдена действующая исходная отметка для снятия или отключения.");
-            return null;
-        }
-        if (candidates.length === 1) {
-            return candidates[0];
-        }
-        const list = candidates.map((item, index) => (
-            `${index + 1}. ${item.entry_time || "—"} · ${item.label}`
-            + (item.pz_number ? ` · ПЗ №${item.pz_number}` : "")
-        )).join("\n");
-        const raw = window.prompt(
-            `Выберите исходную отметку (1–${candidates.length}):\n${list}`,
-            "1",
-        );
-        const index = Number.parseInt(raw || "", 10) - 1;
-        return candidates[index] || null;
-    }
-
     function selectionLabel(range) {
         return normalizeSingleLine(range?.toString() || "", 500);
+    }
+
+    function normalizePzNumber(value) {
+        return normalizeSingleLine(value, 32)
+            .replace(/^№\s*/u, "")
+            .replace(/\s+/g, "");
+    }
+
+    function setNormativeStep(step = "main") {
+        const main = step === "main";
+        if (normativeActions) {
+            normativeActions.hidden = !main;
+        }
+        if (normativeMainFooter) {
+            normativeMainFooter.hidden = !main;
+        }
+        if (pzNumberPanel) {
+            pzNumberPanel.hidden = step !== "pz-number";
+        }
+        if (normativeSourcePanel) {
+            normativeSourcePanel.hidden = step !== "source";
+        }
+        if (pzNumberError) {
+            pzNumberError.textContent = "";
+        }
+        if (normativeSourceError) {
+            normativeSourceError.textContent = "";
+        }
+        if (normativeState) {
+            normativeState.step = step;
+        }
+    }
+
+    function updatePzNumberPreview() {
+        const normalized = normalizePzNumber(pzNumberInput?.value || "");
+        if (pzNumberPreview) {
+            pzNumberPreview.textContent = normalized ? `№${normalized}` : "№—";
+        }
+    }
+
+    function showPzNumberStep(kind, preserveValue = false) {
+        if (!normativeState || !pzNumberPanel || !pzNumberInput) {
+            return;
+        }
+        normativeState.pendingKind = kind;
+        setNormativeStep("pz-number");
+        if (pzNumberTitle) {
+            pzNumberTitle.textContent = kind === "pz_remove"
+                ? "Какое ПЗ снято?"
+                : "Какое ПЗ установлено?";
+        }
+        if (!preserveValue) {
+            pzNumberInput.value = "";
+        }
+        updatePzNumberPreview();
+        positionPopover(
+            normativeMenu,
+            normativeState.trigger?.getBoundingClientRect()
+                || normativeMenu.getBoundingClientRect(),
+            430,
+        );
+        window.requestAnimationFrame(() => {
+            pzNumberInput.focus({preventScroll: true});
+            pzNumberInput.select();
+        });
+    }
+
+    function normativeSourceButton(item, kind, pzNumber) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "draft-normative-source-option";
+
+        const marker = document.createElement("span");
+        marker.className = "draft-normative-source-marker";
+        marker.textContent = item.pz_number ? `ПЗ №${item.pz_number}` : "ЗН";
+
+        const body = document.createElement("span");
+        const title = document.createElement("strong");
+        title.textContent = item.label;
+        const meta = document.createElement("small");
+        meta.textContent = item.entry_time
+            ? `Исходная запись в ${item.entry_time}`
+            : "Исходная запись";
+        body.append(title, meta);
+        button.append(marker, body);
+        button.addEventListener("click", () => {
+            commitNormativeAction(kind, pzNumber, item);
+        });
+        return button;
+    }
+
+    function showNormativeSourceStep(kind, pzNumber, candidates) {
+        if (!normativeState || !normativeSourceList) {
+            return;
+        }
+        normativeState.pendingKind = kind;
+        normativeState.pendingPzNumber = pzNumber;
+        normativeSourceList.replaceChildren(
+            ...candidates.map((item) => (
+                normativeSourceButton(item, kind, pzNumber)
+            )),
+        );
+        setNormativeStep("source");
+        positionPopover(
+            normativeMenu,
+            normativeState.trigger?.getBoundingClientRect()
+                || normativeMenu.getBoundingClientRect(),
+            430,
+        );
+        window.requestAnimationFrame(() => {
+            normativeSourceList.querySelector("button")?.focus({
+                preventScroll: true,
+            });
+        });
     }
 
     function wrapRangeWithNormativeAnnotation(controller, range, annotation) {
@@ -2577,46 +2728,18 @@
         syncController(controller, true);
     }
 
-    function applyNormativeAction(kind) {
+    function commitNormativeAction(kind, pzNumber = "", source = null) {
         const state = normativeState;
-        hideNormativeMenu();
-        if (
-            !state?.controller
-            || (kind !== "remove" && !NORMATIVE_KINDS[kind])
-        ) {
+        if (!state?.controller) {
             return;
         }
         const controller = state.controller;
-        const range = state.range?.cloneRange() || controller.savedRange?.cloneRange();
-        if (kind === "emergency") {
-            toggleEmergencyAnnotation(controller);
-            return;
-        }
-        if (kind === "remove") {
-            if (range) {
-                removeNormativeFromSelection(controller, range);
-            }
-            return;
-        }
+        const range = state.range?.cloneRange()
+            || controller.savedRange?.cloneRange();
         const label = selectionLabel(range);
         if (!label) {
             window.alert("Сначала выделите текст включения, установки, отключения или снятия.");
             return;
-        }
-        let pzNumber = "";
-        if (["pz_install", "pz_remove"].includes(kind)) {
-            const raw = window.prompt("Введите номер ПЗ без знака №:", "");
-            pzNumber = normalizeSingleLine(raw, 32).replace(/^№\s*/u, "");
-            if (!pzNumber) {
-                return;
-            }
-        }
-        let source = null;
-        if (["zn_off", "pz_remove"].includes(kind)) {
-            source = chooseNormativeSource(kind, pzNumber);
-            if (!source) {
-                return;
-            }
         }
         const annotation = {
             id: newAnnotationId(),
@@ -2628,7 +2751,85 @@
                 source_annotation: source.id,
             } : {}),
         };
-        wrapRangeWithNormativeAnnotation(controller, range, annotation);
+        if (wrapRangeWithNormativeAnnotation(controller, range, annotation)) {
+            hideNormativeMenu();
+        }
+    }
+
+    function continueNormativeAction(kind, pzNumber = "") {
+        if (["zn_off", "pz_remove"].includes(kind)) {
+            const candidates = activeNormativeSources(kind, pzNumber);
+            if (!candidates.length) {
+                const target = normativeState?.step === "pz-number"
+                    ? pzNumberError
+                    : normativeSourceError;
+                if (target) {
+                    target.textContent = pzNumber
+                        ? `Действующая установка ПЗ №${pzNumber} не найдена.`
+                        : "Действующая исходная отметка не найдена.";
+                } else {
+                    window.alert("Не найдена действующая исходная отметка для снятия или отключения.");
+                }
+                return;
+            }
+            if (candidates.length > 1) {
+                showNormativeSourceStep(kind, pzNumber, candidates);
+                return;
+            }
+            commitNormativeAction(kind, pzNumber, candidates[0]);
+            return;
+        }
+        commitNormativeAction(kind, pzNumber);
+    }
+
+    function applyNormativeAction(kind) {
+        const state = normativeState;
+        if (
+            !state?.controller
+            || (kind !== "remove" && !NORMATIVE_KINDS[kind])
+        ) {
+            return;
+        }
+        const controller = state.controller;
+        const range = state.range?.cloneRange()
+            || controller.savedRange?.cloneRange();
+        if (kind === "emergency") {
+            toggleEmergencyAnnotation(controller);
+            hideNormativeMenu();
+            return;
+        }
+        if (kind === "remove") {
+            if (range) {
+                removeNormativeFromSelection(controller, range);
+            }
+            hideNormativeMenu();
+            return;
+        }
+        if (!selectionLabel(range)) {
+            window.alert("Сначала выделите текст включения, установки, отключения или снятия.");
+            return;
+        }
+        if (["pz_install", "pz_remove"].includes(kind)) {
+            showPzNumberStep(kind);
+            return;
+        }
+        continueNormativeAction(kind);
+    }
+
+    function applyPzNumberStep() {
+        const kind = normativeState?.pendingKind;
+        if (!["pz_install", "pz_remove"].includes(kind)) {
+            return;
+        }
+        const pzNumber = normalizePzNumber(pzNumberInput?.value || "");
+        if (!pzNumber) {
+            if (pzNumberError) {
+                pzNumberError.textContent = "Укажите номер ПЗ.";
+            }
+            pzNumberInput?.focus({preventScroll: true});
+            return;
+        }
+        continueNormativeAction(kind, pzNumber);
     }
 
     function hideNormativeMenu() {
@@ -2640,6 +2841,7 @@
         normativeMenu.style.removeProperty("left");
         normativeMenu.style.removeProperty("top");
         normativeState?.trigger?.setAttribute("aria-expanded", "false");
+        setNormativeStep("main");
         normativeState = null;
     }
 
@@ -2649,14 +2851,22 @@
         }
         captureSelection(activeController);
         const range = activeController.savedRange?.cloneRange() || null;
-        normativeState = {controller: activeController, range, trigger};
+        normativeState = {
+            controller: activeController,
+            range,
+            trigger,
+            step: "main",
+            pendingKind: "",
+            pendingPzNumber: "",
+        };
+        setNormativeStep("main");
         if (normativeMenuStatus) {
             normativeMenuStatus.textContent = range && !range.collapsed
                 ? `Выделено: ${selectionLabel(range)}`
                 : "Для ПЗ/ЗН сначала выделите относящийся к операции текст";
         }
         trigger.setAttribute("aria-expanded", "true");
-        positionPopover(normativeMenu, trigger.getBoundingClientRect(), 390);
+        positionPopover(normativeMenu, trigger.getBoundingClientRect(), 430);
     }
 
     function initializeRow(row) {
@@ -2735,8 +2945,19 @@
             dispatchFallbackEvent(controller, "compositionend");
             dispatchFallbackEvent(controller, "input");
         });
+        editor.addEventListener("beforeinput", (event) => {
+            if (
+                !controller.composing
+                && simplifiedTimeCommitInput(event)
+            ) {
+                formatSimplifiedTimeBeforeCaret(controller);
+            }
+        });
         editor.addEventListener("input", () => {
             hideFloatingToolbar();
+            if (!controller.composing) {
+                formatSimplifiedTimeAfterCommit(controller);
+            }
             syncController(controller, !controller.composing);
             if (!controller.autoReferenceApplying) {
                 scheduleAutomaticReferences(controller);
@@ -3005,6 +3226,25 @@
     normativeMenu?.querySelectorAll("[data-normative-close]").forEach((button) => {
         button.addEventListener("click", () => hideNormativeMenu());
     });
+    pzNumberInput?.addEventListener("input", updatePzNumberPreview);
+    pzNumberInput?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            applyPzNumberStep();
+        }
+    });
+    normativeMenu?.querySelector("[data-pz-number-apply]")
+        ?.addEventListener("click", applyPzNumberStep);
+    normativeMenu?.querySelector("[data-pz-number-cancel]")
+        ?.addEventListener("click", () => setNormativeStep("main"));
+    normativeMenu?.querySelector("[data-normative-source-cancel]")
+        ?.addEventListener("click", () => {
+            if (normativeState?.pendingKind === "pz_remove") {
+                showPzNumberStep("pz_remove", true);
+            } else {
+                setNormativeStep("main");
+            }
+        });
 
     document.addEventListener("selectionchange", scheduleSelectionUi);
     document.addEventListener("mouseup", scheduleSelectionUi);

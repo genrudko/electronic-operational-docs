@@ -6,7 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
-REVISION = "01134"
+REVISION = "011342"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "eod_config.settings")
@@ -104,7 +104,8 @@ def main() -> None:
             marker in editor_js
             for marker in (
                 "function activeNormativeSources",
-                "function chooseNormativeSource",
+                "function showNormativeSourceStep",
+                "function showPzNumberStep",
                 "source_entry: source.entry_reference",
                 "source_annotation: source.id",
                 "function closedNormativeIds",
