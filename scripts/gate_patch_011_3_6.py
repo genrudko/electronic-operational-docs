@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REVISION = "011360"
+REVISION = "011363"
 
 
 def read(relative: str) -> str:
@@ -24,6 +24,10 @@ def main() -> None:
     css = read("src/static/system/app.css")
     template = read("src/templates/operational_log/shift_workspace.html")
     base = read("src/templates/base.html")
+    page_navigation = editor.split(
+        "function moveSelectionByPage",
+        1,
+    )[1].split("function placeCaretAfter", 1)[0]
 
     require(
         "LOGICAL_CARET_BOOKMARKS",
@@ -42,6 +46,10 @@ def main() -> None:
         "CLEAN_CLIPBOARD_REFERENCE_ACTION",
         'editor.addEventListener("copy"' in editor
         and "function sanitizeClipboardText" in editor
+        and "function clipboardTextFromNode" in editor
+        and "function clipboardTextFromChildren" in editor
+        and "container.innerText" not in editor
+        and "draft-clipboard-serializer" not in editor
         and ".draft-reference-token-action::before" in css
         and 'content: "↗";' in css,
     )
@@ -50,6 +58,10 @@ def main() -> None:
         "function moveSelectionWithModify" in editor
         and '"lineboundary"' in editor
         and "function moveSelectionByPage" in editor
+        and "function editorVisualLineRects" in editor
+        and "function editorPositionFromPoint" in editor
+        and "function restoreWindowViewport" in editor
+        and "moveSelectionWithModify(" not in page_navigation
         and '["PageUp", "PageDown"]' in editor,
     )
     require(

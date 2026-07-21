@@ -8386,13 +8386,3 @@ body.draft-view-drawer-visible .draft-view-drawer {
     user-select: none;
     -webkit-user-select: none;
 }
-
-.draft-clipboard-serializer {
-    position: fixed;
-    left: -100000px;
-    top: 0;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    white-space: pre-wrap;
-}

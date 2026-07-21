@@ -2,7 +2,7 @@
     "use strict";
 
     const SCHEMA_VERSION = "operational-draft-editor.v4";
-    const RUNTIME_REVISION = "011360";
+    const RUNTIME_REVISION = "011363";
     const LEGACY_SCHEMA_VERSIONS = new Set([
         "operational-draft-editor.v1",
         "operational-draft-editor.v2",
@@ -2359,17 +2359,72 @@
         return detachReferenceTokens(controller, stale);
     }
 
+    function clipboardBlockElement(node) {
+        return Boolean(
+            node?.nodeType === Node.ELEMENT_NODE
+            && ["div", "p", "li", "ul", "ol"].includes(
+                node.tagName.toLowerCase(),
+            )
+        );
+    }
+
+    function clipboardTextFromChildren(parent) {
+        let result = "";
+        let previousWasBlock = false;
+        Array.from(parent.childNodes).forEach((child) => {
+            const currentIsBlock = clipboardBlockElement(child);
+            const value = clipboardTextFromNode(child);
+            if (currentIsBlock && value === "") {
+                if (result && !result.endsWith("\n")) {
+                    result += "\n";
+                }
+                result += "\n";
+                previousWasBlock = true;
+                return;
+            }
+            if (
+                result
+                && !result.endsWith("\n")
+                && (currentIsBlock || previousWasBlock)
+            ) {
+                result += "\n";
+            }
+            result += value;
+            previousWasBlock = currentIsBlock;
+        });
+        return result;
+    }
+
+    function clipboardTextFromNode(node) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            return node.nodeValue || "";
+        }
+        if (
+            node.nodeType !== Node.ELEMENT_NODE
+            && node.nodeType !== Node.DOCUMENT_FRAGMENT_NODE
+        ) {
+            return "";
+        }
+        if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+            return clipboardTextFromChildren(node);
+        }
+        if (node.matches?.("[data-reference-token-action]")) {
+            return "";
+        }
+        if (node.matches?.("[data-reference-kind]")) {
+            return referenceTokenLabel(node);
+        }
+        if (node.tagName.toLowerCase() === "br") {
+            return "\n";
+        }
+        return clipboardTextFromChildren(node);
+    }
+
     function cleanClipboardText(range) {
-        const container = document.createElement("div");
-        container.className = "draft-clipboard-serializer";
-        container.setAttribute("aria-hidden", "true");
-        container.append(range.cloneContents());
-        container.querySelectorAll("[data-reference-token-action]")
-            .forEach((node) => node.remove());
-        document.body.append(container);
-        const value = container.innerText || container.textContent || "";
-        container.remove();
-        return value.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+        return clipboardTextFromNode(range.cloneContents())
+            .replace(/\r\n/g, "\n")
+            .replace(/\r/g, "\n")
+            .replace(/\u00a0/g, " ");
     }
 
     function sanitizeClipboardText(value) {
@@ -2504,28 +2559,199 @@
         return true;
     }
 
-    function moveSelectionByPage(controller, direction, extend = false) {
-        const style = window.getComputedStyle(controller.editor);
-        const lineHeight = Number.parseFloat(style.lineHeight)
-            || (Number.parseFloat(style.fontSize) * 1.45)
-            || 18;
-        const lineCount = Math.max(
-            1,
-            Math.floor(controller.editor.clientHeight / lineHeight) - 1,
-        );
-        for (let index = 0; index < lineCount; index += 1) {
-            moveSelectionWithModify(
-                controller,
-                direction,
-                "line",
-                extend,
-            );
-            const selection = window.getSelection();
-            if (!selectionInsideEditor(selection, controller.editor)) {
-                break;
+    function selectionFocusClientPoint(selection, editor) {
+        if (!selection?.focusNode || !editor.contains(selection.focusNode)) {
+            return null;
+        }
+        const caret = document.createRange();
+        try {
+            caret.setStart(selection.focusNode, selection.focusOffset);
+            caret.collapse(true);
+        } catch (error) {
+            return null;
+        }
+        const collapsedRect = Array.from(caret.getClientRects()).at(-1);
+        if (collapsedRect) {
+            return {
+                x: collapsedRect.left,
+                y: collapsedRect.top + collapsedRect.height / 2,
+            };
+        }
+        if (selection.focusNode.nodeType === Node.TEXT_NODE) {
+            const length = selection.focusNode.nodeValue?.length || 0;
+            const probe = document.createRange();
+            if (selection.focusOffset < length) {
+                probe.setStart(selection.focusNode, selection.focusOffset);
+                probe.setEnd(selection.focusNode, selection.focusOffset + 1);
+                const rect = Array.from(probe.getClientRects())[0];
+                if (rect) {
+                    return {x: rect.left, y: rect.top + rect.height / 2};
+                }
+            }
+            if (selection.focusOffset > 0) {
+                probe.setStart(selection.focusNode, selection.focusOffset - 1);
+                probe.setEnd(selection.focusNode, selection.focusOffset);
+                const rect = Array.from(probe.getClientRects()).at(-1);
+                if (rect) {
+                    return {x: rect.right, y: rect.top + rect.height / 2};
+                }
             }
         }
-        return true;
+        const editorRect = editor.getBoundingClientRect();
+        const style = window.getComputedStyle(editor);
+        return {
+            x: editorRect.left + (Number.parseFloat(style.paddingLeft) || 0),
+            y: editorRect.top + editorRect.height / 2,
+        };
+    }
+
+    function editorVisualLineRects(editor) {
+        const rects = [];
+        editableTextNodes(editor).forEach((node) => {
+            if (!(node.nodeValue || "").length) {
+                return;
+            }
+            const range = document.createRange();
+            range.selectNodeContents(node);
+            Array.from(range.getClientRects()).forEach((rect) => {
+                if (rect.height > 0 && rect.width >= 0) {
+                    rects.push(rect);
+                }
+            });
+        });
+        rects.sort((left, right) => (
+            left.top - right.top
+            || left.left - right.left
+        ));
+        const lines = [];
+        rects.forEach((rect) => {
+            const line = lines.find((candidate) => (
+                Math.abs(candidate.top - rect.top) <= 2
+                && Math.abs(candidate.bottom - rect.bottom) <= 2
+            ));
+            if (line) {
+                line.left = Math.min(line.left, rect.left);
+                line.right = Math.max(line.right, rect.right);
+                line.top = Math.min(line.top, rect.top);
+                line.bottom = Math.max(line.bottom, rect.bottom);
+                line.height = Math.max(line.height, rect.height);
+                return;
+            }
+            lines.push({
+                left: rect.left,
+                right: rect.right,
+                top: rect.top,
+                bottom: rect.bottom,
+                height: rect.height,
+            });
+        });
+        return lines;
+    }
+
+    function editorPositionFromPoint(editor, x, y) {
+        let node = null;
+        let offset = 0;
+        if (typeof document.caretPositionFromPoint === "function") {
+            const position = document.caretPositionFromPoint(x, y);
+            node = position?.offsetNode || null;
+            offset = position?.offset || 0;
+        } else if (typeof document.caretRangeFromPoint === "function") {
+            const range = document.caretRangeFromPoint(x, y);
+            node = range?.startContainer || null;
+            offset = range?.startOffset || 0;
+        }
+        if (!node || !editor.contains(node)) {
+            return null;
+        }
+        const element = node.nodeType === Node.ELEMENT_NODE
+            ? node
+            : node.parentElement;
+        const action = element?.closest?.("[data-reference-token-action]");
+        if (action) {
+            const token = action.closest("[data-reference-kind]");
+            const label = token?.querySelector("[data-reference-token-label]");
+            const textNode = label?.firstChild;
+            if (textNode?.nodeType === Node.TEXT_NODE) {
+                return {node: textNode, offset: textNode.length};
+            }
+            return token
+                ? {
+                    node: token.parentNode,
+                    offset: Array.prototype.indexOf.call(
+                        token.parentNode.childNodes,
+                        token,
+                    ) + 1,
+                }
+                : null;
+        }
+        return {node, offset};
+    }
+
+    function restoreWindowViewport(snapshot) {
+        if (!snapshot) {
+            return;
+        }
+        const restore = () => {
+            window.scrollTo({
+                left: snapshot.x,
+                top: snapshot.y,
+                behavior: "auto",
+            });
+        };
+        restore();
+        window.requestAnimationFrame(() => {
+            restore();
+            window.requestAnimationFrame(restore);
+        });
+    }
+
+    function moveSelectionByPage(controller, direction, extend = false) {
+        const resolved = currentEditorSelection(controller);
+        const selection = window.getSelection();
+        if (!resolved || !selection) {
+            return false;
+        }
+        const viewport = {x: window.scrollX, y: window.scrollY};
+        const lines = editorVisualLineRects(controller.editor);
+        let target = null;
+        if (lines.length <= 1) {
+            target = editorBoundaryPosition(
+                controller.editor,
+                direction === "forward",
+            );
+        } else {
+            const currentPoint = selectionFocusClientPoint(
+                selection,
+                controller.editor,
+            );
+            const line = direction === "forward" ? lines.at(-1) : lines[0];
+            const inset = Math.min(
+                1,
+                Math.max(0, (line.right - line.left) / 2),
+            );
+            const x = Math.max(
+                line.left + inset,
+                Math.min(
+                    line.right - inset,
+                    currentPoint?.x ?? line.left,
+                ),
+            );
+            target = editorPositionFromPoint(
+                controller.editor,
+                x,
+                line.top + line.height / 2,
+            );
+        }
+        const moved = setSelectionFocus(
+            controller,
+            target || editorBoundaryPosition(
+                controller.editor,
+                direction === "forward",
+            ),
+            extend,
+        );
+        restoreWindowViewport(viewport);
+        return moved;
     }
 
     function placeCaretAfter(node) {

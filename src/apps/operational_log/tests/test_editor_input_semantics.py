@@ -5,7 +5,7 @@ from pathlib import Path
 from django.test import SimpleTestCase
 
 ROOT = Path(__file__).resolve().parents[3]
-REVISION = "011360"
+REVISION = "011363"
 
 
 class EditorInputSemanticsRuntimeTests(SimpleTestCase):
@@ -41,6 +41,10 @@ class EditorInputSemanticsRuntimeTests(SimpleTestCase):
             r'event\.clipboardData\.setData\(\s*"text/plain"',
         )
         self.assertIn("function sanitizeClipboardText", editor)
+        self.assertIn("function clipboardTextFromNode", editor)
+        self.assertIn("function clipboardTextFromChildren", editor)
+        self.assertNotIn("container.innerText", editor)
+        self.assertNotIn("draft-clipboard-serializer", editor)
         self.assertIn("↗", editor)
         self.assertIn(".draft-reference-token-action::before", css)
         self.assertIn('content: "↗";', css)
@@ -51,6 +55,14 @@ class EditorInputSemanticsRuntimeTests(SimpleTestCase):
         self.assertIn('"lineboundary"', editor)
         self.assertIn('"word"', editor)
         self.assertIn("function moveSelectionByPage", editor)
+        self.assertIn("function editorVisualLineRects", editor)
+        self.assertIn("function editorPositionFromPoint", editor)
+        self.assertIn("function restoreWindowViewport", editor)
+        page_navigation = editor.split(
+            "function moveSelectionByPage",
+            1,
+        )[1].split("function placeCaretAfter", 1)[0]
+        self.assertNotIn("moveSelectionWithModify(", page_navigation)
         self.assertIn('["PageUp", "PageDown"]', editor)
         self.assertIn("editorBoundaryPosition", editor)
 

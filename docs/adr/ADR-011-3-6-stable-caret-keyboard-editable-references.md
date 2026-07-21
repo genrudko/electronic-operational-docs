@@ -37,3 +37,20 @@ Semantic identity is no longer allowed to survive a changed visible label. The
 link preview opens from the dedicated arrow action or Ctrl+Click, while a normal
 click and double-click on the label retain native caret and word-selection
 behavior.
+
+## Repair 3 — logical clipboard serialization and viewport-safe Page navigation
+
+Ручная проверка выявила два остаточных дефекта: CSS-зависимый `innerText` мог
+добавлять перенос между подписью ссылки и следующим знаком препинания, а
+многократный `Selection.modify(..., "line")` прокручивал весь журнал.
+
+Repair 3 закрепляет следующие решения:
+
+- plain-text clipboard строится собственным обходом клонированного `Range`;
+- подпись semantic reference сериализуется как обычный текст, action-иконка
+  пропускается, а переносы создаются только реальными блоками и `<br>`;
+- `PageUp`/`PageDown` находят первую или последнюю визуальную строку через
+  геометрию текстовых диапазонов и caret-from-point API;
+- исходный viewport восстанавливается синхронно и в двух следующих кадрах;
+- для однострочной записи `PageUp` и `PageDown` переходят соответственно к
+  началу и концу записи; `Shift` продолжает выделение.

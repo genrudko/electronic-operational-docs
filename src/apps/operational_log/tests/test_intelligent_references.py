@@ -95,6 +95,6 @@ class IntelligentReferenceCatalogTests(OperationalLogTestCase):
             "data-simplified-time-toggle",
             "data-simplified-time-label",
             "data-initial-simplified-time",
-            "?v=011360",
+            "?v=011363",
         ):
             self.assertContains(response, marker)
