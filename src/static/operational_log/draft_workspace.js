@@ -583,6 +583,9 @@
         if (!activeDraftForm) {
             return false;
         }
+        if (activeDraftForm.dataset.finishing === "true") {
+            return true;
+        }
         const active = document.activeElement;
         return Boolean(
             active
@@ -630,11 +633,28 @@
         paginationPending = true;
     }
 
+    function cancelScheduledPagination() {
+        if (!paginationTimer) {
+            return;
+        }
+        window.clearTimeout(paginationTimer);
+        paginationTimer = null;
+    }
+
     function flushDeferredPagination() {
         if (!paginationPending || isDraftEditing()) {
             return;
         }
         schedulePagination(80);
+    }
+
+    function flushDeferredPaginationImmediately() {
+        cancelScheduledPagination();
+        if (!paginationPending) {
+            return false;
+        }
+        paginateByRecordCount(true);
+        return true;
     }
 
     function statusNode(form) {
@@ -1662,6 +1682,7 @@
             return;
         }
         form.dataset.finishing = "true";
+        cancelScheduledPagination();
         const activeTimer = timers.get(form);
         if (activeTimer) {
             window.clearTimeout(activeTimer);
@@ -1686,7 +1707,7 @@
             viewport,
         });
         if (!chronologyApplied) {
-            flushDeferredPagination();
+            flushDeferredPaginationImmediately();
             restoreViewportAnchor(viewport);
         }
 
@@ -1848,11 +1869,12 @@
         return candidates.at(-1) || null;
     }
 
-    function cancelInlineCreation() {
+    function cancelInlineCreation(suppliedViewport = null) {
         if (!inlineCreation || inlineCreation.materializing) {
             return;
         }
         const { record, dateLabel, dateIso } = inlineCreation;
+        const viewport = captureViewportAnchor(record, suppliedViewport);
         inlineCreation = null;
         if (inlineCreationTimer) {
             window.clearTimeout(inlineCreationTimer);
@@ -1863,7 +1885,9 @@
             dateIso,
         );
         record.replaceWith(replacement);
-        flushDeferredPagination();
+        viewport.row = replacement;
+        flushDeferredPaginationImmediately();
+        restoreViewportAnchor(viewport);
     }
 
     function inlineCreationHasMeaningfulInput(state) {
@@ -1893,10 +1917,33 @@
         }, 320);
     }
 
-    async function materializeInlineDraft(focusContent) {
+    async function materializeInlineDraft(
+        focusContent,
+        suppliedViewport = null,
+    ) {
         const state = inlineCreation;
-        if (!state || state.materializing) {
+        if (!state) {
             return;
+        }
+        if (state.materializing) {
+            if (!focusContent) {
+                state.finishAfterMaterialize = true;
+                state.clickAwayViewport = (
+                    suppliedViewport
+                    || state.clickAwayViewport
+                    || captureViewportAnchor(state.record)
+                );
+            }
+            return;
+        }
+
+        const initialViewport = captureViewportAnchor(
+            state.record,
+            suppliedViewport || state.clickAwayViewport,
+        );
+        if (!focusContent) {
+            state.finishAfterMaterialize = true;
+            state.clickAwayViewport = initialViewport;
         }
 
         const normalizedTime = normalizeTime(
@@ -2011,18 +2058,31 @@
             form.classList.add("has-focus");
             autoGrow(contentInput);
 
-            if (focusContent) {
+            const keepEditing = (
+                focusContent && !state.finishAfterMaterialize
+            );
+            const viewport = captureViewportAnchor(
+                row,
+                state.clickAwayViewport || initialViewport,
+            );
+
+            if (keepEditing) {
                 if (!window.EODDraftEditor?.focus(form, "end")) {
-                    contentInput.focus();
+                    contentInput.focus({preventScroll: true});
                     contentInput.setSelectionRange(
                         contentInput.value.length,
                         contentInput.value.length,
                     );
                 }
+                await save(form);
+                flushDeferredPagination();
+            } else {
+                await finishDraftEditing(
+                    form,
+                    "inline-click-away",
+                    viewport,
+                );
             }
-
-            await save(form);
-            flushDeferredPagination();
         } catch (error) {
             state.materializing = false;
             state.record.classList.remove("is-materializing");
@@ -2100,6 +2160,8 @@
             contentInput,
             status,
             materializing: false,
+            finishAfterMaterialize: false,
+            clickAwayViewport: null,
         };
 
         const cancelOnEscape = (event) => {
@@ -2149,6 +2211,10 @@
         });
 
         record.addEventListener("focusout", () => {
+            const viewport = (
+                inlineCreation?.clickAwayViewport
+                || captureViewportAnchor(record)
+            );
             window.setTimeout(() => {
                 if (
                     !inlineCreation
@@ -2162,9 +2228,9 @@
                         inlineCreation,
                     )
                 ) {
-                    void materializeInlineDraft(false);
+                    void materializeInlineDraft(false, viewport);
                 } else {
-                    cancelInlineCreation();
+                    cancelInlineCreation(viewport);
                 }
             }, 180);
         });
@@ -2443,9 +2509,7 @@
             return;
         }
 
-        if (paginationTimer) {
-            window.clearTimeout(paginationTimer);
-        }
+        cancelScheduledPagination();
 
         paginationTimer = window.setTimeout(() => {
             paginationTimer = null;
@@ -2916,6 +2980,18 @@
     simplifiedTimeToggle?.addEventListener("click", () => {
         setSimplifiedTimeEnabled(!simplifiedTimeEnabled);
     });
+
+    document.addEventListener("pointerdown", (event) => {
+        const state = inlineCreation;
+        if (
+            !state?.record?.isConnected
+            || state.record.contains(event.target)
+        ) {
+            return;
+        }
+        state.finishAfterMaterialize = true;
+        state.clickAwayViewport = captureViewportAnchor(state.record);
+    }, true);
 
     workspace.addEventListener("input", (event) => {
         const input = event.target.closest?.("[data-quick-time]");

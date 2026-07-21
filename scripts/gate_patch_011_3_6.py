@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REVISION = "011363"
+REVISION = "011364"
 
 
 def read(relative: str) -> str:
@@ -18,6 +18,7 @@ def require(name: str, condition: bool) -> None:
 
 def main() -> None:
     editor = read("src/static/operational_log/draft_editor.js")
+    workspace = read("src/static/operational_log/draft_workspace.js")
     navigation = read(
         "src/static/operational_log/draft_reference_navigation.js"
     )
@@ -63,6 +64,15 @@ def main() -> None:
         and "function restoreWindowViewport" in editor
         and "moveSelectionWithModify(" not in page_navigation
         and '["PageUp", "PageDown"]' in editor,
+    )
+    require(
+        "CLICK_AWAY_CREATION_VIEWPORT_STABILITY",
+        'document.addEventListener("pointerdown"' in workspace
+        and "finishAfterMaterialize" in workspace
+        and "clickAwayViewport" in workspace
+        and '"inline-click-away"' in workspace
+        and "flushDeferredPaginationImmediately" in workspace
+        and 'activeDraftForm.dataset.finishing === "true"' in workspace,
     )
     require(
         "REFERENCE_PREVIEW_EXPLICIT_ACTION",
