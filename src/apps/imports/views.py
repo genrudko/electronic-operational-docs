@@ -14,8 +14,9 @@ from .forms import (
     ImportRowCorrectionForm,
     ImportUploadForm,
 )
-from .models import ImportBatch, ImportPublication, ImportRow
+from .models import ImportBatch, ImportMappingTemplate, ImportPublication, ImportRow
 from .services import (
+    available_data_profiles,
     build_import_publication_preview,
     bulk_decide_import_rows,
     can_publish_import,
@@ -38,6 +39,8 @@ def _organization_batch(request: HttpRequest, public_id):
             "organization",
             "created_by",
             "created_by__position",
+            "data_profile",
+            "applied_mapping_template",
         ),
         public_id=public_id,
         organization=employee.organization,
@@ -60,7 +63,7 @@ def import_list(request: HttpRequest) -> HttpResponse:
     employee = require_import_employee(request.user)
     batches = list(
         ImportBatch.objects.filter(organization=employee.organization)
-        .select_related("created_by")
+        .select_related("created_by", "data_profile", "applied_mapping_template")
         .annotate(stored_rows=Count("rows"))
         .order_by("-created_at", "-id")[:100]
     )
@@ -83,10 +86,43 @@ def import_list(request: HttpRequest) -> HttpResponse:
             batch.status == ImportBatch.Status.PUBLISHED for batch in batches
         ),
     }
+    profiles = available_data_profiles(employee.organization)
+    mapping_template_count = ImportMappingTemplate.objects.filter(
+        organization=employee.organization,
+        is_active=True,
+    ).count()
     return render(
         request,
         "imports/list.html",
-        {"batches": batches, "summary": summary},
+        {
+            "batches": batches,
+            "summary": summary,
+            "profiles": profiles,
+            "mapping_template_count": mapping_template_count,
+        },
+    )
+
+
+@login_required
+def data_profile_list(request: HttpRequest) -> HttpResponse:
+    employee = require_import_employee(request.user)
+    profiles = available_data_profiles(employee.organization)
+    profile_rows = []
+    for profile in profiles:
+        profile_rows.append(
+            {
+                "profile": profile,
+                "batch_count": ImportBatch.objects.filter(data_profile=profile).count(),
+                "published_count": ImportBatch.objects.filter(
+                    data_profile=profile,
+                    status=ImportBatch.Status.PUBLISHED,
+                ).count(),
+            }
+        )
+    return render(
+        request,
+        "imports/data_profiles.html",
+        {"profile_rows": profile_rows},
     )
 
 
@@ -94,12 +130,18 @@ def import_list(request: HttpRequest) -> HttpResponse:
 def import_upload(request: HttpRequest) -> HttpResponse:
     employee = require_import_employee(request.user)
     if request.method == "POST":
-        form = ImportUploadForm(request.POST, request.FILES)
+        form = ImportUploadForm(
+            request.POST,
+            request.FILES,
+            organization=employee.organization,
+        )
         if form.is_valid():
             batch = create_import_batch(
                 uploaded_file=form.cleaned_data["source_file"],
                 target_registry=form.cleaned_data["target_registry"],
                 employee=employee,
+                data_profile=form.cleaned_data["data_profile"],
+                source_reference=form.cleaned_data["source_reference"],
             )
             if batch.status == ImportBatch.Status.READY:
                 messages.success(
@@ -113,8 +155,15 @@ def import_upload(request: HttpRequest) -> HttpResponse:
                 )
             return redirect("imports:detail", public_id=batch.public_id)
     else:
-        form = ImportUploadForm()
-    return render(request, "imports/upload.html", {"form": form})
+        form = ImportUploadForm(organization=employee.organization)
+    return render(
+        request,
+        "imports/upload.html",
+        {
+            "form": form,
+            "profiles": available_data_profiles(employee.organization),
+        },
+    )
 
 
 @login_required

@@ -21,9 +21,21 @@
                 <div class="field-error">{{ form.non_field_errors }}</div>
             {% endif %}
             <label>
+                <span>{{ form.data_profile.label }}</span>
+                {{ form.data_profile }}
+                <small>{{ form.data_profile.help_text }}</small>
+                {{ form.data_profile.errors }}
+            </label>
+            <label>
                 <span>{{ form.target_registry.label }}</span>
                 {{ form.target_registry }}
                 {{ form.target_registry.errors }}
+            </label>
+            <label>
+                <span>{{ form.source_reference.label }}</span>
+                {{ form.source_reference }}
+                <small>{{ form.source_reference.help_text }}</small>
+                {{ form.source_reference.errors }}
             </label>
             <label class="file-drop-field">
                 <span>{{ form.source_file.label }}</span>
@@ -36,7 +48,7 @@
     </article>
 
     <aside class="profile-card">
-        <div class="eyebrow">ОГРАНИЧЕНИЯ ЭТАПА 008.1</div>
+        <div class="eyebrow">ПРОФИЛЬ И ПРОИСХОЖДЕНИЕ</div>
         <h2>Что произойдёт</h2>
         <ul class="plain-list">
             <li>Исходные значения ячеек сохранятся без исправления.</li>
@@ -44,7 +56,17 @@
             <li>Формулы XLSX сохранятся как текст и не выполнятся.</li>
             <li>Полные дубли строк будут отмечены конфликтами.</li>
             <li>Рабочие справочники останутся без изменений.</li>
+            <li>Профиль данных и источник будут записаны в аудиторскую историю.</li>
+            <li>Знакомая структура заголовков получит сохранённую схему сопоставления.</li>
         </ul>
+        <div class="mini-profile-list">
+        {% for profile in profiles %}
+            <div>
+                <strong>{{ profile.name }}</strong>
+                <span>{{ profile.description }}</span>
+            </div>
+        {% endfor %}
+        </div>
         <p class="muted">
             Ограничения: до 10 МБ, до 5000 строк данных и до 100 колонок.
             Содержимое исходного файла после разбора не хранится; сохраняются его

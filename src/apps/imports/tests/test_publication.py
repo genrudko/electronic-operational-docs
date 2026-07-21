@@ -374,6 +374,12 @@ class ControlledImportPublicationTests(TestCase):
         self.assertEqual(batch.publication_digest, publication.digest)
         self.assertEqual(batch.published_by, self.publisher)
         self.assertEqual(publication.published_rows.count(), 1)
+        self.assertEqual(publication.schema_version, "eod.import.publication.v2")
+        self.assertIn('"data_profile"', publication.canonical_json)
+        self.assertEqual(
+            publication.result_summary["data_profile"]["code"],
+            batch.data_profile.code,
+        )
         self.assertEqual(
             batch.events.filter(event_type=ImportEvent.EventType.PUBLISHED).count(),
             1,

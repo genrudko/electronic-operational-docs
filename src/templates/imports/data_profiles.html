@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Профили данных · Импорт · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+    <div>
+        <div class="eyebrow">КОНТРОЛИРУЕМАЯ СРЕДА ДАННЫХ</div>
+        <h1>Профили данных</h1>
+        <p>Каждая загрузка явно относится к безопасной презентационной, локальной или тестовой среде.</p>
+    </div>
+    <div class="document-actions">
+        <a href="{% url 'imports:list' %}">К журналу загрузок</a>
+        <a class="button" href="{% url 'imports:upload' %}">Новая загрузка</a>
+    </div>
+</section>
+
+<section class="notice-card import-safety-notice">
+    <strong>Профиль является частью происхождения данных</strong>
+    <p>
+        Выбранный профиль сохраняется в попытке импорта, событиях и каноническом снимке
+        публикации. Локальные данные с реальными ФИО нельзя смешивать с презентационным
+        экспортируемым набором.
+    </p>
+</section>
+
+<section class="data-profile-grid">
+{% for item in profile_rows %}
+    {% with profile=item.profile %}
+    <article class="profile-card data-profile-card profile-kind-{{ profile.kind|lower }}">
+        <div class="section-heading">
+            <div>
+                <div class="eyebrow">{{ profile.get_kind_display }}</div>
+                <h2>{{ profile.name }}</h2>
+            </div>
+            {% if profile.is_default %}<span class="count-badge">По умолчанию</span>{% endif %}
+        </div>
+        <p>{{ profile.description }}</p>
+        <dl class="detail-list">
+            <dt>Внутренний код</dt><dd><code>{{ profile.code }}</code></dd>
+            <dt>Чувствительность</dt><dd>{{ profile.get_sensitivity_level_display }}</dd>
+            <dt>Экспорт</dt><dd>{{ profile.get_export_policy_display }}</dd>
+            <dt>Реальные персональные данные</dt>
+            <dd>{% if profile.allows_real_personal_data %}Допускаются локально{% else %}Не допускаются{% endif %}</dd>
+            <dt>Попыток импорта</dt><dd>{{ item.batch_count }}</dd>
+            <dt>Публикаций</dt><dd>{{ item.published_count }}</dd>
+        </dl>
+    </article>
+    {% endwith %}
+{% endfor %}
+</section>
+
+<section class="profile-card">
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow">ПРАВИЛА ИСПОЛЬЗОВАНИЯ</div>
+            <h2>Разделение контуров</h2>
+        </div>
+    </div>
+    <div class="three-column-guidance">
+        <article>
+            <strong>Презентация</strong>
+            <p>Реальные диспетчерские наименования допустимы, реальные ФИО и фактическая оперативная история — нет.</p>
+        </article>
+        <article>
+            <strong>Локальная проверка</strong>
+            <p>Допускаются внутренние данные для проверки на одном компьютере. Обычный экспорт запрещён.</p>
+        </article>
+        <article>
+            <strong>Автотесты</strong>
+            <p>Только синтетические записи. Профиль не используется для демонстрации или рабочего наполнения.</p>
+        </article>
+    </div>
+</section>
+{% endblock %}

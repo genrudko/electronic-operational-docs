@@ -1,13 +1,60 @@
 from django.contrib import admin
 
 from .models import (
+    DataProfile,
     ImportBatch,
     ImportColumn,
     ImportEvent,
+    ImportMappingTemplate,
     ImportPublication,
     ImportPublicationRow,
     ImportRow,
 )
+
+
+@admin.register(DataProfile)
+class DataProfileAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "organization",
+        "kind",
+        "sensitivity_level",
+        "export_policy",
+        "is_default",
+        "is_active",
+    )
+    list_filter = ("kind", "sensitivity_level", "export_policy", "is_active")
+    search_fields = ("name", "code", "organization__name")
+
+
+@admin.register(ImportMappingTemplate)
+class ImportMappingTemplateAdmin(admin.ModelAdmin):
+    list_display = (
+        "name",
+        "organization",
+        "target_registry",
+        "usage_count",
+        "last_used_at",
+        "is_active",
+    )
+    list_filter = ("target_registry", "is_active")
+    search_fields = ("name", "header_signature", "organization__name")
+    readonly_fields = (
+        "header_signature",
+        "mapping",
+        "created_by",
+        "updated_by",
+        "usage_count",
+        "last_used_at",
+        "created_at",
+        "updated_at",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 class ImportColumnInline(admin.TabularInline):
@@ -31,6 +78,7 @@ class ImportBatchAdmin(admin.ModelAdmin):
     list_display = (
         "original_filename",
         "organization",
+        "data_profile",
         "target_registry",
         "status",
         "data_rows",

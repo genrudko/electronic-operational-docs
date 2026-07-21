@@ -4,24 +4,59 @@ from pathlib import Path
 
 from django import forms
 
-from .models import ImportBatch, ImportRow
+from .models import DataProfile, ImportBatch, ImportRow
 from .services import (
     MAX_FILE_SIZE,
+    available_data_profiles,
     registry_field_specs,
     suggest_column_mapping,
 )
 
 
+class DataProfileChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj: DataProfile) -> str:
+        suffix = " · профиль по умолчанию" if obj.is_default else ""
+        return f"{obj.name} · {obj.get_export_policy_display()}{suffix}"
+
+
 class ImportUploadForm(forms.Form):
+    data_profile = DataProfileChoiceField(
+        label="Профиль данных",
+        queryset=DataProfile.objects.none(),
+        required=False,
+        help_text=(
+            "Презентационный профиль безопасен для показа. Локальный проверочный "
+            "профиль не предназначен для обычного экспорта."
+        ),
+    )
     target_registry = forms.ChoiceField(
         label="Назначение импорта",
         choices=ImportBatch.TargetRegistry.choices,
+    )
+    source_reference = forms.CharField(
+        label="Источник или основание",
+        required=False,
+        max_length=1000,
+        help_text=(
+            "Например: «Перечень объектов диспетчеризации Кочубеевской ВЭС» "
+            "или реквизиты документа-основания."
+        ),
     )
     source_file = forms.FileField(
         label="Файл",
         help_text="Поддерживаются CSV и XLSX размером до 10 МБ.",
         widget=forms.ClearableFileInput(attrs={"accept": ".csv,.xlsx"}),
     )
+
+    def __init__(self, *args, organization, **kwargs):
+        super().__init__(*args, **kwargs)
+        profiles = available_data_profiles(organization)
+        self.fields["data_profile"].queryset = DataProfile.objects.filter(
+            pk__in=[profile.pk for profile in profiles]
+        ).order_by("-is_default", "name")
+        default_profile = next((profile for profile in profiles if profile.is_default), None)
+        if default_profile is not None:
+            self.fields["data_profile"].initial = default_profile
 
     def clean_source_file(self):
         uploaded = self.cleaned_data["source_file"]

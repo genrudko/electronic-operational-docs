@@ -44,6 +44,10 @@
         <dd>{{ publication.actor.full_name }} · {{ publication.actor.position.name }}</dd>
         <dt>Назначение</dt>
         <dd>{{ publication.get_target_registry_display }}</dd>
+        <dt>Профиль данных</dt>
+        <dd>{{ batch.data_profile.name }} · <code>{{ batch.data_profile.code }}</code></dd>
+        <dt>Политика экспорта</dt>
+        <dd>{{ batch.data_profile.get_export_policy_display }}</dd>
         <dt>Версия схемы</dt>
         <dd><code>{{ publication.schema_version }}</code></dd>
         <dt>SHA-256</dt>

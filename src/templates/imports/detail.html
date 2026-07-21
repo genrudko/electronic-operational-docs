@@ -29,6 +29,16 @@
     </div>
 </section>
 
+<section class="notice-card data-profile-notice profile-kind-{{ batch.data_profile.kind|lower }}">
+    <strong>{{ batch.data_profile.name }}</strong>
+    <p>{{ batch.data_profile.description }}</p>
+    <p class="muted">
+        {{ batch.data_profile.get_sensitivity_level_display }} ·
+        {{ batch.data_profile.get_export_policy_display }}
+        {% if batch.data_profile.allows_real_personal_data %}· допускаются реальные персональные данные{% endif %}
+    </p>
+</section>
+
 {% if batch.status == 'FAILED' %}
 <section class="notice-card error-notice">
     <strong>Файл не разобран</strong>
@@ -70,6 +80,8 @@
     </div>
     <dl class="detail-list import-metadata">
         <dt>Назначение</dt><dd>{{ batch.get_target_registry_display }}</dd>
+        <dt>Профиль данных</dt><dd>{{ batch.data_profile.name }}</dd>
+        {% if batch.source_reference %}<dt>Источник</dt><dd>{{ batch.source_reference }}</dd>{% endif %}
         <dt>Формат</dt><dd>{{ batch.get_source_format_display }}</dd>
         <dt>Размер</dt><dd>{{ batch.file_size }} байт</dd>
         {% if batch.sheet_name %}<dt>Лист</dt><dd>{{ batch.sheet_name }}</dd>{% endif %}
@@ -83,6 +95,8 @@
         <div class="technical-panel">
             <dl class="detail-list">
                 <dt>SHA-256</dt><dd><code class="breakable">{{ batch.file_sha256 }}</code></dd>
+                <dt>SHA-256 заголовков</dt><dd><code class="breakable">{{ batch.header_signature|default:"—" }}</code></dd>
+                <dt>Код профиля</dt><dd><code>{{ batch.data_profile.code }}</code></dd>
                 <dt>Публичный идентификатор</dt><dd><code>{{ batch.public_id }}</code></dd>
                 <dt>Повторных загрузок того же файла</dt><dd>{{ duplicate_attempts }}</dd>
                 <dt>Исходный файл хранится</dt><dd>Нет</dd>
@@ -114,6 +128,12 @@
             <span class="import-status status-review">Не подтверждено</span>
         {% endif %}
     </div>
+    {% if batch.applied_mapping_template %}
+        <p class="mapping-template-note">
+            Применена сохранённая схема «{{ batch.applied_mapping_template.name }}».
+            Перед публикацией сопоставление всё равно требует явного подтверждения.
+        </p>
+    {% endif %}
     <p class="muted">
         Сопоставлено колонок: {{ mapped_count }} из {{ batch.column_count }}.
         Обязательных полей для выбранного назначения: {{ required_count }}.

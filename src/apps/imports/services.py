@@ -16,15 +16,17 @@ from xml.etree import ElementTree
 
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.db.models import Max, Q
+from django.db.models import F, Max, Q
 from django.utils import timezone
 
 from apps.organizations.models import Employee, RoleAssignment
 
 from .models import (
+    DataProfile,
     ImportBatch,
     ImportColumn,
     ImportEvent,
+    ImportMappingTemplate,
     ImportPublication,
     ImportPublicationRow,
     ImportRow,
@@ -335,6 +337,92 @@ REGISTRY_FIELD_SPECS: dict[str, tuple[ImportFieldSpec, ...]] = {
 
 TRUE_VALUES = {"1", "да", "истина", "true", "yes", "y", "on"}
 FALSE_VALUES = {"0", "нет", "ложь", "false", "no", "n", "off"}
+
+
+def ensure_data_profiles(organization) -> tuple[DataProfile, ...]:
+    return DataProfile.ensure_for_organization(organization)
+
+
+def default_data_profile(organization) -> DataProfile:
+    return DataProfile.default_for_organization(organization)
+
+
+def available_data_profiles(organization) -> tuple[DataProfile, ...]:
+    ensure_data_profiles(organization)
+    return tuple(
+        DataProfile.objects.filter(organization=organization, is_active=True).order_by(
+            "-is_default",
+            "name",
+        )
+    )
+
+
+def _header_signature(column_payloads: list[dict[str, object]]) -> str:
+    normalized_headers = [
+        {
+            "position": int(payload["position"]),
+            "normalized_name": str(payload["normalized_name"]),
+        }
+        for payload in column_payloads
+    ]
+    canonical = json.dumps(
+        normalized_headers,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _validated_template_mapping(
+    *,
+    target_registry: str,
+    mapping: dict[str, object],
+    column_count: int,
+) -> dict[int, str]:
+    allowed_keys = {spec.key for spec in registry_field_specs(target_registry)}
+    cleaned: dict[int, str] = {}
+    used_keys: set[str] = set()
+    for raw_position, raw_key in mapping.items():
+        try:
+            position = int(raw_position)
+        except (TypeError, ValueError):
+            continue
+        key = str(raw_key or "")
+        if position < 1 or position > column_count or key not in allowed_keys:
+            continue
+        if key in used_keys:
+            continue
+        cleaned[position] = key
+        used_keys.add(key)
+    return cleaned
+
+
+def _matching_mapping_template(
+    *,
+    organization,
+    target_registry: str,
+    header_signature: str,
+    column_count: int,
+) -> tuple[ImportMappingTemplate | None, dict[int, str]]:
+    template = (
+        ImportMappingTemplate.objects.filter(
+            organization=organization,
+            target_registry=target_registry,
+            header_signature=header_signature,
+            is_active=True,
+        )
+        .order_by("-updated_at", "-id")
+        .first()
+    )
+    if template is None:
+        return None, {}
+    mapping = _validated_template_mapping(
+        target_registry=target_registry,
+        mapping=template.mapping,
+        column_count=column_count,
+    )
+    return template, mapping
 
 
 def require_import_employee(user) -> Employee:
@@ -1042,6 +1130,8 @@ def create_import_batch(
     uploaded_file,
     target_registry: str,
     employee: Employee,
+    data_profile: DataProfile | None = None,
+    source_reference: str = "",
 ) -> ImportBatch:
     filename = _safe_filename(uploaded_file.name)
     data = _read_upload(uploaded_file)
@@ -1054,11 +1144,18 @@ def create_import_batch(
         if extension == ".csv"
         else ImportBatch.SourceFormat.XLSX
     )
+    selected_profile = data_profile or default_data_profile(employee.organization)
+    if selected_profile.organization_id != employee.organization_id:
+        raise ValidationError("Профиль данных относится к другой организации.")
+    if not selected_profile.is_active:
+        raise ValidationError("Нельзя использовать отключённый профиль данных.")
 
     batch = ImportBatch.objects.create(
         organization=employee.organization,
         created_by=employee,
+        data_profile=selected_profile,
         target_registry=target_registry,
+        source_reference=normalize_cell(source_reference),
         original_filename=filename,
         source_format=source_format,
         file_size=len(data),
@@ -1073,6 +1170,8 @@ def create_import_batch(
             "filename": filename,
             "size": len(data),
             "sha256": digest,
+            "data_profile": selected_profile.code,
+            "source_reference": batch.source_reference,
         },
     )
 
@@ -1085,6 +1184,20 @@ def create_import_batch(
             raise ImportParseError(f"Файл содержит больше {MAX_COLUMNS} колонок.")
 
         column_payloads = _column_payloads(parsed, width, target_registry)
+        header_signature = _header_signature(column_payloads)
+        mapping_template, template_mapping = _matching_mapping_template(
+            organization=employee.organization,
+            target_registry=target_registry,
+            header_signature=header_signature,
+            column_count=width,
+        )
+        if mapping_template is not None and template_mapping:
+            for payload in column_payloads:
+                position = int(payload["position"])
+                if position in template_mapping:
+                    payload["mapped_key"] = template_mapping[position]
+                    payload["mapping_origin"] = ImportColumn.MappingOrigin.TEMPLATE
+            batch.applied_mapping_template = mapping_template
         row_payloads = _row_payloads(parsed, width, column_payloads)
 
         ImportColumn.objects.bulk_create(
@@ -1096,6 +1209,7 @@ def create_import_batch(
 
         counts = _status_counts(row_payloads)
         batch.sheet_name = parsed.sheet_name
+        batch.header_signature = header_signature
         batch.source_encoding = parsed.encoding
         batch.source_delimiter = parsed.delimiter
         batch.status = ImportBatch.Status.READY
@@ -1119,8 +1233,28 @@ def create_import_batch(
                 "columns": batch.column_count,
                 "status_counts": counts,
                 "source_bytes_retained": False,
+                "data_profile": selected_profile.code,
+                "header_signature": header_signature,
+                "mapping_template_id": (
+                    mapping_template.pk if mapping_template is not None and template_mapping else None
+                ),
             },
         )
+        if mapping_template is not None and template_mapping:
+            ImportMappingTemplate.objects.filter(pk=mapping_template.pk).update(
+                usage_count=F("usage_count") + 1,
+                last_used_at=timezone.now(),
+            )
+            ImportEvent.objects.create(
+                batch=batch,
+                event_type=ImportEvent.EventType.MAPPING_TEMPLATE_APPLIED,
+                actor=employee,
+                details={
+                    "template_id": mapping_template.pk,
+                    "template_name": mapping_template.name,
+                    "mapping": {str(key): value for key, value in template_mapping.items()},
+                },
+            )
     except (ImportParseError, csv.Error, ElementTree.ParseError, zipfile.BadZipFile) as exc:
         batch.status = ImportBatch.Status.FAILED
         batch.error_message = str(exc)
@@ -1606,6 +1740,44 @@ def recalculate_batch_review(
     return batch
 
 
+def _save_mapping_template(
+    *,
+    batch: ImportBatch,
+    employee: Employee,
+    mapping: dict[int, str],
+) -> ImportMappingTemplate | None:
+    if not batch.header_signature:
+        return None
+    mapping_payload = {str(position): key for position, key in mapping.items() if key}
+    template_name = f"{batch.get_target_registry_display()}: {Path(batch.original_filename).stem}"
+    template, created = ImportMappingTemplate.objects.get_or_create(
+        organization=batch.organization,
+        target_registry=batch.target_registry,
+        header_signature=batch.header_signature,
+        defaults={
+            "name": template_name,
+            "mapping": mapping_payload,
+            "created_by": employee,
+            "updated_by": employee,
+        },
+    )
+    if not created:
+        template.name = template_name
+        template.mapping = mapping_payload
+        template.updated_by = employee
+        template.is_active = True
+        template.save(
+            update_fields=(
+                "name",
+                "mapping",
+                "updated_by",
+                "is_active",
+                "updated_at",
+            )
+        )
+    return template
+
+
 @transaction.atomic
 def save_column_mapping(
     *,
@@ -1649,6 +1821,24 @@ def save_column_mapping(
             "publication_performed": False,
         },
     )
+    mapping_template = _save_mapping_template(
+        batch=batch,
+        employee=employee,
+        mapping=cleaned,
+    )
+    if mapping_template is not None:
+        batch.applied_mapping_template = mapping_template
+        batch.save(update_fields=("applied_mapping_template", "updated_at"))
+        ImportEvent.objects.create(
+            batch=batch,
+            event_type=ImportEvent.EventType.MAPPING_TEMPLATE_SAVED,
+            actor=employee,
+            details={
+                "template_id": mapping_template.pk,
+                "template_name": mapping_template.name,
+                "header_signature": mapping_template.header_signature,
+            },
+        )
     return recalculate_batch_review(
         batch=batch,
         employee=employee,
@@ -1864,7 +2054,7 @@ def bulk_decide_import_rows(
     return result
 
 
-PUBLICATION_SCHEMA = "eod.import.publication.v1"
+PUBLICATION_SCHEMA = "eod.import.publication.v2"
 PUBLISHER_ROLE_CODE = "organization_admin"
 
 
@@ -2198,12 +2388,22 @@ def build_import_publication_preview(batch: ImportBatch) -> ImportPublicationPre
             "id": batch.organization_id,
             "code": batch.organization.code,
         },
+        "data_profile": {
+            "id": batch.data_profile_id,
+            "code": batch.data_profile.code,
+            "kind": batch.data_profile.kind,
+            "sensitivity_level": batch.data_profile.sensitivity_level,
+            "export_policy": batch.data_profile.export_policy,
+            "allows_real_personal_data": batch.data_profile.allows_real_personal_data,
+        },
         "source": {
             "filename": batch.original_filename,
             "format": batch.source_format,
             "size": batch.file_size,
             "sha256": batch.file_sha256,
+            "header_signature": batch.header_signature,
             "sheet": batch.sheet_name,
+            "reference": batch.source_reference,
         },
         "target_registry": batch.target_registry,
         "mapping_revision": batch.mapping_revision,
@@ -2459,7 +2659,12 @@ def publish_import_batch(
 
     locked = (
         ImportBatch.objects.select_for_update()
-        .select_related("organization", "created_by", "published_by")
+        .select_related(
+            "organization",
+            "created_by",
+            "published_by",
+            "data_profile",
+        )
         .get(pk=batch.pk)
     )
     list(
@@ -2488,6 +2693,12 @@ def publish_import_batch(
         "accepted": len(result_rows),
         "rejected": preview.rejected_count,
         "models": model_counts,
+        "data_profile": {
+            "code": locked.data_profile.code,
+            "kind": locked.data_profile.kind,
+            "sensitivity_level": locked.data_profile.sensitivity_level,
+            "export_policy": locked.data_profile.export_policy,
+        },
     }
     publication = ImportPublication.objects.create(
         batch=locked,

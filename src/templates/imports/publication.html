@@ -12,6 +12,14 @@
     <a href="{% url 'imports:detail' batch.public_id %}">К проверке строк</a>
 </section>
 
+<section class="notice-card data-profile-notice profile-kind-{{ batch.data_profile.kind|lower }}">
+    <strong>Публикация в профиль «{{ batch.data_profile.name }}»</strong>
+    <p>{{ batch.data_profile.get_sensitivity_level_display }} · {{ batch.data_profile.get_export_policy_display }}</p>
+    {% if batch.data_profile.export_policy == 'PROHIBITED' %}
+    <p>Созданные записи предназначены только для локальной проверки и не должны попадать в обычный экспорт.</p>
+    {% endif %}
+</section>
+
 <section class="notice-card warning-notice">
     <strong>Следующее подтверждение изменит рабочий справочник</strong>
     <p>
@@ -67,6 +75,9 @@
         <dd><code class="breakable">{{ batch.file_sha256 }}</code></dd>
         <dt>SHA-256 состава публикации</dt>
         <dd><code class="breakable">{{ preview.digest }}</code></dd>
+        <dt>Профиль данных</dt>
+        <dd>{{ batch.data_profile.name }} · <code>{{ batch.data_profile.code }}</code></dd>
+        {% if batch.source_reference %}<dt>Источник</dt><dd>{{ batch.source_reference }}</dd>{% endif %}
         <dt>Публикующий сотрудник</dt>
         <dd>{{ employee.full_name }}</dd>
         <dt>Требуемая роль</dt>

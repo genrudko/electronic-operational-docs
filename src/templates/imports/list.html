@@ -9,7 +9,26 @@
         <h1>Импорт справочников</h1>
         <p>Загруженные файлы разбираются отдельно и не изменяют действующие справочники.</p>
     </div>
-    <a class="button" href="{% url 'imports:upload' %}">Загрузить файл</a>
+    <div class="document-actions">
+        <a class="button secondary" href="{% url 'imports:data_profiles' %}">Профили данных</a>
+        <a class="button" href="{% url 'imports:upload' %}">Загрузить файл</a>
+    </div>
+</section>
+
+<section class="data-profile-strip" aria-label="Профили данных организации">
+    {% for profile in profiles %}
+    <article class="data-profile-chip profile-kind-{{ profile.kind|lower }}">
+        <div>
+            <strong>{{ profile.name }}</strong>
+            <span>{{ profile.get_sensitivity_level_display }}</span>
+        </div>
+        <small>{{ profile.get_export_policy_display }}</small>
+    </article>
+    {% endfor %}
+    <a class="data-profile-chip mapping-chip" href="{% url 'imports:data_profiles' %}">
+        <div><strong>Схемы сопоставления</strong><span>Повторное использование структуры файлов</span></div>
+        <small>{{ mapping_template_count }} действующих</small>
+    </a>
 </section>
 
 <section class="notice-card import-safety-notice">
@@ -45,6 +64,7 @@
                 <tr>
                     <th>Файл</th>
                     <th>Назначение</th>
+                    <th>Профиль данных</th>
                     <th>Формат</th>
                     <th>Строки</th>
                     <th>Состояние</th>
@@ -61,6 +81,11 @@
                         </a>
                     </td>
                     <td>{{ batch.get_target_registry_display }}</td>
+                    <td>
+                        <span class="data-profile-badge profile-kind-{{ batch.data_profile.kind|lower }}">
+                            {{ batch.data_profile.name }}
+                        </span>
+                    </td>
                     <td>{{ batch.get_source_format_display }}</td>
                     <td>{{ batch.data_rows }}</td>
                     <td>
@@ -80,7 +105,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="7" class="muted">
+                    <td colspan="8" class="muted">
                         Загрузок пока нет. Начните с небольшого тестового CSV или XLSX.
                     </td>
                 </tr>
