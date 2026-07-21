@@ -20,8 +20,11 @@
         "[data-add-draft-form]",
     );
     const commandBar = workspace.querySelector(".draft-command-bar");
-    const pageNavigation = workspace.querySelector(
-        "[data-page-navigation]",
+    const ribbonModeToggle = workspace.querySelector(
+        "[data-ribbon-mode-toggle]",
+    );
+    const ribbonModeIcon = workspace.querySelector(
+        "[data-ribbon-mode-icon]",
     );
     const defaultEntryDate = (
         workspace.dataset.defaultEntryDate || ""
@@ -183,6 +186,12 @@
         "eod-draft-view-mode",
         "single",
     );
+    let ribbonMode = normalizeRibbonMode(
+        readPreference(
+            "eod.operationalJournal.ribbonMode",
+            "compact",
+        ),
+    );
 
     function readPreference(key, fallback) {
         try {
@@ -197,6 +206,38 @@
             window.localStorage.setItem(key, String(value));
         } catch (error) {
             // Настройка действует в текущей вкладке.
+        }
+    }
+
+    function normalizeRibbonMode(value) {
+        return value === "expanded" ? "expanded" : "compact";
+    }
+
+    function applyRibbonMode(value, persist = false) {
+        ribbonMode = normalizeRibbonMode(value);
+        if (commandBar) {
+            commandBar.dataset.ribbonMode = ribbonMode;
+        }
+        const expanded = ribbonMode === "expanded";
+        if (ribbonModeToggle) {
+            const label = expanded
+                ? "Свернуть ленту редактора"
+                : "Развернуть ленту редактора";
+            ribbonModeToggle.setAttribute(
+                "aria-expanded",
+                expanded ? "true" : "false",
+            );
+            ribbonModeToggle.setAttribute("aria-label", label);
+            ribbonModeToggle.title = label;
+        }
+        if (ribbonModeIcon) {
+            ribbonModeIcon.textContent = expanded ? "⌃" : "⌄";
+        }
+        if (persist) {
+            writePreference(
+                "eod.operationalJournal.ribbonMode",
+                ribbonMode,
+            );
         }
     }
 
@@ -2572,19 +2613,6 @@
             "--draft-overlay-top",
             `${offset}px`,
         );
-        const commandBarHeight = commandBar
-            ? Math.max(0, Math.ceil(commandBar.getBoundingClientRect().height))
-            : 0;
-        workspace.style.setProperty(
-            "--draft-command-bar-height",
-            `${commandBarHeight}px`,
-        );
-        if (pageNavigation) {
-            pageNavigation.style.setProperty(
-                "--draft-page-navigation-top",
-                `${offset + commandBarHeight + 8}px`,
-            );
-        }
     }
 
     function openDrawer() {
@@ -2955,6 +2983,15 @@
         }
     });
 
+    if (ribbonModeToggle) {
+        ribbonModeToggle.addEventListener("click", () => {
+            applyRibbonMode(
+                ribbonMode === "compact" ? "expanded" : "compact",
+                true,
+            );
+        });
+    }
+
     workspace
         .querySelector("[data-open-view-drawer]")
         .addEventListener("click", openDrawer);
@@ -2966,13 +3003,6 @@
             closeDrawer();
         }
     });
-
-    const stickyLayoutObserver = typeof ResizeObserver === "function"
-        ? new ResizeObserver(() => updateOverlayOffsets())
-        : null;
-    if (commandBar) {
-        stickyLayoutObserver?.observe(commandBar);
-    }
 
     window.addEventListener("resize", () => {
         if (resizeTimer) {
@@ -2999,6 +3029,7 @@
         event.returnValue = "";
     });
 
+    applyRibbonMode(ribbonMode);
     updateOverlayOffsets();
     applyQuickDisplayPreferences();
     updateRecordControls();

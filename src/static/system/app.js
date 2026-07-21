@@ -501,45 +501,195 @@
         window.clearTimeout(searchTimer);
         searchTimer = window.setTimeout(() => loadPage(true), 280);
     });
-})();(() => {
+})();
+
+/* Patch 011.3.5: global navigation menus own the highest overlay layer. */
+(() => {
     "use strict";
 
+    const MOBILE_BREAKPOINT = 860;
+    const VIEWPORT_MARGIN = 10;
+    const MENU_GAP = 6;
     const toggle = document.querySelector("[data-nav-toggle]");
     const navigation = document.querySelector("[data-main-navigation]");
+    const menus = Array.from(
+        document.querySelectorAll("details[data-nav-menu]"),
+    );
+    let activeMenu = null;
+
+    function triggerFor(menu) {
+        return menu?.querySelector(":scope > [data-nav-menu-trigger]") || null;
+    }
+
+    function panelFor(menu) {
+        return menu?.querySelector(":scope > [data-nav-menu-panel]") || null;
+    }
+
+    function isMobileNavigation() {
+        return window.matchMedia(
+            `(max-width: ${MOBILE_BREAKPOINT}px)`,
+        ).matches;
+    }
+
+    function resetPanelPosition(menu) {
+        const panel = panelFor(menu);
+        if (!panel) {
+            return;
+        }
+        for (const property of [
+            "left",
+            "right",
+            "top",
+            "width",
+            "max-height",
+        ]) {
+            panel.style.removeProperty(property);
+        }
+        panel.removeAttribute("data-positioned");
+    }
+
+    function setExpanded(menu, expanded) {
+        const trigger = triggerFor(menu);
+        if (trigger) {
+            trigger.setAttribute("aria-expanded", expanded ? "true" : "false");
+        }
+    }
+
+    function closeMenu(menu, restoreFocus = false) {
+        if (!menu) {
+            return;
+        }
+        const trigger = triggerFor(menu);
+        menu.open = false;
+        setExpanded(menu, false);
+        resetPanelPosition(menu);
+        if (activeMenu === menu) {
+            activeMenu = null;
+        }
+        if (restoreFocus && trigger) {
+            trigger.focus();
+        }
+    }
+
+    function closeOtherMenus(current) {
+        for (const menu of menus) {
+            if (menu !== current && menu.open) {
+                closeMenu(menu);
+            }
+        }
+    }
+
+    function positionMenu(menu) {
+        if (!menu?.open) {
+            return;
+        }
+        const trigger = triggerFor(menu);
+        const panel = panelFor(menu);
+        if (!trigger || !panel) {
+            return;
+        }
+
+        resetPanelPosition(menu);
+        if (isMobileNavigation()) {
+            return;
+        }
+
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const anchor = trigger.getBoundingClientRect();
+        const menuRect = menu.getBoundingClientRect();
+        const availableWidth = Math.max(
+            220,
+            viewportWidth - VIEWPORT_MARGIN * 2,
+        );
+        const preferredWidth = Math.min(
+            Math.max(panel.scrollWidth, 250),
+            340,
+            availableWidth,
+        );
+        panel.style.width = `${Math.round(preferredWidth)}px`;
+
+        const measured = panel.getBoundingClientRect();
+        const alignedLeft = menu.classList.contains("user-menu")
+            ? anchor.right - measured.width
+            : anchor.left;
+        const viewportLeft = Math.min(
+            Math.max(alignedLeft, VIEWPORT_MARGIN),
+            viewportWidth - measured.width - VIEWPORT_MARGIN,
+        );
+        const viewportTop = anchor.bottom + MENU_GAP;
+        const availableHeight = Math.max(
+            120,
+            viewportHeight - viewportTop - VIEWPORT_MARGIN,
+        );
+
+        panel.style.left = `${Math.round(viewportLeft - menuRect.left)}px`;
+        panel.style.right = "auto";
+        panel.style.top = `${Math.round(viewportTop - menuRect.top)}px`;
+        panel.style.maxHeight = `${Math.floor(availableHeight)}px`;
+        panel.setAttribute("data-positioned", "true");
+    }
+
     if (toggle && navigation) {
         toggle.addEventListener("click", () => {
             const open = navigation.classList.toggle("open");
             toggle.setAttribute("aria-expanded", open ? "true" : "false");
-        });
-    }
-
-    const menus = Array.from(document.querySelectorAll("details.nav-menu"));
-    for (const menu of menus) {
-        menu.addEventListener("toggle", () => {
-            if (!menu.open) {
-                return;
-            }
-            for (const other of menus) {
-                if (other !== menu) {
-                    other.open = false;
+            if (!open) {
+                for (const menu of menus) {
+                    closeMenu(menu);
                 }
             }
         });
     }
+
+    menus.forEach((menu, index) => {
+        const trigger = triggerFor(menu);
+        const panel = panelFor(menu);
+        if (!trigger || !panel) {
+            return;
+        }
+        const panelId = panel.id || `global-nav-menu-${index + 1}`;
+        panel.id = panelId;
+        panel.setAttribute("role", "menu");
+        trigger.setAttribute("aria-controls", panelId);
+        trigger.setAttribute("aria-haspopup", "menu");
+        setExpanded(menu, menu.open);
+
+        menu.addEventListener("toggle", () => {
+            if (!menu.open) {
+                setExpanded(menu, false);
+                resetPanelPosition(menu);
+                if (activeMenu === menu) {
+                    activeMenu = null;
+                }
+                return;
+            }
+            closeOtherMenus(menu);
+            activeMenu = menu;
+            setExpanded(menu, true);
+            window.requestAnimationFrame(() => positionMenu(menu));
+        });
+    });
+
     document.addEventListener("pointerdown", (event) => {
-        for (const menu of menus) {
-            if (menu.open && !menu.contains(event.target)) {
-                menu.open = false;
-            }
+        if (activeMenu && !activeMenu.contains(event.target)) {
+            closeMenu(activeMenu);
         }
     });
+
     document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") {
-            for (const menu of menus) {
-                menu.open = false;
-            }
+        if (event.key === "Escape" && activeMenu) {
+            event.preventDefault();
+            closeMenu(activeMenu, true);
         }
     });
+
+    window.addEventListener("resize", () => positionMenu(activeMenu));
+    window.addEventListener(
+        "scroll",
+        () => positionMenu(activeMenu),
+        { passive: true },
+    );
 })();
 
 /* Patch 007.6: technical disclosures always start collapsed. */

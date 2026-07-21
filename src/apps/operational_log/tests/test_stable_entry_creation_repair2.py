@@ -5,7 +5,7 @@ from pathlib import Path
 from django.test import SimpleTestCase
 
 ROOT = Path(__file__).resolve().parents[3]
-REVISION = "011344"
+REVISION = "011350"
 
 
 class StableEntryCreationRepair2Tests(SimpleTestCase):
@@ -39,14 +39,17 @@ class StableEntryCreationRepair2Tests(SimpleTestCase):
         self.assertIn("seconds === 0", workspace)
         self.assertIn("window.queueMicrotask", workspace)
 
-    def test_page_navigation_uses_measured_sticky_offset(self) -> None:
+    def test_page_navigation_is_integrated_into_single_sticky_bar(self) -> None:
         workspace = self.source("static/operational_log/draft_workspace.js")
         template = self.source("templates/operational_log/shift_workspace.html")
         css = self.source("static/system/app.css")
+        self.assertIn("draft-command-primary-row", template)
         self.assertIn("data-page-navigation", template)
-        self.assertIn('"--draft-page-navigation-top"', workspace)
-        self.assertIn("stickyLayoutObserver?.observe(commandBar);", workspace)
-        self.assertIn("position: sticky", css)
+        self.assertNotIn('"--draft-page-navigation-top"', workspace)
+        self.assertNotIn('"--draft-command-bar-height"', workspace)
+        self.assertNotIn("new ResizeObserver", workspace)
+        self.assertIn(".draft-page-navigation {", css)
+        self.assertIn("position: static;", css)
 
     def test_simplified_time_has_before_and_after_input_paths(self) -> None:
         editor = self.source("static/operational_log/draft_editor.js")

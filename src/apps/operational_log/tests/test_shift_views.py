@@ -56,8 +56,8 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         )
         self.assertEqual(workspace.status_code, 200)
         for marker in (
-            "РАБОЧИЙ ЧЕРНОВИК СМЕНЫ",
-            "Автосохранение",
+            "Рабочий черновик",
+            "Автосохранение включено",
             "Одна страница",
             "Разворот",
             "Поиск по записям",
@@ -65,6 +65,10 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             "Визы и замечания",
             "data-page-input",
             "data-page-buttons",
+            "draft-command-primary-row",
+            'data-ribbon-mode="compact"',
+            "data-ribbon-mode-toggle",
+            "Развернуть ленту редактора",
             "data-view-drawer",
             "data-column-resizer",
             "data-records-preset",
@@ -109,6 +113,8 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         self.assertNotContains(workspace, "draft-workspace-layout")
         self.assertContains(workspace, "15 записей")
         self.assertContains(workspace, "+ Запись")
+        self.assertContains(workspace, "Панель")
+        self.assertContains(workspace, "Чистовик")
         self.assertContains(
             workspace,
             "ЗАПИСЕЙ НА СТРАНИЦЕ",

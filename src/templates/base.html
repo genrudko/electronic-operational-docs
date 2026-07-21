@@ -23,8 +23,8 @@
     <meta name="color-scheme" content="dark light">
     <title>{% block title %}Электронная оперативная документация{% endblock %}</title>
     <link rel="icon" href="{% static 'system/favicon.svg' %}" type="image/svg+xml">
-    <link rel="stylesheet" href="{% static 'system/app.css' %}?v=011344">
-    <script src="{% static 'system/app.js' %}" defer></script>
+    <link rel="stylesheet" href="{% static 'system/app.css' %}?v=011350">
+    <script src="{% static 'system/app.js' %}?v=011350" defer></script>
 </head>
 <body>
 <header class="topbar presentation-topbar">
@@ -63,12 +63,12 @@
                 <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-management"></use></svg>
                 <span>Управление и ведение</span>
             </a>
-            <details class="nav-menu{% if request.resolver_match.namespace == 'organizations' or request.resolver_match.namespace == 'normatives' or request.resolver_match.namespace == 'imports' or request.resolver_match.namespace == 'workplace_docs' %} active{% endif %}">
-                <summary>
+            <details data-nav-menu class="nav-menu{% if request.resolver_match.namespace == 'organizations' or request.resolver_match.namespace == 'normatives' or request.resolver_match.namespace == 'imports' or request.resolver_match.namespace == 'workplace_docs' %} active{% endif %}">
+                <summary data-nav-menu-trigger>
                     <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-directory"></use></svg>
                     <span>Справочники</span>
                 </summary>
-                <div class="nav-menu-panel">
+                <div class="nav-menu-panel" data-nav-menu-panel>
                     <a href="{% url 'organizations:directory' %}">
                         <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-organization"></use></svg>
                         Организация и персонал
@@ -87,12 +87,12 @@
                     </a>
                 </div>
             </details>
-            <details class="nav-menu user-menu">
-                <summary aria-label="Меню пользователя">
+            <details data-nav-menu class="nav-menu user-menu">
+                <summary data-nav-menu-trigger aria-label="Меню пользователя">
                     <span class="user-avatar">{{ user_initial }}</span>
                     <span class="user-menu-label">{{ user_display_name }}</span>
                 </summary>
-                <div class="nav-menu-panel nav-menu-panel-right">
+                <div class="nav-menu-panel nav-menu-panel-right" data-nav-menu-panel>
                     <div class="user-menu-identity">
                         <strong>{{ user_display_name }}</strong>
                         {% if user_display_role %}<span>{{ user_display_role }}</span>{% endif %}

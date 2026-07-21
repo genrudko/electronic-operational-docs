@@ -27,7 +27,7 @@ TEST_LABELS = [
     "apps.workplace_docs.tests",
     "apps.operational_log.tests",
 ]
-MIN_TEST_COUNT = 339
+MIN_TEST_COUNT = 344
 
 runner = DiscoverRunner(verbosity=2, interactive=False)
 suite = runner.build_suite(test_labels=TEST_LABELS)

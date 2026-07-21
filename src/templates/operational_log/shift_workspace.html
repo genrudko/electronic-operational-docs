@@ -6,31 +6,28 @@
 
 {% block content %}
 <section
-    class="shift-book-header"
+    class="shift-book-header shift-book-summary-bar"
     data-journal-title-size="{{ ui_preferences.journal_title_font_size|lower }}"
+    aria-label="Сведения о рабочем журнале"
 >
     <div class="shift-book-title">
-        <div class="section-kicker">РАБОЧИЙ ЧЕРНОВИК СМЕНЫ</div>
-        <h1>{{ journal.title }}</h1>
+        <h1 title="{{ journal.title }}">{{ journal.title }}</h1>
         {% if shift %}
         <div class="shift-book-meta">
-            <span>
+            <span class="shift-book-meta-period">
                 {{ shift.planned_start_at|date:"d.m.Y H:i" }} —
                 {{ shift.planned_end_at|date:"d.m.Y H:i" }}
             </span>
-            <span>{{ drafts|length }} записей</span>
-            <span class="shift-autosave-indicator">
-                ● Автосохранение
+            <span class="shift-book-meta-chip">{{ drafts|length }} записей</span>
+            <span class="shift-book-meta-chip shift-autosave-indicator">
+                ● Автосохранение включено
+            </span>
+            <span class="shift-book-meta-chip shift-draft-status-chip">
+                Рабочий черновик
             </span>
         </div>
         {% endif %}
     </div>
-    <a
-        class="shift-book-clean-copy"
-        href="{% url 'operational_log:detail' journal.pk %}"
-    >
-        Чистовик
-    </a>
 </section>
 
 {% if not shift %}
@@ -89,65 +86,117 @@
         --draft-remarks-column: 20%;
     "
 >
-    <div class="draft-command-bar screen-only">
-        <div
-            class="draft-view-switch"
-            role="group"
-            aria-label="Режим отображения"
-        >
-            <button
-                type="button"
-                class="draft-view-button is-active"
-                data-view-mode="single"
-                aria-pressed="true"
+    <div
+        class="draft-command-bar screen-only"
+        data-ribbon-mode="compact"
+    >
+        <div class="draft-command-primary-row">
+            <div
+                class="draft-view-switch"
+                role="group"
+                aria-label="Режим отображения"
             >
-                Одна страница
-            </button>
-            <button
-                type="button"
-                class="draft-view-button"
-                data-view-mode="spread"
-                aria-pressed="false"
-            >
-                Разворот
-            </button>
-        </div>
-
-        <div class="draft-command-search">
-            <input
-                type="search"
-                placeholder="Поиск по записям…"
-                data-draft-search
-                aria-label="Поиск по записям"
-            >
-            <select data-draft-filter aria-label="Фильтр записей">
-                <option value="all">Все записи</option>
-                <option value="filled">Заполненные</option>
-                <option value="empty">Пустые</option>
-            </select>
-        </div>
-
-        <div class="draft-command-actions">
-            <form
-                method="post"
-                action="{% url 'operational_log:add_draft' journal.pk %}"
-                data-add-draft-form
-            >
-                {% csrf_token %}
-                <button class="button compact-button" type="submit">
-                    + Запись
+                <button
+                    type="button"
+                    class="draft-view-button is-active"
+                    data-view-mode="single"
+                    aria-pressed="true"
+                >
+                    Одна страница
                 </button>
-            </form>
-            <button
-                class="button secondary compact-button"
-                type="button"
-                data-open-view-drawer
+                <button
+                    type="button"
+                    class="draft-view-button"
+                    data-view-mode="spread"
+                    aria-pressed="false"
+                >
+                    Разворот
+                </button>
+            </div>
+
+            <div class="draft-command-search">
+                <input
+                    type="search"
+                    placeholder="Поиск по записям…"
+                    data-draft-search
+                    aria-label="Поиск по записям"
+                >
+                <select data-draft-filter aria-label="Фильтр записей">
+                    <option value="all">Все записи</option>
+                    <option value="filled">Заполненные</option>
+                    <option value="empty">Пустые</option>
+                </select>
+            </div>
+
+            <nav
+                class="draft-page-navigation"
+                data-page-navigation
+                aria-label="Навигация по страницам"
             >
-                Панель
-            </button>
+                <button
+                    type="button"
+                    data-page-prev
+                    aria-label="Предыдущая страница"
+                >
+                    ←
+                </button>
+                <span class="draft-page-jump">
+                    Страница
+                    <input
+                        type="number"
+                        min="1"
+                        value="1"
+                        data-page-input
+                        aria-label="Номер страницы"
+                    >
+                    из <strong data-page-total>1</strong>
+                </span>
+                <div
+                    class="draft-page-buttons"
+                    data-page-buttons
+                    aria-label="Номера страниц"
+                ></div>
+                <button
+                    type="button"
+                    data-page-next
+                    aria-label="Следующая страница"
+                >
+                    →
+                </button>
+                <span class="draft-page-range" data-page-range>
+                    Страница 1 из 1
+                </span>
+            </nav>
+
+            <div class="draft-command-actions">
+                <form
+                    method="post"
+                    action="{% url 'operational_log:add_draft' journal.pk %}"
+                    data-add-draft-form
+                >
+                    {% csrf_token %}
+                    <button class="button compact-button" type="submit">
+                        + Запись
+                    </button>
+                </form>
+                <button
+                    class="button secondary compact-button"
+                    type="button"
+                    data-open-view-drawer
+                >
+                    Панель
+                </button>
+                <a
+                    class="button compact-button draft-clean-copy-action"
+                    href="{% url 'operational_log:detail' journal.pk %}"
+                >
+                    Чистовик
+                </a>
+            </div>
         </div>
 
         <div
+            id="draft-editor-ribbon"
             class="draft-editor-ribbon"
             data-editor-ribbon
             role="toolbar"
@@ -416,6 +465,17 @@
             </small>
         </section>
     </div>
+    <button
+        class="draft-ribbon-mode-toggle"
+        type="button"
+        data-ribbon-mode-toggle
+        aria-controls="draft-editor-ribbon"
+        aria-expanded="false"
+        aria-label="Развернуть ленту редактора"
+        title="Развернуть ленту редактора"
+    >
+        <span data-ribbon-mode-icon aria-hidden="true">⌄</span>
+    </button>
 </div>
 
 <div
@@ -584,46 +644,6 @@
 {{ semantic_reference_catalog|json_script:"draft-semantic-reference-catalog" }}
 
     </div>
-
-    <nav
-        class="draft-page-navigation screen-only"
-        data-page-navigation
-        aria-label="Навигация по страницам"
-    >
-        <button
-            type="button"
-            data-page-prev
-            aria-label="Предыдущая страница"
-        >
-            ←
-        </button>
-        <span class="draft-page-jump">
-            Страница
-            <input
-                type="number"
-                min="1"
-                value="1"
-                data-page-input
-                aria-label="Номер страницы"
-            >
-            из <strong data-page-total>1</strong>
-        </span>
-        <div
-            class="draft-page-buttons"
-            data-page-buttons
-            aria-label="Номера страниц"
-        ></div>
-        <button
-            type="button"
-            data-page-next
-            aria-label="Следующая страница"
-        >
-            →
-        </button>
-        <span class="draft-page-range" data-page-range>
-            Страница 1 из 1
-        </span>
-    </nav>
 
     <div class="draft-paper-stage">
         <div class="draft-book" data-draft-book>
@@ -1418,15 +1438,15 @@
 
 
 <script
-    src="{% static 'operational_log/draft_editor.js' %}?v=011344"
+    src="{% static 'operational_log/draft_editor.js' %}?v=011350"
     defer
 ></script>
 <script
-    src="{% static 'operational_log/draft_workspace.js' %}?v=011344"
+    src="{% static 'operational_log/draft_workspace.js' %}?v=011350"
     defer
 ></script>
 <script
-    src="{% static 'operational_log/draft_reference_navigation.js' %}?v=011344"
+    src="{% static 'operational_log/draft_reference_navigation.js' %}?v=011350"
     defer
 ></script>
 {% endif %}
