@@ -307,14 +307,55 @@ def _occurrence_external_key(occurrence_id: str) -> str:
     return f"OCC:{_slug_hash('source', occurrence_id, 24)}"
 
 
+def _source_facility(row: dict[str, str]) -> str:
+    return _normalize_space(
+        row.get("energy_facility_raw", "") or row.get("dispatcher_name_raw", "")
+    )
+
+
+def _normalized_voltage_label(value: str) -> str:
+    token = _normalize_space(value).replace(".", ",")
+    match = re.search(r"(?<!\d)(\d+(?:,\d+)?)\s*кв\b", token, flags=re.IGNORECASE)
+    if not match:
+        return ""
+    number = match.group(1)
+    try:
+        decimal = Decimal(number.replace(",", "."))
+    except InvalidOperation:
+        return ""
+    if decimal == decimal.to_integral_value():
+        formatted = str(int(decimal))
+    else:
+        formatted = format(decimal.normalize(), "f").replace(".", ",")
+    return f"{formatted} кВ"
+
+
+def _row_voltage_label(row: dict[str, str]) -> str:
+    for value in (
+        row.get("voltage_context_raw", ""),
+        row.get("dispatcher_name_raw", ""),
+        row.get("parent_raw", ""),
+        row.get("hierarchy_path_raw", ""),
+    ):
+        label = _normalized_voltage_label(value)
+        if label:
+            return label
+    nominal = _normalize_space(row.get("nominal_voltage_kv", ""))
+    if nominal:
+        return _normalized_voltage_label(f"{nominal} кВ")
+    return ""
+
+
 def _hierarchy_keys(asset_rows: list[dict[str, str]]) -> dict[tuple[str, str], str]:
     result: dict[tuple[str, str], str] = {}
     for row in asset_rows:
         if row["record_role"] != PowerSystemAssetOccurrence.RecordRole.HIERARCHY_NODE:
             continue
-        facility = _normalize_space(row["energy_facility_raw"] or row["dispatcher_name_raw"])
+        facility = _source_facility(row)
         name = _normalize_space(row["dispatcher_name_raw"])
         type_code = _normalize_space(row["asset_type_proposed"])
+        if not facility or not name:
+            continue
         external = (
             _site_external_key(facility)
             if type_code == "energy_facility"
@@ -334,16 +375,24 @@ def _parent_external_key(
     row: dict[str, str],
     hierarchy: dict[tuple[str, str], str],
 ) -> str:
-    facility = _normalize_space(row["energy_facility_raw"] or row["dispatcher_name_raw"])
+    facility = _source_facility(row)
     type_code = _normalize_space(row["asset_type_proposed"])
-    site_key = _site_external_key(facility)
+    site_key = _site_external_key(facility) if facility else ""
     if type_code == "energy_facility":
         return ""
+    if not facility:
+        return ""
+
+    voltage_label = _row_voltage_label(row)
+    voltage_key = hierarchy.get(
+        (_comparison_token(facility), _comparison_token(voltage_label)),
+        "",
+    )
     if row["record_role"] == PowerSystemAssetOccurrence.RecordRole.HIERARCHY_NODE:
         if type_code == "voltage_level":
             return site_key
         if type_code in {"unit_substation", "control_building"}:
-            return hierarchy.get(
+            return voltage_key or hierarchy.get(
                 (_comparison_token(facility), _comparison_token("35 кВ")),
                 site_key,
             )
@@ -354,7 +403,10 @@ def _parent_external_key(
                 (_comparison_token(facility), _comparison_token("ВЭУ")),
                 site_key,
             )
-        return site_key
+        return voltage_key or site_key
+
+    if type_code in {"overhead_line", "cable_line"} and voltage_key:
+        return voltage_key
 
     candidates = [_normalize_space(row["parent_raw"])]
     candidates.extend(
@@ -370,7 +422,8 @@ def _parent_external_key(
         key = (_comparison_token(facility), _comparison_token(candidate))
         if candidate and key in hierarchy:
             return hierarchy[key]
-    return site_key
+
+    return voltage_key or site_key
 
 
 def _logical_key(row: dict[str, str], parent_external_key: str) -> str:
@@ -448,6 +501,84 @@ def _revision_counts(revision: PowerSystemSourceRevision) -> dict[str, int]:
     for field_name, value in counts.items():
         setattr(revision, field_name, value)
     return counts
+
+
+def _occurrence_source_row(occurrence: PowerSystemAssetOccurrence) -> dict[str, str]:
+    return {
+        "occurrence_id": occurrence.occurrence_id,
+        "record_role": occurrence.record_role,
+        "asset_type_proposed": occurrence.asset_type_code,
+        "dispatcher_name_raw": occurrence.dispatcher_name_raw,
+        "comparison_key": occurrence.comparison_key,
+        "energy_facility_raw": occurrence.energy_facility_raw,
+        "voltage_context_raw": occurrence.voltage_context_raw,
+        "nominal_voltage_kv": ""
+        if occurrence.nominal_voltage_kv is None
+        else str(occurrence.nominal_voltage_kv),
+        "parent_raw": occurrence.parent_raw,
+        "hierarchy_path_raw": occurrence.hierarchy_path_raw,
+        "import_disposition": occurrence.import_disposition,
+        "duplicate_group": occurrence.duplicate_group,
+    }
+
+
+@transaction.atomic
+def reanalyze_power_system_revision(
+    revision: PowerSystemSourceRevision,
+) -> dict[str, int]:
+    locked = PowerSystemSourceRevision.objects.select_for_update().get(pk=revision.pk)
+    occurrences = list(
+        locked.asset_occurrences.select_for_update().order_by(
+            "source_sheet",
+            "source_row",
+            "occurrence_id",
+        )
+    )
+    source_rows = [_occurrence_source_row(occurrence) for occurrence in occurrences]
+    hierarchy = _hierarchy_keys(source_rows)
+    changed: list[PowerSystemAssetOccurrence] = []
+    counters = defaultdict(int)
+    for occurrence, row in zip(occurrences, source_rows, strict=True):
+        if occurrence.review_status == PowerSystemAssetOccurrence.ReviewStatus.PUBLISHED:
+            counters["published_unchanged"] += 1
+            continue
+        old_parent_key = occurrence.parent_external_key
+        old_logical_key = occurrence.logical_key
+        parent_key = _parent_external_key(row, hierarchy)
+        logical_key = _logical_key(row, parent_key)
+        occurrence.parent_external_key = parent_key
+        occurrence.logical_key = logical_key
+        if old_parent_key != parent_key:
+            counters["parent_changed"] += 1
+        if old_logical_key != logical_key:
+            counters["logical_key_changed"] += 1
+        if parent_key:
+            counters["resolved_parent"] += 1
+        else:
+            counters["unresolved_parent"] += 1
+        if old_parent_key != parent_key or old_logical_key != logical_key:
+            changed.append(occurrence)
+    if changed:
+        PowerSystemAssetOccurrence.objects.bulk_update(
+            changed,
+            ("parent_external_key", "logical_key"),
+        )
+    counters["updated_rows"] = len(changed)
+    _revision_counts(locked)
+    return dict(counters)
+
+
+def reanalyze_staged_power_system_revisions() -> dict[str, int]:
+    totals = defaultdict(int)
+    queryset = PowerSystemSourceRevision.objects.exclude(
+        status=PowerSystemSourceRevision.Status.DISCARDED,
+    ).order_by("pk")
+    for revision in queryset:
+        result = reanalyze_power_system_revision(revision)
+        totals["revisions"] += 1
+        for key, value in result.items():
+            totals[key] += value
+    return dict(totals)
 
 
 @transaction.atomic
@@ -575,7 +706,7 @@ def stage_power_system_package(
         source_row = _positive_int(row["source_row"], "source_row")
         parent_key = _parent_external_key(row, hierarchy)
         type_code = _normalize_space(row["asset_type_proposed"])
-        facility = _normalize_space(row["energy_facility_raw"] or row["dispatcher_name_raw"])
+        facility = _source_facility(row)
         external_key = (
             _site_external_key(facility)
             if type_code == "energy_facility"

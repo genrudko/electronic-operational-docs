@@ -1,14 +1,301 @@
 {% extends "base.html" %}
 {% block title %}{{ revision.original_filename }} · ЭОД{% endblock %}
 {% block content %}
-<section class="page-heading compact"><div><div class="eyebrow">РЕДАКЦИЯ ИСТОЧНИКА</div><h1>{{ revision.original_filename }}</h1><p>{{ revision.source_reference }}</p></div><div class="document-actions"><a class="button secondary" href="{% url 'imports:power_system_list' %}">К списку</a>{% if revision.ready_count %}<a class="button" href="{% url 'imports:power_system_publication' revision.public_id %}">Проверить публикацию</a>{% endif %}</div></section>
-<section class="notice-card data-profile-notice"><strong>{{ revision.data_profile.name }} · {{ revision.get_source_approval_status_display }}</strong><p>SHA-256 пакета: <code class="breakable">{{ revision.file_sha256 }}</code></p>{% if revision.source_approval_status != 'APPROVED' %}<p>Редакция источника не считается официально утверждённой. Публикация возможна только как контролируемое решение пользователя.</p>{% endif %}</section>
-<section class="summary-grid">
-<article class="metric"><span>Всего строк</span><strong>{{ revision.total_occurrences }}</strong></article><article class="metric"><span>Готово</span><strong>{{ revision.ready_count }}</strong></article><article class="metric"><span>Ручная проверка</span><strong>{{ revision.review_count }}</strong></article><article class="metric"><span>Заблокировано</span><strong>{{ revision.blocked_count }}</strong></article><article class="metric"><span>Исключено</span><strong>{{ revision.excluded_count }}</strong></article><article class="metric"><span>Опубликовано</span><strong>{{ revision.published_count }}</strong></article>
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">ПРЕДВАРИТЕЛЬНАЯ ПРОВЕРКА ИСТОЧНИКА</div>
+        <h1>{{ revision.original_filename }}</h1>
+        <p>{{ revision.source_reference }}</p>
+    </div>
+    <div class="document-actions">
+        <a class="button secondary" href="{% url 'imports:power_system_list' %}">К списку редакций</a>
+        {% if revision.ready_count %}
+            <a class="button" href="{% url 'imports:power_system_publication' revision.public_id %}">
+                Проверить публикацию {{ revision.ready_count }} строк
+            </a>
+        {% endif %}
+    </div>
 </section>
-<section class="profile-card"><h2>Поиск и фильтры</h2><form method="get" class="equipment-filter-form"><div><label for="ps-q">Строка, наименование, объект</label><input id="ps-q" type="search" name="q" value="{{ query }}"></div><div><label for="ps-status">Состояние</label><select id="ps-status" name="status"><option value="">Все</option>{% for value,label in review_status_choices %}<option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div><div><label for="ps-type">Тип</label><select id="ps-type" name="type"><option value="">Все</option>{% for item in type_counts %}<option value="{{ item.code }}" {% if type_filter == item.code %}selected{% endif %}>{{ item.name }} ({{ item.count }})</option>{% endfor %}</select></div><button class="button" type="submit">Применить</button><a href="{% url 'imports:power_system_detail' revision.public_id %}">Сбросить</a></form></section>
-<section class="profile-card"><div class="section-heading"><div><div class="eyebrow">ИСХОДНЫЕ СТРОКИ</div><h2>Строки источника</h2></div><span class="count-badge">{{ page.paginator.count }}</span></div><div class="table-wrap"><table><thead><tr><th>Источник</th><th>Объект</th><th>Тип и родитель</th><th>Состояние</th><th>Решение</th></tr></thead><tbody>
-{% for row in page.object_list %}<tr><td><code>{{ row.occurrence_id }}</code><small>{{ row.source_sheet }} · строка {{ row.source_row }}</small></td><td><strong>{{ row.dispatcher_name_raw }}</strong>{% if row.display_name_normalized and row.display_name_normalized != row.dispatcher_name_raw %}<small>Для поиска: {{ row.display_name_normalized }}</small>{% endif %}<small>{{ row.energy_facility_raw }} · {{ row.voltage_context_raw }}</small></td><td>{{ row.asset_type_name }}<small>Родитель: {{ row.parent_raw|default:"не задан" }}</small></td><td><span class="import-status status-{{ row.review_status|lower }}">{{ row.get_review_status_display }}</span>{% if row.review_note %}<small>{{ row.review_note }}</small>{% endif %}</td><td>{% if row.review_status != 'PUBLISHED' %}<details><summary>Принять решение</summary><form method="post" action="{% url 'imports:power_system_occurrence_decide' revision.public_id row.pk %}" class="compact-decision-form">{% csrf_token %}<select name="action"><option value="ACCEPT_AS_NEW">Принять отдельно</option><option value="MERGE_WITH">Объединить</option><option value="EXCLUDE">Исключить</option><option value="RESET">Сбросить</option></select><input name="merge_target_occurrence_id" placeholder="occurrence_id для объединения"><textarea name="note" rows="2" placeholder="Комментарий"></textarea><button class="button secondary" type="submit">Сохранить</button></form></details>{% else %}<a href="{% url 'equipment:detail' row.published_asset.public_id %}">Открыть объект</a>{% endif %}</td></tr>{% empty %}<tr><td colspan="5">Строки не найдены.</td></tr>{% endfor %}
-</tbody></table></div>{% if page.has_other_pages %}<nav class="pagination">{% if page.has_previous %}<a href="?page={{ page.previous_page_number }}&q={{ query|urlencode }}&status={{ status_filter }}&type={{ type_filter }}">←</a>{% endif %}<span>{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a href="?page={{ page.next_page_number }}&q={{ query|urlencode }}&status={{ status_filter }}&type={{ type_filter }}">→</a>{% endif %}</nav>{% endif %}</section>
-<section class="profile-grid"><article class="profile-card"><h2>Проблемы источника</h2><ul class="revision-list">{% for issue in issues %}<li><strong>{{ issue.issue_code }} · {{ issue.get_severity_display }}</strong><span>{{ issue.evidence }}</span><small>{{ issue.recommended_handling }}</small></li>{% empty %}<li>Проблем не зарегистрировано.</li>{% endfor %}</ul></article><article class="profile-card"><h2>Публикации</h2><ul class="revision-list">{% for publication in publications %}<li><strong>{{ publication.created_at|date:"d.m.Y H:i" }}</strong><span>{{ publication.actor.full_name }}</span><small><code>{{ publication.digest|slice:":16" }}…</code></small></li>{% empty %}<li>Публикаций пока нет.</li>{% endfor %}</ul>{% if revision.status == 'STAGED' or revision.status == 'PARTIALLY_PUBLISHED' %}<form method="post" action="{% url 'imports:power_system_discard' revision.public_id %}">{% csrf_token %}<button class="button danger" type="submit">Убрать редакцию из рабочего списка</button></form>{% endif %}</article></section>
+
+<section class="notice-card data-profile-notice">
+    <strong>{{ revision.data_profile.name }} · {{ revision.get_source_approval_status_display }}</strong>
+    <p>SHA-256 пакета: <code class="breakable">{{ revision.file_sha256 }}</code></p>
+    {% if revision.source_approval_status != 'APPROVED' %}
+        <p>
+            Редакция источника не считается официально утверждённой. Публикация допустима
+            только как отдельное контролируемое решение пользователя.
+        </p>
+    {% endif %}
+</section>
+
+<section class="power-system-workflow" aria-label="Порядок предварительной проверки">
+    <article class="workflow-step workflow-step-ready">
+        <span>1</span>
+        <div>
+            <strong>{{ revision.ready_count }} строк уже готовы</strong>
+            <p>Их не требуется принимать по одной. Они попадут в отдельную проверку публикации автоматически.</p>
+        </div>
+    </article>
+    <article class="workflow-step workflow-step-attention">
+        <span>2</span>
+        <div>
+            <strong>{{ attention_count }} строк требуют решения</strong>
+            <p>{{ revision.review_count }} требуют проверки, {{ revision.blocked_count }} заблокированы источником.</p>
+        </div>
+    </article>
+    <article class="workflow-step">
+        <span>3</span>
+        <div>
+            <strong>Карантин не блокирует чистую часть</strong>
+            <p>Спорные и исключённые строки остаются в редакции и не изменяют рабочий реестр.</p>
+        </div>
+    </article>
+</section>
+
+<section class="summary-grid power-system-summary">
+    <a class="metric ps-count-link {% if status_filter == 'ALL' %}is-active{% endif %}" href="?status=ALL">
+        <span>Всего строк</span><strong>{{ revision.total_occurrences }}</strong>
+    </a>
+    <a class="metric ps-count-link {% if status_filter == 'READY' %}is-active{% endif %}" href="?status=READY">
+        <span>Готово автоматически</span><strong>{{ revision.ready_count }}</strong>
+    </a>
+    <a class="metric ps-count-link {% if status_filter == 'ATTENTION' %}is-active{% endif %}" href="?status=ATTENTION">
+        <span>Требуют решения</span><strong>{{ attention_count }}</strong>
+    </a>
+    <a class="metric ps-count-link {% if status_filter == 'EXCLUDED' %}is-active{% endif %}" href="?status=EXCLUDED">
+        <span>Исключено</span><strong>{{ revision.excluded_count }}</strong>
+    </a>
+    <a class="metric ps-count-link {% if status_filter == 'PUBLISHED' %}is-active{% endif %}" href="?status=PUBLISHED">
+        <span>Опубликовано</span><strong>{{ revision.published_count }}</strong>
+    </a>
+</section>
+
+<section class="profile-card ps-hierarchy-card">
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow">ВОССТАНОВЛЕННАЯ СТРУКТУРА</div>
+            <h2>Контроль иерархии</h2>
+        </div>
+        <span class="count-badge">По контексту источника</span>
+    </div>
+    <div class="ps-hierarchy-grid">
+        <article><span>Энергообъекты</span><strong>{{ hierarchy_counts.sites }}</strong></article>
+        <article><span>Классы напряжения</span><strong>{{ hierarchy_counts.voltage_levels }}</strong></article>
+        <article><span>КТП</span><strong>{{ hierarchy_counts.unit_substations }}</strong></article>
+        <article><span>ВЭУ</span><strong>{{ hierarchy_counts.wind_turbines }}</strong></article>
+        <article><span>ЛЭП</span><strong>{{ hierarchy_counts.lines }}</strong></article>
+    </div>
+    <div class="ps-hierarchy-samples">
+        {% for row in hierarchy_examples %}
+            <div>
+                <strong>{{ row.dispatcher_name_raw }}</strong>
+                <span>{{ row.asset_type_name }}</span>
+                <small>Родитель в системе: {{ row.resolved_parent_name }}</small>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="profile-card equipment-filter-card">
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow">РАБОЧАЯ ВЫБОРКА</div>
+            <h2>Поиск и фильтры</h2>
+        </div>
+        {% if status_filter == 'ATTENTION' %}
+            <span class="count-badge warning">Показаны только строки, требующие решения</span>
+        {% endif %}
+    </div>
+    <form method="get" class="equipment-filter-form power-system-filter-form">
+        <div>
+            <label for="ps-q">Строка, наименование или объект</label>
+            <input id="ps-q" type="search" name="q" value="{{ query }}" placeholder="Например: КТП-22 или КЛ 35 кВ">
+        </div>
+        <div>
+            <label for="ps-status">Состояние</label>
+            <select id="ps-status" name="status">
+                <option value="ATTENTION" {% if status_filter == 'ATTENTION' %}selected{% endif %}>Требуют решения</option>
+                <option value="ALL" {% if status_filter == 'ALL' %}selected{% endif %}>Все строки</option>
+                {% for value,label in review_status_choices %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="ps-type">Тип</label>
+            <select id="ps-type" name="type">
+                <option value="">Все типы</option>
+                {% for item in type_counts %}
+                    <option value="{{ item.code }}" {% if type_filter == item.code %}selected{% endif %}>
+                        {{ item.name }} ({{ item.count }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="button" type="submit">Применить</button>
+        <a href="{% url 'imports:power_system_detail' revision.public_id %}">К строкам на проверке</a>
+    </form>
+</section>
+
+<section class="profile-card ps-source-card">
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow">ИСХОДНЫЕ СТРОКИ</div>
+            <h2>
+                {% if status_filter == 'ATTENTION' %}Требуют решения{% elif status_filter == 'READY' %}Готовы автоматически{% else %}Строки источника{% endif %}
+            </h2>
+        </div>
+        <span class="count-badge">{{ page.paginator.count }}</span>
+    </div>
+    <div class="table-wrap ps-review-table-wrap">
+        <table class="ps-review-table">
+            <colgroup>
+                <col class="ps-col-source">
+                <col class="ps-col-object">
+                <col class="ps-col-hierarchy">
+                <col class="ps-col-status">
+                <col class="ps-col-action">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Источник</th>
+                    <th>Объект</th>
+                    <th>Тип и восстановленный родитель</th>
+                    <th>Состояние</th>
+                    <th>Действие</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in page.object_list %}
+                <tr class="ps-row-status-{{ row.review_status|lower }}">
+                    <td class="ps-source-cell">
+                        <code>{{ row.occurrence_id }}</code>
+                        <small>{{ row.source_sheet }}</small>
+                        <small>Строка {{ row.source_row }}</small>
+                    </td>
+                    <td class="ps-object-cell">
+                        <strong>{{ row.dispatcher_name_raw }}</strong>
+                        {% if row.display_name_normalized and row.display_name_normalized != row.dispatcher_name_raw %}
+                            <small>Вариант для поиска: {{ row.display_name_normalized }}</small>
+                        {% endif %}
+                        <span>{{ row.energy_facility_raw|default:"Энергообъект не определён" }}</span>
+                        {% if row.voltage_context_raw %}<small>{{ row.voltage_context_raw }}</small>{% endif %}
+                    </td>
+                    <td class="ps-hierarchy-cell">
+                        <strong>{{ row.asset_type_name }}</strong>
+                        <span class="ps-parent-path">Родитель в системе: {{ row.resolved_parent_name }}</span>
+                        {% if row.parent_raw and row.parent_raw != row.resolved_parent_name %}
+                            <small>В исходном CSV: {{ row.parent_raw }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="import-status status-{{ row.review_status|lower }}">{{ row.get_review_status_display }}</span>
+                        {% if row.review_note %}<small>{{ row.review_note }}</small>{% endif %}
+                    </td>
+                    <td class="ps-action-cell">
+                        {% if row.needs_manual_decision %}
+                            <details class="ps-decision-panel">
+                                <summary>Принять решение</summary>
+                                <form method="post" action="{% url 'imports:power_system_occurrence_decide' revision.public_id row.pk %}" class="compact-decision-form">
+                                    {% csrf_token %}
+                                    <label>
+                                        Решение
+                                        <select name="action">
+                                            <option value="ACCEPT_AS_NEW">Принять отдельным объектом</option>
+                                            <option value="MERGE_WITH">Объединить с другой строкой</option>
+                                            <option value="EXCLUDE">Исключить из публикации</option>
+                                            <option value="RESET">Вернуть исходное состояние</option>
+                                        </select>
+                                    </label>
+                                    <label>
+                                        Строка для объединения
+                                        <input name="merge_target_occurrence_id" placeholder="Идентификатор исходной строки">
+                                    </label>
+                                    <label>
+                                        Комментарий
+                                        <textarea name="note" rows="3" placeholder="Почему принято это решение"></textarea>
+                                    </label>
+                                    <button class="button secondary" type="submit">Сохранить решение</button>
+                                </form>
+                            </details>
+                        {% elif row.is_automatic_ready %}
+                            <div class="ps-auto-note">
+                                <strong>Ручное действие не требуется</strong>
+                                <span>Будет включена в предварительный состав публикации.</span>
+                            </div>
+                        {% elif row.review_status == 'PUBLISHED' and row.published_asset_id %}
+                            <a href="{% url 'equipment:detail' row.published_asset.public_id %}">Открыть объект</a>
+                        {% else %}
+                            <span class="muted">В публикацию не входит</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5">По заданным условиям строки не найдены.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if page.has_other_pages %}
+        <nav class="pagination">
+            {% if page.has_previous %}
+                <a href="?page={{ page.previous_page_number }}&q={{ query|urlencode }}&status={{ status_filter }}&type={{ type_filter }}">←</a>
+            {% endif %}
+            <span>{{ page.number }} / {{ page.paginator.num_pages }}</span>
+            {% if page.has_next %}
+                <a href="?page={{ page.next_page_number }}&q={{ query|urlencode }}&status={{ status_filter }}&type={{ type_filter }}">→</a>
+            {% endif %}
+        </nav>
+    {% endif %}
+</section>
+
+<section class="profile-grid ps-bottom-grid">
+    <article class="profile-card">
+        <div class="section-heading">
+            <div><div class="eyebrow">КАЧЕСТВО ИСТОЧНИКА</div><h2>Зарегистрированные проблемы</h2></div>
+            <span class="count-badge">{{ revision.issue_rows }}</span>
+        </div>
+        <div class="ps-issue-list">
+            {% for issue in issues %}
+                <details>
+                    <summary>
+                        <span>{{ issue.title_ui }}</span>
+                        <small>{{ issue.get_severity_display }} · {{ issue.category_ui }}</small>
+                    </summary>
+                    <dl>
+                        <dt>Что обнаружено</dt><dd>{{ issue.evidence_ui }}</dd>
+                        <dt>Риск</dt><dd>{{ issue.risk_ui }}</dd>
+                        <dt>Как обрабатывать</dt><dd>{{ issue.handling_ui }}</dd>
+                        {% if issue.source_sheet %}<dt>Источник</dt><dd>{{ issue.source_sheet }} · {{ issue.source_rows }}</dd>{% endif %}
+                    </dl>
+                    <code class="technical-only">{{ issue.issue_code }}</code>
+                </details>
+            {% empty %}
+                <p>Проблем источника не зарегистрировано.</p>
+            {% endfor %}
+        </div>
+    </article>
+    <article class="profile-card">
+        <div class="section-heading">
+            <div><div class="eyebrow">ИСТОРИЯ</div><h2>Публикации редакции</h2></div>
+        </div>
+        <ul class="revision-list">
+            {% for publication in publications %}
+                <li>
+                    <strong>{{ publication.created_at|date:"d.m.Y H:i" }}</strong>
+                    <span>{{ publication.actor.full_name }}</span>
+                    <small><code>{{ publication.digest|slice:":16" }}…</code></small>
+                </li>
+            {% empty %}
+                <li>Публикаций пока нет.</li>
+            {% endfor %}
+        </ul>
+        {% if revision.status == 'STAGED' or revision.status == 'PARTIALLY_PUBLISHED' %}
+            <form method="post" action="{% url 'imports:power_system_discard' revision.public_id %}">
+                {% csrf_token %}
+                <button class="button danger" type="submit">Убрать редакцию из рабочего списка</button>
+            </form>
+        {% endif %}
+    </article>
+</section>
 {% endblock %}

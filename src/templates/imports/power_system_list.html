@@ -2,24 +2,46 @@
 {% block title %}Импорт объектов энергосистемы · ЭОД{% endblock %}
 {% block content %}
 <section class="page-heading compact">
-  <div><div class="eyebrow">ОБЪЕКТЫ ЭНЕРГОСИСТЕМЫ</div><h1>Предметный импорт оборудования</h1>
-  <p>Контролируемые редакции, построчная проверка, карантин конфликтов и отдельная публикация.</p></div>
-  <div class="document-actions"><a class="button" href="{% url 'imports:power_system_upload' %}">Загрузить пакет</a><a class="button secondary" href="{% url 'imports:list' %}">Обычный импорт</a></div>
+    <div>
+        <div class="eyebrow">ОБЪЕКТЫ ЭНЕРГОСИСТЕМЫ</div>
+        <h1>Импорт оборудования из ZIP</h1>
+        <p>Контролируемые редакции, проверка спорных строк, карантин конфликтов и отдельная публикация.</p>
+    </div>
+    <div class="document-actions">
+        <a class="button" href="{% url 'imports:power_system_upload' %}">Загрузить ZIP-пакет</a>
+        <a class="button secondary" href="{% url 'imports:list' %}">Обычный импорт CSV/XLSX</a>
+    </div>
 </section>
-<section class="notice-card import-safety-notice"><strong>Загрузка не изменяет рабочие справочники</strong><p>Пакет сначала разбирается в staging-зону. Неоднозначные строки можно принять, объединить или исключить. Публикация требует отдельного подтверждения и текущего пароля.</p></section>
+<section class="notice-card import-safety-notice">
+    <strong>Загрузка не изменяет рабочие справочники</strong>
+    <p>
+        Пакет сначала разбирается в область предварительной проверки. Готовые строки не требуют
+        ручного принятия по одной; решения нужны только для спорных и заблокированных строк.
+    </p>
+</section>
 <section class="summary-grid">
-  <article class="metric"><span>Редакций</span><strong>{{ summary.total }}</strong></article>
-  <article class="metric"><span>На проверке</span><strong>{{ summary.staged }}</strong></article>
-  <article class="metric"><span>Требуют внимания</span><strong>{{ summary.attention }}</strong></article>
-  <article class="metric"><span>С публикациями</span><strong>{{ summary.published }}</strong></article>
+    <article class="metric"><span>Редакций</span><strong>{{ summary.total }}</strong></article>
+    <article class="metric"><span>На проверке</span><strong>{{ summary.staged }}</strong></article>
+    <article class="metric"><span>Требуют внимания</span><strong>{{ summary.attention }}</strong></article>
+    <article class="metric"><span>С публикациями</span><strong>{{ summary.published }}</strong></article>
 </section>
-<section class="profile-card"><div class="table-wrap"><table>
-<thead><tr><th>Пакет и источник</th><th>Профиль</th><th>Строки</th><th>Проверка</th><th>Состояние</th><th>Дата</th></tr></thead>
-<tbody>{% for revision in revisions %}<tr>
-<td><a href="{% url 'imports:power_system_detail' revision.public_id %}">{{ revision.original_filename }}</a><small>{{ revision.source_reference }}</small></td>
-<td>{{ revision.data_profile.name }}</td><td>{{ revision.total_occurrences }}</td>
-<td><small>Готово: {{ revision.ready_count }} · Проверка: {{ revision.review_count }} · Блок: {{ revision.blocked_count }}</small></td>
-<td><span class="import-status status-{{ revision.status|lower }}">{{ revision.get_status_display }}</span></td><td>{{ revision.created_at|date:"d.m.Y H:i" }}</td>
-</tr>{% empty %}<tr><td colspan="6">Контролируемых пакетов пока нет.</td></tr>{% endfor %}</tbody>
-</table></div></section>
+<section class="profile-card">
+    <div class="table-wrap"><table>
+        <thead><tr><th>Пакет и источник</th><th>Профиль</th><th>Строки</th><th>Предварительная проверка</th><th>Состояние</th><th>Дата</th></tr></thead>
+        <tbody>
+        {% for revision in revisions %}
+            <tr>
+                <td><a href="{% url 'imports:power_system_detail' revision.public_id %}">{{ revision.original_filename }}</a><small>{{ revision.source_reference }}</small></td>
+                <td>{{ revision.data_profile.name }}</td>
+                <td>{{ revision.total_occurrences }}</td>
+                <td><small>Готово автоматически: {{ revision.ready_count }} · Требуют проверки: {{ revision.review_count }} · Заблокировано: {{ revision.blocked_count }}</small></td>
+                <td><span class="import-status status-{{ revision.status|lower }}">{{ revision.get_status_display }}</span></td>
+                <td>{{ revision.created_at|date:"d.m.Y H:i" }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6">Контролируемых пакетов пока нет.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table></div>
+</section>
 {% endblock %}

@@ -82,6 +82,108 @@ def _validation_message(error: ValidationError) -> str:
     return " ".join(error.messages)
 
 
+POWER_SYSTEM_ISSUE_LABELS = {
+    "BROKEN_HELPER_FORMULAS": "Повреждённые служебные формулы",
+    "DUPLICATE_TN_1_330": "Повторяющееся наименование ТН-1-330",
+    "LEP_CROSS_LISTED_35KV_CABLES": "Повторное представление КЛ 35 кВ",
+    "LEP_TSN_NAME_AUTHORITY_CONFLICT": "Конфликт принадлежности КЛ ТСН",
+    "LEP_RESERVE_CABLE_DUPLICATE": "Повтор резервной КЛ 0,4 кВ",
+    "KOCUBEYEVSKAYA_TYPO": "Опечатка в названии Кочубеевской ВЭС",
+    "AUTHORITY_DOUBLE_SPACE": "Лишний пробел в субъекте ведения",
+    "MISSING_CONDUCT_VALUES_DGR": "Не заполнено ведение ДГР",
+    "RZA_KTP_HEADINGS_HAVE_AUTHORITY": "Полномочия указаны в заголовках КТП",
+    "SDTU_EMPTY_NUMBERED_PLACEHOLDERS": "Пустые нумерованные строки СДТУ",
+    "SDTU_SWITCH_NAME_POSSIBLE_TYPO": "Возможная опечатка в имени коммутатора",
+    "SDTU_MUX_SPACING": "Разное оформление наименований MUX",
+    "PARENT_REQUIRED_FOR_UNIQUENESS": "Родитель обязателен для различения объектов",
+    "INFORMATIONAL_CONDUCT_FOOTNOTE_SCOPE": "Неясная область информационного ведения",
+    "BLANK_VS_DASH_SEMANTICS": "Пустое значение отличается от явного прочерка",
+    "AGGREGATE_DISPATCH_NAMES": "Составные диспетчерские наименования",
+    "SOURCE_VERSION_UNCERTAIN": "Неопределённая редакция источника",
+    "ABBREVIATION_VES_COLLISION": "Неоднозначное сокращение ВЭС",
+    "EXTERNAL_AUTHORITY_SUBJECTS": "Внешние субъекты управления и ведения",
+    "SOURCE_CATEGORY_TECHNICAL_MISMATCH": "Категория источника не равна техническому типу",
+    "RZA_PRIMARY_LINK_MATCHING": "Связь РЗА с первичным оборудованием требует проверки",
+    "ABBREVIATION_CONTACT_SCOPE": "Контактные данные вне области импорта оборудования",
+}
+
+POWER_SYSTEM_CATEGORY_LABELS = {
+    "SOURCE_INTEGRITY": "Целостность источника",
+    "DUPLICATE": "Возможный дубль",
+    "AUTHORITY_CONFLICT": "Конфликт управления или ведения",
+    "ALIAS": "Алиас и нормализация",
+    "NORMALIZATION": "Нормализация",
+    "MISSING_DATA": "Отсутствующие данные",
+    "STRUCTURE": "Структура источника",
+    "POSSIBLE_TYPO": "Возможная опечатка",
+    "UNIQUENESS": "Уникальность",
+    "SEMANTICS": "Смысл исходного значения",
+    "GRANULARITY": "Гранулярность объекта",
+    "VERSIONING": "Версия источника",
+    "ALIAS_COLLISION": "Конфликт сокращений",
+    "REFERENCE_DATA": "Внешние справочные данные",
+    "CLASSIFICATION": "Классификация",
+    "RELATIONSHIP": "Предлагаемая связь",
+    "SCOPE": "Область применения",
+}
+
+POWER_SYSTEM_TEXT_REPLACEMENTS = (
+    ("staging external authority references", "временные ссылки на внешних субъектов управления и ведения"),
+    ("revision + parent + type + raw name", "редакция + родитель + тип + исходное имя"),
+    (
+        "is_informational сделать nullable",
+        "признак информационного ведения разрешить оставлять неопределённым",
+    ),
+    ("type_code только PROPOSED", "технический тип хранить только как предложение"),
+    ("proposed match с confidence", "предлагаемую связь с оценкой уверенности"),
+    ("DRAFT source revision", "черновую редакцию источника"),
+    ("source_category_raw", "исходная категория"),
+    ("source-occurrence", "исходная строка"),
+    ("source occurrences", "исходные строки"),
+    ("source occurrence", "исходная строка"),
+    ("Merge candidate", "Кандидат на объединение"),
+    ("merge candidate", "кандидат на объединение"),
+    ("после review", "после ручной проверки"),
+    ("filename/checksum", "имя файла и контрольную сумму"),
+    ("comparison key", "ключ сравнения"),
+    ("normalized key", "нормализованный ключ"),
+    ("placeholders", "пустые строки-заполнители"),
+    ("Raw сохранить", "Исходное значение сохранить"),
+    ("PROPOSED", "предложенный"),
+    ("review", "ручная проверка"),
+    ("scope", "область действия"),
+    ("alias", "алиас"),
+    ("raw", "исходное значение"),
+)
+
+
+def _power_system_ui_text(value: str) -> str:
+    result = value or ""
+    for source, target in POWER_SYSTEM_TEXT_REPLACEMENTS:
+        result = result.replace(source, target)
+    return result
+
+
+def _power_system_parent_labels(revision: PowerSystemSourceRevision) -> dict[str, str]:
+    return {
+        external_key: dispatcher_name
+        for external_key, dispatcher_name in revision.asset_occurrences.filter(
+            record_role=PowerSystemAssetOccurrence.RecordRole.HIERARCHY_NODE,
+        ).values_list("external_key", "dispatcher_name_raw")
+    }
+
+
+def _decorate_power_system_occurrence(row, parent_labels: dict[str, str]) -> None:
+    row.resolved_parent_name = parent_labels.get(row.parent_external_key, "")
+    if not row.resolved_parent_name:
+        row.resolved_parent_name = row.parent_raw or row.energy_facility_raw or "Не определён"
+    row.needs_manual_decision = row.review_status in {
+        PowerSystemAssetOccurrence.ReviewStatus.REVIEW_REQUIRED,
+        PowerSystemAssetOccurrence.ReviewStatus.BLOCKED,
+    }
+    row.is_automatic_ready = row.review_status == PowerSystemAssetOccurrence.ReviewStatus.READY
+
+
 @login_required
 def import_list(request: HttpRequest) -> HttpResponse:
     employee = require_import_employee(request.user)
@@ -615,7 +717,8 @@ def power_system_upload(request: HttpRequest) -> HttpResponse:
 @login_required
 def power_system_detail(request: HttpRequest, public_id) -> HttpResponse:
     employee, revision = power_system_revision_for_user(request.user, public_id)
-    status_filter = request.GET.get("status", "").strip().upper()
+    raw_status_filter = request.GET.get("status")
+    status_filter = "ATTENTION" if raw_status_filter is None else raw_status_filter.strip().upper()
     type_filter = request.GET.get("type", "").strip()
     query = request.GET.get("q", "").strip()
     allowed_statuses = {value for value, _label in PowerSystemAssetOccurrence.ReviewStatus.choices}
@@ -624,10 +727,25 @@ def power_system_detail(request: HttpRequest, public_id) -> HttpResponse:
         "reviewed_by",
         "published_asset",
     )
-    if status_filter in allowed_statuses:
+    if status_filter == "ATTENTION":
+        occurrences = occurrences.filter(
+            review_status__in=(
+                PowerSystemAssetOccurrence.ReviewStatus.REVIEW_REQUIRED,
+                PowerSystemAssetOccurrence.ReviewStatus.BLOCKED,
+            )
+        )
+    elif status_filter in allowed_statuses:
         occurrences = occurrences.filter(review_status=status_filter)
+    elif status_filter in {"", "ALL"}:
+        status_filter = "ALL"
     else:
-        status_filter = ""
+        status_filter = "ATTENTION"
+        occurrences = occurrences.filter(
+            review_status__in=(
+                PowerSystemAssetOccurrence.ReviewStatus.REVIEW_REQUIRED,
+                PowerSystemAssetOccurrence.ReviewStatus.BLOCKED,
+            )
+        )
     if type_filter:
         occurrences = occurrences.filter(asset_type_code=type_filter)
     if query:
@@ -639,9 +757,41 @@ def power_system_detail(request: HttpRequest, public_id) -> HttpResponse:
             | Q(energy_facility_raw__icontains=query)
         )
     occurrences = occurrences.order_by("source_sheet", "source_row", "occurrence_id")
-    page = Paginator(occurrences, 50).get_page(request.GET.get("page"))
-    issues = revision.issues.order_by("-severity", "issue_code")[:100]
+    page_size = 25 if status_filter == "ATTENTION" else 50
+    page = Paginator(occurrences, page_size).get_page(request.GET.get("page"))
+    parent_labels = _power_system_parent_labels(revision)
+    for row in page.object_list:
+        _decorate_power_system_occurrence(row, parent_labels)
+
+    issues = list(revision.issues.order_by("-severity", "issue_code")[:100])
+    for issue in issues:
+        issue.title_ui = POWER_SYSTEM_ISSUE_LABELS.get(issue.issue_code, issue.issue_code)
+        issue.category_ui = POWER_SYSTEM_CATEGORY_LABELS.get(issue.category, issue.category)
+        issue.evidence_ui = _power_system_ui_text(issue.evidence)
+        issue.risk_ui = _power_system_ui_text(issue.import_risk)
+        issue.handling_ui = _power_system_ui_text(issue.recommended_handling)
+
+    hierarchy_counts = {
+        "sites": revision.asset_occurrences.filter(asset_type_code="energy_facility").count(),
+        "voltage_levels": revision.asset_occurrences.filter(asset_type_code="voltage_level").count(),
+        "unit_substations": revision.asset_occurrences.filter(asset_type_code="unit_substation").count(),
+        "wind_turbines": revision.asset_occurrences.filter(asset_type_code="wind_turbine").count(),
+        "lines": revision.asset_occurrences.filter(
+            asset_type_code__in=("overhead_line", "cable_line")
+        ).count(),
+    }
+    hierarchy_examples = []
+    for type_code in ("unit_substation", "control_building", "wind_turbine", "cable_line"):
+        example = revision.asset_occurrences.filter(asset_type_code=type_code).order_by(
+            "source_sheet",
+            "source_row",
+        ).first()
+        if example is not None:
+            _decorate_power_system_occurrence(example, parent_labels)
+            hierarchy_examples.append(example)
+
     publications = revision.publications.select_related("actor").order_by("-created_at")
+    attention_count = revision.review_count + revision.blocked_count
     return render(
         request,
         "imports/power_system_detail.html",
@@ -657,6 +807,9 @@ def power_system_detail(request: HttpRequest, public_id) -> HttpResponse:
             "type_filter": type_filter,
             "query": query,
             "can_publish": can_publish_import(request.user),
+            "attention_count": attention_count,
+            "hierarchy_counts": hierarchy_counts,
+            "hierarchy_examples": hierarchy_examples,
         },
     )
 

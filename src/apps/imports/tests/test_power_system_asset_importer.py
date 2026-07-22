@@ -18,6 +18,7 @@ from apps.imports.power_system import (
     build_power_system_publication_preview,
     decide_power_system_occurrence,
     publish_power_system_revision,
+    reanalyze_power_system_revision,
     stage_power_system_package,
 )
 from apps.organizations.models import (
@@ -91,8 +92,8 @@ class PowerSystemAssetImporterTests(TestCase):
     def test_stage_is_idempotent_and_keeps_conflict_in_row_quarantine(self):
         revision, created = self.stage()
         self.assertTrue(created)
-        self.assertEqual(revision.total_occurrences, 5)
-        self.assertEqual(revision.ready_count, 4)
+        self.assertEqual(revision.total_occurrences, 9)
+        self.assertEqual(revision.ready_count, 8)
         self.assertEqual(revision.blocked_count, 1)
         blocked = revision.asset_occurrences.get(occurrence_id="SYN-BLOCKED")
         self.assertEqual(blocked.review_status, PowerSystemAssetOccurrence.ReviewStatus.BLOCKED)
@@ -102,6 +103,50 @@ class PowerSystemAssetImporterTests(TestCase):
         self.assertFalse(duplicate_created)
         self.assertEqual(duplicate.pk, revision.pk)
         self.assertEqual(PowerSystemSourceRevision.objects.count(), 1)
+
+    def test_hierarchy_is_recovered_from_semantic_context_not_broken_source_path(self):
+        revision, _created = self.stage()
+        rows = {
+            row.occurrence_id: row
+            for row in revision.asset_occurrences.filter(
+                occurrence_id__in=(
+                    "SYN-35KV",
+                    "SYN-KTP-1",
+                    "SYN-OPU",
+                    "SYN-WTG-GROUP",
+                    "SYN-WTG-1",
+                    "SYN-LINE-35",
+                )
+            )
+        }
+        self.assertEqual(rows["SYN-KTP-1"].parent_external_key, rows["SYN-35KV"].external_key)
+        self.assertEqual(rows["SYN-OPU"].parent_external_key, rows["SYN-35KV"].external_key)
+        self.assertEqual(rows["SYN-LINE-35"].parent_external_key, rows["SYN-35KV"].external_key)
+        self.assertEqual(
+            rows["SYN-WTG-1"].parent_external_key,
+            rows["SYN-WTG-GROUP"].external_key,
+        )
+
+    def test_reanalysis_repairs_existing_staging_without_changing_source_values(self):
+        revision, _created = self.stage()
+        site = revision.asset_occurrences.get(occurrence_id="SYN-SITE")
+        ktp = revision.asset_occurrences.get(occurrence_id="SYN-KTP-1")
+        original_parent_raw = ktp.parent_raw
+        original_path_raw = ktp.hierarchy_path_raw
+        PowerSystemAssetOccurrence.objects.filter(pk=ktp.pk).update(
+            parent_external_key=site.external_key,
+            logical_key="LOGICAL:incorrect-before-repair",
+        )
+
+        result = reanalyze_power_system_revision(revision)
+        ktp.refresh_from_db()
+        voltage = revision.asset_occurrences.get(occurrence_id="SYN-35KV")
+        self.assertGreaterEqual(result["parent_changed"], 1)
+        self.assertGreaterEqual(result["logical_key_changed"], 1)
+        self.assertEqual(ktp.parent_external_key, voltage.external_key)
+        self.assertNotEqual(ktp.logical_key, "LOGICAL:incorrect-before-repair")
+        self.assertEqual(ktp.parent_raw, original_parent_raw)
+        self.assertEqual(ktp.hierarchy_path_raw, original_path_raw)
 
     def test_manual_decision_is_audited_and_resettable(self):
         revision, _created = self.stage()
@@ -148,7 +193,7 @@ class PowerSystemAssetImporterTests(TestCase):
         )
         revision.refresh_from_db()
         self.assertEqual(revision.status, PowerSystemSourceRevision.Status.PARTIALLY_PUBLISHED)
-        self.assertEqual(revision.published_count, 4)
+        self.assertEqual(revision.published_count, 8)
         self.assertEqual(revision.blocked_count, 1)
         self.assertEqual(EnergySite.objects.filter(organization=self.organization).count(), 1)
 
@@ -160,12 +205,31 @@ class PowerSystemAssetImporterTests(TestCase):
             organization=self.organization,
             technical_name="КТП-1",
         )
+        control_building = EquipmentAsset.objects.get(
+            organization=self.organization,
+            technical_name="ОПУ ВЭС",
+        )
+        turbine_group = EquipmentAsset.objects.get(
+            organization=self.organization,
+            technical_name="ВЭУ",
+        )
+        turbine = EquipmentAsset.objects.get(
+            organization=self.organization,
+            technical_name="ВЭУ-1",
+        )
+        line = EquipmentAsset.objects.get(
+            organization=self.organization,
+            technical_name="КЛ 35 кВ КТП-1 – КТП-2",
+        )
         breaker = EquipmentAsset.objects.get(
             organization=self.organization,
             technical_name="В-35 КТП-1",
         )
         self.assertIsNone(voltage.parent)
         self.assertEqual(ktp.parent, voltage)
+        self.assertEqual(control_building.parent, voltage)
+        self.assertEqual(line.parent, voltage)
+        self.assertEqual(turbine.parent, turbine_group)
         self.assertEqual(breaker.parent, ktp)
         self.assertEqual(breaker.attributes["source_occurrence_ids"], ["SYN-Q-1"])
         self.assertEqual(EquipmentAlias.objects.get().scope_parent, ktp)
@@ -174,6 +238,39 @@ class PowerSystemAssetImporterTests(TestCase):
         self.assertEqual(supervision.conduct_mode, SupervisionRevision.ConductMode.OPERATIONAL)
         self.assertFalse(supervision.is_information_only)
         self.assertEqual(len(publication.digest), 64)
+
+    def test_detail_defaults_to_attention_and_hides_manual_action_for_ready_rows(self):
+        revision, _created = self.stage()
+        self.client.force_login(self.user)
+
+        attention = self.client.get(
+            reverse("imports:power_system_detail", args=[revision.public_id])
+        )
+        self.assertContains(attention, "Показаны только строки, требующие решения")
+        self.assertContains(attention, "SYN-BLOCKED")
+        self.assertNotContains(attention, "SYN-Q-1")
+        self.assertContains(attention, "Принять решение")
+
+        ready = self.client.get(
+            reverse("imports:power_system_detail", args=[revision.public_id]),
+            {"status": PowerSystemAssetOccurrence.ReviewStatus.READY},
+        )
+        self.assertContains(ready, "SYN-Q-1")
+        self.assertContains(ready, "Ручное действие не требуется")
+        self.assertNotContains(ready, "Принять решение")
+
+    def test_issue_descriptions_are_localized_for_user_interface(self):
+        revision, _created = self.stage()
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("imports:power_system_detail", args=[revision.public_id])
+        )
+        self.assertContains(response, "Повторное представление КЛ 35 кВ")
+        self.assertContains(response, "Кандидат на объединение")
+        self.assertContains(response, "после ручной проверки")
+        self.assertNotContains(response, "source-occurrence")
+        self.assertNotContains(response, "Merge candidate")
+        self.assertNotContains(response, "staging external authority references")
 
     def test_views_expose_staging_without_publishing(self):
         self.client.force_login(self.user)
@@ -192,6 +289,6 @@ class PowerSystemAssetImporterTests(TestCase):
         detail = self.client.get(
             reverse("imports:power_system_detail", args=[revision.public_id])
         )
-        self.assertContains(detail, "Строки источника")
+        self.assertContains(detail, "Требуют решения")
         self.assertContains(detail, "SYN-BLOCKED")
-        self.assertContains(detail, "Требует проверки")
+        self.assertContains(detail, "Заблокирована")

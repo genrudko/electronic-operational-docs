@@ -8548,3 +8548,202 @@ body.draft-view-drawer-visible .draft-view-drawer {
 .status-discarded {
     opacity: .84;
 }
+
+/* Patch 011.5 Repair 3 — рабочая проверка пакета объектов энергосистемы */
+.power-system-workflow {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 18px 0;
+}
+.workflow-step {
+    min-width: 0;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-muted);
+}
+.workflow-step strong,
+.workflow-step span {
+    display: block;
+}
+.workflow-step span {
+    margin-top: 5px;
+    color: var(--surface-secondary-text);
+    line-height: 1.45;
+}
+.power-system-summary .metric a,
+.ps-count-link {
+    color: inherit;
+    text-decoration: none;
+}
+.ps-count-link:hover strong,
+.ps-count-link:focus-visible strong {
+    text-decoration: underline;
+}
+.ps-hierarchy-card {
+    overflow: hidden;
+}
+.ps-hierarchy-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(110px, 1fr));
+    gap: 10px;
+    margin: 14px 0 18px;
+}
+.ps-hierarchy-grid > div {
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-muted);
+}
+.ps-hierarchy-grid span,
+.ps-hierarchy-grid strong {
+    display: block;
+}
+.ps-hierarchy-grid span {
+    color: var(--surface-secondary-text);
+    font-size: .88rem;
+}
+.ps-hierarchy-grid strong {
+    margin-top: 4px;
+    font-size: 1.2rem;
+}
+.ps-hierarchy-samples {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+    gap: 10px;
+}
+.ps-hierarchy-samples > div {
+    padding: 12px 14px;
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    background: var(--surface-muted);
+}
+.ps-hierarchy-samples strong,
+.ps-hierarchy-samples span {
+    display: block;
+}
+.ps-hierarchy-samples span {
+    margin-top: 4px;
+    color: var(--surface-secondary-text);
+    overflow-wrap: anywhere;
+}
+.power-system-filter-form {
+    display: grid;
+    grid-template-columns: minmax(220px, 2fr) minmax(175px, 1fr) minmax(175px, 1fr) auto auto;
+    align-items: end;
+    gap: 12px;
+}
+.power-system-filter-form > div {
+    min-width: 0;
+}
+.power-system-filter-form label {
+    display: block;
+    margin-bottom: 6px;
+}
+.power-system-filter-form input,
+.power-system-filter-form select {
+    width: 100%;
+}
+.ps-review-table-wrap {
+    overflow-x: auto;
+}
+.ps-review-table {
+    min-width: 1120px;
+    table-layout: fixed;
+}
+.ps-review-table th:nth-child(1) { width: 145px; }
+.ps-review-table th:nth-child(2) { width: 255px; }
+.ps-review-table th:nth-child(3) { width: 210px; }
+.ps-review-table th:nth-child(4) { width: 175px; }
+.ps-review-table th:nth-child(5) { width: 155px; }
+.ps-review-table th:nth-child(6) { width: 210px; }
+.ps-review-table td {
+    vertical-align: top;
+    overflow-wrap: anywhere;
+}
+.ps-source-cell strong,
+.ps-source-cell span,
+.ps-object-cell strong,
+.ps-object-cell span,
+.ps-hierarchy-cell strong,
+.ps-hierarchy-cell span {
+    display: block;
+}
+.ps-source-cell span,
+.ps-object-cell span,
+.ps-hierarchy-cell span,
+.ps-parent-path {
+    margin-top: 4px;
+    color: var(--surface-secondary-text);
+    font-size: .88rem;
+    line-height: 1.4;
+}
+.ps-action-cell {
+    min-width: 210px;
+}
+.ps-auto-note {
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--success, #3f9b6d) 46%, var(--border));
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--success, #3f9b6d) 9%, var(--surface));
+}
+.ps-auto-note strong,
+.ps-auto-note span {
+    display: block;
+}
+.ps-auto-note span {
+    margin-top: 4px;
+    color: var(--surface-secondary-text);
+    font-size: .87rem;
+}
+.ps-decision-panel summary {
+    cursor: pointer;
+    font-weight: 700;
+}
+.ps-decision-panel[open] summary {
+    margin-bottom: 10px;
+}
+.ps-decision-panel .compact-decision-form {
+    margin-top: 0;
+}
+.ps-issue-list {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.ps-issue-list li {
+    padding: 13px 15px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-muted);
+}
+.ps-issue-list strong,
+.ps-issue-list span {
+    display: block;
+}
+.ps-issue-list span {
+    margin-top: 5px;
+    line-height: 1.45;
+}
+
+@media (max-width: 1100px) {
+    .power-system-workflow {
+        grid-template-columns: 1fr;
+    }
+    .ps-hierarchy-grid {
+        grid-template-columns: repeat(3, minmax(110px, 1fr));
+    }
+    .power-system-filter-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 680px) {
+    .ps-hierarchy-grid,
+    .power-system-filter-form {
+        grid-template-columns: 1fr;
+    }
+}

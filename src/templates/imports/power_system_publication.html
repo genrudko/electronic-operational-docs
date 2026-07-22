@@ -1,9 +1,55 @@
 {% extends "base.html" %}
 {% block title %}Публикация объектов энергосистемы · ЭОД{% endblock %}
 {% block content %}
-<section class="page-heading compact"><div><div class="eyebrow">КОНТРОЛИРУЕМАЯ ПУБЛИКАЦИЯ</div><h1>Проверка готовых строк</h1><p>{{ revision.original_filename }}</p></div><a href="{% url 'imports:power_system_detail' revision.public_id %}">← К проверке строк</a></section>
-<section class="notice-card warning-notice"><strong>Публикуются только строки со статусом «Готова»</strong><p>Строки в карантине и исключённые строки не меняют рабочий реестр. Операция выполняется одной транзакцией и повторно проверяет SHA-256 состава.</p></section>
-<section class="summary-grid"><article class="metric"><span>Строк</span><strong>{{ preview.summary.selected }}</strong></article><article class="metric"><span>Узлов иерархии</span><strong>{{ preview.summary.hierarchy }}</strong></article><article class="metric"><span>Объектных строк</span><strong>{{ preview.summary.objects }}</strong></article><article class="metric"><span>В карантине</span><strong>{{ preview.summary.quarantined }}</strong></article></section>
-<section class="profile-card"><dl class="detail-list"><dt>Дата действия</dt><dd>{{ preview.effective_from|date:"d.m.Y" }}</dd><dt>SHA-256 пакета</dt><dd><code class="breakable">{{ revision.file_sha256 }}</code></dd><dt>SHA-256 публикации</dt><dd><code class="breakable">{{ preview.digest }}</code></dd><dt>Профиль</dt><dd>{{ revision.data_profile.name }}</dd></dl><details class="technical-only"><summary>Канонический снимок</summary><pre class="breakable">{{ preview.canonical_json }}</pre></details></section>
-<section class="profile-card"><h2>Подтверждение</h2>{% if can_publish %}<form method="post" class="stacked-form">{% csrf_token %}{{ form.non_field_errors }}{% for field in form %}{% if not field.is_hidden %}<div class="field-row"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>{% else %}{{ field }}{% endif %}{% endfor %}<div class="document-actions"><button class="button" type="submit">Опубликовать готовые строки</button><a class="button secondary" href="{% url 'imports:power_system_detail' revision.public_id %}">Отмена</a></div></form>{% else %}<p>Публикация доступна только пользователю с прямой ролью «Администратор справочников».</p>{% endif %}</section>
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">КОНТРОЛИРУЕМАЯ ПУБЛИКАЦИЯ</div>
+        <h1>Проверка готовой части редакции</h1>
+        <p>{{ revision.original_filename }}</p>
+    </div>
+    <a href="{% url 'imports:power_system_detail' revision.public_id %}">← К предварительной проверке</a>
+</section>
+<section class="notice-card warning-notice">
+    <strong>Публикуются только строки со статусом «Готова»</strong>
+    <p>
+        Ручное подтверждение каждой готовой строки не требуется. Строки на проверке,
+        заблокированные и исключённые остаются в карантине и не изменяют рабочий реестр.
+        Перед записью система повторно проверит состав и SHA-256.
+    </p>
+</section>
+<section class="summary-grid">
+    <article class="metric"><span>Будет опубликовано</span><strong>{{ preview.summary.selected }}</strong></article>
+    <article class="metric"><span>Узлов иерархии</span><strong>{{ preview.summary.hierarchy }}</strong></article>
+    <article class="metric"><span>Объектных строк</span><strong>{{ preview.summary.objects }}</strong></article>
+    <article class="metric"><span>Останется в карантине</span><strong>{{ preview.summary.quarantined }}</strong></article>
+</section>
+<section class="profile-card">
+    <dl class="detail-list">
+        <dt>Дата действия</dt><dd>{{ preview.effective_from|date:"d.m.Y" }}</dd>
+        <dt>SHA-256 пакета</dt><dd><code class="breakable">{{ revision.file_sha256 }}</code></dd>
+        <dt>SHA-256 публикации</dt><dd><code class="breakable">{{ preview.digest }}</code></dd>
+        <dt>Профиль</dt><dd>{{ revision.data_profile.name }}</dd>
+    </dl>
+    <details class="technical-only"><summary>Канонический снимок</summary><pre class="breakable">{{ preview.canonical_json }}</pre></details>
+</section>
+<section class="profile-card">
+    <h2>Подтверждение публикации готовой части</h2>
+    {% if can_publish %}
+        <form method="post" class="stacked-form">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+                {% if not field.is_hidden %}
+                    <div class="field-row"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>
+                {% else %}{{ field }}{% endif %}
+            {% endfor %}
+            <div class="document-actions">
+                <button class="button" type="submit">Опубликовать {{ preview.summary.selected }} готовых строк</button>
+                <a class="button secondary" href="{% url 'imports:power_system_detail' revision.public_id %}">Отмена</a>
+            </div>
+        </form>
+    {% else %}
+        <p>Публикация доступна только пользователю с прямой ролью «Администратор справочников».</p>
+    {% endif %}
+</section>
 {% endblock %}

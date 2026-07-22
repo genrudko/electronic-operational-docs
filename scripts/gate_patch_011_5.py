@@ -26,7 +26,11 @@ def main() -> None:
     import_views = read("src/apps/imports/views.py")
     import_urls = read("src/apps/imports/urls.py")
     detail_template = read("src/templates/imports/power_system_detail.html")
+    list_template = read("src/templates/imports/list.html")
+    power_system_list_template = read("src/templates/imports/power_system_list.html")
+    publication_template = read("src/templates/imports/power_system_publication.html")
     upload_template = read("src/templates/imports/power_system_upload.html")
+    equipment_registry_template = read("src/templates/equipment/registry.html")
     equipment_template = read("src/templates/equipment/detail.html")
     tests = read("src/apps/imports/tests/test_power_system_asset_importer.py")
     adr = read("docs/adr/ADR-011-5-power-system-asset-importer.md")
@@ -75,6 +79,15 @@ def main() -> None:
         and "Не удалось разрешить иерархию" in importer,
     )
     require(
+        "REAL_PACKAGE_HIERARCHY_REPAIR",
+        "def _row_voltage_label(" in importer
+        and 'type_code in {"unit_substation", "control_building"}' in importer
+        and 'type_code in {"overhead_line", "cable_line"}' in importer
+        and 'comparison_token("ВЭУ")' in importer
+        and "def reanalyze_power_system_revision(" in importer
+        and "def reanalyze_staged_power_system_revisions(" in importer,
+    )
+    require(
         "SCOPED_EQUIPMENT_ALIASES",
         "scope_site = models.ForeignKey" in equipment_models
         and "scope_parent = models.ForeignKey" in equipment_models
@@ -105,8 +118,21 @@ def main() -> None:
         and "Загрузить контролируемый пакет" in upload_template
         and "Строки источника" in detail_template
         and "Происхождение из источника" in equipment_template
+        and "Импорт оборудования из ZIP" in list_template
+        and "Импорт оборудования из ZIP" in power_system_list_template
+        and "Публикуются только строки со статусом «Готова»" in publication_template
+        and "Импортировать оборудование" in equipment_registry_template
         and "SOURCE OCCURRENCES" not in detail_template
         and ">STAGING<" not in upload_template,
+    )
+    require(
+        "ATTENTION_FIRST_REVIEW_UI",
+        'status_filter = "ATTENTION"' in import_views
+        and "needs_manual_decision" in import_views
+        and "Показаны только строки, требующие решения" in detail_template
+        and "Ручное действие не требуется" in detail_template
+        and "POWER_SYSTEM_TEXT_REPLACEMENTS" in import_views
+        and "Повторное представление КЛ 35 кВ" in import_views,
     )
     require(
         "SEARCH_AND_PROVENANCE",
@@ -117,8 +143,12 @@ def main() -> None:
     require(
         "SYNTHETIC_IMPORT_TESTS",
         "test_stage_is_idempotent" in tests
+        and "test_hierarchy_is_recovered_from_semantic_context" in tests
+        and "test_reanalysis_repairs_existing_staging" in tests
         and "test_manual_decision_is_audited" in tests
         and "test_publication_rebuilds_hierarchy" in tests
+        and "test_detail_defaults_to_attention" in tests
+        and "test_issue_descriptions_are_localized" in tests
         and "test_views_expose_staging_without_publishing" in tests,
     )
     require(
