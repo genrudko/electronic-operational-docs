@@ -246,7 +246,7 @@ def main() -> None:
         and "X-Content-SHA256" in import_views
         and "Cache-Control" in import_views
         and "power_system_snapshot_download" in publication_template
-        and "power_system_review.js' %}?v=011573" in detail_template,
+        and "power_system_review.js' %}?v=011574" in detail_template,
     )
     require(
         "CANONICAL_SNAPSHOT_PROGRESS",
@@ -255,6 +255,14 @@ def main() -> None:
         and "await fetch(trigger.href" in review_js
         and "URL.createObjectURL" in review_js
         and "X-Content-SHA256" in review_js,
+    )
+    require(
+        "PUBLICATION_DOWNLOAD_SCRIPT_WIRING",
+        "power_system_review.js' %}?v=011574" in detail_template
+        and "power_system_review.js' %}?v=011574" in publication_template
+        and "data-power-system-snapshot-trigger" in publication_template
+        and "event.preventDefault()" in review_js
+        and "await fetch(trigger.href" in review_js,
     )
     print("PATCH_011_5_POWER_SYSTEM_ASSET_IMPORTER_GATE_PASSED")
 

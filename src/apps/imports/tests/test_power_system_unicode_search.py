@@ -46,7 +46,12 @@ class PowerSystemUnicodeSearchTests(SimpleTestCase):
         self.assertIn("power_system_snapshot_download", views)
         self.assertIn("X-Content-SHA256", views)
         self.assertIn("data-power-system-snapshot-trigger", publication)
+        self.assertIn(
+            "{% static 'imports/power_system_review.js' %}?v=011574",
+            publication,
+        )
         self.assertNotIn("request.GET.show_snapshot", publication)
         self.assertNotIn("preview.canonical_json_pretty", publication)
         self.assertIn("await fetch(trigger.href", review_js)
+        self.assertIn("event.preventDefault()", review_js)
         self.assertIn("URL.createObjectURL", review_js)
