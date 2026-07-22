@@ -27,7 +27,6 @@ def _csv_bytes(header: tuple[str, ...], rows: Iterable[dict[str, object]]) -> by
 def synthetic_personnel_csv_files() -> dict[str, bytes]:
     people = [
         {
-            "index": 0,
             "source_sheet": "Приложение",
             "source_excel_row": 9,
             "source_person_no": 1,
@@ -47,7 +46,6 @@ def synthetic_personnel_csv_files() -> dict[str, bytes]:
             "basis_metadata_status": "INCOMPLETE_IN_SOURCE",
         },
         {
-            "index": 1,
             "source_sheet": "Приложение",
             "source_excel_row": 10,
             "source_person_no": 2,
@@ -69,7 +67,6 @@ def synthetic_personnel_csv_files() -> dict[str, bytes]:
     ]
     positions = [
         {
-            "index": 0,
             "position_key_proposed": "POS-001",
             "position_name_normalized_candidate": "Начальник смены",
             "source_variants": "Начальник смены",
@@ -77,7 +74,6 @@ def synthetic_personnel_csv_files() -> dict[str, bytes]:
             "normalization_status": "DIRECT",
         },
         {
-            "index": 1,
             "position_key_proposed": "POS-002",
             "position_name_normalized_candidate": "Инженер",
             "source_variants": "Инженер",
@@ -86,10 +82,9 @@ def synthetic_personnel_csv_files() -> dict[str, bytes]:
         },
     ]
     authorities = []
-    for index, (proposed, (column, _internal)) in enumerate(CSV_AUTHORITY_CODE_MAP.items()):
+    for proposed, (column, _internal) in CSV_AUTHORITY_CODE_MAP.items():
         authorities.append(
             {
-                "index": index,
                 "authority_code_proposed": proposed,
                 "source_excel_column": column,
                 "source_label_normalized": f"Синтетическое полномочие {proposed}",
@@ -99,7 +94,6 @@ def synthetic_personnel_csv_files() -> dict[str, bytes]:
             }
         )
     assignments = []
-    index = 0
     for person in people:
         person_no = person["source_person_no"]
         source_row = person["source_excel_row"]
@@ -130,7 +124,6 @@ def synthetic_personnel_csv_files() -> dict[str, bytes]:
                 raw, status, action, enum_value = "2", "ENUM_VALUE", "STAGING_ONLY", "2"
             assignments.append(
                 {
-                    "index": index,
                     "source_person_no": person_no,
                     "full_name_normalized": person["full_name_normalized"],
                     "authority_code_proposed": proposed,
@@ -145,10 +138,8 @@ def synthetic_personnel_csv_files() -> dict[str, bytes]:
                     "import_action_proposed": action,
                 }
             )
-            index += 1
     issues = [
         {
-            "index": 0,
             "issue_id": "ISSUE-001",
             "source": "synthetic",
             "severity": "HIGH",

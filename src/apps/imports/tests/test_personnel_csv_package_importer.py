@@ -79,7 +79,10 @@ class PersonnelCsvPackageImporterTests(TestCase):
         )
 
     def test_parser_accepts_required_package_and_maps_all_21_authorities(self):
-        parsed = parse_personnel_csv_package(synthetic_personnel_csv_package())
+        files = synthetic_personnel_csv_files()
+        for name, content in files.items():
+            self.assertNotEqual(content.splitlines()[0].split(b",")[0], b"index", name)
+        parsed = parse_personnel_csv_package(synthetic_personnel_csv_package(files=files))
         self.assertEqual(parsed.manifest["source_format"], "NORMALIZED_CSV_PACKAGE")
         self.assertEqual(parsed.manifest["person_count"], 2)
         self.assertEqual(parsed.manifest["position_count"], 2)

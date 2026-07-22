@@ -57,7 +57,9 @@ def main() -> None:
         "CSV_PACKAGE_STRICT_UTF8_HEADERS",
         'decode("utf-8-sig")' in importer
         and "требуется кодировка UTF-8" in importer
-        and "заголовок не соответствует утверждённому CSV-контракту" in importer,
+        and "заголовок не соответствует утверждённому CSV-контракту" in importer
+        and '    "index",' not in importer
+        and '"index":' not in helper,
     )
     require(
         "CSV_PACKAGE_21_CODE_MAPPING",

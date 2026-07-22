@@ -113,7 +113,6 @@ PERSONNEL_CSV_ALLOWED_FILES = (
 )
 
 PEOPLE_CSV_HEADER = (
-    "index",
     "source_sheet",
     "source_excel_row",
     "source_person_no",
@@ -138,7 +137,6 @@ PEOPLE_CSV_HEADER = (
     "temporary_right_indicator",
 )
 POSITIONS_CSV_HEADER = (
-    "index",
     "position_key_proposed",
     "position_name_normalized_candidate",
     "source_variants",
@@ -146,7 +144,6 @@ POSITIONS_CSV_HEADER = (
     "normalization_status",
 )
 AUTHORITIES_CSV_HEADER = (
-    "index",
     "authority_code_proposed",
     "source_excel_column",
     "source_label_normalized",
@@ -156,7 +153,6 @@ AUTHORITIES_CSV_HEADER = (
     "notes",
 )
 ASSIGNMENTS_CSV_HEADER = (
-    "index",
     "source_person_no",
     "full_name_normalized",
     "authority_code_proposed",
@@ -175,7 +171,6 @@ ASSIGNMENTS_CSV_HEADER = (
     "import_action_proposed",
 )
 ISSUES_CSV_HEADER = (
-    "index",
     "issue_id",
     "source",
     "severity",
