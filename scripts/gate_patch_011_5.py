@@ -246,7 +246,7 @@ def main() -> None:
         and "X-Content-SHA256" in import_views
         and "Cache-Control" in import_views
         and "power_system_snapshot_download" in publication_template
-        and "power_system_review.js' %}?v=011574" in detail_template,
+        and "power_system_review.js' %}?v=011575" in detail_template,
     )
     require(
         "CANONICAL_SNAPSHOT_PROGRESS",
@@ -258,11 +258,22 @@ def main() -> None:
     )
     require(
         "PUBLICATION_DOWNLOAD_SCRIPT_WIRING",
-        "power_system_review.js' %}?v=011574" in detail_template
-        and "power_system_review.js' %}?v=011574" in publication_template
+        "power_system_review.js' %}?v=011575" in detail_template
+        and "power_system_review.js' %}?v=011575" in publication_template
         and "data-power-system-snapshot-trigger" in publication_template
         and "event.preventDefault()" in review_js
         and "await fetch(trigger.href" in review_js,
+    )
+    require(
+        "EXPLICIT_DOWNLOAD_COMPLETION_FEEDBACK",
+        'aria-live="assertive"' in publication_template
+        and 'data-state="idle"' in publication_template
+        and "showDownloadToast" in review_js
+        and "Файл передан в загрузки браузера" in review_js
+        and "Скачать ещё раз" in review_js
+        and ".ps-download-toast" in read("src/static/system/app.css")
+        and '.ps-snapshot-progress[data-state="success"]'
+        in read("src/static/system/app.css"),
     )
     print("PATCH_011_5_POWER_SYSTEM_ASSET_IMPORTER_GATE_PASSED")
 

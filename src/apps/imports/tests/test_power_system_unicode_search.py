@@ -47,11 +47,19 @@ class PowerSystemUnicodeSearchTests(SimpleTestCase):
         self.assertIn("X-Content-SHA256", views)
         self.assertIn("data-power-system-snapshot-trigger", publication)
         self.assertIn(
-            "{% static 'imports/power_system_review.js' %}?v=011574",
+            "{% static 'imports/power_system_review.js' %}?v=011575",
             publication,
         )
         self.assertNotIn("request.GET.show_snapshot", publication)
         self.assertNotIn("preview.canonical_json_pretty", publication)
         self.assertIn("await fetch(trigger.href", review_js)
         self.assertIn("event.preventDefault()", review_js)
+        self.assertIn("showDownloadToast", review_js)
+        self.assertIn("Файл передан в загрузки браузера", review_js)
+        self.assertIn("Скачать ещё раз", review_js)
+        self.assertIn('aria-live="assertive"', publication)
+        self.assertIn('data-state="idle"', publication)
+        app_css = (ROOT / "static/system/app.css").read_text(encoding="utf-8")
+        self.assertIn(".ps-download-toast", app_css)
+        self.assertIn('.ps-snapshot-progress[data-state="success"]', app_css)
         self.assertIn("URL.createObjectURL", review_js)

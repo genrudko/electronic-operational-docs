@@ -59,9 +59,12 @@
             <p
                 class="ps-snapshot-progress"
                 data-power-system-snapshot-progress
+                data-state="idle"
                 hidden
                 role="status"
-                aria-live="polite"
+                aria-live="assertive"
+                aria-atomic="true"
+                tabindex="-1"
             >Подготавливается канонический JSON…</p>
         </div>
     </div>
@@ -88,5 +91,5 @@
     {% endif %}
 </section>
 
-<script src="{% static 'imports/power_system_review.js' %}?v=011574" defer></script>
+<script src="{% static 'imports/power_system_review.js' %}?v=011575" defer></script>
 {% endblock %}

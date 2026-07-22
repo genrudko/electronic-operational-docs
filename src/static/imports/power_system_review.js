@@ -64,6 +64,75 @@
         return basicMatch ? basicMatch[1] : fallback;
     };
 
+    const formatBytes = (value) => {
+        if (!Number.isFinite(value) || value < 0) {
+            return "";
+        }
+        if (value < 1024) {
+            return `${value} Б`;
+        }
+        const units = ["КБ", "МБ", "ГБ"];
+        let amount = value;
+        let unit = "Б";
+        for (const candidate of units) {
+            amount /= 1024;
+            unit = candidate;
+            if (amount < 1024) {
+                break;
+            }
+        }
+        return `${amount.toLocaleString("ru-RU", {
+            maximumFractionDigits: amount >= 10 ? 1 : 2,
+        })} ${unit}`;
+    };
+
+    let toastTimer = 0;
+
+    const ensureDownloadToast = () => {
+        const existing = document.querySelector("[data-power-system-download-toast]");
+        if (existing instanceof HTMLElement) {
+            return existing;
+        }
+        const toast = document.createElement("div");
+        toast.className = "ps-download-toast";
+        toast.hidden = true;
+        toast.dataset.powerSystemDownloadToast = "";
+        toast.setAttribute("role", "status");
+        toast.setAttribute("aria-live", "assertive");
+        toast.setAttribute("aria-atomic", "true");
+        document.body.append(toast);
+        return toast;
+    };
+
+    const showDownloadToast = (message, state) => {
+        const toast = ensureDownloadToast();
+        window.clearTimeout(toastTimer);
+        toast.dataset.state = state;
+        toast.textContent = message;
+        toast.hidden = false;
+        window.requestAnimationFrame(() => {
+            toast.classList.add("is-visible");
+        });
+        toastTimer = window.setTimeout(() => {
+            toast.classList.remove("is-visible");
+            window.setTimeout(() => {
+                toast.hidden = true;
+            }, 180);
+        }, 10000);
+    };
+
+    const updateProgress = (progress, message, state, focus = false) => {
+        if (!(progress instanceof HTMLElement)) {
+            return;
+        }
+        progress.hidden = false;
+        progress.dataset.state = state;
+        progress.textContent = message;
+        if (focus) {
+            progress.focus({preventScroll: true});
+        }
+    };
+
     const trigger = document.querySelector("[data-power-system-snapshot-trigger]");
     if (!(trigger instanceof HTMLAnchorElement)) {
         return;
@@ -83,18 +152,15 @@
 
         const container = trigger.closest("[data-power-system-snapshot-container]");
         const progress = container?.querySelector("[data-power-system-snapshot-progress]");
-        const originalLabel = trigger.textContent || "Скачать канонический JSON";
+        const originalLabel = trigger.textContent?.trim() || "Скачать канонический JSON";
+        let completed = false;
+
         trigger.dataset.snapshotLoading = "true";
         trigger.setAttribute("aria-busy", "true");
         trigger.setAttribute("aria-disabled", "true");
         trigger.textContent = "Подготавливается канонический JSON…";
-        if (container) {
-            container.setAttribute("aria-busy", "true");
-        }
-        if (progress instanceof HTMLElement) {
-            progress.hidden = false;
-            progress.textContent = "Сервер формирует точный канонический файл…";
-        }
+        container?.setAttribute("aria-busy", "true");
+        updateProgress(progress, "Сервер формирует точный канонический файл…", "loading");
 
         try {
             const response = await fetch(trigger.href, {
@@ -122,20 +188,37 @@
             window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
 
             const digest = response.headers.get("X-Content-SHA256") || "";
-            if (progress instanceof HTMLElement) {
-                progress.textContent = digest
-                    ? `Файл подготовлен. SHA-256: ${digest}`
-                    : "Файл подготовлен и передан браузеру.";
-            }
+            const size = formatBytes(blob.size);
+            const sizePart = size ? ` (${size})` : "";
+            const digestPart = digest ? ` SHA-256: ${digest}` : "";
+            updateProgress(
+                progress,
+                `Файл передан в загрузки браузера: ${filename}${sizePart}.${digestPart}`,
+                "success",
+                true,
+            );
+            showDownloadToast(
+                `Канонический JSON передан в загрузки браузера: ${filename}`,
+                "success",
+            );
+            trigger.textContent = "Скачать ещё раз";
+            trigger.dataset.snapshotDownloaded = "true";
+            completed = true;
         } catch (_error) {
-            if (progress instanceof HTMLElement) {
-                progress.textContent = "Не удалось подготовить JSON. Повторите попытку.";
-            }
+            updateProgress(
+                progress,
+                "Не удалось передать JSON в загрузки браузера. Повторите попытку.",
+                "error",
+                true,
+            );
+            showDownloadToast("Не удалось скачать канонический JSON.", "error");
         } finally {
             trigger.dataset.snapshotLoading = "false";
             trigger.removeAttribute("aria-busy");
             trigger.removeAttribute("aria-disabled");
-            trigger.textContent = originalLabel;
+            if (!completed) {
+                trigger.textContent = originalLabel;
+            }
             container?.removeAttribute("aria-busy");
         }
     });

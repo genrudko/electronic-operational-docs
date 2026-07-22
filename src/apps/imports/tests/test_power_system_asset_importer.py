@@ -450,9 +450,11 @@ class PowerSystemAssetImporterTests(TestCase):
         self.assertContains(publication, "Неизменяемый технический состав публикации")
         self.assertContains(publication, 'class="technical-only ps-canonical-snapshot"')
         self.assertContains(publication, "Скачать канонический JSON")
+        self.assertContains(publication, 'aria-live="assertive"')
+        self.assertContains(publication, 'data-state="idle"')
         self.assertContains(
             publication,
-            "/static/imports/power_system_review.js?v=011574",
+            "/static/imports/power_system_review.js?v=011575",
         )
         self.assertNotContains(publication, "\n  &quot;effective_from&quot;")
         self.assertNotContains(publication, "preview.canonical_json_pretty")
