@@ -383,6 +383,22 @@ class EquipmentAlias(models.Model):
         related_name="aliases",
         verbose_name="Оборудование",
     )
+    scope_site = models.ForeignKey(
+        EnergySite,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="scoped_equipment_aliases",
+        verbose_name="Область алиаса — энергообъект",
+    )
+    scope_parent = models.ForeignKey(
+        EquipmentAsset,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="scoped_child_aliases",
+        verbose_name="Область алиаса — родительский объект",
+    )
     alias = models.CharField("Алиас", max_length=1000)
     normalized_alias = models.CharField(
         "Нормализованный алиас",
@@ -408,8 +424,19 @@ class EquipmentAlias(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=("organization", "normalized_alias", "valid_from"),
-                name="uniq_equipment_alias_start_per_org",
-            )
+                condition=Q(scope_site__isnull=True, scope_parent__isnull=True),
+                name="uniq_global_equipment_alias_start",
+            ),
+            models.UniqueConstraint(
+                fields=("organization", "scope_site", "normalized_alias", "valid_from"),
+                condition=Q(scope_site__isnull=False, scope_parent__isnull=True),
+                name="uniq_site_equipment_alias_start",
+            ),
+            models.UniqueConstraint(
+                fields=("organization", "scope_parent", "normalized_alias", "valid_from"),
+                condition=Q(scope_parent__isnull=False),
+                name="uniq_parent_equipment_alias_start",
+            ),
         ]
         verbose_name = "алиас оборудования"
         verbose_name_plural = "алиасы оборудования"
@@ -435,6 +462,18 @@ class EquipmentAlias(models.Model):
         if self.equipment_id and self.organization_id:
             if self.equipment.organization_id != self.organization_id:
                 errors["equipment"] = "Оборудование относится к другой организации."
+        if self.scope_site_id and self.organization_id:
+            if self.scope_site.organization_id != self.organization_id:
+                errors["scope_site"] = "Энергообъект области относится к другой организации."
+            if self.equipment_id and self.scope_site_id != self.equipment.site_id:
+                errors["scope_site"] = "Область алиаса не совпадает с энергообъектом оборудования."
+        if self.scope_parent_id and self.organization_id:
+            if self.scope_parent.organization_id != self.organization_id:
+                errors["scope_parent"] = "Родитель области относится к другой организации."
+            if self.equipment_id and self.equipment.parent_id != self.scope_parent_id:
+                errors["scope_parent"] = "Область алиаса не совпадает с родителем оборудования."
+            if self.scope_site_id and self.scope_parent.site_id != self.scope_site_id:
+                errors["scope_parent"] = "Родитель области относится к другому энергообъекту."
         if self.created_by_id and self.created_by.organization_id != self.organization_id:
             errors["created_by"] = "Сотрудник относится к другой организации."
         if errors:

@@ -4,7 +4,16 @@ from pathlib import Path
 
 from django import forms
 
-from .models import DataProfile, ImportBatch, ImportRow
+from .models import (
+    DataProfile,
+    ImportBatch,
+    ImportRow,
+    PowerSystemSourceRevision,
+)
+from .power_system import (
+    MAX_POWER_SYSTEM_PACKAGE_SIZE,
+    available_power_system_profiles,
+)
 from .services import (
     MAX_FILE_SIZE,
     available_data_profiles,
@@ -183,5 +192,115 @@ class ImportPublicationConfirmationForm(forms.Form):
         label=(
             "Я проверил(а) итог публикации и подтверждаю создание записей "
             "в рабочем справочнике от своего имени"
+        )
+    )
+
+
+class PowerSystemPackageUploadForm(forms.Form):
+    data_profile = DataProfileChoiceField(
+        label="Профиль данных",
+        queryset=DataProfile.objects.none(),
+        required=False,
+    )
+    source_reference = forms.CharField(
+        label="Источник или основание",
+        max_length=1000,
+        help_text="Например: перечень объектов диспетчеризации и реквизиты редакции.",
+    )
+    source_approval_status = forms.ChoiceField(
+        label="Статус исходной редакции",
+        choices=PowerSystemSourceRevision.SourceApprovalStatus.choices,
+        initial=PowerSystemSourceRevision.SourceApprovalStatus.UNKNOWN,
+    )
+    effective_from = forms.DateField(
+        label="Дата начала действия",
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date"}),
+        help_text="Оставьте пустым, если дата редакции не подтверждена.",
+    )
+    source_file = forms.FileField(
+        label="Контролируемый ZIP-пакет",
+        help_text=(
+            "Пакет должен содержать аналитический MD и пять CSV установленной структуры. "
+            "Рабочие справочники при загрузке не изменяются."
+        ),
+        widget=forms.ClearableFileInput(attrs={"accept": ".zip"}),
+    )
+
+    def __init__(self, *args, organization, **kwargs):
+        super().__init__(*args, **kwargs)
+        profiles = available_power_system_profiles(organization)
+        self.fields["data_profile"].queryset = DataProfile.objects.filter(
+            pk__in=[profile.pk for profile in profiles]
+        ).order_by("-is_default", "name")
+        default_profile = next((profile for profile in profiles if profile.is_default), None)
+        if default_profile is not None:
+            self.fields["data_profile"].initial = default_profile
+
+    def clean_source_file(self):
+        uploaded = self.cleaned_data["source_file"]
+        if Path(uploaded.name).suffix.lower() != ".zip":
+            raise forms.ValidationError("Для предметного импорта требуется ZIP-пакет.")
+        if uploaded.size == 0:
+            raise forms.ValidationError("Нельзя загрузить пустой ZIP-пакет.")
+        if uploaded.size > MAX_POWER_SYSTEM_PACKAGE_SIZE:
+            raise forms.ValidationError("Размер ZIP-пакета превышает 25 МБ.")
+        return uploaded
+
+
+class PowerSystemOccurrenceDecisionForm(forms.Form):
+    action = forms.ChoiceField(
+        label="Решение",
+        choices=(
+            ("ACCEPT_AS_NEW", "Принять как отдельный объект"),
+            ("MERGE_WITH", "Объединить с другой строкой"),
+            ("EXCLUDE", "Исключить из публикации"),
+            ("RESET", "Сбросить ручное решение"),
+        ),
+    )
+    merge_target_occurrence_id = forms.CharField(
+        label="occurrence_id целевой строки",
+        max_length=128,
+        required=False,
+    )
+    note = forms.CharField(
+        label="Комментарий",
+        max_length=2000,
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("action") == "MERGE_WITH" and not cleaned.get(
+            "merge_target_occurrence_id"
+        ):
+            self.add_error(
+                "merge_target_occurrence_id",
+                "Для объединения укажите occurrence_id целевой строки.",
+            )
+        return cleaned
+
+
+class PowerSystemPublicationConfirmationForm(forms.Form):
+    effective_from = forms.DateField(
+        label="Дата начала действия публикуемой редакции",
+        widget=forms.DateInput(attrs={"type": "date"}),
+    )
+    preview_digest = forms.CharField(widget=forms.HiddenInput())
+    password = forms.CharField(
+        label="Текущий пароль",
+        strip=False,
+        widget=forms.PasswordInput(
+            attrs={
+                "autocomplete": "current-password",
+                "placeholder": "Введите пароль своей учётной записи",
+            }
+        ),
+    )
+    confirm = forms.BooleanField(
+        label=(
+            "Я проверил(а) готовые строки и подтверждаю их контролируемую "
+            "публикацию от своего имени"
         )
     )

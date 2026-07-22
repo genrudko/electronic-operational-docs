@@ -1,20 +1,44 @@
 from __future__ import annotations
 
+from datetime import date
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 
 from .forms import (
     ImportColumnMappingForm,
     ImportPublicationConfirmationForm,
     ImportRowCorrectionForm,
     ImportUploadForm,
+    PowerSystemOccurrenceDecisionForm,
+    PowerSystemPackageUploadForm,
+    PowerSystemPublicationConfirmationForm,
 )
-from .models import ImportBatch, ImportMappingTemplate, ImportPublication, ImportRow
+from .models import (
+    ImportBatch,
+    ImportMappingTemplate,
+    ImportPublication,
+    ImportRow,
+    PowerSystemAssetOccurrence,
+    PowerSystemSourceRevision,
+)
+from .power_system import (
+    PowerSystemPackageError,
+    build_power_system_publication_preview,
+    decide_power_system_occurrence,
+    discard_power_system_revision,
+    power_system_revision_for_user,
+    power_system_type_counts,
+    publish_power_system_revision,
+    source_revision_queryset_for_employee,
+    stage_power_system_package,
+)
 from .services import (
     available_data_profiles,
     build_import_publication_preview,
@@ -500,3 +524,293 @@ def import_publication_result(request: HttpRequest, public_id) -> HttpResponse:
             "published_rows": rows,
         },
     )
+
+
+@login_required
+def power_system_list(request: HttpRequest) -> HttpResponse:
+    employee = require_import_employee(request.user)
+    revisions = list(
+        source_revision_queryset_for_employee(employee)
+        .annotate(stored_occurrences=Count("asset_occurrences"))
+        .order_by("-created_at", "-id")[:100]
+    )
+    return render(
+        request,
+        "imports/power_system_list.html",
+        {
+            "employee": employee,
+            "revisions": revisions,
+            "summary": {
+                "total": len(revisions),
+                "staged": sum(
+                    revision.status == PowerSystemSourceRevision.Status.STAGED
+                    for revision in revisions
+                ),
+                "attention": sum(
+                    bool(revision.review_count or revision.blocked_count)
+                    for revision in revisions
+                    if revision.status != PowerSystemSourceRevision.Status.DISCARDED
+                ),
+                "published": sum(
+                    revision.status
+                    in {
+                        PowerSystemSourceRevision.Status.PUBLISHED,
+                        PowerSystemSourceRevision.Status.PARTIALLY_PUBLISHED,
+                    }
+                    for revision in revisions
+                ),
+            },
+        },
+    )
+
+
+@login_required
+def power_system_upload(request: HttpRequest) -> HttpResponse:
+    employee = require_import_employee(request.user)
+    if request.method == "POST":
+        form = PowerSystemPackageUploadForm(
+            request.POST,
+            request.FILES,
+            organization=employee.organization,
+        )
+        if form.is_valid():
+            try:
+                revision, created = stage_power_system_package(
+                    uploaded_file=form.cleaned_data["source_file"],
+                    employee=employee,
+                    data_profile=form.cleaned_data["data_profile"],
+                    source_reference=form.cleaned_data["source_reference"],
+                    source_approval_status=form.cleaned_data["source_approval_status"],
+                    effective_from=form.cleaned_data["effective_from"],
+                )
+            except (ValidationError, PowerSystemPackageError) as error:
+                form.add_error(
+                    None,
+                    _validation_message(error)
+                    if isinstance(error, ValidationError)
+                    else str(error),
+                )
+            else:
+                if created:
+                    messages.success(
+                        request,
+                        "Пакет разобран в область предварительной проверки. "
+                        "Рабочие справочники не изменены.",
+                    )
+                else:
+                    messages.info(
+                        request,
+                        "Пакет с тем же SHA-256 уже был загружен. Открыта существующая редакция.",
+                    )
+                return redirect("imports:power_system_detail", public_id=revision.public_id)
+    else:
+        form = PowerSystemPackageUploadForm(organization=employee.organization)
+    return render(
+        request,
+        "imports/power_system_upload.html",
+        {"form": form},
+    )
+
+
+@login_required
+def power_system_detail(request: HttpRequest, public_id) -> HttpResponse:
+    employee, revision = power_system_revision_for_user(request.user, public_id)
+    status_filter = request.GET.get("status", "").strip().upper()
+    type_filter = request.GET.get("type", "").strip()
+    query = request.GET.get("q", "").strip()
+    allowed_statuses = {value for value, _label in PowerSystemAssetOccurrence.ReviewStatus.choices}
+    occurrences = revision.asset_occurrences.select_related(
+        "merge_target",
+        "reviewed_by",
+        "published_asset",
+    )
+    if status_filter in allowed_statuses:
+        occurrences = occurrences.filter(review_status=status_filter)
+    else:
+        status_filter = ""
+    if type_filter:
+        occurrences = occurrences.filter(asset_type_code=type_filter)
+    if query:
+        occurrences = occurrences.filter(
+            Q(occurrence_id__icontains=query)
+            | Q(dispatcher_name_raw__icontains=query)
+            | Q(display_name_normalized__icontains=query)
+            | Q(parent_raw__icontains=query)
+            | Q(energy_facility_raw__icontains=query)
+        )
+    occurrences = occurrences.order_by("source_sheet", "source_row", "occurrence_id")
+    page = Paginator(occurrences, 50).get_page(request.GET.get("page"))
+    issues = revision.issues.order_by("-severity", "issue_code")[:100]
+    publications = revision.publications.select_related("actor").order_by("-created_at")
+    return render(
+        request,
+        "imports/power_system_detail.html",
+        {
+            "employee": employee,
+            "revision": revision,
+            "page": page,
+            "issues": issues,
+            "publications": publications,
+            "type_counts": power_system_type_counts(revision),
+            "status_filter": status_filter,
+            "review_status_choices": PowerSystemAssetOccurrence.ReviewStatus.choices,
+            "type_filter": type_filter,
+            "query": query,
+            "can_publish": can_publish_import(request.user),
+        },
+    )
+
+
+@login_required
+def power_system_occurrence_decide(request: HttpRequest, public_id, occurrence_id: int) -> HttpResponse:
+    employee, revision = power_system_revision_for_user(request.user, public_id)
+    occurrence = get_object_or_404(
+        revision.asset_occurrences.select_related("merge_target"),
+        pk=occurrence_id,
+    )
+    if request.method != "POST":
+        return redirect("imports:power_system_detail", public_id=revision.public_id)
+    form = PowerSystemOccurrenceDecisionForm(request.POST)
+    if form.is_valid():
+        try:
+            decide_power_system_occurrence(
+                occurrence=occurrence,
+                employee=employee,
+                action=form.cleaned_data["action"],
+                note=form.cleaned_data["note"],
+                merge_target_occurrence_id=form.cleaned_data["merge_target_occurrence_id"],
+            )
+        except ValidationError as error:
+            messages.error(request, _validation_message(error))
+        else:
+            messages.success(request, "Решение по строке сохранено.")
+    else:
+        messages.error(
+            request,
+            " ".join(message for messages_list in form.errors.values() for message in messages_list),
+        )
+    return redirect("imports:power_system_detail", public_id=revision.public_id)
+
+
+@login_required
+def power_system_publication(request: HttpRequest, public_id) -> HttpResponse:
+    employee, revision = power_system_revision_for_user(request.user, public_id)
+    can_publish = can_publish_import(request.user)
+    initial_date = revision.effective_from or timezone.localdate()
+    requested_date = request.GET.get("effective_from", "").strip()
+    if requested_date:
+        try:
+            initial_date = date.fromisoformat(requested_date)
+        except ValueError:
+            pass
+    try:
+        preview = build_power_system_publication_preview(
+            revision=revision,
+            effective_from=initial_date,
+        )
+    except ValidationError as error:
+        messages.error(request, _validation_message(error))
+        return redirect("imports:power_system_detail", public_id=revision.public_id)
+
+    if request.method == "POST":
+        form = PowerSystemPublicationConfirmationForm(request.POST)
+        if form.is_valid() and can_publish:
+            try:
+                publication = publish_power_system_revision(
+                    revision=revision,
+                    actor=employee,
+                    user=request.user,
+                    password=form.cleaned_data["password"],
+                    effective_from=form.cleaned_data["effective_from"],
+                    expected_digest=form.cleaned_data["preview_digest"],
+                )
+            except (ValidationError, PermissionDenied) as error:
+                form.add_error(
+                    None,
+                    _validation_message(error)
+                    if isinstance(error, ValidationError)
+                    else str(error),
+                )
+            else:
+                messages.success(request, "Готовые строки опубликованы контролируемой транзакцией.")
+                return redirect(
+                    "imports:power_system_publication_result",
+                    public_id=revision.public_id,
+                    publication_id=publication.public_id,
+                )
+    else:
+        form = PowerSystemPublicationConfirmationForm(
+            initial={
+                "effective_from": initial_date,
+                "preview_digest": preview.digest,
+            }
+        )
+    return render(
+        request,
+        "imports/power_system_publication.html",
+        {
+            "employee": employee,
+            "revision": revision,
+            "preview": preview,
+            "form": form,
+            "can_publish": can_publish,
+        },
+    )
+
+
+@login_required
+def power_system_publication_result(
+    request: HttpRequest,
+    public_id,
+    publication_id,
+) -> HttpResponse:
+    employee, revision = power_system_revision_for_user(request.user, public_id)
+    publication = get_object_or_404(
+        revision.publications.select_related("actor"),
+        public_id=publication_id,
+    )
+    summary_labels = {
+        "selected": "Выбрано строк",
+        "hierarchy": "Узлов иерархии",
+        "objects": "Объектных строк",
+        "quarantined": "Осталось в карантине",
+        "excluded": "Исключено",
+        "sites": "Энергообъектов",
+        "assets_created": "Создано объектов оборудования",
+        "assets_reused": "Повторно использовано объектов",
+        "aliases_created": "Создано поисковых алиасов",
+        "authority_published": "Опубликовано назначений управления и ведения",
+        "authority_review_required": "Назначений оставлено на проверке",
+        "authority_skipped": "Назначений без создания редакции",
+        "remaining_ready": "Осталось готовых строк",
+        "remaining_review": "Осталось строк на проверке",
+        "remaining_blocked": "Осталось заблокированных строк",
+    }
+    summary_rows = [
+        (summary_labels.get(key, key), value)
+        for key, value in publication.result_summary.items()
+        if key != "models"
+    ]
+    return render(
+        request,
+        "imports/power_system_publication_result.html",
+        {
+            "employee": employee,
+            "revision": revision,
+            "publication": publication,
+            "summary_rows": summary_rows,
+        },
+    )
+
+
+@login_required
+def power_system_discard(request: HttpRequest, public_id) -> HttpResponse:
+    employee, revision = power_system_revision_for_user(request.user, public_id)
+    if request.method == "POST":
+        try:
+            discard_power_system_revision(revision=revision, employee=employee)
+        except ValidationError as error:
+            messages.error(request, _validation_message(error))
+        else:
+            messages.success(request, "Редакция убрана из рабочего списка без физического удаления.")
+    return redirect("imports:power_system_list")

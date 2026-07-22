@@ -79,7 +79,7 @@
                             <span class="semantic-badge supervision authority-kind">{% if item.level.level_type == "DISPATCH" %}Диспетчерское ведение{% else %}Технологическое ведение{% endif %}</span>
                             <strong>{{ item.subject.presentation_label }}</strong>
                             <small>{{ item.level.presentation_label }}</small>
-                            {% if item.is_information_only %}<span class="semantic-badge information" title="Без права выдачи команд управления">Информационное ведение</span>{% endif %}
+                            {% if item.conduct_mode == 'INFORMATIONAL' %}<span class="semantic-badge information" title="Без права выдачи команд управления">Информационное ведение</span>{% elif item.conduct_mode == 'UNKNOWN' %}<span class="semantic-badge warning" title="Режим ведения не определён источником">Режим не определён</span>{% endif %}
                         </div>
                     {% empty %}<div class="friendly-empty">Назначение ведения отсутствует</div>{% endfor %}
                 </section>

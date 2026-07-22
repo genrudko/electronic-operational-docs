@@ -266,22 +266,39 @@ def resolve_equipment_alias(
     organization: Organization,
     value: str,
     day: date | None = None,
+    *,
+    site: EnergySite | None = None,
+    parent: EquipmentAsset | None = None,
 ) -> EquipmentAsset | None:
     target = day or timezone.localdate()
     normalized = " ".join(value.split()).casefold()
-    alias = (
+    aliases = (
         EquipmentAlias.objects.filter(
             organization=organization,
             normalized_alias=normalized,
             valid_from__lte=target,
         )
         .filter(Q(valid_until__isnull=True) | Q(valid_until__gte=target))
-        .select_related("equipment")
-        .order_by("-valid_from")
-        .first()
+        .select_related("equipment", "scope_site", "scope_parent")
     )
-    if alias is not None:
-        return alias.equipment
+    if parent is not None:
+        scoped = aliases.filter(scope_parent=parent).order_by("-valid_from", "pk").first()
+        if scoped is not None:
+            return scoped.equipment
+    if site is not None:
+        scoped = (
+            aliases.filter(scope_parent__isnull=True, scope_site=site)
+            .order_by("-valid_from", "pk")
+            .first()
+        )
+        if scoped is not None:
+            return scoped.equipment
+    global_matches = list(
+        aliases.filter(scope_parent__isnull=True, scope_site__isnull=True)
+        .order_by("-valid_from", "pk")[:2]
+    )
+    if len(global_matches) == 1:
+        return global_matches[0].equipment
     return (
         EquipmentAsset.objects.filter(
             organization=organization,
@@ -360,6 +377,7 @@ def search_equipment(
     query: str = "",
     site_code: str = "",
     type_code: str = "",
+    voltage_level: str = "",
 ):
     queryset = EquipmentAsset.objects.filter(organization=organization).select_related(
         "site",
@@ -378,6 +396,8 @@ def search_equipment(
         queryset = queryset.filter(site__code=site_code)
     if type_code:
         queryset = queryset.filter(equipment_type__code=type_code)
+    if voltage_level:
+        queryset = queryset.filter(voltage_level=voltage_level)
     return queryset.order_by("site__name", "code")
 
 

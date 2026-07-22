@@ -22,16 +22,27 @@ def registry(request: HttpRequest) -> HttpResponse:
     query = request.GET.get("q", "").strip()
     site_code = request.GET.get("site", "").strip()
     type_code = request.GET.get("type", "").strip()
+    voltage_level = request.GET.get("voltage", "").strip()
     assets = search_equipment(
         organization=employee.organization,
         query=query,
         site_code=site_code,
         type_code=type_code,
+        voltage_level=voltage_level,
     )
     sites = EnergySite.objects.filter(
         organization=employee.organization,
         is_active=True,
     ).order_by("name")
+    voltage_levels = list(
+        EquipmentAsset.objects.filter(
+            organization=employee.organization,
+        )
+        .exclude(voltage_level="")
+        .values_list("voltage_level", flat=True)
+        .distinct()
+        .order_by("voltage_level")
+    )
     types = EquipmentType.objects.filter(
         equipment_assets__organization=employee.organization,
         is_active=True,
@@ -47,6 +58,8 @@ def registry(request: HttpRequest) -> HttpResponse:
             "query": query,
             "selected_site": site_code,
             "selected_type": type_code,
+            "voltage_levels": voltage_levels,
+            "selected_voltage": voltage_level,
             "asset_count": assets.count(),
         },
     )
@@ -131,5 +144,10 @@ def equipment_detail(request: HttpRequest, public_id) -> HttpResponse:
             "children": children,
             "outgoing_relations": outgoing,
             "incoming_relations": incoming,
+            "source_provenance": equipment.attributes.get("source_occurrence_ids", []),
+            "source_revision_public_id": equipment.attributes.get(
+                "source_revision_public_id",
+                "",
+            ),
         },
     )

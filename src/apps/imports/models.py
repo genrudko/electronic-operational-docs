@@ -900,3 +900,697 @@ class ImportPublicationRow(models.Model):
             errors["digest"] = "Для результата строки требуется SHA-256."
         if errors:
             raise ValidationError(errors)
+
+
+class PowerSystemSourceRevision(models.Model):
+    class Status(models.TextChoices):
+        STAGED = "STAGED", "Подготовлена к проверке"
+        PARTIALLY_PUBLISHED = "PARTIALLY_PUBLISHED", "Опубликована частично"
+        PUBLISHED = "PUBLISHED", "Опубликована"
+        DISCARDED = "DISCARDED", "Убрана из рабочего списка"
+
+    class SourceApprovalStatus(models.TextChoices):
+        DRAFT = "DRAFT", "Черновик или неподтверждённая редакция"
+        APPROVED = "APPROVED", "Утверждённая редакция"
+        UNKNOWN = "UNKNOWN", "Статус редакции не установлен"
+
+    public_id = models.UUIDField(
+        "Публичный идентификатор",
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="power_system_source_revisions",
+        verbose_name="Организация",
+    )
+    data_profile = models.ForeignKey(
+        DataProfile,
+        on_delete=models.PROTECT,
+        related_name="power_system_source_revisions",
+        verbose_name="Профиль данных",
+    )
+    uploaded_by = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        related_name="uploaded_power_system_revisions",
+        verbose_name="Загрузил",
+    )
+    source_reference = models.CharField("Источник или основание", max_length=1000)
+    source_approval_status = models.CharField(
+        "Статус исходной редакции",
+        max_length=16,
+        choices=SourceApprovalStatus.choices,
+        default=SourceApprovalStatus.UNKNOWN,
+    )
+    effective_from = models.DateField("Действует с", null=True, blank=True)
+    original_filename = models.CharField("Имя ZIP-пакета", max_length=255)
+    file_size = models.PositiveBigIntegerField("Размер ZIP-пакета, байт")
+    file_sha256 = models.CharField("SHA-256 ZIP-пакета", max_length=64)
+    source_document_name = models.CharField(
+        "Имя исходного документа",
+        max_length=500,
+        blank=True,
+    )
+    source_document_sha256 = models.CharField(
+        "SHA-256 исходного документа",
+        max_length=64,
+        blank=True,
+    )
+    analysis_filename = models.CharField("Файл аналитического отчёта", max_length=255)
+    supersedes = models.ForeignKey(
+        "self",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="superseded_by",
+        verbose_name="Предыдущая редакция",
+    )
+    manifest = models.JSONField("Манифест пакета", default=dict)
+    type_dictionary = models.JSONField("Словарь типов пакета", default=list)
+    diff_counts = models.JSONField(
+        "Итоги сравнения с предыдущей редакцией",
+        default=dict,
+        blank=True,
+    )
+    total_occurrences = models.PositiveIntegerField("Всего source occurrences", default=0)
+    hierarchy_nodes = models.PositiveIntegerField("Иерархических узлов", default=0)
+    authority_rows = models.PositiveIntegerField("Строк полномочий", default=0)
+    alias_rows = models.PositiveIntegerField("Строк алиасов", default=0)
+    issue_rows = models.PositiveIntegerField("Проблем источника", default=0)
+    ready_count = models.PositiveIntegerField("Готово к публикации", default=0)
+    review_count = models.PositiveIntegerField("Требует проверки", default=0)
+    blocked_count = models.PositiveIntegerField("Заблокировано", default=0)
+    excluded_count = models.PositiveIntegerField("Исключено", default=0)
+    published_count = models.PositiveIntegerField("Опубликовано", default=0)
+    status = models.CharField(
+        "Состояние",
+        max_length=24,
+        choices=Status.choices,
+        default=Status.STAGED,
+        db_index=True,
+    )
+    publication_digest = models.CharField(
+        "SHA-256 публикации",
+        max_length=64,
+        blank=True,
+        editable=False,
+    )
+    published_at = models.DateTimeField("Опубликовано", null=True, blank=True)
+    published_by = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="published_power_system_revisions",
+        verbose_name="Опубликовал",
+    )
+    created_at = models.DateTimeField("Создано", auto_now_add=True)
+    updated_at = models.DateTimeField("Изменено", auto_now=True)
+    discarded_at = models.DateTimeField("Убрано из рабочего списка", null=True, blank=True)
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("organization", "file_sha256"),
+                name="uniq_ps_package_sha_org",
+            )
+        ]
+        indexes = [
+            models.Index(
+                fields=("organization", "status", "-created_at"),
+                name="ps_source_org_status_idx",
+            ),
+            models.Index(
+                fields=("organization", "source_reference", "-created_at"),
+                name="ps_source_reference_idx",
+            ),
+        ]
+        verbose_name = "редакция источника объектов энергосистемы"
+        verbose_name_plural = "редакции источников объектов энергосистемы"
+
+    def __str__(self) -> str:
+        return f"{self.original_filename} · {self.get_status_display()}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        self.original_filename = self.original_filename.strip()
+        self.file_sha256 = self.file_sha256.strip().lower()
+        self.source_document_sha256 = self.source_document_sha256.strip().lower()
+        self.source_reference = self.source_reference.strip()
+        self.source_document_name = self.source_document_name.strip()
+        self.analysis_filename = self.analysis_filename.strip()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
+        raise ValidationError(
+            "Физическое удаление редакции источника запрещено. "
+            "Используйте удаление из рабочего списка."
+        )
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if self.organization_id and self.data_profile_id:
+            if self.data_profile.organization_id != self.organization_id:
+                errors["data_profile"] = "Профиль данных относится к другой организации."
+        if self.organization_id and self.uploaded_by_id:
+            if self.uploaded_by.organization_id != self.organization_id:
+                errors["uploaded_by"] = "Загрузивший сотрудник относится к другой организации."
+        if self.organization_id and self.published_by_id:
+            if self.published_by.organization_id != self.organization_id:
+                errors["published_by"] = "Публикующий сотрудник относится к другой организации."
+        if self.supersedes_id and self.organization_id:
+            if self.supersedes.organization_id != self.organization_id:
+                errors["supersedes"] = "Предыдущая редакция относится к другой организации."
+        if len(self.file_sha256) != 64:
+            errors["file_sha256"] = "Для ZIP-пакета требуется SHA-256."
+        if self.source_document_sha256 and len(self.source_document_sha256) != 64:
+            errors["source_document_sha256"] = "SHA-256 исходного документа должен содержать 64 знака."
+        for field in ("manifest", "diff_counts"):
+            if not isinstance(getattr(self, field), dict):
+                errors[field] = "Значение должно храниться JSON-объектом."
+        if not isinstance(self.type_dictionary, list):
+            errors["type_dictionary"] = "Словарь типов должен храниться списком."
+        if self.status in {self.Status.PUBLISHED, self.Status.PARTIALLY_PUBLISHED}:
+            if not self.published_at or not self.published_by_id or len(self.publication_digest) != 64:
+                errors["status"] = "Публикация требует автора, времени и SHA-256."
+        elif self.published_at or self.published_by_id or self.publication_digest:
+            errors["status"] = "Реквизиты публикации допустимы только после публикации."
+        if self.status == self.Status.DISCARDED and self.discarded_at is None:
+            errors["discarded_at"] = "Для убранной редакции требуется время операции."
+        if errors:
+            raise ValidationError(errors)
+
+
+class PowerSystemAssetOccurrence(models.Model):
+    class RecordRole(models.TextChoices):
+        HIERARCHY_NODE = "HIERARCHY_NODE", "Узел иерархии"
+        DISPATCHING_OBJECT_OCCURRENCE = (
+            "DISPATCHING_OBJECT_OCCURRENCE",
+            "Строка объекта диспетчеризации",
+        )
+
+    class DiffState(models.TextChoices):
+        ADDED = "ADDED", "Добавлена"
+        UNCHANGED = "UNCHANGED", "Без изменений"
+        CHANGED = "CHANGED", "Изменена"
+
+    class ReviewStatus(models.TextChoices):
+        READY = "READY", "Готова"
+        REVIEW_REQUIRED = "REVIEW_REQUIRED", "Требует проверки"
+        BLOCKED = "BLOCKED", "Заблокирована"
+        EXCLUDED = "EXCLUDED", "Исключена"
+        PUBLISHED = "PUBLISHED", "Опубликована"
+
+    class ReviewDecision(models.TextChoices):
+        NONE = "NONE", "Решение не принято"
+        ACCEPT_AS_NEW = "ACCEPT_AS_NEW", "Принять как отдельный объект"
+        MERGE_WITH = "MERGE_WITH", "Объединить с другой строкой"
+        EXCLUDE = "EXCLUDE", "Исключить из публикации"
+
+    source_revision = models.ForeignKey(
+        PowerSystemSourceRevision,
+        on_delete=models.CASCADE,
+        related_name="asset_occurrences",
+        verbose_name="Редакция источника",
+    )
+    occurrence_id = models.CharField("Идентификатор строки источника", max_length=128)
+    source_sheet = models.CharField("Лист источника", max_length=255)
+    source_row = models.PositiveIntegerField("Строка источника")
+    source_item_number = models.CharField("Номер пункта источника", max_length=64, blank=True)
+    record_role = models.CharField("Роль записи", max_length=40, choices=RecordRole.choices)
+    domain = models.CharField("Предметный контур", max_length=64)
+    asset_type_code = models.SlugField("Предложенный тип", max_length=96)
+    asset_type_name = models.CharField("Предложенный тип по-русски", max_length=255)
+    source_category_raw = models.CharField("Исходная категория", max_length=1000, blank=True)
+    dispatcher_name_raw = models.CharField("Исходное диспетчерское наименование", max_length=1000)
+    display_name_normalized = models.CharField("Нормализованное отображение", max_length=1000)
+    comparison_key = models.CharField("Ключ сравнения", max_length=1000)
+    energy_facility_raw = models.CharField("Энергообъект источника", max_length=500)
+    voltage_context_raw = models.CharField("Контекст напряжения", max_length=255, blank=True)
+    nominal_voltage_kv = models.DecimalField(
+        "Номинальное напряжение, кВ",
+        max_digits=9,
+        decimal_places=3,
+        null=True,
+        blank=True,
+    )
+    voltage_basis = models.CharField("Основание напряжения", max_length=64, blank=True)
+    parent_raw = models.CharField("Исходный родитель", max_length=1000, blank=True)
+    hierarchy_path_raw = models.TextField("Исходный путь иерархии", blank=True)
+    external_key = models.CharField("Стабильный внешний ключ", max_length=128)
+    parent_external_key = models.CharField("Внешний ключ родителя", max_length=128, blank=True)
+    logical_key = models.CharField("Ключ логического объекта", max_length=128)
+    management_raw = models.TextField("Исходное управление", blank=True)
+    conduct_raw = models.TextField("Исходное ведение", blank=True)
+    note_raw = models.TextField("Исходное примечание", blank=True)
+    source_flags = models.JSONField("Исходные признаки", default=dict)
+    classification_confidence = models.CharField("Уверенность классификации", max_length=16)
+    hierarchy_confidence = models.CharField("Уверенность иерархии", max_length=16)
+    import_disposition = models.CharField("Предложенное действие", max_length=64)
+    duplicate_group = models.CharField("Группа дублей", max_length=128, blank=True)
+    related_primary_asset_raw = models.CharField(
+        "Связанное первичное оборудование",
+        max_length=1000,
+        blank=True,
+    )
+    relation_basis = models.CharField("Основание связи", max_length=255, blank=True)
+    source_fact_notes = models.TextField("Пояснение аналитического источника", blank=True)
+    row_fingerprint = models.CharField("SHA-256 содержательной строки", max_length=64)
+    diff_state = models.CharField(
+        "Изменение относительно предыдущей редакции",
+        max_length=16,
+        choices=DiffState.choices,
+        default=DiffState.ADDED,
+    )
+    initial_review_status = models.CharField(
+        "Исходное состояние проверки",
+        max_length=24,
+        choices=ReviewStatus.choices,
+    )
+    review_status = models.CharField(
+        "Состояние проверки",
+        max_length=24,
+        choices=ReviewStatus.choices,
+        db_index=True,
+    )
+    review_decision = models.CharField(
+        "Решение",
+        max_length=24,
+        choices=ReviewDecision.choices,
+        default=ReviewDecision.NONE,
+    )
+    merge_target = models.ForeignKey(
+        "self",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="merged_source_occurrences",
+        verbose_name="Объединить со строкой",
+    )
+    review_note = models.TextField("Комментарий проверки", blank=True)
+    reviewed_by = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="reviewed_power_system_occurrences",
+        verbose_name="Проверил",
+    )
+    reviewed_at = models.DateTimeField("Проверено", null=True, blank=True)
+    published_asset = models.ForeignKey(
+        "equipment.EquipmentAsset",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="source_occurrences",
+        verbose_name="Опубликованный объект",
+    )
+    publication_result = models.JSONField("Результат публикации", default=dict, blank=True)
+    created_at = models.DateTimeField("Создано", auto_now_add=True)
+
+    class Meta:
+        ordering = ("source_sheet", "source_row", "occurrence_id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("source_revision", "occurrence_id"),
+                name="uniq_ps_occurrence_id",
+            ),
+            models.UniqueConstraint(
+                fields=("source_revision", "external_key"),
+                name="uniq_ps_external_key",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=("source_revision", "review_status", "source_sheet", "source_row"),
+                name="ps_occurrence_review_idx",
+            ),
+            models.Index(
+                fields=("source_revision", "logical_key"),
+                name="ps_occurrence_logical_idx",
+            ),
+            models.Index(
+                fields=("source_revision", "comparison_key"),
+                name="ps_occurrence_compare_idx",
+            ),
+        ]
+        verbose_name = "исходная строка объекта энергосистемы"
+        verbose_name_plural = "исходные строки объектов энергосистемы"
+
+    def __str__(self) -> str:
+        return f"{self.occurrence_id} · {self.dispatcher_name_raw}"
+
+    @property
+    def effective_logical_key(self) -> str:
+        if self.review_decision == self.ReviewDecision.MERGE_WITH and self.merge_target_id:
+            return self.merge_target.logical_key
+        if self.review_decision == self.ReviewDecision.ACCEPT_AS_NEW:
+            return f"{self.logical_key}:{self.occurrence_id}"
+        return self.logical_key
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if len(self.row_fingerprint) != 64:
+            errors["row_fingerprint"] = "Для строки требуется SHA-256."
+        if self.review_decision == self.ReviewDecision.NONE:
+            if self.merge_target_id or self.reviewed_by_id or self.reviewed_at or self.review_note:
+                errors["review_decision"] = "Ожидающая строка не должна содержать реквизиты решения."
+        else:
+            if not self.reviewed_by_id or not self.reviewed_at:
+                errors["reviewed_by"] = "Для решения нужны сотрудник и время."
+        if self.review_decision == self.ReviewDecision.MERGE_WITH:
+            if not self.merge_target_id:
+                errors["merge_target"] = "Укажите строку, с которой нужно объединить объект."
+            elif self.merge_target_id == self.pk:
+                errors["merge_target"] = "Строку нельзя объединить с самой собой."
+            elif self.merge_target.source_revision_id != self.source_revision_id:
+                errors["merge_target"] = "Целевая строка относится к другой редакции."
+        elif self.merge_target_id:
+            errors["merge_target"] = "Целевая строка допустима только для решения «объединить»."
+        if self.reviewed_by_id and self.source_revision_id:
+            if self.reviewed_by.organization_id != self.source_revision.organization_id:
+                errors["reviewed_by"] = "Проверяющий относится к другой организации."
+        if self.review_status == self.ReviewStatus.PUBLISHED and not self.publication_result:
+            errors["publication_result"] = "Опубликованная строка требует результата."
+        if self.published_asset_id and self.source_revision_id:
+            if self.published_asset.organization_id != self.source_revision.organization_id:
+                errors["published_asset"] = "Оборудование относится к другой организации."
+        if not isinstance(self.source_flags, dict):
+            errors["source_flags"] = "Исходные признаки должны храниться JSON-объектом."
+        if not isinstance(self.publication_result, dict):
+            errors["publication_result"] = "Результат должен храниться JSON-объектом."
+        if errors:
+            raise ValidationError(errors)
+
+
+class PowerSystemAuthorityOccurrence(models.Model):
+    class AuthorityKind(models.TextChoices):
+        OPERATIONAL_MANAGEMENT = "OPERATIONAL_MANAGEMENT", "Оперативное управление"
+        OPERATIONAL_CONDUCT = "OPERATIONAL_CONDUCT", "Оперативное ведение"
+
+    class AssignmentStatus(models.TextChoices):
+        ASSIGNED = "ASSIGNED", "Назначено"
+        EXPLICIT_NONE = "EXPLICIT_NONE", "Явно отсутствует"
+        MISSING = "MISSING", "Не заполнено"
+
+    class ConductMode(models.TextChoices):
+        OPERATIONAL = "OPERATIONAL", "Оперативное ведение"
+        INFORMATIONAL = "INFORMATIONAL", "Информационное ведение"
+        UNKNOWN = "UNKNOWN", "Не установлено"
+
+    class PublicationStatus(models.TextChoices):
+        PENDING = "PENDING", "Ожидает"
+        PUBLISHED = "PUBLISHED", "Опубликовано"
+        SKIPPED = "SKIPPED", "Не создаёт назначения"
+        REVIEW_REQUIRED = "REVIEW_REQUIRED", "Требует проверки"
+
+    source_revision = models.ForeignKey(
+        PowerSystemSourceRevision,
+        on_delete=models.CASCADE,
+        related_name="authority_occurrences",
+        verbose_name="Редакция источника",
+    )
+    asset_occurrence = models.ForeignKey(
+        PowerSystemAssetOccurrence,
+        on_delete=models.CASCADE,
+        related_name="authority_occurrences",
+        verbose_name="Строка объекта",
+    )
+    sequence = models.PositiveIntegerField("Порядок в ячейке")
+    source_sheet = models.CharField("Лист источника", max_length=255)
+    source_row = models.PositiveIntegerField("Строка источника")
+    dispatcher_name_raw = models.CharField("Диспетчерское наименование", max_length=1000)
+    authority_kind = models.CharField("Вид полномочия", max_length=32, choices=AuthorityKind.choices)
+    assignment_status = models.CharField(
+        "Состояние назначения",
+        max_length=20,
+        choices=AssignmentStatus.choices,
+    )
+    authority_subject_raw = models.CharField("Исходный субъект", max_length=1000, blank=True)
+    authority_subject_normalized = models.CharField(
+        "Предложенный субъект",
+        max_length=1000,
+        blank=True,
+    )
+    normalization_status = models.CharField("Состояние нормализации", max_length=40, blank=True)
+    source_cell_raw = models.TextField("Исходная ячейка", blank=True)
+    conduct_mode = models.CharField(
+        "Режим ведения",
+        max_length=16,
+        choices=ConductMode.choices,
+        default=ConductMode.UNKNOWN,
+    )
+    informational_basis = models.CharField("Основание режима ведения", max_length=255, blank=True)
+    row_fingerprint = models.CharField("SHA-256 строки", max_length=64)
+    publication_status = models.CharField(
+        "Результат публикации",
+        max_length=20,
+        choices=PublicationStatus.choices,
+        default=PublicationStatus.PENDING,
+    )
+    published_target_model = models.CharField("Опубликованная модель", max_length=128, blank=True)
+    published_target_id = models.CharField("Идентификатор записи", max_length=128, blank=True)
+    publication_note = models.TextField("Комментарий публикации", blank=True)
+
+    class Meta:
+        ordering = ("asset_occurrence", "authority_kind", "sequence")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("asset_occurrence", "authority_kind", "sequence"),
+                name="uniq_ps_authority_seq",
+            )
+        ]
+        indexes = [
+            models.Index(
+                fields=("source_revision", "authority_kind", "assignment_status"),
+                name="ps_authority_kind_idx",
+            )
+        ]
+        verbose_name = "исходное назначение управления или ведения"
+        verbose_name_plural = "исходные назначения управления и ведения"
+
+    def __str__(self) -> str:
+        return f"{self.asset_occurrence.occurrence_id} · {self.get_authority_kind_display()}"
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if self.asset_occurrence_id and self.source_revision_id:
+            if self.asset_occurrence.source_revision_id != self.source_revision_id:
+                errors["asset_occurrence"] = "Строка объекта относится к другой редакции."
+        if self.assignment_status == self.AssignmentStatus.ASSIGNED and not self.authority_subject_raw:
+            errors["authority_subject_raw"] = "Для назначения требуется субъект."
+        if self.authority_kind == self.AuthorityKind.OPERATIONAL_MANAGEMENT:
+            if self.conduct_mode != self.ConductMode.UNKNOWN:
+                errors["conduct_mode"] = "Режим ведения не применяется к управлению."
+        if len(self.row_fingerprint) != 64:
+            errors["row_fingerprint"] = "Для строки требуется SHA-256."
+        if errors:
+            raise ValidationError(errors)
+
+
+class PowerSystemAliasProposal(models.Model):
+    class ReviewStatus(models.TextChoices):
+        AUTO_SAFE = "AUTO_SAFE", "Безопасен для публикации"
+        REVIEW_REQUIRED = "REVIEW_REQUIRED", "Требует проверки"
+        BLOCKED = "BLOCKED", "Автоприменение запрещено"
+
+    class PublicationStatus(models.TextChoices):
+        PENDING = "PENDING", "Ожидает"
+        PUBLISHED = "PUBLISHED", "Опубликован"
+        SKIPPED = "SKIPPED", "Не опубликован"
+
+    source_revision = models.ForeignKey(
+        PowerSystemSourceRevision,
+        on_delete=models.CASCADE,
+        related_name="alias_proposals",
+        verbose_name="Редакция источника",
+    )
+    asset_occurrence = models.ForeignKey(
+        PowerSystemAssetOccurrence,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="alias_proposals",
+        verbose_name="Строка объекта",
+    )
+    alias_scope = models.CharField("Область алиаса", max_length=40)
+    occurrence_id_raw = models.CharField("Исходная ссылка", max_length=128, blank=True)
+    parent_context_raw = models.CharField("Контекст родителя", max_length=1000, blank=True)
+    alias_raw = models.CharField("Алиас", max_length=1000)
+    target_name_raw = models.CharField("Целевое имя", max_length=1000)
+    alias_kind = models.CharField("Вид алиаса", max_length=64)
+    normalization_rule = models.CharField("Правило нормализации", max_length=500, blank=True)
+    confidence = models.CharField("Уверенность", max_length=16)
+    proposal_status = models.CharField("Статус предложения", max_length=40)
+    note = models.TextField("Примечание", blank=True)
+    row_fingerprint = models.CharField("SHA-256 строки", max_length=64)
+    review_status = models.CharField(
+        "Состояние проверки",
+        max_length=20,
+        choices=ReviewStatus.choices,
+    )
+    publication_status = models.CharField(
+        "Результат публикации",
+        max_length=16,
+        choices=PublicationStatus.choices,
+        default=PublicationStatus.PENDING,
+    )
+    published_alias = models.ForeignKey(
+        "equipment.EquipmentAlias",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="source_alias_proposals",
+        verbose_name="Опубликованный алиас",
+    )
+
+    class Meta:
+        ordering = ("alias_scope", "alias_raw", "id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=(
+                    "source_revision",
+                    "alias_scope",
+                    "occurrence_id_raw",
+                    "alias_raw",
+                    "target_name_raw",
+                ),
+                name="uniq_ps_alias_proposal",
+            )
+        ]
+        verbose_name = "предложение алиаса объекта энергосистемы"
+        verbose_name_plural = "предложения алиасов объектов энергосистемы"
+
+    def __str__(self) -> str:
+        return f"{self.alias_raw} → {self.target_name_raw}"
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if self.asset_occurrence_id and self.source_revision_id:
+            if self.asset_occurrence.source_revision_id != self.source_revision_id:
+                errors["asset_occurrence"] = "Строка объекта относится к другой редакции."
+        if len(self.row_fingerprint) != 64:
+            errors["row_fingerprint"] = "Для строки требуется SHA-256."
+        if errors:
+            raise ValidationError(errors)
+
+
+class PowerSystemImportIssue(models.Model):
+    class Severity(models.TextChoices):
+        LOW = "LOW", "Низкая"
+        MEDIUM = "MEDIUM", "Средняя"
+        HIGH = "HIGH", "Высокая"
+        CRITICAL = "CRITICAL", "Критическая"
+
+    class Status(models.TextChoices):
+        OPEN = "OPEN", "Открыта"
+        RESOLVED = "RESOLVED", "Разрешена"
+        ACCEPTED_RISK = "ACCEPTED_RISK", "Риск принят"
+
+    source_revision = models.ForeignKey(
+        PowerSystemSourceRevision,
+        on_delete=models.CASCADE,
+        related_name="issues",
+        verbose_name="Редакция источника",
+    )
+    issue_code = models.CharField("Код проблемы", max_length=96)
+    severity = models.CharField("Важность", max_length=16, choices=Severity.choices)
+    category = models.CharField("Категория", max_length=64)
+    source_sheet = models.CharField("Лист источника", max_length=500, blank=True)
+    source_rows = models.CharField("Строки источника", max_length=500, blank=True)
+    evidence = models.TextField("Наблюдение")
+    import_risk = models.TextField("Риск импорта")
+    recommended_handling = models.TextField("Рекомендуемая обработка")
+    blocks_automatic_import = models.BooleanField("Блокирует автоматическую публикацию")
+    status = models.CharField("Состояние", max_length=20, choices=Status.choices)
+    resolution_note = models.TextField("Решение", blank=True)
+    resolved_by = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="resolved_power_system_issues",
+        verbose_name="Решил",
+    )
+    resolved_at = models.DateTimeField("Решено", null=True, blank=True)
+    row_fingerprint = models.CharField("SHA-256 строки", max_length=64)
+
+    class Meta:
+        ordering = ("-severity", "issue_code")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("source_revision", "issue_code"),
+                name="uniq_power_system_issue_code",
+            )
+        ]
+        verbose_name = "проблема импорта объектов энергосистемы"
+        verbose_name_plural = "проблемы импорта объектов энергосистемы"
+
+    def __str__(self) -> str:
+        return f"{self.issue_code} · {self.get_severity_display()}"
+
+
+class PowerSystemPublication(models.Model):
+    public_id = models.UUIDField(
+        "Публичный идентификатор",
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
+    source_revision = models.ForeignKey(
+        PowerSystemSourceRevision,
+        on_delete=models.PROTECT,
+        related_name="publications",
+        verbose_name="Редакция источника",
+    )
+    actor = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        related_name="power_system_publications",
+        verbose_name="Опубликовал",
+    )
+    schema_version = models.CharField(
+        "Версия схемы",
+        max_length=64,
+        default="eod.power-system.publication.v1",
+    )
+    canonical_json = models.TextField("Канонический снимок публикации")
+    digest = models.CharField("SHA-256 публикации", max_length=64, unique=True)
+    result_summary = models.JSONField("Итоги публикации", default=dict)
+    created_at = models.DateTimeField("Опубликовано", auto_now_add=True)
+
+    objects = ImmutableAuditManager()
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+        verbose_name = "публикация объектов энергосистемы"
+        verbose_name_plural = "публикации объектов энергосистемы"
+
+    def __str__(self) -> str:
+        return f"{self.source_revision.original_filename} · {self.digest[:12]}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.pk:
+            raise ValidationError("Снимок публикации объектов энергосистемы неизменяем.")
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
+        raise ValidationError("Физическое удаление публикации объектов энергосистемы запрещено.")
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if self.source_revision_id and self.actor_id:
+            if self.source_revision.organization_id != self.actor.organization_id:
+                errors["actor"] = "Публикующий сотрудник относится к другой организации."
+        if len(self.digest) != 64:
+            errors["digest"] = "Для публикации требуется SHA-256."

@@ -126,7 +126,7 @@ def current_supervision_revisions(
         )
         .filter(Q(effective_until__isnull=True) | Q(effective_until__gte=target))
         .select_related("level", "subject")
-        .order_by("level__rank", "is_information_only", "subject__name")
+        .order_by("level__rank", "conduct_mode", "subject__name")
     )
 
 
@@ -253,11 +253,12 @@ def publish_supervision_revision(
     locked.digest = sha256_text(
         canonical_json(
             {
-                "schema": "eod.dispatching.supervision.v1",
+                "schema": "eod.dispatching.supervision.v2",
                 "equipment_public_id": str(locked.supervision_object.equipment.public_id),
                 "revision_number": locked.revision_number,
                 "level_code": locked.level.code,
                 "subject_code": locked.subject.code,
+                "conduct_mode": locked.conduct_mode,
                 "information_only": locked.is_information_only,
                 "effective_from": locked.effective_from,
                 "effective_until": locked.effective_until,

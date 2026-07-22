@@ -124,8 +124,16 @@ class EquipmentNameRevisionAdmin(admin.ModelAdmin):
 
 @admin.register(EquipmentAlias)
 class EquipmentAliasAdmin(admin.ModelAdmin):
-    list_display = ("alias", "equipment", "alias_type", "valid_from", "valid_until")
-    list_filter = ("alias_type", "organization")
+    list_display = (
+        "alias",
+        "equipment",
+        "scope_site",
+        "scope_parent",
+        "alias_type",
+        "valid_from",
+        "valid_until",
+    )
+    list_filter = ("alias_type", "organization", "scope_site")
     search_fields = ("alias", "equipment__code", "equipment__technical_name")
 
     def has_change_permission(self, request, obj=None) -> bool:

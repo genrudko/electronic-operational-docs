@@ -8521,3 +8521,30 @@ body.draft-view-drawer-visible .draft-view-drawer {
         grid-template-columns: 1fr;
     }
 }
+
+/* Patch 011.5: controlled power-system asset import */
+.compact-decision-form {
+    display: grid;
+    gap: .55rem;
+    min-width: min(28rem, 72vw);
+    padding-top: .65rem;
+}
+.compact-decision-form textarea,
+.compact-decision-form input,
+.compact-decision-form select {
+    width: 100%;
+}
+.status-ready,
+.status-published,
+.status-auto_safe {
+    border-color: color-mix(in srgb, var(--success, #3f9b6d) 58%, transparent);
+}
+.status-review_required,
+.status-partially_published {
+    border-color: color-mix(in srgb, var(--warning, #d6a53b) 62%, transparent);
+}
+.status-blocked,
+.status-excluded,
+.status-discarded {
+    opacity: .84;
+}

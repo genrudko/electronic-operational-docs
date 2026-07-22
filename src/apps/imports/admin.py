@@ -9,6 +9,12 @@ from .models import (
     ImportPublication,
     ImportPublicationRow,
     ImportRow,
+    PowerSystemAliasProposal,
+    PowerSystemAssetOccurrence,
+    PowerSystemAuthorityOccurrence,
+    PowerSystemImportIssue,
+    PowerSystemPublication,
+    PowerSystemSourceRevision,
 )
 
 
@@ -216,6 +222,180 @@ class ImportPublicationRowAdmin(admin.ModelAdmin):
         "digest",
         "created_at",
     )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PowerSystemSourceRevision)
+class PowerSystemSourceRevisionAdmin(admin.ModelAdmin):
+    list_display = (
+        "original_filename",
+        "organization",
+        "data_profile",
+        "source_approval_status",
+        "status",
+        "total_occurrences",
+        "ready_count",
+        "review_count",
+        "blocked_count",
+        "published_count",
+        "created_at",
+    )
+    list_filter = ("status", "source_approval_status", "data_profile")
+    search_fields = ("original_filename", "source_reference", "file_sha256")
+    readonly_fields = (
+        "public_id",
+        "file_sha256",
+        "source_document_sha256",
+        "manifest",
+        "type_dictionary",
+        "diff_counts",
+        "total_occurrences",
+        "hierarchy_nodes",
+        "authority_rows",
+        "alias_rows",
+        "issue_rows",
+        "ready_count",
+        "review_count",
+        "blocked_count",
+        "excluded_count",
+        "published_count",
+        "publication_digest",
+        "published_at",
+        "published_by",
+        "created_at",
+        "updated_at",
+        "discarded_at",
+    )
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PowerSystemAssetOccurrence)
+class PowerSystemAssetOccurrenceAdmin(admin.ModelAdmin):
+    list_display = (
+        "occurrence_id",
+        "source_revision",
+        "source_sheet",
+        "source_row",
+        "asset_type_code",
+        "dispatcher_name_raw",
+        "review_status",
+        "diff_state",
+    )
+    list_filter = ("review_status", "diff_state", "record_role", "asset_type_code")
+    search_fields = (
+        "occurrence_id",
+        "dispatcher_name_raw",
+        "display_name_normalized",
+        "logical_key",
+        "external_key",
+    )
+    readonly_fields = [field.name for field in PowerSystemAssetOccurrence._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PowerSystemAuthorityOccurrence)
+class PowerSystemAuthorityOccurrenceAdmin(admin.ModelAdmin):
+    list_display = (
+        "asset_occurrence",
+        "authority_kind",
+        "assignment_status",
+        "authority_subject_raw",
+        "conduct_mode",
+        "publication_status",
+    )
+    list_filter = (
+        "authority_kind",
+        "assignment_status",
+        "conduct_mode",
+        "publication_status",
+    )
+    search_fields = (
+        "asset_occurrence__occurrence_id",
+        "authority_subject_raw",
+        "source_cell_raw",
+    )
+    readonly_fields = [field.name for field in PowerSystemAuthorityOccurrence._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PowerSystemAliasProposal)
+class PowerSystemAliasProposalAdmin(admin.ModelAdmin):
+    list_display = (
+        "alias_raw",
+        "target_name_raw",
+        "alias_scope",
+        "review_status",
+        "publication_status",
+    )
+    list_filter = ("alias_scope", "review_status", "publication_status")
+    search_fields = ("alias_raw", "target_name_raw", "occurrence_id_raw")
+    readonly_fields = [field.name for field in PowerSystemAliasProposal._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PowerSystemImportIssue)
+class PowerSystemImportIssueAdmin(admin.ModelAdmin):
+    list_display = (
+        "issue_code",
+        "source_revision",
+        "severity",
+        "category",
+        "blocks_automatic_import",
+        "status",
+    )
+    list_filter = ("severity", "category", "blocks_automatic_import", "status")
+    search_fields = ("issue_code", "evidence", "recommended_handling")
+    readonly_fields = [field.name for field in PowerSystemImportIssue._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PowerSystemPublication)
+class PowerSystemPublicationAdmin(admin.ModelAdmin):
+    list_display = ("source_revision", "actor", "digest", "created_at")
+    search_fields = ("source_revision__original_filename", "digest")
+    readonly_fields = [field.name for field in PowerSystemPublication._meta.fields]
 
     def has_add_permission(self, request):
         return False

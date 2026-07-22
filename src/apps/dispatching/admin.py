@@ -63,12 +63,12 @@ class SupervisionRevisionAdmin(admin.ModelAdmin):
         "revision_number",
         "level",
         "subject",
-        "is_information_only",
+        "conduct_mode",
         "effective_from",
         "effective_until",
         "status",
     )
-    list_filter = ("status", "is_information_only", "level", "subject")
+    list_filter = ("status", "conduct_mode", "level", "subject")
     readonly_fields = ("published_at", "published_by", "digest", "created_at")
 
 

@@ -425,6 +425,11 @@ class ManagementRevision(models.Model):
 
 
 class SupervisionRevision(models.Model):
+    class ConductMode(models.TextChoices):
+        OPERATIONAL = "OPERATIONAL", "Оперативное ведение"
+        INFORMATIONAL = "INFORMATIONAL", "Информационное ведение"
+        UNKNOWN = "UNKNOWN", "Режим ведения не подтверждён"
+
     supervision_object = models.ForeignKey(
         SupervisionObject,
         on_delete=models.PROTECT,
@@ -444,10 +449,17 @@ class SupervisionRevision(models.Model):
         related_name="supervision_revisions",
         verbose_name="Субъект ведения",
     )
+    conduct_mode = models.CharField(
+        "Режим ведения",
+        max_length=16,
+        choices=ConductMode.choices,
+        default=ConductMode.OPERATIONAL,
+        help_text="UNKNOWN сохраняет неопределённость источника без ложного вывода.",
+    )
     is_information_only = models.BooleanField(
-        "Информационное ведение",
+        "Информационное ведение (совместимость)",
         default=False,
-        help_text="Субъект получает сведения, но не осуществляет оперативное ведение режима.",
+        help_text="Синхронизируется с режимом ведения и сохраняется для обратной совместимости.",
     )
     effective_from = models.DateField("Действует с")
     effective_until = models.DateField("Действует по", null=True, blank=True)
@@ -516,14 +528,19 @@ class SupervisionRevision(models.Model):
         verbose_name_plural = "редакции ведения"
 
     def __str__(self) -> str:
-        label = "информационное ведение" if self.is_information_only else "ведение"
-        return f"{self.supervision_object.equipment} · {label} № {self.revision_number}"
+        return (
+            f"{self.supervision_object.equipment} · "
+            f"{self.get_conduct_mode_display().lower()} № {self.revision_number}"
+        )
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         if self.pk:
             original = type(self).objects.get(pk=self.pk)
             if original.status == PublicationStatus.PUBLISHED:
                 raise ValidationError("Опубликованная редакция ведения неизменяема.")
+        elif self.is_information_only and self.conduct_mode == self.ConductMode.OPERATIONAL:
+            self.conduct_mode = self.ConductMode.INFORMATIONAL
+        self.is_information_only = self.conduct_mode == self.ConductMode.INFORMATIONAL
         self.full_clean()
         super().save(*args, **kwargs)
 
@@ -545,6 +562,8 @@ class SupervisionRevision(models.Model):
         if organization_id and self.published_by_id:
             if self.published_by.organization_id != organization_id:
                 errors["published_by"] = "Публикующий сотрудник относится к другой организации."
+        if self.is_information_only != (self.conduct_mode == self.ConductMode.INFORMATIONAL):
+            errors["is_information_only"] = "Признак должен соответствовать режиму ведения."
         if not self.basis_reference.strip():
             errors["basis_reference"] = "Реквизиты документа-основания обязательны."
         if self.status == PublicationStatus.PUBLISHED:

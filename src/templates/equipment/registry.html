@@ -73,8 +73,17 @@
                 {% endfor %}
             </select>
         </div>
+        <div>
+            <label for="equipment-voltage-filter">Класс напряжения</label>
+            <select id="equipment-voltage-filter" name="voltage">
+                <option value="">Все классы</option>
+                {% for voltage in voltage_levels %}
+                    <option value="{{ voltage }}" {% if selected_voltage == voltage %}selected{% endif %}>{{ voltage }}</option>
+                {% endfor %}
+            </select>
+        </div>
         <button class="button" type="submit">Найти</button>
-        {% if query or selected_site or selected_type %}
+        {% if query or selected_site or selected_type or selected_voltage %}
             <a href="{% url 'equipment:registry' %}">Сбросить</a>
         {% endif %}
     </form>

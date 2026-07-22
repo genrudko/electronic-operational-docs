@@ -101,4 +101,14 @@
         </ul>
     </article>
 </section>
+
+{% if source_provenance %}
+<section class="profile-card technical-only">
+    <h2>Происхождение из источника</h2>
+    <dl class="detail-list">
+        <dt>Редакция источника</dt><dd><code>{{ source_revision_public_id }}</code></dd>
+        <dt>Исходные строки</dt><dd>{% for item in source_provenance %}<code>{{ item }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
+    </dl>
+</section>
+{% endif %}
 {% endblock %}
