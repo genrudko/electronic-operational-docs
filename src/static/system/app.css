@@ -8964,3 +8964,165 @@ html[data-theme="dark"] .ps-download-toast[data-state="error"] {
 [data-power-system-snapshot-trigger][aria-busy="true"] {
     pointer-events: none;
 }
+
+/* Patch 011.6.1 — personnel, qualifications and operational rights */
+.personnel-privacy-notice {
+    border-color: color-mix(in srgb, var(--warning) 45%, var(--border));
+}
+.personnel-workflow {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin: 18px 0;
+}
+.personnel-workflow article {
+    display: grid;
+    gap: 7px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--panel);
+}
+.personnel-workflow span,
+.personnel-source-row header span,
+.personnel-right-grid span,
+.employee-right-grid span,
+.employee-qualification-cards span {
+    color: var(--muted);
+}
+.personnel-summary .metric.is-active {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+.personnel-row-list {
+    display: grid;
+    gap: 14px;
+}
+.personnel-source-row {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--border);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--panel) 88%, transparent);
+}
+.personnel-source-row.status-ready,
+.personnel-source-row.status-published { border-left-color: var(--success); }
+.personnel-source-row.status-review_required { border-left-color: var(--warning); }
+.personnel-source-row.status-blocked { border-left-color: var(--danger); }
+.personnel-source-row > header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+.personnel-source-row > header > div {
+    display: grid;
+    gap: 4px;
+}
+.personnel-qualification-line {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0;
+}
+.personnel-qualification-line div {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+}
+.personnel-qualification-line dt {
+    margin-bottom: 4px;
+    color: var(--muted);
+    font-size: 12px;
+}
+.personnel-qualification-line dd { margin: 0; }
+.personnel-issues,
+.personnel-cell-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.personnel-issues span,
+.personnel-cell-summary span {
+    padding: 6px 9px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 12px;
+}
+.personnel-issues span,
+.personnel-cell-summary .is-ambiguous {
+    border-color: color-mix(in srgb, var(--warning) 55%, var(--border));
+    background: color-mix(in srgb, var(--warning) 10%, transparent);
+}
+.personnel-cell-summary .is-positive {
+    border-color: color-mix(in srgb, var(--success) 55%, var(--border));
+    background: color-mix(in srgb, var(--success) 10%, transparent);
+}
+.personnel-right-grid,
+.employee-right-grid,
+.employee-qualification-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+.personnel-right-grid > div,
+.employee-right-grid article,
+.employee-qualification-cards article {
+    display: grid;
+    gap: 6px;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+.personnel-right-grid.ambiguous > div {
+    border-color: color-mix(in srgb, var(--warning) 55%, var(--border));
+}
+.personnel-search-card { margin-bottom: 20px; }
+.personnel-search-form {
+    display: grid;
+    gap: 10px;
+}
+.personnel-search-form > div {
+    display: flex;
+    gap: 10px;
+}
+.personnel-search-form input {
+    flex: 1 1 320px;
+    min-width: 0;
+}
+.personnel-search-results {
+    display: grid;
+    gap: 9px;
+    margin-top: 20px;
+}
+.personnel-search-result {
+    display: grid;
+    gap: 3px;
+    padding: 11px 13px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    text-decoration: none;
+}
+.personnel-search-result:hover { border-color: var(--accent); }
+.employee-right-category + .employee-right-category { margin-top: 24px; }
+.employee-right-category h3 { margin-bottom: 10px; }
+.employee-identity-card { margin-bottom: 18px; }
+.error-text { color: var(--danger); }
+
+@media (max-width: 900px) {
+    .personnel-workflow,
+    .personnel-qualification-line,
+    .personnel-right-grid,
+    .employee-right-grid,
+    .employee-qualification-cards {
+        grid-template-columns: 1fr;
+    }
+    .personnel-source-row > header,
+    .personnel-search-form > div {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}

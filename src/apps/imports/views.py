@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -16,6 +17,8 @@ from .forms import (
     ImportPublicationConfirmationForm,
     ImportRowCorrectionForm,
     ImportUploadForm,
+    PersonnelPublicationConfirmationForm,
+    PersonnelWorkbookUploadForm,
     PowerSystemDuplicateGroupDecisionForm,
     PowerSystemOccurrenceDecisionForm,
     PowerSystemPackageUploadForm,
@@ -26,8 +29,23 @@ from .models import (
     ImportMappingTemplate,
     ImportPublication,
     ImportRow,
+    PersonnelAuthorityCell,
+    PersonnelPublication,
+    PersonnelSourceRevision,
+    PersonnelSourceRow,
     PowerSystemAssetOccurrence,
     PowerSystemSourceRevision,
+)
+from .personnel import (
+    PersonnelWorkbookError,
+    build_personnel_publication_preview,
+    discard_personnel_revision,
+    personnel_revision_for_user,
+    publish_personnel_revision,
+    stage_personnel_workbook,
+)
+from .personnel import (
+    source_revision_queryset_for_employee as personnel_revision_queryset_for_employee,
 )
 from .power_system import (
     PowerSystemPackageError,
@@ -1121,3 +1139,215 @@ def power_system_discard(request: HttpRequest, public_id) -> HttpResponse:
         else:
             messages.success(request, "Редакция убрана из рабочего списка без физического удаления.")
     return redirect("imports:power_system_list")
+
+
+PERSONNEL_GRANT_STATE_LABELS = dict(PersonnelAuthorityCell.GrantState.choices)
+
+
+def _decorate_personnel_row(row: PersonnelSourceRow) -> None:
+    cells = list(row.authority_cells.all())
+    row.positive_cells = [cell for cell in cells if cell.is_publishable]
+    row.ambiguous_cells_list = [
+        cell
+        for cell in cells
+        if cell.grant_state == PersonnelAuthorityCell.GrantState.AMBIGUOUS
+    ]
+    row.negative_count = sum(
+        cell.grant_state == PersonnelAuthorityCell.GrantState.NOT_GRANTED
+        for cell in cells
+    )
+    row.blank_count = sum(
+        cell.grant_state == PersonnelAuthorityCell.GrantState.BLANK
+        for cell in cells
+    )
+    for cell in cells:
+        cell.grant_state_label = PERSONNEL_GRANT_STATE_LABELS.get(
+            cell.grant_state,
+            cell.grant_state,
+        )
+
+
+@login_required
+def personnel_list(request: HttpRequest) -> HttpResponse:
+    employee = require_import_employee(request.user)
+    revisions = list(
+        personnel_revision_queryset_for_employee(employee).order_by("-created_at", "-id")[:100]
+    )
+    summary = {
+        "total": len(revisions),
+        "staged": sum(item.status == PersonnelSourceRevision.Status.STAGED for item in revisions),
+        "attention": sum(
+            item.review_rows + item.blocked_rows > 0
+            for item in revisions
+            if item.status != PersonnelSourceRevision.Status.DISCARDED
+        ),
+        "published": sum(
+            item.status
+            in {
+                PersonnelSourceRevision.Status.PUBLISHED,
+                PersonnelSourceRevision.Status.PARTIALLY_PUBLISHED,
+            }
+            for item in revisions
+        ),
+    }
+    return render(
+        request,
+        "imports/personnel_list.html",
+        {"revisions": revisions, "summary": summary},
+    )
+
+
+@login_required
+def personnel_upload(request: HttpRequest) -> HttpResponse:
+    employee = require_import_employee(request.user)
+    form = PersonnelWorkbookUploadForm(
+        request.POST or None,
+        request.FILES or None,
+        organization=employee.organization,
+    )
+    if request.method == "POST" and form.is_valid():
+        try:
+            revision = stage_personnel_workbook(
+                uploaded_file=form.cleaned_data["source_file"],
+                employee=employee,
+                data_profile=form.cleaned_data["data_profile"],
+                source_reference=form.cleaned_data["source_reference"],
+                effective_from=form.cleaned_data["effective_from"],
+            )
+        except (PersonnelWorkbookError, PermissionDenied, ValidationError) as error:
+            message = (
+                _validation_message(error)
+                if isinstance(error, ValidationError)
+                else str(error)
+            )
+            form.add_error(None, message)
+        else:
+            messages.success(
+                request,
+                "XLSX разобран в изолированную staging-редакцию. Рабочие карточки не изменены.",
+            )
+            return redirect("imports:personnel_detail", public_id=revision.public_id)
+    return render(request, "imports/personnel_upload.html", {"form": form})
+
+
+@login_required
+def personnel_detail(request: HttpRequest, public_id) -> HttpResponse:
+    employee, revision = personnel_revision_for_user(request.user, public_id)
+    status_filter = request.GET.get("status", "ALL").upper()
+    valid_filters = {"ALL", *PersonnelSourceRow.ReviewStatus.values}
+    if status_filter not in valid_filters:
+        status_filter = "ALL"
+    rows = (
+        revision.person_rows.select_related(
+            "matched_employee",
+            "matched_employee__division",
+            "matched_employee__position",
+            "published_employee",
+        )
+        .prefetch_related("authority_cells__right_definition")
+        .order_by("source_row_number")
+    )
+    if status_filter != "ALL":
+        rows = rows.filter(review_status=status_filter)
+    page = Paginator(rows, 20).get_page(request.GET.get("page"))
+    for row in page.object_list:
+        _decorate_personnel_row(row)
+    return render(
+        request,
+        "imports/personnel_detail.html",
+        {
+            "employee": employee,
+            "revision": revision,
+            "page": page,
+            "status_filter": status_filter,
+            "can_publish": can_publish_import(request.user),
+            "is_development_database": (
+                getattr(settings, "EOD_DATABASE_PROFILE", "presentation") == "development"
+            ),
+        },
+    )
+
+
+@login_required
+def personnel_publication(request: HttpRequest, public_id) -> HttpResponse:
+    employee, revision = personnel_revision_for_user(request.user, public_id)
+    if revision.status != PersonnelSourceRevision.Status.STAGED:
+        publication = PersonnelPublication.objects.filter(source_revision=revision).first()
+        if publication is not None:
+            return redirect(
+                "imports:personnel_publication_result",
+                public_id=revision.public_id,
+                publication_id=publication.public_id,
+            )
+        messages.error(request, "Эта staging-редакция больше не доступна для публикации.")
+        return redirect("imports:personnel_detail", public_id=revision.public_id)
+
+    preview = build_personnel_publication_preview(revision)
+    initial = {"preview_digest": preview.digest}
+    form = PersonnelPublicationConfirmationForm(request.POST or None, initial=initial)
+    if request.method == "POST" and form.is_valid():
+        try:
+            publication = publish_personnel_revision(
+                revision=revision,
+                actor=employee,
+                user=request.user,
+                password=form.cleaned_data["password"],
+                expected_digest=form.cleaned_data["preview_digest"],
+            )
+        except (PermissionDenied, ValidationError) as error:
+            message = (
+                _validation_message(error)
+                if isinstance(error, ValidationError)
+                else str(error)
+            )
+            form.add_error(None, message)
+        else:
+            messages.success(request, "Контролируемая частичная публикация персонала завершена.")
+            return redirect(
+                "imports:personnel_publication_result",
+                public_id=revision.public_id,
+                publication_id=publication.public_id,
+            )
+    return render(
+        request,
+        "imports/personnel_publication.html",
+        {
+            "revision": revision,
+            "preview": preview,
+            "form": form,
+            "can_publish": can_publish_import(request.user),
+        },
+    )
+
+
+@login_required
+def personnel_publication_result(
+    request: HttpRequest,
+    public_id,
+    publication_id,
+) -> HttpResponse:
+    _employee, revision = personnel_revision_for_user(request.user, public_id)
+    publication = get_object_or_404(
+        PersonnelPublication.objects.select_related("actor", "source_revision"),
+        public_id=publication_id,
+        source_revision=revision,
+    )
+    return render(
+        request,
+        "imports/personnel_publication_result.html",
+        {"revision": revision, "publication": publication},
+    )
+
+
+@login_required
+def personnel_discard(request: HttpRequest, public_id) -> HttpResponse:
+    if request.method != "POST":
+        return redirect("imports:personnel_detail", public_id=public_id)
+    employee, revision = personnel_revision_for_user(request.user, public_id)
+    try:
+        discard_personnel_revision(revision=revision, employee=employee)
+    except ValidationError as error:
+        messages.error(request, _validation_message(error))
+    else:
+        messages.success(request, "Staging-редакция убрана из рабочего списка.")
+    return redirect("imports:personnel_list")

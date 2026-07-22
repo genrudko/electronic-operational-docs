@@ -9,4 +9,9 @@ urlpatterns = [
     path("accounts/logout/", views.personal_logout, name="logout"),
     path("accounts/me/", views.account, name="account"),
     path("organization/", views.directory, name="directory"),
+    path(
+        "organization/employees/<uuid:public_id>/",
+        views.employee_detail,
+        name="employee_detail",
+    ),
 ]

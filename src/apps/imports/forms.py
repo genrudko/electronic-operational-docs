@@ -10,6 +10,10 @@ from .models import (
     ImportRow,
     PowerSystemSourceRevision,
 )
+from .personnel import (
+    MAX_PERSONNEL_XLSX_SIZE,
+    available_personnel_profiles,
+)
 from .power_system import (
     MAX_POWER_SYSTEM_PACKAGE_SIZE,
     available_power_system_profiles,
@@ -333,5 +337,74 @@ class PowerSystemPublicationConfirmationForm(forms.Form):
         label=(
             "Я проверил(а) готовые строки и подтверждаю их контролируемую "
             "публикацию от своего имени"
+        )
+    )
+
+
+class PersonnelWorkbookUploadForm(forms.Form):
+    data_profile = DataProfileChoiceField(
+        label="Профиль данных",
+        queryset=DataProfile.objects.none(),
+        required=True,
+        help_text=(
+            "Доступен только локальный профиль с запретом обычного экспорта. "
+            "Презентационная база реальные ФИО не принимает."
+        ),
+    )
+    source_reference = forms.CharField(
+        label="Источник или основание",
+        max_length=1000,
+        help_text="Укажите наименование матрицы и реквизиты распоряжения, если они подтверждены.",
+    )
+    effective_from = forms.DateField(
+        label="Дата начала действия",
+        widget=forms.DateInput(attrs={"type": "date"}),
+        help_text="Дата применяется к создаваемым квалификациям и положительным назначениям прав.",
+    )
+    source_file = forms.FileField(
+        label="Матрица работников и прав",
+        help_text=(
+            "Поддерживается XLSX размером до 10 МБ. "
+            "Файл хранится только как разобранная staging-редакция."
+        ),
+        widget=forms.ClearableFileInput(attrs={"accept": ".xlsx"}),
+    )
+
+    def __init__(self, *args, organization, **kwargs):
+        super().__init__(*args, **kwargs)
+        profiles = available_personnel_profiles(organization)
+        self.fields["data_profile"].queryset = DataProfile.objects.filter(
+            pk__in=[profile.pk for profile in profiles]
+        ).order_by("name")
+        if profiles:
+            self.fields["data_profile"].initial = profiles[0]
+
+    def clean_source_file(self):
+        uploaded = self.cleaned_data["source_file"]
+        if Path(uploaded.name).suffix.lower() != ".xlsx":
+            raise forms.ValidationError("Для матрицы персонала требуется файл XLSX.")
+        if uploaded.size == 0:
+            raise forms.ValidationError("Нельзя загрузить пустой XLSX.")
+        if uploaded.size > MAX_PERSONNEL_XLSX_SIZE:
+            raise forms.ValidationError("Размер XLSX превышает 10 МБ.")
+        return uploaded
+
+
+class PersonnelPublicationConfirmationForm(forms.Form):
+    preview_digest = forms.CharField(widget=forms.HiddenInput())
+    password = forms.CharField(
+        label="Текущий пароль",
+        strip=False,
+        widget=forms.PasswordInput(
+            attrs={
+                "autocomplete": "current-password",
+                "placeholder": "Введите пароль своей учётной записи",
+            }
+        ),
+    )
+    confirm = forms.BooleanField(
+        label=(
+            "Я проверил(а) состав частичной публикации и подтверждаю создание "
+            "карточек, квалификаций и только положительных однозначных прав"
         )
     )

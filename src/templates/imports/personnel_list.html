@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Импорт персонала и прав · ЭОД{% endblock %}
+{% block content %}
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">ПЕРСОНАЛ, КВАЛИФИКАЦИИ И ПРАВА</div>
+        <h1>Редакции матриц работников</h1>
+        <p>Реальные ФИО разрешены только в локальной development-базе и не попадают в обычный экспорт.</p>
+    </div>
+    <div class="document-actions">
+        <a class="button" href="{% url 'imports:personnel_upload' %}">Загрузить XLSX</a>
+        <a class="button secondary" href="{% url 'imports:list' %}">К импорту данных</a>
+    </div>
+</section>
+<section class="notice-card personnel-privacy-notice">
+    <strong>Изолированный контур персональных данных</strong>
+    <p>При загрузке рабочие карточки не изменяются. Отрицательные отметки и пустые ячейки не создают запретов; неоднозначные значения сохраняются в staging и не публикуются автоматически.</p>
+</section>
+<section class="summary-grid">
+    <article class="metric"><span>Редакций</span><strong>{{ summary.total }}</strong></article>
+    <article class="metric"><span>Ожидают публикации</span><strong>{{ summary.staged }}</strong></article>
+    <article class="metric"><span>Требуют внимания</span><strong>{{ summary.attention }}</strong></article>
+    <article class="metric"><span>С публикациями</span><strong>{{ summary.published }}</strong></article>
+</section>
+<section class="profile-card">
+    <div class="table-wrap"><table>
+        <thead><tr><th>Файл и источник</th><th>Структура</th><th>Работники</th><th>Положительные права</th><th>Неоднозначности</th><th>Состояние</th><th>Дата</th></tr></thead>
+        <tbody>
+        {% for revision in revisions %}
+            <tr>
+                <td><a href="{% url 'imports:personnel_detail' revision.public_id %}">{{ revision.original_filename }}</a><small>{{ revision.source_reference }}</small></td>
+                <td>{{ revision.get_layout_version_display }}</td>
+                <td>{{ revision.total_people }}<small>готово: {{ revision.ready_rows }} · проверка: {{ revision.review_rows }} · блок: {{ revision.blocked_rows }}</small></td>
+                <td>{{ revision.publishable_grants }}</td>
+                <td>{{ revision.ambiguous_cells }}</td>
+                <td><span class="import-status status-{{ revision.status|lower }}">{{ revision.get_status_display }}</span></td>
+                <td>{{ revision.created_at|date:"d.m.Y H:i" }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="7" class="muted">Матрицы персонала ещё не загружались.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table></div>
+</section>
+{% endblock %}

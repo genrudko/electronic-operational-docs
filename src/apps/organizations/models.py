@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from datetime import date
 
 from django.conf import settings
@@ -184,6 +185,12 @@ class Position(models.Model):
 
 
 class Employee(models.Model):
+    public_id = models.UUIDField(
+        "Публичный идентификатор",
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
     organization = models.ForeignKey(
         Organization,
         on_delete=models.PROTECT,
@@ -664,6 +671,205 @@ class OperationalReportingLine(models.Model):
             raise ValidationError(
                 {"subordinate_division": "Руководитель и подразделение относятся к разным организациям."}
             )
+
+
+class OperationalRightDefinition(models.Model):
+    class Category(models.TextChoices):
+        APPLICATIONS = "APPLICATIONS", "Заявки"
+        WORK_SAFETY = "WORK_SAFETY", "Безопасное производство работ"
+        SWITCHING = "SWITCHING", "Переключения"
+        COMMUNICATIONS = "COMMUNICATIONS", "Оперативные переговоры"
+        SPECIAL_WORK = "SPECIAL_WORK", "Специальные работы"
+        RZA = "RZA", "Релейная защита и автоматика"
+
+    class ValueKind(models.TextChoices):
+        BOOLEAN = "BOOLEAN", "Право предоставлено или не предоставлено"
+        QUALIFIED = "QUALIFIED", "Право с квалификатором или областью действия"
+        ENUM = "ENUM", "Перечислимое квалификационное значение"
+
+    code = models.SlugField("Код права", max_length=96, unique=True)
+    name = models.CharField("Наименование права", max_length=500)
+    category = models.CharField(
+        "Категория",
+        max_length=24,
+        choices=Category.choices,
+    )
+    value_kind = models.CharField(
+        "Тип значения",
+        max_length=16,
+        choices=ValueKind.choices,
+        default=ValueKind.BOOLEAN,
+    )
+    description = models.TextField("Пояснение", blank=True)
+    display_order = models.PositiveSmallIntegerField("Порядок отображения", default=0)
+    is_active = models.BooleanField("Действующее право", default=True)
+
+    class Meta:
+        ordering = ("display_order", "name")
+        verbose_name = "вид оперативного права"
+        verbose_name_plural = "виды оперативных прав"
+
+    def __str__(self) -> str:
+        return self.name
+
+    def save(self, *args, **kwargs) -> None:
+        self.code = self.code.strip().lower()
+        self.name = self.name.strip()
+        self.description = self.description.strip()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+
+class EmployeeQualification(models.Model):
+    public_id = models.UUIDField(
+        "Публичный идентификатор",
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        related_name="qualifications",
+        verbose_name="Сотрудник",
+    )
+    personnel_category = models.CharField("Категория персонала", max_length=128)
+    electrical_safety_group = models.CharField(
+        "Группа по электробезопасности",
+        max_length=16,
+        blank=True,
+    )
+    voltage_scope = models.CharField(
+        "Класс напряжения",
+        max_length=255,
+        blank=True,
+    )
+    electrical_installation_scope = models.TextField(
+        "Область электроустановок",
+        blank=True,
+    )
+    valid_from = models.DateField("Действует с")
+    valid_until = models.DateField("Действует по", null=True, blank=True)
+    is_active = models.BooleanField("Действующая квалификация", default=True)
+    source_reference = models.CharField("Источник или основание", max_length=1000)
+    source_file_sha256 = models.CharField("SHA-256 исходного файла", max_length=64)
+    source_row_number = models.PositiveIntegerField("Строка исходного файла")
+    created_at = models.DateTimeField("Создана", auto_now_add=True)
+
+    class Meta:
+        ordering = ("employee__last_name", "-valid_from", "-id")
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(valid_until__isnull=True) | Q(valid_until__gte=F("valid_from")),
+                name="employee_qualification_valid_window",
+            ),
+            models.UniqueConstraint(
+                fields=("employee", "source_file_sha256", "source_row_number"),
+                name="uniq_employee_qualification_source_row",
+            ),
+        ]
+        verbose_name = "квалификация сотрудника"
+        verbose_name_plural = "квалификации сотрудников"
+
+    def __str__(self) -> str:
+        group = f", группа {self.electrical_safety_group}" if self.electrical_safety_group else ""
+        return f"{self.employee}: {self.personnel_category}{group}"
+
+    def save(self, *args, **kwargs) -> None:
+        self.personnel_category = self.personnel_category.strip().upper()
+        self.electrical_safety_group = self.electrical_safety_group.strip().upper()
+        self.voltage_scope = " ".join(self.voltage_scope.split())
+        self.electrical_installation_scope = " ".join(
+            self.electrical_installation_scope.split()
+        )
+        self.source_reference = self.source_reference.strip()
+        self.source_file_sha256 = self.source_file_sha256.strip().lower()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def clean(self) -> None:
+        super().clean()
+        _validate_window(self.valid_from, self.valid_until)
+        errors: dict[str, str] = {}
+        if len(self.source_file_sha256.strip()) != 64:
+            errors["source_file_sha256"] = "Для источника требуется SHA-256."
+        if errors:
+            raise ValidationError(errors)
+
+
+class EmployeeOperationalRight(models.Model):
+    public_id = models.UUIDField(
+        "Публичный идентификатор",
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        related_name="operational_rights",
+        verbose_name="Сотрудник",
+    )
+    right_definition = models.ForeignKey(
+        OperationalRightDefinition,
+        on_delete=models.PROTECT,
+        related_name="employee_grants",
+        verbose_name="Вид права",
+    )
+    qualifier = models.CharField("Квалификатор", max_length=500, blank=True)
+    scope_text = models.TextField("Область действия", blank=True)
+    source_marker = models.CharField("Исходная отметка", max_length=500)
+    source_reference = models.CharField("Источник или основание", max_length=1000)
+    source_file_sha256 = models.CharField("SHA-256 исходного файла", max_length=64)
+    source_row_number = models.PositiveIntegerField("Строка исходного файла")
+    valid_from = models.DateField("Действует с")
+    valid_until = models.DateField("Действует по", null=True, blank=True)
+    is_active = models.BooleanField("Действующее назначение", default=True)
+    created_at = models.DateTimeField("Создано", auto_now_add=True)
+
+    class Meta:
+        ordering = (
+            "employee__last_name",
+            "right_definition__display_order",
+            "right_definition__name",
+        )
+        constraints = [
+            models.CheckConstraint(
+                condition=Q(valid_until__isnull=True) | Q(valid_until__gte=F("valid_from")),
+                name="employee_operational_right_valid_window",
+            ),
+            models.UniqueConstraint(
+                fields=(
+                    "employee",
+                    "right_definition",
+                    "source_file_sha256",
+                    "source_row_number",
+                ),
+                name="uniq_employee_right_source_row",
+            ),
+        ]
+        verbose_name = "оперативное право сотрудника"
+        verbose_name_plural = "оперативные права сотрудников"
+
+    def __str__(self) -> str:
+        suffix = f" · {self.qualifier}" if self.qualifier else ""
+        return f"{self.employee}: {self.right_definition}{suffix}"
+
+    def save(self, *args, **kwargs) -> None:
+        self.qualifier = " ".join(self.qualifier.split())
+        self.scope_text = " ".join(self.scope_text.split())
+        self.source_marker = " ".join(self.source_marker.split())
+        self.source_reference = self.source_reference.strip()
+        self.source_file_sha256 = self.source_file_sha256.strip().lower()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def clean(self) -> None:
+        super().clean()
+        _validate_window(self.valid_from, self.valid_until)
+        if len(self.source_file_sha256.strip()) != 64:
+            raise ValidationError({"source_file_sha256": "Для источника требуется SHA-256."})
+
 
 class InterfacePreference(models.Model):
     class Theme(models.TextChoices):

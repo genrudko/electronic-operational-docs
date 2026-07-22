@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import unicodedata
 from collections import defaultdict
 
 from django.contrib import messages
@@ -8,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Prefetch
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from apps.equipment.models import EnergySite
@@ -21,10 +22,40 @@ from .models import (
     EmployeeEnergySiteAuthorization,
     InterfacePreference,
     OperationalReportingLine,
+    OperationalRightDefinition,
     Organization,
     RoleAssignment,
 )
 from .services import get_effective_roles
+
+
+def _search_token(value: str) -> str:
+    return " ".join(
+        unicodedata.normalize("NFKC", value or "")
+        .casefold()
+        .replace("ё", "е")
+        .split()
+    )
+
+
+def _employee_search_haystack(employee: Employee) -> str:
+    parts = [
+        employee.full_name,
+        employee.personnel_number,
+        employee.division.name,
+        employee.position.name,
+        employee.workplace.name if employee.workplace_id else "",
+    ]
+    parts.extend(
+        f"{qualification.personnel_category} {qualification.electrical_safety_group} "
+        f"{qualification.voltage_scope} {qualification.electrical_installation_scope}"
+        for qualification in employee.qualifications.all()
+    )
+    parts.extend(
+        f"{grant.right_definition.name} {grant.qualifier} {grant.scope_text}"
+        for grant in employee.operational_rights.all()
+    )
+    return _search_token(" ".join(parts))
 
 
 class PersonalLoginView(LoginView):
@@ -85,6 +116,10 @@ def directory(request):
         employees = list(
             Employee.objects.filter(organization=organization, is_active=True)
             .select_related("division", "position", "workplace", "user")
+            .prefetch_related(
+                "qualifications",
+                "operational_rights__right_definition",
+            )
             .order_by("division__name", "last_name", "first_name")
         )
         sites = list(
@@ -139,10 +174,73 @@ def directory(request):
             }
         )
 
+    query = " ".join(request.GET.get("q", "").split())
+    query_token = _search_token(query)
+    search_results: list[Employee] = []
+    if query_token:
+        for card in organization_cards:
+            for employee in card["employees"]:
+                if query_token in _employee_search_haystack(employee):
+                    search_results.append(employee)
+
     return render(
         request,
         "organizations/directory.html",
-        {"organization_cards": organization_cards},
+        {
+            "organization_cards": organization_cards,
+            "query": query,
+            "search_results": search_results,
+        },
+    )
+
+
+@login_required
+def employee_detail(request, public_id):
+    employee = get_object_or_404(
+        Employee.objects.select_related(
+            "organization",
+            "division",
+            "position",
+            "workplace",
+            "user",
+        ).prefetch_related(
+            "qualifications",
+            "operational_rights__right_definition",
+        ),
+        public_id=public_id,
+        is_active=True,
+    )
+    qualifications = list(
+        employee.qualifications.filter(is_active=True).order_by("-valid_from", "-id")
+    )
+    grants = list(
+        employee.operational_rights.filter(is_active=True)
+        .select_related("right_definition")
+        .order_by("right_definition__display_order", "right_definition__name")
+    )
+    grouped_rights: list[dict[str, object]] = []
+    current_category = None
+    current_group = None
+    category_labels = dict(OperationalRightDefinition.Category.choices)
+    for grant in grants:
+        category = grant.right_definition.category
+        if category != current_category:
+            current_group = {
+                "code": category,
+                "name": category_labels.get(category, category),
+                "rights": [],
+            }
+            grouped_rights.append(current_group)
+            current_category = category
+        current_group["rights"].append(grant)
+    return render(
+        request,
+        "organizations/employee_detail.html",
+        {
+            "employee": employee,
+            "qualifications": qualifications,
+            "grouped_rights": grouped_rights,
+        },
     )
 
 

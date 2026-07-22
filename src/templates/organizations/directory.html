@@ -14,16 +14,31 @@
     </div>
 </section>
 
+<section class="profile-card personnel-search-card">
+    <form method="get" class="personnel-search-form">
+        <label for="personnel-search">Поиск сотрудника, должности, подразделения, квалификации или права</label>
+        <div><input id="personnel-search" type="search" name="q" value="{{ query }}" placeholder="Например: IV, переключения, инженер, КВЭС"><button class="button" type="submit">Найти</button>{% if query %}<a class="button secondary" href="{% url 'organizations:directory' %}">Сбросить</a>{% endif %}</div>
+    </form>
+    {% if query %}
+        <div class="personnel-search-results">
+            <div class="section-heading"><div><div class="eyebrow">РЕЗУЛЬТАТЫ ПОИСКА</div><h2>{{ search_results|length }} совпадений</h2></div></div>
+            {% for employee in search_results %}
+                <a class="personnel-search-result" href="{% url 'organizations:employee_detail' employee.public_id %}"><strong>{{ employee.full_name }}</strong><span>{{ employee.position.name }} · {{ employee.division.name }}</span></a>
+            {% empty %}<p class="muted">По запросу «{{ query }}» ничего не найдено.</p>{% endfor %}
+        </div>
+    {% endif %}
+</section>
+
 {% for card in organization_cards %}
 <section class="directory-card organization-overview">
     <div class="directory-header">
         <div>
             <span class="code-chip technical-only">{{ card.organization.code }}</span>
             <h2>{{ card.organization.short_name|default:card.organization.name }}</h2>
-            <p>Все ФИО и персональные реквизиты в профиле являются вымышленными.</p>
+            <p>Состав персонала зависит от активного профиля базы данных.</p>
         </div>
         <div class="metric inline">
-            <span>Вымышленных сотрудников</span>
+            <span>Сотрудников</span>
             <strong>{{ card.employee_count }}</strong>
         </div>
     </div>
@@ -65,7 +80,7 @@
                             <span>Руководство центра</span>
                             {% for employee in row.direct_employees %}
                                 <div>
-                                    <strong>{{ employee.full_name }}</strong>
+                                    <strong><a href="{% url 'organizations:employee_detail' employee.public_id %}">{{ employee.full_name }}</a></strong>
                                     <small>{{ employee.position.name }}</small>
                                 </div>
                             {% endfor %}
@@ -158,7 +173,7 @@
                 {% for row in card.authorization_rows %}
                     <tr>
                         <td>
-                            <strong>{{ row.employee.full_name }}</strong>
+                            <strong><a href="{% url 'organizations:employee_detail' row.employee.public_id %}">{{ row.employee.full_name }}</a></strong>
                             <small>{{ row.employee.position.name }}</small>
                         </td>
                         <td>{{ row.role }}</td>
@@ -177,7 +192,7 @@
 </section>
 
 <details class="technical-disclosure personnel-directory">
-    <summary>Справочник вымышленных сотрудников · {{ card.employee_count }} записей</summary>
+    <summary>Справочник сотрудников · {{ card.employee_count }} записей</summary>
     <div class="technical-disclosure-body table-wrap">
         <table>
             <thead>
@@ -192,7 +207,7 @@
             <tbody>
                 {% for employee in card.employees %}
                     <tr>
-                        <td>{{ employee.full_name }}</td>
+                        <td><a href="{% url 'organizations:employee_detail' employee.public_id %}">{{ employee.full_name }}</a></td>
                         <td>{{ employee.division.name }}</td>
                         <td>{{ employee.position.name }}</td>
                         <td class="technical-only"><code>{{ employee.personnel_number }}</code></td>

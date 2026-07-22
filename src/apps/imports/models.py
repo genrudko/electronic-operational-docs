@@ -1598,3 +1598,381 @@ class PowerSystemPublication(models.Model):
                 errors["actor"] = "Публикующий сотрудник относится к другой организации."
         if len(self.digest) != 64:
             errors["digest"] = "Для публикации требуется SHA-256."
+
+
+class PersonnelSourceRevision(models.Model):
+    class Status(models.TextChoices):
+        STAGED = "STAGED", "Подготовлена к проверке"
+        PARTIALLY_PUBLISHED = "PARTIALLY_PUBLISHED", "Опубликована частично"
+        PUBLISHED = "PUBLISHED", "Опубликована"
+        DISCARDED = "DISCARDED", "Убрана из рабочего списка"
+
+    class LayoutVersion(models.TextChoices):
+        CURRENT_28_COLUMNS = "CURRENT_28_COLUMNS", "Текущая матрица с подразделением"
+        LEGACY_22_COLUMNS = "LEGACY_22_COLUMNS", "Ранняя матрица без отдельного подразделения"
+
+    public_id = models.UUIDField(
+        "Публичный идентификатор",
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="personnel_source_revisions",
+        verbose_name="Организация",
+    )
+    data_profile = models.ForeignKey(
+        DataProfile,
+        on_delete=models.PROTECT,
+        related_name="personnel_source_revisions",
+        verbose_name="Профиль данных",
+    )
+    uploaded_by = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        related_name="uploaded_personnel_revisions",
+        verbose_name="Загрузил",
+    )
+    source_reference = models.CharField("Источник или основание", max_length=1000)
+    effective_from = models.DateField("Действует с")
+    original_filename = models.CharField("Имя XLSX", max_length=255)
+    file_size = models.PositiveBigIntegerField("Размер XLSX, байт")
+    file_sha256 = models.CharField("SHA-256 XLSX", max_length=64)
+    sheet_name = models.CharField("Лист", max_length=255)
+    layout_version = models.CharField(
+        "Версия структуры",
+        max_length=32,
+        choices=LayoutVersion.choices,
+    )
+    document_date = models.DateField("Дата документа", null=True, blank=True)
+    document_number = models.CharField("Номер документа", max_length=255, blank=True)
+    manifest = models.JSONField("Манифест разбора", default=dict)
+    footnotes = models.JSONField("Сноски источника", default=dict)
+    total_people = models.PositiveIntegerField("Работников", default=0)
+    total_authority_cells = models.PositiveIntegerField("Ячеек полномочий", default=0)
+    ready_rows = models.PositiveIntegerField("Готовых строк", default=0)
+    review_rows = models.PositiveIntegerField("Строк на проверке", default=0)
+    blocked_rows = models.PositiveIntegerField("Заблокированных строк", default=0)
+    publishable_grants = models.PositiveIntegerField("Публикуемых прав", default=0)
+    ambiguous_cells = models.PositiveIntegerField("Неоднозначных ячеек", default=0)
+    status = models.CharField(
+        "Состояние",
+        max_length=24,
+        choices=Status.choices,
+        default=Status.STAGED,
+        db_index=True,
+    )
+    publication_digest = models.CharField(
+        "SHA-256 публикации",
+        max_length=64,
+        blank=True,
+        editable=False,
+    )
+    published_at = models.DateTimeField("Опубликовано", null=True, blank=True)
+    published_by = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="published_personnel_revisions",
+        verbose_name="Опубликовал",
+    )
+    created_at = models.DateTimeField("Создано", auto_now_add=True)
+    updated_at = models.DateTimeField("Изменено", auto_now=True)
+    discarded_at = models.DateTimeField("Убрано из рабочего списка", null=True, blank=True)
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("organization", "file_sha256"),
+                name="uniq_personnel_source_sha_org",
+            )
+        ]
+        indexes = [
+            models.Index(
+                fields=("organization", "status", "-created_at"),
+                name="personnel_src_status_idx",
+            )
+        ]
+        verbose_name = "редакция источника персонала и прав"
+        verbose_name_plural = "редакции источников персонала и прав"
+
+    def __str__(self) -> str:
+        return f"{self.original_filename} · {self.get_status_display()}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        self.original_filename = self.original_filename.strip()
+        self.file_sha256 = self.file_sha256.strip().lower()
+        self.source_reference = self.source_reference.strip()
+        self.document_number = self.document_number.strip()
+        self.sheet_name = self.sheet_name.strip()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
+        raise ValidationError(
+            "Физическое удаление редакции персонала запрещено. Используйте удаление из рабочего списка."
+        )
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if self.data_profile_id and self.organization_id:
+            if self.data_profile.organization_id != self.organization_id:
+                errors["data_profile"] = "Профиль данных относится к другой организации."
+            if (
+                self.data_profile.code != "local-validation"
+                or self.data_profile.kind != DataProfile.Kind.LOCAL_VALIDATION
+                or not self.data_profile.allows_real_personal_data
+                or self.data_profile.export_policy != DataProfile.ExportPolicy.PROHIBITED
+            ):
+                errors["data_profile"] = (
+                    "Матрица работников допускается только в неэкспортируемом "
+                    "профиле local-validation."
+                )
+        if self.uploaded_by_id and self.organization_id:
+            if self.uploaded_by.organization_id != self.organization_id:
+                errors["uploaded_by"] = "Загрузивший сотрудник относится к другой организации."
+        if self.published_by_id and self.organization_id:
+            if self.published_by.organization_id != self.organization_id:
+                errors["published_by"] = "Публикующий сотрудник относится к другой организации."
+        if len(self.file_sha256.strip()) != 64:
+            errors["file_sha256"] = "Для XLSX требуется SHA-256."
+        if not isinstance(self.manifest, dict):
+            errors["manifest"] = "Манифест должен храниться JSON-объектом."
+        if not isinstance(self.footnotes, dict):
+            errors["footnotes"] = "Сноски должны храниться JSON-объектом."
+        if self.status in {self.Status.PUBLISHED, self.Status.PARTIALLY_PUBLISHED}:
+            if not self.published_at or not self.published_by_id or len(self.publication_digest) != 64:
+                errors["status"] = "Публикация требует автора, времени и SHA-256."
+        elif self.published_at or self.published_by_id or self.publication_digest:
+            errors["status"] = "Реквизиты публикации допустимы только после публикации."
+        if self.status == self.Status.DISCARDED and self.discarded_at is None:
+            errors["discarded_at"] = "Для убранной редакции требуется время операции."
+        if errors:
+            raise ValidationError(errors)
+
+
+class PersonnelSourceRow(models.Model):
+    class MatchKind(models.TextChoices):
+        NONE = "NONE", "Совпадение не найдено"
+        EXACT = "EXACT", "Однозначное точное совпадение"
+        REVIEW_REQUIRED = "REVIEW_REQUIRED", "Совпадение требует проверки"
+
+    class ReviewStatus(models.TextChoices):
+        READY = "READY", "Готова"
+        REVIEW_REQUIRED = "REVIEW_REQUIRED", "Требует проверки"
+        BLOCKED = "BLOCKED", "Заблокирована"
+        PUBLISHED = "PUBLISHED", "Опубликована"
+        EXCLUDED = "EXCLUDED", "Исключена"
+
+    source_revision = models.ForeignKey(
+        PersonnelSourceRevision,
+        on_delete=models.PROTECT,
+        related_name="person_rows",
+        verbose_name="Редакция источника",
+    )
+    source_row_number = models.PositiveIntegerField("Строка XLSX")
+    source_sequence = models.PositiveIntegerField("Номер по источнику")
+    full_name_raw = models.CharField("ФИО из источника", max_length=500)
+    last_name = models.CharField("Фамилия", max_length=150, blank=True)
+    first_name = models.CharField("Имя", max_length=150, blank=True)
+    middle_name = models.CharField("Отчество", max_length=150, blank=True)
+    position_raw = models.CharField("Должность из источника", max_length=500)
+    division_raw = models.CharField("Подразделение из источника", max_length=500, blank=True)
+    personnel_category_raw = models.CharField("Категория персонала", max_length=128, blank=True)
+    electrical_safety_raw = models.CharField("Группа и класс напряжения", max_length=500, blank=True)
+    electrical_safety_group = models.CharField("Группа", max_length=16, blank=True)
+    voltage_scope = models.CharField("Класс напряжения", max_length=255, blank=True)
+    installation_scope_raw = models.TextField("Область электроустановок", blank=True)
+    rza_category_raw = models.CharField("Категория РЗА", max_length=128, blank=True)
+    matched_employee = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="matched_personnel_source_rows",
+        verbose_name="Предполагаемый сотрудник",
+    )
+    match_kind = models.CharField(
+        "Результат сопоставления",
+        max_length=24,
+        choices=MatchKind.choices,
+        default=MatchKind.NONE,
+    )
+    review_status = models.CharField(
+        "Состояние проверки",
+        max_length=24,
+        choices=ReviewStatus.choices,
+        db_index=True,
+    )
+    issues = models.JSONField("Проблемы строки", default=list, blank=True)
+    fingerprint = models.CharField("SHA-256 строки", max_length=64)
+    published_employee = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="published_personnel_source_rows",
+        verbose_name="Опубликованный сотрудник",
+    )
+    created_at = models.DateTimeField("Создана", auto_now_add=True)
+
+    class Meta:
+        ordering = ("source_revision", "source_row_number")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("source_revision", "source_row_number"),
+                name="uniq_personnel_source_row",
+            )
+        ]
+        verbose_name = "строка источника персонала"
+        verbose_name_plural = "строки источника персонала"
+
+    def __str__(self) -> str:
+        return f"Строка {self.source_row_number}: {self.full_name_raw}"
+
+    @property
+    def full_name(self) -> str:
+        return " ".join(part for part in (self.last_name, self.first_name, self.middle_name) if part)
+
+    def clean(self) -> None:
+        super().clean()
+        if not isinstance(self.issues, list):
+            raise ValidationError({"issues": "Проблемы должны храниться JSON-массивом."})
+        if len(self.fingerprint.strip()) != 64:
+            raise ValidationError({"fingerprint": "Для строки требуется SHA-256."})
+        if self.matched_employee_id and self.source_revision_id:
+            if self.matched_employee.organization_id != self.source_revision.organization_id:
+                raise ValidationError({"matched_employee": "Сотрудник относится к другой организации."})
+        if self.published_employee_id and self.source_revision_id:
+            if self.published_employee.organization_id != self.source_revision.organization_id:
+                raise ValidationError({"published_employee": "Сотрудник относится к другой организации."})
+
+
+class PersonnelAuthorityCell(models.Model):
+    class GrantState(models.TextChoices):
+        GRANTED = "GRANTED", "Право предоставлено"
+        NOT_GRANTED = "NOT_GRANTED", "Право не предоставлено"
+        BLANK = "BLANK", "Значение отсутствует"
+        QUALIFIED = "QUALIFIED", "Право с квалификатором"
+        AMBIGUOUS = "AMBIGUOUS", "Неоднозначное значение"
+
+    person_row = models.ForeignKey(
+        PersonnelSourceRow,
+        on_delete=models.PROTECT,
+        related_name="authority_cells",
+        verbose_name="Строка работника",
+    )
+    right_definition = models.ForeignKey(
+        "organizations.OperationalRightDefinition",
+        on_delete=models.PROTECT,
+        related_name="source_cells",
+        verbose_name="Вид права",
+    )
+    source_column = models.CharField("Колонка XLSX", max_length=8)
+    source_header = models.CharField("Заголовок источника", max_length=500)
+    raw_marker = models.CharField("Исходная отметка", max_length=500, blank=True)
+    grant_state = models.CharField(
+        "Состояние",
+        max_length=16,
+        choices=GrantState.choices,
+    )
+    qualifier = models.CharField("Квалификатор", max_length=500, blank=True)
+    footnote_numbers = models.JSONField("Номера сносок", default=list, blank=True)
+    equipment_groups = models.JSONField("Группы оборудования", default=list, blank=True)
+    issues = models.JSONField("Проблемы ячейки", default=list, blank=True)
+    is_publishable = models.BooleanField("Можно опубликовать автоматически", default=False)
+
+    class Meta:
+        ordering = ("person_row", "right_definition__display_order")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("person_row", "right_definition"),
+                name="uniq_personnel_authority_cell",
+            )
+        ]
+        verbose_name = "ячейка полномочия"
+        verbose_name_plural = "ячейки полномочий"
+
+    def __str__(self) -> str:
+        return f"{self.person_row.full_name_raw}: {self.right_definition}"
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        for field in ("footnote_numbers", "equipment_groups", "issues"):
+            if not isinstance(getattr(self, field), list):
+                errors[field] = "Значение должно храниться JSON-массивом."
+        if self.is_publishable and self.grant_state not in {
+            self.GrantState.GRANTED,
+            self.GrantState.QUALIFIED,
+        }:
+            errors["is_publishable"] = "Публикуются только положительные однозначные отметки."
+        if errors:
+            raise ValidationError(errors)
+
+
+class PersonnelPublication(models.Model):
+    public_id = models.UUIDField(
+        "Публичный идентификатор",
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
+    source_revision = models.OneToOneField(
+        PersonnelSourceRevision,
+        on_delete=models.PROTECT,
+        related_name="publication",
+        verbose_name="Редакция источника",
+    )
+    actor = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        related_name="personnel_publications",
+        verbose_name="Опубликовал",
+    )
+    schema_version = models.CharField(
+        "Версия схемы",
+        max_length=64,
+        default="eod.personnel-authority.publication.v1",
+    )
+    canonical_json = models.TextField("Канонический снимок публикации")
+    digest = models.CharField("SHA-256 публикации", max_length=64, unique=True)
+    result_summary = models.JSONField("Итоги публикации", default=dict)
+    created_at = models.DateTimeField("Опубликовано", auto_now_add=True)
+
+    objects = ImmutableAuditManager()
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+        verbose_name = "публикация персонала и полномочий"
+        verbose_name_plural = "публикации персонала и полномочий"
+
+    def __str__(self) -> str:
+        return f"{self.source_revision.original_filename} · {self.digest[:12]}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.pk:
+            raise ValidationError("Снимок публикации персонала неизменяем.")
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
+        raise ValidationError("Физическое удаление публикации персонала запрещено.")
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if self.source_revision_id and self.actor_id:
+            if self.source_revision.organization_id != self.actor.organization_id:
+                errors["actor"] = "Публикующий сотрудник относится к другой организации."
+        if len(self.digest) != 64:
+            errors["digest"] = "Для публикации требуется SHA-256."
+        if not isinstance(self.result_summary, dict):
+            errors["result_summary"] = "Итоги должны храниться JSON-объектом."
+        if errors:
+            raise ValidationError(errors)

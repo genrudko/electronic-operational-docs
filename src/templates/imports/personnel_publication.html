@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Публикация персонала · ЭОД{% endblock %}
+{% block content %}
+<section class="page-heading compact"><div><div class="eyebrow">КОНТРОЛИРУЕМАЯ ЧАСТИЧНАЯ ПУБЛИКАЦИЯ</div><h1>Проверка персонала и положительных прав</h1><p>{{ revision.original_filename }}</p></div><a href="{% url 'imports:personnel_detail' revision.public_id %}">К строкам источника</a></section>
+<section class="notice-card warning-notice"><strong>Публикуется только однозначная положительная часть</strong><p>Отрицательные отметки, пустые ячейки и неоднозначные значения не создают записей и не отзывают действующие права. Вся операция выполняется одной транзакцией после проверки SHA-256 и пароля.</p></section>
+<section class="summary-grid">
+    <article class="metric"><span>Работников в снимке</span><strong>{{ preview.summary.selected_people }}</strong></article>
+    <article class="metric"><span>Положительных прав</span><strong>{{ preview.summary.publishable_grants }}</strong></article>
+    <article class="metric"><span>Неоднозначных ячеек останется</span><strong>{{ preview.summary.ambiguous_cells_left_in_staging }}</strong></article>
+    <article class="metric"><span>Заблокированных строк</span><strong>{{ preview.summary.blocked_people }}</strong></article>
+</section>
+<section class="profile-card"><div class="section-heading"><div><div class="eyebrow">КОНТРОЛЬ ЦЕЛОСТНОСТИ</div><h2>Неэкспортируемый снимок</h2></div></div>
+<dl class="detail-list"><dt>SHA-256 XLSX</dt><dd><code class="breakable">{{ revision.file_sha256 }}</code></dd><dt>SHA-256 состава публикации</dt><dd><code class="breakable">{{ preview.digest }}</code></dd><dt>Профиль</dt><dd>{{ revision.data_profile.name }} · {{ revision.data_profile.get_export_policy_display }}</dd><dt>Действует с</dt><dd>{{ revision.effective_from|date:"d.m.Y" }}</dd></dl>
+<p class="muted">Канонический JSON содержит ФИО и поэтому не отображается и не скачивается через интерфейс. В базе хранится неизменяемый снимок и его SHA-256.</p></section>
+<section class="profile-card"><h2>Подтверждение</h2>
+{% if can_publish %}<form method="post" class="stacked-form">{% csrf_token %}{{ form.non_field_errors }}{{ form.preview_digest }}<div class="field-row"><label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>{{ form.password }}{{ form.password.errors }}</div><div class="checkbox-row">{{ form.confirm }}<label for="{{ form.confirm.id_for_label }}">{{ form.confirm.label }}</label>{{ form.confirm.errors }}</div><div class="document-actions"><button class="button" type="submit">Опубликовать положительную часть</button><a class="button secondary" href="{% url 'imports:personnel_detail' revision.public_id %}">Отмена</a></div></form>
+{% else %}<div class="notice-card"><strong>Недостаточно полномочий</strong><p>Требуется прямая действующая роль «Администратор справочников».</p></div>{% endif %}
+</section>
+{% endblock %}

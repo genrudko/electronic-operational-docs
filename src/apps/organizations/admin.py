@@ -7,9 +7,12 @@ from .models import (
     DivisionServiceProfile,
     Employee,
     EmployeeEnergySiteAuthorization,
+    EmployeeOperationalRight,
+    EmployeeQualification,
     InterfacePreference,
     OperationalArea,
     OperationalReportingLine,
+    OperationalRightDefinition,
     Organization,
     Position,
     ResponsibilityScope,
@@ -227,3 +230,53 @@ class AuthenticationEventAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None) -> bool:
         return False
+
+
+@admin.register(OperationalRightDefinition)
+class OperationalRightDefinitionAdmin(admin.ModelAdmin):
+    list_display = ("code", "name", "category", "value_kind", "display_order", "is_active")
+    list_filter = ("category", "value_kind", "is_active")
+    search_fields = ("code", "name", "description")
+
+
+@admin.register(EmployeeQualification)
+class EmployeeQualificationAdmin(admin.ModelAdmin):
+    list_display = (
+        "employee",
+        "personnel_category",
+        "electrical_safety_group",
+        "voltage_scope",
+        "valid_from",
+        "valid_until",
+        "is_active",
+    )
+    list_filter = ("personnel_category", "electrical_safety_group", "is_active")
+    search_fields = ("employee__last_name", "employee__first_name", "source_reference")
+    readonly_fields = ("public_id", "source_file_sha256", "source_row_number", "created_at")
+
+
+@admin.register(EmployeeOperationalRight)
+class EmployeeOperationalRightAdmin(admin.ModelAdmin):
+    list_display = (
+        "employee",
+        "right_definition",
+        "qualifier",
+        "valid_from",
+        "valid_until",
+        "is_active",
+    )
+    list_filter = ("right_definition__category", "right_definition", "is_active")
+    search_fields = (
+        "employee__last_name",
+        "employee__first_name",
+        "right_definition__name",
+        "qualifier",
+        "scope_text",
+    )
+    readonly_fields = (
+        "public_id",
+        "source_marker",
+        "source_file_sha256",
+        "source_row_number",
+        "created_at",
+    )

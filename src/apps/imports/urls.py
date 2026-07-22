@@ -5,6 +5,28 @@ from . import views
 app_name = "imports"
 
 urlpatterns = [
+    path("imports/personnel/", views.personnel_list, name="personnel_list"),
+    path("imports/personnel/upload/", views.personnel_upload, name="personnel_upload"),
+    path(
+        "imports/personnel/<uuid:public_id>/",
+        views.personnel_detail,
+        name="personnel_detail",
+    ),
+    path(
+        "imports/personnel/<uuid:public_id>/publication/",
+        views.personnel_publication,
+        name="personnel_publication",
+    ),
+    path(
+        "imports/personnel/<uuid:public_id>/publication/<uuid:publication_id>/",
+        views.personnel_publication_result,
+        name="personnel_publication_result",
+    ),
+    path(
+        "imports/personnel/<uuid:public_id>/discard/",
+        views.personnel_discard,
+        name="personnel_discard",
+    ),
     path("imports/power-system/", views.power_system_list, name="power_system_list"),
     path(
         "imports/power-system/upload/",

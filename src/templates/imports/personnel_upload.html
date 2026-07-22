@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Загрузка матрицы персонала · ЭОД{% endblock %}
+{% block content %}
+<section class="page-heading compact">
+    <div><div class="eyebrow">ЛОКАЛЬНАЯ ПРОВЕРОЧНАЯ БАЗА</div><h1>Загрузить матрицу работников и прав</h1><p>Поддерживаются текущая матрица A:AB и ранняя матрица A:V. Исходные отметки сохраняются без исправления.</p></div>
+    <a href="{% url 'imports:personnel_list' %}">← К редакциям</a>
+</section>
+<section class="notice-card warning-notice">
+    <strong>Файл содержит персональные данные</strong>
+    <p>Загрузка разрешена только при <code>EOD_DATABASE_PROFILE=development</code>. Файл не сохраняется в Git и не переносится в презентационную базу; в БД остаются разобранные значения и SHA-256 источника.</p>
+</section>
+<section class="profile-card">
+    <form method="post" enctype="multipart/form-data" class="stacked-form">
+        {% csrf_token %}{{ form.non_field_errors }}
+        {% for field in form %}
+            <div class="field-row"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}{{ field.errors }}</div>
+        {% endfor %}
+        <div class="document-actions"><button class="button" type="submit">Разобрать в staging</button><a class="button secondary" href="{% url 'imports:personnel_list' %}">Отмена</a></div>
+    </form>
+</section>
+{% endblock %}

@@ -9,6 +9,10 @@ from .models import (
     ImportPublication,
     ImportPublicationRow,
     ImportRow,
+    PersonnelAuthorityCell,
+    PersonnelPublication,
+    PersonnelSourceRevision,
+    PersonnelSourceRow,
     PowerSystemAliasProposal,
     PowerSystemAssetOccurrence,
     PowerSystemAuthorityOccurrence,
@@ -396,6 +400,88 @@ class PowerSystemPublicationAdmin(admin.ModelAdmin):
     list_display = ("source_revision", "actor", "digest", "created_at")
     search_fields = ("source_revision__original_filename", "digest")
     readonly_fields = [field.name for field in PowerSystemPublication._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PersonnelSourceRevision)
+class PersonnelSourceRevisionAdmin(admin.ModelAdmin):
+    list_display = (
+        "original_filename",
+        "organization",
+        "data_profile",
+        "layout_version",
+        "total_people",
+        "publishable_grants",
+        "ambiguous_cells",
+        "status",
+        "created_at",
+    )
+    list_filter = ("status", "layout_version", "data_profile")
+    search_fields = ("original_filename", "source_reference", "file_sha256")
+    readonly_fields = [field.name for field in PersonnelSourceRevision._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PersonnelSourceRow)
+class PersonnelSourceRowAdmin(admin.ModelAdmin):
+    list_display = (
+        "source_revision",
+        "source_row_number",
+        "full_name_raw",
+        "position_raw",
+        "division_raw",
+        "review_status",
+        "match_kind",
+    )
+    list_filter = ("review_status", "match_kind")
+    search_fields = ("full_name_raw", "position_raw", "division_raw", "fingerprint")
+    readonly_fields = [field.name for field in PersonnelSourceRow._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PersonnelAuthorityCell)
+class PersonnelAuthorityCellAdmin(admin.ModelAdmin):
+    list_display = (
+        "person_row",
+        "right_definition",
+        "raw_marker",
+        "grant_state",
+        "is_publishable",
+    )
+    list_filter = ("grant_state", "is_publishable", "right_definition")
+    search_fields = ("person_row__full_name_raw", "right_definition__name", "raw_marker")
+    readonly_fields = [field.name for field in PersonnelAuthorityCell._meta.fields]
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PersonnelPublication)
+class PersonnelPublicationAdmin(admin.ModelAdmin):
+    list_display = ("source_revision", "actor", "digest", "created_at")
+    search_fields = ("source_revision__original_filename", "digest")
+    readonly_fields = [field.name for field in PersonnelPublication._meta.fields]
 
     def has_add_permission(self, request):
         return False

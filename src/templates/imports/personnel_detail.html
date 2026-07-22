@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ revision.original_filename }} · Персонал · ЭОД{% endblock %}
+{% block content %}
+<section class="page-heading compact">
+    <div><div class="eyebrow">ПРЕДВАРИТЕЛЬНАЯ ПРОВЕРКА ПЕРСОНАЛА</div><h1>{{ revision.original_filename }}</h1><p>{{ revision.source_reference }}</p></div>
+    <div class="document-actions">
+        <a class="button secondary" href="{% url 'imports:personnel_list' %}">К редакциям</a>
+        {% if revision.status == 'STAGED' %}<a class="button" href="{% url 'imports:personnel_publication' revision.public_id %}">Проверить публикацию</a>{% endif %}
+    </div>
+</section>
+<section class="notice-card data-profile-notice">
+    <strong>{{ revision.data_profile.name }} · обычный экспорт запрещён</strong>
+    <p>SHA-256 XLSX: <code class="breakable">{{ revision.file_sha256 }}</code></p>
+    <p>Структура: {{ revision.get_layout_version_display }} · лист «{{ revision.sheet_name }}» · действует с {{ revision.effective_from|date:"d.m.Y" }}.</p>
+    {% if not is_development_database %}<p class="error-text">Текущая база не является development-базой. Публикация и новая загрузка будут заблокированы.</p>{% endif %}
+</section>
+<section class="personnel-workflow" aria-label="Правила обработки матрицы">
+    <article><strong>Положительные отметки</strong><span>Создают только явно предоставленные права.</span></article>
+    <article><strong>«–» и пусто</strong><span>Не создают постоянных запретов и не отзывают ранее выданные права.</span></article>
+    <article><strong>Неоднозначные значения</strong><span>Сохраняются дословно и остаются вне автоматической публикации.</span></article>
+</section>
+<section class="summary-grid personnel-summary">
+    <a class="metric {% if status_filter == 'ALL' %}is-active{% endif %}" href="?status=ALL"><span>Работников</span><strong>{{ revision.total_people }}</strong></a>
+    <a class="metric {% if status_filter == 'READY' %}is-active{% endif %}" href="?status=READY"><span>Готово</span><strong>{{ revision.ready_rows }}</strong></a>
+    <a class="metric {% if status_filter == 'REVIEW_REQUIRED' %}is-active{% endif %}" href="?status=REVIEW_REQUIRED"><span>На проверке</span><strong>{{ revision.review_rows }}</strong></a>
+    <a class="metric {% if status_filter == 'BLOCKED' %}is-active{% endif %}" href="?status=BLOCKED"><span>Заблокировано</span><strong>{{ revision.blocked_rows }}</strong></a>
+    <article class="metric"><span>Публикуемых прав</span><strong>{{ revision.publishable_grants }}</strong></article>
+    <article class="metric"><span>Неоднозначных ячеек</span><strong>{{ revision.ambiguous_cells }}</strong></article>
+</section>
+<section class="profile-card">
+    <div class="section-heading"><div><div class="eyebrow">СТРОКИ ИСТОЧНИКА</div><h2>Работники и отметки прав</h2></div><span class="count-badge">Страница {{ page.number }} из {{ page.paginator.num_pages }}</span></div>
+    <div class="personnel-row-list">
+    {% for row in page.object_list %}
+        <article class="personnel-source-row status-{{ row.review_status|lower }}">
+            <header>
+                <div><strong>{{ row.source_sequence }}. {{ row.full_name_raw }}</strong><span>{{ row.position_raw }}{% if row.division_raw %} · {{ row.division_raw }}{% endif %}</span></div>
+                <span class="import-status status-{{ row.review_status|lower }}">{{ row.get_review_status_display }}</span>
+            </header>
+            <dl class="personnel-qualification-line">
+                <div><dt>Категория</dt><dd>{{ row.personnel_category_raw|default:"не указана" }}</dd></div>
+                <div><dt>Группа</dt><dd>{{ row.electrical_safety_group|default:"не распознана" }}</dd></div>
+                <div><dt>Класс напряжения</dt><dd>{{ row.voltage_scope|default:"не указан" }}</dd></div>
+                <div><dt>Электроустановка</dt><dd>{{ row.installation_scope_raw|default:"не указана" }}</dd></div>
+            </dl>
+            {% if row.issues %}<div class="personnel-issues">{% for issue in row.issues %}<span>{{ issue }}</span>{% endfor %}</div>{% endif %}
+            <div class="personnel-cell-summary">
+                <span class="is-positive">Положительных: {{ row.positive_cells|length }}</span>
+                <span class="is-ambiguous">Неоднозначных: {{ row.ambiguous_cells_list|length }}</span>
+                <span>«–»: {{ row.negative_count }}</span><span>Пусто: {{ row.blank_count }}</span>
+            </div>
+            {% if row.positive_cells %}
+                <details><summary>Положительные права</summary><div class="personnel-right-grid">
+                {% for cell in row.positive_cells %}<div><strong>{{ cell.right_definition.name }}</strong><span>{{ cell.qualifier|default:"без дополнительного квалификатора" }}</span><small>Исходная отметка: {{ cell.raw_marker }}</small></div>{% endfor %}
+                </div></details>
+            {% endif %}
+            {% if row.ambiguous_cells_list %}
+                <details open><summary>Неоднозначные значения — не публикуются</summary><div class="personnel-right-grid ambiguous">
+                {% for cell in row.ambiguous_cells_list %}<div><strong>{{ cell.right_definition.name }}</strong><span>Исходная отметка: {{ cell.raw_marker|default:"пусто" }}</span>{% for issue in cell.issues %}<small>{{ issue }}</small>{% endfor %}</div>{% endfor %}
+                </div></details>
+            {% endif %}
+            {% if row.matched_employee %}<small>Однозначно сопоставлено с карточкой: <a href="{% url 'organizations:employee_detail' row.matched_employee.public_id %}">{{ row.matched_employee.full_name }}</a></small>{% endif %}
+        </article>
+    {% empty %}<p class="muted">По выбранному фильтру строк нет.</p>{% endfor %}
+    </div>
+    {% if page.paginator.num_pages > 1 %}<nav class="pagination" aria-label="Страницы">{% if page.has_previous %}<a href="?status={{ status_filter }}&page={{ page.previous_page_number }}">← Назад</a>{% endif %}<span>{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a href="?status={{ status_filter }}&page={{ page.next_page_number }}">Далее →</a>{% endif %}</nav>{% endif %}
+</section>
+{% if revision.status == 'STAGED' %}
+<section class="profile-card danger-zone"><h2>Управление staging-редакцией</h2><p>Физическое удаление запрещено. Операция только убирает редакцию из рабочего списка.</p><form method="post" action="{% url 'imports:personnel_discard' revision.public_id %}">{% csrf_token %}<button class="button secondary" type="submit">Убрать редакцию из рабочего списка</button></form></section>
+{% endif %}
+{% endblock %}
