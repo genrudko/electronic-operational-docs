@@ -40,23 +40,30 @@
         <dt>SHA-256 публикации</dt><dd><code class="breakable">{{ preview.digest }}</code></dd>
         <dt>Профиль</dt><dd>{{ revision.data_profile.name }}</dd>
     </dl>
-    <details class="technical-only ps-canonical-snapshot" id="canonical-snapshot"{% if request.GET.show_snapshot == '1' %} open{% endif %}>
+    <details class="technical-only ps-canonical-snapshot" id="canonical-snapshot">
     <summary>Канонический снимок</summary>
-    {% if request.GET.show_snapshot == '1' %}
-        <p>Неизменяемый технический состав публикации. Форматирование выполнено только по явному запросу.</p>
-        <pre>{{ preview.canonical_json_pretty }}</pre>
-    {% else %}
-        <div class="ps-canonical-snapshot-placeholder">
-            <p>
-                Неизменяемый технический состав публикации не включается в первоначальный ответ целиком,
-                чтобы предварительная проверка 2500 строк открывалась быстрее. SHA-256 выше уже рассчитан
-                по полному каноническому снимку.
-            </p>
-            <a class="button secondary" href="{{ request.path }}?show_snapshot=1#canonical-snapshot">
-                Показать форматированный снимок
-            </a>
+    <div class="ps-canonical-snapshot-placeholder" data-power-system-snapshot-container>
+        <p>
+            Неизменяемый технический состав публикации не встраивается в HTML-страницу целиком:
+            браузеру не требуется отрисовывать многомегабайтный технический блок. Полный канонический
+            снимок выдаётся в точных UTF-8 байтах, по которым рассчитан показанный выше SHA-256.
+        </p>
+        <div class="ps-canonical-snapshot-actions">
+            <a
+                class="button secondary"
+                href="{% url 'imports:power_system_snapshot_download' revision.public_id %}"
+                data-power-system-snapshot-trigger
+                download
+            >Скачать канонический JSON</a>
+            <p
+                class="ps-snapshot-progress"
+                data-power-system-snapshot-progress
+                hidden
+                role="status"
+                aria-live="polite"
+            >Подготавливается канонический JSON…</p>
         </div>
-    {% endif %}
+    </div>
 </details>
 </section>
 <section class="profile-card">

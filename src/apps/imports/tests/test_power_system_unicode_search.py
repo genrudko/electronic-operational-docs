@@ -33,17 +33,20 @@ class PowerSystemUnicodeSearchTests(SimpleTestCase):
         self.assertIn('unicodedata.normalize("NFKC"', helper)
         self.assertIn(".casefold()", helper)
 
-    def test_publication_preview_is_lazy_and_has_progress_feedback(self):
-        detail = (ROOT / "templates/imports/power_system_detail.html").read_text(
-            encoding="utf-8"
-        )
+    def test_publication_snapshot_is_delivered_outside_html(self):
+        urls = (ROOT / "apps/imports/urls.py").read_text(encoding="utf-8")
+        views = (ROOT / "apps/imports/views.py").read_text(encoding="utf-8")
         publication = (
             ROOT / "templates/imports/power_system_publication.html"
         ).read_text(encoding="utf-8")
         review_js = (
             ROOT / "static/imports/power_system_review.js"
         ).read_text(encoding="utf-8")
-        self.assertIn("data-power-system-preview-trigger", detail)
-        self.assertIn("request.GET.show_snapshot", publication)
-        self.assertIn("ps-canonical-snapshot-placeholder", publication)
-        self.assertIn('setAttribute("aria-busy", "true")', review_js)
+        self.assertIn("power_system_snapshot_download", urls)
+        self.assertIn("power_system_snapshot_download", views)
+        self.assertIn("X-Content-SHA256", views)
+        self.assertIn("data-power-system-snapshot-trigger", publication)
+        self.assertNotIn("request.GET.show_snapshot", publication)
+        self.assertNotIn("preview.canonical_json_pretty", publication)
+        self.assertIn("await fetch(trigger.href", review_js)
+        self.assertIn("URL.createObjectURL", review_js)

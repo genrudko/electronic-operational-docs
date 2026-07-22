@@ -977,6 +977,16 @@ def power_system_duplicate_group_decide(
 
 @login_required
 def power_system_publication(request: HttpRequest, public_id) -> HttpResponse:
+    resolver_url_name = getattr(
+        request.resolver_match,
+        "url_name",
+        "",
+    )
+    is_snapshot_download = (
+        resolver_url_name == "power_system_snapshot_download"
+    )
+    if is_snapshot_download and request.method != "GET":
+        return HttpResponse(status=405)
     employee, revision = power_system_revision_for_user(request.user, public_id)
     can_publish = can_publish_import(request.user)
     initial_date = revision.effective_from or timezone.localdate()
@@ -991,6 +1001,20 @@ def power_system_publication(request: HttpRequest, public_id) -> HttpResponse:
             revision=revision,
             effective_from=initial_date,
         )
+        if is_snapshot_download:
+            payload = preview.canonical_json.encode("utf-8")
+            response = HttpResponse(
+                payload,
+                content_type="application/json; charset=utf-8",
+            )
+            response["Content-Disposition"] = (
+                f'attachment; filename="power-system-{revision.public_id}-canonical.json"'
+            )
+            response["X-Content-SHA256"] = preview.digest
+            response["Cache-Control"] = "no-store"
+            response["X-Content-Type-Options"] = "nosniff"
+            response["Content-Length"] = str(len(payload))
+            return response
     except ValidationError as error:
         messages.error(request, _validation_message(error))
         return redirect("imports:power_system_detail", public_id=revision.public_id)

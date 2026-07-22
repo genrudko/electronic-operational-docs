@@ -32,6 +32,11 @@ urlpatterns = [
         name="power_system_publication",
     ),
     path(
+        'imports/power-system/<uuid:public_id>/publication/canonical.json',
+        views.power_system_publication,
+        name="power_system_snapshot_download",
+    ),
+    path(
         "imports/power-system/<uuid:public_id>/publication/<uuid:publication_id>/",
         views.power_system_publication_result,
         name="power_system_publication_result",

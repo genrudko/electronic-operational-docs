@@ -449,19 +449,35 @@ class PowerSystemAssetImporterTests(TestCase):
         self.assertContains(publication, "ЩПТ")
         self.assertContains(publication, "Неизменяемый технический состав публикации")
         self.assertContains(publication, 'class="technical-only ps-canonical-snapshot"')
-        self.assertContains(publication, "Показать форматированный снимок")
+        self.assertContains(publication, "Скачать канонический JSON")
         self.assertNotContains(publication, "\n  &quot;effective_from&quot;")
-        publication_with_snapshot = self.client.get(
+        self.assertNotContains(publication, "preview.canonical_json_pretty")
+        snapshot_download = self.client.get(
             reverse(
-                "imports:power_system_publication",
+                "imports:power_system_snapshot_download",
                 args=[revision.public_id],
             )
-            + "?show_snapshot=1"
         )
-        self.assertContains(
-            publication_with_snapshot,
-            "\n  &quot;effective_from&quot;",
+        self.assertEqual(snapshot_download.status_code, 200)
+        snapshot_post = self.client.post(
+            reverse(
+                "imports:power_system_snapshot_download",
+                args=[revision.public_id],
+            )
         )
+        self.assertEqual(snapshot_post.status_code, 405)
+        self.assertEqual(
+            snapshot_download["Content-Type"],
+            "application/json; charset=utf-8",
+        )
+        self.assertIn("attachment;", snapshot_download["Content-Disposition"])
+        self.assertEqual(snapshot_download["Cache-Control"], "no-store")
+        self.assertEqual(snapshot_download["X-Content-Type-Options"], "nosniff")
+        self.assertEqual(
+            snapshot_download["X-Content-SHA256"],
+            __import__("hashlib").sha256(snapshot_download.content).hexdigest(),
+        )
+        self.assertContains(publication, snapshot_download["X-Content-SHA256"])
 
 
     def test_views_expose_staging_without_publishing(self):

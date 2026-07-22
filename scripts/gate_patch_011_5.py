@@ -226,9 +226,9 @@ def main() -> None:
     )
     require(
         "LAZY_PUBLICATION_SNAPSHOT",
-        "request.GET.show_snapshot" in publication_template
-        and "ps-canonical-snapshot-placeholder" in publication_template
-        and "preview.canonical_json_pretty" in publication_template,
+        "ps-canonical-snapshot-placeholder" in publication_template
+        and "preview.canonical_json_pretty" not in publication_template
+        and "request.GET.show_snapshot" not in publication_template,
     )
     require(
         "PUBLICATION_PREVIEW_PROGRESS",
@@ -236,6 +236,25 @@ def main() -> None:
         and "data-power-system-preview-progress" in detail_template
         and "aria-busy" in review_js
         and "Формируется предварительная проверка" in review_js,
+    )
+    require(
+        "CANONICAL_SNAPSHOT_DELIVERY",
+        "power_system_snapshot_download" in import_urls
+        and "power_system_snapshot_download" in import_views
+        and "preview.canonical_json.encode" in import_views
+        and "Content-Disposition" in import_views
+        and "X-Content-SHA256" in import_views
+        and "Cache-Control" in import_views
+        and "power_system_snapshot_download" in publication_template
+        and "power_system_review.js' %}?v=011573" in detail_template,
+    )
+    require(
+        "CANONICAL_SNAPSHOT_PROGRESS",
+        "data-power-system-snapshot-trigger" in publication_template
+        and "data-power-system-snapshot-progress" in publication_template
+        and "await fetch(trigger.href" in review_js
+        and "URL.createObjectURL" in review_js
+        and "X-Content-SHA256" in review_js,
     )
     print("PATCH_011_5_POWER_SYSTEM_ASSET_IMPORTER_GATE_PASSED")
 

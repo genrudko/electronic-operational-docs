@@ -8873,3 +8873,24 @@ body.draft-view-drawer-visible .draft-view-drawer {
 @media (prefers-reduced-motion: reduce) {
     .ps-preview-progress::before { animation: none; }
 }
+
+/* Patch 011.5 Repair 13: canonical snapshot download delivery */
+.ps-canonical-snapshot-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.8rem;
+}
+.ps-snapshot-progress {
+    max-width: min(100%, 72rem);
+    margin: 0;
+    overflow-wrap: anywhere;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+[data-power-system-snapshot-container][aria-busy="true"] {
+    cursor: progress;
+}
+[data-power-system-snapshot-trigger][aria-busy="true"] {
+    pointer-events: none;
+}
