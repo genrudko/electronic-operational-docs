@@ -8813,3 +8813,22 @@ body.draft-view-drawer-visible .draft-view-drawer {
     .ps-conflict-member { grid-template-columns: 1fr; }
     .ps-conflict-member .import-status { justify-self: start; }
 }
+
+
+/* Patch 011.5 Repair 10: common DC control equipment family and readable snapshot */
+.ps-hierarchy-health { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.ps-canonical-snapshot > p { color: var(--muted); margin: 0.75rem 0; }
+.ps-canonical-snapshot pre {
+    max-height: 34rem;
+    margin: 0;
+    padding: 1rem;
+    overflow: auto;
+    white-space: pre;
+    overflow-wrap: normal;
+    tab-size: 2;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--surface) 82%, var(--background));
+    font-size: 0.82rem;
+    line-height: 1.45;
+}

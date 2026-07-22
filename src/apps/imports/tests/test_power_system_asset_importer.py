@@ -291,7 +291,7 @@ class PowerSystemAssetImporterTests(TestCase):
         site = revision.asset_occurrences.get(occurrence_id="SYN-SITE")
         ktp = revision.asset_occurrences.get(occurrence_id="SYN-KTP-1")
         self.assertEqual(shot.asset_type_code, "dc_distribution_board")
-        self.assertEqual(shot.asset_type_name, "Шкаф оперативного тока")
+        self.assertEqual(shot.asset_type_name, "Щит или шкаф оперативного постоянного тока")
         self.assertEqual(shot.classification_confidence, "HIGH")
         self.assertEqual(shot.review_status, PowerSystemAssetOccurrence.ReviewStatus.READY)
         self.assertEqual(
@@ -303,6 +303,11 @@ class PowerSystemAssetImporterTests(TestCase):
             "other_equipment",
         )
         self.assertEqual(shot.parent_external_key, ktp.external_key)
+        shpt = revision.asset_occurrences.get(occurrence_id="SYN-SHPT-1")
+        self.assertEqual(shpt.asset_type_code, shot.asset_type_code)
+        self.assertEqual(shpt.asset_type_name, shot.asset_type_name)
+        self.assertEqual(shpt.source_flags["dc_equipment_designation"], "ЩПТ")
+        self.assertEqual(shot.source_flags["dc_equipment_designation"], "ШОТ")
         self.assertEqual(site.parent_external_key, "")
 
         result = reanalyze_power_system_revision(revision)
@@ -355,7 +360,10 @@ class PowerSystemAssetImporterTests(TestCase):
             effective_from=date(2026, 7, 22),
         )
         self.assertEqual(preview.summary["orphan_rows"], 0)
+        self.assertEqual(preview.summary["dc_control_equipment_rows"], 2)
         self.assertEqual(preview.summary["shot_rows"], 1)
+        self.assertEqual(preview.summary["shpt_rows"], 1)
+        self.assertIn("\n  ", preview.canonical_json_pretty)
         self.assertEqual(preview.summary["duplicate_groups_pending"], 0)
 
         publish_power_system_revision(
@@ -379,7 +387,17 @@ class PowerSystemAssetImporterTests(TestCase):
             technical_name="ШОТ",
         )
         self.assertEqual(shot_asset.equipment_type.code, "dc_distribution_board")
-        self.assertEqual(shot_asset.equipment_type.name, "Шкаф оперативного тока")
+        self.assertEqual(
+            shot_asset.equipment_type.name,
+            "Щит или шкаф оперативного постоянного тока",
+        )
+        self.assertEqual(shot_asset.attributes["dc_equipment_designation"], "ШОТ")
+        shpt_asset = EquipmentAsset.objects.get(
+            organization=self.organization,
+            technical_name="ЩПТ-1",
+        )
+        self.assertEqual(shpt_asset.equipment_type_id, shot_asset.equipment_type_id)
+        self.assertEqual(shpt_asset.attributes["dc_equipment_designation"], "ЩПТ")
 
     def test_grouped_review_view_uses_detected_candidates_instead_of_free_text(self):
         revision, _created = stage_power_system_package(
@@ -400,10 +418,38 @@ class PowerSystemAssetImporterTests(TestCase):
         self.assertContains(response, "SYN-DUP-A")
         self.assertContains(response, "SYN-DUP-B")
         self.assertContains(response, 'name="primary_occurrence_id"')
-        self.assertContains(response, "ШОТ распознано")
+        self.assertContains(response, "Оборудование оперативного постоянного тока")
+        self.assertContains(response, "Обозначение ШОТ")
+        self.assertContains(response, "Обозначение ЩПТ")
+        self.assertContains(response, "Отдельные строки вне групп")
+        self.assertContains(response, "SYN-BLOCKED")
+        self.assertNotContains(
+            response,
+            "Все спорные строки распределены по группам",
+        )
+        revision.asset_occurrences.filter(occurrence_id="SYN-BLOCKED").update(
+            review_status=PowerSystemAssetOccurrence.ReviewStatus.EXCLUDED,
+        )
+        grouped_only_response = self.client.get(
+            reverse("imports:power_system_detail", args=[revision.public_id])
+        )
+        self.assertContains(
+            grouped_only_response,
+            "Все спорные строки распределены по группам",
+        )
         self.assertContains(response, "Потерянные родители")
         self.assertNotContains(response, "Идентификатор исходной строки")
         self.assertNotContains(response, 'placeholder="Идентификатор')
+
+        publication = self.client.get(
+            reverse("imports:power_system_publication", args=[revision.public_id])
+        )
+        self.assertContains(publication, "Оборудование ОПТ")
+        self.assertContains(publication, "ШОТ")
+        self.assertContains(publication, "ЩПТ")
+        self.assertContains(publication, "Неизменяемый технический состав публикации")
+        self.assertContains(publication, 'class="technical-only ps-canonical-snapshot"')
+        self.assertContains(publication, "\n  &quot;effective_from&quot;")
 
 
     def test_views_expose_staging_without_publishing(self):

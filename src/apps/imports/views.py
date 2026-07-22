@@ -867,8 +867,16 @@ def power_system_detail(request: HttpRequest, public_id) -> HttpResponse:
     orphan_count = revision.asset_occurrences.exclude(
         asset_type_code="energy_facility",
     ).filter(parent_external_key="").count()
+    dc_control_equipment_count = revision.asset_occurrences.filter(
+        asset_type_code="dc_distribution_board",
+    ).count()
     shot_count = revision.asset_occurrences.filter(
         asset_type_code="dc_distribution_board",
+        dispatcher_name_raw="ШОТ",
+    ).count()
+    shpt_count = revision.asset_occurrences.filter(
+        asset_type_code="dc_distribution_board",
+        dispatcher_name_raw__startswith="ЩПТ",
     ).count()
     return render(
         request,
@@ -895,7 +903,9 @@ def power_system_detail(request: HttpRequest, public_id) -> HttpResponse:
             "grouped_attention_row_count": len(grouped_occurrence_ids),
             "root_count": root_count,
             "orphan_count": orphan_count,
+            "dc_control_equipment_count": dc_control_equipment_count,
             "shot_count": shot_count,
+            "shpt_count": shpt_count,
         },
     )
 

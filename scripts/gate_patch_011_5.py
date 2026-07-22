@@ -175,9 +175,9 @@ def main() -> None:
     )
     require(
         "CONTROLLED_SHOT_NORMALIZATION",
-        'CONTROLLED_SHOT_TYPE_CODE = "dc_distribution_board"' in importer
+        'CONTROLLED_DC_EQUIPMENT_TYPE_CODE = "dc_distribution_board"' in importer
         and "SHOT_EXACT_UNDER_KTP" in importer
-        and "Шкаф оперативного тока" in importer,
+        and "Щит или шкаф оперативного постоянного тока" in importer,
     )
     require(
         "EXPLICIT_CONTROL_BUILDING_PARENT",
@@ -195,6 +195,21 @@ def main() -> None:
         "def decide_power_system_duplicate_group(" in importer
         and "def power_system_duplicate_group_decide(" in import_views
         and "СГРУППИРОВАННАЯ ПРОВЕРКА" in detail_template,
+    )
+    require(
+        "COMMON_DC_CONTROL_EQUIPMENT_FAMILY",
+        'CONTROLLED_DC_EQUIPMENT_TYPE_CODE = "dc_distribution_board"' in importer
+        and "dc_equipment_designation" in importer
+        and "Оборудование оперативного постоянного тока" in detail_template
+        and "Обозначение ШОТ" in detail_template
+        and "Обозначение ЩПТ" in detail_template
+        and "dc_control_equipment_rows" in publication_template,
+    )
+    require(
+        "READABLE_CANONICAL_SNAPSHOT",
+        "canonical_json_pretty" in importer
+        and "ps-canonical-snapshot" in publication_template
+        and "Отдельные строки вне групп" in detail_template,
     )
     print("PATCH_011_5_POWER_SYSTEM_ASSET_IMPORTER_GATE_PASSED")
 

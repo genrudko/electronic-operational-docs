@@ -249,6 +249,25 @@ def synthetic_power_system_package(
                     "duplicate_group": "SYN_DUP_1",
                     "is_primary_equipment_proposed": "TRUE",
                 },
+                {
+                    **base,
+                    "occurrence_id": "SYN-SHPT-1",
+                    "source_row": "13",
+                    "record_role": "DISPATCHING_OBJECT_OCCURRENCE",
+                    "domain": "AUXILIARY_SYSTEM",
+                    "asset_type_proposed": "dc_distribution_board",
+                    "asset_type_ru_proposed": "Щит постоянного тока",
+                    "source_category_raw": "Система оперативного постоянного тока",
+                    "dispatcher_name_raw": "ЩПТ-1",
+                    "display_name_normalized_proposed": "ЩПТ-1",
+                    "comparison_key": "щпт-1",
+                    "parent_raw": "ОПУ ВЭС",
+                    "hierarchy_path_raw": f"{facility} / ОПУ ВЭС / ЩПТ-1",
+                    "classification_confidence": "HIGH",
+                    "import_disposition": "CREATE",
+                    "is_primary_equipment_proposed": "FALSE",
+                    "is_secondary_device_proposed": "TRUE",
+                },
             ]
         )
     authority_rows = [
@@ -345,6 +364,14 @@ def synthetic_power_system_package(
             "source_evidence": "КЛ 35 кВ",
             "is_primary_equipment_default": "TRUE",
             "is_operational_control_object_default": "TRUE",
+            "status": "PROPOSED",
+        },
+        {
+            "type_code_proposed": "dc_distribution_board",
+            "russian_label_proposed": "Щит или шкаф оперативного постоянного тока",
+            "domain": "AUXILIARY_SYSTEM",
+            "source_evidence": "ШОТ; ЩПТ-1",
+            "is_secondary_device_default": "TRUE",
             "status": "PROPOSED",
         },
         {

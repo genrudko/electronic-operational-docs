@@ -35,8 +35,10 @@ from .services import can_publish_import, require_import_employee
 MAX_POWER_SYSTEM_PACKAGE_SIZE = 25 * 1024 * 1024
 MAX_POWER_SYSTEM_UNCOMPRESSED_SIZE = 120 * 1024 * 1024
 POWER_SYSTEM_PUBLICATION_SCHEMA = "eod.power-system.publication.v1"
-CONTROLLED_SHOT_TYPE_CODE = "dc_distribution_board"
-CONTROLLED_SHOT_TYPE_NAME = "Шкаф оперативного тока"
+CONTROLLED_DC_EQUIPMENT_TYPE_CODE = "dc_distribution_board"
+CONTROLLED_DC_EQUIPMENT_TYPE_NAME = "Щит или шкаф оперативного постоянного тока"
+CONTROLLED_SHOT_TYPE_CODE = CONTROLLED_DC_EQUIPMENT_TYPE_CODE
+CONTROLLED_SHOT_TYPE_NAME = CONTROLLED_DC_EQUIPMENT_TYPE_NAME
 
 ASSET_FILE = "eod_power_system_assets.csv"
 AUTHORITY_FILE = "eod_operational_authority_assignments.csv"
@@ -153,6 +155,15 @@ class PowerSystemPublicationPreview:
     canonical_json: str
     digest: str
     summary: dict[str, int]
+
+    @property
+    def canonical_json_pretty(self) -> str:
+        return json.dumps(
+            json.loads(self.canonical_json),
+            ensure_ascii=False,
+            sort_keys=True,
+            indent=2,
+        )
 
 
 def _canonical_json(value: object) -> str:
@@ -329,9 +340,32 @@ def _is_controlled_shot_row(row: dict[str, str]) -> bool:
     )
 
 
+def _dc_equipment_designation(value: str) -> str:
+    token = _comparison_token(value)
+    if token == "шот":
+        return "ШОТ"
+    if re.fullmatch(r"щпт(?:-?\s*\d+)?", token):
+        return "ЩПТ"
+    return ""
+
+
+def _is_controlled_dc_equipment_row(row: dict[str, str]) -> bool:
+    return _is_controlled_shot_row(row) or (
+        _normalize_space(row.get("asset_type_proposed", ""))
+        == CONTROLLED_DC_EQUIPMENT_TYPE_CODE
+    )
+
+
 def _normalized_type_values(row: dict[str, str]) -> tuple[str, str, str]:
-    if _is_controlled_shot_row(row):
-        return CONTROLLED_SHOT_TYPE_CODE, CONTROLLED_SHOT_TYPE_NAME, "HIGH"
+    if _is_controlled_dc_equipment_row(row):
+        classification = _normalize_space(row.get("classification_confidence", ""))
+        if _is_controlled_shot_row(row):
+            classification = "HIGH"
+        return (
+            CONTROLLED_DC_EQUIPMENT_TYPE_CODE,
+            CONTROLLED_DC_EQUIPMENT_TYPE_NAME,
+            classification,
+        )
     return (
         _normalize_space(row.get("asset_type_proposed", "")),
         _normalize_space(row.get("asset_type_ru_proposed", "")),
@@ -606,7 +640,8 @@ def reanalyze_power_system_revision(
         type_code, type_name, classification = _normalized_type_values(row)
         occurrence.parent_external_key = parent_key
         occurrence.logical_key = logical_key
-        if _is_controlled_shot_row(row):
+        if _is_controlled_dc_equipment_row(row):
+            designation = _dc_equipment_designation(occurrence.dispatcher_name_raw)
             occurrence.source_flags = {
                 **occurrence.source_flags,
                 "source_asset_type_proposed": occurrence.source_flags.get(
@@ -618,7 +653,12 @@ def reanalyze_power_system_revision(
                 "source_classification_confidence": occurrence.source_flags.get(
                     "source_classification_confidence", old_values[4]
                 ),
-                "controlled_type_normalization": "SHOT_EXACT_UNDER_KTP",
+                "controlled_type_normalization": (
+                    "SHOT_EXACT_UNDER_KTP"
+                    if designation == "ШОТ"
+                    else "DC_CONTROL_EQUIPMENT_FAMILY"
+                ),
+                "dc_equipment_designation": designation,
             }
         occurrence.asset_type_code = type_code
         occurrence.asset_type_name = type_name
@@ -882,6 +922,15 @@ def stage_power_system_package(
                     "controlled_type_normalization": (
                         "SHOT_EXACT_UNDER_KTP"
                         if _is_controlled_shot_row(row)
+                        else (
+                            "DC_CONTROL_EQUIPMENT_FAMILY"
+                            if _is_controlled_dc_equipment_row(row)
+                            else ""
+                        )
+                    ),
+                    "dc_equipment_designation": (
+                        _dc_equipment_designation(row["dispatcher_name_raw"])
+                        if _is_controlled_dc_equipment_row(row)
                         else ""
                     ),
                 },
@@ -1352,8 +1401,18 @@ def build_power_system_publication_preview(
             and not occurrence.parent_external_key
             for occurrence in occurrences
         ),
+        "dc_control_equipment_rows": sum(
+            occurrence.asset_type_code == CONTROLLED_DC_EQUIPMENT_TYPE_CODE
+            for occurrence in occurrences
+        ),
         "shot_rows": sum(
-            occurrence.asset_type_code == CONTROLLED_SHOT_TYPE_CODE
+            occurrence.asset_type_code == CONTROLLED_DC_EQUIPMENT_TYPE_CODE
+            and _dc_equipment_designation(occurrence.dispatcher_name_raw) == "ШОТ"
+            for occurrence in occurrences
+        ),
+        "shpt_rows": sum(
+            occurrence.asset_type_code == CONTROLLED_DC_EQUIPMENT_TYPE_CODE
+            and _dc_equipment_designation(occurrence.dispatcher_name_raw) == "ЩПТ"
             for occurrence in occurrences
         ),
         "quarantined": revision.review_count + revision.blocked_count,
@@ -1399,7 +1458,7 @@ def _equipment_category(type_code: str, domain: str) -> str:
         "battery_bank",
         "charger",
         "metering_system",
-        CONTROLLED_SHOT_TYPE_CODE,
+        CONTROLLED_DC_EQUIPMENT_TYPE_CODE,
     }:
         return EquipmentType.Category.AUXILIARY
     if domain == "PRIMARY_EQUIPMENT":
@@ -1425,9 +1484,14 @@ def _resolve_or_create_equipment_type(
 
     type_code = occurrence.asset_type_code
     type_row = dictionary.get(type_code, {})
-    name = _normalize_space(
-        type_row.get("russian_label_proposed", "") or occurrence.asset_type_name or type_code
-    )
+    if type_code == CONTROLLED_DC_EQUIPMENT_TYPE_CODE:
+        name = CONTROLLED_DC_EQUIPMENT_TYPE_NAME
+    else:
+        name = _normalize_space(
+            type_row.get("russian_label_proposed", "")
+            or occurrence.asset_type_name
+            or type_code
+        )
     category = _equipment_category(type_code, occurrence.domain)
     existing = EquipmentType.objects.filter(code=type_code).first()
     if existing is not None:
@@ -1547,6 +1611,15 @@ def _existing_or_create_asset(
             "source_occurrence_ids": [occurrence.occurrence_id],
             "classification_confidence": occurrence.classification_confidence,
             "hierarchy_confidence": occurrence.hierarchy_confidence,
+            **(
+                {
+                    "dc_equipment_designation": _dc_equipment_designation(
+                        occurrence.dispatcher_name_raw
+                    )
+                }
+                if occurrence.asset_type_code == CONTROLLED_DC_EQUIPMENT_TYPE_CODE
+                else {}
+            ),
         },
         is_external=False,
     )

@@ -88,7 +88,9 @@
     <div class="ps-hierarchy-health">
         <article class="is-ok"><span>Корневые энергообъекты</span><strong>{{ root_count }}</strong><small>Родитель не требуется</small></article>
         <article class="{% if orphan_count %}is-error{% else %}is-ok{% endif %}"><span>Потерянные родители</span><strong>{{ orphan_count }}</strong><small>{% if orphan_count %}Публикация будет заблокирована{% else %}Осиротевших строк нет{% endif %}</small></article>
-        <article class="is-ok"><span>ШОТ распознано</span><strong>{{ shot_count }}</strong><small>Тип: шкаф оперативного тока</small></article>
+        <article class="is-ok"><span>Оборудование оперативного постоянного тока</span><strong>{{ dc_control_equipment_count }}</strong><small>Единая техническая группа для ШОТ и ЩПТ</small></article>
+        <article class="is-ok"><span>Обозначение ШОТ</span><strong>{{ shot_count }}</strong><small>Шкафное исполнение в составе КТП</small></article>
+        <article class="is-ok"><span>Обозначение ЩПТ</span><strong>{{ shpt_count }}</strong><small>Щитовое исполнение в соответствующем РУ</small></article>
     </div>
     <div class="ps-hierarchy-samples">
         {% for row in hierarchy_examples %}
@@ -214,7 +216,7 @@
         <div>
             <div class="eyebrow">ИСХОДНЫЕ СТРОКИ</div>
             <h2>
-                {% if status_filter == 'ATTENTION' %}Требуют решения{% elif status_filter == 'READY' %}Готовы автоматически{% else %}Строки источника{% endif %}
+                {% if status_filter == 'ATTENTION' %}Отдельные строки вне групп{% elif status_filter == 'READY' %}Готовы автоматически{% else %}Строки источника{% endif %}
             </h2>
         </div>
         <span class="count-badge">{{ page.paginator.count }}</span>
@@ -310,7 +312,15 @@
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="5">По заданным условиям строки не найдены.</td></tr>
+                <tr>
+                    <td colspan="5">
+                        {% if status_filter == 'ATTENTION' and duplicate_group_count %}
+                            Все спорные строки распределены по группам.
+                        {% else %}
+                            По заданным условиям строки не найдены.
+                        {% endif %}
+                    </td>
+                </tr>
             {% endfor %}
             </tbody>
         </table>

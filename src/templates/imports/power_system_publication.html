@@ -24,7 +24,9 @@
     <article class="metric"><span>Останется в карантине</span><strong>{{ preview.summary.quarantined }}</strong></article>
     <article class="metric"><span>Корневые энергообъекты</span><strong>{{ preview.summary.root_sites }}</strong></article>
     <article class="metric"><span>Потерянные родители</span><strong>{{ preview.summary.orphan_rows }}</strong></article>
+    <article class="metric"><span>Оборудование ОПТ</span><strong>{{ preview.summary.dc_control_equipment_rows }}</strong></article>
     <article class="metric"><span>ШОТ</span><strong>{{ preview.summary.shot_rows }}</strong></article>
+    <article class="metric"><span>ЩПТ</span><strong>{{ preview.summary.shpt_rows }}</strong></article>
     <article class="metric"><span>Нерешённые группы</span><strong>{{ preview.summary.duplicate_groups_pending }}</strong></article>
 </section>
 <section class="notice-card {% if preview.summary.orphan_rows %}error-notice{% else %}success-notice{% endif %}">
@@ -38,7 +40,11 @@
         <dt>SHA-256 публикации</dt><dd><code class="breakable">{{ preview.digest }}</code></dd>
         <dt>Профиль</dt><dd>{{ revision.data_profile.name }}</dd>
     </dl>
-    <details class="technical-only"><summary>Канонический снимок</summary><pre class="breakable">{{ preview.canonical_json }}</pre></details>
+    <details class="technical-only ps-canonical-snapshot">
+        <summary>Канонический снимок</summary>
+        <p>Неизменяемый технический состав публикации. Блок ограничен по высоте и прокручивается внутри.</p>
+        <pre>{{ preview.canonical_json_pretty }}</pre>
+    </details>
 </section>
 <section class="profile-card">
     <h2>Подтверждение публикации готовой части</h2>
