@@ -4,11 +4,11 @@
 <section class="page-heading compact">
     <div>
         <div class="eyebrow">ПЕРСОНАЛ, КВАЛИФИКАЦИИ И ПРАВА</div>
-        <h1>Редакции матриц работников</h1>
+        <h1>Редакции источников работников</h1>
         <p>Реальные ФИО разрешены только в локальной development-базе и не попадают в обычный экспорт.</p>
     </div>
     <div class="document-actions">
-        <a class="button" href="{% url 'imports:personnel_upload' %}">Загрузить XLSX</a>
+        <a class="button" href="{% url 'imports:personnel_upload' %}">Загрузить источник</a>
         <a class="button secondary" href="{% url 'imports:list' %}">К импорту данных</a>
     </div>
 </section>
@@ -37,7 +37,7 @@
                 <td>{{ revision.created_at|date:"d.m.Y H:i" }}</td>
             </tr>
         {% empty %}
-            <tr><td colspan="7" class="muted">Матрицы персонала ещё не загружались.</td></tr>
+            <tr><td colspan="7" class="muted">Источники персонала ещё не загружались.</td></tr>
         {% endfor %}
         </tbody>
     </table></div>

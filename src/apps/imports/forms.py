@@ -11,7 +11,7 @@ from .models import (
     PowerSystemSourceRevision,
 )
 from .personnel import (
-    MAX_PERSONNEL_XLSX_SIZE,
+    MAX_PERSONNEL_SOURCE_SIZE,
     available_personnel_profiles,
 )
 from .power_system import (
@@ -362,12 +362,12 @@ class PersonnelWorkbookUploadForm(forms.Form):
         help_text="Дата применяется к создаваемым квалификациям и положительным назначениям прав.",
     )
     source_file = forms.FileField(
-        label="Матрица работников и прав",
+        label="Источник работников и прав",
         help_text=(
-            "Поддерживается XLSX размером до 10 МБ. "
-            "Файл хранится только как разобранная staging-редакция."
+            "Предпочтителен ZIP-пакет нормализованных CSV из чата № 2; "
+            "исходная матрица XLSX также поддерживается. Размер до 10 МБ."
         ),
-        widget=forms.ClearableFileInput(attrs={"accept": ".xlsx"}),
+        widget=forms.ClearableFileInput(attrs={"accept": ".zip,.xlsx"}),
     )
 
     def __init__(self, *args, organization, **kwargs):
@@ -381,12 +381,15 @@ class PersonnelWorkbookUploadForm(forms.Form):
 
     def clean_source_file(self):
         uploaded = self.cleaned_data["source_file"]
-        if Path(uploaded.name).suffix.lower() != ".xlsx":
-            raise forms.ValidationError("Для матрицы персонала требуется файл XLSX.")
+        extension = Path(uploaded.name).suffix.lower()
+        if extension not in {".zip", ".xlsx"}:
+            raise forms.ValidationError(
+                "Допустимы ZIP-пакет нормализованных CSV или исходная матрица XLSX."
+            )
         if uploaded.size == 0:
-            raise forms.ValidationError("Нельзя загрузить пустой XLSX.")
-        if uploaded.size > MAX_PERSONNEL_XLSX_SIZE:
-            raise forms.ValidationError("Размер XLSX превышает 10 МБ.")
+            raise forms.ValidationError("Нельзя загрузить пустой источник.")
+        if uploaded.size > MAX_PERSONNEL_SOURCE_SIZE:
+            raise forms.ValidationError("Размер источника превышает 10 МБ.")
         return uploaded
 
 

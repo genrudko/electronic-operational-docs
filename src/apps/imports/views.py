@@ -1224,7 +1224,7 @@ def personnel_upload(request: HttpRequest) -> HttpResponse:
         else:
             messages.success(
                 request,
-                "XLSX разобран в изолированную staging-редакцию. Рабочие карточки не изменены.",
+                "Источник разобран в изолированную staging-редакцию. Рабочие карточки не изменены.",
             )
             return redirect("imports:personnel_detail", public_id=revision.public_id)
     return render(request, "imports/personnel_upload.html", {"form": form})

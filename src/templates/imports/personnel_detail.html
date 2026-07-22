@@ -10,8 +10,12 @@
 </section>
 <section class="notice-card data-profile-notice">
     <strong>{{ revision.data_profile.name }} · обычный экспорт запрещён</strong>
-    <p>SHA-256 XLSX: <code class="breakable">{{ revision.file_sha256 }}</code></p>
-    <p>Структура: {{ revision.get_layout_version_display }} · лист «{{ revision.sheet_name }}» · действует с {{ revision.effective_from|date:"d.m.Y" }}.</p>
+    <p>SHA-256 источника: <code class="breakable">{{ revision.file_sha256 }}</code></p>
+    <p>Формат: {% if revision.manifest.source_format == 'NORMALIZED_CSV_PACKAGE' %}нормализованный ZIP-пакет CSV{% else %}XLSX{% endif %} · структура: {{ revision.get_layout_version_display }} · источник «{{ revision.sheet_name }}» · действует с {{ revision.effective_from|date:"d.m.Y" }}.</p>
+    {% if revision.manifest.source_format == 'NORMALIZED_CSV_PACKAGE' %}
+        <p>Компоненты: {% for name in revision.manifest.package_components %}<code>{{ name }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+        <p>Проблем источника: {{ revision.manifest.source_issue_count|default:0 }}{% if revision.manifest.ignored_components %} · отложено до следующего контура: {{ revision.manifest.ignored_components|join:", " }}{% endif %}.</p>
+    {% endif %}
     {% if not is_development_database %}<p class="error-text">Текущая база не является development-базой. Публикация и новая загрузка будут заблокированы.</p>{% endif %}
 </section>
 <section class="personnel-workflow" aria-label="Правила обработки матрицы">

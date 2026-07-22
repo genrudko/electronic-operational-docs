@@ -1,13 +1,24 @@
 {% extends "base.html" %}
-{% block title %}Загрузка матрицы персонала · ЭОД{% endblock %}
+{% block title %}Загрузка персонала и прав · ЭОД{% endblock %}
 {% block content %}
 <section class="page-heading compact">
-    <div><div class="eyebrow">ЛОКАЛЬНАЯ ПРОВЕРОЧНАЯ БАЗА</div><h1>Загрузить матрицу работников и прав</h1><p>Поддерживаются текущая матрица A:AB и ранняя матрица A:V. Исходные отметки сохраняются без исправления.</p></div>
+    <div><div class="eyebrow">ЛОКАЛЬНАЯ ПРОВЕРОЧНАЯ БАЗА</div><h1>Загрузить источник работников и прав</h1><p>Предпочтителен нормализованный ZIP-пакет CSV из чата № 2. Исходные XLSX A:AB и A:V сохраняются для обратной совместимости.</p></div>
     <a href="{% url 'imports:personnel_list' %}">← К редакциям</a>
 </section>
 <section class="notice-card warning-notice">
-    <strong>Файл содержит персональные данные</strong>
-    <p>Загрузка разрешена только при <code>EOD_DATABASE_PROFILE=development</code>. Файл не сохраняется в Git и не переносится в презентационную базу; в БД остаются разобранные значения и SHA-256 источника.</p>
+    <strong>Источник содержит персональные данные</strong>
+    <p>Загрузка разрешена только при <code>EOD_DATABASE_PROFILE=development</code>. Исходный ZIP или XLSX не сохраняется в Git и не переносится в презентационную базу; в БД остаются разобранные значения и SHA-256 источника.</p>
+</section>
+<section class="profile-card">
+    <h2>Состав ZIP-пакета CSV</h2>
+    <p>Обязательны четыре файла в корне ZIP или одном общем каталоге:</p>
+    <ul class="detail-list">
+        <li><code>eod_people.csv</code></li>
+        <li><code>eod_positions.csv</code></li>
+        <li><code>eod_operational_authorities.csv</code></li>
+        <li><code>eod_person_authority_assignments.csv</code></li>
+    </ul>
+    <p><code>eod_import_issues.csv</code> допускается как приложение. <code>eod_workplace_document_register.csv</code> распознаётся, но намеренно не импортируется до отдельного контура документации рабочих мест.</p>
 </section>
 <section class="profile-card">
     <form method="post" enctype="multipart/form-data" class="stacked-form">

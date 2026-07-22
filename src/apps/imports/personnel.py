@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+import csv
 import hashlib
 import io
 import json
 import re
+import stat
 import unicodedata
 import zipfile
 from collections import Counter
 from dataclasses import dataclass
 from datetime import date, datetime
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 from xml.etree import ElementTree
 
 from django.conf import settings
@@ -35,8 +37,12 @@ from .models import (
 )
 from .services import can_publish_import, require_import_employee
 
-MAX_PERSONNEL_XLSX_SIZE = 10 * 1024 * 1024
+MAX_PERSONNEL_SOURCE_SIZE = 10 * 1024 * 1024
+MAX_PERSONNEL_XLSX_SIZE = MAX_PERSONNEL_SOURCE_SIZE
 MAX_PERSONNEL_XLSX_UNCOMPRESSED_SIZE = 60 * 1024 * 1024
+MAX_PERSONNEL_CSV_PACKAGE_UNCOMPRESSED_SIZE = 60 * 1024 * 1024
+MAX_PERSONNEL_CSV_ENTRY_SIZE = 25 * 1024 * 1024
+MAX_PERSONNEL_CSV_PACKAGE_ENTRIES = 16
 PERSONNEL_PUBLICATION_SCHEMA = "eod.personnel-authority.publication.v1"
 
 CURRENT_RIGHT_COLUMNS = (
@@ -61,6 +67,125 @@ CURRENT_RIGHT_COLUMNS = (
     ("Z", "induced_voltage_work"),
     ("AA", "high_voltage_testing"),
     ("AB", "rza_maintenance_category"),
+)
+
+CSV_AUTHORITY_CODE_MAP = {
+    "DISPATCH_REQUEST_SUBMIT": ("G", "dispatch_application_submit"),
+    "DISPATCH_REQUEST_APPROVE": ("H", "dispatch_application_approve"),
+    "OPERATIONAL_REQUEST_SUBMIT": ("I", "operational_application_submit"),
+    "OPERATIONAL_REQUEST_APPROVE": ("J", "operational_application_approve"),
+    "UNBLOCKING_PERMISSION_ISSUE": ("K", "interlock_bypass_authorization"),
+    "WORKPLACE_PREPARATION_ADMISSION_PERMISSION_ISSUE": (
+        "L",
+        "worksite_preparation_and_admission_authorization",
+    ),
+    "WORK_PERMIT_OR_ORDER_ISSUE": ("M", "permit_and_order_issue"),
+    "RESPONSIBLE_WORK_MANAGER": ("N", "responsible_work_manager"),
+    "ADMITTING_PERSON": ("O", "admitting_person"),
+    "WORK_SUPERVISOR": ("P", "work_supervisor"),
+    "OBSERVER": ("Q", "observer"),
+    "BRIGADE_MEMBER": ("R", "team_member"),
+    "SOLE_INSPECTION": ("S", "sole_inspection"),
+    "OPERATIONAL_NEGOTIATIONS": ("T", "operational_communications"),
+    "SWITCHING_EXECUTION": ("U", "switching_operation"),
+    "SWITCHING_CONTROL": ("V", "switching_supervision"),
+    "WORK_AT_HEIGHT_QUALIFICATION": ("X", "work_at_height"),
+    "LIVE_WORK_QUALIFICATION": ("Y", "live_work"),
+    "INDUCED_VOLTAGE_WORK": ("Z", "induced_voltage_work"),
+    "HIGH_VOLTAGE_TESTING": ("AA", "high_voltage_testing"),
+    "RZA_MAINTENANCE_CATEGORY": ("AB", "rza_maintenance_category"),
+}
+
+PERSONNEL_CSV_REQUIRED_FILES = frozenset(
+    {
+        "eod_people.csv",
+        "eod_positions.csv",
+        "eod_operational_authorities.csv",
+        "eod_person_authority_assignments.csv",
+    }
+)
+PERSONNEL_CSV_OPTIONAL_FILES = frozenset({"eod_import_issues.csv"})
+PERSONNEL_CSV_IGNORED_FILES = frozenset({"eod_workplace_document_register.csv"})
+PERSONNEL_CSV_ALLOWED_FILES = (
+    PERSONNEL_CSV_REQUIRED_FILES
+    | PERSONNEL_CSV_OPTIONAL_FILES
+    | PERSONNEL_CSV_IGNORED_FILES
+)
+
+PEOPLE_CSV_HEADER = (
+    "index",
+    "source_sheet",
+    "source_excel_row",
+    "source_person_no",
+    "full_name_raw",
+    "full_name_normalized",
+    "position_raw",
+    "position_normalized_candidate",
+    "organizational_unit_raw",
+    "organizational_unit_normalized_candidate",
+    "personnel_category_raw",
+    "personnel_category_normalized_candidate",
+    "electrical_safety_group_raw",
+    "electrical_safety_group",
+    "voltage_scope",
+    "electrical_installation_scope_raw",
+    "knowledge_check_date",
+    "valid_until",
+    "basis_document_date",
+    "basis_document_number",
+    "basis_document_title",
+    "basis_metadata_status",
+    "temporary_right_indicator",
+)
+POSITIONS_CSV_HEADER = (
+    "index",
+    "position_key_proposed",
+    "position_name_normalized_candidate",
+    "source_variants",
+    "person_count",
+    "normalization_status",
+)
+AUTHORITIES_CSV_HEADER = (
+    "index",
+    "authority_code_proposed",
+    "source_excel_column",
+    "source_label_normalized",
+    "authority_category_proposed",
+    "value_kind",
+    "compound_decomposition",
+    "notes",
+)
+ASSIGNMENTS_CSV_HEADER = (
+    "index",
+    "source_person_no",
+    "full_name_normalized",
+    "authority_code_proposed",
+    "source_excel_cell",
+    "source_raw_value",
+    "source_status",
+    "qualifier_raw",
+    "reference_marker",
+    "reference_text_from_source_legend",
+    "enum_value",
+    "scope_raw",
+    "effective_from",
+    "effective_until",
+    "basis_document_date",
+    "basis_document_number",
+    "import_action_proposed",
+)
+ISSUES_CSV_HEADER = (
+    "index",
+    "issue_id",
+    "source",
+    "severity",
+    "entity_ref",
+    "field",
+    "raw_value",
+    "issue_type",
+    "description",
+    "recommended_action",
+    "status",
 )
 LEGACY_RIGHT_COLUMNS = (
     ("F", "dispatch_application_submit"),
@@ -178,10 +303,10 @@ def _read_upload(uploaded_file) -> bytes:
     data = bytearray()
     for chunk in chunks:
         data.extend(chunk)
-        if len(data) > MAX_PERSONNEL_XLSX_SIZE:
-            raise PersonnelWorkbookError("Размер XLSX превышает 10 МБ.")
+        if len(data) > MAX_PERSONNEL_SOURCE_SIZE:
+            raise PersonnelWorkbookError("Размер источника персонала превышает 10 МБ.")
     if not data:
-        raise PersonnelWorkbookError("Нельзя загрузить пустой XLSX.")
+        raise PersonnelWorkbookError("Нельзя загрузить пустой источник персонала.")
     return bytes(data)
 
 
@@ -456,6 +581,437 @@ def _parse_marker(
     return state, qualifier, tuple(footnotes), tuple(equipment_groups), (), True
 
 
+def _safe_package_member_name(info: zipfile.ZipInfo) -> str | None:
+    path = PurePosixPath(info.filename.replace("\\", "/"))
+    if path.is_absolute() or ".." in path.parts:
+        raise PersonnelWorkbookError("ZIP-пакет содержит недопустимый путь файла.")
+    if info.is_dir():
+        return None
+    unix_mode = (info.external_attr >> 16) & 0o170000
+    if unix_mode == stat.S_IFLNK:
+        raise PersonnelWorkbookError("ZIP-пакет не должен содержать символические ссылки.")
+    if len(path.parts) > 2:
+        raise PersonnelWorkbookError(
+            "CSV-файлы должны находиться в корне ZIP или в одном общем каталоге."
+        )
+    return path.name.casefold()
+
+
+def _personnel_csv_package_entries(data: bytes) -> dict[str, bytes]:
+    try:
+        archive = zipfile.ZipFile(io.BytesIO(data))
+    except zipfile.BadZipFile as exc:
+        raise PersonnelWorkbookError("Файл повреждён или не является ZIP-пакетом CSV.") from exc
+    result: dict[str, bytes] = {}
+    total_size = 0
+    with archive:
+        files = [info for info in archive.infolist() if not info.is_dir()]
+        if len(files) > MAX_PERSONNEL_CSV_PACKAGE_ENTRIES:
+            raise PersonnelWorkbookError("ZIP-пакет содержит слишком много файлов.")
+        for info in files:
+            name = _safe_package_member_name(info)
+            if name is None:
+                continue
+            if info.flag_bits & 0x1:
+                raise PersonnelWorkbookError("Зашифрованные ZIP-пакеты не поддерживаются.")
+            if name in {".ds_store", "thumbs.db"} or name.startswith("._"):
+                continue
+            if name not in PERSONNEL_CSV_ALLOWED_FILES:
+                raise PersonnelWorkbookError(f"Неожиданный файл в кадровом ZIP-пакете: {name}.")
+            if name in result:
+                raise PersonnelWorkbookError(f"В ZIP-пакете повторяется файл {name}.")
+            if info.file_size > MAX_PERSONNEL_CSV_ENTRY_SIZE:
+                raise PersonnelWorkbookError(f"Файл {name} превышает безопасный лимит 25 МБ.")
+            total_size += info.file_size
+            if total_size > MAX_PERSONNEL_CSV_PACKAGE_UNCOMPRESSED_SIZE:
+                raise PersonnelWorkbookError("Распакованный ZIP-пакет превышает 60 МБ.")
+            result[name] = archive.read(info)
+    missing = sorted(PERSONNEL_CSV_REQUIRED_FILES - set(result))
+    if missing:
+        raise PersonnelWorkbookError(
+            "В кадровом ZIP-пакете отсутствуют обязательные файлы: " + ", ".join(missing) + "."
+        )
+    return result
+
+
+def _parse_csv_rows(data: bytes, *, filename: str, expected_header: tuple[str, ...]) -> list[dict[str, str]]:
+    if data.startswith((b"\xff\xfe", b"\xfe\xff")):
+        raise PersonnelWorkbookError(f"{filename}: требуется кодировка UTF-8, а не UTF-16.")
+    if b"\x00" in data:
+        raise PersonnelWorkbookError(f"{filename}: обнаружены нулевые байты.")
+    try:
+        text = data.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise PersonnelWorkbookError(f"{filename}: требуется кодировка UTF-8.") from exc
+    reader = csv.DictReader(io.StringIO(text, newline=""))
+    actual_header = tuple(reader.fieldnames or ())
+    if actual_header != expected_header:
+        raise PersonnelWorkbookError(
+            f"{filename}: заголовок не соответствует утверждённому CSV-контракту."
+        )
+    rows: list[dict[str, str]] = []
+    for line_number, raw_row in enumerate(reader, start=2):
+        if None in raw_row:
+            raise PersonnelWorkbookError(f"{filename}:{line_number}: лишние значения в строке.")
+        row = {key: _normalize_space(value or "") for key, value in raw_row.items()}
+        if not any(row.values()):
+            continue
+        rows.append(row)
+    if not rows:
+        raise PersonnelWorkbookError(f"{filename}: не найдено строк данных.")
+    return rows
+
+
+def _positive_integer(value: str, *, label: str) -> int:
+    normalized = _normalize_space(value)
+    if not normalized.isdigit() or int(normalized) <= 0:
+        raise PersonnelWorkbookError(f"{label}: ожидается положительное целое число.")
+    return int(normalized)
+
+
+def _optional_iso_date(value: str, *, label: str) -> date | None:
+    normalized = _normalize_space(value)
+    if not normalized:
+        return None
+    try:
+        return date.fromisoformat(normalized)
+    except ValueError as exc:
+        raise PersonnelWorkbookError(f"{label}: ожидается дата YYYY-MM-DD.") from exc
+
+
+def _reference_number(value: str) -> int | None:
+    normalized = _normalize_space(value).replace(",", ".")
+    if not normalized:
+        return None
+    match = re.fullmatch(r"(\d+)(?:\.0+)?", normalized)
+    return int(match.group(1)) if match else None
+
+
+def _csv_source_cell(value: str, *, expected_column: str, expected_row: int) -> None:
+    match = re.fullmatch(r"([A-Za-z]+)(\d+)", _normalize_space(value))
+    if not match:
+        raise PersonnelWorkbookError(f"Некорректная ссылка исходной ячейки: {value!r}.")
+    if match.group(1).upper() != expected_column or int(match.group(2)) != expected_row:
+        raise PersonnelWorkbookError(
+            f"Ссылка {value!r} не соответствует ожидаемой ячейке {expected_column}{expected_row}."
+        )
+
+
+def parse_personnel_csv_package(data: bytes) -> ParsedPersonnelWorkbook:
+    entries = _personnel_csv_package_entries(data)
+    people_rows = _parse_csv_rows(
+        entries["eod_people.csv"], filename="eod_people.csv", expected_header=PEOPLE_CSV_HEADER
+    )
+    position_rows = _parse_csv_rows(
+        entries["eod_positions.csv"],
+        filename="eod_positions.csv",
+        expected_header=POSITIONS_CSV_HEADER,
+    )
+    authority_rows = _parse_csv_rows(
+        entries["eod_operational_authorities.csv"],
+        filename="eod_operational_authorities.csv",
+        expected_header=AUTHORITIES_CSV_HEADER,
+    )
+    assignment_rows = _parse_csv_rows(
+        entries["eod_person_authority_assignments.csv"],
+        filename="eod_person_authority_assignments.csv",
+        expected_header=ASSIGNMENTS_CSV_HEADER,
+    )
+    issue_rows = (
+        _parse_csv_rows(
+            entries["eod_import_issues.csv"],
+            filename="eod_import_issues.csv",
+            expected_header=ISSUES_CSV_HEADER,
+        )
+        if "eod_import_issues.csv" in entries
+        else []
+    )
+
+    positions: dict[str, dict[str, str]] = {}
+    position_keys: set[str] = set()
+    for row in position_rows:
+        key = row["position_key_proposed"]
+        name = row["position_name_normalized_candidate"]
+        if not key or key in position_keys:
+            raise PersonnelWorkbookError("eod_positions.csv: пустой или повторяющийся ключ должности.")
+        if not name or _comparison_token(name) in positions:
+            raise PersonnelWorkbookError("eod_positions.csv: пустая или повторяющаяся должность.")
+        if not row["normalization_status"]:
+            raise PersonnelWorkbookError("eod_positions.csv: не указан статус нормализации.")
+        position_keys.add(key)
+        positions[_comparison_token(name)] = row
+
+    authority_catalog: dict[str, dict[str, str]] = {}
+    for row in authority_rows:
+        proposed = row["authority_code_proposed"]
+        if proposed in authority_catalog:
+            raise PersonnelWorkbookError("eod_operational_authorities.csv: повторяется код полномочия.")
+        expected = CSV_AUTHORITY_CODE_MAP.get(proposed)
+        if expected is None:
+            raise PersonnelWorkbookError(
+                f"eod_operational_authorities.csv: неизвестный код полномочия {proposed!r}."
+            )
+        if row["source_excel_column"].upper() != expected[0]:
+            raise PersonnelWorkbookError(
+                f"eod_operational_authorities.csv: код {proposed} привязан не к той колонке."
+            )
+        if not row["source_label_normalized"]:
+            raise PersonnelWorkbookError(
+                f"eod_operational_authorities.csv: для {proposed} отсутствует наименование."
+            )
+        authority_catalog[proposed] = row
+    missing_authorities = sorted(set(CSV_AUTHORITY_CODE_MAP) - set(authority_catalog))
+    if missing_authorities or len(authority_catalog) != len(CSV_AUTHORITY_CODE_MAP):
+        raise PersonnelWorkbookError(
+            "eod_operational_authorities.csv должен содержать ровно 21 утверждённый код."
+        )
+
+    people: dict[int, dict[str, str]] = {}
+    source_rows: set[int] = set()
+    for row in people_rows:
+        person_no = _positive_integer(
+            row["source_person_no"], label="eod_people.csv: source_person_no"
+        )
+        source_row = _positive_integer(
+            row["source_excel_row"], label=f"eod_people.csv: работник {person_no}: source_excel_row"
+        )
+        if person_no in people or source_row in source_rows:
+            raise PersonnelWorkbookError("eod_people.csv: повторяется номер работника или исходная строка.")
+        full_name = row["full_name_normalized"] or row["full_name_raw"]
+        if not full_name:
+            raise PersonnelWorkbookError(f"eod_people.csv: у работника {person_no} отсутствует ФИО.")
+        position_candidate = row["position_normalized_candidate"] or row["position_raw"]
+        if _comparison_token(position_candidate) not in positions:
+            raise PersonnelWorkbookError(
+                f"eod_people.csv: должность работника {person_no} отсутствует в eod_positions.csv."
+            )
+        for field in ("knowledge_check_date", "valid_until", "basis_document_date"):
+            _optional_iso_date(row[field], label=f"eod_people.csv: работник {person_no}: {field}")
+        people[person_no] = row
+        source_rows.add(source_row)
+
+    footnotes: dict[str, str] = {}
+    for row in assignment_rows:
+        marker = _reference_number(row["reference_marker"])
+        text = row["reference_text_from_source_legend"]
+        if marker is None or not text:
+            continue
+        existing = footnotes.get(str(marker))
+        if existing and existing != text:
+            raise PersonnelWorkbookError(f"В пакете противоречиво расшифрована сноска {marker}.")
+        footnotes[str(marker)] = text
+    known_footnotes = {int(key) for key in footnotes}
+
+    assignments: dict[tuple[int, str], dict[str, str]] = {}
+    for row in assignment_rows:
+        person_no = _positive_integer(
+            row["source_person_no"],
+            label="eod_person_authority_assignments.csv: source_person_no",
+        )
+        person = people.get(person_no)
+        if person is None:
+            raise PersonnelWorkbookError(
+                f"eod_person_authority_assignments.csv: неизвестный работник {person_no}."
+            )
+        proposed = row["authority_code_proposed"]
+        mapping = CSV_AUTHORITY_CODE_MAP.get(proposed)
+        if mapping is None:
+            raise PersonnelWorkbookError(
+                f"eod_person_authority_assignments.csv: неизвестный код {proposed!r}."
+            )
+        key = (person_no, proposed)
+        if key in assignments:
+            raise PersonnelWorkbookError(
+                f"eod_person_authority_assignments.csv: повторяется назначение {person_no}/{proposed}."
+            )
+        expected_name = person["full_name_normalized"] or person["full_name_raw"]
+        if _comparison_token(row["full_name_normalized"]) != _comparison_token(expected_name):
+            raise PersonnelWorkbookError(
+                f"eod_person_authority_assignments.csv: ФИО не совпадает у работника {person_no}."
+            )
+        source_row = _positive_integer(
+            person["source_excel_row"], label=f"eod_people.csv: работник {person_no}: source_excel_row"
+        )
+        _csv_source_cell(
+            row["source_excel_cell"], expected_column=mapping[0], expected_row=source_row
+        )
+        if row["import_action_proposed"] not in {"CREATE_OR_UPDATE_ASSIGNMENT", "STAGING_ONLY"}:
+            raise PersonnelWorkbookError(
+                "eod_person_authority_assignments.csv: неизвестное предлагаемое действие импорта."
+            )
+        for field in ("effective_from", "effective_until", "basis_document_date"):
+            _optional_iso_date(
+                row[field], label=f"eod_person_authority_assignments.csv: {person_no}/{proposed}: {field}"
+            )
+        assignments[key] = row
+
+    expected_assignment_count = len(people) * len(CSV_AUTHORITY_CODE_MAP)
+    if len(assignments) != expected_assignment_count:
+        raise PersonnelWorkbookError(
+            "eod_person_authority_assignments.csv должен содержать по 21 строке на каждого работника."
+        )
+
+    parsed_rows: list[ParsedPersonRow] = []
+    document_dates: set[date] = set()
+    document_numbers: set[str] = set()
+    for person_no in sorted(people):
+        person = people[person_no]
+        source_row = int(person["source_excel_row"])
+        full_name_raw = person["full_name_raw"] or person["full_name_normalized"]
+        last_name, first_name, middle_name, name_issues = _parse_name(full_name_raw)
+        position_raw = person["position_normalized_candidate"] or person["position_raw"]
+        division_raw = (
+            person["organizational_unit_normalized_candidate"]
+            or person["organizational_unit_raw"]
+        )
+        category_raw = (
+            person["personnel_category_normalized_candidate"]
+            or person["personnel_category_raw"]
+        )
+        safety_raw = person["electrical_safety_group_raw"]
+        safety_group = person["electrical_safety_group"]
+        voltage_scope = person["voltage_scope"]
+        if not safety_group:
+            safety_group, parsed_voltage = _parse_safety(safety_raw)
+            voltage_scope = voltage_scope or parsed_voltage
+        installation_scope = person["electrical_installation_scope_raw"]
+        issues = list(name_issues)
+        if not position_raw:
+            issues.append("Не указана должность.")
+        if not division_raw:
+            issues.append("Не указано структурное подразделение.")
+        if not category_raw:
+            issues.append("Не указана категория персонала.")
+        if not safety_group:
+            issues.append("Не распознана группа по электробезопасности.")
+        position_info = positions.get(_comparison_token(position_raw))
+        if position_info and position_info["normalization_status"] != "DIRECT":
+            issues.append("Нормализация наименования должности требует ручного подтверждения.")
+
+        parsed_cells: list[ParsedAuthorityCell] = []
+        rza_category = ""
+        for proposed, (column, internal_code) in CSV_AUTHORITY_CODE_MAP.items():
+            assignment = assignments[(person_no, proposed)]
+            raw_marker = assignment["source_raw_value"]
+            if internal_code == "rza_maintenance_category":
+                rza_category = assignment["enum_value"] or raw_marker
+            state, qualifier, marker_footnotes, equipment_groups, cell_issues, publishable = _parse_marker(
+                raw_marker,
+                right_code=internal_code,
+                known_footnotes=known_footnotes,
+            )
+            extra_issues = list(cell_issues)
+            if assignment["import_action_proposed"] == "STAGING_ONLY" and publishable:
+                state = PersonnelAuthorityCell.GrantState.AMBIGUOUS
+                publishable = False
+                extra_issues.append(
+                    "Нормализатор источника оставил положительное значение только в staging."
+                )
+            if assignment["import_action_proposed"] == "CREATE_OR_UPDATE_ASSIGNMENT" and not publishable:
+                extra_issues.append(
+                    "Предложение публикации отклонено: исходная отметка не является однозначной."
+                )
+            qualifier_parts = [qualifier]
+            if assignment["qualifier_raw"] and assignment["qualifier_raw"] not in qualifier:
+                qualifier_parts.append(assignment["qualifier_raw"])
+            qualifier = "; ".join(_normalize_space(item) for item in qualifier_parts if item)
+            parsed_cells.append(
+                ParsedAuthorityCell(
+                    source_column=column,
+                    right_code=internal_code,
+                    source_header=authority_catalog[proposed]["source_label_normalized"],
+                    raw_marker=raw_marker,
+                    grant_state=state,
+                    qualifier=qualifier,
+                    footnote_numbers=marker_footnotes,
+                    equipment_groups=equipment_groups,
+                    issues=tuple(extra_issues),
+                    is_publishable=publishable,
+                )
+            )
+            if assignment["basis_document_date"]:
+                document_dates.add(
+                    _optional_iso_date(
+                        assignment["basis_document_date"],
+                        label=f"назначение {person_no}/{proposed}: basis_document_date",
+                    )
+                )
+            if assignment["basis_document_number"]:
+                document_numbers.add(assignment["basis_document_number"])
+
+        ambiguous_count = sum(
+            cell.grant_state == PersonnelAuthorityCell.GrantState.AMBIGUOUS
+            for cell in parsed_cells
+        )
+        if ambiguous_count:
+            issues.append(f"Неоднозначных ячеек полномочий: {ambiguous_count}.")
+        if not last_name or not first_name or not position_raw:
+            review_status = PersonnelSourceRow.ReviewStatus.BLOCKED
+        elif issues:
+            review_status = PersonnelSourceRow.ReviewStatus.REVIEW_REQUIRED
+        else:
+            review_status = PersonnelSourceRow.ReviewStatus.READY
+        fingerprint_payload = {
+            "source_person_no": person_no,
+            "source_row": source_row,
+            "person": person,
+            "assignments": [assignments[(person_no, code)] for code in CSV_AUTHORITY_CODE_MAP],
+        }
+        _canonical, fingerprint = _sha256_payload(fingerprint_payload)
+        parsed_rows.append(
+            ParsedPersonRow(
+                source_row_number=source_row,
+                source_sequence=person_no,
+                full_name_raw=full_name_raw,
+                last_name=last_name,
+                first_name=first_name,
+                middle_name=middle_name,
+                position_raw=position_raw,
+                division_raw=division_raw,
+                personnel_category_raw=category_raw,
+                electrical_safety_raw=safety_raw,
+                electrical_safety_group=safety_group,
+                voltage_scope=voltage_scope,
+                installation_scope_raw=installation_scope,
+                rza_category_raw=rza_category,
+                issues=tuple(issues),
+                review_status=review_status,
+                fingerprint=fingerprint,
+                authority_cells=tuple(parsed_cells),
+            )
+        )
+
+    document_date = next(iter(document_dates)) if len(document_dates) == 1 else None
+    document_number = next(iter(document_numbers)) if len(document_numbers) == 1 else ""
+    severity_counts = dict(Counter(row["severity"] or "UNSPECIFIED" for row in issue_rows))
+    manifest = {
+        "schema": "eod.personnel-authority.normalized-csv-package.v1",
+        "source_format": "NORMALIZED_CSV_PACKAGE",
+        "layout_version": PersonnelSourceRevision.LayoutVersion.CURRENT_28_COLUMNS,
+        "sheet_name": "eod_people.csv",
+        "package_components": sorted(entries),
+        "required_components": sorted(PERSONNEL_CSV_REQUIRED_FILES),
+        "ignored_components": sorted(set(entries) & PERSONNEL_CSV_IGNORED_FILES),
+        "person_count": len(parsed_rows),
+        "position_count": len(position_rows),
+        "authority_definition_count": len(authority_catalog),
+        "authority_cell_count": len(assignments),
+        "source_issue_count": len(issue_rows),
+        "source_issue_severity_counts": severity_counts,
+        "source_issues": issue_rows,
+        "document_date": document_date.isoformat() if document_date else None,
+        "document_number": document_number,
+    }
+    return ParsedPersonnelWorkbook(
+        sheet_name="eod_people.csv",
+        layout_version=PersonnelSourceRevision.LayoutVersion.CURRENT_28_COLUMNS,
+        document_date=document_date,
+        document_number=document_number,
+        footnotes=footnotes,
+        manifest=manifest,
+        rows=tuple(parsed_rows),
+    )
+
 def parse_personnel_workbook(data: bytes) -> ParsedPersonnelWorkbook:
     sheet_name, cells = _workbook_cells(data)
     layout = _detect_layout(cells)
@@ -596,6 +1152,7 @@ def parse_personnel_workbook(data: bytes) -> ParsedPersonnelWorkbook:
 
     manifest = {
         "schema": "eod.personnel-authority.source.v1",
+        "source_format": "XLSX",
         "layout_version": layout,
         "sheet_name": sheet_name,
         "person_count": len(rows),
@@ -712,7 +1269,15 @@ def stage_personnel_workbook(
     if existing is not None:
         return existing
 
-    parsed = parse_personnel_workbook(data)
+    extension = Path(getattr(uploaded_file, "name", "")).suffix.lower()
+    if extension == ".zip":
+        parsed = parse_personnel_csv_package(data)
+    elif extension == ".xlsx":
+        parsed = parse_personnel_workbook(data)
+    else:
+        raise PersonnelWorkbookError(
+            "Допустимы ZIP-пакет нормализованных CSV или исходная матрица XLSX."
+        )
     right_definitions = {
         item.code: item
         for item in OperationalRightDefinition.objects.filter(is_active=True)
@@ -733,16 +1298,16 @@ def stage_personnel_workbook(
         organization=employee.organization,
         data_profile=data_profile,
         uploaded_by=employee,
-        source_reference=_normalize_space(source_reference) or "Матрица работников и предоставленных прав",
+        source_reference=_normalize_space(source_reference) or "Источник работников и предоставленных прав",
         effective_from=effective_from,
-        original_filename=getattr(uploaded_file, "name", "personnel.xlsx"),
+        original_filename=getattr(uploaded_file, "name", "personnel-source.zip"),
         file_size=len(data),
         file_sha256=digest,
         sheet_name=parsed.sheet_name,
         layout_version=parsed.layout_version,
         document_date=parsed.document_date,
         document_number=parsed.document_number,
-        manifest=parsed.manifest,
+        manifest={**parsed.manifest, "source_sha256": digest, "source_size": len(data)},
         footnotes=parsed.footnotes,
         total_people=len(parsed.rows),
         total_authority_cells=sum(len(row.authority_cells) for row in parsed.rows),
