@@ -8747,3 +8747,69 @@ body.draft-view-drawer-visible .draft-view-drawer {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* Patch 011.5 Repair 6: grouped conflict review and hierarchy health */
+.ps-hierarchy-health {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+.ps-hierarchy-health article {
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface-soft);
+}
+.ps-hierarchy-health article.is-ok { border-color: color-mix(in srgb, var(--success) 45%, var(--border)); }
+.ps-hierarchy-health article.is-error { border-color: color-mix(in srgb, var(--danger) 60%, var(--border)); }
+.ps-hierarchy-health strong { font-size: 1.45rem; }
+.ps-hierarchy-health small { color: var(--muted); }
+.ps-conflict-group-list { display: grid; gap: 1rem; }
+.ps-conflict-group {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface-soft);
+    overflow: hidden;
+}
+.ps-conflict-group.is-blocked { border-color: color-mix(in srgb, var(--warning) 55%, var(--border)); }
+.ps-conflict-group > header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+.ps-conflict-group > header div { display: grid; gap: 0.25rem; }
+.ps-conflict-members { display: grid; }
+.ps-conflict-member {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border);
+}
+.ps-conflict-member > span:first-of-type { display: grid; gap: 0.2rem; min-width: 0; }
+.ps-conflict-member small { color: var(--muted); overflow-wrap: anywhere; }
+.ps-conflict-form {
+    display: grid;
+    grid-template-columns: minmax(12rem, 1fr) minmax(14rem, 1fr) minmax(14rem, 1.2fr) auto;
+    align-items: end;
+    gap: 0.75rem;
+    padding: 1rem;
+}
+.ps-conflict-form label { display: grid; gap: 0.35rem; }
+.ps-conflict-form select, .ps-conflict-form input { width: 100%; }
+@media (max-width: 1050px) {
+    .ps-conflict-form { grid-template-columns: 1fr 1fr; }
+    .ps-hierarchy-health { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+    .ps-conflict-form { grid-template-columns: 1fr; }
+    .ps-conflict-member { grid-template-columns: 1fr; }
+    .ps-conflict-member .import-status { justify-self: start; }
+}

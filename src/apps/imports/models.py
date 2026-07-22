@@ -1248,9 +1248,13 @@ class PowerSystemAssetOccurrence(models.Model):
     @property
     def effective_logical_key(self) -> str:
         if self.review_decision == self.ReviewDecision.MERGE_WITH and self.merge_target_id:
-            return self.merge_target.logical_key
+            return self.merge_target.effective_logical_key
         if self.review_decision == self.ReviewDecision.ACCEPT_AS_NEW:
-            return f"{self.logical_key}:{self.occurrence_id}"
+            has_merged_sources = self.merged_source_occurrences.filter(
+                review_decision=self.ReviewDecision.MERGE_WITH,
+            ).exists()
+            if not has_merged_sources:
+                return f"{self.logical_key}:{self.occurrence_id}"
         return self.logical_key
 
     def clean(self) -> None:

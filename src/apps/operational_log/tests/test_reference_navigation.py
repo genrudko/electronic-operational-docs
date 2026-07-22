@@ -6,6 +6,7 @@ from django.test import SimpleTestCase
 
 ROOT = Path(__file__).resolve().parents[3]
 REVISION = "011364"
+SYSTEM_CSS_REVISION = "011566"
 
 
 class ReferenceNavigationRuntimeContractTests(SimpleTestCase):
@@ -73,6 +74,6 @@ class ReferenceNavigationRuntimeContractTests(SimpleTestCase):
                 template,
             )
         self.assertIn(
-            f"system/app.css' %}}?v={REVISION}",
+            f"system/app.css' %}}?v={SYSTEM_CSS_REVISION}",
             base_template,
         )

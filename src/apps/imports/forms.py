@@ -282,6 +282,37 @@ class PowerSystemOccurrenceDecisionForm(forms.Form):
         return cleaned
 
 
+class PowerSystemDuplicateGroupDecisionForm(forms.Form):
+    action = forms.ChoiceField(
+        label="Решение по группе",
+        choices=(
+            ("MERGE", "Объединить строки в один объект"),
+            ("KEEP_SEPARATE", "Оставить отдельными объектами"),
+            ("KEEP_PRIMARY", "Оставить только выбранную строку"),
+            ("RESET", "Сбросить решение по группе"),
+        ),
+    )
+    primary_occurrence_id = forms.CharField(
+        label="Основная строка",
+        max_length=128,
+        required=False,
+    )
+    note = forms.CharField(
+        label="Комментарий",
+        max_length=2000,
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("action") in {"MERGE", "KEEP_PRIMARY"} and not cleaned.get(
+            "primary_occurrence_id"
+        ):
+            self.add_error("primary_occurrence_id", "Выберите основную строку группы.")
+        return cleaned
+
+
 class PowerSystemPublicationConfirmationForm(forms.Form):
     effective_from = forms.DateField(
         label="Дата начала действия публикуемой редакции",

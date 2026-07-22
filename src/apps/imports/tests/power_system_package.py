@@ -30,7 +30,11 @@ def _csv_bytes(headers: tuple[str, ...], rows: list[dict[str, str]]) -> bytes:
     return stream.getvalue().encode("utf-8")
 
 
-def synthetic_power_system_package(*, filename: str = "synthetic-power-system.zip"):
+def synthetic_power_system_package(
+    *,
+    filename: str = "synthetic-power-system.zip",
+    include_repair6_cases: bool = False,
+):
     facility = "Синтетическая ВЭС"
     base = {
         "source_sheet": "Синтетический перечень",
@@ -190,6 +194,63 @@ def synthetic_power_system_package(*, filename: str = "synthetic-power-system.zi
             "is_primary_equipment_proposed": "TRUE",
         },
     ]
+    if include_repair6_cases:
+        asset_rows.extend(
+            [
+                {
+                    **base,
+                    "occurrence_id": "SYN-SHOT-1",
+                    "source_row": "10",
+                    "record_role": "DISPATCHING_OBJECT_OCCURRENCE",
+                    "domain": "PRIMARY_EQUIPMENT",
+                    "asset_type_proposed": "other_equipment",
+                    "asset_type_ru_proposed": "Прочее оборудование",
+                    "source_category_raw": "Прочее",
+                    "dispatcher_name_raw": "ШОТ",
+                    "display_name_normalized_proposed": "ШОТ",
+                    "comparison_key": "шот",
+                    "parent_raw": "КТП-1",
+                    "hierarchy_path_raw": f"{facility} / 35 кВ / КТП-1 / Прочее",
+                    "classification_confidence": "LOW",
+                    "import_disposition": "CREATE",
+                    "is_primary_equipment_proposed": "TRUE",
+                },
+                {
+                    **base,
+                    "occurrence_id": "SYN-DUP-A",
+                    "source_row": "11",
+                    "record_role": "DISPATCHING_OBJECT_OCCURRENCE",
+                    "domain": "POWER_LINE",
+                    "asset_type_proposed": "cable_line",
+                    "asset_type_ru_proposed": "Кабельная линия",
+                    "dispatcher_name_raw": "КЛ 35 кВ Синтетическая 1 цепь",
+                    "display_name_normalized_proposed": "КЛ 35 кВ Синтетическая 1 цепь",
+                    "comparison_key": "кл 35 кв синтетическая 1 цепь",
+                    "parent_raw": facility,
+                    "hierarchy_path_raw": f"{facility} / 35 кВ",
+                    "import_disposition": "MERGE_CANDIDATE",
+                    "duplicate_group": "SYN_DUP_1",
+                    "is_primary_equipment_proposed": "TRUE",
+                },
+                {
+                    **base,
+                    "occurrence_id": "SYN-DUP-B",
+                    "source_row": "12",
+                    "record_role": "DISPATCHING_OBJECT_OCCURRENCE",
+                    "domain": "POWER_LINE",
+                    "asset_type_proposed": "cable_line",
+                    "asset_type_ru_proposed": "Кабельная линия",
+                    "dispatcher_name_raw": "КЛ 35 кВ Синтетическая 1 цепь",
+                    "display_name_normalized_proposed": "КЛ 35 кВ Синтетическая 1 цепь",
+                    "comparison_key": "кл 35 кв синтетическая 1 цепь",
+                    "parent_raw": facility,
+                    "hierarchy_path_raw": f"{facility} / 35 кВ",
+                    "import_disposition": "MERGE_CANDIDATE",
+                    "duplicate_group": "SYN_DUP_1",
+                    "is_primary_equipment_proposed": "TRUE",
+                },
+            ]
+        )
     authority_rows = [
         {
             "occurrence_id": "SYN-Q-1",

@@ -40,7 +40,7 @@
         <span>2</span>
         <div>
             <strong>{{ attention_count }} строк требуют решения</strong>
-            <p>{{ revision.review_count }} требуют проверки, {{ revision.blocked_count }} заблокированы источником.</p>
+            <p>Они собраны в {{ duplicate_group_count }} групп конфликтов; отдельно показаны только строки без группы.</p>
         </div>
     </article>
     <article class="workflow-step">
@@ -85,6 +85,11 @@
         <article><span>ВЭУ</span><strong>{{ hierarchy_counts.wind_turbines }}</strong></article>
         <article><span>ЛЭП</span><strong>{{ hierarchy_counts.lines }}</strong></article>
     </div>
+    <div class="ps-hierarchy-health">
+        <article class="is-ok"><span>Корневые энергообъекты</span><strong>{{ root_count }}</strong><small>Родитель не требуется</small></article>
+        <article class="{% if orphan_count %}is-error{% else %}is-ok{% endif %}"><span>Потерянные родители</span><strong>{{ orphan_count }}</strong><small>{% if orphan_count %}Публикация будет заблокирована{% else %}Осиротевших строк нет{% endif %}</small></article>
+        <article class="is-ok"><span>ШОТ распознано</span><strong>{{ shot_count }}</strong><small>Тип: шкаф оперативного тока</small></article>
+    </div>
     <div class="ps-hierarchy-samples">
         {% for row in hierarchy_examples %}
             <div>
@@ -95,6 +100,73 @@
         {% endfor %}
     </div>
 </section>
+
+{% if duplicate_group_count %}
+<section class="profile-card ps-conflict-groups">
+    <div class="section-heading">
+        <div>
+            <div class="eyebrow">СГРУППИРОВАННАЯ ПРОВЕРКА</div>
+            <h2>Конфликты и возможные дубли</h2>
+            <p>{{ grouped_attention_row_count }} строк собраны в {{ duplicate_group_count }} групп. Одно решение применяется ко всей группе.</p>
+        </div>
+        <span class="count-badge warning">{{ duplicate_group_count }} групп</span>
+    </div>
+    <div class="ps-conflict-group-list">
+        {% for group in duplicate_groups %}
+            {% if not group.resolved %}
+            <article class="ps-conflict-group {% if group.blocked %}is-blocked{% endif %}">
+                <header>
+                    <div>
+                        <strong>{{ group.title }}</strong>
+                        <small>{% if group.blocked %}Конфликт источника{% else %}Возможный дубль{% endif %} · {{ group.members|length }} строки</small>
+                    </div>
+                    <code class="technical-only">{{ group.code }}</code>
+                </header>
+                <div class="ps-conflict-members">
+                    {% for member in group.members %}
+                        <div class="ps-conflict-member">
+                            <span>
+                                <strong>{{ member.occurrence_id }} · {{ member.dispatcher_name_raw }}</strong>
+                                <small>{{ member.energy_facility_raw }} · исходный родитель: {{ member.parent_raw|default:"не указан" }}</small>
+                                <small>Родитель в системе: {{ member.resolved_parent_name }}</small>
+                            </span>
+                            <span class="import-status status-{{ member.review_status|lower }}">{{ member.get_review_status_display }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+                <form method="post" action="{% url 'imports:power_system_duplicate_group_decide' revision.public_id group.code %}" class="ps-conflict-form">
+                    {% csrf_token %}
+                    <label>
+                        Основная строка
+                        <select name="primary_occurrence_id">
+                            <option value="">Выберите строку</option>
+                            {% for member in group.members %}
+                                <option value="{{ member.occurrence_id }}">{{ member.occurrence_id }} · {{ member.energy_facility_raw }} · {{ member.parent_raw }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label>
+                        Решение по группе
+                        <select name="action" required>
+                            <option value="">Выберите решение</option>
+                            <option value="MERGE">Объединить строки в один объект</option>
+                            <option value="KEEP_SEPARATE">Оставить отдельными объектами</option>
+                            <option value="KEEP_PRIMARY">Оставить только выбранную строку</option>
+                            <option value="RESET">Сбросить решение</option>
+                        </select>
+                    </label>
+                    <label class="ps-conflict-note">
+                        Комментарий
+                        <input name="note" placeholder="Основание решения">
+                    </label>
+                    <button class="button secondary" type="submit">Сохранить решение по группе</button>
+                </form>
+            </article>
+            {% endif %}
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
 
 <section class="profile-card equipment-filter-card">
     <div class="section-heading">
@@ -202,15 +274,22 @@
                                         Решение
                                         <select name="action">
                                             <option value="ACCEPT_AS_NEW">Принять отдельным объектом</option>
-                                            <option value="MERGE_WITH">Объединить с другой строкой</option>
+                                            {% if row.merge_candidates %}<option value="MERGE_WITH">Объединить с найденной строкой</option>{% endif %}
                                             <option value="EXCLUDE">Исключить из публикации</option>
                                             <option value="RESET">Вернуть исходное состояние</option>
                                         </select>
                                     </label>
-                                    <label>
-                                        Строка для объединения
-                                        <input name="merge_target_occurrence_id" placeholder="Идентификатор исходной строки">
-                                    </label>
+                                    {% if row.merge_candidates %}
+                                        <label>
+                                            Строка для объединения
+                                            <select name="merge_target_occurrence_id">
+                                                <option value="">Выберите найденную строку</option>
+                                                {% for candidate in row.merge_candidates %}
+                                                    <option value="{{ candidate.occurrence_id }}">{{ candidate.occurrence_id }} · {{ candidate.energy_facility_raw }} · {{ candidate.parent_raw }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </label>
+                                    {% endif %}
                                     <label>
                                         Комментарий
                                         <textarea name="note" rows="3" placeholder="Почему принято это решение"></textarea>

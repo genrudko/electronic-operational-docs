@@ -4,11 +4,14 @@
 <section class="page-heading compact">
     <div>
         <div class="eyebrow">ОБЪЕКТЫ ЭНЕРГОСИСТЕМЫ</div>
-        <h1>Импорт оборудования из ZIP</h1>
-        <p>Контролируемые редакции, проверка спорных строк, карантин конфликтов и отдельная публикация.</p>
+        <h1>Редакции импорта оборудования</h1>
+        <p>Сначала открывайте существующую редакцию. Новый ZIP загружается только отдельной кнопкой.</p>
     </div>
     <div class="document-actions">
-        <a class="button" href="{% url 'imports:power_system_upload' %}">Загрузить ZIP-пакет</a>
+        {% if revisions %}
+            <a class="button" href="{% url 'imports:power_system_detail' revisions.0.public_id %}">Открыть последнюю редакцию</a>
+        {% endif %}
+        <a class="button secondary" href="{% url 'imports:power_system_upload' %}">Загрузить новый ZIP-пакет</a>
         <a class="button secondary" href="{% url 'imports:list' %}">Обычный импорт CSV/XLSX</a>
     </div>
 </section>

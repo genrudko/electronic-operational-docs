@@ -16,6 +16,7 @@ from .forms import (
     ImportPublicationConfirmationForm,
     ImportRowCorrectionForm,
     ImportUploadForm,
+    PowerSystemDuplicateGroupDecisionForm,
     PowerSystemOccurrenceDecisionForm,
     PowerSystemPackageUploadForm,
     PowerSystemPublicationConfirmationForm,
@@ -31,6 +32,7 @@ from .models import (
 from .power_system import (
     PowerSystemPackageError,
     build_power_system_publication_preview,
+    decide_power_system_duplicate_group,
     decide_power_system_occurrence,
     discard_power_system_revision,
     power_system_revision_for_user,
@@ -175,13 +177,63 @@ def _power_system_parent_labels(revision: PowerSystemSourceRevision) -> dict[str
 
 def _decorate_power_system_occurrence(row, parent_labels: dict[str, str]) -> None:
     row.resolved_parent_name = parent_labels.get(row.parent_external_key, "")
-    if not row.resolved_parent_name:
-        row.resolved_parent_name = row.parent_raw or row.energy_facility_raw or "Не определён"
+    row.is_root_site = row.asset_type_code == "energy_facility" and not row.parent_external_key
+    row.is_orphan = row.asset_type_code != "energy_facility" and not row.parent_external_key
+    if row.is_root_site:
+        row.resolved_parent_name = "Корневой энергообъект"
+    elif not row.resolved_parent_name:
+        row.resolved_parent_name = row.parent_raw or "Не определён"
     row.needs_manual_decision = row.review_status in {
         PowerSystemAssetOccurrence.ReviewStatus.REVIEW_REQUIRED,
         PowerSystemAssetOccurrence.ReviewStatus.BLOCKED,
     }
     row.is_automatic_ready = row.review_status == PowerSystemAssetOccurrence.ReviewStatus.READY
+
+
+def _power_system_duplicate_groups(
+    revision: PowerSystemSourceRevision,
+    parent_labels: dict[str, str],
+) -> list[dict[str, object]]:
+    rows = list(
+        revision.asset_occurrences.filter(duplicate_group__gt="")
+        .exclude(review_status=PowerSystemAssetOccurrence.ReviewStatus.PUBLISHED)
+        .select_related("merge_target", "reviewed_by")
+        .order_by("duplicate_group", "source_sheet", "source_row", "occurrence_id")
+    )
+    grouped: dict[str, list[PowerSystemAssetOccurrence]] = {}
+    for row in rows:
+        grouped.setdefault(row.duplicate_group, []).append(row)
+
+    result: list[dict[str, object]] = []
+    attention_statuses = {
+        PowerSystemAssetOccurrence.ReviewStatus.REVIEW_REQUIRED,
+        PowerSystemAssetOccurrence.ReviewStatus.BLOCKED,
+    }
+    for duplicate_group, members in grouped.items():
+        if len(members) < 2:
+            continue
+        for member in members:
+            _decorate_power_system_occurrence(member, parent_labels)
+        result.append(
+            {
+                "code": duplicate_group,
+                "title": members[0].dispatcher_name_raw,
+                "members": members,
+                "blocked": any(
+                    member.review_status == PowerSystemAssetOccurrence.ReviewStatus.BLOCKED
+                    for member in members
+                ),
+                "resolved": not any(
+                    member.review_status in attention_statuses for member in members
+                ),
+                "decision_count": sum(
+                    member.review_decision
+                    != PowerSystemAssetOccurrence.ReviewDecision.NONE
+                    for member in members
+                ),
+            }
+        )
+    return result
 
 
 @login_required
@@ -722,6 +774,14 @@ def power_system_detail(request: HttpRequest, public_id) -> HttpResponse:
     type_filter = request.GET.get("type", "").strip()
     query = request.GET.get("q", "").strip()
     allowed_statuses = {value for value, _label in PowerSystemAssetOccurrence.ReviewStatus.choices}
+    parent_labels = _power_system_parent_labels(revision)
+    duplicate_groups = _power_system_duplicate_groups(revision, parent_labels)
+    grouped_occurrence_ids = {
+        member.pk
+        for group in duplicate_groups
+        if not group["resolved"]
+        for member in group["members"]
+    }
     occurrences = revision.asset_occurrences.select_related(
         "merge_target",
         "reviewed_by",
@@ -733,7 +793,7 @@ def power_system_detail(request: HttpRequest, public_id) -> HttpResponse:
                 PowerSystemAssetOccurrence.ReviewStatus.REVIEW_REQUIRED,
                 PowerSystemAssetOccurrence.ReviewStatus.BLOCKED,
             )
-        )
+        ).exclude(pk__in=grouped_occurrence_ids)
     elif status_filter in allowed_statuses:
         occurrences = occurrences.filter(review_status=status_filter)
     elif status_filter in {"", "ALL"}:
@@ -759,9 +819,17 @@ def power_system_detail(request: HttpRequest, public_id) -> HttpResponse:
     occurrences = occurrences.order_by("source_sheet", "source_row", "occurrence_id")
     page_size = 25 if status_filter == "ATTENTION" else 50
     page = Paginator(occurrences, page_size).get_page(request.GET.get("page"))
-    parent_labels = _power_system_parent_labels(revision)
+    duplicate_members = {
+        group["code"]: group["members"]
+        for group in duplicate_groups
+    }
     for row in page.object_list:
         _decorate_power_system_occurrence(row, parent_labels)
+        row.merge_candidates = [
+            candidate
+            for candidate in duplicate_members.get(row.duplicate_group, [])
+            if candidate.pk != row.pk
+        ]
 
     issues = list(revision.issues.order_by("-severity", "issue_code")[:100])
     for issue in issues:
@@ -792,6 +860,16 @@ def power_system_detail(request: HttpRequest, public_id) -> HttpResponse:
 
     publications = revision.publications.select_related("actor").order_by("-created_at")
     attention_count = revision.review_count + revision.blocked_count
+    root_count = revision.asset_occurrences.filter(
+        asset_type_code="energy_facility",
+        parent_external_key="",
+    ).count()
+    orphan_count = revision.asset_occurrences.exclude(
+        asset_type_code="energy_facility",
+    ).filter(parent_external_key="").count()
+    shot_count = revision.asset_occurrences.filter(
+        asset_type_code="dc_distribution_board",
+    ).count()
     return render(
         request,
         "imports/power_system_detail.html",
@@ -810,6 +888,14 @@ def power_system_detail(request: HttpRequest, public_id) -> HttpResponse:
             "attention_count": attention_count,
             "hierarchy_counts": hierarchy_counts,
             "hierarchy_examples": hierarchy_examples,
+            "duplicate_groups": duplicate_groups,
+            "duplicate_group_count": sum(
+                not group["resolved"] for group in duplicate_groups
+            ),
+            "grouped_attention_row_count": len(grouped_occurrence_ids),
+            "root_count": root_count,
+            "orphan_count": orphan_count,
+            "shot_count": shot_count,
         },
     )
 
@@ -841,6 +927,42 @@ def power_system_occurrence_decide(request: HttpRequest, public_id, occurrence_i
         messages.error(
             request,
             " ".join(message for messages_list in form.errors.values() for message in messages_list),
+        )
+    return redirect("imports:power_system_detail", public_id=revision.public_id)
+
+
+@login_required
+def power_system_duplicate_group_decide(
+    request: HttpRequest,
+    public_id,
+    duplicate_group: str,
+) -> HttpResponse:
+    employee, revision = power_system_revision_for_user(request.user, public_id)
+    if request.method != "POST":
+        return redirect("imports:power_system_detail", public_id=revision.public_id)
+    form = PowerSystemDuplicateGroupDecisionForm(request.POST)
+    if form.is_valid():
+        try:
+            decide_power_system_duplicate_group(
+                revision=revision,
+                employee=employee,
+                duplicate_group=duplicate_group,
+                action=form.cleaned_data["action"],
+                primary_occurrence_id=form.cleaned_data["primary_occurrence_id"],
+                note=form.cleaned_data["note"],
+            )
+        except ValidationError as error:
+            messages.error(request, _validation_message(error))
+        else:
+            messages.success(request, "Решение по группе исходных строк сохранено.")
+    else:
+        messages.error(
+            request,
+            " ".join(
+                message
+                for messages_list in form.errors.values()
+                for message in messages_list
+            ),
         )
     return redirect("imports:power_system_detail", public_id=revision.public_id)
 

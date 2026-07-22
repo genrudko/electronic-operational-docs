@@ -81,7 +81,8 @@ def main() -> None:
     require(
         "REAL_PACKAGE_HIERARCHY_REPAIR",
         "def _row_voltage_label(" in importer
-        and 'type_code in {"unit_substation", "control_building"}' in importer
+        and 'if type_code == "unit_substation":' in importer
+        and 'if type_code == "control_building":' in importer
         and 'type_code in {"overhead_line", "cable_line"}' in importer
         and 'comparison_token("ВЭУ")' in importer
         and "def reanalyze_power_system_revision(" in importer
@@ -116,12 +117,12 @@ def main() -> None:
         "RUSSIAN_USER_INTERFACE",
         'name="power_system_upload"' in import_urls
         and "Загрузить контролируемый пакет" in upload_template
-        and "Строки источника" in detail_template
+        and "Конфликты и возможные дубли" in detail_template
         and "Происхождение из источника" in equipment_template
-        and "Импорт оборудования из ZIP" in list_template
-        and "Импорт оборудования из ZIP" in power_system_list_template
+        and "Редакции импорта оборудования" in list_template
+        and "Редакции импорта оборудования" in power_system_list_template
         and "Публикуются только строки со статусом «Готова»" in publication_template
-        and "Импортировать оборудование" in equipment_registry_template
+        and "Редакции импорта оборудования" in equipment_registry_template
         and "SOURCE OCCURRENCES" not in detail_template
         and ">STAGING<" not in upload_template,
     )
@@ -149,7 +150,10 @@ def main() -> None:
         and "test_publication_rebuilds_hierarchy" in tests
         and "test_detail_defaults_to_attention" in tests
         and "test_issue_descriptions_are_localized" in tests
-        and "test_views_expose_staging_without_publishing" in tests,
+        and "test_views_expose_staging_without_publishing" in tests
+        and "test_repair6_normalizes_shot" in tests
+        and "test_duplicate_group_decision_merges" in tests
+        and "test_grouped_review_view_uses_detected_candidates" in tests,
     )
     require(
         "NO_REAL_SOURCE_DATA_IN_PATCH",
@@ -168,6 +172,29 @@ def main() -> None:
         "def power_system_upload(" in import_views
         and "def power_system_occurrence_decide(" in import_views
         and "def power_system_publication(" in import_views,
+    )
+    require(
+        "CONTROLLED_SHOT_NORMALIZATION",
+        'CONTROLLED_SHOT_TYPE_CODE = "dc_distribution_board"' in importer
+        and "SHOT_EXACT_UNDER_KTP" in importer
+        and "Шкаф оперативного тока" in importer,
+    )
+    require(
+        "EXPLICIT_CONTROL_BUILDING_PARENT",
+        'if type_code == "control_building":' in importer
+        and "explicit_parent" in importer,
+    )
+    require(
+        "ROOT_AND_ORPHAN_SEPARATION",
+        'counters["root_without_parent"]' in importer
+        and 'counters["orphan_parent"]' in importer
+        and "Потерянные родители" in publication_template,
+    )
+    require(
+        "GROUPED_CONFLICT_REVIEW",
+        "def decide_power_system_duplicate_group(" in importer
+        and "def power_system_duplicate_group_decide(" in import_views
+        and "СГРУППИРОВАННАЯ ПРОВЕРКА" in detail_template,
     )
     print("PATCH_011_5_POWER_SYSTEM_ASSET_IMPORTER_GATE_PASSED")
 

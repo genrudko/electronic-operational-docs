@@ -35,6 +35,8 @@ from .services import can_publish_import, require_import_employee
 MAX_POWER_SYSTEM_PACKAGE_SIZE = 25 * 1024 * 1024
 MAX_POWER_SYSTEM_UNCOMPRESSED_SIZE = 120 * 1024 * 1024
 POWER_SYSTEM_PUBLICATION_SCHEMA = "eod.power-system.publication.v1"
+CONTROLLED_SHOT_TYPE_CODE = "dc_distribution_board"
+CONTROLLED_SHOT_TYPE_NAME = "Шкаф оперативного тока"
 
 ASSET_FILE = "eod_power_system_assets.csv"
 AUTHORITY_FILE = "eod_operational_authority_assignments.csv"
@@ -313,6 +315,39 @@ def _source_facility(row: dict[str, str]) -> str:
     )
 
 
+def _is_controlled_shot_row(row: dict[str, str]) -> bool:
+    return (
+        _comparison_token(row.get("dispatcher_name_raw", "")) == "шот"
+        and bool(
+            re.fullmatch(
+                r"ктп-?\s*\d+",
+                _comparison_token(row.get("parent_raw", "")),
+            )
+        )
+        and _normalize_space(row.get("record_role", ""))
+        == PowerSystemAssetOccurrence.RecordRole.DISPATCHING_OBJECT_OCCURRENCE
+    )
+
+
+def _normalized_type_values(row: dict[str, str]) -> tuple[str, str, str]:
+    if _is_controlled_shot_row(row):
+        return CONTROLLED_SHOT_TYPE_CODE, CONTROLLED_SHOT_TYPE_NAME, "HIGH"
+    return (
+        _normalize_space(row.get("asset_type_proposed", "")),
+        _normalize_space(row.get("asset_type_ru_proposed", "")),
+        _normalize_space(row.get("classification_confidence", "")),
+    )
+
+
+def _normalized_source_row(row: dict[str, str]) -> dict[str, str]:
+    normalized = dict(row)
+    type_code, type_name, classification = _normalized_type_values(normalized)
+    normalized["asset_type_proposed"] = type_code
+    normalized["asset_type_ru_proposed"] = type_name
+    normalized["classification_confidence"] = classification
+    return normalized
+
+
 def _normalized_voltage_label(value: str) -> str:
     token = _normalize_space(value).replace(".", ",")
     match = re.search(r"(?<!\d)(\d+(?:,\d+)?)\s*кв\b", token, flags=re.IGNORECASE)
@@ -391,7 +426,14 @@ def _parent_external_key(
     if row["record_role"] == PowerSystemAssetOccurrence.RecordRole.HIERARCHY_NODE:
         if type_code == "voltage_level":
             return site_key
-        if type_code in {"unit_substation", "control_building"}:
+        if type_code == "control_building":
+            explicit_parent = _normalize_space(row.get("parent_raw", ""))
+            explicit_key = hierarchy.get(
+                (_comparison_token(facility), _comparison_token(explicit_parent)),
+                "",
+            )
+            return explicit_key or site_key
+        if type_code == "unit_substation":
             return voltage_key or hierarchy.get(
                 (_comparison_token(facility), _comparison_token("35 кВ")),
                 site_key,
@@ -508,6 +550,9 @@ def _occurrence_source_row(occurrence: PowerSystemAssetOccurrence) -> dict[str, 
         "occurrence_id": occurrence.occurrence_id,
         "record_role": occurrence.record_role,
         "asset_type_proposed": occurrence.asset_type_code,
+        "asset_type_ru_proposed": occurrence.asset_type_name,
+        "classification_confidence": occurrence.classification_confidence,
+        "hierarchy_confidence": occurrence.hierarchy_confidence,
         "dispatcher_name_raw": occurrence.dispatcher_name_raw,
         "comparison_key": occurrence.comparison_key,
         "energy_facility_raw": occurrence.energy_facility_raw,
@@ -534,34 +579,98 @@ def reanalyze_power_system_revision(
             "occurrence_id",
         )
     )
-    source_rows = [_occurrence_source_row(occurrence) for occurrence in occurrences]
-    hierarchy = _hierarchy_keys(source_rows)
+    normalized_rows = [
+        _normalized_source_row(_occurrence_source_row(occurrence))
+        for occurrence in occurrences
+    ]
+    hierarchy = _hierarchy_keys(normalized_rows)
     changed: list[PowerSystemAssetOccurrence] = []
     counters = defaultdict(int)
-    for occurrence, row in zip(occurrences, source_rows, strict=True):
+    for occurrence, row in zip(occurrences, normalized_rows, strict=True):
         if occurrence.review_status == PowerSystemAssetOccurrence.ReviewStatus.PUBLISHED:
             counters["published_unchanged"] += 1
             continue
-        old_parent_key = occurrence.parent_external_key
-        old_logical_key = occurrence.logical_key
+
+        old_values = (
+            occurrence.parent_external_key,
+            occurrence.logical_key,
+            occurrence.asset_type_code,
+            occurrence.asset_type_name,
+            occurrence.classification_confidence,
+            occurrence.initial_review_status,
+            occurrence.review_status,
+            occurrence.source_flags,
+        )
         parent_key = _parent_external_key(row, hierarchy)
         logical_key = _logical_key(row, parent_key)
+        type_code, type_name, classification = _normalized_type_values(row)
         occurrence.parent_external_key = parent_key
         occurrence.logical_key = logical_key
-        if old_parent_key != parent_key:
+        if _is_controlled_shot_row(row):
+            occurrence.source_flags = {
+                **occurrence.source_flags,
+                "source_asset_type_proposed": occurrence.source_flags.get(
+                    "source_asset_type_proposed", old_values[2]
+                ),
+                "source_asset_type_ru_proposed": occurrence.source_flags.get(
+                    "source_asset_type_ru_proposed", old_values[3]
+                ),
+                "source_classification_confidence": occurrence.source_flags.get(
+                    "source_classification_confidence", old_values[4]
+                ),
+                "controlled_type_normalization": "SHOT_EXACT_UNDER_KTP",
+            }
+        occurrence.asset_type_code = type_code
+        occurrence.asset_type_name = type_name
+        occurrence.classification_confidence = classification
+
+        normalized_initial_status = _initial_review_status(row)
+        occurrence.initial_review_status = normalized_initial_status
+        if occurrence.review_decision == PowerSystemAssetOccurrence.ReviewDecision.NONE:
+            occurrence.review_status = normalized_initial_status
+
+        if old_values[0] != parent_key:
             counters["parent_changed"] += 1
-        if old_logical_key != logical_key:
+        if old_values[1] != logical_key:
             counters["logical_key_changed"] += 1
-        if parent_key:
+        if old_values[2] != type_code:
+            counters["type_changed"] += 1
+        if old_values[6] != occurrence.review_status:
+            counters["review_status_changed"] += 1
+
+        if occurrence.asset_type_code == "energy_facility" and not parent_key:
+            counters["root_without_parent"] += 1
+        elif parent_key:
             counters["resolved_parent"] += 1
         else:
-            counters["unresolved_parent"] += 1
-        if old_parent_key != parent_key or old_logical_key != logical_key:
+            counters["orphan_parent"] += 1
+
+        new_values = (
+            occurrence.parent_external_key,
+            occurrence.logical_key,
+            occurrence.asset_type_code,
+            occurrence.asset_type_name,
+            occurrence.classification_confidence,
+            occurrence.initial_review_status,
+            occurrence.review_status,
+            occurrence.source_flags,
+        )
+        if old_values != new_values:
             changed.append(occurrence)
+
     if changed:
         PowerSystemAssetOccurrence.objects.bulk_update(
             changed,
-            ("parent_external_key", "logical_key"),
+            (
+                "parent_external_key",
+                "logical_key",
+                "asset_type_code",
+                "asset_type_name",
+                "classification_confidence",
+                "initial_review_status",
+                "review_status",
+                "source_flags",
+            ),
         )
     counters["updated_rows"] = len(changed)
     _revision_counts(locked)
@@ -702,10 +811,11 @@ def stage_power_system_package(
 
     occurrences: list[PowerSystemAssetOccurrence] = []
     current_fingerprints: dict[str, str] = {}
-    for row in asset_rows:
+    for source_row_data in asset_rows:
+        row = _normalized_source_row(source_row_data)
         source_row = _positive_int(row["source_row"], "source_row")
         parent_key = _parent_external_key(row, hierarchy)
-        type_code = _normalize_space(row["asset_type_proposed"])
+        type_code, type_name, classification_confidence = _normalized_type_values(row)
         facility = _source_facility(row)
         external_key = (
             _site_external_key(facility)
@@ -716,7 +826,7 @@ def stage_power_system_package(
                 else _occurrence_external_key(row["occurrence_id"])
             )
         )
-        fingerprint = _sha256_bytes(_canonical_json(row).encode("utf-8"))
+        fingerprint = _sha256_bytes(_canonical_json(source_row_data).encode("utf-8"))
         current_fingerprints[row["occurrence_id"]] = fingerprint
         previous_fingerprint = previous_fingerprints.get(row["occurrence_id"])
         if previous_fingerprint is None:
@@ -736,7 +846,7 @@ def stage_power_system_package(
                 record_role=row["record_role"],
                 domain=row["domain"],
                 asset_type_code=type_code,
-                asset_type_name=row["asset_type_ru_proposed"],
+                asset_type_name=type_name,
                 source_category_raw=row["source_category_raw"],
                 dispatcher_name_raw=row["dispatcher_name_raw"],
                 display_name_normalized=row["display_name_normalized_proposed"],
@@ -762,8 +872,20 @@ def stage_power_system_package(
                     "is_independent_dispatching_object_candidate": row[
                         "is_independent_dispatching_object_candidate"
                     ],
+                    "source_asset_type_proposed": source_row_data["asset_type_proposed"],
+                    "source_asset_type_ru_proposed": source_row_data[
+                        "asset_type_ru_proposed"
+                    ],
+                    "source_classification_confidence": source_row_data[
+                        "classification_confidence"
+                    ],
+                    "controlled_type_normalization": (
+                        "SHOT_EXACT_UNDER_KTP"
+                        if _is_controlled_shot_row(row)
+                        else ""
+                    ),
                 },
-                classification_confidence=row["classification_confidence"],
+                classification_confidence=classification_confidence,
                 hierarchy_confidence=row["hierarchy_confidence"],
                 import_disposition=row["import_disposition"],
                 duplicate_group=row["duplicate_group"],
@@ -985,6 +1107,119 @@ def decide_power_system_occurrence(
     return locked
 
 
+@transaction.atomic
+def decide_power_system_duplicate_group(
+    *,
+    revision: PowerSystemSourceRevision,
+    employee: Employee,
+    duplicate_group: str,
+    action: str,
+    primary_occurrence_id: str = "",
+    note: str = "",
+) -> tuple[PowerSystemAssetOccurrence, ...]:
+    locked_revision = PowerSystemSourceRevision.objects.select_for_update().get(
+        pk=revision.pk
+    )
+    if locked_revision.organization_id != employee.organization_id:
+        raise PermissionDenied("Редакция относится к другой организации.")
+    if locked_revision.status == PowerSystemSourceRevision.Status.DISCARDED:
+        raise ValidationError("Убранную редакцию нельзя проверять.")
+
+    group_token = _normalize_space(duplicate_group)
+    rows = list(
+        locked_revision.asset_occurrences.select_for_update()
+        .filter(duplicate_group=group_token)
+        .order_by("source_sheet", "source_row", "occurrence_id")
+    )
+    if len(rows) < 2:
+        raise ValidationError("Группа содержит меньше двух исходных строк.")
+    if any(
+        row.review_status == PowerSystemAssetOccurrence.ReviewStatus.PUBLISHED
+        for row in rows
+    ):
+        raise ValidationError("Опубликованную группу нельзя изменить.")
+
+    normalized_action = action.strip().upper()
+    now = timezone.now()
+    primary = next(
+        (
+            row
+            for row in rows
+            if row.occurrence_id == _normalize_space(primary_occurrence_id)
+        ),
+        None,
+    )
+    if normalized_action in {"MERGE", "KEEP_PRIMARY"} and primary is None:
+        raise ValidationError("Выберите основную строку группы.")
+
+    if normalized_action == "RESET":
+        for row in rows:
+            row.review_decision = PowerSystemAssetOccurrence.ReviewDecision.NONE
+            row.review_status = row.initial_review_status
+            row.merge_target = None
+            row.review_note = ""
+            row.reviewed_by = None
+            row.reviewed_at = None
+    elif normalized_action == "KEEP_SEPARATE":
+        for row in rows:
+            row.review_decision = PowerSystemAssetOccurrence.ReviewDecision.ACCEPT_AS_NEW
+            row.review_status = PowerSystemAssetOccurrence.ReviewStatus.READY
+            row.merge_target = None
+            row.review_note = note.strip()
+            row.reviewed_by = employee
+            row.reviewed_at = now
+    elif normalized_action == "MERGE":
+        assert primary is not None
+        primary.review_decision = PowerSystemAssetOccurrence.ReviewDecision.ACCEPT_AS_NEW
+        primary.review_status = PowerSystemAssetOccurrence.ReviewStatus.READY
+        primary.merge_target = None
+        primary.review_note = note.strip()
+        primary.reviewed_by = employee
+        primary.reviewed_at = now
+        for row in rows:
+            if row.pk == primary.pk:
+                continue
+            row.review_decision = PowerSystemAssetOccurrence.ReviewDecision.MERGE_WITH
+            row.review_status = PowerSystemAssetOccurrence.ReviewStatus.READY
+            row.merge_target = primary
+            row.review_note = note.strip()
+            row.reviewed_by = employee
+            row.reviewed_at = now
+    elif normalized_action == "KEEP_PRIMARY":
+        assert primary is not None
+        primary.review_decision = PowerSystemAssetOccurrence.ReviewDecision.ACCEPT_AS_NEW
+        primary.review_status = PowerSystemAssetOccurrence.ReviewStatus.READY
+        primary.merge_target = None
+        primary.review_note = note.strip()
+        primary.reviewed_by = employee
+        primary.reviewed_at = now
+        for row in rows:
+            if row.pk == primary.pk:
+                continue
+            row.review_decision = PowerSystemAssetOccurrence.ReviewDecision.EXCLUDE
+            row.review_status = PowerSystemAssetOccurrence.ReviewStatus.EXCLUDED
+            row.merge_target = None
+            row.review_note = note.strip()
+            row.reviewed_by = employee
+            row.reviewed_at = now
+    else:
+        raise ValidationError("Неизвестное решение по группе.")
+
+    PowerSystemAssetOccurrence.objects.bulk_update(
+        rows,
+        (
+            "review_decision",
+            "review_status",
+            "merge_target",
+            "review_note",
+            "reviewed_by",
+            "reviewed_at",
+        ),
+    )
+    _revision_counts(locked_revision)
+    return tuple(rows)
+
+
 def get_merge_target(
     *,
     revision: PowerSystemSourceRevision,
@@ -1043,6 +1278,17 @@ def build_power_system_publication_preview(
     )
     if not occurrences:
         raise ValidationError("Нет готовых неопубликованных строк.")
+    unexpected_roots = [
+        occurrence.occurrence_id
+        for occurrence in occurrences
+        if occurrence.asset_type_code != "energy_facility"
+        and not occurrence.parent_external_key
+    ]
+    if unexpected_roots:
+        raise ValidationError(
+            "Нельзя публиковать строки без определённого родителя: "
+            + ", ".join(unexpected_roots[:10])
+        )
     selected_ids = {occurrence.pk for occurrence in occurrences}
     unresolved_parent_keys = {
         occurrence.parent_external_key
@@ -1096,7 +1342,31 @@ def build_power_system_publication_preview(
             == PowerSystemAssetOccurrence.RecordRole.DISPATCHING_OBJECT_OCCURRENCE
             for occurrence in occurrences
         ),
+        "root_sites": sum(
+            occurrence.asset_type_code == "energy_facility"
+            and not occurrence.parent_external_key
+            for occurrence in occurrences
+        ),
+        "orphan_rows": sum(
+            occurrence.asset_type_code != "energy_facility"
+            and not occurrence.parent_external_key
+            for occurrence in occurrences
+        ),
+        "shot_rows": sum(
+            occurrence.asset_type_code == CONTROLLED_SHOT_TYPE_CODE
+            for occurrence in occurrences
+        ),
         "quarantined": revision.review_count + revision.blocked_count,
+        "duplicate_groups_pending": revision.asset_occurrences.filter(
+            duplicate_group__gt="",
+            review_status__in=(
+                PowerSystemAssetOccurrence.ReviewStatus.REVIEW_REQUIRED,
+                PowerSystemAssetOccurrence.ReviewStatus.BLOCKED,
+            ),
+        )
+        .values("duplicate_group")
+        .distinct()
+        .count(),
         "excluded": revision.excluded_count,
     }
     return PowerSystemPublicationPreview(
@@ -1124,7 +1394,13 @@ def _equipment_category(type_code: str, domain: str) -> str:
         return EquipmentType.Category.SDTU
     if type_code in {"voltage_level", "asset_group", "bus_section", "low_voltage_bus_section"}:
         return EquipmentType.Category.SWITCHGEAR
-    if type_code in {"control_building", "battery_bank", "charger", "metering_system"}:
+    if type_code in {
+        "control_building",
+        "battery_bank",
+        "charger",
+        "metering_system",
+        CONTROLLED_SHOT_TYPE_CODE,
+    }:
         return EquipmentType.Category.AUXILIARY
     if domain == "PRIMARY_EQUIPMENT":
         return EquipmentType.Category.SUBSTATION

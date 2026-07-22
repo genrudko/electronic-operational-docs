@@ -16,6 +16,7 @@ from apps.imports.models import (
 )
 from apps.imports.power_system import (
     build_power_system_publication_preview,
+    decide_power_system_duplicate_group,
     decide_power_system_occurrence,
     publish_power_system_revision,
     reanalyze_power_system_revision,
@@ -110,6 +111,7 @@ class PowerSystemAssetImporterTests(TestCase):
             row.occurrence_id: row
             for row in revision.asset_occurrences.filter(
                 occurrence_id__in=(
+                    "SYN-SITE",
                     "SYN-35KV",
                     "SYN-KTP-1",
                     "SYN-OPU",
@@ -120,7 +122,7 @@ class PowerSystemAssetImporterTests(TestCase):
             )
         }
         self.assertEqual(rows["SYN-KTP-1"].parent_external_key, rows["SYN-35KV"].external_key)
-        self.assertEqual(rows["SYN-OPU"].parent_external_key, rows["SYN-35KV"].external_key)
+        self.assertEqual(rows["SYN-OPU"].parent_external_key, rows["SYN-SITE"].external_key)
         self.assertEqual(rows["SYN-LINE-35"].parent_external_key, rows["SYN-35KV"].external_key)
         self.assertEqual(
             rows["SYN-WTG-1"].parent_external_key,
@@ -227,7 +229,8 @@ class PowerSystemAssetImporterTests(TestCase):
         )
         self.assertIsNone(voltage.parent)
         self.assertEqual(ktp.parent, voltage)
-        self.assertEqual(control_building.parent, voltage)
+        self.assertIsNone(control_building.parent)
+        self.assertEqual(control_building.site.name, "Синтетическая ВЭС")
         self.assertEqual(line.parent, voltage)
         self.assertEqual(turbine.parent, turbine_group)
         self.assertEqual(breaker.parent, ktp)
@@ -271,6 +274,137 @@ class PowerSystemAssetImporterTests(TestCase):
         self.assertNotContains(response, "source-occurrence")
         self.assertNotContains(response, "Merge candidate")
         self.assertNotContains(response, "staging external authority references")
+
+    def test_repair6_normalizes_shot_and_separates_root_from_orphan(self):
+        revision, created = stage_power_system_package(
+            uploaded_file=synthetic_power_system_package(
+                filename="synthetic-repair6.zip",
+                include_repair6_cases=True,
+            ),
+            employee=self.employee,
+            data_profile=self.profile,
+            source_reference="Синтетический пакет Repair 6",
+            source_approval_status=PowerSystemSourceRevision.SourceApprovalStatus.DRAFT,
+        )
+        self.assertTrue(created)
+        shot = revision.asset_occurrences.get(occurrence_id="SYN-SHOT-1")
+        site = revision.asset_occurrences.get(occurrence_id="SYN-SITE")
+        ktp = revision.asset_occurrences.get(occurrence_id="SYN-KTP-1")
+        self.assertEqual(shot.asset_type_code, "dc_distribution_board")
+        self.assertEqual(shot.asset_type_name, "Шкаф оперативного тока")
+        self.assertEqual(shot.classification_confidence, "HIGH")
+        self.assertEqual(shot.review_status, PowerSystemAssetOccurrence.ReviewStatus.READY)
+        self.assertEqual(
+            shot.source_flags["controlled_type_normalization"],
+            "SHOT_EXACT_UNDER_KTP",
+        )
+        self.assertEqual(
+            shot.source_flags["source_asset_type_proposed"],
+            "other_equipment",
+        )
+        self.assertEqual(shot.parent_external_key, ktp.external_key)
+        self.assertEqual(site.parent_external_key, "")
+
+        result = reanalyze_power_system_revision(revision)
+        self.assertEqual(result["root_without_parent"], 1)
+        self.assertEqual(result.get("orphan_parent", 0), 0)
+
+    def test_duplicate_group_decision_merges_to_selected_primary(self):
+        revision, _created = stage_power_system_package(
+            uploaded_file=synthetic_power_system_package(
+                filename="synthetic-groups.zip",
+                include_repair6_cases=True,
+            ),
+            employee=self.employee,
+            data_profile=self.profile,
+            source_reference="Синтетические группы",
+            source_approval_status=PowerSystemSourceRevision.SourceApprovalStatus.DRAFT,
+        )
+        rows = decide_power_system_duplicate_group(
+            revision=revision,
+            employee=self.employee,
+            duplicate_group="SYN_DUP_1",
+            action="MERGE",
+            primary_occurrence_id="SYN-DUP-A",
+            note="Синтетическое объединение пары.",
+        )
+        primary = next(row for row in rows if row.occurrence_id == "SYN-DUP-A")
+        secondary = next(row for row in rows if row.occurrence_id == "SYN-DUP-B")
+        self.assertEqual(
+            primary.review_decision,
+            PowerSystemAssetOccurrence.ReviewDecision.ACCEPT_AS_NEW,
+        )
+        self.assertEqual(
+            secondary.review_decision,
+            PowerSystemAssetOccurrence.ReviewDecision.MERGE_WITH,
+        )
+        self.assertEqual(secondary.merge_target_id, primary.pk)
+        self.assertEqual(primary.effective_logical_key, primary.logical_key)
+        self.assertEqual(primary.effective_logical_key, secondary.effective_logical_key)
+        self.assertEqual(
+            primary.review_status,
+            PowerSystemAssetOccurrence.ReviewStatus.READY,
+        )
+        self.assertEqual(
+            secondary.review_status,
+            PowerSystemAssetOccurrence.ReviewStatus.READY,
+        )
+
+        preview = build_power_system_publication_preview(
+            revision=revision,
+            effective_from=date(2026, 7, 22),
+        )
+        self.assertEqual(preview.summary["orphan_rows"], 0)
+        self.assertEqual(preview.summary["shot_rows"], 1)
+        self.assertEqual(preview.summary["duplicate_groups_pending"], 0)
+
+        publish_power_system_revision(
+            revision=revision,
+            actor=self.employee,
+            user=self.user,
+            password=self.password,
+            effective_from=date(2026, 7, 22),
+            expected_digest=preview.digest,
+        )
+        merged = EquipmentAsset.objects.get(
+            organization=self.organization,
+            technical_name="КЛ 35 кВ Синтетическая 1 цепь",
+        )
+        self.assertEqual(
+            merged.attributes["source_occurrence_ids"],
+            ["SYN-DUP-A", "SYN-DUP-B"],
+        )
+        shot_asset = EquipmentAsset.objects.get(
+            organization=self.organization,
+            technical_name="ШОТ",
+        )
+        self.assertEqual(shot_asset.equipment_type.code, "dc_distribution_board")
+        self.assertEqual(shot_asset.equipment_type.name, "Шкаф оперативного тока")
+
+    def test_grouped_review_view_uses_detected_candidates_instead_of_free_text(self):
+        revision, _created = stage_power_system_package(
+            uploaded_file=synthetic_power_system_package(
+                filename="synthetic-group-ui.zip",
+                include_repair6_cases=True,
+            ),
+            employee=self.employee,
+            data_profile=self.profile,
+            source_reference="Синтетический интерфейс групп",
+            source_approval_status=PowerSystemSourceRevision.SourceApprovalStatus.DRAFT,
+        )
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("imports:power_system_detail", args=[revision.public_id])
+        )
+        self.assertContains(response, "СГРУППИРОВАННАЯ ПРОВЕРКА")
+        self.assertContains(response, "SYN-DUP-A")
+        self.assertContains(response, "SYN-DUP-B")
+        self.assertContains(response, 'name="primary_occurrence_id"')
+        self.assertContains(response, "ШОТ распознано")
+        self.assertContains(response, "Потерянные родители")
+        self.assertNotContains(response, "Идентификатор исходной строки")
+        self.assertNotContains(response, 'placeholder="Идентификатор')
+
 
     def test_views_expose_staging_without_publishing(self):
         self.client.force_login(self.user)

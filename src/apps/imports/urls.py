@@ -22,6 +22,11 @@ urlpatterns = [
         name="power_system_occurrence_decide",
     ),
     path(
+        "imports/power-system/<uuid:public_id>/groups/<slug:duplicate_group>/decision/",
+        views.power_system_duplicate_group_decide,
+        name="power_system_duplicate_group_decide",
+    ),
+    path(
         "imports/power-system/<uuid:public_id>/publication/",
         views.power_system_publication,
         name="power_system_publication",

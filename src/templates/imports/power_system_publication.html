@@ -22,6 +22,14 @@
     <article class="metric"><span>Узлов иерархии</span><strong>{{ preview.summary.hierarchy }}</strong></article>
     <article class="metric"><span>Объектных строк</span><strong>{{ preview.summary.objects }}</strong></article>
     <article class="metric"><span>Останется в карантине</span><strong>{{ preview.summary.quarantined }}</strong></article>
+    <article class="metric"><span>Корневые энергообъекты</span><strong>{{ preview.summary.root_sites }}</strong></article>
+    <article class="metric"><span>Потерянные родители</span><strong>{{ preview.summary.orphan_rows }}</strong></article>
+    <article class="metric"><span>ШОТ</span><strong>{{ preview.summary.shot_rows }}</strong></article>
+    <article class="metric"><span>Нерешённые группы</span><strong>{{ preview.summary.duplicate_groups_pending }}</strong></article>
+</section>
+<section class="notice-card {% if preview.summary.orphan_rows %}error-notice{% else %}success-notice{% endif %}">
+    <strong>Контроль иерархии перед публикацией</strong>
+    <p>Корневые энергообъекты допустимы без родителя. Любая другая строка без родителя блокирует публикацию. Сейчас потерянных родителей: {{ preview.summary.orphan_rows }}.</p>
 </section>
 <section class="profile-card">
     <dl class="detail-list">
