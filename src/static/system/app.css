@@ -8832,3 +8832,44 @@ body.draft-view-drawer-visible .draft-view-drawer {
     font-size: 0.82rem;
     line-height: 1.45;
 }
+
+/* Patch 011.5 Repair 12: preview progress and lazy canonical snapshot */
+[data-power-system-preview-container][aria-busy="true"] {
+    opacity: 0.86;
+}
+[data-power-system-preview-trigger][aria-busy="true"] {
+    cursor: progress;
+    pointer-events: none;
+}
+.ps-preview-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin: 0.75rem 0 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+.ps-preview-progress::before {
+    width: 1rem;
+    height: 1rem;
+    flex: 0 0 auto;
+    border: 2px solid color-mix(in srgb, var(--accent) 28%, transparent);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    content: "";
+    animation: ps-preview-spin 0.75s linear infinite;
+}
+.ps-canonical-snapshot-placeholder {
+    display: grid;
+    gap: 0.8rem;
+    justify-items: start;
+    padding: 1rem;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--surface) 74%, transparent);
+}
+.ps-canonical-snapshot-placeholder p { margin: 0; }
+@keyframes ps-preview-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+    .ps-preview-progress::before { animation: none; }
+}

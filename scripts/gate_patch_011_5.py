@@ -24,6 +24,11 @@ def main() -> None:
     import_models = read("src/apps/imports/models.py")
     importer = read("src/apps/imports/power_system.py")
     import_views = read("src/apps/imports/views.py")
+    unicode_search = read("src/apps/imports/unicode_search.py")
+    unicode_search_tests = read(
+        "src/apps/imports/tests/test_power_system_unicode_search.py"
+    )
+    review_js = read("src/static/imports/power_system_review.js")
     import_urls = read("src/apps/imports/urls.py")
     detail_template = read("src/templates/imports/power_system_detail.html")
     list_template = read("src/templates/imports/list.html")
@@ -210,6 +215,27 @@ def main() -> None:
         "canonical_json_pretty" in importer
         and "ps-canonical-snapshot" in publication_template
         and "Отдельные строки вне групп" in detail_template,
+    )
+    require(
+        "UNICODE_CASEFOLD_SEARCH",
+        "unicodedata.normalize" in unicode_search
+        and ".casefold()" in unicode_search
+        and "filter_power_system_occurrences" in unicode_search
+        and "filter_power_system_occurrences" in import_views
+        and "test_cyrillic_search_is_case_insensitive" in unicode_search_tests,
+    )
+    require(
+        "LAZY_PUBLICATION_SNAPSHOT",
+        "request.GET.show_snapshot" in publication_template
+        and "ps-canonical-snapshot-placeholder" in publication_template
+        and "preview.canonical_json_pretty" in publication_template,
+    )
+    require(
+        "PUBLICATION_PREVIEW_PROGRESS",
+        "data-power-system-preview-trigger" in detail_template
+        and "data-power-system-preview-progress" in detail_template
+        and "aria-busy" in review_js
+        and "Формируется предварительная проверка" in review_js,
     )
     print("PATCH_011_5_POWER_SYSTEM_ASSET_IMPORTER_GATE_PASSED")
 

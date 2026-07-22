@@ -40,11 +40,24 @@
         <dt>SHA-256 публикации</dt><dd><code class="breakable">{{ preview.digest }}</code></dd>
         <dt>Профиль</dt><dd>{{ revision.data_profile.name }}</dd>
     </dl>
-    <details class="technical-only ps-canonical-snapshot">
-        <summary>Канонический снимок</summary>
-        <p>Неизменяемый технический состав публикации. Блок ограничен по высоте и прокручивается внутри.</p>
+    <details class="technical-only ps-canonical-snapshot" id="canonical-snapshot"{% if request.GET.show_snapshot == '1' %} open{% endif %}>
+    <summary>Канонический снимок</summary>
+    {% if request.GET.show_snapshot == '1' %}
+        <p>Неизменяемый технический состав публикации. Форматирование выполнено только по явному запросу.</p>
         <pre>{{ preview.canonical_json_pretty }}</pre>
-    </details>
+    {% else %}
+        <div class="ps-canonical-snapshot-placeholder">
+            <p>
+                Неизменяемый технический состав публикации не включается в первоначальный ответ целиком,
+                чтобы предварительная проверка 2500 строк открывалась быстрее. SHA-256 выше уже рассчитан
+                по полному каноническому снимку.
+            </p>
+            <a class="button secondary" href="{{ request.path }}?show_snapshot=1#canonical-snapshot">
+                Показать форматированный снимок
+            </a>
+        </div>
+    {% endif %}
+</details>
 </section>
 <section class="profile-card">
     <h2>Подтверждение публикации готовой части</h2>

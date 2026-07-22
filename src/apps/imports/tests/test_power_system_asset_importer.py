@@ -449,7 +449,19 @@ class PowerSystemAssetImporterTests(TestCase):
         self.assertContains(publication, "ЩПТ")
         self.assertContains(publication, "Неизменяемый технический состав публикации")
         self.assertContains(publication, 'class="technical-only ps-canonical-snapshot"')
-        self.assertContains(publication, "\n  &quot;effective_from&quot;")
+        self.assertContains(publication, "Показать форматированный снимок")
+        self.assertNotContains(publication, "\n  &quot;effective_from&quot;")
+        publication_with_snapshot = self.client.get(
+            reverse(
+                "imports:power_system_publication",
+                args=[revision.public_id],
+            )
+            + "?show_snapshot=1"
+        )
+        self.assertContains(
+            publication_with_snapshot,
+            "\n  &quot;effective_from&quot;",
+        )
 
 
     def test_views_expose_staging_without_publishing(self):

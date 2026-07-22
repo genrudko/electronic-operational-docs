@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}{{ revision.original_filename }} · ЭОД{% endblock %}
 {% block content %}
 <section class="page-heading compact">
@@ -10,9 +11,13 @@
     <div class="document-actions">
         <a class="button secondary" href="{% url 'imports:power_system_list' %}">К списку редакций</a>
         {% if revision.ready_count %}
-            <a class="button" href="{% url 'imports:power_system_publication' revision.public_id %}">
+            <div data-power-system-preview-container><a data-power-system-preview-trigger class="button" href="{% url 'imports:power_system_publication' revision.public_id %}">
                 Проверить публикацию {{ revision.ready_count }} строк
             </a>
+<p class="ps-preview-progress" data-power-system-preview-progress hidden role="status" aria-live="polite">
+    Формируется предварительная проверка. Для большой редакции это может занять несколько секунд.
+</p>
+</div>
         {% endif %}
     </div>
 </section>
@@ -387,4 +392,6 @@
         {% endif %}
     </article>
 </section>
+
+<script src="{% static 'imports/power_system_review.js' %}?v=011572" defer></script>
 {% endblock %}

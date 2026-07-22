@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Count, Q
+from django.db.models import Count
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -56,6 +56,7 @@ from .services import (
     save_column_mapping,
     save_row_correction,
 )
+from .unicode_search import filter_power_system_occurrences
 
 
 def _organization_batch(request: HttpRequest, public_id):
@@ -809,12 +810,9 @@ def power_system_detail(request: HttpRequest, public_id) -> HttpResponse:
     if type_filter:
         occurrences = occurrences.filter(asset_type_code=type_filter)
     if query:
-        occurrences = occurrences.filter(
-            Q(occurrence_id__icontains=query)
-            | Q(dispatcher_name_raw__icontains=query)
-            | Q(display_name_normalized__icontains=query)
-            | Q(parent_raw__icontains=query)
-            | Q(energy_facility_raw__icontains=query)
+        occurrences = filter_power_system_occurrences(
+            occurrences,
+            query,
         )
     occurrences = occurrences.order_by("source_sheet", "source_row", "occurrence_id")
     page_size = 25 if status_filter == "ATTENTION" else 50
