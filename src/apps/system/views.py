@@ -11,6 +11,10 @@ from django.utils import timezone
 from apps.dispatching.models import ManagementRevision, PublicationStatus
 from apps.documents.models import Document
 from apps.equipment.models import EquipmentAsset
+from apps.operational_documents.models import (
+    OperationalDocumentRecord,
+    OperationalDocumentType,
+)
 from apps.organizations.models import Employee, Organization
 
 
@@ -40,13 +44,17 @@ def home(request):
             "management": ManagementRevision.objects.filter(
                 status=PublicationStatus.PUBLISHED
             ).count(),
+            "operational_document_types": OperationalDocumentType.objects.filter(
+                is_active=True
+            ).count(),
+            "operational_document_records": OperationalDocumentRecord.objects.count(),
         }
     return render(
         request,
         "system/home.html",
         {
             "server_time": timezone.localtime(),
-            "project_version": "0.3.2-dev",
+            "project_version": "0.4.0-dev",
             "system_stats": system_stats,
             **_database_context(),
         },

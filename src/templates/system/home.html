@@ -21,10 +21,10 @@
         <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-check"></use></svg>
     </div>
     <div>
-        <div class="hero-title">Базовые реестры готовы к демонстрации</div>
+        <div class="hero-title">Единое ядро оперативной документации готово к наполнению</div>
         <p>
-            Документы, оборудование и распределение управления связаны между собой и сохраняют
-            опубликованную историю изменений.
+            Типы структурированных журналов, их поля и жизненные циклы публикуются как неизменяемые
+            редакции, а каждая запись сохраняет номер, связи, снимки справочников и историю изменений.
         </p>
     </div>
 </section>
@@ -35,6 +35,8 @@
     <article class="metric"><span>Зарегистрировано</span><strong>{{ system_stats.registered }}</strong></article>
     <article class="metric"><span>Оборудование</span><strong>{{ system_stats.equipment }}</strong></article>
     <article class="metric"><span>Действующие назначения управления</span><strong>{{ system_stats.management }}</strong></article>
+    <article class="metric"><span>Типы оперативных документов</span><strong>{{ system_stats.operational_document_types }}</strong></article>
+    <article class="metric"><span>Структурированные записи</span><strong>{{ system_stats.operational_document_records }}</strong></article>
 </section>
 {% else %}
 <section class="login-callout">
@@ -77,11 +79,11 @@
         <span class="module-copy"><strong>Оперативный журнал</strong><small>Утверждённая форма, нумерация и неизменяемые записи</small></span>
         <span class="module-status ready">Готово</span>
     </a>
-    <article class="module-tile planned">
+    <a class="module-tile active" href="{% url 'operational_documents:registry' %}">
         <span class="module-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-request"></use></svg></span>
-        <span class="module-copy"><strong>Заявки</strong><small>Согласования, разрешения и закрытие</small></span>
-        <span class="module-status">В очереди</span>
-    </article>
+        <span class="module-copy"><strong>Оперативные документы</strong><small>Настраиваемые журналы, статусы, связи и история редакций</small></span>
+        <span class="module-status ready">Готово</span>
+    </a>
 </section>
 
 <section class="principles compact-principles">

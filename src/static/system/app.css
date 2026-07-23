@@ -9126,3 +9126,139 @@ html[data-theme="dark"] .ps-download-toast[data-state="error"] {
         flex-direction: column;
     }
 }
+
+/* Patch 011.7 — common operational documentation core */
+.opdoc-filter-card,
+.opdoc-fieldset,
+.opdoc-transition-card {
+    border-color: color-mix(in srgb, var(--accent) 26%, var(--border));
+}
+.opdoc-filter-grid,
+.opdoc-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 18px;
+}
+.opdoc-filter-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: end;
+}
+.opdoc-filter-grid label,
+.opdoc-form-grid .form-row,
+.opdoc-transition-card label {
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+}
+.opdoc-filter-grid input,
+.opdoc-filter-grid select,
+.opdoc-form-grid input,
+.opdoc-form-grid select,
+.opdoc-form-grid textarea,
+.opdoc-transition-card textarea {
+    width: 100%;
+    min-width: 0;
+}
+.opdoc-filter-grid .form-actions {
+    grid-column: span 2;
+    margin: 0;
+    align-self: end;
+}
+.opdoc-form-grid .span-2 {
+    grid-column: 1 / -1;
+}
+.opdoc-section-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 18px;
+    margin: 28px 0 14px;
+}
+.opdoc-section-heading h2,
+.opdoc-section-heading p {
+    margin: 0;
+}
+.opdoc-section-heading p {
+    max-width: 52rem;
+    color: var(--muted);
+}
+.opdoc-fieldset-list,
+.opdoc-transition-grid {
+    display: grid;
+    gap: 14px;
+}
+.opdoc-fieldset {
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--panel) 92%, transparent);
+}
+.opdoc-fieldset > strong {
+    display: block;
+    margin-bottom: 12px;
+}
+.opdoc-transition-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.opdoc-transition-card {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--panel) 92%, transparent);
+}
+.opdoc-transition-card .button {
+    justify-self: start;
+}
+.opdoc-type-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.opdoc-type-grid .card {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+}
+.opdoc-type-grid h2,
+.opdoc-type-grid p {
+    margin: 0;
+}
+.opdoc-type-grid .badge,
+.opdoc-type-grid .status-chip {
+    justify-self: start;
+}
+.opdoc-filter-card + .directory-card {
+    margin-top: 18px;
+}
+.opdoc-filter-card select[multiple],
+.opdoc-form-grid select[multiple] {
+    min-height: 9rem;
+}
+html[data-theme="light"] .opdoc-fieldset,
+html[data-theme="light"] .opdoc-transition-card {
+    background: color-mix(in srgb, var(--panel) 96%, var(--accent) 4%);
+}
+@media (max-width: 1120px) {
+    .opdoc-filter-grid,
+    .opdoc-type-grid,
+    .opdoc-transition-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (max-width: 760px) {
+    .opdoc-filter-grid,
+    .opdoc-form-grid,
+    .opdoc-type-grid,
+    .opdoc-transition-grid {
+        grid-template-columns: 1fr;
+    }
+    .opdoc-filter-grid .form-actions,
+    .opdoc-form-grid .span-2 {
+        grid-column: auto;
+    }
+    .opdoc-section-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}

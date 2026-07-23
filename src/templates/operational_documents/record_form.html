@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+    <div>
+        <div class="section-kicker">{{ document_type.short_name|default:document_type.name }} · редакция структуры {{ revision.revision_number }}</div>
+        <h1>{{ page_title }}</h1>
+        <p>После сохранения создаётся канонический снимок редакции и неизменяемая запись аудита.</p>
+    </div>
+</section>
+
+<section class="directory-card document-form-card">
+    <form method="post" class="document-form">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="opdoc-form-grid">
+            {% for field in form %}
+            <div class="form-row{% if field.name == 'summary' or field.name == 'change_comment' or field.name|slice:':7' == 'field__' %} span-2{% endif %}">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}<small class="muted">{{ field.help_text }}</small>{% endif %}
+                {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="form-actions">
+            <button class="button" type="submit">{{ submit_label }}</button>
+            {% if record %}
+                <a class="button secondary" href="{% url 'operational_documents:record_detail' record.public_id %}">Отмена</a>
+            {% else %}
+                <a class="button secondary" href="{% url 'operational_documents:registry' %}">Отмена</a>
+            {% endif %}
+        </div>
+    </form>
+</section>
+{% endblock %}

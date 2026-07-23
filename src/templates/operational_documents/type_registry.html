@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Типы оперативных документов · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+    <div>
+        <div class="section-kicker">Публикуемая конфигурация</div>
+        <h1>Типы оперативных документов</h1>
+        <p>Опубликованные структуры неизменяемы; записи сохраняют редакцию, по которой были созданы.</p>
+    </div>
+    <div class="document-actions">
+        <a class="button secondary" href="{% url 'operational_documents:registry' %}">К общему реестру</a>
+        {% if can_administer %}<a class="button" href="{% url 'operational_documents:type_create' %}">Создать тип</a>{% endif %}
+    </div>
+</section>
+
+{% if document_types %}
+<section class="grid module-grid opdoc-type-grid">
+    {% for item in document_types %}
+    <article class="card active">
+        <div class="number">{{ item.code }}</div>
+        <h2><a href="{% url 'operational_documents:type_detail' item.public_id %}">{{ item.name }}</a></h2>
+        <p>{{ item.description|default:"Описание не задано"|truncatechars:180 }}</p>
+        {% if item.current_published_revision %}
+            <span class="badge">Редакция {{ item.current_published_revision.revision_number }}</span>
+            <span class="badge">{{ item.current_published_revision.field_definitions|length }} полей</span>
+        {% else %}
+            <span class="status-chip status-draft">Нет опубликованной редакции</span>
+        {% endif %}
+    </article>
+    {% endfor %}
+</section>
+{% else %}
+<section class="empty-state warning">
+    <h2>Типы пока не настроены</h2>
+    <p>Создайте первый тип, чтобы открыть общий механизм структурированных журналов.</p>
+</section>
+{% endif %}
+{% endblock %}

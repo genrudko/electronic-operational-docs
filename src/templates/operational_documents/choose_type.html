@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Выбор типа документа · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+    <div>
+        <div class="section-kicker">Новая запись</div>
+        <h1>Выберите тип оперативного документа</h1>
+        <p>Форма и жизненный цикл будут построены по действующей опубликованной редакции.</p>
+    </div>
+</section>
+<section class="directory-card document-form-card">
+    <form method="post" class="document-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="form-actions">
+            <button class="button" type="submit">Продолжить</button>
+            <a class="button secondary" href="{% url 'operational_documents:registry' %}">Отмена</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

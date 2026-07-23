@@ -8,7 +8,11 @@ class SystemSmokeTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Электронная оперативная документация")
-        self.assertContains(response, "Базовые реестры готовы к демонстрации")
+        self.assertContains(
+            response,
+            "Единое ядро оперативной документации готово к наполнению",
+        )
+        self.assertContains(response, "Оперативные документы")
         self.assertContains(response, "Управление и ведение")
         self.assertNotContains(response, "Локальный профиль разработки")
 

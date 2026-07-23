@@ -23,7 +23,7 @@
     <meta name="color-scheme" content="dark light">
     <title>{% block title %}Электронная оперативная документация{% endblock %}</title>
     <link rel="icon" href="{% static 'system/favicon.svg' %}" type="image/svg+xml">
-    <link rel="stylesheet" href="{% static 'system/app.css' %}?v=011610">
+    <link rel="stylesheet" href="{% static 'system/app.css' %}?v=011700">
     <script src="{% static 'system/app.js' %}?v=011364" defer></script>
 </head>
 <body>
@@ -54,6 +54,10 @@
             <a href="{% url 'operational_log:registry' %}" {% if request.resolver_match.namespace == 'operational_log' %}class="active"{% endif %}>
                 <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg>
                 <span>Оперативный журнал</span>
+            </a>
+            <a href="{% url 'operational_documents:registry' %}" {% if request.resolver_match.namespace == 'operational_documents' %}class="active"{% endif %}>
+                <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-journal"></use></svg>
+                <span>Оперативные документы</span>
             </a>
             <a href="{% url 'equipment:registry' %}" {% if request.resolver_match.namespace == 'equipment' %}class="active"{% endif %}>
                 <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-equipment"></use></svg>

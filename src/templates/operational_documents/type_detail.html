@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}{{ document_type.name }} · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+    <div>
+        <div class="section-kicker">{{ document_type.code }}</div>
+        <h1>{{ document_type.name }}</h1>
+        <p>{{ document_type.description|default:"Описание не задано" }}</p>
+    </div>
+    <div class="document-actions">
+        <a class="button secondary" href="{% url 'operational_documents:type_registry' %}">К типам</a>
+        {% if current_revision %}<a class="button" href="{% url 'operational_documents:record_create' document_type.public_id %}">Создать запись</a>{% endif %}
+    </div>
+</section>
+
+{% if current_revision %}
+<section class="profile-grid">
+    <article class="profile-card">
+        <h2>Опубликованная редакция {{ current_revision.revision_number }}</h2>
+        <dl>
+            <dt>Префикс номера</dt><dd><code>{{ current_revision.number_prefix }}</code></dd>
+            <dt>Рабочее место</dt><dd>{{ current_revision.requires_workplace|yesno:"обязательно,необязательно" }}</dd>
+            <dt>Опубликована</dt><dd>{{ current_revision.published_at|date:"d.m.Y H:i" }}</dd>
+            <dt>Опубликовал</dt><dd>{{ current_revision.published_by.full_name }}</dd>
+            <dt>SHA-256</dt><dd><code>{{ current_revision.sha256 }}</code></dd>
+        </dl>
+    </article>
+    <article class="profile-card">
+        <h2>Жизненный цикл</h2>
+        <ul class="role-list">
+            {% for status in current_revision.status_definitions %}
+            <li><strong>{{ status.name }}</strong><span><code>{{ status.code }}</code>{% if status.is_initial %} · начальное{% endif %}{% if status.is_terminal %} · конечное{% endif %}</span></li>
+            {% endfor %}
+        </ul>
+    </article>
+</section>
+
+<section class="directory-card">
+    <h2>Поля записи</h2>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Порядок</th><th>Код</th><th>Наименование</th><th>Тип</th><th>Правила</th></tr></thead>
+            <tbody>
+                {% for field in current_revision.field_definitions %}
+                <tr>
+                    <td>{{ field.position }}</td>
+                    <td><code>{{ field.code }}</code></td>
+                    <td>{{ field.label }}</td>
+                    <td>{{ field.type }}</td>
+                    <td>{% if field.required %}обязательно{% else %}необязательно{% endif %}{% if field.show_in_list %}; в общем реестре{% endif %}{% if field.searchable %}; участвует в поиске{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endif %}
+
+<section class="directory-card">
+    <h2>История редакций</h2>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Редакция</th><th>Состояние</th><th>Создана</th><th>Опубликована</th><th>SHA-256</th></tr></thead>
+            <tbody>
+                {% for revision in revisions %}
+                <tr>
+                    <td>{{ revision.revision_number }}</td>
+                    <td>{{ revision.get_status_display }}</td>
+                    <td>{{ revision.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>{{ revision.published_at|date:"d.m.Y H:i"|default:"—" }}</td>
+                    <td><code>{{ revision.sha256|default:"—" }}</code></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
