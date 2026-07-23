@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{{ revision.original_filename }} · Документация · ЭОД{% endblock %}
+{% block content %}
+<section class="page-heading compact">
+    <div><div class="eyebrow">ПРЕДВАРИТЕЛЬНАЯ ПРОВЕРКА РЕЕСТРА</div><h1>{{ revision.original_filename }}</h1><p>{{ revision.source_reference }}</p></div>
+    <div class="document-actions">
+        <a class="button secondary" href="{% url 'imports:workplace_document_list' %}">К редакциям</a>
+        {% if revision.status == 'STAGED' %}<a class="button" href="{% url 'imports:workplace_document_publication' revision.public_id %}">Проверить публикацию</a>{% endif %}
+        {% if revision.target_document_list %}<a class="button secondary" href="{% url 'workplace_docs:detail' revision.target_document_list.pk %}">Открыть опубликованный перечень</a>{% endif %}
+    </div>
+</section>
+<section class="notice-card data-profile-notice">
+    <strong>{{ revision.data_profile.name }} · {{ revision.data_profile.get_export_policy_display }}</strong>
+    <p>SHA-256 источника: <code class="breakable">{{ revision.file_sha256 }}</code></p>
+    <p>Рабочее место из источника: «{{ revision.workplace_scope_raw }}». {% if revision.matched_workplace %}Сопоставлено с «{{ revision.matched_workplace.name }}»{% if revision.manifest.workplace_match_kind == 'CONTROLLED_ALIAS' %} по контролируемому алиасу{% endif %}.{% else %}<span class="error-text">Однозначное сопоставление отсутствует.</span>{% endif %}</p>
+    <p>Действует с {{ revision.effective_from|date:"d.m.Y" }} · контроль редакции каждые {{ revision.list_review_period_months }} мес. · кодировка {{ revision.source_encoding }}.</p>
+    {% if not is_development_database %}<p class="error-text">Текущая база не является development-базой. Публикация и новая загрузка заблокированы.</p>{% endif %}
+</section>
+<section class="notice-card warning-notice">
+    <strong>Знак «+» — не разрешение отказаться от бумаги</strong>
+    <p>В опубликованной карточке он будет сохранён как «электронная форма указана», а число автоматических отказов от бумажного хранения всегда равно нулю.</p>
+</section>
+<section class="summary-grid">
+    <a class="metric {% if status_filter == 'ALL' %}is-active{% endif %}" href="?status=ALL"><span>Позиций</span><strong>{{ revision.total_rows }}</strong></a>
+    <article class="metric"><span>Разделов</span><strong>{{ revision.section_count }}</strong></article>
+    <a class="metric {% if status_filter == 'READY' %}is-active{% endif %}" href="?status=READY"><span>Готово</span><strong>{{ revision.ready_rows }}</strong></a>
+    <a class="metric {% if status_filter == 'REVIEW_REQUIRED' %}is-active{% endif %}" href="?status=REVIEW_REQUIRED"><span>На проверке</span><strong>{{ revision.review_rows }}</strong></a>
+    <a class="metric {% if status_filter == 'BLOCKED' %}is-active{% endif %}" href="?status=BLOCKED"><span>Заблокировано</span><strong>{{ revision.blocked_rows }}</strong></a>
+    <a class="metric {% if status_filter == 'EXCLUDED' %}is-active{% endif %}" href="?status=EXCLUDED"><span>Исключено решением</span><strong>{{ revision.excluded_rows }}</strong></a>
+    <a class="metric {% if status_filter == 'PUBLISHED' %}is-active{% endif %}" href="?status=PUBLISHED"><span>Опубликовано</span><strong>{{ published_rows_count }}</strong></a>
+    <article class="metric"><span>Электронная форма указана</span><strong>{{ revision.electronic_indicated_rows }}</strong></article>
+</section>
+<section class="profile-card">
+    <div class="section-heading"><div><div class="eyebrow">ПОИСК И ФИЛЬТР</div><h2>Позиции источника</h2></div><span class="count-badge">Страница {{ page.number }} из {{ page.paginator.num_pages }}</span></div>
+    <form method="get" class="inline-filter-form">
+        <input type="hidden" name="status" value="{{ status_filter }}">
+        <input type="search" name="q" value="{{ search_query }}" placeholder="Название, тип, раздел или номер">
+        <button class="button secondary" type="submit">Найти</button>
+        {% if search_query %}<a href="?status={{ status_filter }}">Сбросить</a>{% endif %}
+    </form>
+    <div class="personnel-row-list">
+    {% for row in page.object_list %}
+        <article class="personnel-source-row status-{{ row.review_status|lower }}">
+            <header>
+                <div><strong>{{ row.register_entry_no }}. {{ row.document_title_raw }}</strong><span>Раздел {{ row.section_no }} — {{ row.section_name }}{% if row.subsection_no %} · {{ row.subsection_no }} {{ row.subsection_name }}{% endif %}</span></div>
+                <span class="import-status status-{{ row.review_status|lower }}">{{ row.get_review_status_display }}</span>
+            </header>
+            <dl class="personnel-qualification-line">
+                <div><dt>Номер в разделе</dt><dd>{{ row.source_document_no|default:"не указан" }}</dd></div>
+                <div><dt>Тип</dt><dd>{{ row.document_type_proposed|default:"не классифицирован" }}</dd></div>
+                <div><dt>Электронная форма</dt><dd>{{ row.electronic_storage_mark }} · {% if row.electronic_storage_interpretation == 'INDICATED' %}указана{% else %}не указана{% endif %}</dd></div>
+                <div><dt>Пересмотр</dt><dd>{{ row.review_period_raw|default:"не указан" }}{% if row.review_interval_months %} · {{ row.review_interval_months }} мес.{% endif %}</dd></div>
+                <div><dt>Утверждение</dt><dd>{{ row.approval_date|date:"d.m.Y"|default:"не указано" }}</dd></div>
+                <div><dt>Страница источника</dt><dd>{{ row.source_pdf_page|default:"не указана" }}</dd></div>
+            </dl>
+            {% if row.approving_role or row.approver_name %}<small>{{ row.approving_role }}{% if row.approver_name %} · {{ row.approver_name }}{% endif %}</small>{% endif %}
+            {% if row.issues %}<div class="personnel-issues">{% for issue in row.issues %}<span>{{ issue }}</span>{% endfor %}</div>{% endif %}
+            {% if row.review_decision != 'NONE' %}<div class="notice-card"><strong>{{ row.get_review_decision_display }}</strong><p>{{ row.decision_note }} · {{ row.reviewed_by.full_name }} · {{ row.reviewed_at|date:"d.m.Y H:i" }}</p></div>{% endif %}
+            {% if revision.status == 'STAGED' and row.initial_review_status == 'REVIEW_REQUIRED' %}
+                <details {% if row.review_status == 'REVIEW_REQUIRED' %}open{% endif %}><summary>Решение по неоднозначной строке</summary>
+                    <form method="post" action="{% url 'imports:workplace_document_row_decide' revision.public_id row.pk %}" class="stacked-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="return_query" value="status={{ status_filter }}&q={{ search_query|urlencode }}&page={{ page.number }}">
+                        {% if row.review_decision == 'NONE' %}
+                            <div class="field-row"><label for="action-{{ row.pk }}">Решение</label><select id="action-{{ row.pk }}" name="action"><option value="ACCEPT_AS_IS">Принять исходное значение как есть</option><option value="EXCLUDE">Исключить позицию из публикации</option></select></div>
+                            <div class="field-row"><label for="note-{{ row.pk }}">Обоснование</label><textarea id="note-{{ row.pk }}" name="note" rows="2" required></textarea></div>
+                            <button class="button secondary" type="submit">Сохранить решение</button>
+                        {% else %}
+                            <input type="hidden" name="action" value="RESET"><input type="hidden" name="note" value="">
+                            <button class="button secondary" type="submit">Сбросить решение</button>
+                        {% endif %}
+                    </form>
+                </details>
+            {% endif %}
+            {% if row.target_entry %}<small>Опубликовано: <code>{{ row.target_entry.code }}</code></small>{% endif %}
+        </article>
+    {% empty %}<p class="muted">По выбранному фильтру и запросу строк нет.</p>{% endfor %}
+    </div>
+    {% if page.paginator.num_pages > 1 %}<nav class="pagination" aria-label="Страницы">{% if page.has_previous %}<a href="?status={{ status_filter }}&q={{ search_query|urlencode }}&page={{ page.previous_page_number }}">← Назад</a>{% endif %}<span>{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a href="?status={{ status_filter }}&q={{ search_query|urlencode }}&page={{ page.next_page_number }}">Далее →</a>{% endif %}</nav>{% endif %}
+</section>
+{% if revision.status == 'STAGED' %}
+<section class="profile-card danger-zone"><h2>Управление staging-редакцией</h2><p>Физическое удаление запрещено. Операция только исключает ошибочную редакцию из рабочего списка и сохраняет историю.</p><form method="post" action="{% url 'imports:workplace_document_discard' revision.public_id %}">{% csrf_token %}<button class="button secondary" type="submit">Убрать редакцию из рабочего списка</button></form></section>
+{% endif %}
+{% endblock %}

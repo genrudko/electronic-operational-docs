@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Результат публикации перечня · ЭОД{% endblock %}
+{% block content %}
+<section class="page-heading compact"><div><div class="eyebrow">ПУБЛИКАЦИЯ ЗАВЕРШЕНА</div><h1>Создана утверждённая редакция перечня</h1><p>{{ revision.original_filename }}</p></div><div class="document-actions">{% if revision.target_document_list %}<a class="button" href="{% url 'workplace_docs:detail' revision.target_document_list.pk %}">Открыть перечень</a>{% endif %}<a class="button secondary" href="{% url 'imports:workplace_document_detail' revision.public_id %}">К редакции импорта</a></div></section>
+<section class="notice-card success-notice"><strong>Результат неизменяем</strong><p>SHA-256: <code class="breakable">{{ publication.digest }}</code> · {{ publication.actor.full_name }} · {{ publication.created_at|date:"d.m.Y H:i" }}</p></section>
+<section class="profile-card"><h2>Итоги</h2><dl class="detail-list"><dt>Создано позиций</dt><dd>{{ publication.result_summary.created_entries }}</dd><dt>Осталось на проверке</dt><dd>{{ publication.result_summary.review_rows_not_published }}</dd><dt>Заблокировано и не опубликовано</dt><dd>{{ publication.result_summary.blocked_rows_not_published }}</dd><dt>Исключено решением</dt><dd>{{ publication.result_summary.excluded_rows_not_published }}</dd><dt>Номер редакции перечня</dt><dd>{{ publication.result_summary.target_revision_number }}</dd><dt>Автоматических отказов от бумажного хранения</dt><dd>{{ publication.result_summary.paper_storage_waivers_created }}</dd></dl></section>
+{% endblock %}

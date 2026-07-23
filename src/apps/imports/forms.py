@@ -24,6 +24,10 @@ from .services import (
     registry_field_specs,
     suggest_column_mapping,
 )
+from .workplace_documents import (
+    MAX_WORKPLACE_DOCUMENT_CSV_SIZE,
+    available_workplace_document_profiles,
+)
 
 
 class DataProfileChoiceField(forms.ModelChoiceField):
@@ -411,3 +415,107 @@ class PersonnelPublicationConfirmationForm(forms.Form):
             "карточек, квалификаций и только положительных однозначных прав"
         )
     )
+
+
+class WorkplaceDocumentRegisterUploadForm(forms.Form):
+    data_profile = DataProfileChoiceField(
+        label="Профиль данных",
+        queryset=DataProfile.objects.none(),
+        required=True,
+        help_text=(
+            "Реестр содержит ФИО утвердившего и доступен только в локальном "
+            "неэкспортируемом профиле."
+        ),
+    )
+    source_reference = forms.CharField(
+        label="Источник или основание",
+        max_length=1000,
+        help_text=(
+            "Например: «Перечень документации на рабочем месте оперативного "
+            "персонала Кочубеевской ВЭС, утверждён 07.08.2024»."
+        ),
+    )
+    effective_from = forms.DateField(
+        label="Дата начала действия перечня",
+        widget=forms.DateInput(attrs={"type": "date"}),
+    )
+    list_review_period_months = forms.IntegerField(
+        label="Период пересмотра самого перечня, месяцев",
+        min_value=1,
+        max_value=60,
+        initial=12,
+        help_text=(
+            "Это период контроля редакции перечня. Индивидуальная периодичность "
+            "каждой позиции сохраняется отдельно из CSV."
+        ),
+    )
+    source_file = forms.FileField(
+        label="CSV-реестр документации",
+        help_text=(
+            "Выберите eod_workplace_document_register.csv в UTF-8 или UTF-8 с BOM. "
+            "Файл сохраняется только как разобранная staging-редакция."
+        ),
+        widget=forms.ClearableFileInput(attrs={"accept": ".csv,text/csv"}),
+    )
+
+    def __init__(self, *args, organization, **kwargs):
+        super().__init__(*args, **kwargs)
+        profiles = available_workplace_document_profiles(organization)
+        self.fields["data_profile"].queryset = DataProfile.objects.filter(
+            pk__in=[profile.pk for profile in profiles]
+        ).order_by("name")
+        if profiles:
+            self.fields["data_profile"].initial = profiles[0]
+
+    def clean_source_file(self):
+        uploaded = self.cleaned_data["source_file"]
+        if Path(uploaded.name).suffix.lower() != ".csv":
+            raise forms.ValidationError("Для Patch 011.6.2 требуется один CSV-файл.")
+        if uploaded.size == 0:
+            raise forms.ValidationError("Нельзя загрузить пустой CSV-файл.")
+        if uploaded.size > MAX_WORKPLACE_DOCUMENT_CSV_SIZE:
+            raise forms.ValidationError("Размер CSV-файла превышает 5 МБ.")
+        return uploaded
+
+
+class WorkplaceDocumentPublicationConfirmationForm(forms.Form):
+    preview_digest = forms.CharField(widget=forms.HiddenInput())
+    password = forms.CharField(
+        label="Текущий пароль",
+        strip=False,
+        widget=forms.PasswordInput(
+            attrs={
+                "autocomplete": "current-password",
+                "placeholder": "Введите пароль своей учётной записи",
+            }
+        ),
+    )
+    confirm = forms.BooleanField(
+        label=(
+            "Я проверил(а) готовые позиции и подтверждаю создание утверждённой "
+            "редакции перечня без автоматического отказа от бумажного хранения"
+        )
+    )
+
+
+class WorkplaceDocumentRowDecisionForm(forms.Form):
+    action = forms.ChoiceField(
+        label="Решение",
+        choices=(
+            ("ACCEPT_AS_IS", "Принять исходное значение как есть"),
+            ("EXCLUDE", "Исключить позицию из публикации"),
+            ("RESET", "Сбросить принятое решение"),
+        ),
+    )
+    note = forms.CharField(
+        label="Обоснование",
+        required=False,
+        max_length=2000,
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("action") != "RESET" and not (cleaned.get("note") or "").strip():
+            self.add_error("note", "Для принятия или исключения требуется обоснование.")
+        return cleaned

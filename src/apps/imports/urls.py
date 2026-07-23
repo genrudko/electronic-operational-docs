@@ -5,6 +5,41 @@ from . import views
 app_name = "imports"
 
 urlpatterns = [
+    path(
+        "imports/workplace-documents/",
+        views.workplace_document_import_list,
+        name="workplace_document_list",
+    ),
+    path(
+        "imports/workplace-documents/upload/",
+        views.workplace_document_import_upload,
+        name="workplace_document_upload",
+    ),
+    path(
+        "imports/workplace-documents/<uuid:public_id>/",
+        views.workplace_document_import_detail,
+        name="workplace_document_detail",
+    ),
+    path(
+        "imports/workplace-documents/<uuid:public_id>/rows/<int:row_id>/decision/",
+        views.workplace_document_import_row_decide,
+        name="workplace_document_row_decide",
+    ),
+    path(
+        "imports/workplace-documents/<uuid:public_id>/publication/",
+        views.workplace_document_import_publication,
+        name="workplace_document_publication",
+    ),
+    path(
+        "imports/workplace-documents/<uuid:public_id>/publication/<uuid:publication_id>/",
+        views.workplace_document_import_publication_result,
+        name="workplace_document_publication_result",
+    ),
+    path(
+        "imports/workplace-documents/<uuid:public_id>/discard/",
+        views.workplace_document_import_discard,
+        name="workplace_document_discard",
+    ),
     path("imports/personnel/", views.personnel_list, name="personnel_list"),
     path("imports/personnel/upload/", views.personnel_upload, name="personnel_upload"),
     path(

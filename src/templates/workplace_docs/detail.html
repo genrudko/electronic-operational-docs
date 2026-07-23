@@ -9,19 +9,36 @@
         <h1>{{ document_list.title }}</h1>
         <p>{{ document_list.workplace.name }} · редакция № {{ revision.revision_number }}</p>
     </div>
-    <a href="{% url 'workplace_docs:registry' %}">К перечням</a>
+    <div class="document-actions">
+        <a class="button secondary" href="{% url 'workplace_docs:registry' %}">К перечням</a>
+        <a class="button secondary" href="{% url 'imports:workplace_document_list' %}">
+            Источники импорта
+        </a>
+    </div>
 </section>
 
 <section class="notice-card success-notice">
     <strong>Редакция утверждена и неизменяема</strong>
     <p>
-        Состав позиций, применимость, формы хранения и нормативные основания зафиксированы
+        Состав позиций, применимость, формы хранения и основания зафиксированы
         контрольной суммой. Изменения оформляются новой редакцией перечня.
+    </p>
+</section>
+
+<section class="notice-card warning-notice">
+    <strong>Форма хранения не заменяет нормативное решение</strong>
+    <p>
+        Для импортированных позиций форма хранения остаётся «Не определена». Исходная
+        отметка электронной формы показывается отдельно и не подтверждает право отказаться
+        от бумажного экземпляра.
     </p>
 </section>
 
 <section class="summary-grid">
     <article class="metric"><span>Всего позиций</span><strong>{{ summary.total }}</strong></article>
+    {% if search_query %}
+        <article class="metric"><span>Найдено</span><strong>{{ summary.shown }}</strong></article>
+    {% endif %}
     <article class="metric"><span>Обязательных</span><strong>{{ summary.mandatory }}</strong></article>
     <article class="metric"><span>Типовых</span><strong>{{ summary.typical }}</strong></article>
     <article class="metric"><span>Локальных</span><strong>{{ summary.local }}</strong></article>
@@ -50,7 +67,9 @@
         <dt>Следующий пересмотр</dt><dd>{{ revision.next_review_date|date:"d.m.Y" }}</dd>
         <dt>Утвердил</dt><dd>{{ revision.approved_by.full_name }} · {{ revision.approved_by.position.name }}</dd>
         <dt>Утверждено</dt><dd>{{ revision.approved_at|date:"d.m.Y H:i:s" }}</dd>
-        {% if revision.change_summary %}<dt>Описание редакции</dt><dd>{{ revision.change_summary }}</dd>{% endif %}
+        {% if revision.change_summary %}
+            <dt>Описание редакции</dt><dd>{{ revision.change_summary }}</dd>
+        {% endif %}
     </dl>
     <details class="technical-only">
         <summary>Технические реквизиты редакции</summary>
@@ -71,17 +90,30 @@
             <div class="eyebrow">СОСТАВ ДОКУМЕНТАЦИИ</div>
             <h2>Позиции перечня</h2>
         </div>
-        <span class="count-badge">{{ entries|length }} позиций</span>
+        <span class="count-badge">{{ entries|length }} показано</span>
     </div>
+    <form method="get" class="inline-filter-form">
+        <input
+            type="search"
+            name="q"
+            value="{{ search_query }}"
+            placeholder="Название, тип, раздел или номер"
+        >
+        <button class="button secondary" type="submit">Найти</button>
+        {% if search_query %}
+            <a href="{% url 'workplace_docs:detail' document_list.pk %}">Сбросить</a>
+        {% endif %}
+    </form>
     <div class="table-wrap">
         <table>
             <thead>
                 <tr>
-                    <th>Документация</th>
-                    <th>Происхождение</th>
-                    <th>Обязательность и применимость</th>
+                    <th>№ и документация</th>
+                    <th>Раздел и тип</th>
+                    <th>Применимость</th>
                     <th>Форма хранения</th>
-                    <th>Нормативное основание</th>
+                    <th>Пересмотр и утверждение</th>
+                    <th>Основание</th>
                 </tr>
             </thead>
             <tbody>
@@ -89,26 +121,75 @@
                 <tr>
                     <td>
                         <strong>{{ entry.title }}</strong>
-                        <small><code>{{ entry.code }}</code></small>
+                        <small>
+                            <code>{{ entry.code }}</code>
+                            {% if entry.source_register_entry_no %}
+                                · позиция {{ entry.source_register_entry_no }}
+                            {% endif %}
+                            {% if entry.source_document_no %}
+                                · № {{ entry.source_document_no }} в разделе
+                            {% endif %}
+                        </small>
                         {% if entry.notes %}<small>{{ entry.notes }}</small>{% endif %}
                     </td>
-                    <td>{{ entry.get_source_kind_display }}</td>
+                    <td>
+                        {% if entry.section_no %}
+                            <strong>{{ entry.section_no }}. {{ entry.section_name }}</strong>
+                        {% endif %}
+                        {% if entry.subsection_no %}
+                            <small>{{ entry.subsection_no }} {{ entry.subsection_name }}</small>
+                        {% endif %}
+                        <small>{{ entry.document_type_label|default:entry.get_source_kind_display }}</small>
+                    </td>
                     <td>
                         <strong>{{ entry.get_requirement_kind_display }}</strong>
-                        {% if entry.applicability_text %}<small>{{ entry.applicability_text }}</small>{% endif %}
+                        {% if entry.applicability_text %}
+                            <small>{{ entry.applicability_text }}</small>
+                        {% endif %}
                     </td>
-                    <td>{{ entry.get_storage_form_display }}</td>
+                    <td>
+                        {{ entry.get_storage_form_display }}
+                        {% if entry.electronic_storage_mark %}
+                            <small>
+                                Исходная отметка: {{ entry.electronic_storage_mark }} ·
+                                {{ entry.get_electronic_storage_interpretation_display }}
+                            </small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if entry.review_period_raw %}
+                            {{ entry.review_period_raw }}
+                        {% else %}
+                            Не указано
+                        {% endif %}
+                        {% if entry.review_interval_months %}
+                            <small>{{ entry.review_interval_months }} мес.</small>
+                        {% endif %}
+                        {% if entry.approval_date %}
+                            <small>Утверждено {{ entry.approval_date|date:"d.m.Y" }}</small>
+                        {% endif %}
+                        {% if entry.approver_name %}
+                            <small>{{ entry.approving_role }} · {{ entry.approver_name }}</small>
+                        {% endif %}
+                        {% if entry.source_pdf_page %}
+                            <small>Страница источника: {{ entry.source_pdf_page }}</small>
+                        {% endif %}
+                    </td>
                     <td>
                         {% if entry.normative_document %}
                             <a href="{% url 'normatives:document_detail' entry.normative_document.code %}">
                                 {{ entry.normative_document }}
                             </a>
-                            {% if entry.normative_clause %}<small>{{ entry.normative_clause }}</small>{% endif %}
+                            {% if entry.normative_clause %}
+                                <small>{{ entry.normative_clause }}</small>
+                            {% endif %}
                         {% else %}
                             {{ entry.basis_text }}
                         {% endif %}
                     </td>
                 </tr>
+            {% empty %}
+                <tr><td colspan="6" class="muted">По запросу позиции не найдены.</td></tr>
             {% endfor %}
             </tbody>
         </table>
@@ -134,7 +215,10 @@
                             Редакция № {{ item.revision_number }}
                         </a>
                     </td>
-                    <td>{{ item.effective_from|date:"d.m.Y" }} — {{ item.effective_until|date:"d.m.Y"|default:"по настоящее время" }}</td>
+                    <td>
+                        {{ item.effective_from|date:"d.m.Y" }} —
+                        {{ item.effective_until|date:"d.m.Y"|default:"по настоящее время" }}
+                    </td>
                     <td>{{ item.approved_by.full_name }}</td>
                 </tr>
             {% endfor %}

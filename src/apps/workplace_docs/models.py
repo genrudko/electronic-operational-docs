@@ -39,9 +39,16 @@ class RequirementKind(models.TextChoices):
 
 
 class StorageForm(models.TextChoices):
+    UNKNOWN = "UNKNOWN", "Не определена"
     PAPER = "PAPER", "Бумажная"
     ELECTRONIC = "ELECTRONIC", "Электронная"
     MIXED = "MIXED", "Смешанная"
+
+
+class ElectronicStorageInterpretation(models.TextChoices):
+    INDICATED = "INDICATED", "Электронная форма указана"
+    NOT_INDICATED = "NOT_INDICATED", "Электронная форма не указана"
+    UNKNOWN = "UNKNOWN", "Не удалось определить"
 
 
 class WorkplaceDocumentList(models.Model):
@@ -253,6 +260,38 @@ class WorkplaceDocumentEntry(models.Model):
     normative_clause = models.CharField("Пункт нормативного документа", max_length=128, blank=True)
     basis_text = models.CharField("Основание", max_length=1000, blank=True)
     notes = models.TextField("Примечание", blank=True)
+    source_register_entry_no = models.PositiveIntegerField(
+        "Сквозной номер позиции источника",
+        null=True,
+        blank=True,
+    )
+    section_no = models.CharField("Номер раздела источника", max_length=32, blank=True)
+    section_name = models.CharField("Наименование раздела", max_length=255, blank=True)
+    subsection_no = models.CharField("Номер подраздела источника", max_length=32, blank=True)
+    subsection_name = models.CharField("Наименование подраздела", max_length=255, blank=True)
+    source_document_no = models.CharField("Номер документа в разделе", max_length=64, blank=True)
+    document_type_label = models.CharField("Тип документа из источника", max_length=255, blank=True)
+    electronic_storage_mark = models.CharField(
+        "Отметка электронной формы из источника",
+        max_length=16,
+        blank=True,
+    )
+    electronic_storage_interpretation = models.CharField(
+        "Интерпретация электронной формы",
+        max_length=24,
+        choices=ElectronicStorageInterpretation.choices,
+        default=ElectronicStorageInterpretation.UNKNOWN,
+    )
+    review_period_raw = models.CharField("Периодичность из источника", max_length=255, blank=True)
+    review_interval_months = models.PositiveSmallIntegerField(
+        "Нормализованный период пересмотра, месяцев",
+        null=True,
+        blank=True,
+    )
+    approval_date = models.DateField("Дата утверждения позиции", null=True, blank=True)
+    approving_role = models.CharField("Должность утвердившего", max_length=255, blank=True)
+    approver_name = models.CharField("Утвердивший по источнику", max_length=255, blank=True)
+    source_pdf_page = models.PositiveSmallIntegerField("Страница источника", null=True, blank=True)
     display_order = models.PositiveIntegerField("Порядок отображения", default=0)
 
     objects = ProtectedManager()

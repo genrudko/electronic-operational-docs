@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db.models import Q
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
@@ -92,9 +93,20 @@ def detail(
     if revision is None:
         raise Http404("Утверждённая редакция перечня не найдена.")
 
-    entries = list(
-        revision.entries.select_related("normative_document").order_by("display_order", "code")
+    search_query = (request.GET.get("q") or "").strip()
+    entry_queryset = revision.entries.select_related("normative_document").order_by(
+        "display_order", "code"
     )
+    if search_query:
+        entry_queryset = entry_queryset.filter(
+            Q(title__icontains=search_query)
+            | Q(code__icontains=search_query)
+            | Q(document_type_label__icontains=search_query)
+            | Q(section_name__icontains=search_query)
+            | Q(subsection_name__icontains=search_query)
+            | Q(source_document_no__icontains=search_query)
+        )
+    entries = list(entry_queryset)
     history = list(revisions.order_by("-revision_number"))
     context = {
         "document_list": document_list,
@@ -103,8 +115,10 @@ def detail(
         "history": history,
         "review_state": review_state(revision),
         "today": timezone.localdate(),
+        "search_query": search_query,
         "summary": {
-            "total": len(entries),
+            "total": revision.entries.count(),
+            "shown": len(entries),
             "mandatory": sum(
                 1 for entry in entries if entry.requirement_kind == RequirementKind.MANDATORY
             ),

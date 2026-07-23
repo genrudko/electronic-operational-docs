@@ -8,7 +8,7 @@ from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 
-from apps.organizations.models import Employee, Organization
+from apps.organizations.models import Employee, Organization, Workplace
 
 DATA_PROFILE_SPECS: tuple[dict[str, object], ...] = (
     {
@@ -1963,6 +1963,506 @@ class PersonnelPublication(models.Model):
 
     def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
         raise ValidationError("Физическое удаление публикации персонала запрещено.")
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if self.source_revision_id and self.actor_id:
+            if self.source_revision.organization_id != self.actor.organization_id:
+                errors["actor"] = "Публикующий сотрудник относится к другой организации."
+        if len(self.digest) != 64:
+            errors["digest"] = "Для публикации требуется SHA-256."
+        if not isinstance(self.result_summary, dict):
+            errors["result_summary"] = "Итоги должны храниться JSON-объектом."
+        if errors:
+            raise ValidationError(errors)
+
+
+class WorkplaceDocumentSourceRevision(models.Model):
+    class Status(models.TextChoices):
+        STAGED = "STAGED", "Подготовлена к проверке"
+        PUBLISHED = "PUBLISHED", "Опубликована"
+        DISCARDED = "DISCARDED", "Убрана из рабочего списка"
+
+    public_id = models.UUIDField(
+        "Публичный идентификатор",
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.PROTECT,
+        related_name="workplace_document_source_revisions",
+        verbose_name="Организация",
+    )
+    data_profile = models.ForeignKey(
+        DataProfile,
+        on_delete=models.PROTECT,
+        related_name="workplace_document_source_revisions",
+        verbose_name="Профиль данных",
+    )
+    uploaded_by = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        related_name="uploaded_workplace_document_revisions",
+        verbose_name="Загрузил",
+    )
+    source_reference = models.CharField("Источник или основание", max_length=1000)
+    effective_from = models.DateField("Действует с")
+    list_review_period_months = models.PositiveSmallIntegerField(
+        "Период пересмотра перечня, месяцев",
+        default=12,
+    )
+    original_filename = models.CharField("Имя CSV", max_length=255)
+    file_size = models.PositiveBigIntegerField("Размер CSV, байт")
+    file_sha256 = models.CharField("SHA-256 CSV", max_length=64)
+    header_signature = models.CharField("SHA-256 заголовка", max_length=64)
+    source_encoding = models.CharField("Кодировка", max_length=32, default="utf-8-sig")
+    workplace_scope_raw = models.CharField("Рабочее место из источника", max_length=500, blank=True)
+    matched_workplace = models.ForeignKey(
+        Workplace,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="matched_workplace_document_source_revisions",
+        verbose_name="Сопоставленное рабочее место",
+    )
+    manifest = models.JSONField("Манифест разбора", default=dict)
+    total_rows = models.PositiveIntegerField("Позиций", default=0)
+    section_count = models.PositiveIntegerField("Разделов", default=0)
+    ready_rows = models.PositiveIntegerField("Готовых строк", default=0)
+    review_rows = models.PositiveIntegerField("Строк на проверке", default=0)
+    blocked_rows = models.PositiveIntegerField("Заблокированных строк", default=0)
+    excluded_rows = models.PositiveIntegerField("Исключённых строк", default=0)
+    electronic_indicated_rows = models.PositiveIntegerField(
+        "Строк с указанной электронной формой",
+        default=0,
+    )
+    status = models.CharField(
+        "Состояние",
+        max_length=16,
+        choices=Status.choices,
+        default=Status.STAGED,
+        db_index=True,
+    )
+    publication_digest = models.CharField(
+        "SHA-256 публикации",
+        max_length=64,
+        blank=True,
+        editable=False,
+    )
+    published_at = models.DateTimeField("Опубликовано", null=True, blank=True)
+    published_by = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="published_workplace_document_imports",
+        verbose_name="Опубликовал",
+    )
+    target_document_list = models.ForeignKey(
+        "workplace_docs.WorkplaceDocumentList",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="source_import_revisions",
+        verbose_name="Созданный перечень",
+    )
+    target_revision = models.ForeignKey(
+        "workplace_docs.WorkplaceDocumentRevision",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="source_import_revisions",
+        verbose_name="Созданная редакция",
+    )
+    created_at = models.DateTimeField("Создано", auto_now_add=True)
+    updated_at = models.DateTimeField("Изменено", auto_now=True)
+    discarded_at = models.DateTimeField("Убрано из рабочего списка", null=True, blank=True)
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+        constraints = [
+            models.UniqueConstraint(
+                fields=(
+                    "organization",
+                    "file_sha256",
+                    "source_reference",
+                    "effective_from",
+                    "list_review_period_months",
+                ),
+                name="uniq_workdoc_source_context",
+            )
+        ]
+        indexes = [
+            models.Index(
+                fields=("organization", "status", "-created_at"),
+                name="workdoc_src_status_idx",
+            )
+        ]
+        verbose_name = "редакция источника документации рабочего места"
+        verbose_name_plural = "редакции источников документации рабочих мест"
+
+    def __str__(self) -> str:
+        return f"{self.original_filename} · {self.get_status_display()}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        self.original_filename = self.original_filename.strip()
+        self.file_sha256 = self.file_sha256.strip().lower()
+        self.header_signature = self.header_signature.strip().lower()
+        self.source_reference = self.source_reference.strip()
+        self.workplace_scope_raw = self.workplace_scope_raw.strip()
+        if self.pk:
+            original = type(self).objects.get(pk=self.pk)
+            immutable_fields = (
+                "organization_id",
+                "data_profile_id",
+                "uploaded_by_id",
+                "source_reference",
+                "effective_from",
+                "list_review_period_months",
+                "original_filename",
+                "file_size",
+                "file_sha256",
+                "header_signature",
+                "source_encoding",
+                "workplace_scope_raw",
+                "matched_workplace_id",
+                "manifest",
+                "total_rows",
+                "section_count",
+                "electronic_indicated_rows",
+            )
+            if any(
+                getattr(original, field) != getattr(self, field)
+                for field in immutable_fields
+            ):
+                raise ValidationError(
+                    "Исходные реквизиты staging-редакции неизменяемы; "
+                    "создайте новую загрузку."
+                )
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
+        raise ValidationError(
+            "Физическое удаление staging-редакции документации запрещено. "
+            "Используйте удаление из рабочего списка."
+        )
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if self.data_profile_id and self.organization_id:
+            if self.data_profile.organization_id != self.organization_id:
+                errors["data_profile"] = "Профиль данных относится к другой организации."
+            if (
+                self.data_profile.code != "local-validation"
+                or self.data_profile.kind != DataProfile.Kind.LOCAL_VALIDATION
+                or not self.data_profile.allows_real_personal_data
+                or self.data_profile.export_policy != DataProfile.ExportPolicy.PROHIBITED
+            ):
+                errors["data_profile"] = (
+                    "Реестр с ФИО утвердившего допускается только в неэкспортируемом "
+                    "профиле local-validation."
+                )
+        if self.uploaded_by_id and self.organization_id:
+            if self.uploaded_by.organization_id != self.organization_id:
+                errors["uploaded_by"] = "Загрузивший сотрудник относится к другой организации."
+        if self.published_by_id and self.organization_id:
+            if self.published_by.organization_id != self.organization_id:
+                errors["published_by"] = "Публикующий сотрудник относится к другой организации."
+        if self.matched_workplace_id and self.organization_id:
+            if self.matched_workplace.organization_id != self.organization_id:
+                errors["matched_workplace"] = "Рабочее место относится к другой организации."
+        if len(self.file_sha256) != 64:
+            errors["file_sha256"] = "Для CSV требуется SHA-256."
+        if len(self.header_signature) != 64:
+            errors["header_signature"] = "Для заголовка требуется SHA-256."
+        if not isinstance(self.manifest, dict):
+            errors["manifest"] = "Манифест должен храниться JSON-объектом."
+        if not 1 <= self.list_review_period_months <= 60:
+            errors["list_review_period_months"] = "Период пересмотра должен быть от 1 до 60 месяцев."
+        if self.status == self.Status.PUBLISHED:
+            required = (
+                self.published_at
+                and self.published_by_id
+                and len(self.publication_digest) == 64
+                and self.target_document_list_id
+                and self.target_revision_id
+            )
+            if not required:
+                errors["status"] = "Публикация требует автора, времени, SHA-256 и целевой редакции."
+        elif any(
+            (
+                self.published_at,
+                self.published_by_id,
+                self.publication_digest,
+                self.target_document_list_id,
+                self.target_revision_id,
+            )
+        ):
+            errors["status"] = "Реквизиты публикации допустимы только после публикации."
+        if self.status == self.Status.DISCARDED and self.discarded_at is None:
+            errors["discarded_at"] = "Для убранной редакции требуется время операции."
+        if errors:
+            raise ValidationError(errors)
+
+
+class WorkplaceDocumentSourceRow(models.Model):
+    class ReviewStatus(models.TextChoices):
+        READY = "READY", "Готова"
+        REVIEW_REQUIRED = "REVIEW_REQUIRED", "Требует проверки"
+        BLOCKED = "BLOCKED", "Заблокирована"
+        PUBLISHED = "PUBLISHED", "Опубликована"
+        EXCLUDED = "EXCLUDED", "Исключена"
+
+    class ReviewDecision(models.TextChoices):
+        NONE = "NONE", "Решение не принято"
+        ACCEPT_AS_IS = "ACCEPT_AS_IS", "Принять исходное значение"
+        EXCLUDE = "EXCLUDE", "Исключить из публикации"
+
+    source_revision = models.ForeignKey(
+        WorkplaceDocumentSourceRevision,
+        on_delete=models.PROTECT,
+        related_name="source_rows",
+        verbose_name="Редакция источника",
+    )
+    source_row_number = models.PositiveIntegerField("Строка CSV")
+    source_index = models.PositiveIntegerField("Технический индекс источника")
+    register_entry_no = models.PositiveIntegerField("Сквозной номер позиции")
+    section_no = models.CharField("Номер раздела", max_length=32)
+    section_name = models.CharField("Наименование раздела", max_length=255)
+    subsection_no = models.CharField("Номер подраздела", max_length=32, blank=True)
+    subsection_name = models.CharField("Наименование подраздела", max_length=255, blank=True)
+    source_document_no = models.CharField("Номер документа в разделе", max_length=64, blank=True)
+    document_title_raw = models.CharField("Наименование документа", max_length=1000)
+    document_type_proposed = models.CharField("Предложенный тип", max_length=255, blank=True)
+    electronic_storage_mark = models.CharField("Исходная отметка электронной формы", max_length=16)
+    electronic_storage_interpretation = models.CharField(
+        "Интерпретация электронной формы",
+        max_length=24,
+    )
+    review_period_raw = models.CharField("Исходная периодичность", max_length=255, blank=True)
+    review_interval_years_raw = models.CharField(
+        "Предложенный период в годах",
+        max_length=64,
+        blank=True,
+    )
+    review_interval_months = models.PositiveSmallIntegerField(
+        "Нормализованный период, месяцев",
+        null=True,
+        blank=True,
+    )
+    approval_date = models.DateField("Дата утверждения", null=True, blank=True)
+    approval_date_raw = models.CharField("Исходная дата утверждения", max_length=64, blank=True)
+    approving_role = models.CharField("Должность утвердившего", max_length=255, blank=True)
+    approver_name = models.CharField("Утвердивший", max_length=255, blank=True)
+    workplace_scope = models.CharField("Рабочее место", max_length=500)
+    source_pdf_page = models.PositiveSmallIntegerField("Страница PDF", null=True, blank=True)
+    source_notes = models.TextField("Примечания источника", blank=True)
+    initial_review_status = models.CharField(
+        "Исходное состояние проверки",
+        max_length=24,
+        choices=ReviewStatus.choices,
+    )
+    review_status = models.CharField(
+        "Состояние проверки",
+        max_length=24,
+        choices=ReviewStatus.choices,
+        db_index=True,
+    )
+    review_decision = models.CharField(
+        "Решение",
+        max_length=24,
+        choices=ReviewDecision.choices,
+        default=ReviewDecision.NONE,
+    )
+    decision_note = models.TextField("Обоснование решения", blank=True)
+    reviewed_by = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="reviewed_workplace_document_source_rows",
+        verbose_name="Проверил",
+    )
+    reviewed_at = models.DateTimeField("Проверено", null=True, blank=True)
+    issues = models.JSONField("Проблемы строки", default=list, blank=True)
+    fingerprint = models.CharField("SHA-256 строки", max_length=64)
+    target_entry = models.ForeignKey(
+        "workplace_docs.WorkplaceDocumentEntry",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="source_import_rows",
+        verbose_name="Опубликованная позиция",
+    )
+    created_at = models.DateTimeField("Создано", auto_now_add=True)
+
+    class Meta:
+        ordering = ("source_revision", "register_entry_no", "source_index")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("source_revision", "source_row_number"),
+                name="uniq_workdoc_source_row",
+            )
+        ]
+        indexes = [
+            models.Index(
+                fields=("source_revision", "review_status", "register_entry_no"),
+                name="workdoc_row_review_idx",
+            )
+        ]
+        verbose_name = "строка источника документации рабочего места"
+        verbose_name_plural = "строки источника документации рабочего места"
+
+    def __str__(self) -> str:
+        return f"{self.register_entry_no}. {self.document_title_raw}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.pk:
+            original = type(self).objects.get(pk=self.pk)
+            immutable_fields = (
+                "source_revision_id",
+                "source_row_number",
+                "source_index",
+                "register_entry_no",
+                "section_no",
+                "section_name",
+                "subsection_no",
+                "subsection_name",
+                "source_document_no",
+                "document_title_raw",
+                "document_type_proposed",
+                "electronic_storage_mark",
+                "electronic_storage_interpretation",
+                "review_period_raw",
+                "review_interval_years_raw",
+                "review_interval_months",
+                "approval_date",
+                "approval_date_raw",
+                "approving_role",
+                "approver_name",
+                "workplace_scope",
+                "source_pdf_page",
+                "source_notes",
+                "initial_review_status",
+                "issues",
+                "fingerprint",
+            )
+            if any(
+                getattr(original, field) != getattr(self, field)
+                for field in immutable_fields
+            ):
+                raise ValidationError(
+                    "Исходные значения staging-строки неизменяемы; "
+                    "решение хранится отдельно."
+                )
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def clean(self) -> None:
+        super().clean()
+        errors: dict[str, str] = {}
+        if not isinstance(self.issues, list):
+            errors["issues"] = "Проблемы должны храниться JSON-массивом."
+        if len(self.fingerprint) != 64:
+            errors["fingerprint"] = "Для строки требуется SHA-256."
+        allowed_initial_statuses = {
+            self.ReviewStatus.READY,
+            self.ReviewStatus.REVIEW_REQUIRED,
+            self.ReviewStatus.BLOCKED,
+        }
+        if self.initial_review_status not in allowed_initial_statuses:
+            errors["initial_review_status"] = "Исходное состояние staging-строки недопустимо."
+        if self.review_decision == self.ReviewDecision.NONE:
+            if any((self.decision_note, self.reviewed_by_id, self.reviewed_at)):
+                errors["review_decision"] = "Реквизиты решения допустимы только после проверки."
+            if self.review_status == self.ReviewStatus.PUBLISHED:
+                if self.initial_review_status != self.ReviewStatus.READY:
+                    errors["review_status"] = (
+                        "Без ручного решения публикуется только изначально готовая строка."
+                    )
+            elif self.review_status != self.initial_review_status:
+                errors["review_status"] = (
+                    "Без ручного решения состояние должно совпадать с исходным."
+                )
+        elif not self.decision_note.strip() or not self.reviewed_by_id or not self.reviewed_at:
+            errors["review_decision"] = "Решение требует автора, времени и обоснования."
+        if self.review_decision == self.ReviewDecision.ACCEPT_AS_IS:
+            if self.initial_review_status != self.ReviewStatus.REVIEW_REQUIRED:
+                errors["review_decision"] = (
+                    "Принять как есть можно только строку, изначально требующую проверки."
+                )
+            if self.review_status not in {
+                self.ReviewStatus.READY,
+                self.ReviewStatus.PUBLISHED,
+            }:
+                errors["review_status"] = (
+                    "Принятая строка должна иметь состояние «Готова» или «Опубликована»."
+                )
+        if self.review_decision == self.ReviewDecision.EXCLUDE:
+            if self.initial_review_status != self.ReviewStatus.REVIEW_REQUIRED:
+                errors["review_decision"] = (
+                    "Исключить можно только строку, изначально требующую проверки."
+                )
+            if self.review_status != self.ReviewStatus.EXCLUDED:
+                errors["review_status"] = "Исключённая строка должна иметь состояние «Исключена»."
+        if self.target_entry_id and self.review_status != self.ReviewStatus.PUBLISHED:
+            errors["target_entry"] = "Ссылка на позицию допустима только после публикации."
+        if errors:
+            raise ValidationError(errors)
+
+
+class WorkplaceDocumentPublication(models.Model):
+    public_id = models.UUIDField(
+        "Публичный идентификатор",
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+    )
+    source_revision = models.OneToOneField(
+        WorkplaceDocumentSourceRevision,
+        on_delete=models.PROTECT,
+        related_name="publication",
+        verbose_name="Редакция источника",
+    )
+    actor = models.ForeignKey(
+        Employee,
+        on_delete=models.PROTECT,
+        related_name="workplace_document_import_publications",
+        verbose_name="Опубликовал",
+    )
+    schema_version = models.CharField(
+        "Версия схемы",
+        max_length=64,
+        default="eod.workplace-document-import.publication.v1",
+    )
+    canonical_json = models.TextField("Канонический снимок публикации")
+    digest = models.CharField("SHA-256 публикации", max_length=64, unique=True)
+    result_summary = models.JSONField("Итоги публикации", default=dict)
+    created_at = models.DateTimeField("Опубликовано", auto_now_add=True)
+
+    objects = ImmutableAuditManager()
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+        verbose_name = "публикация реестра документации рабочего места"
+        verbose_name_plural = "публикации реестров документации рабочих мест"
+
+    def __str__(self) -> str:
+        return f"{self.source_revision.original_filename} · {self.digest[:12]}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.pk:
+            raise ValidationError("Снимок публикации реестра документации неизменяем.")
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
+        raise ValidationError("Физическое удаление публикации реестра документации запрещено.")
 
     def clean(self) -> None:
         super().clean()

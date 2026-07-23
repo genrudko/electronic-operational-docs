@@ -113,6 +113,25 @@ def build_revision_snapshot(revision: WorkplaceDocumentRevision) -> dict[str, An
                 "normative_clause": entry.normative_clause,
                 "basis_text": entry.basis_text,
                 "notes": entry.notes,
+                "source_register_entry_no": entry.source_register_entry_no,
+                "section_no": entry.section_no,
+                "section_name": entry.section_name,
+                "subsection_no": entry.subsection_no,
+                "subsection_name": entry.subsection_name,
+                "source_document_no": entry.source_document_no,
+                "document_type_label": entry.document_type_label,
+                "electronic_storage_mark": entry.electronic_storage_mark,
+                "electronic_storage_interpretation": (
+                    entry.electronic_storage_interpretation
+                ),
+                "review_period_raw": entry.review_period_raw,
+                "review_interval_months": entry.review_interval_months,
+                "approval_date": (
+                    entry.approval_date.isoformat() if entry.approval_date else None
+                ),
+                "approving_role": entry.approving_role,
+                "approver_name": entry.approver_name,
+                "source_pdf_page": entry.source_pdf_page,
                 "display_order": entry.display_order,
             }
             for entry in entries

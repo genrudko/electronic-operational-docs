@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Загрузка реестра документации · ЭОД{% endblock %}
+{% block content %}
+<section class="page-heading compact">
+    <div><div class="eyebrow">PATCH 011.6.2 · STAGING</div><h1>Загрузка перечня документации рабочего места</h1><p>Выберите один нормализованный CSV. Действующий перечень при загрузке не изменяется.</p></div>
+    <a class="button secondary" href="{% url 'imports:workplace_document_list' %}">К редакциям</a>
+</section>
+<section class="notice-card import-safety-notice">
+    <strong>Технический административный контур</strong>
+    <p>Поддерживается прямой файл <code>eod_workplace_document_register.csv</code> в UTF-8. Исходные байты не сохраняются; остаются staging-строки, происхождение и SHA-256.</p>
+</section>
+<section class="notice-card warning-notice">
+    <strong>Электронная отметка интерпретируется ограниченно</strong>
+    <p>«+» означает только то, что электронная форма указана в исходном перечне. «–» и <code>NOT_INDICATED</code> не запрещают электронную копию и не определяют наличие бумажного экземпляра.</p>
+</section>
+<section class="profile-card">
+    <h2>Реквизиты источника</h2>
+    <form method="post" enctype="multipart/form-data" class="stacked-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% for field in form %}
+            <div class="field-row">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                {{ field.errors }}
+            </div>
+        {% endfor %}
+        <div class="document-actions"><button class="button" type="submit">Разобрать в staging</button><a class="button secondary" href="{% url 'imports:workplace_document_list' %}">Отмена</a></div>
+    </form>
+</section>
+{% endblock %}

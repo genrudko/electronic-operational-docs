@@ -7,9 +7,10 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
 from .forms import (
@@ -23,6 +24,9 @@ from .forms import (
     PowerSystemOccurrenceDecisionForm,
     PowerSystemPackageUploadForm,
     PowerSystemPublicationConfirmationForm,
+    WorkplaceDocumentPublicationConfirmationForm,
+    WorkplaceDocumentRegisterUploadForm,
+    WorkplaceDocumentRowDecisionForm,
 )
 from .models import (
     ImportBatch,
@@ -35,6 +39,9 @@ from .models import (
     PersonnelSourceRow,
     PowerSystemAssetOccurrence,
     PowerSystemSourceRevision,
+    WorkplaceDocumentPublication,
+    WorkplaceDocumentSourceRevision,
+    WorkplaceDocumentSourceRow,
 )
 from .personnel import (
     PersonnelWorkbookError,
@@ -75,6 +82,19 @@ from .services import (
     save_row_correction,
 )
 from .unicode_search import filter_power_system_occurrences
+from .workplace_documents import (
+    WorkplaceDocumentRegisterError,
+    build_workplace_document_publication_preview,
+    can_publish_workplace_document_register,
+    decide_workplace_document_source_row,
+    discard_workplace_document_revision,
+    publish_workplace_document_register,
+    stage_workplace_document_register,
+    workplace_document_revision_for_user,
+)
+from .workplace_documents import (
+    source_revision_queryset_for_employee as workplace_document_revision_queryset_for_employee,
+)
 
 
 def _organization_batch(request: HttpRequest, public_id):
@@ -1351,3 +1371,296 @@ def personnel_discard(request: HttpRequest, public_id) -> HttpResponse:
     else:
         messages.success(request, "Staging-редакция убрана из рабочего списка.")
     return redirect("imports:personnel_list")
+
+
+@login_required
+def workplace_document_import_list(request: HttpRequest) -> HttpResponse:
+    employee = require_import_employee(request.user)
+    revisions = list(
+        workplace_document_revision_queryset_for_employee(employee)
+        .annotate(
+            published_rows_count=Count(
+                "source_rows",
+                filter=Q(
+                    source_rows__review_status=(
+                        WorkplaceDocumentSourceRow.ReviewStatus.PUBLISHED
+                    )
+                ),
+            )
+        )
+        .order_by("-created_at", "-id")
+    )
+    summary = {
+        "total": len(revisions),
+        "active": sum(
+            item.status == WorkplaceDocumentSourceRevision.Status.STAGED
+            for item in revisions
+        ),
+        "attention": sum(
+            item.review_rows + item.blocked_rows > 0
+            for item in revisions
+            if item.status != WorkplaceDocumentSourceRevision.Status.DISCARDED
+        ),
+        "published": sum(
+            item.status == WorkplaceDocumentSourceRevision.Status.PUBLISHED
+            for item in revisions
+        ),
+    }
+    return render(
+        request,
+        "imports/workplace_document_list.html",
+        {"revisions": revisions, "summary": summary},
+    )
+
+
+@login_required
+def workplace_document_import_upload(request: HttpRequest) -> HttpResponse:
+    employee = require_import_employee(request.user)
+    form = WorkplaceDocumentRegisterUploadForm(
+        request.POST or None,
+        request.FILES or None,
+        organization=employee.organization,
+    )
+    if request.method == "POST" and form.is_valid():
+        try:
+            revision = stage_workplace_document_register(
+                uploaded_file=form.cleaned_data["source_file"],
+                employee=employee,
+                data_profile=form.cleaned_data["data_profile"],
+                source_reference=form.cleaned_data["source_reference"],
+                effective_from=form.cleaned_data["effective_from"],
+                list_review_period_months=form.cleaned_data[
+                    "list_review_period_months"
+                ],
+            )
+        except (
+            WorkplaceDocumentRegisterError,
+            PermissionDenied,
+            ValidationError,
+        ) as error:
+            message = (
+                _validation_message(error)
+                if isinstance(error, ValidationError)
+                else str(error)
+            )
+            form.add_error(None, message)
+        else:
+            messages.success(
+                request,
+                "CSV разобран в staging-редакцию. Действующий перечень не изменён.",
+            )
+            return redirect(
+                "imports:workplace_document_detail",
+                public_id=revision.public_id,
+            )
+    return render(
+        request,
+        "imports/workplace_document_upload.html",
+        {"form": form},
+    )
+
+
+@login_required
+def workplace_document_import_detail(request: HttpRequest, public_id) -> HttpResponse:
+    employee, revision = workplace_document_revision_for_user(request.user, public_id)
+    status_filter = request.GET.get("status", "ALL").upper()
+    valid_filters = {"ALL", *WorkplaceDocumentSourceRow.ReviewStatus.values}
+    if status_filter not in valid_filters:
+        status_filter = "ALL"
+    search_query = (request.GET.get("q") or "").strip()
+    rows = revision.source_rows.select_related("target_entry", "reviewed_by").order_by(
+        "register_entry_no", "source_index"
+    )
+    if status_filter != "ALL":
+        rows = rows.filter(review_status=status_filter)
+    if search_query:
+        rows = rows.filter(
+            Q(document_title_raw__icontains=search_query)
+            | Q(document_type_proposed__icontains=search_query)
+            | Q(section_name__icontains=search_query)
+            | Q(subsection_name__icontains=search_query)
+            | Q(source_document_no__icontains=search_query)
+        )
+    page = Paginator(rows, 20).get_page(request.GET.get("page"))
+    return render(
+        request,
+        "imports/workplace_document_detail.html",
+        {
+            "employee": employee,
+            "revision": revision,
+            "page": page,
+            "status_filter": status_filter,
+            "search_query": search_query,
+            "published_rows_count": revision.source_rows.filter(
+                review_status=WorkplaceDocumentSourceRow.ReviewStatus.PUBLISHED
+            ).count(),
+            "can_publish": can_publish_workplace_document_register(employee),
+            "is_development_database": (
+                getattr(settings, "EOD_DATABASE_PROFILE", "presentation")
+                == "development"
+            ),
+        },
+    )
+
+
+@login_required
+def workplace_document_import_row_decide(
+    request: HttpRequest,
+    public_id,
+    row_id: int,
+) -> HttpResponse:
+    if request.method != "POST":
+        return redirect(
+            "imports:workplace_document_detail",
+            public_id=public_id,
+        )
+    employee, revision = workplace_document_revision_for_user(request.user, public_id)
+    form = WorkplaceDocumentRowDecisionForm(request.POST)
+    if not form.is_valid():
+        messages.error(
+            request,
+            " ".join(
+                message
+                for field_errors in form.errors.values()
+                for message in field_errors
+            ),
+        )
+    else:
+        try:
+            decide_workplace_document_source_row(
+                source_revision=revision,
+                row_id=row_id,
+                actor=employee,
+                action=form.cleaned_data["action"],
+                note=form.cleaned_data["note"],
+            )
+        except (PermissionDenied, ValidationError) as error:
+            message = (
+                _validation_message(error)
+                if isinstance(error, ValidationError)
+                else str(error)
+            )
+            messages.error(request, message)
+        else:
+            messages.success(request, "Решение по строке сохранено в staging.")
+    query = request.POST.get("return_query", "")
+    target = reverse(
+        "imports:workplace_document_detail",
+        args=[revision.public_id],
+    )
+    return redirect(f"{target}?{query}" if query else target)
+
+
+@login_required
+def workplace_document_import_publication(
+    request: HttpRequest,
+    public_id,
+) -> HttpResponse:
+    employee, revision = workplace_document_revision_for_user(request.user, public_id)
+    if revision.status != WorkplaceDocumentSourceRevision.Status.STAGED:
+        publication = WorkplaceDocumentPublication.objects.filter(
+            source_revision=revision
+        ).first()
+        if publication is not None:
+            return redirect(
+                "imports:workplace_document_publication_result",
+                public_id=revision.public_id,
+                publication_id=publication.public_id,
+            )
+        messages.error(request, "Эта staging-редакция больше не доступна для публикации.")
+        return redirect(
+            "imports:workplace_document_detail",
+            public_id=revision.public_id,
+        )
+
+    preview = build_workplace_document_publication_preview(revision)
+    form = WorkplaceDocumentPublicationConfirmationForm(
+        request.POST or None,
+        initial={"preview_digest": preview["digest"]},
+    )
+    if request.method == "POST" and form.is_valid():
+        if not request.user.check_password(form.cleaned_data["password"]):
+            form.add_error("password", "Неверный текущий пароль.")
+        else:
+            try:
+                publication = publish_workplace_document_register(
+                    source_revision=revision,
+                    actor=employee,
+                    expected_digest=form.cleaned_data["preview_digest"],
+                )
+            except (PermissionDenied, ValidationError) as error:
+                message = (
+                    _validation_message(error)
+                    if isinstance(error, ValidationError)
+                    else str(error)
+                )
+                form.add_error(None, message)
+            else:
+                messages.success(
+                    request,
+                    "Готовые позиции опубликованы новой утверждённой редакцией перечня.",
+                )
+                return redirect(
+                    "imports:workplace_document_publication_result",
+                    public_id=revision.public_id,
+                    publication_id=publication.public_id,
+                )
+    return render(
+        request,
+        "imports/workplace_document_publication.html",
+        {
+            "revision": revision,
+            "preview": preview,
+            "form": form,
+            "can_publish": can_publish_workplace_document_register(employee),
+        },
+    )
+
+
+@login_required
+def workplace_document_import_publication_result(
+    request: HttpRequest,
+    public_id,
+    publication_id,
+) -> HttpResponse:
+    _employee, revision = workplace_document_revision_for_user(request.user, public_id)
+    publication = get_object_or_404(
+        WorkplaceDocumentPublication.objects.select_related(
+            "actor",
+            "source_revision",
+            "source_revision__target_document_list",
+            "source_revision__target_revision",
+        ),
+        public_id=publication_id,
+        source_revision=revision,
+    )
+    return render(
+        request,
+        "imports/workplace_document_publication_result.html",
+        {"revision": revision, "publication": publication},
+    )
+
+
+@login_required
+def workplace_document_import_discard(request: HttpRequest, public_id) -> HttpResponse:
+    if request.method != "POST":
+        return redirect(
+            "imports:workplace_document_detail",
+            public_id=public_id,
+        )
+    employee, revision = workplace_document_revision_for_user(request.user, public_id)
+    try:
+        discard_workplace_document_revision(
+            source_revision=revision,
+            actor=employee,
+        )
+    except (PermissionDenied, ValidationError) as error:
+        message = (
+            _validation_message(error)
+            if isinstance(error, ValidationError)
+            else str(error)
+        )
+        messages.error(request, message)
+    else:
+        messages.success(request, "Staging-редакция убрана из рабочего списка.")
+    return redirect("imports:workplace_document_list")
