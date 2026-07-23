@@ -2091,8 +2091,9 @@ class WorkplaceDocumentSourceRevision(models.Model):
                     "source_reference",
                     "effective_from",
                     "list_review_period_months",
+                    "matched_workplace",
                 ),
-                name="uniq_workdoc_source_context",
+                name="uniq_workdoc_src_context_wp",
             )
         ]
         indexes = [

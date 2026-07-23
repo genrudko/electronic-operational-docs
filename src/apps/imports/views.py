@@ -1432,6 +1432,7 @@ def workplace_document_import_upload(request: HttpRequest) -> HttpResponse:
                 list_review_period_months=form.cleaned_data[
                     "list_review_period_months"
                 ],
+                target_workplace=form.cleaned_data["target_workplace"],
             )
         except (
             WorkplaceDocumentRegisterError,

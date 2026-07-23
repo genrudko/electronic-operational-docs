@@ -31,6 +31,9 @@ def main() -> None:
     tests = read("src/apps/imports/tests/test_workplace_document_register_importer.py")
     helper = read("src/apps/imports/tests/workplace_document_register_csv.py")
     adr = read("docs/adr/ADR-011-6-2-workplace-document-register-importer.md")
+    target_workplace_migration = read(
+        "src/apps/imports/migrations/0008_workplace_document_target_workplace_context.py"
+    )
 
     header_contract = importer.split("WORKPLACE_DOCUMENT_HEADER = (", 1)[1].split(
         ")\nDIRECT_PUBLISHER_ROLE", 1
@@ -110,6 +113,17 @@ def main() -> None:
         and "Сопоставлено" in detail_template,
     )
     require(
+        "WORKDOC_EXPLICIT_TARGET_WORKPLACE",
+        "target_workplace = WorkplaceChoiceField" in forms
+        and 'target_workplace=form.cleaned_data["target_workplace"]' in views
+        and "target_workplace: Workplace | None = None" in importer
+        and '"MANUAL_SELECTION"' in importer
+        and '"selected_workplace_code"' in importer
+        and "по явному выбору администратора" in detail_template
+        and '"matched_workplace"' in target_workplace_migration
+        and '"uniq_workdoc_src_context_wp"' in target_workplace_migration,
+    )
+    require(
         "WORKDOC_CONTROLLED_PUBLICATION",
         "DIRECT_PUBLISHER_ROLE" in importer
         and "expected_digest" in importer
@@ -159,6 +173,8 @@ def main() -> None:
         and "test_parser_accepts_exact_header_utf8_bom_and_counts_sections" in tests
         and 'self.assertNotIn("index", WORKPLACE_DOCUMENT_HEADER)' in tests
         and "test_electronic_marker_is_preserved_without_paper_waiver" in tests
+        and "test_explicit_workplace_selection_resolves_unknown_source_scope" in tests
+        and "test_same_source_context_may_be_reloaded_for_another_explicit_workplace" in tests
         and "test_controlled_publication_creates_approved_revision" in tests
         and "test_upload_detail_preview_and_published_registry_are_visible" in tests,
     )

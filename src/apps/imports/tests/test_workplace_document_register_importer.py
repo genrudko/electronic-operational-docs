@@ -173,6 +173,7 @@ class WorkplaceDocumentRegisterImporterTests(TestCase):
         form = WorkplaceDocumentRegisterUploadForm(
             data={
                 "data_profile": self.profile.pk,
+                "target_workplace": self.workplace.pk,
                 "source_reference": "Синтетический перечень",
                 "effective_from": "2026-07-23",
                 "list_review_period_months": 12,
@@ -181,9 +182,22 @@ class WorkplaceDocumentRegisterImporterTests(TestCase):
             organization=self.organization,
         )
         self.assertTrue(form.is_valid(), form.errors)
+        missing_workplace_form = WorkplaceDocumentRegisterUploadForm(
+            data={
+                "data_profile": self.profile.pk,
+                "source_reference": "Без рабочего места",
+                "effective_from": "2026-07-23",
+                "list_review_period_months": 12,
+            },
+            files={"source_file": self.upload()},
+            organization=self.organization,
+        )
+        self.assertFalse(missing_workplace_form.is_valid())
+        self.assertIn("target_workplace", missing_workplace_form.errors)
         zip_form = WorkplaceDocumentRegisterUploadForm(
             data={
                 "data_profile": self.profile.pk,
+                "target_workplace": self.workplace.pk,
                 "source_reference": "ZIP",
                 "effective_from": "2026-07-23",
                 "list_review_period_months": 12,
@@ -203,6 +217,76 @@ class WorkplaceDocumentRegisterImporterTests(TestCase):
         self.assertEqual(revision.manifest["workplace_match_kind"], "CONTROLLED_ALIAS")
         self.assertFalse(revision.manifest["source_bytes_persisted"])
         self.assertFalse(hasattr(revision, "source_bytes"))
+
+    def test_explicit_workplace_selection_resolves_unknown_source_scope(self):
+        rows = synthetic_workplace_document_rows()
+        for row in rows:
+            row["workplace_scope"] = "Общее рабочее место оперативного персонала"
+        revision = stage_workplace_document_register(
+            uploaded_file=self.upload(synthetic_workplace_document_csv(rows=rows)),
+            employee=self.employee,
+            data_profile=self.profile,
+            source_reference="Синтетический перечень с ручным сопоставлением",
+            effective_from=date(2026, 7, 23),
+            list_review_period_months=12,
+            target_workplace=self.workplace,
+        )
+        self.assertEqual(revision.matched_workplace, self.workplace)
+        self.assertEqual(revision.manifest["workplace_match_kind"], "MANUAL_SELECTION")
+        self.assertEqual(revision.manifest["automatic_workplace_match_kind"], "NOT_FOUND")
+        self.assertEqual(revision.manifest["selected_workplace_code"], self.workplace.code)
+        self.assertEqual(revision.ready_rows, 2)
+        self.assertEqual(revision.blocked_rows, 0)
+
+    def test_explicit_workplace_must_not_conflict_with_unambiguous_source_match(self):
+        second_workplace = Workplace.objects.create(
+            organization=self.organization,
+            division=self.division,
+            code="SECOND_CONTROL_ROOM",
+            name="Резервное рабочее место",
+        )
+        with self.assertRaisesMessage(ValidationError, "противоречит"):
+            stage_workplace_document_register(
+                uploaded_file=self.upload(),
+                employee=self.employee,
+                data_profile=self.profile,
+                source_reference="Конфликт ручного выбора",
+                effective_from=date(2026, 7, 23),
+                list_review_period_months=12,
+                target_workplace=second_workplace,
+            )
+
+    def test_same_source_context_may_be_reloaded_for_another_explicit_workplace(self):
+        rows = synthetic_workplace_document_rows()
+        for row in rows:
+            row["workplace_scope"] = "Общее рабочее место оперативного персонала"
+        data = synthetic_workplace_document_csv(rows=rows)
+        second_workplace = Workplace.objects.create(
+            organization=self.organization,
+            division=self.division,
+            code="SECOND_CONTROL_ROOM",
+            name="Резервное рабочее место",
+        )
+        first = stage_workplace_document_register(
+            uploaded_file=self.upload(data),
+            employee=self.employee,
+            data_profile=self.profile,
+            source_reference="Один источник для двух рабочих мест",
+            effective_from=date(2026, 7, 23),
+            list_review_period_months=12,
+            target_workplace=self.workplace,
+        )
+        second = stage_workplace_document_register(
+            uploaded_file=self.upload(data),
+            employee=self.employee,
+            data_profile=self.profile,
+            source_reference="Один источник для двух рабочих мест",
+            effective_from=date(2026, 7, 23),
+            list_review_period_months=12,
+            target_workplace=second_workplace,
+        )
+        self.assertNotEqual(first.pk, second.pk)
+        self.assertEqual(WorkplaceDocumentSourceRevision.objects.count(), 2)
 
     def test_staging_source_metadata_and_raw_row_values_are_immutable(self):
         revision = self.stage()
@@ -415,6 +499,7 @@ class WorkplaceDocumentRegisterImporterTests(TestCase):
             reverse("imports:workplace_document_upload"),
             {
                 "data_profile": self.profile.pk,
+                "target_workplace": self.workplace.pk,
                 "source_reference": "Перечень документации, утверждён 07.08.2024",
                 "effective_from": "2026-07-23",
                 "list_review_period_months": 12,

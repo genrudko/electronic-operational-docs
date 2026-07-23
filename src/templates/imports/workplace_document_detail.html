@@ -12,7 +12,7 @@
 <section class="notice-card data-profile-notice">
     <strong>{{ revision.data_profile.name }} · {{ revision.data_profile.get_export_policy_display }}</strong>
     <p>SHA-256 источника: <code class="breakable">{{ revision.file_sha256 }}</code></p>
-    <p>Рабочее место из источника: «{{ revision.workplace_scope_raw }}». {% if revision.matched_workplace %}Сопоставлено с «{{ revision.matched_workplace.name }}»{% if revision.manifest.workplace_match_kind == 'CONTROLLED_ALIAS' %} по контролируемому алиасу{% endif %}.{% else %}<span class="error-text">Однозначное сопоставление отсутствует.</span>{% endif %}</p>
+    <p>Рабочее место из источника: «{{ revision.workplace_scope_raw }}». {% if revision.matched_workplace %}Сопоставлено с «{{ revision.matched_workplace.name }}»{% if revision.manifest.workplace_match_kind == 'CONTROLLED_ALIAS' %} по контролируемому алиасу{% elif revision.manifest.workplace_match_kind == 'MANUAL_SELECTION' %} по явному выбору администратора{% endif %}.{% else %}<span class="error-text">Однозначное сопоставление отсутствует.</span>{% endif %}</p>
     <p>Действует с {{ revision.effective_from|date:"d.m.Y" }} · контроль редакции каждые {{ revision.list_review_period_months }} мес. · кодировка {{ revision.source_encoding }}.</p>
     {% if not is_development_database %}<p class="error-text">Текущая база не является development-базой. Публикация и новая загрузка заблокированы.</p>{% endif %}
 </section>

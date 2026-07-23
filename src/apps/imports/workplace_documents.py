@@ -546,6 +546,7 @@ def stage_workplace_document_register(
     source_reference: str,
     effective_from: date,
     list_review_period_months: int,
+    target_workplace: Workplace | None = None,
 ) -> WorkplaceDocumentSourceRevision:
     _require_development_database()
     if employee.organization_id != data_profile.organization_id:
@@ -561,27 +562,59 @@ def stage_workplace_document_register(
         )
     if not 1 <= list_review_period_months <= 60:
         raise ValidationError("Период пересмотра перечня должен быть от 1 до 60 месяцев.")
+    if target_workplace is not None:
+        if target_workplace.organization_id != employee.organization_id:
+            raise ValidationError("Выбранное рабочее место относится к другой организации.")
+        if not target_workplace.is_active:
+            raise ValidationError("Выбранное рабочее место не является действующим.")
 
     data = _read_upload(uploaded_file)
     digest = hashlib.sha256(data).hexdigest()
     normalized_reference = _normalize_space(source_reference)
+    parsed = parse_workplace_document_register(data)
+    automatic_workplace, automatic_match_kind = _match_workplace(
+        employee.organization,
+        parsed.workplace_scope,
+    )
+    if target_workplace is not None:
+        if (
+            automatic_workplace is not None
+            and automatic_workplace.pk != target_workplace.pk
+        ):
+            raise ValidationError(
+                "Выбранное рабочее место противоречит однозначному "
+                "сопоставлению области из CSV."
+            )
+        workplace = target_workplace
+        match_kind = (
+            automatic_match_kind
+            if automatic_workplace is not None
+            else "MANUAL_SELECTION"
+        )
+    else:
+        workplace = automatic_workplace
+        match_kind = automatic_match_kind
+
     existing = WorkplaceDocumentSourceRevision.objects.filter(
         organization=employee.organization,
         file_sha256=digest,
         source_reference=normalized_reference,
         effective_from=effective_from,
         list_review_period_months=list_review_period_months,
+        matched_workplace=workplace,
     ).first()
     if existing is not None:
         return existing
-    parsed = parse_workplace_document_register(data)
-    workplace, match_kind = _match_workplace(employee.organization, parsed.workplace_scope)
 
     manifest = {
         **parsed.manifest,
         "source_sha256": digest,
         "source_size": len(data),
         "workplace_match_kind": match_kind,
+        "automatic_workplace_match_kind": automatic_match_kind,
+        "selected_workplace_code": (
+            target_workplace.code if target_workplace is not None else None
+        ),
         "matched_workplace_code": workplace.code if workplace else None,
         "source_bytes_persisted": False,
     }

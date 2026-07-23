@@ -4,6 +4,8 @@ from pathlib import Path
 
 from django import forms
 
+from apps.organizations.models import Workplace
+
 from .models import (
     DataProfile,
     ImportBatch,
@@ -34,6 +36,11 @@ class DataProfileChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj: DataProfile) -> str:
         suffix = " · профиль по умолчанию" if obj.is_default else ""
         return f"{obj.name} · {obj.get_export_policy_display()}{suffix}"
+
+
+class WorkplaceChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj: Workplace) -> str:
+        return f"{obj.name} · {obj.code}"
 
 
 class ImportUploadForm(forms.Form):
@@ -427,6 +434,16 @@ class WorkplaceDocumentRegisterUploadForm(forms.Form):
             "неэкспортируемом профиле."
         ),
     )
+    target_workplace = WorkplaceChoiceField(
+        label="Рабочее место назначения",
+        queryset=Workplace.objects.none(),
+        required=True,
+        help_text=(
+            "Выберите действующее рабочее место, к которому относится перечень. "
+            "Выбор сохраняется в происхождении staging-редакции и проверяется "
+            "против однозначного автоматического сопоставления."
+        ),
+    )
     source_reference = forms.CharField(
         label="Источник или основание",
         max_length=1000,
@@ -466,6 +483,13 @@ class WorkplaceDocumentRegisterUploadForm(forms.Form):
         ).order_by("name")
         if profiles:
             self.fields["data_profile"].initial = profiles[0]
+        workplaces = Workplace.objects.filter(
+            organization=organization,
+            is_active=True,
+        ).order_by("name", "code")
+        self.fields["target_workplace"].queryset = workplaces
+        if workplaces.count() == 1:
+            self.fields["target_workplace"].initial = workplaces.first()
 
     def clean_source_file(self):
         uploaded = self.cleaned_data["source_file"]
