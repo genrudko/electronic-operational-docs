@@ -19,6 +19,7 @@ from apps.imports.tests.workplace_document_register_csv import (
     synthetic_workplace_document_rows,
 )
 from apps.imports.workplace_documents import (
+    WORKPLACE_DOCUMENT_HEADER,
     WorkplaceDocumentRegisterError,
     build_workplace_document_publication_preview,
     decide_workplace_document_source_row,
@@ -124,6 +125,9 @@ class WorkplaceDocumentRegisterImporterTests(TestCase):
         self.assertEqual(parsed.manifest["section_count"], 1)
         self.assertEqual(parsed.manifest["electronic_indicated_count"], 1)
         self.assertEqual(parsed.encoding, "utf-8-sig")
+        self.assertEqual(WORKPLACE_DOCUMENT_HEADER[0], "register_entry_no")
+        self.assertNotIn("index", WORKPLACE_DOCUMENT_HEADER)
+        self.assertEqual([row.source_index for row in parsed.rows], [0, 1])
         self.assertTrue(all(row.review_status == "READY" for row in parsed.rows))
 
     def test_electronic_marker_is_preserved_without_paper_waiver(self):

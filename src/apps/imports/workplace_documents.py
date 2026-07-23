@@ -39,7 +39,6 @@ from .services import require_import_employee
 
 MAX_WORKPLACE_DOCUMENT_CSV_SIZE = 5 * 1024 * 1024
 WORKPLACE_DOCUMENT_HEADER = (
-    "index",
     "register_entry_no",
     "section_no",
     "section_name",
@@ -205,11 +204,7 @@ def _review_months(years_raw: str, period_raw: str) -> tuple[int | None, list[st
 
 
 def _base_row(raw: dict[str, str], source_row_number: int) -> ParsedWorkplaceDocumentRow:
-    source_index = _positive_integer(
-        raw["index"],
-        label=f"Строка {source_row_number}, index",
-        allow_zero=True,
-    )
+    source_index = source_row_number - 2
     register_entry_no = _positive_integer(
         raw["register_entry_no"],
         label=f"Строка {source_row_number}, register_entry_no",
@@ -371,7 +366,6 @@ def parse_workplace_document_register(data: bytes) -> ParsedWorkplaceDocumentReg
 
     rows = [_base_row(raw, row_number) for row_number, raw in enumerate(raw_rows, start=2)]
 
-    index_counts = Counter(row.source_index for row in rows)
     entry_counts = Counter(row.register_entry_no for row in rows)
     section_names: dict[str, set[str]] = defaultdict(set)
     subsection_names: dict[tuple[str, str], set[str]] = defaultdict(set)
@@ -395,12 +389,6 @@ def parse_workplace_document_register(data: bytes) -> ParsedWorkplaceDocumentReg
                 )
 
     for index, row in enumerate(rows):
-        if index_counts[row.source_index] > 1:
-            rows[index] = _add_issue(
-                rows[index],
-                "Технический index повторяется в источнике.",
-                blocked=True,
-            )
         if entry_counts[row.register_entry_no] > 1:
             rows[index] = _add_issue(
                 rows[index],
@@ -436,16 +424,6 @@ def parse_workplace_document_register(data: bytes) -> ParsedWorkplaceDocumentReg
                 rows[index] = _add_issue(
                     rows[index],
                     "Нумерация документов в разделе или подразделе имеет пропуск или начинается не с 1.",
-                )
-
-    expected_indexes = list(range(len(rows)))
-    actual_indexes = [row.source_index for row in rows]
-    if actual_indexes != expected_indexes:
-        for index, row in enumerate(rows):
-            if row.source_index != index:
-                rows[index] = _add_issue(
-                    rows[index],
-                    "Технический index не соответствует порядку строк CSV.",
                 )
 
     expected_entries = list(range(1, len(rows) + 1))

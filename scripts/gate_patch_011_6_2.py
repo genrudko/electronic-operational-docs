@@ -32,11 +32,15 @@ def main() -> None:
     helper = read("src/apps/imports/tests/workplace_document_register_csv.py")
     adr = read("docs/adr/ADR-011-6-2-workplace-document-register-importer.md")
 
+    header_contract = importer.split("WORKPLACE_DOCUMENT_HEADER = (", 1)[1].split(
+        ")\nDIRECT_PUBLISHER_ROLE", 1
+    )[0]
     require(
         "WORKDOC_STRICT_DIRECT_CSV_CONTRACT",
         "WORKPLACE_DOCUMENT_HEADER" in importer
-        and '"index"' in importer
-        and '"source_notes"' in importer
+        and '"register_entry_no"' in header_contract
+        and '"index"' not in header_contract
+        and '"source_notes"' in header_contract
         and "UTF-8 или UTF-8 с BOM" in importer
         and "Заголовок eod_workplace_document_register.csv" in importer
         and 'attrs={"accept": ".csv,text/csv"}' in forms,
@@ -74,7 +78,8 @@ def main() -> None:
         "WORKDOC_NUMBERING_AND_QUARANTINE",
         "повторяется внутри того же раздела или подраздела" in importer
         and "имеет пропуск или начинается не с 1" in importer
-        and "Технический index не соответствует" in importer
+        and "source_index = source_row_number - 2" in importer
+        and "Технический index" not in importer
         and "ReviewStatus.REVIEW_REQUIRED" in importer
         and "ReviewStatus.BLOCKED" in importer,
     )
@@ -150,7 +155,9 @@ def main() -> None:
     require(
         "WORKDOC_SYNTHETIC_TESTS",
         "synthetic_workplace_document_csv" in helper
+        and '"index"' not in helper
         and "test_parser_accepts_exact_header_utf8_bom_and_counts_sections" in tests
+        and 'self.assertNotIn("index", WORKPLACE_DOCUMENT_HEADER)' in tests
         and "test_electronic_marker_is_preserved_without_paper_waiver" in tests
         and "test_controlled_publication_creates_approved_revision" in tests
         and "test_upload_detail_preview_and_published_registry_are_visible" in tests,

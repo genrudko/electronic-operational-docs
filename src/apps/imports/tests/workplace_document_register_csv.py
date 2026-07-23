@@ -9,7 +9,6 @@ from apps.imports.workplace_documents import WORKPLACE_DOCUMENT_HEADER
 def synthetic_workplace_document_rows() -> list[dict[str, str]]:
     return [
         {
-            "index": "0",
             "register_entry_no": "1",
             "section_no": "1",
             "section_name": "Пожарная безопасность",
@@ -30,7 +29,6 @@ def synthetic_workplace_document_rows() -> list[dict[str, str]]:
             "source_notes": "",
         },
         {
-            "index": "1",
             "register_entry_no": "2",
             "section_no": "1",
             "section_name": "Пожарная безопасность",

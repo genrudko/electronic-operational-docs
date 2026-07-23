@@ -22,7 +22,7 @@ Patch 011.6.2 добавляет специализированный техни
 
 1. исходный файл принимается только в development-базе;
 2. разрешён только профиль `local-validation` с запрещённым обычным экспортом;
-3. проверяются UTF-8/UTF-8 BOM и точный фактический заголовок из 19 колонок;
+3. проверяются UTF-8/UTF-8 BOM и точный фактический заголовок из 18 колонок;
 4. исходные байты не сохраняются;
 5. создаются staging-редакция, строки и неизменяемый снимок публикации;
 6. сохраняются исходные и нормализованные номера, даты, периодичность и отметки;
@@ -38,7 +38,7 @@ Patch 011.6.2 добавляет специализированный техни
 ## Контракт заголовка
 
 ```text
-index,register_entry_no,section_no,section_name,subsection_no,subsection_name,
+register_entry_no,section_no,section_name,subsection_no,subsection_name,
 source_document_no,document_title_raw,document_type_proposed,
 electronic_storage_mark,electronic_storage_interpretation,review_period_raw,
 review_interval_years_proposed,approval_date_from_title_page,
@@ -46,8 +46,9 @@ approving_role_from_title_page,approver_from_title_page,workplace_scope,
 source_pdf_page,source_notes
 ```
 
-Строка выше разбита для чтения ADR; программный контракт хранит те же 19 полей
-в одном упорядоченном tuple.
+Строка выше разбита для чтения ADR; программный контракт хранит те же 18 полей
+в одном упорядоченном tuple. Внутренний `source_index` вычисляется по физическому
+порядку строк CSV и не является колонкой внешнего формата.
 
 ## Предметные ограничения
 
