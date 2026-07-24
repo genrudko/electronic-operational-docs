@@ -44,7 +44,7 @@ Baseline `bf986433ea33bf932f98925e7daf61b0199e23d0`.
 - GitHub-hosted Linux;
 - Python 3.13;
 - PostgreSQL 18.4;
-- полный актуальный test gate;
+- актуальные architecture/profile gates;
 - VPS не используется как self-hosted runner.
 
 ## INFRA-002
@@ -60,7 +60,7 @@ Baseline `bf986433ea33bf932f98925e7daf61b0199e23d0`.
 - presentation data imported to `eod_preview`;
 - `operator.demo` and `supervisor.demo` authenticate;
 - main page HTTP 200;
-- visual walkthrough from recorded video accepted.
+- visual walkthrough accepted.
 
 Merge commit `ded4571dcacd973184d3121b19c8db8c70e7b08a`.
 
@@ -77,27 +77,71 @@ Merge commit `ded4571dcacd973184d3121b19c8db8c70e7b08a`.
 - development reset from preview succeeds without changing preview;
 - both contours simultaneously healthy;
 - exact database identities verified;
-- both demo accounts authenticate;
-- UI and presentation data work through SSH tunnel from PC;
-- current head CI success for `EOD CI` and `EOD Development Stack`.
+- demo accounts authenticate;
+- UI and presentation data work through SSH tunnel;
+- current-head CI success.
 
 Merge commit `abd6066885b060e3e3d2c39098fcaf640bb70416`.
 
 ## DOCS-001
 
-**Статус:** в работе.
+**Статус:** принят пользователем, squash-merged PR #4, post-merge verified.
 
-Приёмка должна подтвердить:
+### Exact evidence
 
-- полное дерево канонических документов;
-- отсутствие конфликтующих старых инструкций в активном слое;
-- корректный baseline;
-- рабочие internal links;
-- documentation contract CI;
-- README as entry point;
-- AGENTS contract;
-- handoff sufficient to continue work;
-- explicit plan review as next stage.
+```text
+accepted PR head: 1f0b71b927fbee0ef08957eac157b2480d2e9a8c
+merge commit: e18872face7f27f489056b72fed31e5586121b0c
+merge method: squash
+```
+
+### CI exact head
+
+- EOD Documentation Contract — success;
+- EOD Development Stack — success;
+- EOD CI — success.
+
+Django test command обнаружил `0 test(s)`. Этот факт принят как technical debt, а не как доказательство регрессионной защиты; DOCS-001 не менял application behavior, models, migrations or runtime data.
+
+### Принято содержательно
+
+- репозиторий является главным онлайн-источником истины;
+- канонический documentation tree и index;
+- README and AGENTS entry contracts;
+- GitHub-first/VPS-first development workflow;
+- preview/development/database/tunnel/rollback runbooks;
+- PR template and documentation contract gate;
+- migration from legacy `docs/project_state/`;
+- последовательная журнальная стратегия;
+- paper-first scope журнала ключей;
+- UX-001 parallel workstream;
+- обязательная DOCS-актуализация после принятых изменений;
+- PLAN-001 как следующий обязательный этап.
+
+### Post-merge preview verification
+
+На `/srv/eod/repository` подтверждено:
+
+- branch `main`;
+- HEAD `e18872face7f27f489056b72fed31e5586121b0c`;
+- clean worktree;
+- documentation contract OK, 43 required files;
+- preview containers healthy;
+- health endpoint `{"status": "ok"}`;
+- main page HTTP 200;
+- database identity `eod_preview`;
+- `migrate --check` success, pending migrations отсутствуют.
+
+### Решение
+
+DOCS-001 принят без блокирующих дефектов. Accepted application baseline: `e18872face7f27f489056b72fed31e5586121b0c`.
+
+Открытые follow-up:
+
+- PLAN-001 evidence audit;
+- минимальный automated smoke/integration suite;
+- UX-001 design system workstream;
+- backup retention policy.
 
 ## Шаблон будущей записи
 
