@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - "infra/**"
   pull_request:
     branches:
       - main
@@ -112,3 +111,120 @@ jobs:
           set -euo pipefail
           git diff --check
           git status --short
+
+  notify-telegram:
+    name: Telegram CI notification
+    needs:
+      - quality-and-tests
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Send CI result to Telegram
+        env:
+          CI_RESULT: ${{ needs.quality-and-tests.result }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          import html
+          import json
+          import os
+          import urllib.error
+          import urllib.request
+          from pathlib import Path
+
+
+          token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+          chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+          result = os.environ.get("CI_RESULT", "unknown").strip().lower()
+
+          if not token:
+              raise SystemExit("TELEGRAM_BOT_TOKEN is not configured.")
+          if not chat_id:
+              raise SystemExit("TELEGRAM_CHAT_ID is not configured.")
+
+          event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
+          repository = os.environ["GITHUB_REPOSITORY"]
+          server_url = os.environ["GITHUB_SERVER_URL"]
+          run_id = os.environ["GITHUB_RUN_ID"]
+          run_number = os.environ["GITHUB_RUN_NUMBER"]
+          event_name = os.environ["GITHUB_EVENT_NAME"]
+          actor = os.environ["GITHUB_ACTOR"]
+          sha = os.environ["GITHUB_SHA"]
+          run_url = f"{server_url}/{repository}/actions/runs/{run_id}"
+
+          labels = {
+              "success": ("✅", "успешно"),
+              "failure": ("❌", "ошибка"),
+              "cancelled": ("⚪", "отменён"),
+              "skipped": ("⏭", "пропущен"),
+          }
+          icon, result_label = labels.get(result, ("ℹ️", result))
+
+          branch = os.environ.get("GITHUB_REF_NAME", "unknown")
+          pr_url = ""
+          pr_number = ""
+          if event_name == "pull_request":
+              pull_request = event.get("pull_request", {})
+              branch = pull_request.get("head", {}).get("ref", branch)
+              pr_url = pull_request.get("html_url", "")
+              number = event.get("number")
+              if number is not None:
+                  pr_number = str(number)
+
+          title = f"{icon} <b>EOD CI: {html.escape(result_label)}</b>"
+          lines = [
+              title,
+              "",
+              f"<b>Репозиторий:</b> <code>{html.escape(repository)}</code>",
+              f"<b>Ветка:</b> <code>{html.escape(branch)}</code>",
+              f"<b>Commit:</b> <code>{html.escape(sha[:12])}</code>",
+              f"<b>Запуск:</b> #{html.escape(run_number)}",
+          ]
+          if pr_number:
+              lines.append(f"<b>Pull request:</b> #{html.escape(pr_number)}")
+          lines.extend(
+              [
+                  f"<b>Событие:</b> <code>{html.escape(event_name)}</code>",
+                  f"<b>Автор:</b> <code>{html.escape(actor)}</code>",
+              ]
+          )
+
+          buttons = [{"text": "Открыть GitHub Actions", "url": run_url}]
+          if pr_url:
+              buttons.append({"text": "Открыть PR", "url": pr_url})
+
+          payload = {
+              "chat_id": chat_id,
+              "text": "\n".join(lines),
+              "parse_mode": "HTML",
+              "disable_web_page_preview": True,
+              "reply_markup": {"inline_keyboard": [buttons]},
+          }
+          request = urllib.request.Request(
+              f"https://api.telegram.org/bot{token}/sendMessage",
+              data=json.dumps(payload).encode("utf-8"),
+              headers={"Content-Type": "application/json"},
+              method="POST",
+          )
+
+          try:
+              with urllib.request.urlopen(request, timeout=20) as response:
+                  response_payload = json.loads(response.read().decode("utf-8"))
+          except urllib.error.HTTPError as exc:
+              body = exc.read().decode("utf-8", errors="replace")
+              raise SystemExit(
+                  f"Telegram API returned HTTP {exc.code}: {body}"
+              ) from None
+          except urllib.error.URLError as exc:
+              raise SystemExit(f"Telegram API request failed: {exc.reason}") from None
+
+          if not response_payload.get("ok"):
+              raise SystemExit("Telegram API returned an unsuccessful response.")
+
+          print("Telegram CI notification sent successfully.")
+          PY
