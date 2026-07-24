@@ -1,0 +1,112 @@
+name: EOD Development Stack
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eod-development-stack-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  development-container-smoke:
+    name: Isolated development container smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      DJANGO_SECRET_KEY: ci-development-secret-not-for-deployment-0123456789
+      DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost
+      POSTGRES_DB: eod_development
+      POSTGRES_USER: eod_development
+      POSTGRES_PASSWORD: eod_development_ci_password
+      EOD_DEVELOPMENT_PORT: "8766"
+      TIME_ZONE: Europe/Moscow
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Validate development shell scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n scripts/development_stack.sh
+          bash -n scripts/reset_development_database.sh
+          sh -n scripts/development-entrypoint.sh
+
+      - name: Validate development Compose configuration
+        run: docker compose -f compose.development.yaml config --quiet
+
+      - name: Build development image
+        run: docker compose -f compose.development.yaml build --pull
+
+      - name: Start development stack
+        run: docker compose -f compose.development.yaml up --detach
+
+      - name: Wait for development application health
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 45); do
+            if curl --fail --silent --show-error \
+              http://127.0.0.1:8766/_health/ >/tmp/eod-development-health.json; then
+              cat /tmp/eod-development-health.json
+              exit 0
+            fi
+            if (( attempt % 10 == 0 )); then
+              echo "Health attempt ${attempt}/45"
+              docker compose -f compose.development.yaml ps --all
+            fi
+            sleep 2
+          done
+          exit 1
+
+      - name: Verify isolated database identity
+        run: |
+          docker compose -f compose.development.yaml exec -T app \
+            python manage.py shell -c \
+            'from django.db import connection; assert connection.settings_dict["NAME"] == "eod_development"; assert connection.settings_dict["USER"] == "eod_development"; print("Development database identity: ok")'
+
+      - name: Verify private port exposure
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_port="$(docker compose -f compose.development.yaml port app 8766)"
+          test "$app_port" = "127.0.0.1:8766"
+          if docker compose -f compose.development.yaml port db 5432 \
+            >/tmp/eod-development-db-port.txt 2>&1; then
+            echo "Development PostgreSQL must not publish a host port."
+            cat /tmp/eod-development-db-port.txt
+            exit 1
+          fi
+
+      - name: Capture development diagnostics after failure
+        if: ${{ failure() }}
+        shell: bash
+        run: |
+          {
+            echo "===== docker compose ps --all ====="
+            docker compose -f compose.development.yaml ps --all
+            echo
+            echo "===== docker compose logs ====="
+            docker compose -f compose.development.yaml logs --no-color
+          } >development-diagnostics.log 2>&1
+          cat development-diagnostics.log
+
+      - name: Upload development diagnostics after failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: development-diagnostics-${{ github.run_id }}
+          path: development-diagnostics.log
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Stop development stack
+        if: ${{ always() }}
+        run: docker compose -f compose.development.yaml down --volumes --remove-orphans
