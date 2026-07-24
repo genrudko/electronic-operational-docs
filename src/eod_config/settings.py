@@ -34,7 +34,14 @@ def env_bool(name: str, default: bool = False) -> bool:
     }
 
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "development-only-change-me")
+EOD_DEPLOYMENT_MODE = os.getenv("EOD_DEPLOYMENT_MODE", "development").strip().lower()
+if EOD_DEPLOYMENT_MODE not in {"development", "ci", "preview"}:
+    raise RuntimeError(
+        "Неподдерживаемый EOD_DEPLOYMENT_MODE. "
+        "Допустимы development, ci и preview."
+    )
+
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "development-only-change-me").strip()
 DEBUG = env_bool("DJANGO_DEBUG", True)
 ALLOWED_HOSTS = [
     value.strip()
@@ -63,6 +70,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -137,6 +145,26 @@ else:
         f"Неподдерживаемый DB_ENGINE={DB_ENGINE!r}. Допустимы sqlite и postgresql."
     )
 
+if EOD_DEPLOYMENT_MODE == "preview":
+    preview_errors: list[str] = []
+    if SECRET_KEY in {"", "development-only-change-me"}:
+        preview_errors.append("DJANGO_SECRET_KEY должен быть задан явно")
+    if DEBUG:
+        preview_errors.append("DJANGO_DEBUG должен быть отключён")
+    if not ALLOWED_HOSTS:
+        preview_errors.append("DJANGO_ALLOWED_HOSTS не должен быть пустым")
+    if DB_ENGINE not in {"postgres", "postgresql"}:
+        preview_errors.append("preview допускает только PostgreSQL")
+    postgres_password = os.getenv("POSTGRES_PASSWORD", "").strip()
+    if postgres_password in {"", "eod_local_password"}:
+        preview_errors.append("POSTGRES_PASSWORD должен быть задан явно")
+    postgres_host = os.getenv("POSTGRES_HOST", "").strip()
+    if not postgres_host:
+        preview_errors.append("POSTGRES_HOST должен быть задан явно")
+    if preview_errors:
+        details = "; ".join(preview_errors)
+        raise RuntimeError(f"Небезопасная конфигурация preview: {details}.")
+
 LANGUAGE_CODE = "ru"
 TIME_ZONE = os.getenv("TIME_ZONE", "Europe/Moscow")
 USE_I18N = True
@@ -145,6 +173,14 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "src" / "static"]
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
