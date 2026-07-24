@@ -1,7 +1,9 @@
 # ЭОД — текущий handoff
 
-**Обновлено:** 24.07.2026  
-**Accepted baseline:** `main / abd6066885b060e3e3d2c39098fcaf640bb70416`  
+**Обновлено:** 24.07.2026
+
+**Accepted baseline:** `main / abd6066885b060e3e3d2c39098fcaf640bb70416`
+
 **Active branch:** `docs/001-project-operating-system`
 
 ## Проект
