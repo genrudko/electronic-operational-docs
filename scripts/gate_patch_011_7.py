@@ -133,7 +133,7 @@ def main() -> None:
         "create_and_publish_type",
         "field_definitions_from_formset",
     )
-    require(services, "return bool(getattr(user, \"is_superuser\", False))")
+    require(services, 'return bool(getattr(user, "is_superuser", False))')
     forbid(services, 'user_has_role(user, "shift_supervisor")')
     print("SOURCE_BOUND_ACTION_GUARD=PASSED")
 
@@ -229,11 +229,11 @@ def main() -> None:
     print(f"OPDOC_REPAIR2_TEST_CONTRACT=PASSED COUNT={test_count}")
 
     adr = read("docs/adr/ADR-011-7-operational-documentation-core.md")
-    current_state = read("docs/project_state/CURRENT_STATE.md")
-    decision_log = read("docs/project_state/DECISION_LOG.md")
-    patch_history = read("docs/project_state/PATCH_HISTORY.md")
-    open_items = read("docs/project_state/OPEN_ITEMS.md")
-    handoff = read("docs/project_state/CHAT_HANDOFF.md")
+    current_state = read("docs/project/CURRENT_STATE.md")
+    decision_log = read("docs/project/DECISION_LOG.md")
+    patch_history = read("docs/project/PATCH_HISTORY.md")
+    domain_invariants = read("docs/project/DOMAIN_INVARIANTS.md")
+    handoff = read("docs/project/CURRENT_HANDOFF.md")
     require(
         adr,
         "Источник формы обязателен",
@@ -242,25 +242,31 @@ def main() -> None:
     )
     require(
         current_state,
-        "fec8bd675f9565b0c4e398124cd22f8fabec02b4",
-        "Patch 011.7 Repair 2",
-        "cdbe4fa878cc1c26d2aec2d4a93daa6b856a5f2e108ec1cce1d17d1d9eaba081",
+        "abd6066885b060e3e3d2c39098fcaf640bb70416",
+        "source-bound каталог рабочих форм",
+        "DOCS-001 — Project operating system",
     )
-    require(decision_log, "формы журналов только из утверждённых источников")
+    require(decision_log, "рабочие формы только из утверждённых источников")
     require(patch_history, "Patch 011.7 Repair 1 Revision 10", "Patch 011.7 Repair 2")
-    require(open_items, "не заполняются по памяти")
+    require(
+        domain_invariants,
+        "оператор не проектирует состав граф",
+        "source-bound",
+        "точная форма не восстанавливается по памяти",
+    )
     require(
         handoff,
-        "Repair 2 input baseline: fec8bd675f9565b0c4e398124cd22f8fabec02b4",
-        "current technical HEAD after Repair 2: read from successful patch log",
+        "GitHub-first/VPS-first",
+        "abd6066885b060e3e3d2c39098fcaf640bb70416",
+        "PLAN-001 — доказательная ревизия плана и реализации",
     )
     for relative in (
         "docs/adr/ADR-011-7-operational-documentation-core.md",
-        "docs/project_state/CURRENT_STATE.md",
-        "docs/project_state/DECISION_LOG.md",
-        "docs/project_state/PATCH_HISTORY.md",
-        "docs/project_state/OPEN_ITEMS.md",
-        "docs/project_state/CHAT_HANDOFF.md",
+        "docs/project/CURRENT_STATE.md",
+        "docs/project/DECISION_LOG.md",
+        "docs/project/PATCH_HISTORY.md",
+        "docs/project/DOMAIN_INVARIANTS.md",
+        "docs/project/CURRENT_HANDOFF.md",
     ):
         bad_lines = [
             number
