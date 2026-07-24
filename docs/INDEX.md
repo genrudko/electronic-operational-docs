@@ -25,6 +25,7 @@
 | [`project/DATA_AND_PRIVACY_POLICY.md`](project/DATA_AND_PRIVACY_POLICY.md) | Политика данных, секретов и репозитория |
 | [`project/DECISION_LOG.md`](project/DECISION_LOG.md) | Хронологический журнал решений |
 | [`project/OPEN_ITEMS.md`](project/OPEN_ITEMS.md) | Открытые вопросы, блокеры и отложенные задачи |
+| [`project/UX_001_UI_DESIGN_SYSTEM_CHAT_BRIEF.md`](project/UX_001_UI_DESIGN_SYSTEM_CHAT_BRIEF.md) | Задание параллельному UI/UX-чату и контракт UX-001 |
 | [`project/PATCH_HISTORY.md`](project/PATCH_HISTORY.md) | История технических этапов и repair |
 | [`project/BASELINE_HISTORY.md`](project/BASELINE_HISTORY.md) | Принятые Git baseline и tags |
 | [`project/ACCEPTANCE_HISTORY.md`](project/ACCEPTANCE_HISTORY.md) | Технические и пользовательские приёмки |
