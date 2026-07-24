@@ -4,7 +4,9 @@
 
 **Accepted application baseline:** `main / e18872face7f27f489056b72fed31e5586121b0c`
 
-**Active branch:** `docs/002-docs001-baseline-finalization`
+**Current main history HEAD:** `a2d686b0061fac513c02540a2176850640496884`
+
+**Active branch:** `docs/003-ux001-provisional-contract`
 
 ## Проект
 
@@ -54,7 +56,7 @@ PostgreSQL host ports отсутствуют. Контуры изолирова�
 
 ## Что принято последним
 
-DOCS-001:
+### DOCS-001
 
 - PR #4 принят пользователем;
 - exact accepted head: `1f0b71b927fbee0ef08957eac157b2480d2e9a8c`;
@@ -62,41 +64,41 @@ DOCS-001:
 - canonical documentation tree, README, AGENTS and index;
 - GitHub-first/VPS-first operating system;
 - project/process/runbooks/acceptance/releases documents;
-- PR template and documentation contract CI;
-- migration and removal of active `docs/project_state/`;
 - sequential journal strategy;
 - paper-first scope for the keys journal;
-- UX-001 brief and parallel UI/UX workstream;
-- mandatory DOCS continuity after accepted changes.
+- UX-001 brief and parallel UI/UX workstream.
 
-## Post-merge evidence DOCS-001
+DOCS-001 является accepted application baseline.
 
-На `/srv/eod/repository` подтверждено:
+### DOCS-002
 
-- branch `main`;
-- HEAD `e18872face7f27f489056b72fed31e5586121b0c`;
-- clean worktree;
-- documentation contract OK, 43 required files;
-- preview app and db healthy;
-- health `{"status": "ok"}`;
-- main page HTTP 200;
-- database identity `eod_preview`;
-- pending migrations отсутствуют.
-
-DOCS-001 не менял application behavior, models, migrations or runtime data; container rebuild не требовался.
+- PR #5 принят пользователем и squash-merged;
+- merge commit: `a2d686b0061fac513c02540a2176850640496884`;
+- зафиксированы DOCS-001 post-merge evidence, baseline history and PLAN-001 transition;
+- metadata-only follow-up не создаёт новый application baseline;
+- preview после merge: clean `main`, documentation contract OK, containers healthy, health OK, HTTP 200.
 
 ## Текущая работа
 
-`docs/002-docs001-baseline-finalization` — короткий metadata follow-up:
+`DOCS-003 — provisional UX-001 v0.3 contract`:
 
-- фиксирует accepted application baseline `e18872f…`;
-- обновляет current state, handoff, baseline/acceptance histories and release notes;
-- переводит roadmap и open items на PLAN-001;
-- уточняет, что metadata-only follow-up не создаёт бесконечную рекурсию baseline SHA.
+- исходный UX-пакет сохраняется в `docs/ux/UX-001_v0.3/`;
+- package manifest сохраняет контроль исходных файлов;
+- `docs/ux/README.md` задаёт канонический статус и следующий visual gate;
+- current state, handoff, roadmap, open items and decision log синхронизируются;
+- production code, domain model, lifecycle and runtime data не меняются.
 
-После merge этого follow-up accepted application baseline остаётся `e18872f…`, потому что ветка изменяет только документационную фиксацию уже принятого состояния и не меняет application/runtime baseline.
+Текущий статус UX-001:
 
-## Следующая обязательная работа
+```text
+status: provisional
+visual acceptance: pending
+implementation authorization: not granted
+```
+
+Пользователь не видел визуально новое направление и разрешил оформить контракт как обратимую основу для дальнейшего прототипирования. Concrete palette, typography, density, radii, shadows, shell composition и внешний вид reference screens не приняты.
+
+## Следующая обязательная продуктовая работа
 
 PLAN-001 — доказательная ревизия плана и реализации.
 
@@ -120,7 +122,15 @@ PLAN-001 — доказательная ревизия плана и реали�
 - возможная корректировка очередности;
 - минимальный smoke/integration test suite.
 
-Параллельно UX-001 выполняет evidence-based audit текущего интерфейса и формирует design/interaction contract без остановки продуктового потока.
+## Следующий UX gate
+
+1. Подготовить два компактных visual directions на application shell и одном показательном structured-journal screen.
+2. Пользователь выбирает, комбинирует или отклоняет направление.
+3. Выбранное направление реализуется как ограниченный runtime prototype на development contour.
+4. Проверяются плотность, длинные русские значения, states, focus, overlays and target desktop.
+5. Только после визуальной приёмки фиксируются accepted tokens и разрешается постепенное внедрение.
+
+UX-001 не должен останавливать PLAN-001. Defect journal остаётся кандидатом, а не утверждённым первым slice.
 
 ## Принятые продуктовые решения
 
@@ -136,8 +146,6 @@ PLAN-001 — доказательная ревизия плана и реали�
 
 Связи не откладываются до завершения всего пакета, но универсальная timeline не проектируется заранее без подтверждённых кейсов.
 
-Предварительный первый кандидат — журнал дефектов. Окончательный выбор выполняется PLAN-001.
-
 ### Журнал ключей
 
 - бумажный журнал остаётся основным оригиналом;
@@ -146,7 +154,11 @@ PLAN-001 — доказательная ревизия плана и реали�
 
 ### UI/UX
 
-UX-001 формирует principles, tokens, component and interaction contracts, page archetypes, reference screens and implementation roadmap. Основной интеграционный чат сохраняет domain/architecture decisions и реализацию.
+- visual goal: современная операционная платформа, а не техническая administrative console;
+- visual identity самостоятельна и не использует чужие logos, marks or official affiliation claims;
+- UI только русский, internals — professional technical English;
+- candidate visual tokens не становятся стандартом без runtime and user visual acceptance;
+- operational journal остаётся специализированной document-first environment.
 
 ## Предметные правила, которые нельзя потерять
 
@@ -173,7 +185,8 @@ UX-001 формирует principles, tokens, component and interaction contract
 3. migrations, tests, CI and VPS diagnostics;
 4. `docs/project/CURRENT_HANDOFF.md`;
 5. decision/baseline/acceptance histories;
-6. current chat;
-7. historical local plans and context archives.
+6. `docs/ux/README.md` for UX-001 status;
+7. current chat;
+8. historical local plans and context archives.
 
 При расхождении факт проверяется, а документы исправляются в той же рабочей ветке.
