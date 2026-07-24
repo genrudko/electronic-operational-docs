@@ -1,0 +1,130 @@
+name: EOD CI
+
+on:
+  push:
+    branches:
+      - main
+      - "infra/**"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eod-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-and-tests:
+    name: Python 3.13 / PostgreSQL 18
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+
+    services:
+      postgres:
+        image: postgres:18.4-bookworm
+        env:
+          POSTGRES_DB: eod_ci
+          POSTGRES_USER: eod_ci
+          POSTGRES_PASSWORD: eod_ci_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U eod_ci -d eod_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      DJANGO_SECRET_KEY: ci-only-not-for-deployment
+      DJANGO_DEBUG: "0"
+      DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost,testserver
+      DB_ENGINE: postgresql
+      POSTGRES_DB: eod_ci
+      POSTGRES_USER: eod_ci
+      POSTGRES_PASSWORD: eod_ci_password
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5432"
+      EOD_DATABASE_PROFILE: gate
+      EOD_ALLOW_SQLITE_PATH_OVERRIDE: "0"
+      TIME_ZONE: Europe/Moscow
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install project and development dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --editable ".[dev]"
+          python -m pip check
+
+      - name: Show runtime versions
+        run: |
+          python --version
+          python -m pip --version
+          python -m django --version
+          python - <<'PY'
+          import psycopg
+
+          print(f"psycopg {psycopg.__version__}")
+          PY
+
+      - name: Ruff
+        run: python -m ruff check .
+
+      - name: Compile Python sources
+        run: python -m compileall -q manage.py src scripts
+
+      - name: Django system check
+        run: python manage.py check
+
+      - name: Verify migration files are current
+        run: python manage.py makemigrations --check --dry-run
+
+      - name: Apply migrations to PostgreSQL
+        run: python manage.py migrate --noinput
+
+      - name: Run architectural gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          gates = sorted(Path("scripts").glob("gate_patch_*.py"))
+          if not gates:
+              raise SystemExit("No scripts/gate_patch_*.py files were found.")
+
+          print(f"Discovered {len(gates)} architectural gate scripts.")
+          for gate in gates:
+              print(f"\n===== {gate} =====", flush=True)
+              subprocess.run([sys.executable, str(gate)], check=True)
+          PY
+
+      - name: Collect static files
+        run: python manage.py collectstatic --noinput --clear
+
+      - name: Run full Django test suite
+        run: python manage.py test --verbosity 2
+
+      - name: Verify repository remains unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git status --short
