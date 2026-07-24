@@ -1,6 +1,15 @@
 # ЭОД — release notes
 
-## Unreleased — DOCS-001 Project operating system
+## 2026-07-25 — DOCS-001 Project operating system
+
+### Статус
+
+Принят пользователем, squash-merged PR #4 и проверен на accepted preview.
+
+```text
+accepted PR head: 1f0b71b927fbee0ef08957eac157b2480d2e9a8c
+accepted application baseline: e18872face7f27f489056b72fed31e5586121b0c
+```
 
 ### Цель
 
@@ -20,21 +29,47 @@
 - preview/development/database/reset/tunnel/branch/post-merge/incident runbooks;
 - internal prototype acceptance, demonstration scenarios, regression checklist and known limitations;
 - PR template;
-- documentation contract script and GitHub Actions workflow.
+- documentation contract script and GitHub Actions workflow;
+- UX-001 UI design system chat brief.
 
-### Миграция
+### Принятые продуктовые решения
 
-Устаревший `docs/project_state/` удаляется из active tree после переноса значимой информации. История остаётся в Git.
+- журнальный контур развивается последовательными vertical slices;
+- каждый журнал получает минимальные реальные связи до перехода к следующему;
+- универсальная timeline не проектируется преждевременно;
+- журнал ключей считается paper-first;
+- полный электронный lifecycle ключей исключён из обязательного prototype scope;
+- UX-001 работает параллельно, не становясь вторым интеграционным центром;
+- применимые canonical docs обновляются после каждого принятого feature/repair/patch.
 
-Старые документы, ориентированные на локальные autonomous Python patches, SQLite и запрет automatic push, заменяются GitHub-first/VPS-first моделью.
+### Миграция документации
 
-### Текущий принятый baseline
+Устаревший `docs/project_state/` удалён из active tree после переноса значимой информации. История остаётся в Git.
 
-```text
-main / abd6066885b060e3e3d2c39098fcaf640bb70416
-```
+Старые инструкции, ориентированные на локальные autonomous Python patches, SQLite и запрет automatic push, заменены GitHub-first/VPS-first моделью.
 
-DOCS-001 branch не станет accepted baseline до merge и post-merge preview verification.
+### CI и проверки
+
+Для exact accepted head прошли:
+
+- EOD Documentation Contract;
+- EOD Development Stack;
+- EOD CI.
+
+Django test command обнаружил `0 test(s)`. Это зафиксировано как technical debt и не считается регрессионной защитой. DOCS-001 не менял application behavior, models, migrations or runtime data.
+
+### Post-merge preview
+
+Подтверждено:
+
+- `/srv/eod/repository` на `main / e18872face7f27f489056b72fed31e5586121b0c`;
+- clean worktree;
+- documentation contract OK, 43 required files;
+- preview app and database healthy;
+- health endpoint OK;
+- main page HTTP 200;
+- database identity `eod_preview`;
+- pending migrations отсутствуют.
 
 ### Следующий этап
 
@@ -43,8 +78,10 @@ PLAN-001:
 - evidence audit реализации;
 - матрица `requirement → code → tests → data → acceptance`;
 - master plan v3.0;
-- возможная корректировка направления;
-- выбор ближайшего vertical slice.
+- выбор ближайшего журнального vertical slice;
+- определение минимального automated smoke/integration suite.
+
+Параллельно выполняется UX-001.
 
 ## 2026-07-24 — INFRA-003
 
@@ -69,7 +106,7 @@ PLAN-001:
 ## 2026-07-24 — INFRA-001
 
 - GitHub Actions CI on Linux/Python/PostgreSQL;
-- current architecture and full test gates.
+- current architecture and profile gates.
 
 ## 2026-07-24 — Patch 011.7 Repair 2
 
