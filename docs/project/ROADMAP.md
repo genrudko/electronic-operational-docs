@@ -25,7 +25,9 @@ Roadmap управляется доказательствами, а не тол�
 - paper-first режим журнала ключей;
 - UX-001 parallel workstream.
 
-## Текущая фаза
+DOCS-002 затем зафиксировал accepted baseline и PLAN-001 transition как metadata-only follow-up; current main history HEAD `a2d686b0061fac513c02540a2176850640496884` не подменяет application baseline.
+
+## Текущая продуктовая фаза
 
 ### PLAN-001 — ревизия фактической реализации
 
@@ -53,23 +55,41 @@ Roadmap управляется доказательствами, а не тол�
 - обновлённые acceptance criteria;
 - список технического долга, который действительно блокирует продуктовую разработку.
 
-## Параллельная фаза
+## Параллельная UX-фаза
 
 ### UX-001 — UI design system and interaction contract
 
-UX-001 не блокирует PLAN-001 и первый продуктовый vertical slice. Он создаёт:
+**Текущий статус:** provisional project contract; visual acceptance pending; implementation authorization not granted.
 
+UX-001 v0.3 подготовил:
+
+- evidence-based UI audit;
+- runtime video evidence audit;
+- самостоятельное visual direction;
 - UI principles;
-- application shell;
-- design tokens;
+- candidate design tokens;
 - component contract;
+- interaction/keyboard/focus/overlay contract;
 - page archetypes;
-- interaction contract;
-- keyboard/focus/overlay rules;
-- три reference screens;
-- поэтапный implementation roadmap.
+- three textual reference-screen contracts;
+- staged implementation roadmap.
 
-UI/UX-решения проверяются на оперативном журнале, одном structured journal и документном реестре/timeline. Интеграционные и доменные решения остаются в основном чате.
+Пакет сохраняется в `docs/ux/UX-001_v0.3/`, а каноническая граница статуса — в `docs/ux/README.md`.
+
+### Следующий visual gate
+
+```text
+два компактных визуальных направления
+на application shell + один structured-journal screen
+→ решение пользователя
+→ ограниченный runtime prototype
+→ визуальная корректировка и acceptance
+→ accepted tokens
+```
+
+До этого не являются стандартом concrete palette, typography scale, density, radii, shadows, shell composition и внешний вид reference screens. Массовое внедрение по всем routes не разрешено.
+
+UX-001 не блокирует PLAN-001. UI/UX-решения проверяются на реальном выбранном journal slice и operational journal, а интеграционные и доменные решения остаются в основном чате.
 
 ## Принцип продуктовой очереди после PLAN-001
 
@@ -99,6 +119,8 @@ UI/UX-решения проверяются на оперативном журн
 - presentation data;
 - automated gates;
 - пользовательская приёмка.
+
+UX-001 использует defect family как reference contract, но это не является окончательным выбором продукта.
 
 ### PRODUCT-A2 — Application journal vertical slice
 
@@ -139,14 +161,18 @@ UI/UX-решения проверяются на оперативном журн
 - минимальный реестр документов переключений;
 - связи с заявками, распоряжениями и оперативным журналом.
 
-### PRODUCT-C — Operational journal assistance
+### PRODUCT-C — Operational journal assistance and stabilization
 
 - шаблоны;
 - параметры;
 - словарь сокращений;
 - оборудование, сотрудники и документы в подсказках;
 - клавиатурная работа;
-- стабильность редактора и семантических ссылок.
+- стабильность редактора и семантических ссылок;
+- устранение marker duplication;
+- stable focus/overlay/drawer geometry.
+
+Blocking editor repairs не откладываются автоматически до полного редизайна.
 
 ### RELEASE-A — Internal prototype
 
@@ -205,6 +231,7 @@ UI/UX-решения проверяются на оперативном журн
 - новый этап не добавляется только потому, что он звучит полезно;
 - изменение направления оформляется записью в `DECISION_LOG.md`;
 - статус `готово` требует Definition of Done and acceptance evidence;
+- provisional UX contract не считается visual acceptance;
 - частично реализованная функция не считается завершённым этапом;
 - infrastructure tasks могут закрывать части поздних этапов досрочно;
 - применимые canonical docs обновляются вместе с каждым принятым изменением.
