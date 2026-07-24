@@ -11,6 +11,7 @@ import sys
 import time
 import zipfile
 from collections import Counter
+from contextlib import closing
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -28,7 +29,7 @@ def readonly_uri(path: Path) -> str:
 
 
 def sqlite_integrity(path: Path) -> str:
-    with sqlite3.connect(readonly_uri(path), uri=True) as database:
+    with closing(sqlite3.connect(readonly_uri(path), uri=True)) as database:
         result = database.execute("PRAGMA integrity_check").fetchone()
     return str(result[0] if result else "no result")
 
@@ -41,16 +42,17 @@ def create_sqlite_backup(source_path: Path, backup_path: Path) -> int:
     if backup_path.exists():
         backup_path.unlink()
 
-    with sqlite3.connect(readonly_uri(source_path), uri=True) as source:
-        with sqlite3.connect(backup_path) as target:
+    with closing(sqlite3.connect(readonly_uri(source_path), uri=True)) as source:
+        with closing(sqlite3.connect(backup_path)) as target:
             source.backup(target)
             target.execute("PRAGMA optimize")
+            target.commit()
 
     backup_check = sqlite_integrity(backup_path)
     if backup_check != "ok":
         raise RuntimeError(f"Backup database integrity check failed: {backup_check}")
 
-    with sqlite3.connect(readonly_uri(backup_path), uri=True) as database:
+    with closing(sqlite3.connect(readonly_uri(backup_path), uri=True)) as database:
         table_count = database.execute(
             """
             SELECT COUNT(*)
@@ -124,7 +126,7 @@ def export_fixture(repo: Path, backup_path: Path, fixture_path: Path) -> None:
 
 
 def sqlite_table_counts(database_path: Path) -> dict[str, int]:
-    with sqlite3.connect(readonly_uri(database_path), uri=True) as database:
+    with closing(sqlite3.connect(readonly_uri(database_path), uri=True)) as database:
         names = [
             row[0]
             for row in database.execute(
@@ -210,7 +212,9 @@ def promote_snapshot_directory(working_dir: Path, final_dir: Path) -> None:
         except OSError as exc:
             last_error = exc
             if final_dir.exists():
-                raise RuntimeError(f"Snapshot target appeared unexpectedly: {final_dir}") from exc
+                raise RuntimeError(
+                    f"Snapshot target appeared unexpectedly: {final_dir}"
+                ) from exc
             if attempt < attempts:
                 delay = 0.5 * attempt
                 print(
@@ -227,7 +231,9 @@ def promote_snapshot_directory(working_dir: Path, final_dir: Path) -> None:
         shutil.copytree(working_dir, final_dir)
         actual_files = file_tree_manifest(final_dir)
         if actual_files != expected_files:
-            raise RuntimeError("Copied snapshot directory does not match the working directory.")
+            raise RuntimeError(
+                "Copied snapshot directory does not match the working directory."
+            )
     except Exception:
         if final_dir.exists():
             shutil.rmtree(final_dir, ignore_errors=True)
@@ -238,7 +244,11 @@ def promote_snapshot_directory(working_dir: Path, final_dir: Path) -> None:
 
 
 def create_archive(source_dir: Path, archive_path: Path) -> None:
-    with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+    with zipfile.ZipFile(
+        archive_path,
+        "w",
+        compression=zipfile.ZIP_DEFLATED,
+    ) as archive:
         for path in sorted(source_dir.rglob("*")):
             if path.is_file():
                 archive.write(path, path.relative_to(source_dir).as_posix())
@@ -247,7 +257,9 @@ def create_archive(source_dir: Path, archive_path: Path) -> None:
 def parse_args() -> argparse.Namespace:
     default_repo = Path(__file__).resolve().parents[1]
     default_backup_root = (
-        Path(r"G:\EOD_BACKUPS") if os.name == "nt" else default_repo.parent / "EOD_BACKUPS"
+        Path(r"G:\EOD_BACKUPS")
+        if os.name == "nt"
+        else default_repo.parent / "EOD_BACKUPS"
     )
     parser = argparse.ArgumentParser(
         description="Create a verified transferable snapshot of presentation.sqlite3."
@@ -319,7 +331,10 @@ def main() -> int:
         print("\n===== CREATE TRANSFER ARCHIVE =====")
         create_archive(final_dir, archive_path)
         archive_hash = sha256(archive_path)
-        hash_path.write_text(f"{archive_hash}  {archive_path.name}\n", encoding="ascii")
+        hash_path.write_text(
+            f"{archive_hash}  {archive_path.name}\n",
+            encoding="ascii",
+        )
 
         print("\n===== SNAPSHOT READY =====")
         print(f"Snapshot directory: {final_dir}")
