@@ -36,7 +36,7 @@ ZIP snapshot не идентифицируется заранее зашитым
 
 ## 2026-07-24 — постоянный CI на Linux/PostgreSQL
 
-GitHub Actions использует Ubuntu 24.04, Python 3.13 и PostgreSQL 18.4. Постоянный pipeline выполняет lint, compile, Django checks, migration checks, migrations, актуальный профильный gate, collectstatic и test suite.
+GitHub Actions использует Ubuntu 24.04, Python 3.13 и PostgreSQL 18.4. Постоянный pipeline выполняет lint, compile, Django checks, migration checks, migrations, актуальный профильный gate, collectstatic и test command.
 
 Исторические `gate_patch_*.py` не запускаются все подряд: они являются контрактами своего baseline, а не автоматически кумулятивным набором.
 
@@ -77,7 +77,7 @@ DOCS-001 вводит канонический индекс, current state, hand
 
 ## 2026-07-24 — план подлежит ревизии после DOCS-001
 
-Исторический master plan сохраняется, но очередность не применяется автоматически. Следующий этап — доказательная сверка требований с кодом, migrations, UI, tests, presentation data и acceptance, после чего утверждается master plan v3.0.
+Исторический master plan сохраняется, но очередность не применяется автоматически. Следующий этап — доказательная сверка требований с code, migrations, UI, tests, presentation data and acceptance, после чего утверждается master plan v3.0.
 
 ## 2026-07-24 — ЩПТ и ШОТ являются общей технической группой
 
@@ -108,3 +108,20 @@ DOCS-001 вводит канонический индекс, current state, hand
 ## 2026-07-24 — документация обновляется вместе с каждым принятым изменением
 
 Принятый patch, feature slice, repair или infrastructure change не считается полностью завершённым без актуализации применимых canonical docs в том же PR или в обязательном post-merge documentation follow-up. `CURRENT_STATE.md` и `CURRENT_HANDOFF.md` должны позволять продолжить работу даже при внезапном завершении чата.
+
+## 2026-07-25 — DOCS-001 принят как project operating system
+
+Пользователь принял DOCS-001 и явно разрешил squash merge PR #4. Merge commit `e18872face7f27f489056b72fed31e5586121b0c` прошёл post-merge preview verification: main/HEAD, clean worktree, documentation contract, healthy containers, HTTP 200, database identity `eod_preview` and no pending migrations.
+
+Этот commit становится accepted application baseline. Следующий обязательный этап — PLAN-001.
+
+## 2026-07-25 — metadata-only follow-up не создаёт рекурсивный baseline
+
+Merge commit невозможно записать внутрь документации до его появления. Поэтому после post-merge gate создаётся короткий documentation-only PR, фиксирующий уже принятый SHA.
+
+Такой follow-up:
+
+- не меняет application/runtime/schema/data;
+- не становится новым application baseline только из-за собственного documentation commit;
+- не запускает бесконечную цепочку follow-up;
+- проходит documentation CI and documentation-only preview health gate.
