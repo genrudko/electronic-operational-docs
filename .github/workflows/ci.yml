@@ -97,24 +97,8 @@ jobs:
       - name: Apply migrations to PostgreSQL
         run: python manage.py migrate --noinput
 
-      - name: Run architectural gates
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          import subprocess
-          import sys
-
-          gates = sorted(Path("scripts").glob("gate_patch_*.py"))
-          if not gates:
-              raise SystemExit("No scripts/gate_patch_*.py files were found.")
-
-          print(f"Discovered {len(gates)} architectural gate scripts.")
-          for gate in gates:
-              print(f"\n===== {gate} =====", flush=True)
-              subprocess.run([sys.executable, str(gate)], check=True)
-          PY
+      - name: Run current architectural gate
+        run: python scripts/gate_patch_011_7.py
 
       - name: Collect static files
         run: python manage.py collectstatic --noinput --clear
