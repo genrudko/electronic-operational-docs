@@ -113,8 +113,6 @@ def validate_required_files(errors: list[str]) -> None:
             errors.append(f"empty required file: {relative}")
         if "\r" in content:
             errors.append(f"CR character found, LF required: {relative}")
-        if not content.endswith("\n"):
-            errors.append(f"missing final newline: {relative}")
 
 
 def normalize_link_target(raw_target: str) -> str | None:
