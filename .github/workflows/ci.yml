@@ -77,13 +77,10 @@ jobs:
           python -m pip --version
           python -m django --version
           python - <<'PY'
-          import gunicorn
-          import psycopg
-          import whitenoise
+          from importlib.metadata import version
 
-          print(f"gunicorn {gunicorn.__version__}")
-          print(f"psycopg {psycopg.__version__}")
-          print(f"whitenoise {whitenoise.__version__}")
+          for package in ("gunicorn", "psycopg", "whitenoise"):
+              print(f"{package} {version(package)}")
           PY
 
       - name: Ruff
