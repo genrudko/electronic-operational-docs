@@ -6,7 +6,8 @@
 - `ready for review` — automated and VPS gates completed;
 - `accepted` — пользователь подтвердил результат и разрешил merge;
 - `merged` — change включён в `main`;
-- `baseline` — merged `main` дополнительно синхронизирован с preview и прошёл post-merge gate;
+- `application baseline` — merged `main` дополнительно синхронизирован с preview и прошёл post-merge gate;
+- `metadata follow-up` — documentation-only фиксация уже принятого baseline;
 - `milestone release` — устойчивый демонстрационный рубеж с release notes/tag.
 
 ## 2. Подготовка к приёмке
@@ -46,9 +47,30 @@ Merge выполняется только после явного разреше
 6. проверить containers, database identity, health and HTTP;
 7. проверить demo authentication или профильный smoke;
 8. при failure выполнить rollback/restore;
-9. зафиксировать новый baseline.
+9. зафиксировать новый application baseline.
 
-## 6. Tags
+## 6. Metadata-only follow-up
+
+Merge commit невозможно записать внутрь документации до его появления. Поэтому после успешного post-merge gate допускается короткий documentation-only PR, который фиксирует уже принятый application baseline в:
+
+- `CURRENT_STATE.md`;
+- `CURRENT_HANDOFF.md`;
+- `BASELINE_HISTORY.md`;
+- `ACCEPTANCE_HISTORY.md`;
+- release notes;
+- связанных roadmap/open-items/module-map документах.
+
+Такой follow-up:
+
+- не меняет application behavior, schema, migrations or runtime data;
+- не создаёт новый application baseline только из-за собственного documentation commit;
+- не требует бесконечной цепочки follow-up для записи собственного SHA;
+- проходит documentation CI и documentation-only preview health gate;
+- остаётся видимым в обычной `main` history.
+
+Следующий application baseline появляется после нового принятого изменения, затрагивающего application/runtime или отдельный значимый operating-system milestone, для которого принято явное baseline decision.
+
+## 7. Tags
 
 Tag создаётся после post-merge success для значимых рубежей:
 
@@ -59,7 +81,7 @@ eod-demo-<version>
 
 Tag не создаётся на непринятой branch.
 
-## 7. Release notes
+## 8. Release notes
 
 Для milestone указываются:
 
@@ -72,7 +94,7 @@ Tag не создаётся на непринятой branch.
 - rollback/recovery information;
 - next planned gate.
 
-## 8. Accepted with follow-up
+## 9. Accepted with follow-up
 
 Неблокирующие замечания:
 
@@ -81,7 +103,7 @@ Tag не создаётся на непринятой branch.
 - не описываются как уже исправленные;
 - не меняют accepted scope задним числом.
 
-## 9. Rollback
+## 10. Rollback
 
 Post-merge rollback является отдельным управляемым действием. Предпочтение:
 
@@ -92,7 +114,7 @@ Post-merge rollback является отдельным управляемым �
 
 Нельзя переписывать `main`, чтобы скрыть неудачный release.
 
-## 10. Internal prototype release
+## 11. Internal prototype release
 
 Дополнительно нужны:
 

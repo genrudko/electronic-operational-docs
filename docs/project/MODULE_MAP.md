@@ -11,7 +11,7 @@
 | Integrity confirmation | Готово для прототипа | re-auth, canonical snapshot, SHA-256, VALID/INVALID/LEGACY/MISSING | не является юридической ЭП |
 | Normative registry | Готово как ядро | documents, editions, requirements, traceability | наполнение и актуализация исследований |
 | Equipment registry | Готово как ядро | sites, hierarchy, types, aliases, dispatch names, snapshots | предметная ревизия полноты импорта |
-| Dispatching relations | Готово как ядро | управление, ведение, уровни, субъекты, editions | расширение реальными safe demo cases |
+| Dispatching relations | Готово как ядро | управление, ведение, уровни, субъекты, editions | расширение safe demo cases |
 | Imports | Готово для текущих источников | staging, normalization, conflicts, publication | унификация повторных импортов и UX |
 | Workplace documentation | Готово как реестр | categories, editions, applicability, review dates | шесть неоднозначных строк staging |
 | Operational log | Реализовано, требует отдельной ревизии | chronology, editor, records, links, shift concepts | assistance, keyboard UX, final scenarios |
@@ -21,29 +21,29 @@
 | Defects journal | Частично | ядро и источник формы определены | специализированная карточка, lifecycle, relations and acceptance |
 | Equipment commissioning journal | Частично | ядро и источник формы определены | предметные rules и scenario |
 | RPA/telemechanics journal | Частично | ядро и источник формы определены | точная форма и domain actions |
-| Keys journal | Paper-first / optional electronic aid | бумажный оригинал выбран текущим рабочим режимом | отдельное решение о справочном/контрольном electronic contour; полный lifecycle не обязателен |
+| Keys journal | Paper-first / optional electronic aid | бумажный оригинал выбран текущим рабочим режимом | отдельное решение о справочном/контрольном contour |
 | Work by permits/dispositions journal | План | направление определено | разделение нормативных режимов и формы |
 | Work permit registry | План/исследование | требования собраны как направление | полный lifecycle и нормативное основание |
 | Disposition registry | План/исследование | требования собраны как направление | точная модель выдачи и учёта |
-| Switching documents registry | План | минимальный scope определён | модели, UI и links |
-| Switching generator/safety engine | Вне текущего vertical slice | отдельная граница признана | топология, rules, interlocks, validation |
-| Cross-document timeline | Частично | базовые relations существуют | единый event timeline и UX после реальных journal slices |
+| Switching documents registry | План | минимальный scope определён | models, UI and links |
+| Switching generator/safety engine | Вне текущего vertical slice | отдельная граница признана | topology, rules, interlocks, validation |
+| Cross-document timeline | Частично | базовые relations существуют | единый event timeline после реальных journal slices |
 | UI design system | В работе / UX-001 | задание и границы workstream зафиксированы | audit, tokens, components, interaction contract, reference screens |
 | Automated application tests | Дефицит | Django checks and historical gates существуют | текущая test command обнаруживает 0 tests; нужен smoke/integration suite |
 | Print and export | Частично/план | document rendering foundation может существовать | подтверждённые формы и acceptance |
 | Presentation data | Готово для текущего baseline | PostgreSQL profile, demo users, reset path | расширение под новые scenarios |
-| CI | Готово как pipeline | Linux, Python 3.13, PostgreSQL 18.4, checks and profile gates | нулевое число Django tests не считать regressions evidence |
-| Preview VPS | Готово | isolated stable contour on 8765 | formal post-merge runbook |
+| CI | Готово как pipeline | Linux, Python 3.13, PostgreSQL 18.4, checks and profile gates | нулевое число Django tests не считать regression evidence |
+| Preview VPS | Готово | isolated stable contour on 8765 | backup retention and later production hardening |
 | Development VPS | Готово | isolated branch contour on 8766 | routine use in all next changes |
-| Documentation system | В работе | branch DOCS-001, canonical tree and gate | final acceptance, merge and post-merge baseline update |
+| Documentation system | Готово для текущего процесса | DOCS-001 accepted, canonical tree, runbooks, handoff, documentation gate | поддерживать синхронно с каждым изменением |
 
 ## Статусы
 
-- `Готово` — существует подтверждённая реализация и тестовый/приёмочный след.
-- `Реализовано, требует ревизии` — код существует, но его соответствие текущей цели нужно проверить.
+- `Готово` — существует подтверждённая реализация и test/acceptance evidence.
+- `Реализовано, требует ревизии` — код существует, но соответствие текущей цели нужно проверить.
 - `Частично` — есть foundation или часть формы, но vertical slice не принят.
 - `План/исследование` — реализация не должна начинаться без уточнения источников.
-- `Paper-first / optional electronic aid` — бумажный документ остаётся основным, электронный контур не обязателен и требует отдельного решения.
+- `Paper-first / optional electronic aid` — бумажный документ остаётся основным, электронный контур не обязателен.
 - `Вне текущего vertical slice` — сознательно отложенная сложная область.
 
 ## Правило обновления
