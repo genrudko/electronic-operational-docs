@@ -251,7 +251,11 @@ def main() -> int:
         export_fixture(repo, backup_database, fixture_path)
 
         print("\n===== COPY MEDIA =====")
-        media_files = [path for path in media_source.rglob("*") if path.is_file()] if media_source.is_dir() else []
+        media_files = (
+            [path for path in media_source.rglob("*") if path.is_file()]
+            if media_source.is_dir()
+            else []
+        )
         if media_files:
             shutil.copytree(media_source, working_dir / "media")
             print(f"Media copied: {len(media_files)} files")
