@@ -31,7 +31,16 @@ jobs:
           python-version: "3.13"
 
       - name: Check Git whitespace
-        run: git diff --check origin/${{ github.base_ref }}...HEAD
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "$BASE_REF" ]]; then
+            git diff --check "origin/${BASE_REF}...HEAD"
+          else
+            git diff --check HEAD~1..HEAD
+          fi
 
       - name: Compile documentation checker
         run: python -m compileall -q scripts/check_documentation_contract.py
