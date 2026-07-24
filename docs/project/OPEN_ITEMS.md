@@ -92,27 +92,59 @@ PLAN-001 — доказательная ревизия фактической р
 - отсутствие скачка страницы при клике вне листа;
 - шаблоны, сокращения и автодополнение.
 
+Runtime-видео подтверждает конечное состояние с повторяющимися semantic markers, но не доказывает точную последовательность воспроизведения. Marker serialization/copy-paste остаётся блокирующим repair candidate.
+
 ## 8. UX-001
 
-Параллельный UI/UX-контур должен подготовить:
+UX-001 v0.3 подготовлен и сохраняется в репозитории как provisional project contract.
 
-- evidence-based audit текущего UI;
+```text
+status: provisional
+visual acceptance: pending
+implementation authorization: not granted
+```
+
+Структурно подготовлены:
+
+- evidence-based audit;
+- runtime video audit;
+- самостоятельное visual direction;
 - UI principles;
-- application shell;
-- design tokens;
+- candidate design tokens;
 - component contract;
-- interaction contract;
+- interaction/keyboard/focus/overlay contract;
 - page archetypes;
-- keyboard/focus/overlay rules;
-- три reference screens;
-- implementation roadmap без остановки продуктовой разработки.
+- three textual reference-screen contracts;
+- staged implementation roadmap.
+
+Открытые visual gates:
+
+1. подготовить два компактных визуальных направления на application shell и одном показательном structured-journal screen;
+2. получить выбор/корректировку пользователя;
+3. реализовать ограниченный runtime prototype на development contour;
+4. проверить target desktop, long Russian data, density, states, focus and overlays;
+5. зафиксировать accepted tokens только после визуальной приёмки.
+
+Не приняты:
+
+- concrete palette;
+- typography scale;
+- density;
+- radii and shadows;
+- shell composition;
+- окончательный внешний вид reference screens;
+- dark-theme release scope;
+- target desktop viewport;
+- названия top-level product areas.
 
 Риски:
 
-- абстрактная дизайн-система без проверки на реальных экранах;
-- повторное создание локальных компонентов в каждом журнале;
-- перенос интеграционных решений в отдельный чат;
-- попытка заранее спроектировать все будущие экраны.
+- превратить provisional contract в неизменяемый стандарт без визуальной проверки;
+- развернуть дизайн на все экраны до проверки одного real vertical slice;
+- потерять рабочую информационную плотность ради «воздуха»;
+- смешать visual recommendations с domain lifecycle;
+- создать сходство с identifiable third-party branding;
+- отложить blocking operational-journal repairs до полного редизайна.
 
 ## 9. Импорт и данные
 
@@ -127,7 +159,8 @@ PLAN-001 — доказательная ревизия фактической р
 - Django test command обнаруживает `0 test(s)`;
 - определить минимальный обязательный smoke/integration suite до крупного product slice;
 - нулевое число обнаруженных tests не считать доказательством регрессионной защиты;
-- добавлять профильные tests/gates вместе с каждым журналом.
+- добавлять профильные tests/gates вместе с каждым журналом;
+- добавить automated regression для semantic marker copy/paste/save/reload, когда начинается соответствующий repair.
 
 ## 11. Инфраструктура
 
@@ -136,7 +169,7 @@ PLAN-001 — доказательная ревизия фактической р
 - production hardening относится к отдельному официальному этапу;
 - не расширять инфраструктурный scope без подтверждённой продуктовой необходимости.
 
-DOCS-001 post-merge gate, database identity, health, HTTP and pending migrations уже подтверждены.
+DOCS-001 и DOCS-002 post-merge gates уже подтверждены; preview clean, healthy and HTTP 200.
 
 ## 12. Документационная непрерывность
 
@@ -144,4 +177,5 @@ DOCS-001 post-merge gate, database identity, health, HTTP and pending migrations
 - после принятого feature/repair обязательны актуальные `CURRENT_STATE.md` и `CURRENT_HANDOFF.md`;
 - новый application baseline фиксируется после post-merge verification;
 - metadata-only follow-up не создаёт новый baseline только из-за собственного SHA;
+- UX package сохраняется без подмены provisional status визуальной приёмкой;
 - внезапное завершение чата не должно требовать восстановления состояния по памяти.
