@@ -25,12 +25,24 @@
 | [`project/DATA_AND_PRIVACY_POLICY.md`](project/DATA_AND_PRIVACY_POLICY.md) | Политика данных, секретов и репозитория |
 | [`project/DECISION_LOG.md`](project/DECISION_LOG.md) | Хронологический журнал решений |
 | [`project/OPEN_ITEMS.md`](project/OPEN_ITEMS.md) | Открытые вопросы, блокеры и отложенные задачи |
-| [`project/UX_001_UI_DESIGN_SYSTEM_CHAT_BRIEF.md`](project/UX_001_UI_DESIGN_SYSTEM_CHAT_BRIEF.md) | Задание параллельному UI/UX-чату и контракт UX-001 |
+| [`project/UX_001_UI_DESIGN_SYSTEM_CHAT_BRIEF.md`](project/UX_001_UI_DESIGN_SYSTEM_CHAT_BRIEF.md) | Исходное задание параллельному UI/UX-чату |
+| [`ux/README.md`](ux/README.md) | Статус provisional UX-001 v0.3, навигация и visual acceptance gate |
 | [`project/PATCH_HISTORY.md`](project/PATCH_HISTORY.md) | История технических этапов и repair |
 | [`project/BASELINE_HISTORY.md`](project/BASELINE_HISTORY.md) | Принятые Git baseline и tags |
 | [`project/ACCEPTANCE_HISTORY.md`](project/ACCEPTANCE_HISTORY.md) | Технические и пользовательские приёмки |
 | [`project/CURRENT_HANDOFF.md`](project/CURRENT_HANDOFF.md) | Текущая передача контекста |
 | [`project/NEW_CHAT_STARTER.md`](project/NEW_CHAT_STARTER.md) | Стартовый контракт нового интеграционного чата |
+
+## UX/UI
+
+| Документ | Назначение |
+|---|---|
+| [`ux/README.md`](ux/README.md) | Канонический статус UX-001 и граница между provisional contract и visual acceptance |
+| [`ux/UX-001_v0.3/UX_001_INDEX.md`](ux/UX-001_v0.3/UX_001_INDEX.md) | Индекс консолидированного пакета v0.3 |
+| [`ux/UX-001_v0.3/VISUAL_DIRECTION.md`](ux/UX-001_v0.3/VISUAL_DIRECTION.md) | Самостоятельное визуальное направление ЭОД |
+| [`ux/UX-001_v0.3/UI_AUDIT.md`](ux/UX-001_v0.3/UI_AUDIT.md) | Консолидированный evidence-based аудит |
+| [`ux/UX-001_v0.3/REFERENCE_SCREENS.md`](ux/UX-001_v0.3/REFERENCE_SCREENS.md) | Textual contracts трёх reference families |
+| [`ux/UX-001_v0.3/DESIGN_TOKENS.md`](ux/UX-001_v0.3/DESIGN_TOKENS.md) | Candidate tokens; не визуально принятый стандарт |
 
 ## Процесс разработки
 
@@ -78,7 +90,7 @@
 
 ## Исторические пути
 
-Каталог `docs/project_state/` был ранним механизмом непрерывности контекста. Его содержимое мигрируется в `docs/project/`; старые пути не являются каноническими после DOCS-001.
+Каталог `docs/project_state/` был ранним механизмом непрерывности контекста. Его содержимое мигрировано в `docs/project/`; старые пути не являются каноническими после DOCS-001.
 
 ## Правило актуальности
 

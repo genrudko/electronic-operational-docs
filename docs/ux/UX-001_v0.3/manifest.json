@@ -1,0 +1,55 @@
+{
+  "package": "UX-001_v0.3",
+  "date": "2026-07-25",
+  "accepted_application_baseline": {
+    "branch": "main",
+    "sha": "e18872face7f27f489056b72fed31e5586121b0c"
+  },
+  "metadata_note": "DOCS-002 is a separate metadata follow-up and does not replace the application baseline SHA. Markdown hard-break markers are intentionally preserved; the package path has a narrow whitespace attribute exception so repository copies remain byte-identical to this manifest.",
+  "files": {
+    "COMPONENT_CONTRACT.md": {
+      "bytes": 8440,
+      "sha256": "f0b4c6fd8f6ffa5974fe1829c2c633dd936816028a3ed68e793cef3fec7ef0ab"
+    },
+    "DESIGN_TOKENS.md": {
+      "bytes": 8878,
+      "sha256": "a0a110750d23ffb0ba22369d7189ec4e74f78d78e61a2c47f8418729e75b85be"
+    },
+    "INTERACTION_CONTRACT.md": {
+      "bytes": 7392,
+      "sha256": "71512ccf8ca5a22ce132240cb904a33cab4db1c3da0ecc2dd04cf9a648669428"
+    },
+    "PAGE_ARCHETYPES.md": {
+      "bytes": 4800,
+      "sha256": "a9090af27ac66c95ef72ce73322bcdc5f713ede29c4fc267400782f377e92d87"
+    },
+    "REFERENCE_SCREENS.md": {
+      "bytes": 18272,
+      "sha256": "65d549380d1ab16e84aaad87f2b16732e4b49f346688275dc3039e35941716da"
+    },
+    "UI_AUDIT.md": {
+      "bytes": 15711,
+      "sha256": "2538206e0128d789668f2b9368fbd5044f013fcb224150c58a8495f6157f1239"
+    },
+    "UI_PRINCIPLES.md": {
+      "bytes": 5465,
+      "sha256": "61d713f21b6469f2ac2387061c166fd198bebce76c7edc2eb1e51003adf07e77"
+    },
+    "UX_001_INDEX.md": {
+      "bytes": 7233,
+      "sha256": "fa1155c448d5bd1c935c11638f29a0a63252a336e1d09858e653f59a478681b9"
+    },
+    "UX_IMPLEMENTATION_ROADMAP.md": {
+      "bytes": 7957,
+      "sha256": "b88845af101385d6d4d8e455d05edaa002a45969be84b188e83a24165a914555"
+    },
+    "VIDEO_EVIDENCE_AUDIT.md": {
+      "bytes": 6890,
+      "sha256": "09340dd7f383ef5fbfd0ad2d163613edd369f987461b325618f20e6df48aa56e"
+    },
+    "VISUAL_DIRECTION.md": {
+      "bytes": 11761,
+      "sha256": "46a7cef454afacf50a0086c8f1a6ee3de50de2a1049e28bca55e3f054bed4013"
+    }
+  }
+}

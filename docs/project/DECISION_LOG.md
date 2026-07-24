@@ -125,3 +125,17 @@ Merge commit невозможно записать внутрь документ
 - не становится новым application baseline только из-за собственного documentation commit;
 - не запускает бесконечную цепочку follow-up;
 - проходит documentation CI and documentation-only preview health gate.
+
+## 2026-07-25 — UX-001 v0.3 принимается только как provisional design contract
+
+Пользователь ещё не видел новое визуальное направление на реальных макетах или runtime-прототипе. Поэтому UX-001 v0.3 сохраняется в репозитории как обратимая проектная основа, а не как визуально принятый стандарт.
+
+```text
+status: provisional
+visual acceptance: pending
+implementation authorization: not granted
+```
+
+Приняты структурные границы: самостоятельная visual identity, evidence model, component/interaction contracts, page archetypes и reference-screen requirements. Не приняты concrete palette, typography, density, radii, shadows, shell composition и внешний вид reference screens.
+
+Следующий gate — сравнить два компактных визуальных направления на shell и одном показательном structured-journal screen, получить решение пользователя, затем проверить выбранный вариант ограниченным runtime-прототипом. Массовое внедрение до этого не разрешено.

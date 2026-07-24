@@ -12,6 +12,10 @@
 *.txt text eol=lf
 *.ps1 text eol=crlf
 
+# UX-001 v0.3 is an integrity-checked source package. Preserve its intentional
+# Markdown hard-break markers while keeping trailing-space checks everywhere else.
+docs/ux/UX-001_v0.3/*.md whitespace=-trailing-space
+
 *.png binary
 *.jpg binary
 *.jpeg binary
