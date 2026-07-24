@@ -242,9 +242,9 @@ def main() -> None:
     )
     require(
         current_state,
-        "abd6066885b060e3e3d2c39098fcaf640bb70416",
         "source-bound каталог рабочих форм",
-        "DOCS-001 — Project operating system",
+        "PLAN-001 — Evidence-based implementation review",
+        "один журнал полностью",
     )
     require(decision_log, "рабочие формы только из утверждённых источников")
     require(patch_history, "Patch 011.7 Repair 1 Revision 10", "Patch 011.7 Repair 2")
@@ -257,8 +257,8 @@ def main() -> None:
     require(
         handoff,
         "GitHub-first/VPS-first",
-        "abd6066885b060e3e3d2c39098fcaf640bb70416",
         "PLAN-001 — доказательная ревизия плана и реализации",
+        "журналы доводятся по одному",
     )
     for relative in (
         "docs/adr/ADR-011-7-operational-documentation-core.md",
