@@ -1,7 +1,10 @@
 from django.contrib import admin
 from django.urls import include, path
 
+from eod_config.health import health
+
 urlpatterns = [
+    path("_health/", health, name="health"),
     path("admin/", admin.site.urls),
     path("", include("apps.organizations.urls")),
     path("", include("apps.documents.urls")),

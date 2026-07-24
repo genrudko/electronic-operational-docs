@@ -40,6 +40,7 @@ jobs:
     env:
       PYTHONUNBUFFERED: "1"
       PYTHONDONTWRITEBYTECODE: "1"
+      EOD_DEPLOYMENT_MODE: ci
       DJANGO_SECRET_KEY: ci-only-not-for-deployment
       DJANGO_DEBUG: "0"
       DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost,testserver
@@ -76,9 +77,10 @@ jobs:
           python -m pip --version
           python -m django --version
           python - <<'PY'
-          import psycopg
+          from importlib.metadata import version
 
-          print(f"psycopg {psycopg.__version__}")
+          for package in ("gunicorn", "psycopg", "whitenoise"):
+              print(f"{package} {version(package)}")
           PY
 
       - name: Ruff
@@ -112,10 +114,95 @@ jobs:
           git diff --check
           git status --short
 
+  container-preview-smoke:
+    name: Container preview smoke
+    needs:
+      - quality-and-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      DJANGO_SECRET_KEY: ci-preview-secret-not-for-deployment-0123456789
+      DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost
+      POSTGRES_DB: eod_preview_ci
+      POSTGRES_USER: eod_preview_ci
+      POSTGRES_PASSWORD: eod_preview_ci_password
+      EOD_PREVIEW_PORT: "8765"
+      TIME_ZONE: Europe/Moscow
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Validate preview Compose configuration
+        run: docker compose -f compose.preview.yaml config --quiet
+
+      - name: Build preview image
+        run: docker compose -f compose.preview.yaml build --pull
+
+      - name: Start preview stack
+        run: docker compose -f compose.preview.yaml up --detach
+
+      - name: Wait for application health
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 45); do
+            if curl --fail --silent --show-error \
+              http://127.0.0.1:8765/_health/ >/tmp/eod-health.json; then
+              cat /tmp/eod-health.json
+              exit 0
+            fi
+            if (( attempt % 10 == 0 )); then
+              echo "Health attempt ${attempt}/45"
+              docker compose -f compose.preview.yaml ps --all
+            fi
+            sleep 2
+          done
+          exit 1
+
+      - name: Verify private port exposure
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_port="$(docker compose -f compose.preview.yaml port app 8765)"
+          test "$app_port" = "127.0.0.1:8765"
+          if docker compose -f compose.preview.yaml port db 5432 >/tmp/eod-db-port.txt 2>&1; then
+            echo "PostgreSQL must not publish a host port."
+            cat /tmp/eod-db-port.txt
+            exit 1
+          fi
+
+      - name: Capture preview diagnostics after failure
+        if: ${{ failure() }}
+        shell: bash
+        run: |
+          {
+            echo "===== docker compose ps --all ====="
+            docker compose -f compose.preview.yaml ps --all
+            echo
+            echo "===== docker compose logs ====="
+            docker compose -f compose.preview.yaml logs --no-color
+          } >preview-diagnostics.log 2>&1
+          cat preview-diagnostics.log
+
+      - name: Upload preview diagnostics after failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: preview-diagnostics-${{ github.run_id }}
+          path: preview-diagnostics.log
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Stop preview stack
+        if: ${{ always() }}
+        run: docker compose -f compose.preview.yaml down --volumes --remove-orphans
+
   notify-telegram:
     name: Telegram CI notification
     needs:
       - quality-and-tests
+      - container-preview-smoke
     if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -123,7 +210,8 @@ jobs:
     steps:
       - name: Send CI result to Telegram
         env:
-          CI_RESULT: ${{ needs.quality-and-tests.result }}
+          QUALITY_RESULT: ${{ needs.quality-and-tests.result }}
+          CONTAINER_RESULT: ${{ needs.container-preview-smoke.result }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
@@ -140,12 +228,25 @@ jobs:
 
           token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
           chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
-          result = os.environ.get("CI_RESULT", "unknown").strip().lower()
+          quality_result = os.environ.get("QUALITY_RESULT", "unknown").strip().lower()
+          container_result = os.environ.get("CONTAINER_RESULT", "unknown").strip().lower()
 
           if not token:
               raise SystemExit("TELEGRAM_BOT_TOKEN is not configured.")
           if not chat_id:
               raise SystemExit("TELEGRAM_CHAT_ID is not configured.")
+
+          results = {quality_result, container_result}
+          if "failure" in results:
+              result = "failure"
+          elif "cancelled" in results:
+              result = "cancelled"
+          elif results == {"success"}:
+              result = "success"
+          elif "skipped" in results:
+              result = "skipped"
+          else:
+              result = "unknown"
 
           event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
           repository = os.environ["GITHUB_REPOSITORY"]
@@ -189,6 +290,8 @@ jobs:
               lines.append(f"<b>Pull request:</b> #{html.escape(pr_number)}")
           lines.extend(
               [
+                  f"<b>Python/PostgreSQL:</b> <code>{html.escape(quality_result)}</code>",
+                  f"<b>Container preview:</b> <code>{html.escape(container_result)}</code>",
                   f"<b>Событие:</b> <code>{html.escape(event_name)}</code>",
                   f"<b>Автор:</b> <code>{html.escape(actor)}</code>",
               ]
