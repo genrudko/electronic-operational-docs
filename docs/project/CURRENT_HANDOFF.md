@@ -1,10 +1,10 @@
 # ЭОД — текущий handoff
 
-**Обновлено:** 24.07.2026
+**Обновлено:** 25.07.2026
 
-**Accepted baseline:** `main / abd6066885b060e3e3d2c39098fcaf640bb70416`
+**Accepted application baseline:** `main / e18872face7f27f489056b72fed31e5586121b0c`
 
-**Active branch:** `docs/001-project-operating-system`
+**Active branch:** `docs/002-docs001-baseline-finalization`
 
 ## Проект
 
@@ -21,8 +21,8 @@
 5. пользователь проверяет UI, данные и предметную логику через SSH tunnel;
 6. repair commits создаёт ассистент;
 7. merge выполняется только по явной команде пользователя;
-8. `/srv/eod/repository` синхронизируется с новым `main` и проходит health check;
-9. применимые canonical docs актуализируются вместе с изменением или обязательным post-merge follow-up.
+8. `/srv/eod/repository` синхронизируется с новым `main` и проходит post-merge gate;
+9. применимые canonical docs актуализируются вместе с изменением или metadata follow-up.
 
 Пользователь не должен вручную редактировать код, собирать файлы, применять patch scripts или выполнять Git write operations.
 
@@ -50,72 +50,53 @@ eod_development
 /srv/eod/secrets/development.env
 ```
 
-Оба контура подтверждены simultaneously healthy. PostgreSQL host ports отсутствуют.
+PostgreSQL host ports отсутствуют. Контуры изолированы.
 
 ## Что принято последним
 
-INFRA-003:
+DOCS-001:
 
-- isolated VPS development;
-- separate checkout/Compose/database/user/volume/networks/secrets;
-- safe preview-to-development data reset;
-- current PR head CI green;
-- browser access through SSH tunnel accepted;
-- PR #3 merged;
-- merge commit `abd6066885b060e3e3d2c39098fcaf640bb70416`.
+- PR #4 принят пользователем;
+- exact accepted head: `1f0b71b927fbee0ef08957eac157b2480d2e9a8c`;
+- squash merge commit: `e18872face7f27f489056b72fed31e5586121b0c`;
+- canonical documentation tree, README, AGENTS and index;
+- GitHub-first/VPS-first operating system;
+- project/process/runbooks/acceptance/releases documents;
+- PR template and documentation contract CI;
+- migration and removal of active `docs/project_state/`;
+- sequential journal strategy;
+- paper-first scope for the keys journal;
+- UX-001 brief and parallel UI/UX workstream;
+- mandatory DOCS continuity after accepted changes.
+
+## Post-merge evidence DOCS-001
+
+На `/srv/eod/repository` подтверждено:
+
+- branch `main`;
+- HEAD `e18872face7f27f489056b72fed31e5586121b0c`;
+- clean worktree;
+- documentation contract OK, 43 required files;
+- preview app and db healthy;
+- health `{"status": "ok"}`;
+- main page HTTP 200;
+- database identity `eod_preview`;
+- pending migrations отсутствуют.
+
+DOCS-001 не менял application behavior, models, migrations or runtime data; container rebuild не требовался.
 
 ## Текущая работа
 
-DOCS-001 создаёт новый documentation operating system:
+`docs/002-docs001-baseline-finalization` — короткий metadata follow-up:
 
-- README and AGENTS;
-- canonical index;
-- current state, master plan, roadmap, domain invariants;
-- architecture/module map/data policy;
-- decisions/open items/history/baselines/acceptance;
-- development process and release rules;
-- preview/development/database/tunnel/rollback runbooks;
-- acceptance documents;
-- PR template and documentation CI gate;
-- migration of `docs/project_state/`;
-- UX-001 UI design system chat brief;
-- последовательную журнальную стратегию;
-- paper-first scope журнала ключей;
-- обязательное обновление DOCS после каждого принятого изменения.
+- фиксирует accepted application baseline `e18872f…`;
+- обновляет current state, handoff, baseline/acceptance histories and release notes;
+- переводит roadmap и open items на PLAN-001;
+- уточняет, что metadata-only follow-up не создаёт бесконечную рекурсию baseline SHA.
 
-Техническая проверка DOCS-001 на VPS выполнена для head `43d096f2473a83a964a2968defbd6bb27092218b`: documentation contract OK, Django check OK, no migration changes, development healthy, HTTP 200. Django test command обнаружил `0 test(s)`; это зафиксировано как technical debt, а не как регрессионная защита.
+После merge этого follow-up accepted application baseline остаётся `e18872f…`, потому что ветка изменяет только документационную фиксацию уже принятого состояния и не меняет application/runtime baseline.
 
-После последних документационных commits development checkout требуется обновить до нового exact head и повторить documentation contract/check/status перед merge.
-
-## Принятые продуктовые решения последнего pitching
-
-### Последовательная журнальная разработка
-
-```text
-минимальный общий контракт
-→ один журнал полностью
-→ минимальные реальные связи
-→ automated and user acceptance
-→ следующий журнал
-```
-
-Связи не откладываются до завершения всего пакета, но универсальная timeline не проектируется заранее без подтверждённых кейсов.
-
-Предварительный первый кандидат после PLAN-001 — журнал дефектов. Окончательный выбор выполняется по evidence audit.
-
-### Журнал ключей
-
-Текущая позиция — paper-first:
-
-- бумажный журнал остаётся основным оригиналом;
-- полный электронный lifecycle выдачи/возврата не входит в обязательный внутренний прототип;
-- возможный электронный справочный/контрольный контур требует отдельной предметной и UX-оценки.
-
-### UI/UX
-
-Создано задание `UX_001_UI_DESIGN_SYSTEM_CHAT_BRIEF.md` для отдельного UI/UX-чата. Он формирует principles, tokens, component and interaction contracts, page archetypes, reference screens and implementation roadmap. Основной интеграционный чат сохраняет архитектурные решения и реализацию.
-
-## Следующая обязательная работа после DOCS-001
+## Следующая обязательная работа
 
 PLAN-001 — доказательная ревизия плана и реализации.
 
@@ -132,9 +113,40 @@ PLAN-001 — доказательная ревизия плана и реали�
 → remaining deficit
 ```
 
-Результат — master plan v3.0, подтверждённый первый журнальный vertical slice и возможная корректировка направления разработки.
+Результат:
 
-Параллельно UX-001 начинает evidence-based audit текущего интерфейса и формирует дизайн-контракт без остановки продуктового потока.
+- master plan v3.0;
+- подтверждённый первый журнальный vertical slice;
+- возможная корректировка очередности;
+- минимальный smoke/integration test suite.
+
+Параллельно UX-001 выполняет evidence-based audit текущего интерфейса и формирует design/interaction contract без остановки продуктового потока.
+
+## Принятые продуктовые решения
+
+### Последовательная журнальная разработка
+
+```text
+минимальный общий контракт
+→ один журнал полностью
+→ минимальные реальные связи
+→ automated and user acceptance
+→ следующий журнал
+```
+
+Связи не откладываются до завершения всего пакета, но универсальная timeline не проектируется заранее без подтверждённых кейсов.
+
+Предварительный первый кандидат — журнал дефектов. Окончательный выбор выполняется PLAN-001.
+
+### Журнал ключей
+
+- бумажный журнал остаётся основным оригиналом;
+- полный электронный lifecycle выдачи/возврата не входит в обязательный внутренний прототип;
+- электронный справочный/контрольный контур требует отдельной предметной и UX-оценки.
+
+### UI/UX
+
+UX-001 формирует principles, tokens, component and interaction contracts, page archetypes, reference screens and implementation roadmap. Основной интеграционный чат сохраняет domain/architecture decisions и реализацию.
 
 ## Предметные правила, которые нельзя потерять
 
@@ -150,23 +162,13 @@ PLAN-001 — доказательная ревизия плана и реали�
 - реальные данные и secrets не коммитятся;
 - принятие изменения включает актуализацию применимых canonical docs.
 
-## Быстрая проверка ветки на VPS
+## Тестовый долг
 
-```bash
-cd /srv/eod/development
-git status --short --branch
-git fetch --prune origin
-git pull --ff-only
-python3 scripts/check_documentation_contract.py
-sudo bash scripts/development_stack.sh check
-sudo bash scripts/development_stack.sh status
-```
-
-Команда `development_stack.sh test` сейчас обнаруживает `0 test(s)` и не считается достаточным evidence, пока не создан минимальный автоматический test suite.
+Команда `development_stack.sh test` обнаруживает `0 test(s)` и не считается достаточным evidence. PLAN-001 должен определить минимальный автоматический suite, а каждый следующий product slice — добавлять профильные tests/gates.
 
 ## Источники истины
 
-1. accepted `main` Git history and exact SHA;
+1. accepted application baseline and `main` Git history;
 2. `docs/project/CURRENT_STATE.md`;
 3. migrations, tests, CI and VPS diagnostics;
 4. `docs/project/CURRENT_HANDOFF.md`;
