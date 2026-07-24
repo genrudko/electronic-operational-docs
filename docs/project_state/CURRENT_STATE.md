@@ -1,7 +1,7 @@
 # ЭОД — текущее состояние проекта
 
 **Дата обновления:** 24.07.2026
-**Источник:** Patch 011.7 Repair 2 Revision 1
+**Источник:** Patch 011.7 Repair 2 Revision 1 + INFRA-001 CI baseline
 **Репозиторий:** `G:\electronic-operational-docs`
 
 ## Исходный baseline Repair 2
@@ -13,7 +13,14 @@ worktree до применения: clean
 push: not performed
 ```
 
-Новый технический HEAD фиксируется в patch-логе после успешного локального коммита.
+Новый технический HEAD после Repair 2:
+
+```text
+branch: main
+HEAD: bf986433ea33bf932f98925e7daf61b0199e23d0
+tag: eod-baseline-011.7-repair2
+worktree: clean
+```
 
 Baseline включает технически успешный Patch 011.7 Repair 1 Revision 10: 495 тестов, один skipped, миграции presentation и development применены.
 
@@ -22,7 +29,7 @@ Baseline включает технически успешный Patch 011.7 Repa
 Запуск 24.07.2026 в 01:21:40 завершился отказом на Ruff до Django checks,
 миграций и тестов: две E501 в static gate и один F401 в профильном тесте.
 Rollback восстановил обе runtime DB и исходный `fec8bd67 / clean`; commit не создавался.
-Revision 1 исправляет эти три дефекта и переносит их проверку в preflight payload.
+Revision 1 исправила эти три дефекта и перенесла их проверку в preflight payload.
 
 ## Основание Repair 2
 
@@ -30,7 +37,7 @@ Revision 1 исправляет эти три дефекта и переноси
 
 ## Контракт Repair 2
 
-- ручное создание произвольных форм отключается;
+- ручное создание произвольных форм отключено;
 - рабочие формы привязываются к утверждённому документу, разделу и приложению;
 - каталог показывает подтверждённые источники;
 - технические тестовые схемы остаются только для просмотра;
@@ -53,7 +60,7 @@ Revision 1 исправляет эти три дефекта и переноси
 
 Точный состав граф устанавливается Patch 011.8, а не Repair 2.
 
-## Snapshot
+## Snapshot Repair 2
 
 Перед Repair 2 создан snapshot:
 
@@ -64,4 +71,51 @@ worktree: clean
 archive SHA-256: cdbe4fa878cc1c26d2aec2d4a93daa6b856a5f2e108ec1cce1d17d1d9eaba081
 ```
 
-После технического успеха требуется короткая визуальная приёмка. `EOD_CURRENT_CONTEXT.zip` обновляется только после явного решения о принятии.
+После технического и визуального принятия Repair 2 обновлён текущий baseline и создан тег `eod-baseline-011.7-repair2`.
+
+## INFRA-001 — GitHub Actions CI
+
+Рабочая ветка:
+
+```text
+infra/001-ci-baseline
+```
+
+Постоянный CI создан в `.github/workflows/ci.yml` и подтверждён зелёным прогоном на:
+
+- GitHub-hosted Ubuntu 24.04;
+- Python 3.13;
+- PostgreSQL 18.4.
+
+Workflow выполняет установку зависимостей, Ruff, compileall, Django system check, контроль актуальности миграций, миграции PostgreSQL, текущий `scripts/gate_patch_011_7.py`, collectstatic, полный Django test suite и проверку чистоты checkout.
+
+Исторические `gate_patch_*.py` сохраняются как контракты соответствующих патчей, но не запускаются все подряд: они не образуют кумулятивный набор после последующих рефакторингов.
+
+INFRA-001 не содержит deployment, серверный Docker Compose, HTTPS, домен, reverse proxy, production-секреты или self-hosted runner.
+
+## Серверный контур
+
+Подготовлен отдельный VPS:
+
+- Ubuntu Server 24.04 LTS;
+- 4 vCPU, 8 ГБ RAM, 80 ГБ NVMe;
+- отдельный пользователь `eodadmin` с sudo;
+- SSH только по ключу;
+- прямой root-вход и парольная SSH-аутентификация запрещены;
+- UFW активен, наружу разрешён только SSH;
+- Docker Engine, Compose и Buildx установлены;
+- `/srv/eod` подготовлен;
+- приватный репозиторий клонирован read-only deploy key на принятый `main` baseline.
+
+Текущий локальный `compose.yaml` на VPS не запускается: он предназначен для development и публикует PostgreSQL. Безопасный контейнерный preview относится к следующему отдельному этапу INFRA-002.
+
+## Следующий этап
+
+После принятия и слияния INFRA-001:
+
+1. обновить локальный `main` и серверный read-only checkout;
+2. создать post-acceptance context package;
+3. перейти к `infra/002-container-preview`;
+4. подготовить отдельные Dockerfile и server compose без публикации PostgreSQL;
+5. запустить приложение сначала только на loopback-интерфейсе;
+6. затем добавить reverse proxy и HTTPS отдельным контролируемым изменением.
