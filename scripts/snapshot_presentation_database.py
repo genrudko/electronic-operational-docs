@@ -8,6 +8,7 @@ import shutil
 import sqlite3
 import subprocess
 import sys
+import time
 import zipfile
 from collections import Counter
 from datetime import UTC, datetime
@@ -115,8 +116,7 @@ def export_fixture(repo: Path, backup_path: Path, fixture_path: Path) -> None:
     if result.returncode != 0:
         details = result.stderr.decode("utf-8", errors="replace").strip()
         raise RuntimeError(
-            "Django fixture export failed"
-            + (f":\n{details}" if details else ".")
+            "Django fixture export failed" + (f":\n{details}" if details else ".")
         )
 
     if not fixture_path.is_file() or fixture_path.stat().st_size <= 0:
@@ -190,6 +190,53 @@ def create_manifest(
     print(f"Fixture SHA-256: {fixture_manifest['sha256']}")
 
 
+def file_tree_manifest(root: Path) -> dict[str, tuple[int, str]]:
+    return {
+        path.relative_to(root).as_posix(): (path.stat().st_size, sha256(path))
+        for path in sorted(root.rglob("*"))
+        if path.is_file()
+    }
+
+
+def promote_snapshot_directory(working_dir: Path, final_dir: Path) -> None:
+    last_error: OSError | None = None
+    attempts = 6
+
+    for attempt in range(1, attempts + 1):
+        try:
+            os.replace(working_dir, final_dir)
+            print(f"Snapshot directory finalized by rename on attempt {attempt}.")
+            return
+        except OSError as exc:
+            last_error = exc
+            if final_dir.exists():
+                raise RuntimeError(f"Snapshot target appeared unexpectedly: {final_dir}") from exc
+            if attempt < attempts:
+                delay = 0.5 * attempt
+                print(
+                    f"Directory rename attempt {attempt}/{attempts} failed: {exc}. "
+                    f"Retrying in {delay:.1f}s."
+                )
+                time.sleep(delay)
+
+    print(f"Directory rename remained unavailable: {last_error}")
+    print("Using verified directory copy fallback.")
+    expected_files = file_tree_manifest(working_dir)
+
+    try:
+        shutil.copytree(working_dir, final_dir)
+        actual_files = file_tree_manifest(final_dir)
+        if actual_files != expected_files:
+            raise RuntimeError("Copied snapshot directory does not match the working directory.")
+    except Exception:
+        if final_dir.exists():
+            shutil.rmtree(final_dir, ignore_errors=True)
+        raise
+
+    shutil.rmtree(working_dir)
+    print("Snapshot directory finalized by verified copy fallback.")
+
+
 def create_archive(source_dir: Path, archive_path: Path) -> None:
     with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for path in sorted(source_dir.rglob("*")):
@@ -232,7 +279,7 @@ def main() -> int:
 
     if working_dir.exists():
         shutil.rmtree(working_dir)
-    if final_dir.exists() or archive_path.exists():
+    if final_dir.exists() or archive_path.exists() or hash_path.exists():
         raise RuntimeError(f"Snapshot target already exists: {snapshot_name}")
 
     working_dir.mkdir(parents=True)
@@ -266,7 +313,9 @@ def main() -> int:
         print("\n===== CREATE MANIFEST =====")
         create_manifest(backup_database, fixture_path, manifest_path)
 
-        working_dir.replace(final_dir)
+        print("\n===== FINALIZE SNAPSHOT DIRECTORY =====")
+        promote_snapshot_directory(working_dir, final_dir)
+
         print("\n===== CREATE TRANSFER ARCHIVE =====")
         create_archive(final_dir, archive_path)
         archive_hash = sha256(archive_path)
@@ -279,8 +328,12 @@ def main() -> int:
         print("Source database was not modified.")
         return 0
     except Exception:
-        if working_dir.exists():
-            shutil.rmtree(working_dir, ignore_errors=True)
+        for directory in (working_dir, final_dir):
+            if directory.exists():
+                shutil.rmtree(directory, ignore_errors=True)
+        for file_path in (archive_path, hash_path):
+            if file_path.exists():
+                file_path.unlink(missing_ok=True)
         raise
 
 
