@@ -67,6 +67,7 @@ services:
     tmpfs:
       - /tmp
     networks:
+      - frontend
       - backend
 
 volumes:
@@ -74,5 +75,6 @@ volumes:
   eod_preview_staticfiles:
 
 networks:
+  frontend:
   backend:
     internal: true
