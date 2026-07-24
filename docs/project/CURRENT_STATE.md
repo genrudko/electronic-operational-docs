@@ -4,25 +4,29 @@
 
 **Принятый application baseline:** `main / e18872face7f27f489056b72fed31e5586121b0c`
 
-**Активная рабочая ветка:** `docs/002-docs001-baseline-finalization`
+**Текущий Git HEAD main:** `a2d686b0061fac513c02540a2176850640496884`
+
+**Активная рабочая ветка:** `docs/003-ux001-provisional-contract`
 
 ## 1. Статус проекта
 
 Проект является независимым демонстрационным прототипом электронной оперативной документации для энергетики. Инициатива не является официальным поручением работодателя. Производственные серверы, фактические оперативные записи и реальные персональные данные в разработке не используются.
 
-Базовый функциональный, инфраструктурный и процессный скелет проекта существует. DOCS-001 принят и сделал репозиторий главным онлайн-источником истины. Основной фокус возвращается к продуктовой разработке; инфраструктурные расширения выполняются только по подтверждённой необходимости.
+Базовый функциональный, инфраструктурный и процессный скелет проекта существует. DOCS-001 принят и сделал репозиторий главным онлайн-источником истины. DOCS-002 зафиксировал accepted application baseline и переход к PLAN-001. Основной фокус возвращается к продуктовой разработке; инфраструктурные расширения выполняются только по подтверждённой необходимости.
 
-## 2. Принятый Git baseline
+## 2. Принятый application baseline и main history
 
 ```text
-branch: main
-HEAD: e18872face7f27f489056b72fed31e5586121b0c
+application baseline branch: main
+application baseline HEAD: e18872face7f27f489056b72fed31e5586121b0c
 included: INFRA-001 + INFRA-002 + INFRA-003 + DOCS-001
+current main history HEAD: a2d686b0061fac513c02540a2176850640496884
+current main addition: DOCS-002 metadata follow-up
 ```
 
 PR #4 `DOCS-001: Project operating system and canonical documentation` принят пользователем и squash-merged 25.07.2026.
 
-Post-merge preview verification подтвердил:
+Post-merge preview verification DOCS-001 подтвердил:
 
 - `/srv/eod/repository` находится на точном merge commit;
 - branch `main`, worktree clean;
@@ -32,6 +36,8 @@ Post-merge preview verification подтвердил:
 - main page: HTTP 200;
 - database identity: `eod_preview`;
 - pending migrations отсутствуют.
+
+PR #5 `DOCS-002: Finalize DOCS-001 accepted baseline` squash-merged в `a2d686b0061fac513c02540a2176850640496884`. Это documentation-only metadata follow-up: он не меняет application behavior, schema, migrations or runtime data и не создаёт новый application baseline. После merge preview синхронизирован, documentation contract прошёл, containers healthy, health endpoint OK и главная страница HTTP 200.
 
 ## 3. Инфраструктура
 
@@ -124,7 +130,7 @@ Development-база создаётся как отдельная копия acc
 
 Пользователь исключён из механической части программирования, но сохраняет постановку задачи и приёмку.
 
-## 7. Текущий этап
+## 7. Текущий обязательный продуктовый этап
 
 `PLAN-001 — ревизия фактической реализации`.
 
@@ -148,7 +154,32 @@ Development-база создаётся как отдельная копия acc
 - реалистичная последовательность следующих работ;
 - минимальный обязательный smoke/integration test suite.
 
-## 8. Согласованное продуктовое направление
+## 8. UX-001
+
+`UX-001 v0.3` оформляется в отдельной ветке как **предварительный проектный контракт для визуального прототипирования**.
+
+```text
+status: provisional
+visual acceptance: pending
+implementation authorization: not granted
+```
+
+Структурно пакет включает evidence-based audit, visual direction, principles, candidate tokens, component/interaction contracts, page archetypes, three reference-screen contracts and staged roadmap.
+
+Сейчас не приняты визуально:
+
+- concrete palette;
+- typography scale;
+- density;
+- radii and shadows;
+- shell composition;
+- внешний вид reference screens.
+
+Следующий UX gate: два компактных визуальных направления для application shell и одного показательного structured-journal screen → выбор пользователя → ограниченный runtime prototype → визуальная корректировка → фиксация accepted tokens.
+
+Журнал дефектов остаётся сильным кандидатом на reference vertical slice, но окончательный выбор принимает PLAN-001.
+
+## 9. Согласованное продуктовое направление
 
 ```text
 минимальный общий контракт
@@ -160,10 +191,6 @@ Development-база создаётся как отдельная копия acc
 
 Связи не откладываются до завершения всего пакета. Полная универсальная timeline не проектируется заранее без подтверждённых отношений.
 
-Предварительный первый кандидат — журнал дефектов; окончательное решение принимается после evidence audit.
-
-UX-001 развивается параллельно, проверяется на реальных экранах и не становится отдельным интеграционным центром.
-
-## 9. Критический технический долг
+## 10. Критический технический долг
 
 Текущая Django test command обнаруживает `0 test(s)`. Это не считается доказательством регрессионной защиты. PLAN-001 должен определить минимальный автоматический набор, а каждый следующий product slice обязан добавлять профильные tests/gates.
