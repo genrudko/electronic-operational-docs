@@ -17,7 +17,6 @@ from apps.documents.models import Document
 from apps.equipment.models import EquipmentAsset
 from apps.equipment.services import dispatcher_name_on
 from apps.organizations.models import Employee, Workplace
-from apps.organizations.services import user_has_role
 
 from .models import (
     DocumentLinkType,
@@ -155,10 +154,7 @@ def require_operational_document_employee(user: Any) -> Employee:
 
 
 def can_administer_operational_document_types(user: Any) -> bool:
-    return bool(
-        getattr(user, "is_superuser", False)
-        or user_has_role(user, "shift_supervisor")
-    )
+    return bool(getattr(user, "is_superuser", False))
 
 
 def require_operational_document_type_administrator(user: Any) -> Employee:

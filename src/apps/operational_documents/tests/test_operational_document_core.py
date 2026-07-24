@@ -20,11 +20,11 @@ from apps.organizations.models import (
     Workplace,
 )
 
+from ..forms import OperationalFieldDefinitionFormSet, field_definitions_from_formset
 from ..models import (
     OperationalDocumentAuditEvent,
     OperationalDocumentRecord,
     OperationalDocumentRecordRevision,
-    OperationalDocumentType,
     OperationalDocumentTypeRevision,
     SchemaPublicationStatus,
 )
@@ -194,7 +194,7 @@ class OperationalDocumentCoreTests(TestCase):
     def setUp(self) -> None:
         self.document_type_core = create_and_publish_type(
             actor=self.employee,
-            code="defect-card",
+            code="journal-equipment-defects",
             name="Карточка дефекта",
             short_name="Дефект",
             description="Тестовый тип общего ядра",
@@ -423,37 +423,44 @@ class OperationalDocumentCoreTests(TestCase):
         )
         self.assertNotContains(response, record.registration_number)
 
-    def test_type_builder_view_publishes_default_lifecycle(self) -> None:
+    def test_manual_type_builder_is_disabled_and_catalog_is_source_bound(self) -> None:
         self.client.force_login(self.user)
+        response = self.client.get(reverse("operational_documents:type_create"), follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ручное создание форм отключено")
+        self.assertContains(response, "И-00-007-ОР-2025 версия 2")
+        self.assertContains(response, "Приложение № 8")
+        self.assertNotContains(response, "Создать тип")
+
+    def test_browser_default_field_type_does_not_activate_empty_form(self) -> None:
         payload = {
-            "code": "request-demo",
-            "name": "Демонстрационная заявка",
-            "short_name": "Заявка",
-            "description": "Тип, созданный через общий мастер",
-            "number_prefix": "ЗАЯ",
-            "number_width": "5",
-            "requires_workplace": "on",
-            "fields-TOTAL_FORMS": "4",
+            "fields-TOTAL_FORMS": "3",
             "fields-INITIAL_FORMS": "0",
             "fields-MIN_NUM_FORMS": "1",
             "fields-MAX_NUM_FORMS": "12",
-            "fields-0-label": "Содержание заявки",
-            "fields-0-code": "DESCRIPTION",
+            "fields-0-label": "Содержание",
+            "fields-0-code": "CONTENT",
             "fields-0-field_type": "LONG_TEXT",
             "fields-0-required": "on",
             "fields-0-show_in_list": "on",
             "fields-0-searchable": "on",
             "fields-0-choice_options": "",
             "fields-0-help_text": "",
+            "fields-1-label": "",
+            "fields-1-code": "",
+            "fields-1-field_type": "TEXT",
+            "fields-1-choice_options": "",
+            "fields-1-help_text": "",
+            "fields-2-label": "",
+            "fields-2-code": "",
+            "fields-2-field_type": "TEXT",
+            "fields-2-choice_options": "",
+            "fields-2-help_text": "",
         }
-        response = self.client.post(reverse("operational_documents:type_create"), payload)
-        self.assertEqual(response.status_code, 302)
-        created = OperationalDocumentType.objects.get(code="request-demo")
-        revision = current_published_revision(created)
-        assert revision is not None
-        self.assertEqual(revision.status_definitions[0]["code"], "OPEN")
-        self.assertEqual(revision.status_definitions[-1]["code"], "CLOSED")
-        self.assertEqual(revision.transition_definitions[0]["code"], "START")
+        formset = OperationalFieldDefinitionFormSet(payload, prefix="fields")
+        self.assertTrue(formset.is_valid(), formset.errors)
+        definitions = field_definitions_from_formset(formset)
+        self.assertEqual([item["code"] for item in definitions], ["CONTENT"])
 
     def test_record_detail_route_exposes_links_history_and_transitions(self) -> None:
         record = self.create_test_record()
@@ -467,3 +474,5 @@ class OperationalDocumentCoreTests(TestCase):
         self.assertContains(response, self.equipment.technical_name)
         self.assertContains(response, "Принять в работу")
         self.assertContains(response, "История редакций")
+        self.assertContains(response, "И-00-007-ОР-2025 версия 2")
+        self.assertNotContains(response, "Append-only аудит")

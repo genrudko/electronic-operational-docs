@@ -5,51 +5,65 @@
 {% block content %}
 <section class="page-heading">
     <div>
-        <div class="section-kicker">{{ document_type.code }}</div>
+        <div class="section-kicker">{% if is_source_bound %}Утверждённая форма{% else %}Техническая схема ядра{% endif %}</div>
         <h1>{{ document_type.name }}</h1>
         <p>{{ document_type.description|default:"Описание не задано" }}</p>
     </div>
     <div class="document-actions">
-        <a class="button secondary" href="{% url 'operational_documents:type_registry' %}">К типам</a>
-        {% if current_revision %}<a class="button" href="{% url 'operational_documents:record_create' document_type.public_id %}">Создать запись</a>{% endif %}
+        <a class="button secondary" href="{% url 'operational_documents:type_registry' %}">К формам</a>
+        {% if can_create_record %}<a class="button" href="{% url 'operational_documents:record_create' document_type.public_id %}">Новая запись</a>{% endif %}
     </div>
 </section>
+
+{% if source_form %}
+<section class="source-boundary-notice">
+    <strong>{{ source_form.source_document }}</strong>
+    <p>Раздел {{ source_form.source_section }}, приложение № {{ source_form.source_appendix }}. Состав формы не редактируется оперативным персоналом.</p>
+</section>
+{% else %}
+<section class="source-boundary-notice warning">
+    <strong>Источник формы не привязан</strong>
+    <p>Новые записи и действия по этой технической схеме заблокированы. Она сохранена только для проверки общего ядра.</p>
+</section>
+{% endif %}
 
 {% if current_revision %}
 <section class="profile-grid">
     <article class="profile-card">
-        <h2>Опубликованная редакция {{ current_revision.revision_number }}</h2>
+        <h2>Действующая редакция</h2>
         <dl>
-            <dt>Префикс номера</dt><dd><code>{{ current_revision.number_prefix }}</code></dd>
+            <dt>Редакция</dt><dd>{{ current_revision.revision_number }}</dd>
+            <dt>Нумерация</dt><dd>{{ current_revision.number_prefix }} · {{ current_revision.number_width }} знаков</dd>
             <dt>Рабочее место</dt><dd>{{ current_revision.requires_workplace|yesno:"обязательно,необязательно" }}</dd>
             <dt>Опубликована</dt><dd>{{ current_revision.published_at|date:"d.m.Y H:i" }}</dd>
             <dt>Опубликовал</dt><dd>{{ current_revision.published_by.full_name }}</dd>
-            <dt>SHA-256</dt><dd><code>{{ current_revision.sha256 }}</code></dd>
         </dl>
     </article>
     <article class="profile-card">
-        <h2>Жизненный цикл</h2>
+        <h2>Состояния записи</h2>
         <ul class="role-list">
             {% for status in current_revision.status_definitions %}
-            <li><strong>{{ status.name }}</strong><span><code>{{ status.code }}</code>{% if status.is_initial %} · начальное{% endif %}{% if status.is_terminal %} · конечное{% endif %}</span></li>
+            <li>
+                <strong>{{ status.name }}</strong>
+                <span>{% if status.is_initial %}Начальное состояние{% elif status.is_terminal %}Конечное состояние{% else %}Промежуточное состояние{% endif %}</span>
+            </li>
             {% endfor %}
         </ul>
     </article>
 </section>
 
 <section class="directory-card">
-    <h2>Поля записи</h2>
+    <h2>Графы и поля формы</h2>
     <div class="table-wrap">
         <table>
-            <thead><tr><th>Порядок</th><th>Код</th><th>Наименование</th><th>Тип</th><th>Правила</th></tr></thead>
+            <thead><tr><th>Порядок</th><th>Наименование</th><th>Тип значения</th><th>Правила</th></tr></thead>
             <tbody>
-                {% for field in current_revision.field_definitions %}
+                {% for field in field_rows %}
                 <tr>
                     <td>{{ field.position }}</td>
-                    <td><code>{{ field.code }}</code></td>
                     <td>{{ field.label }}</td>
-                    <td>{{ field.type }}</td>
-                    <td>{% if field.required %}обязательно{% else %}необязательно{% endif %}{% if field.show_in_list %}; в общем реестре{% endif %}{% if field.searchable %}; участвует в поиске{% endif %}</td>
+                    <td>{{ field.type_label }}</td>
+                    <td>{% if field.required %}обязательно{% else %}необязательно{% endif %}{% if field.show_in_list %}; показывается в реестре{% endif %}{% if field.searchable %}; участвует в поиске{% endif %}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -58,8 +72,14 @@
 </section>
 {% endif %}
 
-<section class="directory-card">
-    <h2>История редакций</h2>
+{% if ui_preferences.show_technical_details %}
+<details class="technical-panel technical-only">
+    <summary>Технические сведения</summary>
+    <dl>
+        <dt>Код схемы</dt><dd><code>{{ document_type.code }}</code></dd>
+        {% if current_revision %}<dt>SHA-256 редакции</dt><dd><code class="hash-value">{{ current_revision.sha256 }}</code></dd>{% endif %}
+    </dl>
+    <h3>История редакций</h3>
     <div class="table-wrap">
         <table>
             <thead><tr><th>Редакция</th><th>Состояние</th><th>Создана</th><th>Опубликована</th><th>SHA-256</th></tr></thead>
@@ -70,11 +90,12 @@
                     <td>{{ revision.get_status_display }}</td>
                     <td>{{ revision.created_at|date:"d.m.Y H:i" }}</td>
                     <td>{{ revision.published_at|date:"d.m.Y H:i"|default:"—" }}</td>
-                    <td><code>{{ revision.sha256|default:"—" }}</code></td>
+                    <td><code class="hash-value">{{ revision.sha256|default:"—" }}</code></td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-</section>
+</details>
+{% endif %}
 {% endblock %}

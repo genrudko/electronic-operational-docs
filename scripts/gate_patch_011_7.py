@@ -19,6 +19,12 @@ def require(text: str, *tokens: str) -> None:
         raise AssertionError("Не найдены обязательные маркеры: " + ", ".join(missing))
 
 
+def forbid(text: str, *tokens: str) -> None:
+    present = [token for token in tokens if token in text]
+    if present:
+        raise AssertionError("Обнаружены запрещённые маркеры: " + ", ".join(present))
+
+
 def main() -> None:
     settings = read("src/eod_config/settings.py")
     root_urls = read("src/eod_config/urls.py")
@@ -28,21 +34,19 @@ def main() -> None:
     system_smoke = read("src/apps/system/tests/test_system.py")
     require(settings, "apps.operational_documents.apps.OperationalDocumentsConfig")
     require(root_urls, 'include("apps.operational_documents.urls")')
-    require(app_urls, 'app_name = "operational_documents"', 'name="registry"', 'name="record_transition"')
+    require(app_urls, 'app_name = "operational_documents"', 'name="registry"')
     require(base, "operational_documents:registry", "Оперативные документы")
     require(
         home,
-        "Настраиваемые журналы, статусы, связи и история редакций",
-        "Единое ядро оперативной документации готово к наполнению",
+        "Утверждённые формы журналов",
+        "Ядро структурированных журналов готово к установке утверждённых форм",
+        "Ядро готово",
     )
     require(
         system_smoke,
-        "Единое ядро оперативной документации готово к наполнению",
-        "Оперативные документы",
+        "Утверждённые формы журналов",
+        "Ядро структурированных журналов готово к установке утверждённых форм",
     )
-    if "Базовые реестры готовы к демонстрации" in system_smoke:
-        raise AssertionError("Smoke-тест главной страницы ожидает устаревший текст")
-    print("SYSTEM_HOME_SMOKE_COPY_CONTRACT=PASSED")
     print("OPDOC_APP_WIRING=PASSED")
 
     models = read("src/apps/operational_documents/models.py")
@@ -52,287 +56,222 @@ def main() -> None:
         models,
         "class OperationalDocumentType(models.Model)",
         "class OperationalDocumentTypeRevision(models.Model)",
-        "class SchemaPublicationStatus(models.TextChoices)",
-        "Опубликованная редакция типа неизменяема",
         "canonical_snapshot = models.JSONField",
-        'sha256 = models.CharField("SHA-256"',
+        "class OperationalDocumentRecord(models.Model)",
+        "class OperationalDocumentRecordRevision(models.Model)",
+        "class OperationalDocumentAuditEvent(models.Model)",
     )
     require(
         services,
         "def publish_type_revision",
-        '"schema": "eod.operational-document-type.v1"',
-        "snapshot = json.loads(canonical_json(snapshot))",
-        "sha256_text(canonical_json(snapshot))",
+        "def create_record",
+        "def update_record",
+        "def transition_record",
+        "def normalize_search_text",
+        'unicodedata.normalize("NFKC", str(value)).casefold()',
     )
-    require(migration, 'name="OperationalDocumentTypeRevision"', 'name="uniq_opdoc_type_revision_number"')
-    print("OPDOC_PUBLISHED_SCHEMA_IMMUTABILITY=PASSED")
+    require(migration, 'name="OperationalDocumentTypeRevision"')
+    print("OPDOC_CORE_INVARIANTS=PASSED")
 
+    catalog = read("src/apps/operational_documents/journal_forms.py")
     require(
-        models,
-        "class FieldType(models.TextChoices)",
-        "field_definitions = models.JSONField",
-        "status_definitions = models.JSONField",
-        "transition_definitions = models.JSONField",
-        "participant_role_definitions = models.JSONField",
+        catalog,
+        'SOURCE_DOCUMENT_TITLE = "И-00-007-ОР-2025 версия 2"',
+        'code="journal-orders"',
+        'source_section="7"',
+        'source_appendix="4"',
+        'code="journal-outage-requests"',
+        'source_section="8"',
+        'source_appendix="5"',
+        'code="journal-equipment-commissioning"',
+        'source_section="9"',
+        'source_appendix="6"',
+        'code="journal-rza-telemechanics"',
+        'source_section="10"',
+        'source_appendix="7"',
+        'code="journal-equipment-defects"',
+        'source_section="11"',
+        'source_appendix="8"',
     )
-    require(
-        services,
-        "def normalize_field_definitions",
-        "def normalize_status_definitions",
-        "def normalize_transition_definitions",
-        "DEFAULT_STATUS_DEFINITIONS",
-        "DEFAULT_TRANSITION_DEFINITIONS",
-        "DEFAULT_PARTICIPANT_ROLE_DEFINITIONS",
-    )
+    forbid(catalog, "PRIORITY", "TEMPERATURE", "CONFIRMED")
+    print("APPROVED_JOURNAL_SOURCE_CATALOG=PASSED")
+
     forms = read("src/apps/operational_documents/forms.py")
     require(
         forms,
-        'searchable = forms.BooleanField(label="Учитывать в поиске", required=False)',
-        "OperationalFieldDefinitionFormSet = formset_factory",
+        "APPROVED_JOURNAL_FORM_CODES",
+        'code__in=APPROVED_JOURNAL_FORM_CODES',
+        'cleaned["_empty_definition"] = not meaningful',
+        'form.cleaned_data.get("_empty_definition")',
+        'extra=1',
+        'class": "opdoc-multi-select"',
+        "def main_fields",
+        "def subject_fields",
+        "def participant_fields",
+        "def relation_fields",
     )
-    if 'searchable = forms.BooleanField(label="Учитывать в поиске", required=False, initial=True)' in forms:
-        raise AssertionError("Пустые дополнительные строки formset ошибочно считаются изменёнными")
-    print("OPDOC_CONFIGURABLE_FIELDS_STATUSES_TRANSITIONS=PASSED")
-
-    require(
-        models,
-        "class OperationalDocumentNumberSequence(models.Model)",
-        "class OperationalDocumentRecord(models.Model)",
-        "registration_number = models.CharField",
-        "workplace_name_snapshot",
-        "created_by_full_name_snapshot",
-        "Идентификационные реквизиты записи неизменяемы",
-    )
-    require(
-        services,
-        "def _allocate_number",
-        "select_for_update().get_or_create",
-        "def _registration_number",
-        'f"{revision.number_prefix}-{year}-{value:0{revision.number_width}d}"',
-        '"schema": "eod.operational-document-record.v1"',
-        '"code": record.workplace.code if record.workplace_id else ""',
-    )
-    print("OPDOC_RECORD_NUMBERING_AND_SNAPSHOTS=PASSED")
-
-    require(
-        models,
-        "class OperationalDocumentParticipant(models.Model)",
-        "class OperationalDocumentEquipmentLink(models.Model)",
-        "class OperationalDocumentExternalDocumentLink(models.Model)",
-        "class OperationalDocumentRelation(models.Model)",
-        "Связываемые записи относятся к разным организациям",
-    )
-    require(
-        services,
-        "def _validate_participants",
-        "def _validate_related_collections",
-        "def _sync_participants",
-        "def _sync_equipment",
-        "def _sync_documents",
-        "def _sync_relations",
-    )
-    print("OPDOC_PARTICIPANTS_EQUIPMENT_DOCUMENT_RELATIONS=PASSED")
-
-    require(
-        models,
-        "class OperationalDocumentRecordRevision(models.Model)",
-        "class OperationalDocumentAuditEvent(models.Model)",
-        "Редакция оперативной записи неизменяема",
-        "Событие аудита неизменяемо",
-        "Массовое изменение защищённых записей",
-    )
-    require(
-        services,
-        "def _append_record_revision",
-        'event_type="RECORD_CREATED"',
-        'event_type="RECORD_UPDATED"',
-        'event_type="STATUS_CHANGED"',
-    )
-    print("OPDOC_APPEND_ONLY_REVISIONS_AND_AUDIT=PASSED")
+    forbid(forms, "initial=True,\n    )\n    choice_options")
+    print("OPDOC_FORMSET_AND_EDITOR_GROUPS=PASSED")
 
     views = read("src/apps/operational_documents/views.py")
-    registry = read("src/templates/operational_documents/registry.html")
     require(
         views,
-        "def registry",
+        "APPROVED_JOURNAL_FORM_CODES",
+        "APPROVED_JOURNAL_FORMS",
+        "def _catalog_rows",
+        "def _require_source_bound_record",
+        "Ручное создание форм отключено",
+        "Запись нельзя создать по технической тестовой схеме",
+        "source_form = approved_journal_form",
         "search_text__contains=normalize_search_text(q)",
-        "document_type__public_id",
-        "status_code=status_code",
         "workplace__code",
-        "equipment_links__equipment__public_id",
-        "event_at__date__gte",
-        "event_at__date__lte",
     )
-    require(
-        services,
-        "import unicodedata",
-        "def normalize_search_text",
-        'unicodedata.normalize("NFKC", str(value)).casefold()',
-        "return normalize_search_text(rendered)",
+    forbid(
+        views,
+        "OperationalDocumentTypeForm",
+        "OperationalFieldDefinitionFormSet",
+        "create_and_publish_type",
+        "field_definitions_from_formset",
     )
-    if "Q(search_text__icontains=q)" in views:
-        raise AssertionError("SQLite icontains не обеспечивает Unicode casefold для кириллицы")
-    if "workplace__public_id" in views:
-        raise AssertionError("Workplace не имеет public_id; фильтр должен использовать code")
-    require(registry, "Всего записей", "Оборудование", "С даты", "По дату", "Предметные данные")
-    print("OPDOC_COMMON_REGISTRY_SEARCH_FILTERS=PASSED")
+    require(services, "return bool(getattr(user, \"is_superuser\", False))")
+    forbid(services, 'user_has_role(user, "shift_supervisor")')
+    print("SOURCE_BOUND_ACTION_GUARD=PASSED")
 
-    base_template = read("src/templates/base.html")
-    reference_contract = read(
-        "src/apps/operational_log/tests/test_reference_navigation.py"
-    )
-    require(base_template, "system/app.css' %}?v=011700")
-    require(reference_contract, 'SYSTEM_CSS_REVISION = "011700"')
-    if "011610" in reference_contract:
-        raise AssertionError("Старый CSS cache revision сохранён в regression-тесте")
-    print("SYSTEM_CSS_CACHE_REVISION_CONTRACT=PASSED")
-
+    registry = read("src/templates/operational_documents/registry.html")
+    type_registry = read("src/templates/operational_documents/type_registry.html")
+    type_detail = read("src/templates/operational_documents/type_detail.html")
+    choose_type = read("src/templates/operational_documents/choose_type.html")
+    record_form = read("src/templates/operational_documents/record_form.html")
+    record_detail = read("src/templates/operational_documents/record_detail.html")
     templates = "\n".join(
-        read(f"src/templates/operational_documents/{name}")
-        for name in (
-            "registry.html",
-            "type_registry.html",
-            "type_form.html",
-            "type_detail.html",
-            "choose_type.html",
-            "record_form.html",
-            "record_detail.html",
-        )
+        (registry, type_registry, type_detail, choose_type, record_form, record_detail)
     )
     require(
-        templates,
-        "Единое структурированное ядро",
-        "Публикуемая конфигурация",
-        "Новая запись",
-        "История редакций",
-        "Доступные переходы состояния",
+        registry,
+        "Формы по утверждённым источникам",
+        "Оперативный персонал не конструирует формы журналов",
+        "Техническая запись",
+        "Нет установленных форм",
     )
-    print("OPDOC_RUSSIAN_UI=PASSED")
+    require(
+        type_registry,
+        "Источник → форма → запись",
+        "Ручное создание произвольных журналов отключено",
+        "Раздел {{ row.form.source_section }}",
+        "Приложение № {{ row.form.source_appendix }}",
+        "Состав граф по памяти не создаётся",
+    )
+    forbid(type_registry, "Создать тип")
+    require(
+        type_detail,
+        "Утверждённая форма",
+        "Источник формы не привязан",
+        "Технические сведения",
+        "type_label",
+    )
+    require(
+        choose_type,
+        "только формы, установленные по утверждённым источникам",
+        "Утверждённые формы ещё не установлены",
+    )
+    require(
+        record_form,
+        "Данные установленной формы",
+        "Оборудование и связанные документы",
+        "Поиск по списку",
+        "удерживать Ctrl не требуется",
+        'select.addEventListener("mousedown"',
+    )
+    require(
+        record_detail,
+        "Данные формы",
+        "Техническая запись общего ядра",
+        "неизменяемый журнал аудита",
+        "data-required-message",
+        "Без комментария действие не будет выполнено",
+    )
+    forbid(templates, "Append-only аудит", ">LONG_TEXT<", ">BOOLEAN<")
+    print("OPDOC_SOURCE_BOUND_RUSSIAN_UI=PASSED")
+
+    css = read("src/static/system/app.css")
+    reference_contract = read("src/apps/operational_log/tests/test_reference_navigation.py")
+    require(base, "system/app.css' %}?v=011702")
+    require(reference_contract, 'SYSTEM_CSS_REVISION = "011702"')
+    require(
+        css,
+        "Patch 011.7 Repair 2 — source-bound journal UX",
+        ".approved-form-catalog",
+        ".opdoc-multi-picker",
+        ".sticky-form-actions",
+        ".hash-value",
+    )
+    print("OPDOC_ASSET_AND_LAYOUT_CONTRACT=PASSED")
 
     tests = read("src/apps/operational_documents/tests/test_operational_document_core.py")
     tree = ast.parse(tests)
     test_count = sum(
         1
         for node in ast.walk(tree)
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test_")
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        and node.name.startswith("test_")
     )
-    if test_count < 10:
-        raise AssertionError(f"Ожидалось не менее 10 профильных тестов, найдено {test_count}")
+    if test_count < 11:
+        raise AssertionError(f"Ожидалось не менее 11 профильных тестов, найдено {test_count}")
     require(
         tests,
-        "test_published_type_revision_has_canonical_hash_and_is_immutable",
-        "test_server_numbering_increments_per_type_and_year",
-        "test_update_creates_new_immutable_revision_and_preserves_first_snapshot",
-        "test_cross_organization_equipment_and_participant_are_rejected",
-        "test_common_registry_search_and_filters_show_only_own_organization",
+        "test_manual_type_builder_is_disabled_and_catalog_is_source_bound",
+        "test_browser_default_field_type_does_not_activate_empty_form",
+        '"fields-1-field_type": "TEXT"',
+        'self.assertEqual([item["code"] for item in definitions], ["CONTENT"])',
+        'code="journal-equipment-defects"',
         '"q": "НАГРЕВ"',
-        'self.assertIn("нагрев", record.search_text)',
-        'self.assertNotIn("Нагрев", record.search_text)',
     )
-    if '"q": "теплов"' in tests or '"q": "нагрев"' in tests:
-        raise AssertionError("Поисковый тест не проверяет Unicode-регистронезависимый контракт")
-    print(f"OPDOC_SYNTHETIC_TESTS=PASSED COUNT={test_count}")
+    print(f"OPDOC_REPAIR2_TEST_CONTRACT=PASSED COUNT={test_count}")
 
     adr = read("docs/adr/ADR-011-7-operational-documentation-core.md")
-    require(adr, "единое ядро", "Границы Patch 011.7", "Patch 011.8")
-    print("OPDOC_ARCHITECTURE_DECISION=PASSED")
-
-    workflow = read("docs/project_state/WORKFLOW_CONTRACT.md")
     current_state = read("docs/project_state/CURRENT_STATE.md")
+    decision_log = read("docs/project_state/DECISION_LOG.md")
     patch_history = read("docs/project_state/PATCH_HISTORY.md")
+    open_items = read("docs/project_state/OPEN_ITEMS.md")
     handoff = read("docs/project_state/CHAT_HANDOFF.md")
-    start_text = read("docs/project_state/START_NEW_CHAT.txt")
-    context_manager = read("scripts/eod_context_manager.py")
     require(
-        workflow,
-        "pre-patch snapshot",
-        "EOD_CURRENT_CONTEXT.zip",
-        "визуально принятого Patch/Repair",
-        "ровно один завершающий перевод строки",
+        adr,
+        "Источник формы обязателен",
+        "Пользовательский интерфейс не предоставляет конструктор",
+        "source-bound",
     )
     require(
         current_state,
-        "b73510a5b64b4f7faf9d80996c8ad3dba4822d6f",
-        "Patch 011.7 Repair 1",
-        "исправленная ревизия 10",
-        "Конкретный SHA ZIP не",
+        "fec8bd675f9565b0c4e398124cd22f8fabec02b4",
+        "Patch 011.7 Repair 2",
+        "cdbe4fa878cc1c26d2aec2d4a93daa6b856a5f2e108ec1cce1d17d1d9eaba081",
     )
+    require(decision_log, "формы журналов только из утверждённых источников")
+    require(patch_history, "Patch 011.7 Repair 1 Revision 10", "Patch 011.7 Repair 2")
+    require(open_items, "не заполняются по памяти")
     require(
-        patch_history,
-        "Patch 011.7 — первая попытка",
-        "отказ на Ruff",
-        "rollback: clean",
-        "Patch 011.7 Repair 1 Revision 1",
-        "двумя LF",
-        "Patch 011.7 Repair 1 Revision 2",
-        "I001 и B904",
-        "Patch 011.7 Repair 1 Revision 3",
-        "повторно выявил I001",
-        "Patch 011.7 Repair 1 Revision 4",
-        "Workplace",
-        "Patch 011.7 Repair 1 Revision 5",
-        "9 прошло, 1 failure",
-        "запрос `теплов` отсутствовал",
-        "Patch 011.7 Repair 1 Revision 6",
-        "SQLite `icontains`",
-        "Patch 011.7 Repair 1 Revision 7",
-        "SYSTEM_CSS_REVISION",
-        "011610",
-        "Patch 011.7 Repair 1 Revision 8",
-        "Базовые реестры готовы к демонстрации",
-        "495",
-        "Patch 011.7 Repair 1 Revision 9",
-        "495/495",
-        "git diff --cached --check",
-        "trailing whitespace",
+        handoff,
+        "Repair 2 input baseline: fec8bd675f9565b0c4e398124cd22f8fabec02b4",
+        "current technical HEAD after Repair 2: read from successful patch log",
     )
-    require(handoff, "двухфазный", "START_NEW_CHAT.txt")
-    require(start_text, "Восстанови основной интеграционный контекст", "Не создавай новый патч")
-    require(
-        context_manager,
-        'stable_name = "EOD_CURRENT_CONTEXT.zip"',
-        'stable_name = "EOD_PREPATCH_SNAPSHOT_CURRENT.zip"',
-        '"START_NEW_CHAT.txt"',
-        "from datetime import datetime",
-        "raise SystemExit(1) from None",
-        "# isort: skip_file",
-    )
-    if "import datetime as dt" in context_manager:
-        raise AssertionError("В context manager сохранён aliased datetime import")
-    print("PROJECT_CONTEXT_CONTINUITY=PASSED")
-
-    text_contract_paths = (
+    for relative in (
         "docs/adr/ADR-011-7-operational-documentation-core.md",
-        "docs/project_state/CHAT_HANDOFF.md",
         "docs/project_state/CURRENT_STATE.md",
         "docs/project_state/DECISION_LOG.md",
-        "docs/project_state/OPEN_ITEMS.md",
         "docs/project_state/PATCH_HISTORY.md",
-        "docs/project_state/START_NEW_CHAT.txt",
-        "docs/project_state/WORKFLOW_CONTRACT.md",
-    )
-    for relative in text_contract_paths:
+        "docs/project_state/OPEN_ITEMS.md",
+        "docs/project_state/CHAT_HANDOFF.md",
+    ):
         bad_lines = [
             number
             for number, line in enumerate(read(relative).splitlines(), start=1)
             if line.endswith((" ", "\t"))
         ]
         if bad_lines:
-            raise AssertionError(
-                f"Trailing whitespace в {relative}: строки {bad_lines}"
-            )
-    print("PROJECT_STATE_TRAILING_WHITESPACE_CONTRACT=PASSED")
+            raise AssertionError(f"Trailing whitespace в {relative}: строки {bad_lines}")
+    print("PROJECT_STATE_SOURCE_BOUND_DECISION=PASSED")
 
-    require(
-        models,
-        'return f"{self.record.registration_number}: {self.dispatcher_name_snapshot}"',
-        'return f"{self.record.registration_number}: {self.title_snapshot}"',
-        'f"{self.source_record.registration_number} → "',
-    )
-    if "from typing import Any" in views:
-        raise AssertionError("В views.py сохранён неиспользуемый импорт typing.Any")
-    print("PATCH_011_7_REPAIR1_RUFF_CONTRACT=PASSED")
-    print("PATCH_011_7_OPERATIONAL_DOCUMENTATION_CORE_GATE_PASSED")
+    print("PATCH_011_7_REPAIR2_SOURCE_BOUND_JOURNAL_UX_GATE_PASSED")
 
 
 if __name__ == "__main__":

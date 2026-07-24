@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -12,11 +12,15 @@ from .forms import (
     OperationalDocumentRecordForm,
     OperationalDocumentTransitionForm,
     OperationalDocumentTypeChoiceForm,
-    OperationalDocumentTypeForm,
-    OperationalFieldDefinitionFormSet,
-    field_definitions_from_formset,
+)
+from .journal_forms import (
+    APPROVED_JOURNAL_FORM_CODES,
+    APPROVED_JOURNAL_FORMS,
+    approved_journal_form,
+    is_approved_journal_form_code,
 )
 from .models import (
+    FieldType,
     OperationalDocumentRecord,
     OperationalDocumentType,
     OperationalDocumentTypeRevision,
@@ -25,13 +29,11 @@ from .models import (
 from .services import (
     available_transitions,
     can_administer_operational_document_types,
-    create_and_publish_type,
     create_record,
     current_published_revision,
     field_display_rows,
     normalize_search_text,
     require_operational_document_employee,
-    require_operational_document_type_administrator,
     transition_record,
     update_record,
 )
@@ -69,8 +71,50 @@ def _record_for_employee(public_id, employee):
 def _revision_for_type(document_type: OperationalDocumentType) -> OperationalDocumentTypeRevision:
     revision = current_published_revision(document_type)
     if revision is None:
-        raise ValidationError("Для типа документа отсутствует опубликованная редакция.")
+        raise ValidationError("Для формы журнала отсутствует опубликованная редакция.")
     return revision
+
+
+def _approved_types(organization):
+    return OperationalDocumentType.objects.filter(
+        organization=organization,
+        is_active=True,
+        code__in=APPROVED_JOURNAL_FORM_CODES,
+        revisions__status=SchemaPublicationStatus.PUBLISHED,
+    ).distinct()
+
+
+def _catalog_rows(organization) -> list[dict[str, object]]:
+    installed = {
+        item.code: item
+        for item in OperationalDocumentType.objects.filter(
+            organization=organization,
+            code__in=APPROVED_JOURNAL_FORM_CODES,
+        ).prefetch_related("revisions")
+    }
+    rows: list[dict[str, object]] = []
+    for form in APPROVED_JOURNAL_FORMS:
+        document_type = installed.get(form.code)
+        published_revision = None
+        if document_type is not None:
+            published_revision = current_published_revision(document_type)
+        rows.append(
+            {
+                "form": form,
+                "document_type": document_type,
+                "published_revision": published_revision,
+                "installed": published_revision is not None,
+            }
+        )
+    return rows
+
+
+def _require_source_bound_record(record: OperationalDocumentRecord) -> None:
+    if not is_approved_journal_form_code(record.document_type.code):
+        raise PermissionDenied(
+            "Новые действия по технической тестовой схеме заблокированы. "
+            "Рабочие записи создаются только по форме, привязанной к утверждённому источнику."
+        )
 
 
 @login_required
@@ -105,6 +149,7 @@ def registry(request: HttpRequest) -> HttpResponse:
     records = records.distinct().order_by("-event_at", "-pk")
     record_rows = list(records)
     for record in record_rows:
+        record.is_source_bound = is_approved_journal_form_code(record.document_type.code)
         visible_values = [
             value
             for value in record.field_values.values()
@@ -112,6 +157,7 @@ def registry(request: HttpRequest) -> HttpResponse:
         ]
         record.visible_values = visible_values[:4]
     all_records = OperationalDocumentRecord.objects.filter(organization=employee.organization)
+    approved_types = _approved_types(employee.organization).order_by("name")
     status_options = sorted(
         {
             (record.status_code, record.status_name_snapshot)
@@ -128,11 +174,12 @@ def registry(request: HttpRequest) -> HttpResponse:
                 "total": all_records.count(),
                 "active": all_records.filter(status_is_terminal=False).count(),
                 "closed": all_records.filter(status_is_terminal=True).count(),
-                "types": OperationalDocumentType.objects.filter(
-                    organization=employee.organization,
-                    is_active=True,
+                "types": approved_types.count(),
+                "technical": all_records.exclude(
+                    document_type__code__in=APPROVED_JOURNAL_FORM_CODES
                 ).count(),
             },
+            "can_create_record": approved_types.exists(),
             "document_types": OperationalDocumentType.objects.filter(
                 organization=employee.organization,
                 is_active=True,
@@ -156,27 +203,20 @@ def registry(request: HttpRequest) -> HttpResponse:
 @login_required
 def type_registry(request: HttpRequest) -> HttpResponse:
     employee = require_operational_document_employee(request.user)
-    document_types = list(
+    technical_types = list(
         OperationalDocumentType.objects.filter(organization=employee.organization)
+        .exclude(code__in=APPROVED_JOURNAL_FORM_CODES)
         .prefetch_related("revisions")
         .order_by("name")
     )
-    for document_type in document_types:
-        published = [
-            revision
-            for revision in document_type.revisions.all()
-            if revision.status == SchemaPublicationStatus.PUBLISHED
-        ]
-        document_type.current_published_revision = max(
-            published,
-            key=lambda revision: revision.revision_number,
-            default=None,
-        )
+    for document_type in technical_types:
+        document_type.current_published_revision = current_published_revision(document_type)
     return render(
         request,
         "operational_documents/type_registry.html",
         {
-            "document_types": document_types,
+            "catalog_rows": _catalog_rows(employee.organization),
+            "technical_types": technical_types,
             "can_administer": can_administer_operational_document_types(request.user),
         },
     )
@@ -185,55 +225,13 @@ def type_registry(request: HttpRequest) -> HttpResponse:
 @login_required
 @require_http_methods(["GET", "POST"])
 def type_create(request: HttpRequest) -> HttpResponse:
-    employee = require_operational_document_type_administrator(request.user)
-    form = OperationalDocumentTypeForm(request.POST or None)
-    formset = OperationalFieldDefinitionFormSet(
-        request.POST or None,
-        prefix="fields",
-        initial=(
-            [
-                {
-                    "label": "Описание",
-                    "code": "DESCRIPTION",
-                    "field_type": "LONG_TEXT",
-                    "required": True,
-                    "show_in_list": True,
-                    "searchable": True,
-                }
-            ]
-            if request.method == "GET"
-            else None
-        ),
-    )
-    if request.method == "POST" and form.is_valid() and formset.is_valid():
-        try:
-            document_type = create_and_publish_type(
-                actor=employee,
-                code=form.cleaned_data["code"],
-                name=form.cleaned_data["name"],
-                short_name=form.cleaned_data["short_name"],
-                description=form.cleaned_data["description"],
-                number_prefix=form.cleaned_data["number_prefix"],
-                number_width=form.cleaned_data["number_width"],
-                requires_workplace=form.cleaned_data["requires_workplace"],
-                field_definitions=field_definitions_from_formset(formset),
-            )
-        except ValidationError as error:
-            form.add_error(None, _validation_message(error))
-        else:
-            messages.success(
-                request,
-                "Тип оперативного документа и его первая неизменяемая редакция опубликованы.",
-            )
-            return redirect("operational_documents:type_detail", public_id=document_type.public_id)
-    return render(
+    require_operational_document_employee(request.user)
+    messages.error(
         request,
-        "operational_documents/type_form.html",
-        {
-            "form": form,
-            "formset": formset,
-        },
+        "Ручное создание форм отключено. Состав граф, ролей и действий устанавливается "
+        "только из утверждённых инструкций автономным патчем.",
     )
+    return redirect("operational_documents:type_registry")
 
 
 @login_required
@@ -248,6 +246,14 @@ def type_detail(request: HttpRequest, public_id) -> HttpResponse:
         "-revision_number"
     )
     current_revision = current_published_revision(document_type)
+    type_labels = dict(FieldType.choices)
+    field_rows = []
+    if current_revision is not None:
+        field_rows = [
+            {**definition, "type_label": type_labels.get(definition["type"], definition["type"])}
+            for definition in current_revision.field_definitions
+        ]
+    source_form = approved_journal_form(document_type.code)
     return render(
         request,
         "operational_documents/type_detail.html",
@@ -255,6 +261,10 @@ def type_detail(request: HttpRequest, public_id) -> HttpResponse:
             "document_type": document_type,
             "revisions": revisions,
             "current_revision": current_revision,
+            "field_rows": field_rows,
+            "source_form": source_form,
+            "is_source_bound": source_form is not None,
+            "can_create_record": source_form is not None and current_revision is not None,
             "can_administer": can_administer_operational_document_types(request.user),
         },
     )
@@ -273,7 +283,7 @@ def record_choose_type(request: HttpRequest) -> HttpResponse:
     return render(
         request,
         "operational_documents/choose_type.html",
-        {"form": form},
+        {"form": form, "has_forms": form.fields["document_type"].queryset.exists()},
     )
 
 
@@ -287,6 +297,11 @@ def record_create(request: HttpRequest, type_public_id) -> HttpResponse:
         organization=employee.organization,
         is_active=True,
     )
+    if not is_approved_journal_form_code(document_type.code):
+        raise PermissionDenied(
+            "Запись нельзя создать по технической тестовой схеме. "
+            "Выберите установленную форму утверждённого журнала."
+        )
     try:
         revision = _revision_for_type(document_type)
     except ValidationError as error:
@@ -319,10 +334,7 @@ def record_create(request: HttpRequest, type_public_id) -> HttpResponse:
         except ValidationError as error:
             form.add_error(None, _validation_message(error))
         else:
-            messages.success(
-                request,
-                f"Оперативная запись {record.registration_number} создана.",
-            )
+            messages.success(request, f"Запись {record.registration_number} создана.")
             return redirect("operational_documents:record_detail", public_id=record.public_id)
     return render(
         request,
@@ -331,7 +343,8 @@ def record_create(request: HttpRequest, type_public_id) -> HttpResponse:
             "form": form,
             "document_type": document_type,
             "revision": revision,
-            "page_title": "Новая оперативная запись",
+            "source_form": approved_journal_form(document_type.code),
+            "page_title": "Новая запись",
             "submit_label": "Создать запись",
         },
     )
@@ -341,15 +354,19 @@ def record_create(request: HttpRequest, type_public_id) -> HttpResponse:
 def record_detail(request: HttpRequest, public_id) -> HttpResponse:
     employee = require_operational_document_employee(request.user)
     record = _record_for_employee(public_id, employee)
+    source_form = approved_journal_form(record.document_type.code)
     revisions = record.revisions.select_related("actor").order_by("-revision_number")
     audit_events = record.audit_events.select_related("actor").order_by("-occurred_at", "-pk")
     outgoing_relations = record.outgoing_relations.select_related("target_record", "created_by")
     incoming_relations = record.incoming_relations.select_related("source_record", "created_by")
+    transitions = available_transitions(record) if source_form is not None else []
     return render(
         request,
         "operational_documents/record_detail.html",
         {
             "record": record,
+            "source_form": source_form,
+            "is_source_bound": source_form is not None,
             "field_rows": field_display_rows(record),
             "participants": record.participants.select_related("employee").all(),
             "equipment_links": record.equipment_links.select_related("equipment").all(),
@@ -358,7 +375,7 @@ def record_detail(request: HttpRequest, public_id) -> HttpResponse:
             "incoming_relations": incoming_relations,
             "revisions": revisions,
             "audit_events": audit_events,
-            "transitions": available_transitions(record),
+            "transitions": transitions,
             "transition_form": OperationalDocumentTransitionForm(),
         },
     )
@@ -369,6 +386,7 @@ def record_detail(request: HttpRequest, public_id) -> HttpResponse:
 def record_edit(request: HttpRequest, public_id) -> HttpResponse:
     employee = require_operational_document_employee(request.user)
     record = _record_for_employee(public_id, employee)
+    _require_source_bound_record(record)
     if record.status_is_terminal:
         messages.error(request, "Запись в конечном состоянии нельзя редактировать.")
         return redirect("operational_documents:record_detail", public_id=record.public_id)
@@ -407,6 +425,7 @@ def record_edit(request: HttpRequest, public_id) -> HttpResponse:
             "record": record,
             "document_type": record.document_type,
             "revision": record.schema_revision,
+            "source_form": approved_journal_form(record.document_type.code),
             "page_title": f"Изменение {record.registration_number}",
             "submit_label": "Сохранить новую редакцию",
         },
@@ -418,6 +437,7 @@ def record_edit(request: HttpRequest, public_id) -> HttpResponse:
 def record_transition(request: HttpRequest, public_id) -> HttpResponse:
     employee = require_operational_document_employee(request.user)
     record = _record_for_employee(public_id, employee)
+    _require_source_bound_record(record)
     form = OperationalDocumentTransitionForm(request.POST)
     if form.is_valid():
         try:
@@ -432,5 +452,5 @@ def record_transition(request: HttpRequest, public_id) -> HttpResponse:
         else:
             messages.success(request, f"Состояние изменено: {updated.status_name_snapshot}.")
     else:
-        messages.error(request, "Переход состояния не выполнен.")
+        messages.error(request, "Переход состояния не выполнен. Проверьте обязательные поля.")
     return redirect("operational_documents:record_detail", public_id=record.public_id)

@@ -10,9 +10,9 @@ class SystemSmokeTests(TestCase):
         self.assertContains(response, "Электронная оперативная документация")
         self.assertContains(
             response,
-            "Единое ядро оперативной документации готово к наполнению",
+            "Ядро структурированных журналов готово к установке утверждённых форм",
         )
-        self.assertContains(response, "Оперативные документы")
+        self.assertContains(response, "Утверждённые формы журналов")
         self.assertContains(response, "Управление и ведение")
         self.assertNotContains(response, "Локальный профиль разработки")
 

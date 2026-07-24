@@ -1,40 +1,72 @@
 {% extends "base.html" %}
 
-{% block title %}Типы оперативных документов · ЭОД{% endblock %}
+{% block title %}Формы структурированных журналов · ЭОД{% endblock %}
 
 {% block content %}
 <section class="page-heading">
     <div>
-        <div class="section-kicker">Публикуемая конфигурация</div>
-        <h1>Типы оперативных документов</h1>
-        <p>Опубликованные структуры неизменяемы; записи сохраняют редакцию, по которой были созданы.</p>
+        <div class="section-kicker">Источник → форма → запись</div>
+        <h1>Формы структурированных журналов</h1>
+        <p>Система устанавливает формы только по утверждённым инструкциям. Ручное создание произвольных журналов отключено.</p>
     </div>
     <div class="document-actions">
-        <a class="button secondary" href="{% url 'operational_documents:registry' %}">К общему реестру</a>
-        {% if can_administer %}<a class="button" href="{% url 'operational_documents:type_create' %}">Создать тип</a>{% endif %}
+        <a class="button secondary" href="{% url 'operational_documents:registry' %}">К журналам</a>
     </div>
 </section>
 
-{% if document_types %}
-<section class="grid module-grid opdoc-type-grid">
-    {% for item in document_types %}
-    <article class="card active">
-        <div class="number">{{ item.code }}</div>
-        <h2><a href="{% url 'operational_documents:type_detail' item.public_id %}">{{ item.name }}</a></h2>
-        <p>{{ item.description|default:"Описание не задано"|truncatechars:180 }}</p>
-        {% if item.current_published_revision %}
-            <span class="badge">Редакция {{ item.current_published_revision.revision_number }}</span>
-            <span class="badge">{{ item.current_published_revision.field_definitions|length }} полей</span>
-        {% else %}
-            <span class="status-chip status-draft">Нет опубликованной редакции</span>
+<section class="source-boundary-notice">
+    <strong>Базовый источник</strong>
+    <p>И-00-007-ОР-2025 версия 2. Поля, порядок граф и специальные действия будут устанавливаться отдельным source-bound патчем без ручного конструирования оператором.</p>
+</section>
+
+<section class="approved-form-catalog">
+    {% for row in catalog_rows %}
+    <article class="approved-form-card{% if row.installed %} installed{% endif %}">
+        <div class="approved-form-card-head">
+            <div>
+                <span class="section-kicker">Раздел {{ row.form.source_section }} · Приложение № {{ row.form.source_appendix }}</span>
+                <h2>{{ row.form.name }}</h2>
+            </div>
+            {% if row.installed %}
+                <span class="status-chip status-registered">Установлена</span>
+            {% else %}
+                <span class="status-chip status-draft">Ожидает установки</span>
+            {% endif %}
+        </div>
+        <p>{{ row.form.purpose }}</p>
+        <dl>
+            <dt>Источник</dt><dd>{{ row.form.source_document }}</dd>
+            <dt>Форма</dt><dd>Приложение № {{ row.form.source_appendix }}</dd>
+        </dl>
+        {% if row.installed %}
+            <a class="button secondary" href="{% url 'operational_documents:type_detail' row.document_type.public_id %}">Открыть форму</a>
         {% endif %}
     </article>
     {% endfor %}
 </section>
-{% else %}
-<section class="empty-state warning">
-    <h2>Типы пока не настроены</h2>
-    <p>Создайте первый тип, чтобы открыть общий механизм структурированных журналов.</p>
+
+<section class="source-boundary-notice neutral">
+    <strong>Формы из других источников</strong>
+    <p>Журнал выдачи и возврата ключей и журнал учёта работ по нарядам и распоряжениям будут добавлены только после отдельной привязки к их утверждённым формам. Состав граф по памяти не создаётся.</p>
 </section>
+
+{% if can_administer and ui_preferences.show_technical_details %}
+<details class="technical-panel technical-only">
+    <summary>Технические схемы ядра</summary>
+    <p>Эти схемы использовались для проверки механизма. Они не считаются установленными формами журналов.</p>
+    {% if technical_types %}
+    <div class="grid module-grid opdoc-type-grid">
+        {% for item in technical_types %}
+        <article class="card active">
+            <div class="number">{{ item.code }}</div>
+            <h2><a href="{% url 'operational_documents:type_detail' item.public_id %}">{{ item.name }}</a></h2>
+            {% if item.current_published_revision %}<span class="badge">Редакция {{ item.current_published_revision.revision_number }}</span>{% endif %}
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">Технических схем нет.</p>
+    {% endif %}
+</details>
 {% endif %}
 {% endblock %}

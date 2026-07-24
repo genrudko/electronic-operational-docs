@@ -1,59 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Новый тип оперативного документа · ЭОД{% endblock %}
+{% block title %}Ручное создание формы отключено · ЭОД{% endblock %}
 
 {% block content %}
 <section class="page-heading">
     <div>
-        <div class="section-kicker">Новая неизменяемая конфигурация</div>
-        <h1>Создание типа документа</h1>
-        <p>После сохранения первая редакция будет опубликована. Для изменений потребуется новая редакция.</p>
+        <div class="section-kicker">Source-bound конфигурация</div>
+        <h1>Ручное создание формы отключено</h1>
+        <p>Формы журналов устанавливаются только по утверждённым инструкциям и приложениям.</p>
     </div>
 </section>
-
-<section class="directory-card document-form-card">
-    <form method="post" class="document-form">
-        {% csrf_token %}
-        {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
-        <div class="opdoc-form-grid">
-            {% for field in form %}
-            <div class="form-row{% if field.name == 'description' %} span-2{% endif %}">
-                {{ field.label_tag }}
-                {{ field }}
-                {% if field.help_text %}<small class="muted">{{ field.help_text }}</small>{% endif %}
-                {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
-            </div>
-            {% endfor %}
-        </div>
-
-        <div class="opdoc-section-heading">
-            <h2>Предметные поля</h2>
-            <p>Статусы «Открыта → В работе → Закрыта» и роли «Ответственный / Исполнитель» создаются автоматически.</p>
-        </div>
-        {{ formset.management_form }}
-        {% if formset.non_form_errors %}<div class="form-errors">{{ formset.non_form_errors }}</div>{% endif %}
-        <div class="opdoc-fieldset-list">
-            {% for field_form in formset %}
-            <article class="opdoc-fieldset">
-                <strong>Поле {{ forloop.counter }}</strong>
-                {% if field_form.non_field_errors %}<div class="form-errors">{{ field_form.non_field_errors }}</div>{% endif %}
-                <div class="opdoc-form-grid">
-                    {% for field in field_form.visible_fields %}
-                    <div class="form-row{% if field.name == 'help_text' or field.name == 'choice_options' %} span-2{% endif %}">
-                        {{ field.label_tag }}
-                        {{ field }}
-                        {% if field.help_text %}<small class="muted">{{ field.help_text }}</small>{% endif %}
-                        {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
-                    </div>
-                    {% endfor %}
-                </div>
-            </article>
-            {% endfor %}
-        </div>
-        <div class="form-actions">
-            <button class="button" type="submit">Опубликовать первую редакцию</button>
-            <a class="button secondary" href="{% url 'operational_documents:type_registry' %}">Отмена</a>
-        </div>
-    </form>
+<section class="empty-state warning">
+    <h2>Оперативный персонал не настраивает состав граф</h2>
+    <p>Для новой формы требуется отдельный автономный патч с явной привязкой к источнику и тестами соответствия.</p>
+    <a class="button" href="{% url 'operational_documents:type_registry' %}">Открыть каталог форм</a>
 </section>
 {% endblock %}

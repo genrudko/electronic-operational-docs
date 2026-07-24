@@ -1,16 +1,17 @@
 {% extends "base.html" %}
 
-{% block title %}Выбор типа документа · ЭОД{% endblock %}
+{% block title %}Выбор журнала · ЭОД{% endblock %}
 
 {% block content %}
 <section class="page-heading">
     <div>
         <div class="section-kicker">Новая запись</div>
-        <h1>Выберите тип оперативного документа</h1>
-        <p>Форма и жизненный цикл будут построены по действующей опубликованной редакции.</p>
+        <h1>Выберите журнал</h1>
+        <p>В списке отображаются только формы, установленные по утверждённым источникам.</p>
     </div>
 </section>
-<section class="directory-card document-form-card">
+{% if has_forms %}
+<section class="directory-card document-form-card narrow-form-card">
     <form method="post" class="document-form">
         {% csrf_token %}
         {{ form.as_p }}
@@ -20,4 +21,11 @@
         </div>
     </form>
 </section>
+{% else %}
+<section class="empty-state warning">
+    <h2>Утверждённые формы ещё не установлены</h2>
+    <p>Ручное создание произвольной формы отключено. Откройте каталог, чтобы увидеть подтверждённые источники.</p>
+    <a class="button" href="{% url 'operational_documents:type_registry' %}">Открыть формы журналов</a>
+</section>
+{% endif %}
 {% endblock %}

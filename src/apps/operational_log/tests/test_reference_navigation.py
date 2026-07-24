@@ -6,7 +6,7 @@ from django.test import SimpleTestCase
 
 ROOT = Path(__file__).resolve().parents[3]
 REVISION = "011364"
-SYSTEM_CSS_REVISION = "011700"
+SYSTEM_CSS_REVISION = "011702"
 
 
 class ReferenceNavigationRuntimeContractTests(SimpleTestCase):

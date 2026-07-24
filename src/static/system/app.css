@@ -9262,3 +9262,190 @@ html[data-theme="light"] .opdoc-transition-card {
         flex-direction: column;
     }
 }
+
+/* Patch 011.7 Repair 2 — source-bound journal UX */
+.source-boundary-notice {
+    display: grid;
+    gap: 5px;
+    margin: 0 0 18px;
+    padding: 14px 16px;
+    border: 1px solid color-mix(in srgb, var(--accent) 36%, var(--border));
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--accent) 8%, var(--panel));
+}
+.source-boundary-notice p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.5;
+}
+.source-boundary-notice.compact {
+    padding: 11px 14px;
+}
+.source-boundary-notice.warning {
+    border-color: color-mix(in srgb, var(--warning) 48%, var(--border));
+    background: color-mix(in srgb, var(--warning) 9%, var(--panel));
+}
+.source-boundary-notice.neutral {
+    border-color: var(--border);
+    background: var(--panel);
+}
+.button.disabled {
+    cursor: not-allowed;
+    opacity: .58;
+    pointer-events: none;
+}
+.approved-form-catalog {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+.approved-form-card {
+    display: grid;
+    align-content: start;
+    gap: 12px;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--panel);
+    box-shadow: var(--shadow);
+}
+.approved-form-card.installed {
+    border-color: color-mix(in srgb, var(--success) 42%, var(--border));
+}
+.approved-form-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+.approved-form-card h2,
+.approved-form-card p,
+.approved-form-card dl {
+    margin: 0;
+}
+.approved-form-card h2 {
+    margin-top: 4px;
+    font-size: 19px;
+}
+.approved-form-card p {
+    color: var(--muted);
+    line-height: 1.5;
+}
+.approved-form-card dl {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 6px 10px;
+    font-size: 13px;
+}
+.approved-form-card dt {
+    color: var(--muted);
+}
+.approved-form-card .button {
+    justify-self: start;
+}
+.technical-record-row td {
+    background: color-mix(in srgb, var(--warning) 5%, var(--panel));
+}
+.status-warning {
+    margin-top: 5px;
+    border-color: color-mix(in srgb, var(--warning) 58%, var(--border));
+}
+.narrow-form-card {
+    max-width: 720px;
+}
+.opdoc-record-editor {
+    padding: 0;
+    overflow: hidden;
+}
+.opdoc-record-editor .document-form {
+    display: grid;
+    gap: 0;
+}
+.opdoc-editor-section {
+    padding: 22px;
+    border-bottom: 1px solid var(--border);
+}
+.opdoc-editor-section > header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 16px;
+}
+.opdoc-editor-section h2,
+.opdoc-editor-section p {
+    margin: 0;
+}
+.opdoc-editor-section > header p,
+.opdoc-optional-section > p {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+.opdoc-optional-section {
+    border: 0;
+    border-bottom: 1px solid var(--border);
+}
+.opdoc-optional-section > summary {
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 800;
+}
+.opdoc-optional-section > p {
+    margin: 8px 0 16px;
+}
+.opdoc-multi-picker {
+    display: grid;
+    gap: 8px;
+}
+.opdoc-multi-picker-search {
+    width: 100%;
+}
+.opdoc-multi-picker select[multiple] {
+    min-height: 10rem;
+}
+.opdoc-selected-values {
+    min-height: 34px;
+    padding: 8px 10px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.45;
+}
+.sticky-form-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    margin: 0;
+    padding: 14px 22px;
+    border-top: 1px solid var(--border);
+    background: color-mix(in srgb, var(--panel) 94%, transparent);
+    backdrop-filter: blur(8px);
+}
+.required-mark {
+    color: var(--danger);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+.transition-comment-hint {
+    color: var(--muted);
+    font-size: 11px;
+}
+.hash-value {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+@media (max-width: 900px) {
+    .approved-form-catalog {
+        grid-template-columns: 1fr;
+    }
+    .approved-form-card-head,
+    .opdoc-editor-section > header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}

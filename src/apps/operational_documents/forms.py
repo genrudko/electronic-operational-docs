@@ -9,6 +9,7 @@ from apps.documents.models import Document
 from apps.equipment.models import EquipmentAsset
 from apps.organizations.models import Employee, Workplace
 
+from .journal_forms import APPROVED_JOURNAL_FORM_CODES
 from .models import (
     FieldType,
     OperationalDocumentRecord,
@@ -59,11 +60,12 @@ class OperationalDocumentTypeForm(forms.Form):
 
 
 class OperationalFieldDefinitionForm(forms.Form):
-    label = forms.CharField(label="Наименование поля", max_length=255)
+    label = forms.CharField(label="Наименование поля", max_length=255, required=False)
     code = forms.CharField(
         label="Код поля",
         max_length=64,
-        help_text="Например: DESCRIPTION или DEADLINE.",
+        help_text="Технический идентификатор поля.",
+        required=False,
     )
     field_type = forms.ChoiceField(label="Тип значения", choices=FieldType.choices)
     required = forms.BooleanField(label="Обязательное", required=False)
@@ -78,15 +80,31 @@ class OperationalFieldDefinitionForm(forms.Form):
     help_text = forms.CharField(label="Подсказка", max_length=500, required=False)
 
     def clean_code(self) -> str:
-        value = self.cleaned_data["code"].strip().upper()
-        if not value:
-            raise forms.ValidationError("Код поля обязателен.")
-        return value
+        return str(self.cleaned_data.get("code") or "").strip().upper()
 
     def clean(self) -> dict[str, Any]:
         cleaned = super().clean()
-        field_type = cleaned.get("field_type")
+        label = str(cleaned.get("label") or "").strip()
+        code = str(cleaned.get("code") or "").strip().upper()
         options = str(cleaned.get("choice_options") or "").strip()
+        help_text = str(cleaned.get("help_text") or "").strip()
+        meaningful = bool(
+            label
+            or code
+            or options
+            or help_text
+            or cleaned.get("required")
+            or cleaned.get("show_in_list")
+            or cleaned.get("searchable")
+        )
+        cleaned["_empty_definition"] = not meaningful
+        if not meaningful:
+            return cleaned
+        if not label:
+            self.add_error("label", "Укажите наименование поля.")
+        if not code:
+            self.add_error("code", "Укажите код поля.")
+        field_type = cleaned.get("field_type")
         if field_type == FieldType.CHOICE and not options:
             self.add_error("choice_options", "Укажите хотя бы один вариант.")
         if field_type != FieldType.CHOICE and options:
@@ -105,7 +123,7 @@ class OperationalFieldDefinitionBaseFormSet(BaseFormSet):
         for form in self.forms:
             if not hasattr(form, "cleaned_data") or not form.cleaned_data:
                 continue
-            if form.cleaned_data.get("DELETE"):
+            if form.cleaned_data.get("DELETE") or form.cleaned_data.get("_empty_definition"):
                 continue
             active_count += 1
             code = form.cleaned_data["code"]
@@ -122,7 +140,7 @@ class OperationalFieldDefinitionBaseFormSet(BaseFormSet):
 OperationalFieldDefinitionFormSet = formset_factory(
     OperationalFieldDefinitionForm,
     formset=OperationalFieldDefinitionBaseFormSet,
-    extra=4,
+    extra=1,
     min_num=1,
     max_num=12,
     validate_min=True,
@@ -134,7 +152,11 @@ OperationalFieldDefinitionFormSet = formset_factory(
 def field_definitions_from_formset(formset: BaseFormSet) -> list[dict[str, Any]]:
     definitions: list[dict[str, Any]] = []
     for form in formset.forms:
-        if not form.cleaned_data or form.cleaned_data.get("DELETE"):
+        if (
+            not form.cleaned_data
+            or form.cleaned_data.get("DELETE")
+            or form.cleaned_data.get("_empty_definition")
+        ):
             continue
         options = [
             item.strip()
@@ -170,6 +192,7 @@ class OperationalDocumentTypeChoiceForm(forms.Form):
                 organization=employee.organization,
                 is_active=True,
                 revisions__status=SchemaPublicationStatus.PUBLISHED,
+                code__in=APPROVED_JOURNAL_FORM_CODES,
             )
             .distinct()
             .order_by("name")
@@ -205,19 +228,19 @@ class OperationalDocumentRecordForm(forms.Form):
         label="Оборудование",
         queryset=EquipmentAsset.objects.none(),
         required=False,
-        widget=forms.SelectMultiple(attrs={"size": 8}),
+        widget=forms.SelectMultiple(attrs={"size": 8, "class": "opdoc-multi-select"}),
     )
     related_documents = forms.ModelMultipleChoiceField(
         label="Документы-основания",
         queryset=Document.objects.none(),
         required=False,
-        widget=forms.SelectMultiple(attrs={"size": 6}),
+        widget=forms.SelectMultiple(attrs={"size": 6, "class": "opdoc-multi-select"}),
     )
     related_records = forms.ModelMultipleChoiceField(
         label="Связанные оперативные записи",
         queryset=OperationalDocumentRecord.objects.none(),
         required=False,
-        widget=forms.SelectMultiple(attrs={"size": 6}),
+        widget=forms.SelectMultiple(attrs={"size": 6, "class": "opdoc-multi-select"}),
     )
     change_comment = forms.CharField(
         label="Комментарий к изменению",
@@ -335,7 +358,7 @@ class OperationalDocumentRecordForm(forms.Form):
                     label=str(role["name"]),
                     queryset=queryset,
                     required=bool(role.get("required")),
-                    widget=forms.SelectMultiple(attrs={"size": 6}),
+                    widget=forms.SelectMultiple(attrs={"size": 6, "class": "opdoc-multi-select"}),
                 )
             else:
                 field = forms.ModelChoiceField(
@@ -394,6 +417,31 @@ class OperationalDocumentRecordForm(forms.Form):
             else:
                 result[code] = [value] if value is not None else []
         return result
+
+    def bound_fields(self, names: tuple[str, ...] | list[str]):
+        return [self[name] for name in names if name in self.fields]
+
+    @property
+    def main_fields(self):
+        return self.bound_fields(("title", "event_at", "workplace", "summary"))
+
+    @property
+    def subject_fields(self):
+        return self.bound_fields(list(self.dynamic_field_names.values()))
+
+    @property
+    def participant_fields(self):
+        return self.bound_fields(list(self.participant_field_names.values()))
+
+    @property
+    def relation_fields(self):
+        return self.bound_fields(
+            ("equipment_assets", "related_documents", "related_records")
+        )
+
+    @property
+    def change_fields(self):
+        return self.bound_fields(("change_comment",))
 
 
 class OperationalDocumentTransitionForm(forms.Form):

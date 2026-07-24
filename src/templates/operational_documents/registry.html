@@ -1,35 +1,51 @@
 {% extends "base.html" %}
 
-{% block title %}Оперативные документы · ЭОД{% endblock %}
+{% block title %}Структурированные журналы · ЭОД{% endblock %}
 
 {% block content %}
 <section class="page-heading">
     <div>
-        <div class="section-kicker">Единое структурированное ядро</div>
-        <h1>Оперативные документы</h1>
-        <p>Записи разных журналов в общем реестре со статусами, связями и историей редакций.</p>
+        <div class="section-kicker">Формы по утверждённым источникам</div>
+        <h1>Структурированные журналы</h1>
+        <p>Состав граф и правила записи устанавливаются инструкциями. Оперативный персонал не конструирует формы журналов.</p>
     </div>
     <div class="document-actions">
-        <a class="button secondary" href="{% url 'operational_documents:type_registry' %}">Типы документов</a>
-        <a class="button" href="{% url 'operational_documents:record_choose_type' %}">Новая запись</a>
+        <a class="button secondary" href="{% url 'operational_documents:type_registry' %}">Формы журналов</a>
+        {% if can_create_record %}
+            <a class="button" href="{% url 'operational_documents:record_choose_type' %}">Новая запись</a>
+        {% else %}
+            <span class="button disabled" aria-disabled="true">Нет установленных форм</span>
+        {% endif %}
     </div>
 </section>
+
+<section class="source-boundary-notice">
+    <strong>Источник формы обязателен</strong>
+    <p>Новая запись доступна только после установки формы, привязанной к конкретному разделу и приложению утверждённой инструкции.</p>
+</section>
+
+{% if counts.technical %}
+<section class="source-boundary-notice warning">
+    <strong>Технические данные ядра: {{ counts.technical }}</strong>
+    <p>Они сохранены для проверки механизма, но не считаются записями утверждённого журнала и недоступны для новых действий.</p>
+</section>
+{% endif %}
 
 <section class="summary-grid document-summary">
     <article class="metric"><span>Всего записей</span><strong>{{ counts.total }}</strong></article>
     <article class="metric"><span>В работе</span><strong>{{ counts.active }}</strong></article>
     <article class="metric"><span>Завершено</span><strong>{{ counts.closed }}</strong></article>
-    <article class="metric"><span>Типов документов</span><strong>{{ counts.types }}</strong></article>
+    <article class="metric"><span>Установленных форм</span><strong>{{ counts.types }}</strong></article>
 </section>
 
 <section class="directory-card opdoc-filter-card">
     <form method="get" class="opdoc-filter-grid">
         <label>Поиск
-            <input type="search" name="q" value="{{ filters.q }}" placeholder="Номер, заголовок, содержание, участник">
+            <input type="search" name="q" value="{{ filters.q }}" placeholder="Номер, содержание, участник">
         </label>
-        <label>Тип
+        <label>Журнал
             <select name="type">
-                <option value="">Все типы</option>
+                <option value="">Все журналы и технические записи</option>
                 {% for item in document_types %}
                     <option value="{{ item.public_id }}" {% if filters.type == item.public_id|stringformat:'s' %}selected{% endif %}>{{ item.name }}</option>
                 {% endfor %}
@@ -74,21 +90,22 @@
         <table>
             <thead>
                 <tr>
-                    <th>Время</th>
-                    <th>Номер и тип</th>
-                    <th>Заголовок</th>
-                    <th>Предметные данные</th>
+                    <th>Дата и время</th>
+                    <th>Номер и журнал</th>
+                    <th>Содержание</th>
+                    <th>Данные формы</th>
                     <th>Рабочее место</th>
                     <th>Состояние</th>
                 </tr>
             </thead>
             <tbody>
                 {% for record in records %}
-                <tr>
+                <tr{% if not record.is_source_bound %} class="technical-record-row"{% endif %}>
                     <td>{{ record.event_at|date:"d.m.Y H:i" }}</td>
                     <td>
                         <a href="{% url 'operational_documents:record_detail' record.public_id %}"><strong>{{ record.registration_number }}</strong></a><br>
                         <span class="muted">{{ record.document_type.short_name|default:record.document_type.name }}</span>
+                        {% if not record.is_source_bound %}<span class="status-chip status-warning">Техническая запись</span>{% endif %}
                     </td>
                     <td>
                         <strong>{{ record.title }}</strong>
@@ -97,7 +114,7 @@
                     <td>
                         {% for value in record.visible_values %}
                             <div><span class="muted">{{ value.label }}:</span> {{ value.display|truncatechars:100 }}</div>
-                        {% empty %}<span class="muted">Нет полей для общего реестра</span>{% endfor %}
+                        {% empty %}<span class="muted">Нет отображаемых граф</span>{% endfor %}
                     </td>
                     <td>{{ record.workplace_name_snapshot|default:"—" }}</td>
                     <td><span class="status-chip {% if record.status_is_terminal %}status-registered{% else %}status-draft{% endif %}">{{ record.status_name_snapshot }}</span></td>
@@ -110,7 +127,7 @@
 {% else %}
 <section class="empty-state">
     <h2>Записей не найдено</h2>
-    <p>Измените фильтры или создайте первую запись опубликованного типа.</p>
+    <p>Измените фильтры или дождитесь установки утверждённой формы журнала.</p>
 </section>
 {% endif %}
 {% endblock %}
