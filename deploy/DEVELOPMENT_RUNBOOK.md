@@ -1,64 +1,63 @@
-# EOD isolated VPS development — runbook
+# EOD isolated VPS development — technical runbook
 
-## Purpose
+This file documents the infrastructure created by INFRA-003. The canonical operator-facing workflow is maintained in:
 
-This contour moves Python, Django, PostgreSQL, tests, and visual verification to the VPS while keeping the accepted preview untouched.
+- `docs/runbooks/DEVELOPMENT_RUNBOOK.md`;
+- `docs/runbooks/BRANCH_SWITCHING.md`;
+- `docs/runbooks/PRESENTATION_DATA_RESET.md`;
+- `docs/runbooks/SSH_TUNNEL_ACCESS.md`.
 
-The primary development workflow is GitHub-first:
-
-1. changes are committed to the active working branch in GitHub;
-2. the VPS development checkout receives them with `git pull --ff-only`;
-3. the isolated development stack is refreshed, checked, and tested;
-4. the user verifies the result through an SSH tunnel in any browser.
-
-Downloading, uploading, and executing patch files is not part of the normal workflow. It remains only an emergency fallback for changes that cannot be committed directly to GitHub.
+## Contour contract
 
 | Role | Checkout | Compose project | Branch | Host port | Database |
 |---|---|---|---|---:|---|
 | Accepted preview | `/srv/eod/repository` | `eod-preview` | `main` only | `127.0.0.1:8765` | `eod_preview` |
 | Active development | `/srv/eod/development` | `eod-development` | never `main` | `127.0.0.1:8766` | `eod_development` |
 
-Both PostgreSQL services have separate containers, networks, users, databases, and named volumes. Neither PostgreSQL port is published to the host.
+Both PostgreSQL services use separate containers, networks, users, databases and named volumes. Neither PostgreSQL port is published to the host.
 
-The VPS keeps its read-only GitHub deploy key. Repository writes, commits, pull requests, and merges are performed through GitHub, not from the VPS.
+The VPS deploy key is read-only. Commits, pull requests and merges are performed through GitHub, not from the VPS.
 
 ## Safety invariants
 
-- Never edit or test code in `/srv/eod/repository`.
-- Never run the development stack from `main`.
-- Never use `/srv/eod/secrets/preview.env` with `compose.development.yaml`.
-- Never use `/srv/eod/secrets/development.env` with `compose.preview.yaml`.
-- Preview remains available on port `8765` while development uses `8766`.
-- Resetting development data must never write to the preview database.
-- The VPS deploy key remains read-only.
+- never edit or test code in `/srv/eod/repository`;
+- never run development from `main`;
+- never mix preview and development env files;
+- keep preview on `8765` and development on `8766`;
+- resetting development data must not write to preview;
+- do not publish PostgreSQL;
+- do not create commits on the VPS.
 
-The development entrypoint verifies the exact database name, user, host, port, deployment mode, profile, and SQLite override before Django starts.
+The development entrypoint verifies exact deployment mode, database name/user/host/port, profile and SQLite override before Django starts.
 
-## One-time VPS checkout
+## One-time checkout
 
-Run as `eodadmin`:
+Use the current active non-main branch supplied by the integration workflow:
 
 ```bash
+ACTIVE_BRANCH='<active-non-main-branch>'
+
 sudo install -d -m 0755 -o eodadmin -g eodadmin /srv/eod/development
 rmdir /srv/eod/development
 
 git clone \
-  --branch infra/003-isolated-vps-development \
-  --single-branch \
+  --branch "$ACTIVE_BRANCH" \
   github-eod:genrudko/electronic-operational-docs.git \
   /srv/eod/development
 
 cd /srv/eod/development
 
+git config remote.origin.fetch \
+  '+refs/heads/*:refs/remotes/origin/*'
+
+git fetch --prune origin
 git status --short --branch
 git rev-parse HEAD
 ```
 
-The preview checkout at `/srv/eod/repository` is not modified by these commands.
+Do not use `--single-branch`; the development checkout must be able to switch between future work-item branches.
 
 ## One-time development secrets
-
-Generate independent development secrets and write a root-owned environment file without printing the secret values:
 
 ```bash
 umask 077
@@ -88,68 +87,53 @@ sudo test -s /srv/eod/secrets/development.env
 sudo stat -c '%U:%G %a %n' /srv/eod/secrets/development.env
 ```
 
-Expected ownership and mode:
+Expected:
 
 ```text
 root:root 600 /srv/eod/secrets/development.env
 ```
 
-Do not print or commit this file.
+Never print or commit the secret values.
 
-## First development startup
+## First startup
 
 ```bash
 cd /srv/eod/development
 sudo bash scripts/development_stack.sh bootstrap
 ```
 
-Expected result:
+Expected characteristics:
 
 ```text
-Branch: infra/003-isolated-vps-development
-...
+active branch: non-main
 eod-development-app-1 ... healthy ... 127.0.0.1:8766->8766/tcp
 eod-development-db-1  ... healthy ... 5432/tcp
-{"status":"ok"}
+{"status": "ok"}
 Main page: HTTP 200
 ```
 
-## Seed development from accepted preview
-
-This operation:
-
-1. verifies that preview is on `main` and development is not;
-2. backs up the current development PostgreSQL database;
-3. creates a fresh dump of the accepted preview database;
-4. restores that dump only into `eod_development`;
-5. applies migrations from the active development branch;
-6. verifies the development database name and both demo accounts;
-7. restarts only the development application.
-
-Run:
+## Seed from accepted preview
 
 ```bash
 cd /srv/eod/development
 sudo bash scripts/reset_development_database.sh
 ```
 
-Preview containers and preview data remain intact.
+The script:
 
-## Primary GitHub-first development cycle
+1. verifies preview `main` and development non-main roles;
+2. backs up current development PostgreSQL;
+3. creates a fresh accepted preview dump;
+4. restores only into `eod_development`;
+5. applies active branch migrations;
+6. verifies database identity and demo accounts;
+7. restarts only the development application.
 
-### 1. Changes are committed to GitHub
+## Primary GitHub-first cycle
 
-The assistant prepares complete changes directly in the active GitHub branch. The VPS does not create commits and does not need a writable GitHub key.
+Changes are committed to the active GitHub branch by the AI developer.
 
-### 2. Pull the branch on the VPS
-
-From Termux or any SSH client:
-
-```bash
-ssh -i ~/.ssh/eod_contabo_ed25519 eodadmin@5.181.177.72
-```
-
-Then on the VPS:
+On the VPS:
 
 ```bash
 cd /srv/eod/development
@@ -157,102 +141,66 @@ cd /srv/eod/development
 git status --short --branch
 git fetch --prune origin
 git pull --ff-only
-```
 
-The working tree must be clean before `git pull --ff-only`.
-
-### 3. Refresh the development application
-
-For normal Python, template, CSS, and JavaScript changes:
-
-```bash
 sudo bash scripts/development_stack.sh refresh
-```
-
-The application source is bind-mounted into the container, so a dependency image rebuild is not required.
-
-Use `rebuild` only when the commit changes dependency declarations, the Dockerfile, or container startup files:
-
-```bash
-sudo bash scripts/development_stack.sh rebuild
-```
-
-### 4. Run checks and tests
-
-```bash
 sudo bash scripts/development_stack.sh check
 sudo bash scripts/development_stack.sh test
 sudo bash scripts/development_stack.sh status
 ```
 
-Recent logs:
+Use `rebuild` instead of `refresh` for dependencies, Dockerfile, Compose or startup changes.
+
+## Branch switching
 
 ```bash
-sudo bash scripts/development_stack.sh logs
+cd /srv/eod/development
+
+git status --short --branch
+git fetch --prune origin
+
+git switch <branch> 2>/dev/null || \
+git switch --track origin/<branch>
+
+git pull --ff-only
 ```
 
-Live logs until `Ctrl+C`:
+Do not merge, rebase or force-reset branch history on the VPS.
+
+## Browser access
 
 ```bash
-sudo bash scripts/development_stack.sh follow
-```
-
-### 5. Verify in a browser
-
-Keep this Termux command running in a separate session:
-
-```bash
-ssh -N \
+ssh -N -T \
+  -o ExitOnForwardFailure=yes \
+  -o ServerAliveInterval=30 \
+  -o ServerAliveCountMax=3 \
   -L 8766:127.0.0.1:8766 \
   -i ~/.ssh/eod_contabo_ed25519 \
   eodadmin@5.181.177.72
 ```
 
-Open in the ordinary Android browser:
+Open `http://127.0.0.1:8766`.
+
+## Stack commands
 
 ```text
-http://127.0.0.1:8766
+bootstrap  first build/start
+refresh    recreate app using current source
+rebuild    rebuild image and recreate app
+check      Django check and migration-file verification
+test       full Django test suite
+migrate    apply development migrations
+status     repository/container/HTTP status
+logs       recent logs
+follow     live logs
+shell      container shell
+django-shell Django shell
+stop       stop development without deleting volumes
 ```
 
-The accepted preview remains independently available through a separate tunnel on local port `8765`.
+## Emergency fallback
 
-## Development stack commands
-
-```bash
-cd /srv/eod/development
-sudo bash scripts/development_stack.sh help
-```
-
-Available operations:
-
-- `bootstrap` — first build and startup;
-- `refresh` — recreate the app using current source files;
-- `rebuild` — rebuild dependencies/image and recreate the app;
-- `check` — Django check plus migration-file verification;
-- `test` — full Django test suite;
-- `migrate` — apply development migrations;
-- `status` — repository, container, and HTTP status;
-- `logs` — recent logs;
-- `follow` — live logs;
-- `shell` — container shell;
-- `django-shell` — Django shell;
-- `stop` — stop development without deleting volumes.
-
-## Emergency local patch fallback
-
-This path is not used for normal work. Use it only when a complete change cannot be committed through GitHub first.
-
-A fallback patch must be applied only in `/srv/eod/development`, never in `/srv/eod/repository`. A dirty development worktree must be reviewed and reconciled before any later `git pull`; do not discard it automatically.
-
-## Stop development without affecting preview
-
-```bash
-cd /srv/eod/development
-sudo bash scripts/development_stack.sh stop
-```
-
-This preserves the development PostgreSQL volume.
+Manual patching is not part of normal work. A fallback may be applied only in `/srv/eod/development` when GitHub writes are unavailable. The exact result must then be reproduced as a normal GitHub commit before CI, acceptance or merge.
 
 ## Destructive cleanup
 
-Do not run `docker compose down --volumes` manually. Deleting the development volume is allowed only as an explicit reset operation after a verified backup. Preview volumes must never be referenced by development cleanup commands.
+Do not run `docker compose down --volumes` manually. Volume deletion requires an explicit reset plan and verified backup. Preview volumes must never be referenced by development cleanup commands.
