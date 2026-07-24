@@ -2,7 +2,16 @@
 
 ## Purpose
 
-This contour moves Python, Django, PostgreSQL, patch execution, tests, and visual verification to the VPS while keeping the accepted preview untouched.
+This contour moves Python, Django, PostgreSQL, tests, and visual verification to the VPS while keeping the accepted preview untouched.
+
+The primary development workflow is GitHub-first:
+
+1. changes are committed to the active working branch in GitHub;
+2. the VPS development checkout receives them with `git pull --ff-only`;
+3. the isolated development stack is refreshed, checked, and tested;
+4. the user verifies the result through an SSH tunnel in any browser.
+
+Downloading, uploading, and executing patch files is not part of the normal workflow. It remains only an emergency fallback for changes that cannot be committed directly to GitHub.
 
 | Role | Checkout | Compose project | Branch | Host port | Database |
 |---|---|---|---|---:|---|
@@ -11,16 +20,17 @@ This contour moves Python, Django, PostgreSQL, patch execution, tests, and visua
 
 Both PostgreSQL services have separate containers, networks, users, databases, and named volumes. Neither PostgreSQL port is published to the host.
 
-The VPS keeps its read-only GitHub deploy key. Repository writes, pull requests, and merges remain outside the VPS.
+The VPS keeps its read-only GitHub deploy key. Repository writes, commits, pull requests, and merges are performed through GitHub, not from the VPS.
 
 ## Safety invariants
 
-- Never apply a patch in `/srv/eod/repository`.
+- Never edit or test code in `/srv/eod/repository`.
 - Never run the development stack from `main`.
 - Never use `/srv/eod/secrets/preview.env` with `compose.development.yaml`.
 - Never use `/srv/eod/secrets/development.env` with `compose.preview.yaml`.
 - Preview remains available on port `8765` while development uses `8766`.
 - Resetting development data must never write to the preview database.
+- The VPS deploy key remains read-only.
 
 The development entrypoint verifies the exact database name, user, host, port, deployment mode, profile, and SQLite override before Django starts.
 
@@ -29,20 +39,16 @@ The development entrypoint verifies the exact database name, user, host, port, d
 Run as `eodadmin`:
 
 ```bash
-sudo install -d -m 0755 -o eodadmin -g eodadmin \
-  /srv/eod/development \
-  /srv/eod/patches
-
+sudo install -d -m 0755 -o eodadmin -g eodadmin /srv/eod/development
 rmdir /srv/eod/development
 
 git clone \
+  --branch infra/003-isolated-vps-development \
+  --single-branch \
   github-eod:genrudko/electronic-operational-docs.git \
   /srv/eod/development
 
 cd /srv/eod/development
-
-git fetch --prune origin
-git switch --track origin/infra/003-isolated-vps-development
 
 git status --short --branch
 git rev-parse HEAD
@@ -52,15 +58,15 @@ The preview checkout at `/srv/eod/repository` is not modified by these commands.
 
 ## One-time development secrets
 
-Generate independent development secrets and write the root-owned environment file:
+Generate independent development secrets and write a root-owned environment file without printing the secret values:
 
 ```bash
-DJANGO_SECRET="$(openssl rand -hex 48)"
-POSTGRES_SECRET="$(openssl rand -hex 32)"
+umask 077
+DEV_ENV_TMP="$(mktemp)"
+DJANGO_SECRET="$(python3 -c 'import secrets; print(secrets.token_hex(64))')"
+POSTGRES_SECRET="$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
 
-sudo install -d -m 0750 -o root -g root /srv/eod/secrets
-
-sudo tee /srv/eod/secrets/development.env >/dev/null <<EOF
+cat > "$DEV_ENV_TMP" <<EOF
 DJANGO_SECRET_KEY=${DJANGO_SECRET}
 DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
 POSTGRES_DB=eod_development
@@ -70,10 +76,22 @@ EOD_DEVELOPMENT_PORT=8766
 TIME_ZONE=Europe/Moscow
 EOF
 
-unset DJANGO_SECRET POSTGRES_SECRET
-sudo chown root:root /srv/eod/secrets/development.env
-sudo chmod 0600 /srv/eod/secrets/development.env
+sudo install -d -m 0750 -o root -g root /srv/eod/secrets
+sudo install -m 0600 -o root -g root \
+  "$DEV_ENV_TMP" \
+  /srv/eod/secrets/development.env
+
+rm -f "$DEV_ENV_TMP"
+unset DEV_ENV_TMP DJANGO_SECRET POSTGRES_SECRET
+
 sudo test -s /srv/eod/secrets/development.env
+sudo stat -c '%U:%G %a %n' /srv/eod/secrets/development.env
+```
+
+Expected ownership and mode:
+
+```text
+root:root 600 /srv/eod/secrets/development.env
 ```
 
 Do not print or commit this file.
@@ -82,7 +100,6 @@ Do not print or commit this file.
 
 ```bash
 cd /srv/eod/development
-
 sudo bash scripts/development_stack.sh bootstrap
 ```
 
@@ -93,7 +110,7 @@ Branch: infra/003-isolated-vps-development
 ...
 eod-development-app-1 ... healthy ... 127.0.0.1:8766->8766/tcp
 eod-development-db-1  ... healthy ... 5432/tcp
-{"status": "ok"}
+{"status":"ok"}
 Main page: HTTP 200
 ```
 
@@ -113,41 +130,23 @@ Run:
 
 ```bash
 cd /srv/eod/development
-
 sudo bash scripts/reset_development_database.sh
 ```
 
 Preview containers and preview data remain intact.
 
-## Routine patch workflow from Termux
+## Primary GitHub-first development cycle
 
-### Prepare Termux storage and SSH
+### 1. Changes are committed to GitHub
 
-```bash
-pkg install openssh
-termux-setup-storage
-mkdir -p ~/.ssh
-chmod 700 ~/.ssh
-chmod 600 ~/.ssh/eod_contabo_ed25519
-```
+The assistant prepares complete changes directly in the active GitHub branch. The VPS does not create commits and does not need a writable GitHub key.
 
-### Upload a downloaded patch from the phone
+### 2. Pull the branch on the VPS
 
-Assuming the patch is in the Android Downloads directory:
+From Termux or any SSH client:
 
 ```bash
-scp \
-  -i ~/.ssh/eod_contabo_ed25519 \
-  ~/storage/downloads/patch_*.py \
-  eodadmin@5.181.177.72:/srv/eod/patches/
-```
-
-### Apply it to the development checkout
-
-```bash
-ssh \
-  -i ~/.ssh/eod_contabo_ed25519 \
-  eodadmin@5.181.177.72
+ssh -i ~/.ssh/eod_contabo_ed25519 eodadmin@5.181.177.72
 ```
 
 Then on the VPS:
@@ -156,37 +155,49 @@ Then on the VPS:
 cd /srv/eod/development
 
 git status --short --branch
-python3 /srv/eod/patches/patch_NAME.py
+git fetch --prune origin
+git pull --ff-only
+```
 
-git status --short --branch
+The working tree must be clean before `git pull --ff-only`.
 
+### 3. Refresh the development application
+
+For normal Python, template, CSS, and JavaScript changes:
+
+```bash
 sudo bash scripts/development_stack.sh refresh
 ```
 
-`refresh` does not rebuild Python dependencies. Source changes are bind-mounted into the container, and the Django development server reloads them.
+The application source is bind-mounted into the container, so a dependency image rebuild is not required.
 
-Use `rebuild` only when a patch changes dependency declarations, the Dockerfile, or container startup files:
+Use `rebuild` only when the commit changes dependency declarations, the Dockerfile, or container startup files:
 
 ```bash
 sudo bash scripts/development_stack.sh rebuild
 ```
 
-### Checks and tests
+### 4. Run checks and tests
 
 ```bash
 sudo bash scripts/development_stack.sh check
 sudo bash scripts/development_stack.sh test
 sudo bash scripts/development_stack.sh status
+```
+
+Recent logs:
+
+```bash
 sudo bash scripts/development_stack.sh logs
 ```
 
-Follow live logs until `Ctrl+C`:
+Live logs until `Ctrl+C`:
 
 ```bash
 sudo bash scripts/development_stack.sh follow
 ```
 
-## Open development in the phone browser
+### 5. Verify in a browser
 
 Keep this Termux command running in a separate session:
 
@@ -227,21 +238,11 @@ Available operations:
 - `django-shell` — Django shell;
 - `stop` — stop development without deleting volumes.
 
-## Update the development checkout from GitHub
+## Emergency local patch fallback
 
-Only do this with a clean worktree:
+This path is not used for normal work. Use it only when a complete change cannot be committed through GitHub first.
 
-```bash
-cd /srv/eod/development
-
-git status --short --branch
-git fetch --prune origin
-git pull --ff-only
-
-sudo bash scripts/development_stack.sh refresh
-```
-
-A dirty worktree means a local test patch has not yet been reconciled with the GitHub branch. Do not reset or discard it without an explicit integration decision.
+A fallback patch must be applied only in `/srv/eod/development`, never in `/srv/eod/repository`. A dirty development worktree must be reviewed and reconciled before any later `git pull`; do not discard it automatically.
 
 ## Stop development without affecting preview
 
