@@ -10,7 +10,7 @@ import subprocess
 import sys
 import zipfile
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -150,29 +150,31 @@ def create_manifest(
     database_path: Path,
     fixture_path: Path,
     manifest_path: Path,
-) -> dict[str, object]:
+) -> None:
     objects = json.loads(fixture_path.read_text(encoding="utf-8"))
     if not isinstance(objects, list) or not objects:
         raise RuntimeError("Django fixture must contain a non-empty JSON list.")
 
     model_counts = Counter(item["model"] for item in objects)
     table_counts = sqlite_table_counts(database_path)
-    manifest: dict[str, object] = {
+    database_manifest = {
+        "filename": database_path.name,
+        "size_bytes": database_path.stat().st_size,
+        "sha256": sha256(database_path),
+        "integrity_check": sqlite_integrity(database_path),
+    }
+    fixture_manifest = {
+        "filename": fixture_path.name,
+        "size_bytes": fixture_path.stat().st_size,
+        "sha256": sha256(fixture_path),
+        "object_count": len(objects),
+        "model_count": len(model_counts),
+    }
+    manifest = {
         "snapshot_format": "eod.presentation.snapshot.v1",
-        "created_at_utc": datetime.now(timezone.utc).isoformat(),
-        "database": {
-            "filename": database_path.name,
-            "size_bytes": database_path.stat().st_size,
-            "sha256": sha256(database_path),
-            "integrity_check": sqlite_integrity(database_path),
-        },
-        "fixture": {
-            "filename": fixture_path.name,
-            "size_bytes": fixture_path.stat().st_size,
-            "sha256": sha256(fixture_path),
-            "object_count": len(objects),
-            "model_count": len(model_counts),
-        },
+        "created_at_utc": datetime.now(UTC).isoformat(),
+        "database": database_manifest,
+        "fixture": fixture_manifest,
         "model_counts": dict(sorted(model_counts.items())),
         "sqlite_table_counts": table_counts,
     }
@@ -184,9 +186,8 @@ def create_manifest(
     print(f"Fixture objects: {len(objects)}")
     print(f"Fixture models: {len(model_counts)}")
     print(f"SQLite tables: {len(table_counts)}")
-    print(f"Database SHA-256: {manifest['database']['sha256']}")
-    print(f"Fixture SHA-256: {manifest['fixture']['sha256']}")
-    return manifest
+    print(f"Database SHA-256: {database_manifest['sha256']}")
+    print(f"Fixture SHA-256: {fixture_manifest['sha256']}")
 
 
 def create_archive(source_dir: Path, archive_path: Path) -> None:
