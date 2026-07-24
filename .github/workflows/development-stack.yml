@@ -31,6 +31,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Validate development shell scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n scripts/development_stack.sh
+          bash -n scripts/reset_development_database.sh
+          sh -n scripts/development-entrypoint.sh
+
       - name: Validate development Compose configuration
         run: docker compose -f compose.development.yaml config --quiet
 
