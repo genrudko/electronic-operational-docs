@@ -243,7 +243,7 @@ def main() -> None:
     require(
         current_state,
         "source-bound каталог рабочих форм",
-        "PLAN-001 — Evidence-based implementation review",
+        "PLAN-001 — ревизия фактической реализации",
         "один журнал полностью",
     )
     require(decision_log, "рабочие формы только из утверждённых источников")
