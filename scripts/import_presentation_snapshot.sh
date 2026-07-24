@@ -68,7 +68,7 @@ cleanup_on_failure() {
         fi
     fi
 
-    "${COMPOSE[@]}" up --detach app >/dev/null 2>&1 || true
+    "${COMPOSE[@]}" up --detach --force-recreate app >/dev/null 2>&1 || true
     "${COMPOSE[@]}" ps || true
     exit "$exit_code"
 }
@@ -221,6 +221,7 @@ print("All model counts match the snapshot manifest.")
 print("Demo authentication: ok")
 PY
 
+chmod 0750 "$SNAPSHOT_DIR"
 chmod 0640 "$SNAPSHOT_DIR"/*
 
 echo
@@ -234,12 +235,21 @@ set +a
 : "${POSTGRES_USER:?POSTGRES_USER is missing in preview.env}"
 : "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is missing in preview.env}"
 
+PREVIEW_PORT="${EOD_PREVIEW_PORT:-8765}"
 COMPOSE=(
     docker compose
     --env-file "$ENV_FILE"
     -f compose.preview.yaml
 )
 COMPOSE_READY=1
+
+echo
+echo "===== VALIDATE COMPOSE CONFIGURATION ====="
+"${COMPOSE[@]}" config --quiet
+
+echo
+echo "===== BUILD CURRENT APPLICATION IMAGE ====="
+"${COMPOSE[@]}" build app
 
 echo
 echo "===== VERIFY RUNNING DATABASE ====="
@@ -253,10 +263,6 @@ for attempt in $(seq 1 30); do
     [[ "$attempt" -eq 30 ]] && { echo "ОШИБКА: PostgreSQL не стал healthy." >&2; exit 1; }
     sleep 2
 done
-
-echo
-echo "===== STOP APPLICATION ====="
-"${COMPOSE[@]}" stop app
 
 echo
 echo "===== BACK UP CURRENT POSTGRESQL ====="
@@ -273,34 +279,41 @@ BACKUP_READY=1
 printf 'PostgreSQL backup: %s bytes\n' "$(stat -c '%s' "$POSTGRES_BACKUP")"
 
 echo
+echo "===== STOP APPLICATION ====="
+"${COMPOSE[@]}" stop app
+
+echo
 echo "===== FLUSH PREVIEW APPLICATION DATA ====="
 "${COMPOSE[@]}" run --rm --no-deps \
-    --env EOD_SKIP_STARTUP_TASKS=1 \
-    app python manage.py flush --noinput
+    --user 0:0 \
+    --entrypoint python \
+    app manage.py flush --noinput
 
 echo
 echo "===== LOAD PRESENTATION FIXTURE ====="
 "${COMPOSE[@]}" run --rm --no-deps \
-    --env EOD_SKIP_STARTUP_TASKS=1 \
+    --user 0:0 \
+    --entrypoint python \
     --volume "$SNAPSHOT_DIR:/snapshot:ro" \
-    app python manage.py loaddata /snapshot/presentation_fixture.json
+    app manage.py loaddata /snapshot/presentation_fixture.json
 
 echo
 echo "===== VERIFY IMPORT AGAINST MANIFEST ====="
 "${COMPOSE[@]}" run --rm --no-deps \
-    --env EOD_SKIP_STARTUP_TASKS=1 \
+    --user 0:0 \
+    --entrypoint python \
     --volume "$SNAPSHOT_DIR:/snapshot:ro" \
-    app python /snapshot/verify_import.py /snapshot/manifest.json
+    app /snapshot/verify_import.py /snapshot/manifest.json
 
 echo
-echo "===== START APPLICATION ====="
-"${COMPOSE[@]}" up --detach app
+echo "===== START CURRENT APPLICATION IMAGE ====="
+"${COMPOSE[@]}" up --detach --force-recreate app
 APP_CONTAINER="$("${COMPOSE[@]}" ps -q app)"
 
 for attempt in $(seq 1 36); do
     APP_HEALTH="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$APP_CONTAINER")"
     printf 'Application attempt %02d/36: %s\n' "$attempt" "$APP_HEALTH"
-    if curl --fail --silent --show-error --max-time 5 http://127.0.0.1:8765/_health/ >/dev/null; then
+    if curl --fail --silent --show-error --max-time 5 "http://127.0.0.1:${PREVIEW_PORT}/_health/" >/dev/null; then
         break
     fi
     if [[ "$attempt" -eq 36 ]]; then
@@ -316,11 +329,11 @@ echo "===== FINAL STATUS ====="
 
 echo
 echo "===== FINAL HTTP CHECK ====="
-curl --fail --silent --show-error http://127.0.0.1:8765/_health/
+curl --fail --silent --show-error "http://127.0.0.1:${PREVIEW_PORT}/_health/"
 echo
 curl --fail --silent --show-error --output /dev/null \
     --write-out 'Main page: HTTP %{http_code}; content-type=%{content_type}; bytes=%{size_download}\n' \
-    http://127.0.0.1:8765/
+    "http://127.0.0.1:${PREVIEW_PORT}/"
 
 echo
 echo "===== PRESENTATION SNAPSHOT IMPORTED ====="
