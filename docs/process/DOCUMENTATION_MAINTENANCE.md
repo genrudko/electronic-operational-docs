@@ -24,6 +24,8 @@
 
 Не откладывать обязательное обновление состояния на неопределённый следующий patch.
 
+Merge commit SHA, которого ещё не существует в working branch, фиксируется коротким metadata-only follow-up после успешного post-merge gate. Такой follow-up не создаёт новый application baseline только из-за собственного documentation commit.
+
 ## 4. Факты и планы
 
 Документы обязаны различать:
@@ -39,14 +41,16 @@
 
 ## 5. Baseline consistency
 
-Accepted baseline SHA должен совпадать в:
+Accepted application baseline SHA должен совпадать в:
 
 - `project/CURRENT_STATE.md`;
 - `project/CURRENT_HANDOFF.md`;
 - `project/BASELINE_HISTORY.md`;
 - relevant release notes.
 
-Working branch SHA не подменяет accepted baseline.
+Working branch SHA и metadata-only documentation commit не подменяют accepted application baseline.
+
+Baseline означает post-merge verified application/runtime или явно принятый operating-system milestone. Документационная фиксация уже принятого SHA остаётся обычной частью `main` history, но не запускает рекурсивную цепочку новых baseline.
 
 ## 6. Ссылки
 
@@ -68,7 +72,7 @@ Working branch SHA не подменяет accepted baseline.
 
 `CURRENT_HANDOFF.md` должен содержать:
 
-- accepted baseline;
+- accepted application baseline;
 - active branch and task;
 - last accepted change;
 - infrastructure state;
@@ -110,4 +114,4 @@ Gate не оценивает предметную истинность текс�
 
 ## 12. Архивный слой
 
-`docs/project_state/` после миграции удаляется из active tree. Его история сохраняется Git. Новые документы не должны ссылаться на этот каталог как на текущий источник истины.
+`docs/project_state/` после миграции удалён из active tree. Его история сохраняется Git. Новые документы не должны ссылаться на этот каталог как на текущий источник истины.
