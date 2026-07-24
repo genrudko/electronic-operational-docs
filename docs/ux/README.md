@@ -32,6 +32,10 @@ implementation authorization: not granted
 - [`UX-001_v0.3/UX_IMPLEMENTATION_ROADMAP.md`](UX-001_v0.3/UX_IMPLEMENTATION_ROADMAP.md) — staged roadmap.
 - [`UX-001_v0.3/manifest.json`](UX-001_v0.3/manifest.json) — integrity manifest исходного пакета.
 
+## Целостность исходного пакета
+
+Файлы `UX-001_v0.3/*.md` сохранены без содержательной нормализации, чтобы размеры и SHA-256 продолжали совпадать с `manifest.json`. Используемые в исходнике Markdown hard-break markers являются намеренными; для этого каталога действует узкое whitespace-исключение в `.gitattributes`. На остальную документацию стандартный запрет trailing whitespace продолжает распространяться.
+
 ## Следующий visual gate
 
 1. Подготовить два компактных визуальных направления на application shell и одном показательном structured-journal screen.
