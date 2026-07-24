@@ -5,7 +5,7 @@
     "branch": "main",
     "sha": "e18872face7f27f489056b72fed31e5586121b0c"
   },
-  "metadata_note": "DOCS-002 is a separate metadata follow-up and does not replace the application baseline SHA.",
+  "metadata_note": "DOCS-002 is a separate metadata follow-up and does not replace the application baseline SHA. Markdown hard-break markers are intentionally preserved; the package path has a narrow whitespace attribute exception so repository copies remain byte-identical to this manifest.",
   "files": {
     "COMPONENT_CONTRACT.md": {
       "bytes": 8440,
