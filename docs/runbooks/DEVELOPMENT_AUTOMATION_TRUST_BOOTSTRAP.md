@@ -41,14 +41,25 @@ Its SSH key is forced to run only:
 sudo -n /usr/local/sbin/eod-development-controller ssh-gateway
 ```
 
-## 3. Bootstrap
+## 3. Bootstrap from the accepted exact main
 
-Run only after AUTO-001B has been reviewed and merged into `main`:
+Run only after AUTO-001B has been reviewed, merged into `main`, and the integration chat has recorded the exact accepted merge SHA.
+
+Replace the placeholder with that exact accepted `main` SHA:
 
 ```bash
 cd /srv/eod/repository
+
+AUTO001B_MAIN_SHA=<accepted AUTO-001B merge commit>
+git fetch --prune origin main
+git checkout main
+git reset --hard "$AUTO001B_MAIN_SHA"
+test "$(git rev-parse HEAD)" = "$AUTO001B_MAIN_SHA"
+
 sudo bash deploy/automation/bootstrap_auto001b.sh
 ```
+
+Do not run bootstrap from an old checkout, a PR branch, or an unverified `origin/main`.
 
 The bootstrap is idempotent. A repeat run updates the installed reviewed files without creating duplicate users, keys, `authorized_keys` entries or sudo rules.
 
@@ -60,7 +71,7 @@ Allow write access: OFF
 ```
 
 The private Deploy Key remains root-owned on the VPS and is never printed.
-After adding the public key, run the same bootstrap command again and confirm:
+After adding the public key, run the same exact-main bootstrap command again and confirm:
 
 ```text
 Deploy Key access test: SUCCESS
@@ -159,10 +170,50 @@ stop failed new application
 -> return ERROR
 ```
 
-The same rollback is used for `STALE SHA` before the new release is confirmed.
+The same rollback is used for `STALE SHA`.
+
+After a successful VPS deploy, the controller keeps one pending transaction until GitHub confirms that the PR SHA is still current. If the workflow fails or is cancelled before confirmation, the fallback step calls `rollback-pending`. It restores the backup and previous image, moves the pending state to a completed rollback record, and therefore does not block the next deployment.
+
 Preview is untouched.
 
-## 8. Manual rollback
+## 8. Pending transaction recovery
+
+Inspect controller state:
+
+```bash
+sudo /usr/local/sbin/eod-development-controller status
+```
+
+A pending transaction is reported with its workflow run ID:
+
+```text
+transaction=PENDING
+pending_run_id=<run id>
+```
+
+Recover the single unfinished transaction locally:
+
+```bash
+sudo /usr/local/sbin/eod-development-controller rollback-pending
+```
+
+Successful recovery returns:
+
+```text
+ROLLBACK_PENDING_SUCCESS run=<run id>
+```
+
+This command:
+
+1. finds the single pending transaction;
+2. stops the unconfirmed new application;
+3. restores the saved development database;
+4. starts the previous image and verifies health;
+5. removes the pending state by moving it to a rolled-back record.
+
+If no pending transaction exists, the command stops with a clear error and changes nothing.
+
+## 9. Manual rollback of the last confirmed release
 
 The VPS operator can roll back the last confirmed development deployment:
 
@@ -170,26 +221,6 @@ The VPS operator can roll back the last confirmed development deployment:
 sudo /usr/local/sbin/eod-development-controller rollback-last
 ```
 
-Inspect the current controller state with:
-
-```bash
-sudo /usr/local/sbin/eod-development-controller status
-```
+`rollback-last` is separate from `rollback-pending`. If a pending transaction exists, recover it first with `rollback-pending`.
 
 Manual rollback applies only to the development contour.
-
-## 9. Acceptance gate
-
-Before merging AUTO-001B, record:
-
-```text
-exact PR head
-AUTO-001A Foundation CI: success
-AUTO-001B Controller CI: success
-EOD CI: success
-EOD Development Stack: success
-EOD Documentation Contract: success
-VPS changes before merge: none
-```
-
-After merge, run bootstrap and one safe canary on a non-protected test PR. The canary must remain unmerged and must confirm `SUCCESS`, exact SHA, development-only targeting and no preview change.
