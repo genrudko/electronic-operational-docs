@@ -13,6 +13,7 @@ BOOTSTRAP = ROOT / "deploy/automation/bootstrap_auto001b.sh"
 COMPOSE = ROOT / "deploy/automation/compose.development.yaml"
 WORKFLOW = ROOT / ".github/workflows/vps-development.yml"
 POLICY = ROOT / ".github/auto001a-foundation.json"
+RUNBOOK = ROOT / "docs/runbooks/DEVELOPMENT_AUTOMATION_TRUST_BOOTSTRAP.md"
 
 
 class ControllerContractTests(unittest.TestCase):
@@ -22,6 +23,7 @@ class ControllerContractTests(unittest.TestCase):
         cls.bootstrap = BOOTSTRAP.read_text(encoding="utf-8")
         cls.compose = COMPOSE.read_text(encoding="utf-8")
         cls.workflow = WORKFLOW.read_text(encoding="utf-8")
+        cls.runbook = RUNBOOK.read_text(encoding="utf-8")
 
     def test_private_repository_uses_read_only_deploy_key(self) -> None:
         self.assertIn("github_deploy_key", self.bootstrap)
@@ -116,19 +118,74 @@ class ControllerContractTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, self.workflow)
 
-    def test_workflow_rolls_back_unconfirmed_failure(self) -> None:
+    def test_workflow_fallback_covers_failure_and_cancellation(self) -> None:
         self.assertIn(
-            "Roll back an unconfirmed deployment after workflow failure",
+            "Roll back an unconfirmed deployment after workflow failure or cancellation",
             self.workflow,
         )
         self.assertIn(
-            "failure() && steps.deploy.outputs.result_code == '0'",
+            "(failure() || cancelled()) && steps.deploy.outputs.attempted == 'true'",
             self.workflow,
         )
+        self.assertIn("printf 'attempted=true", self.workflow)
+        self.assertIn('"rollback-pending"', self.workflow)
         self.assertIn(
             "Fallback rollback was requested because the VPS deployment was not confirmed.",
             self.workflow,
         )
+
+    def test_rollback_pending_command_is_available_locally_and_through_gateway(self) -> None:
+        self.assertIn("manual_rollback_pending()", self.controller)
+        self.assertGreaterEqual(self.controller.count("rollback-pending)"), 2)
+        self.assertIn("ROLLBACK_PENDING_SUCCESS", self.controller)
+        self.assertIn(
+            "eod-development-controller {ssh-gateway|rollback-pending|rollback-last|status}",
+            self.controller,
+        )
+
+    def test_pending_state_is_removed_after_restore(self) -> None:
+        rollback = self.controller[
+            self.controller.index("rollback_transaction()") :
+            self.controller.index("deploy_release()")
+        ]
+        self.assertIn(
+            'mv "$TRANSACTION_FILE" "$EOD_STATE_DIR/rolled-back-$run_id.env"',
+            rollback,
+        )
+        self.assertNotIn('cp "$TRANSACTION_FILE"', rollback)
+
+    def test_completed_pending_rollback_does_not_block_next_deploy(self) -> None:
+        manual = self.controller[
+            self.controller.index("manual_rollback_pending()") :
+            self.controller.index("manual_rollback_last()")
+        ]
+        deploy = self.controller[
+            self.controller.index("deploy_release()") :
+            self.controller.index("confirm_release()")
+        ]
+        self.assertIn('rollback_transaction "$run_id"', manual)
+        self.assertIn('compgen -G "$EOD_STATE_DIR/pending-*.env"', deploy)
+        self.assertIn(
+            'mv "$TRANSACTION_FILE" "$EOD_STATE_DIR/rolled-back-$run_id.env"',
+            self.controller,
+        )
+
+    def test_status_reports_pending_run_id(self) -> None:
+        status = self.controller[
+            self.controller.index("show_status()") :
+            self.controller.index("ssh_gateway()")
+        ]
+        self.assertIn("pending_run_id=NONE", status)
+        self.assertIn("pending_run_id=%s", status)
+        self.assertIn("pending_run_id=MULTIPLE", status)
+        self.assertIn("pending_run_id_from_path", status)
+
+    def test_post_merge_bootstrap_requires_exact_accepted_main(self) -> None:
+        self.assertIn("AUTO001B_MAIN_SHA=", self.runbook)
+        self.assertIn('git fetch --prune origin main', self.runbook)
+        self.assertIn('git reset --hard "$AUTO001B_MAIN_SHA"', self.runbook)
+        self.assertIn('test "$(git rev-parse HEAD)" = "$AUTO001B_MAIN_SHA"', self.runbook)
+        self.assertIn("bootstrap_auto001b.sh", self.runbook)
 
     def test_policy_requires_auto001b_ci(self) -> None:
         policy = json.loads(POLICY.read_text(encoding="utf-8"))
