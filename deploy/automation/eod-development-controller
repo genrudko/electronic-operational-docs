@@ -292,6 +292,34 @@ load_transaction() {
     TRANSACTION_FILE="$tx"
 }
 
+single_pending_transaction() {
+    local files=()
+    shopt -s nullglob
+    files=("$EOD_STATE_DIR"/pending-*.env)
+    shopt -u nullglob
+
+    case "${#files[@]}" in
+        0)
+            fail "no pending development transaction"
+            ;;
+        1)
+            printf '%s\n' "${files[0]}"
+            ;;
+        *)
+            fail "multiple pending development transactions require manual inspection"
+            ;;
+    esac
+}
+
+pending_run_id_from_path() {
+    local path="$1"
+    local name="${path##*/}"
+    local run_id="${name#pending-}"
+    run_id="${run_id%.env}"
+    require_run_id "$run_id"
+    printf '%s\n' "$run_id"
+}
+
 apply_migrations() {
     local image="$1"
     start_database "$image"
@@ -342,7 +370,8 @@ deploy_release() {
     require_pr_number "$pr_number"
     require_sha "$sha"
     require_run_id "$run_id"
-    compgen -G "$EOD_STATE_DIR/pending-*.env" >/dev/null && fail "another deployment transaction is pending"
+    compgen -G "$EOD_STATE_DIR/pending-*.env" >/dev/null && \
+        fail "another deployment transaction is pending; run status or rollback-pending"
 
     local release_dir image previous_image previous_sha backup transaction
     release_dir="$(fetch_release "$pr_number" "$sha")"
@@ -389,9 +418,19 @@ confirm_release() {
     printf 'SUCCESS sha=%s run=%s\n' "$sha" "$run_id"
 }
 
+manual_rollback_pending() {
+    local transaction run_id
+    transaction="$(single_pending_transaction)"
+    run_id="$(pending_run_id_from_path "$transaction")"
+    rollback_transaction "$run_id"
+    printf 'ROLLBACK_PENDING_SUCCESS run=%s\n' "$run_id"
+}
+
 manual_rollback_last() {
     local last="$EOD_STATE_DIR/last-success.env"
     [[ -f "$last" ]] || fail "no confirmed deployment is available for rollback"
+    compgen -G "$EOD_STATE_DIR/pending-*.env" >/dev/null && \
+        fail "pending transaction exists; use rollback-pending first"
     # shellcheck disable=SC1090
     source "$last"
     cp "$last" "$EOD_STATE_DIR/pending-$RUN_ID.env"
@@ -399,12 +438,28 @@ manual_rollback_last() {
 }
 
 show_status() {
+    local files=()
+    local run_id
     printf 'current_sha=%s\n' "$(cat "$EOD_STATE_DIR/current_sha" 2>/dev/null || printf UNKNOWN)"
-    if compgen -G "$EOD_STATE_DIR/pending-*.env" >/dev/null; then
-        printf 'transaction=PENDING\n'
-    else
-        printf 'transaction=NONE\n'
-    fi
+
+    shopt -s nullglob
+    files=("$EOD_STATE_DIR"/pending-*.env)
+    shopt -u nullglob
+    case "${#files[@]}" in
+        0)
+            printf 'transaction=NONE\n'
+            printf 'pending_run_id=NONE\n'
+            ;;
+        1)
+            run_id="$(pending_run_id_from_path "${files[0]}")"
+            printf 'transaction=PENDING\n'
+            printf 'pending_run_id=%s\n' "$run_id"
+            ;;
+        *)
+            printf 'transaction=ERROR\n'
+            printf 'pending_run_id=MULTIPLE\n'
+            ;;
+    esac
     printf 'preview=UNTOUCHED\n'
 }
 
@@ -425,6 +480,10 @@ ssh_gateway() {
             [[ "${#args[@]}" -eq 2 ]] || fail "invalid rollback command"
             rollback_transaction "${args[1]}"
             ;;
+        rollback-pending)
+            [[ "${#args[@]}" -eq 1 ]] || fail "invalid rollback-pending command"
+            manual_rollback_pending
+            ;;
         *)
             fail "unsupported forced SSH command"
             ;;
@@ -444,6 +503,9 @@ main() {
         ssh-gateway)
             ssh_gateway
             ;;
+        rollback-pending)
+            manual_rollback_pending
+            ;;
         rollback-last)
             manual_rollback_last
             ;;
@@ -451,7 +513,7 @@ main() {
             show_status
             ;;
         *)
-            fail "usage: eod-development-controller {ssh-gateway|rollback-last|status}"
+            fail "usage: eod-development-controller {ssh-gateway|rollback-pending|rollback-last|status}"
             ;;
     esac
 }
