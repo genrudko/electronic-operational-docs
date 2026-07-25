@@ -1,259 +1,195 @@
-# Runbook — AUTO-001A trusted controller bootstrap
+# Runbook — trusted development automation
 
-## 1. Назначение
-
-Этот runbook применяется только к AUTO-001A — GitHub trusted controller foundation.
-
-Он не создаёт VPS account, forced command, SSH route, deploy secret или runtime deployment. Любые такие действия относятся к отдельному Stage B.
-
-## 2. Исходные baseline
-
-Перед работой подтвердить:
+## 1. Baseline
 
 ```text
 repository: genrudko/electronic-operational-docs
-base branch: main
-main at branch creation: e0ee946f5591ac9d42c4e3e4bcdc10169ea74cad
+accepted AUTO-001A baseline: b9fe794955af33843aee9b553ae73c06352e0929
 accepted application baseline: 937d2cd2b187c17fac3088ccfc52079fc4608306
-Stage A application impact: none
+AUTO-001B merge: requires a separate explicit user decision
 ```
 
-Также проверить:
+AUTO-001A supplies the trusted `pull_request_target:labeled` entry point from `main`.
+AUTO-001B adds a restricted VPS controller for the isolated development contour only.
+Preview is never a target of this controller.
 
-- open PR inventory;
-- отсутствие конфликтующей Stage A branch;
-- PLAN-001 / PR #7 не изменяется;
-- Stage A PR остаётся Draft;
-- merge не выполняется без отдельной команды пользователя.
+## 2. Files installed on the VPS
 
-## 3. Review gate Draft PR
-
-### 3.1 Exact branch and SHA
-
-В PR открыть `Commits` и `Files changed`, затем зафиксировать:
+The reviewed bootstrap copies fixed host-owned files to:
 
 ```text
-branch: automation/001a-trusted-controller-foundation
-exact current head SHA: <40-hex>
-base: main
+/usr/local/sbin/eod-development-controller
+/etc/eod-automation/controller.env
+/etc/eod-automation/compose.development.yaml
+/etc/eod-automation/Dockerfile.development
+/etc/eod-automation/app-entrypoint.sh
 ```
 
-Все CI/evidence должны относиться к этому exact head. После нового commit прежние результаты не являются acceptance evidence.
-
-### 3.2 Diff scope
-
-Допустимы только:
+Runtime data is stored under:
 
 ```text
-.github/auto001a-foundation.json
-.github/workflows/auto-001a-foundation-ci.yml
-.github/workflows/vps-development.yml
-scripts/automation/auto_001a_foundation.py
-tests/automation/test_auto_001a_foundation.py
-docs/automation/AUTO_001A_TRUSTED_CONTROLLER_FOUNDATION.md
-docs/adr/ADR-AUTO-001A-TRUSTED-CONTROLLER-BOOTSTRAP.md
-docs/runbooks/DEVELOPMENT_AUTOMATION_TRUST_BOOTSTRAP.md
-релевантные documentation index/status updates
+/srv/eod/automation/repository.git
+/srv/eod/automation/releases/
+/srv/eod/automation/backups/
+/srv/eod/automation/state/
 ```
 
-Не допускаются:
-
-- application code;
-- models/migrations;
-- Compose/runtime changes;
-- VPS files;
-- secrets;
-- private keys;
-- `.env`;
-- Base64 payload;
-- temporary part-files;
-- PLAN-001 files;
-- automatic merge configuration.
-
-### 3.3 Workflow provenance
-
-Проверить `.github/workflows/vps-development.yml`:
+The restricted account is `eod-automation`. It is not a member of the `docker` group.
+Its SSH key is forced to run only:
 
 ```text
-trigger: pull_request_target / labeled
-trusted checkout ref: ${{ github.sha }}
-persist-credentials: false
-PR checkout: absent
-PR artifact download: absent
-PR code execution: absent
+sudo -n /usr/local/sbin/eod-development-controller ssh-gateway
 ```
 
-`github.sha` в `pull_request_target` используется как exact trusted base/default-branch event SHA. Workflow дополнительно сравнивает checkout HEAD с `GITHUB_SHA`.
+## 3. Bootstrap
 
-### 3.4 Effective permissions
+Run only after AUTO-001B has been reviewed and merged into `main`:
 
-Разрешены только:
-
-```yaml
-contents: read
-pull-requests: read
-actions: read
+```bash
+cd /srv/eod/repository
+sudo bash deploy/automation/bootstrap_auto001b.sh
 ```
 
-`checks: read` и `statuses: read` отсутствуют, потому что controller использует Actions API для списка workflow runs и не обращается к Checks API или commit Statuses API.
+The bootstrap is idempotent. A repeat run updates the installed reviewed files without creating duplicate users, keys, `authorized_keys` entries or sudo rules.
 
-Проверить отсутствие любого `write`, `id-token`, environment deployment, approval и merge surface.
+The first run prints only the public read-only GitHub Deploy Key. Add it at:
 
-### 3.5 Trigger and authorization
+```text
+Repository Settings -> Deploy keys -> Add deploy key
+Allow write access: OFF
+```
 
-Разрешены только labels:
+The private Deploy Key remains root-owned on the VPS and is never printed.
+After adding the public key, run the same bootstrap command again and confirm:
+
+```text
+Deploy Key access test: SUCCESS
+```
+
+Create GitHub Actions secrets exactly as printed by bootstrap:
+
+```text
+EOD_VPS_HOST
+EOD_VPS_PORT
+EOD_VPS_SSH_PRIVATE_KEY
+EOD_VPS_HOST_KEY
+```
+
+Do not send either private key to chat.
+
+## 4. Normal PR verification
+
+For an open same-repository PR with all required exact-SHA CI checks green, the repository owner adds one label:
 
 ```text
 vps-development-refresh
 vps-development-rebuild
 ```
 
-Actor обязан иметь GitHub repository permission:
+The trusted workflow from `main` validates the current PR SHA and invokes the installed controller with only:
 
 ```text
-admin
-maintain
-write
+profile
+PR number
+exact 40-hex SHA
+GitHub workflow run ID
 ```
 
-Неавторизованный actor, fork, закрытый PR, base не `main`, stale SHA или неизвестный label должны блокироваться.
+The controller fetches `refs/pull/<number>/head` using the read-only Deploy Key and rejects it if the fetched SHA differs.
 
-### 3.6 Required exact-SHA workflows
+## 5. Execution order
 
-Для live current PR head требуются successful pull-request runs:
+Before changing the working development database:
+
+1. build the exact-SHA image with the fixed host Dockerfile;
+2. start a temporary PostgreSQL container with ephemeral storage;
+3. run `manage.py check`;
+4. run `makemigrations --check --dry-run`;
+5. run the full `manage.py test apps --verbosity 2` suite;
+6. remove the temporary test database and network.
+
+Only after all tests succeed:
 
 ```text
-EOD CI
-EOD Development Stack
-EOD Documentation Contract
-AUTO-001A Foundation CI
+stop development application
+-> pg_dump eod_development
+-> apply migrations with the new exact-SHA image
+-> start the new release
+-> verify health and Django check
 ```
 
-Проверяется latest run/attempt для каждого имени. Старый successful run не перекрывает более поздний failed rerun.
-
-### 3.7 Automation/security path block
-
-Для каждого changed file controller получает:
+The fixed controller accepts only development identifiers:
 
 ```text
-filename
-previous_filename — только когда GitHub возвращает его для rename
+Compose project: eod-development
+PostgreSQL database/user: eod_development
+PostgreSQL volume: eod_development_postgres_data
+HTTP port: 8766
+Environment file: /srv/eod/secrets/development.env
 ```
 
-Оба имени проверяются по защищённым путям:
+No preview path, port, database, volume or command is present in the controller.
+
+## 6. Results
+
+The workflow reports one practical result:
 
 ```text
-.github/workflows/**
-.github/auto001a-foundation.json
-scripts/automation/**
-deploy/automation/**
-allowlisted security documents
+SUCCESS
+ERROR
+STALE SHA
 ```
 
-Проверить negative tests:
+- `SUCCESS`: exact SHA remains current after VPS verification and the transaction is confirmed.
+- `ERROR`: build, isolated tests, backup, migration, start or health verification failed.
+- `STALE SHA`: the PR head changed during verification; the workflow calls development rollback.
+
+The workflow never approves or merges a PR.
+
+## 7. Automatic rollback
+
+If migrations or the new application start fails, the controller performs:
 
 ```text
-protected → unprotected
-unprotected → protected
-protected → protected
+stop failed new application
+-> recreate eod_development
+-> restore the transaction pg_dump
+-> start the previous application image
+-> verify health
+-> return ERROR
 ```
 
-Любой из этих случаев обязан получить `BLOCKED` до Stage B.
+The same rollback is used for `STALE SHA` before the new release is confirmed.
+Preview is untouched.
 
-## 4. Exact-head CI gate
+## 8. Manual rollback
 
-Обязательные checks Draft PR:
+The VPS operator can roll back the last confirmed development deployment:
+
+```bash
+sudo /usr/local/sbin/eod-development-controller rollback-last
+```
+
+Inspect the current controller state with:
+
+```bash
+sudo /usr/local/sbin/eod-development-controller status
+```
+
+Manual rollback applies only to the development contour.
+
+## 9. Acceptance gate
+
+Before merging AUTO-001B, record:
 
 ```text
-AUTO-001A Foundation CI — success
-EOD CI — success
-EOD Development Stack — success
-EOD Documentation Contract — success
+exact PR head
+AUTO-001A Foundation CI: success
+AUTO-001B Controller CI: success
+EOD CI: success
+EOD Development Stack: success
+EOD Documentation Contract: success
+VPS changes before merge: none
 ```
 
-В AUTO-001A Foundation CI проверить шаги:
-
-- compile;
-- Ruff;
-- unit/negative tests;
-- workflow policy check;
-- permission/deploy-surface audit;
-- clean repository.
-
-При любом новом commit повторить gate для нового exact head.
-
-## 5. VPS side-effect proof
-
-Stage A считается корректным только если diff и workflow подтверждают:
-
-```text
-VPS secret: absent
-SSH command: absent
-SSH action: absent
-restricted VPS account: not created
-forced command: not created
-VPS API/host call: absent
-real deployment: absent
-VPS job state: BLOCKED
-```
-
-Наличие будущего skeleton допустимо только как job summary с детерминированным состоянием `BLOCKED`.
-
-## 6. Merge gate
-
-До команды пользователя PR остаётся Draft/open.
-
-Разрешение merge должно быть отдельным и однозначным. Ни успешный CI, ни review, ни текст «готово» не являются разрешением merge.
-
-Stage A merge означает только:
-
-- controller foundation присутствует в default branch;
-- он может считаться trusted source для следующего этапа;
-- application baseline не изменился;
-- полный AUTO-001 ещё не принят;
-- VPS Stage B остаётся запрещённым.
-
-## 7. Accepted automation foundation baseline
-
-После явной приёмки и merge отдельно записать:
-
-```text
-accepted AUTO-001A exact PR head: <sha>
-AUTO-001A merge commit: <sha>
-accepted automation foundation baseline: <accepted exact PR head / merge record>
-accepted application baseline: 937d2cd2b187c17fac3088ccfc52079fc4608306
-application baseline changed: no
-```
-
-Baseline automation foundation не подменяет application baseline.
-
-## 8. Post-merge canary before Stage B
-
-После merge, но до разрешения Stage B, выполнить отдельный безопасный canary на обычном same-repository PR, который не меняет automation/security paths:
-
-1. дождаться всех exact-SHA required checks;
-2. добавить один allowlisted label авторизованным actor;
-3. подтвердить trusted workflow SHA из `main`;
-4. подтвердить immutable manifest;
-5. подтвердить `vps_phase = BLOCKED`;
-6. подтвердить отсутствие VPS/SSH side effects;
-7. снять label при необходимости.
-
-Canary не разрешает Stage B автоматически.
-
-## 9. Rollback
-
-### До merge
-
-```text
-close Draft PR
-remove branch
-```
-
-VPS rollback отсутствует.
-
-### После merge
-
-Создать отдельный reviewed revert, который удаляет Stage A workflow/policy/code/tests/docs. До merge revert PR controller можно административно не запускать посредством удаления allowlisted labels с PR.
-
-Не выполнять rollback через self-applying workflow или изменение VPS.
+After merge, run bootstrap and one safe canary on a non-protected test PR. The canary must remain unmerged and must confirm `SUCCESS`, exact SHA, development-only targeting and no preview change.
