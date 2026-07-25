@@ -93,9 +93,9 @@ PR code execution: absent
 contents: read
 pull-requests: read
 actions: read
-checks: read
-statuses: read
 ```
+
+`checks: read` и `statuses: read` отсутствуют, потому что controller использует Actions API для списка workflow runs и не обращается к Checks API или commit Statuses API.
 
 Проверить отсутствие любого `write`, `id-token`, environment deployment, approval и merge surface.
 
@@ -133,7 +133,14 @@ AUTO-001A Foundation CI
 
 ### 3.7 Automation/security path block
 
-Проверить negative tests для:
+Для каждого changed file controller получает:
+
+```text
+filename
+previous_filename — только когда GitHub возвращает его для rename
+```
+
+Оба имени проверяются по защищённым путям:
 
 ```text
 .github/workflows/**
@@ -143,7 +150,15 @@ deploy/automation/**
 allowlisted security documents
 ```
 
-Обычный deployment request к PR с такими изменениями обязан получить `BLOCKED` до Stage B.
+Проверить negative tests:
+
+```text
+protected → unprotected
+unprotected → protected
+protected → protected
+```
+
+Любой из этих случаев обязан получить `BLOCKED` до Stage B.
 
 ## 4. Exact-head CI gate
 
