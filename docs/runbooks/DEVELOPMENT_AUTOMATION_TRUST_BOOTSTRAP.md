@@ -52,9 +52,9 @@ cd /srv/eod/repository
 
 AUTO001B_MAIN_SHA=<accepted AUTO-001B merge commit>
 git fetch --prune origin main
-git checkout main
-git reset --hard "$AUTO001B_MAIN_SHA"
+git checkout -B main "$AUTO001B_MAIN_SHA"
 test "$(git rev-parse HEAD)" = "$AUTO001B_MAIN_SHA"
+test "$(git rev-parse origin/main)" = "$AUTO001B_MAIN_SHA"
 
 sudo bash deploy/automation/bootstrap_auto001b.sh
 ```
