@@ -52,7 +52,8 @@ cd /srv/eod/repository
 
 AUTO001B_MAIN_SHA=<accepted AUTO-001B merge commit>
 git fetch --prune origin main
-git checkout -B main "$AUTO001B_MAIN_SHA"
+git checkout main
+git reset --hard "$AUTO001B_MAIN_SHA"
 test "$(git rev-parse HEAD)" = "$AUTO001B_MAIN_SHA"
 test "$(git rev-parse origin/main)" = "$AUTO001B_MAIN_SHA"
 
