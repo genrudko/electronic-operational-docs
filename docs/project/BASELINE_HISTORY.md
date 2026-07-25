@@ -1,6 +1,6 @@
 # ЭОД — история принятых baseline
 
-Baseline фиксируется только после технической и пользовательской приёмки соответствующего изменения.
+Baseline фиксируется только после технической и пользовательской приёмки соответствующего изменения и post-merge проверки применимого runtime-контура.
 
 | Дата | Baseline | Содержание | Доказательства |
 |---|---|---|---|
@@ -10,26 +10,39 @@ Baseline фиксируется только после технической �
 | 2026-07-24 | `ded4571dcacd973184d3121b19c8db8c70e7b08a` | INFRA-002 accepted preview | PR #2, PostgreSQL preview, health and demo auth; tag `eod-baseline-infra-002` |
 | 2026-07-24 | `abd6066885b060e3e3d2c39098fcaf640bb70416` | INFRA-003 isolated development | PR #3, CI, simultaneous preview/development health, database isolation, SSH tunnel acceptance |
 | 2026-07-25 | `e18872face7f27f489056b72fed31e5586121b0c` | DOCS-001 project operating system | PR #4 squash merge, exact-head CI, user approval, preview main/health/HTTP/database identity/migration checks |
+| 2026-07-25 | `937d2cd2b187c17fac3088ccfc52079fc4608306` | QUALITY-001 + DOCS-002 + DOCS-003 + AUTO-000 accepted main | PR #8 and PR #9 accepted; 497/497 PostgreSQL tests on QUALITY-001 head; preview rebuilt from current main; health, HTTP 200, `eod_preview`, migration state, clean exact SHA and host/container source match confirmed |
 
 ## Текущий accepted application baseline
 
 ```text
-main / e18872face7f27f489056b72fed31e5586121b0c
+main / 937d2cd2b187c17fac3088ccfc52079fc4608306
 ```
 
-Он включает INFRA-001–003 и принятый DOCS-001.
+Он включает:
 
-## Working branch
+- INFRA-001–003;
+- DOCS-001–003;
+- QUALITY-001;
+- принятый AUTO-000 development automation contract.
+
+## Текущий metadata follow-up
 
 ```text
-docs/002-docs001-baseline-finalization
+branch: docs/005-auto000-baseline-finalization
+PR: #10
+change type: documentation-only
 ```
 
-Ветка является metadata-only follow-up. Она фиксирует уже доказанный baseline и не меняет application behavior, schema, migrations or runtime data.
+DOCS-005 фиксирует уже доказанный baseline `937d2cd…`, историю приёмки и handoff для нового Чата 0. Его собственный будущий merge commit:
+
+- не изменяет application behavior, schema, migrations, runtime data или infrastructure runtime;
+- не создаёт новый application baseline только из-за собственного SHA;
+- остаётся частью `main` history после принятия;
+- проходит documentation CI и обычный documentation-only post-merge health gate.
 
 ## Разделение application baseline и metadata follow-up
 
-Accepted application baseline — merge commit изменения, которое прошло post-merge preview verification.
+Accepted application baseline — merge commit значимого изменения, для которого выполнены применимые technical gates, пользовательская приёмка и post-merge preview verification.
 
 Последующий документационный commit, который только записывает уже известный merge SHA в history/current-state/release notes:
 
@@ -37,8 +50,6 @@ Accepted application baseline — merge commit изменения, которо�
 - не требует бесконечного follow-up для записи собственного SHA;
 - остаётся частью `main` history;
 - должен пройти documentation CI и обычный documentation-only post-merge health gate.
-
-Новый application baseline появляется только после следующего принятого изменения, затрагивающего application, schema, data, runtime behavior или значимый operating-system milestone, для которого принято отдельное решение о baseline.
 
 ## Правило фиксации нового baseline
 

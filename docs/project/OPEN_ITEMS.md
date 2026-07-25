@@ -2,43 +2,82 @@
 
 ## 1. Текущий обязательный инфраструктурный этап
 
-### AUTO-000
+### AUTO-000 — закрыт
 
-- принять automation architecture;
-- принять security boundaries;
-- принять exact-SHA contract;
-- принять acceptance and rollback;
-- зафиксировать scope AUTO-001 MVP;
-- не менять runtime, workflows, VPS или secrets.
+Принят пользователем, merged PR #9 и post-merge verified на `main / 937d2cd2b187c17fac3088ccfc52079fc4608306`.
 
-### AUTO-001
+Зафиксированы:
 
-- проверить сетевой маршрут GitHub-hosted runner → VPS;
+- automation architecture;
+- security boundaries;
+- exact-SHA contract;
+- acceptance and rollback;
+- scope AUTO-001 MVP;
+- запрет automatic merge;
+- отсутствие runtime/workflow/VPS changes внутри AUTO-000.
+
+### DOCS-005 — текущий metadata follow-up
+
+- записать accepted baseline `937d2cd…`;
+- обновить state/handoff/history/roadmap/release notes;
+- подготовить новый Chat 0;
+- не менять application runtime, workflows, VPS, schema, data или secrets;
+- не считать собственный будущий merge SHA новым application baseline.
+
+### AUTO-001 — следующий implementation work item
+
+До написания executable automation:
+
+- проверить фактический main/exact SHA/open PR/branches;
+- прочитать actual workflows, compose, scripts, runbooks и весь `docs/automation/`;
+- проверить route GitHub-hosted runner → VPS;
 - выбрать restricted transport;
-- реализовать exact-SHA orchestrator;
-- реализовать GitHub and VPS concurrency locks;
-- реализовать sanitised evidence;
-- выполнить два success и один failure acceptance case;
-- подтвердить preview isolation;
-- исключить automatic merge.
+- выполнить documented gap analysis.
 
-После принятия AUTO-001 MVP продолжается PLAN-001. AUTO-002+ не являются предварительным блокером продукта.
+Реализация должна:
+
+- принимать только trusted trigger;
+- проверять green required checks для current PR head;
+- выполнять exact-SHA deployment в `/srv/eod/development`;
+- поддерживать явно выбранный `refresh` или `rebuild`;
+- выполнять `check`, full `test apps`, `status`;
+- проверять preview isolation;
+- использовать GitHub and VPS concurrency locks;
+- публиковать sanitised evidence;
+- fail closed при SHA mismatch, dirty worktree, unknown profile или ambiguous result;
+- исключать automatic merge, preview write и arbitrary shell.
+
+Acceptance:
+
+- два последовательных successful deployments;
+- один intentional failure case;
+- exact-SHA and superseded proof;
+- preview isolation proof;
+- отсутствие ручных VPS-команд пользователя в normal run;
+- explicit user acceptance.
+
+После AUTO-001 MVP продолжается PLAN-001. AUTO-002+ не являются предварительным блокером продукта.
 
 ## 2. PLAN-001 — доказательная ревизия
 
-PR #7 остаётся Draft.
+PR #7 остаётся Draft и был создан от более старого main. После AUTO-001 требуется безопасно синхронизировать branch с accepted main без потери instrumentation.
 
 Нужно установить по каждому модулю:
 
 - что фактически реализовано;
 - что реализовано частично;
 - что сделано иначе, чем планировалось;
-- какие tests/gates реально актуальны;
+- какие tests/gates актуальны;
 - какие presentation scenarios работают;
 - какие этапы утратили актуальность;
-- какое направление и vertical slice выбрать следующим.
+- какой vertical slice выбрать следующим.
 
-Результат должен включать конкретный первый журнальный vertical slice, master plan v3.0 и минимальный automated smoke/integration suite поверх действующего полного PostgreSQL test baseline.
+Результат:
+
+- master plan v3.0;
+- concrete first journal vertical slice;
+- минимальный automated smoke/integration suite поверх полного `497/497` baseline;
+- реалистичная последовательность product work.
 
 ## 3. Структурированные журналы
 
@@ -52,9 +91,7 @@ PR #7 остаётся Draft.
 - журнал учёта работ по нарядам;
 - журнал учёта работ по распоряжениям.
 
-Для каждой формы нужны source traceability, точные графы, специализированные rules, UI, минимальные реальные связи, presentation data, automated gates и acceptance scenario.
-
-Рабочая стратегия:
+Для каждой формы нужны source traceability, точные графы, specialized rules, UI, минимальные реальные связи, presentation data, automated gates и acceptance scenario.
 
 ```text
 один журнал целиком
@@ -63,22 +100,22 @@ PR #7 остаётся Draft.
 → следующий журнал
 ```
 
-Предварительный первый кандидат — журнал дефектов, но PLAN-001 должен подтвердить или опровергнуть эту гипотезу.
+Предварительный кандидат — журнал дефектов, но окончательное решение принимает PLAN-001.
 
 ## 4. Журнал выдачи и возврата ключей
 
-Текущая продуктовая позиция — paper-first:
+Текущая позиция — paper-first:
 
-- бумажный журнал остаётся основным рабочим оригиналом;
+- бумажный журнал остаётся рабочим оригиналом;
 - полный электронный lifecycle выдачи/возврата не входит в обязательный внутренний прототип;
-- возможный электронный справочник, outstanding-control или зеркальная регистрация требуют отдельного предметного и UX-решения;
-- демонстрационный сценарий не должен изображать бумажный процесс полностью электронным без реальной необходимости.
+- electronic reference/outstanding-control/mirror registration требует отдельного предметного и UX-решения;
+- demonstration scenario не должен изображать paper process полностью электронным без основания.
 
 ## 5. Наряды и распоряжения
 
 Открытые предметные вопросы:
 
-- электронный оригинал наряда;
+- electronic original work permit;
 - раздельные журналы работ по нарядам и распоряжениям;
 - целевые инструктажи;
 - первичный и ежедневный допуск;
@@ -102,11 +139,11 @@ PR #7 остаётся Draft.
 
 ## 7. Переключения
 
-Минимальный реестр требует реализации или доказательной ревизии. Автоматическая генерация БП/ТБП/ТПП и safety engine остаются отдельной дальней очередью.
+Минимальный реестр требует реализации или доказательной ревизии. Automatic generation БП/ТБП/ТПП и safety engine остаются отдельной дальней очередью.
 
 ## 8. Оперативный журнал
 
-Нужна отдельная ревизия редактора и assistance:
+Нужна отдельная ревизия editor and assistance:
 
 - insertion caret в конец записи;
 - Ctrl+Left/Right/Home/End внутри текущей записи;
@@ -116,11 +153,9 @@ PR #7 остаётся Draft.
 - отсутствие скачка страницы при клике вне листа;
 - шаблоны, сокращения и автодополнение.
 
-Runtime-видео подтверждает конечное состояние с повторяющимися semantic markers, но не доказывает точную последовательность воспроизведения. Marker serialization/copy-paste остаётся блокирующим repair candidate.
+Marker serialization/copy-paste/save/reload остаётся blocking repair candidate и требует automated regression.
 
 ## 9. UX-001
-
-UX-001 v0.3 подготовлен и сохраняется в репозитории как provisional project contract.
 
 ```text
 status: provisional
@@ -128,26 +163,13 @@ visual acceptance: pending
 implementation authorization: not granted
 ```
 
-Структурно подготовлены:
-
-- evidence-based audit;
-- runtime video audit;
-- самостоятельное visual direction;
-- UI principles;
-- candidate design tokens;
-- component contract;
-- interaction/keyboard/focus/overlay contract;
-- page archetypes;
-- three textual reference-screen contracts;
-- staged implementation roadmap.
-
 Открытые visual gates:
 
-1. подготовить два компактных визуальных направления на application shell и одном показательном structured-journal screen;
-2. получить выбор/корректировку пользователя;
-3. реализовать ограниченный runtime prototype на development contour;
-4. проверить target desktop, long Russian data, density, states, focus and overlays;
-5. зафиксировать accepted tokens только после визуальной приёмки.
+1. два compact visual directions для application shell и одного structured-journal screen;
+2. выбор/корректировка пользователя;
+3. limited runtime prototype на development;
+4. проверка target desktop, long Russian data, density, states, focus and overlays;
+5. accepted tokens только после visual acceptance.
 
 Не приняты:
 
@@ -156,31 +178,22 @@ implementation authorization: not granted
 - density;
 - radii and shadows;
 - shell composition;
-- окончательный внешний вид reference screens;
+- final reference screen appearance;
 - dark-theme release scope;
 - target desktop viewport;
-- названия top-level product areas.
-
-Риски:
-
-- превратить provisional contract в неизменяемый стандарт без визуальной проверки;
-- развернуть дизайн на все экраны до проверки одного real vertical slice;
-- потерять рабочую информационную плотность ради «воздуха»;
-- смешать visual recommendations с domain lifecycle;
-- создать сходство с identifiable third-party branding;
-- отложить blocking operational-journal repairs до полного редизайна.
+- names of top-level product areas.
 
 ## 10. Импорт и данные
 
 - шесть неоднозначных строк документации рабочего места остаются в staging;
-- проверить полноту и терминологию импорта оборудования;
-- поддерживать общий equipment family для ЩПТ/ШОТ;
-- закрепить управляемый RU→EN domain lexicon;
+- проверить полноту и терминологию equipment import;
+- сохранять common equipment family для ЩПТ/ШОТ;
+- закрепить managed RU→EN domain lexicon;
 - не импортировать реальные чувствительные данные в presentation profile.
 
 ## 11. Тесты и quality gates
 
-QUALITY-001 закрыт:
+Закрыто QUALITY-001:
 
 ```text
 test discovery: fixed
@@ -190,32 +203,33 @@ command: python manage.py test apps --verbosity 2
 
 Открыто:
 
-- определить минимальный обязательный smoke/integration subset для быстрых product gates;
-- сохранять полный `test apps` как основной regression baseline;
+- определить минимальный smoke/integration subset для быстрых product gates;
+- сохранять full `test apps` как regression baseline;
 - добавлять профильные tests/gates вместе с каждым журналом;
-- добавить automated regression для semantic marker copy/paste/save/reload;
-- добавить AUTO-001 negative/security tests;
-- позднее добавить structured machine-readable test evidence.
+- automated regression для semantic marker copy/paste/save/reload;
+- AUTO-001 negative/security tests;
+- позднее structured machine-readable test evidence.
 
 ## 12. Инфраструктура
 
 - AUTO-001 restricted gateway;
-- сетевой маршрут GitHub-hosted runner → VPS;
-- deploy credential rotation/revoke;
+- network route GitHub-hosted runner → VPS;
+- deploy credential creation/rotation/revoke;
 - stale-lock recovery;
 - artifact retention;
 - backup policy перед future automatic migrations;
-- определить retention backups;
-- reverse proxy/HTTPS/domain не являются текущим блокером;
-- production hardening относится к отдельному официальному этапу;
-- не расширять инфраструктурный scope сверх AUTO-001 MVP без подтверждённой необходимости.
+- reverse proxy/HTTPS/domain не текущий blocker;
+- production hardening — отдельный официальный этап;
+- не расширять AUTO-001 MVP без подтверждённой необходимости.
+
+На VPS установлен `tmux` для устойчивости длинных ручных операций до AUTO-001.
 
 ## 13. Документационная непрерывность
 
-- применимые canonical docs обновляются в том же PR, что и изменение;
-- после принятого feature/repair обязательны актуальные `CURRENT_STATE.md` и `CURRENT_HANDOFF.md`;
-- новый application baseline фиксируется после post-merge verification;
+- canonical docs обновляются в том же PR, что и изменение, либо обязательном metadata follow-up;
+- accepted application baseline фиксируется после post-merge verification;
 - metadata-only follow-up не создаёт новый baseline только из-за собственного SHA;
-- UX package сохраняется без подмены provisional status визуальной приёмкой;
-- automation docs не изображают AUTO-001 реализованным до фактической acceptance;
-- внезапное завершение чата не должно требовать восстановления состояния по памяти.
+- UX package сохраняет provisional status до visual acceptance;
+- automation docs не изображают AUTO-001 реализованным до acceptance;
+- новый Chat 0 восстанавливает контекст строго по GitHub, `CURRENT_STATE.md` и `CURRENT_HANDOFF.md`;
+- один work-item/PR ведётся в одном отдельном чате, включая repairs.

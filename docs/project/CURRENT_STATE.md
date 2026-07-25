@@ -2,51 +2,41 @@
 
 **Дата проверки:** 25.07.2026
 
-**Принятый application baseline:** `main / e18872face7f27f489056b72fed31e5586121b0c`
+**Принятый application baseline:** `main / 937d2cd2b187c17fac3088ccfc52079fc4608306`
 
-**Текущий Git HEAD main:** `4237aadc2cfdee518567024c2b45b653f49c16e7`
+**Текущий Git HEAD main:** `937d2cd2b187c17fac3088ccfc52079fc4608306`
 
-**Открытые рабочие ветки:**
+**Текущая metadata-работа:** `docs/005-auto000-baseline-finalization` — Draft PR #10
 
-- `plan/001-evidence-audit` — PR #7, Draft;
-- `docs/004-auto-000-development-automation-contract` — текущий AUTO-000.
+**Открытая продуктовая ревизия:** `plan/001-evidence-audit` — Draft PR #7
 
 ## 1. Статус проекта
 
 Проект является независимым демонстрационным прототипом электронной оперативной документации для энергетики. Инициатива не является официальным поручением работодателя. Производственные серверы, фактические оперативные записи и реальные персональные данные в разработке не используются.
 
-Базовый функциональный, инфраструктурный и процессный скелет проекта существует. DOCS-001 сделал репозиторий главным онлайн-источником истины. DOCS-002 зафиксировал accepted application baseline и переход к PLAN-001. DOCS-003 сохранил UX-001 v0.3 как provisional contract. QUALITY-001 восстановил фактическое выполнение полного PostgreSQL test suite.
+GitHub является единственным источником кода и канонической документации. Accepted preview и active development изолированы на VPS.
 
-Перед продолжением PLAN-001 выполняется короткий инфраструктурный спринт AUTO-000/AUTO-001, устраняющий ручной мост между green PR и VPS development. Полный набор последующей автоматизации не является блокером продуктовой разработки.
+Последние принятые этапы:
 
-## 2. Принятый application baseline и main history
+- DOCS-001 — project operating system;
+- DOCS-002 — metadata finalization DOCS-001 baseline;
+- DOCS-003 — provisional UX-001 v0.3 contract;
+- QUALITY-001 — восстановление полного PostgreSQL test execution;
+- AUTO-000 — принятый development automation contract.
+
+## 2. Текущий baseline и main history
 
 ```text
-application baseline branch: main
-application baseline HEAD: e18872face7f27f489056b72fed31e5586121b0c
-included in accepted baseline: INFRA-001 + INFRA-002 + INFRA-003 + DOCS-001
-current main history HEAD: 4237aadc2cfdee518567024c2b45b653f49c16e7
-current main additions: DOCS-002 + DOCS-003 + QUALITY-001
+accepted application baseline branch: main
+accepted application baseline HEAD: 937d2cd2b187c17fac3088ccfc52079fc4608306
+current main history HEAD: 937d2cd2b187c17fac3088ccfc52079fc4608306
 ```
 
-PR #4 `DOCS-001: Project operating system and canonical documentation` принят пользователем и squash-merged 25.07.2026.
+Baseline включает INFRA-001–003, DOCS-001–003, QUALITY-001 и AUTO-000.
 
-Post-merge preview verification DOCS-001 подтвердил:
+### QUALITY-001
 
-- `/srv/eod/repository` находится на точном merge commit;
-- branch `main`, worktree clean;
-- documentation contract: OK, 43 required files;
-- preview app and database healthy;
-- health endpoint: `{"status": "ok"}`;
-- main page: HTTP 200;
-- database identity: `eod_preview`;
-- pending migrations отсутствуют.
-
-PR #5 `DOCS-002: Finalize DOCS-001 accepted baseline` squash-merged в `a2d686b0061fac513c02540a2176850640496884`. Это documentation-only metadata follow-up: он не меняет application behavior, schema, migrations or runtime data и не создаёт новый application baseline.
-
-PR #6 `DOCS-003: Add provisional UX-001 v0.3 contract` squash-merged в `62ce0a611b0d36a4c0f1f28ac6083cac5d305fb5`. Он не меняет runtime и не означает visual acceptance.
-
-PR #8 `QUALITY-001: Repair PostgreSQL test execution` принят пользователем и squash-merged в `4237aadc2cfdee518567024c2b45b653f49c16e7`.
+PR #8 принят пользователем и squash-merged в `4237aadc2cfdee518567024c2b45b653f49c16e7`.
 
 На exact accepted PR head подтверждено:
 
@@ -57,7 +47,29 @@ PR #8 `QUALITY-001: Repair PostgreSQL test execution` принят пользо�
 - database identity: `eod_development`;
 - development worktree: clean.
 
-Accepted application baseline остаётся `e18872f…` до отдельной фиксации post-merge preview evidence для нового application merge commit.
+### AUTO-000
+
+PR #9 принят пользователем и squash-merged в `937d2cd2b187c17fac3088ccfc52079fc4608306`.
+
+AUTO-000 — documentation-only operating-system milestone. Он зафиксировал architecture, security boundaries, exact-SHA contract, acceptance criteria и roadmap AUTO-001, но не реализовал automation runtime.
+
+### Post-merge preview verification
+
+На `/srv/eod/repository` подтверждено:
+
+- branch `main`;
+- exact HEAD `937d2cd2b187c17fac3088ccfc52079fc4608306`;
+- clean worktree;
+- preview app image rebuilt from current checkout;
+- app container recreated и healthy;
+- preview database container не пересоздавался и healthy;
+- health endpoint: `{"status": "ok"}`;
+- main page: HTTP 200 на `127.0.0.1:8765`;
+- database identity: `eod_preview`;
+- `migrate --check`: success;
+- `makemigrations --check --dry-run`: no changes detected;
+- host `src` и container `/app/src` совпадают после исключения generated `electronic_operational_docs.egg-info/*`;
+- итоговый marker: `FINAL PREVIEW GATE PASSED`.
 
 ## 3. Инфраструктура
 
@@ -76,14 +88,14 @@ secrets: /srv/eod/secrets/preview.env
 
 ```text
 checkout: /srv/eod/development
-branch: active non-main branch
+branch: active non-main branch only
 compose project: eod-development
 application: 127.0.0.1:8766
 database/user: eod_development
 secrets: /srv/eod/secrets/development.env
 ```
 
-Оба контура изолированы. PostgreSQL host ports не публикуются. Доступ к приложениям выполняется через SSH tunnel. VPS deploy key остаётся read-only.
+Оба контура изолированы. PostgreSQL host ports не публикуются. Доступ выполняется через SSH tunnel. VPS deploy key остаётся read-only. Development checkout не переводится на `main` после merge.
 
 ## 4. Данные
 
@@ -103,7 +115,7 @@ Development-база создаётся как отдельная копия acc
 - Django application foundation;
 - организация, подразделения, должности, сотрудники, учётные записи, роли и замещения;
 - документарное ядро: черновики, версии, регистрация, нумерация, связи и аудит;
-- повторная аутентификация, канонический snapshot и SHA-256 integrity status;
+- повторная аутентификация, snapshot и SHA-256 integrity status;
 - нормативный реестр и редакции организационной конфигурации;
 - энергообъекты, оборудование, диспетчерские наименования и их история;
 - диспетчерское и технологическое управление и ведение;
@@ -113,8 +125,8 @@ Development-база создаётся как отдельная копия acc
 - source-bound каталог рабочих форм;
 - GitHub Actions CI на Linux/PostgreSQL;
 - безопасный preview и изолированный development на VPS;
-- канонический DOCS-контур, runbooks, acceptance documents и documentation CI gate;
-- обнаруживаемый полный PostgreSQL test suite.
+- канонический documentation/acceptance/runbook contour;
+- обнаруживаемый полный PostgreSQL suite `497/497`.
 
 ### Реализовано частично или требует предметной приёмки
 
@@ -136,40 +148,71 @@ Development-база создаётся как отдельная копия acc
 - юридически значимая электронная подпись;
 - промышленная эксплуатационная готовность.
 
-Полный электронный lifecycle выдачи и возврата ключей не входит в обязательный внутренний прототип: основной режим журнала ключей считается paper-first до отдельного предметного и UX-решения.
+Журнал ключей остаётся paper-first до отдельного предметного и UX-решения.
 
 ## 6. Текущий процесс разработки
 
 1. Ассистент создаёт complete change в отдельной GitHub branch.
 2. GitHub Actions выполняет gates.
-3. VPS development получает branch через `git pull --ff-only`.
-4. Выполняются refresh/check/test/status.
+3. VPS development получает exact branch/SHA.
+4. Выполняются refresh/rebuild, checks, tests и status.
 5. Пользователь проводит предметную и визуальную приёмку.
-6. Merge выполняется только после явного разрешения пользователя.
-7. Preview синхронизируется с `main` и проходит post-merge gate.
-8. Применимые canonical docs актуализируются вместе с изменением или обязательным metadata follow-up.
+6. Repair commits создаются в той же branch/PR.
+7. Merge выполняется только после явного разрешения пользователя.
+8. Preview синхронизируется с `main` и проходит post-merge gate.
+9. Canonical docs актуализируются в том же PR или обязательном metadata follow-up.
 
-Пользователь исключён из механической части программирования, но до AUTO-001 ещё участвует в механическом VPS execution/log-transfer этапе.
+До принятия AUTO-001 пользователь ещё участвует в механическом VPS execution/log-transfer этапе. Для защиты длинных операций на VPS установлен `tmux`.
 
-## 7. Текущий обязательный инфраструктурный этап
+## 7. Текущая работа и следующий этап
+
+### DOCS-005
 
 ```text
-AUTO-000 documentation contract
-→ AUTO-001 development orchestrator MVP
-→ return to PLAN-001
+branch: docs/005-auto000-baseline-finalization
+PR: #10 Draft
+change type: documentation-only metadata follow-up
+runtime impact: none
 ```
 
-AUTO-000 документирует архитектуру, security model, acceptance и roadmap. Он не меняет runtime, workflows, VPS или secrets.
+DOCS-005 фиксирует уже доказанный baseline `937d2cd…`, AUTO-000 acceptance и handoff для нового Чата 0. Собственный merge SHA DOCS-005 не создаёт новый application baseline.
 
-AUTO-001 должен автоматически выполнить exact-SHA development deployment, явно выбранный `refresh`/`rebuild`, `check`, полный `test apps`, `status` и публикацию evidence в GitHub. Automatic merge запрещён.
+### AUTO-001 — следующий implementation work item
 
-AUTO-002 и дальнейшая автоматизация не блокируют возврат к продуктовой разработке.
+```text
+trusted PR trigger
+→ green required checks for current head
+→ restricted VPS gateway
+→ exact-SHA development deployment
+→ explicitly selected refresh/rebuild
+→ check
+→ full test apps
+→ status
+→ sanitised evidence in GitHub
+```
 
-## 8. PLAN-001
+Не входят в MVP:
 
-`PLAN-001 — ревизия фактической реализации` остаётся открытым Draft PR #7.
+- automatic merge;
+- automatic preview deployment;
+- browser automation и visual regression;
+- automatic development database reset;
+- autonomous code repair.
 
-Нужно доказательно сопоставить для каждого модуля:
+Exit gate:
+
+- два последовательных successful deployments;
+- один intentional negative case;
+- exact-SHA и superseded proof;
+- preview isolation proof;
+- отсутствие ручных VPS-команд пользователя в штатном run;
+- отдельная явная пользовательская приёмка.
+
+После AUTO-001 MVP продуктовая работа возвращается к PLAN-001. AUTO-002+ не являются блокерами.
+
+## 8. PLAN-001 — ревизия фактической реализации
+
+PR #7 остаётся Draft. После AUTO-001 необходимо доказательно сопоставить для каждого модуля:
 
 ```text
 требование
@@ -182,18 +225,16 @@ AUTO-002 и дальнейшая автоматизация не блокиру�
 → remaining deficit
 ```
 
-Результат:
+Результаты:
 
 - master plan v3.0;
 - подтверждённый первый журнальный vertical slice;
 - реалистичная последовательность следующих работ;
-- минимальный обязательный smoke/integration suite поверх действующего полного test baseline.
+- минимальный обязательный smoke/integration suite поверх полного PostgreSQL baseline.
 
-PLAN-001 продолжается после принятого AUTO-001 MVP.
+Рабочий принцип: один журнал полностью → минимальные реальные связи → automated and user acceptance → следующий журнал.
 
 ## 9. UX-001
-
-`UX-001 v0.3` является предварительным проектным контрактом для визуального прототипирования.
 
 ```text
 status: provisional
@@ -201,39 +242,20 @@ visual acceptance: pending
 implementation authorization: not granted
 ```
 
-Структурно пакет включает evidence-based audit, visual direction, principles, candidate tokens, component/interaction contracts, page archetypes, three reference-screen contracts and staged roadmap.
+Следующий UX gate: два компактных визуальных направления для application shell и одного показательного structured-journal screen → решение пользователя → ограниченный runtime prototype → корректировка → фиксация accepted tokens.
 
-Сейчас не приняты визуально:
+Журнал дефектов остаётся кандидатом на reference vertical slice, но окончательный выбор принимает PLAN-001.
 
-- concrete palette;
-- typography scale;
-- density;
-- radii and shadows;
-- shell composition;
-- внешний вид reference screens.
+## 10. Непереговорные предметные правила
 
-Следующий UX gate: два компактных визуальных направления для application shell и одного показательного structured-journal screen → выбор пользователя → ограниченный runtime prototype → визуальная корректировка → фиксация accepted tokens.
-
-Журнал дефектов остаётся сильным кандидатом на reference vertical slice, но окончательный выбор принимает PLAN-001.
-
-## 10. Согласованное продуктовое направление
-
-```text
-минимальный общий контракт
-→ один журнал полностью
-→ минимальные реальные связи
-→ automated and user acceptance
-→ следующий журнал
-```
-
-Связи не откладываются до завершения всего пакета. Полная универсальная timeline не проектируется заранее без подтверждённых отношений.
-
-## 11. QUALITY-001 — закрытый технический долг
-
-Полный test command:
-
-```text
-python manage.py test apps --verbosity 2
-```
-
-На exact accepted PR head выполнено `497/497 OK`. Нулевое test discovery больше не считается текущим долгом. Следующие product slices обязаны сохранять полный suite и добавлять профильные tests/gates.
+- UI конечного пользователя только русский;
+- internals — professional technical English;
+- оперативный журнал остаётся специализированным модулем;
+- остальные журналы строятся на общем ядре, но рабочие формы source-bound;
+- оператор не конструирует произвольные рабочие журналы;
+- управление и ведение моделируются раздельно;
+- информационное ведение — характеристика ведения;
+- ЩПТ и ШОТ относятся к одной технической equipment family с сохранением исходного обозначения/варианта исполнения;
+- электронный, гибридный и бумажный режимы наряда не объявляются юридически эквивалентными без доказанного нормативного основания;
+- реальные данные и secrets не коммитятся;
+- automatic merge запрещён.

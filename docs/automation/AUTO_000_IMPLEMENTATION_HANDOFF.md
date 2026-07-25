@@ -1,8 +1,15 @@
 # AUTO-000 → AUTO-001 implementation handoff
 
-## Условие использования
+## Статус
 
-Этот handoff становится рабочим только после пользовательской приёмки и merge AUTO-000.
+```text
+AUTO-000: accepted and merged
+AUTO-000 merge commit: 937d2cd2b187c17fac3088ccfc52079fc4608306
+handoff: active
+AUTO-001 implementation: not started
+```
+
+Этот handoff активирован пользовательской приёмкой и merge AUTO-000. Он используется только как входной контракт отдельного AUTO-001 implementation chat и не является доказательством существующей automation implementation.
 
 ## Первый этап нового implementation chat
 
@@ -25,25 +32,31 @@ current PR head
 → full test apps
 → status
 → preview isolation proof
-→ evidence in GitHub
+→ sanitised evidence in GitHub
 ```
 
 ## Запреты
 
 - automatic merge;
 - arbitrary root shell;
+- ordinary self-hosted runner with sudo and Docker socket;
 - Docker socket for untrusted runner;
-- workflow execution from modified PR context with secrets;
+- workflow execution from modified/untrusted PR context with VPS secrets;
 - preview write;
 - Git commits from VPS;
 - secrets in repository or chat;
-- Base64/self-applying bootstrap.
+- Base64 payloads;
+- temporary part-files;
+- self-applying GitHub Actions workflows;
+- autonomous code repair.
 
 ## Exit gate
 
 - two successful deployments;
-- one negative case;
+- one intentional negative case;
 - exact-SHA and superseded proof;
 - preview isolation;
 - no manual VPS commands in normal cycle;
-- user acceptance.
+- explicit user acceptance.
+
+После exit gate AUTO-001 merge всё равно выполняется только по отдельной явной команде пользователя. Затем работа возвращается в постоянный Chat 0 и далее к PLAN-001.

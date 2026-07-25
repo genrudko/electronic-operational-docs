@@ -6,7 +6,11 @@
 work item: AUTO-000
 change type: documentation-only
 runtime impact: none
-implementation authorization for AUTO-001: pending AUTO-000 acceptance
+status: accepted and merged
+accepted PR head: 3a4b4770e1fce41405813efa1e931288bf1a26b8
+main merge commit: 937d2cd2b187c17fac3088ccfc52079fc4608306
+implementation authorization for AUTO-001: granted by AUTO-000 acceptance
+AUTO-001 implementation: absent until separate work item
 ```
 
 ## Цель
@@ -44,4 +48,6 @@ implementation authorization for AUTO-001: pending AUTO-000 acceptance
 
 ## Acceptance
 
-Merge AUTO-000 означает принятие архитектурного контракта и разрешение подготовить отдельный implementation PR AUTO-001. Он не означает, что automation уже работает.
+AUTO-000 принят пользователем, squash-merged PR #9 и post-merge verified. Это означает принятие архитектурного контракта и разрешение подготовить отдельный implementation PR AUTO-001.
+
+Acceptance AUTO-000 не означает, что automation уже работает. AUTO-001 требует отдельного implementation chat, branch, Draft PR, gap analysis, exact-head CI, VPS acceptance и явного пользовательского merge decision.

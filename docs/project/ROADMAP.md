@@ -4,96 +4,145 @@
 
 Roadmap управляется доказательствами, а не только исторической нумерацией патчей. Каждый этап начинается после проверки текущего baseline и заканчивается технической и пользовательской приёмкой.
 
+## Принятый baseline
+
+```text
+main / 937d2cd2b187c17fac3088ccfc52079fc4608306
+```
+
+Он включает INFRA-001–003, DOCS-001–003, QUALITY-001 и AUTO-000.
+
 ## Последние завершённые этапы
 
 ### DOCS-001 — Project operating system
 
 **Статус:** принят, squash-merged PR #4, post-merge verified.
 
-**Accepted application baseline:** `e18872face7f27f489056b72fed31e5586121b0c`.
-
 Выходы:
 
-- новое дерево документации;
-- актуальные README and AGENTS;
+- canonical documentation tree;
+- README and AGENTS contracts;
 - current state, handoff, master plan, roadmap and domain invariants;
 - preview/development runbooks;
-- PR template;
-- documentation CI gate;
-- migration legacy `docs/project_state/`;
-- последовательная журнальная стратегия;
-- paper-first режим журнала ключей;
+- PR template and documentation CI gate;
+- sequential journal strategy;
+- paper-first keys journal;
 - UX-001 parallel workstream.
 
-DOCS-002 зафиксировал accepted baseline и PLAN-001 transition как metadata-only follow-up. DOCS-003 сохранил UX-001 v0.3 как provisional contract.
+DOCS-002 зафиксировал baseline metadata. DOCS-003 сохранил UX-001 v0.3 как provisional contract.
 
 ### QUALITY-001 — PostgreSQL test execution repair
 
 **Статус:** принят, squash-merged PR #8.
 
 ```text
-current main history HEAD: 4237aadc2cfdee518567024c2b45b653f49c16e7
+merge commit: 4237aadc2cfdee518567024c2b45b653f49c16e7
 full PostgreSQL suite: 497/497 OK
 test command: python manage.py test apps --verbosity 2
 ```
 
-Закрыт долг нулевого test discovery. Следующие product slices сохраняют полный suite и добавляют профильные tests/gates.
-
-## Текущий короткий инфраструктурный спринт
+Нулевой test discovery закрыт. Следующие product slices сохраняют full suite и добавляют профильные tests/gates.
 
 ### AUTO-000 — Development automation contract
 
-**Тип:** documentation-only.
+**Статус:** принят, squash-merged PR #9, post-merge verified.
+
+```text
+accepted PR head: 3a4b4770e1fce41405813efa1e931288bf1a26b8
+merge commit: 937d2cd2b187c17fac3088ccfc52079fc4608306
+change type: documentation-only operating-system milestone
+```
 
 Выходы:
 
 - automation master plan;
 - GitHub/VPS orchestrator contract;
-- security model;
+- exact-SHA and fail-closed invariants;
+- restricted security model;
 - acceptance contract;
 - implementation roadmap;
 - decision register;
-- синхронизация canonical state после QUALITY-001.
+- explicit ban on automatic merge and preview write.
 
-AUTO-000 не меняет runtime, workflows, VPS или secrets.
+Post-merge preview rebuilt from current main and verified: healthy app/db, HTTP 200, `eod_preview`, migrations clean, exact SHA/worktree clean, host/container source match.
+
+## Текущий metadata follow-up
+
+### DOCS-005 — AUTO-000 baseline finalization
+
+**Статус:** Draft PR #10.
+
+```text
+branch: docs/005-auto000-baseline-finalization
+runtime impact: none
+```
+
+Цель:
+
+- записать accepted baseline `937d2cd…`;
+- синхронизировать state/handoff/history/roadmap/open items/release notes;
+- подготовить новый постоянный Chat 0;
+- сохранить границу: собственный merge SHA DOCS-005 не создаёт новый application baseline.
+
+## Следующий короткий инфраструктурный этап
 
 ### AUTO-001 — Development orchestrator MVP
 
-Начинается после принятия AUTO-000.
+Начинается после принятия DOCS-005 и в отдельном implementation chat/branch/PR.
+
+Перед реализацией обязателен gap analysis actual infrastructure:
+
+1. main, exact SHA, open PR and branches;
+2. `AGENTS.md`, canonical docs and all `docs/automation/`;
+3. actual workflows, compose, scripts and runbooks;
+4. network route GitHub-hosted runner → VPS;
+5. restricted transport and permissions;
+6. только затем executable workflow/gateway.
 
 Минимальный infrastructure vertical slice:
 
 ```text
 trusted PR trigger
 → green current-head CI
+→ restricted VPS gateway
 → exact-SHA development deployment
 → explicit refresh/rebuild
 → check
-→ test apps
+→ full test apps
 → status
-→ evidence in GitHub
+→ preview isolation proof
+→ sanitised GitHub evidence
 ```
 
 Gate завершения:
 
-- два успешных deployment;
-- один negative/failure case;
-- exact-SHA proof;
+- два successive successful deployments;
+- один intentional negative case;
+- exact-SHA and superseded proof;
 - preview isolation proof;
-- штатный цикл без ручных VPS-команд пользователя;
-- automatic merge отсутствует.
+- normal cycle without manual VPS commands from user;
+- automatic merge absent;
+- explicit user acceptance.
+
+Не входят:
+
+- automatic preview deployment;
+- browser automation;
+- visual regression;
+- automatic development DB reset;
+- autonomous code repair.
 
 После AUTO-001 MVP продуктовая работа возвращается к PLAN-001. AUTO-002+ не являются блокерами.
 
-## Текущая продуктовая фаза
+## Следующая обязательная продуктовая работа
 
 ### PLAN-001 — ревизия фактической реализации
 
-PR #7 остаётся Draft и продолжается после AUTO-001 MVP.
+PR #7 остаётся Draft и перед продолжением должен быть синхронизирован с accepted main без потери instrumentation.
 
 Цель: установить, что сделано, не сделано, сделано частично или иначе, чем планировалось.
 
-Обязательная матрица по каждому модулю:
+Обязательная матрица:
 
 | Область | Проверяется |
 |---|---|
@@ -103,55 +152,43 @@ PR #7 остаётся Draft и продолжается после AUTO-001 MVP
 | UI | реальные пользовательские маршруты |
 | Тесты | unit, integration, gates and CI |
 | Demo | presentation data and end-to-end scenarios |
-| Приёмка | подтверждённые видео/логи и открытые дефекты |
+| Приёмка | подтверждённые видео/логи и open defects |
 
-PLAN-001 обязан определить минимальный обязательный smoke/integration suite поверх действующего полного PostgreSQL test baseline.
-
-Выход:
+PLAN-001 обязан определить:
 
 - master plan v3.0;
-- подтверждённый ближайший журнальный vertical slice;
-- реалистичная последовательность следующих работ;
-- обновлённые acceptance criteria;
-- список технического долга, который действительно блокирует продуктовую разработку.
+- ближайший journal vertical slice;
+- реалистичную последовательность product work;
+- updated acceptance criteria;
+- минимальный smoke/integration suite поверх full `497/497` baseline;
+- technical debt, который реально блокирует продукт.
 
 ## Параллельная UX-фаза
 
 ### UX-001 — UI design system and interaction contract
 
-**Текущий статус:** provisional project contract; visual acceptance pending; implementation authorization not granted.
+```text
+status: provisional
+visual acceptance: pending
+implementation authorization: not granted
+```
 
-UX-001 v0.3 подготовил:
-
-- evidence-based UI audit;
-- runtime video evidence audit;
-- самостоятельное visual direction;
-- UI principles;
-- candidate design tokens;
-- component contract;
-- interaction/keyboard/focus/overlay contract;
-- page archetypes;
-- three textual reference-screen contracts;
-- staged implementation roadmap.
-
-Пакет сохраняется в `docs/ux/UX-001_v0.3/`, а каноническая граница статуса — в `docs/ux/README.md`.
-
-### Следующий visual gate
+Следующий visual gate:
 
 ```text
-два компактных визуальных направления
-на application shell + один structured-journal screen
-→ решение пользователя
-→ ограниченный runtime prototype
-→ визуальная корректировка и acceptance
+два compact visual directions
+для application shell + одного structured-journal screen
+→ user decision
+→ limited runtime prototype
+→ visual correction and acceptance
 → accepted tokens
 ```
 
-До этого не являются стандартом concrete palette, typography scale, density, radii, shadows, shell composition и внешний вид reference screens. Массовое внедрение по всем routes не разрешено.
+До этого concrete palette, typography, density, radii, shadows, shell composition и reference-screen appearance не являются стандартом.
 
-UX-001 не блокирует PLAN-001. UI/UX-решения проверяются на реальном выбранном journal slice и operational journal, а интеграционные и доменные решения остаются в основном чате.
+UX-001 не блокирует PLAN-001. UI/UX проверяется на выбранном real journal slice и operational journal.
 
-## Принцип продуктовой очереди после PLAN-001
+## Принцип product queue после PLAN-001
 
 ```text
 минимальный общий контракт
@@ -161,148 +198,149 @@ UX-001 не блокирует PLAN-001. UI/UX-решения проверяют
 → следующий журнал
 ```
 
-Полноценная cross-document timeline строится после накопления подтверждённых типов отношений, но минимальные связи с оперативным журналом, оборудованием, участниками и основанием появляются в каждом vertical slice.
+Минимальные связи с operational journal, equipment, participants and basis появляются в каждом vertical slice. Full cross-document timeline не проектируется заранее.
 
-## Предварительные продуктовые фазы
+## Предварительные product phases
 
-Порядок ниже является гипотезой до завершения PLAN-001.
+Порядок ниже остаётся гипотезой до PLAN-001.
 
 ### PRODUCT-A1 — Defect journal vertical slice
 
-Предварительный первый кандидат:
+Предварительный кандидат:
 
-- source-bound форма дефекта;
-- оборудование;
-- инициатор и ответственный;
-- статусы и история;
-- связь с оперативной записью;
+- source-bound defect form;
+- equipment;
+- initiator and responsible person;
+- statuses and history;
+- link to operational record;
 - presentation data;
 - automated gates;
-- пользовательская приёмка.
+- user acceptance.
 
-UX-001 использует defect family как reference contract, но это не является окончательным выбором продукта.
+UX-001 может использовать defect family как reference contract, но это не окончательный выбор.
 
 ### PRODUCT-A2 — Application journal vertical slice
 
-- заявка и её основание;
-- оборудование, сроки и участники;
-- минимальные статусы;
-- связь с дефектом и оперативным журналом;
+- application and basis;
+- equipment, dates and participants;
+- minimal statuses;
+- link to defect and operational journal;
 - acceptance scenario.
 
 ### PRODUCT-A3 — Disposition journal vertical slice
 
-- распоряжение;
+- disposition;
 - issuer/recipient/content;
-- минимальные переходы;
-- связь `заявка → распоряжение`;
-- связь с оперативным журналом;
+- minimal transitions;
+- link `application → disposition`;
+- link to operational journal;
 - acceptance scenario.
 
 ### PRODUCT-A4+ — Remaining structured journals
 
-Очередность уточняется PLAN-001:
+Очередность уточняет PLAN-001:
 
-- журнал ввода оборудования;
-- журнал РЗА и телемеханики;
-- журнал работ по нарядам;
-- журнал работ по распоряжениям;
-- иные source-bound журналы.
+- equipment commissioning;
+- relay protection and telemechanics;
+- work permit journal;
+- disposition-work journal;
+- other source-bound journals.
 
-Журнал выдачи и возврата ключей не входит в обязательный электронный lifecycle. Основной режим — paper-first; электронный справочный/контрольный контур рассматривается отдельно.
+Keys journal does not enter mandatory electronic lifecycle. Primary mode remains paper-first.
 
 ### PRODUCT-B — Work permit and switching minimum slice
 
-- базовый реестр нарядов и распоряжений;
-- участники и роли;
-- работа, место, оборудование и меры безопасности;
-- минимальные статусы и переходы;
-- paper/hybrid/electronic mode оригинала;
-- минимальный реестр документов переключений;
-- связи с заявками, распоряжениями и оперативным журналом.
+- basic work permit/disposition register;
+- participants and roles;
+- work, place, equipment and safety measures;
+- minimal statuses/transitions;
+- paper/hybrid/electronic original mode;
+- minimal switching document register;
+- links to applications, dispositions and operational journal.
 
 ### PRODUCT-C — Operational journal assistance and stabilization
 
-- шаблоны;
-- параметры;
-- словарь сокращений;
-- оборудование, сотрудники и документы в подсказках;
-- клавиатурная работа;
-- стабильность редактора и семантических ссылок;
-- устранение marker duplication;
+- templates and parameters;
+- abbreviation dictionary;
+- equipment/personnel/document suggestions;
+- keyboard workflow;
+- editor and semantic-link stability;
+- marker duplication repair;
 - stable focus/overlay/drawer geometry.
 
-Blocking editor repairs не откладываются автоматически до полного редизайна.
+Blocking editor repairs are not deferred automatically until full redesign.
 
 ### RELEASE-A — Internal prototype
 
-- 6–8 сквозных сценариев;
+- 6–8 end-to-end scenarios;
 - presentation reset;
 - regression checklist;
-- блокирующие дефекты устранены;
-- демонстрационный маршрут от начала до сдачи смены;
-- paper-first ограничения журнала ключей отражены честно.
+- blocking defects removed;
+- route from shift start to shift handover;
+- paper-first keys limitations shown honestly.
 
 ### PRODUCT-D — Cross-document lifecycle
 
-- заявка → распоряжение → работа;
-- дефект → оборудование → работа;
-- наряд → допуски → окончание → закрытие;
-- переключение → заявка → распоряжение → запись;
-- единая timeline.
+- application → disposition → work;
+- defect → equipment → work;
+- work permit → admissions → completion → closure;
+- switching → application → disposition → operational record;
+- unified timeline after evidence exists.
 
 ### PRODUCT-E — Electronic work permit lifecycle
 
-Только после нормативного исследования:
+Only after normative research:
 
-- целевые инструктажи;
-- первичный и ежедневный допуск;
-- изменения бригады;
-- переводы;
-- приостановка и возобновление;
-- полное окончание и закрытие;
-- подписи и доказательства действий;
-- хранение и архив.
+- target briefings;
+- primary/daily admission;
+- crew changes;
+- workplace transfers;
+- suspension/resumption;
+- completion/closure;
+- signatures and action evidence;
+- storage/archive.
 
 ### RELEASE-B — Full demonstration
 
-- роли и полномочия;
-- полный аудит;
-- печатные формы и экспорт;
-- руководство пользователя и администратора;
-- программа и методика испытаний;
-- итоговая функциональная приёмка.
+- roles and permissions;
+- full audit;
+- print/export;
+- user/admin guidance;
+- test program and methodology;
+- final functional acceptance.
 
-## Automation после MVP
+## Automation after MVP
 
-Только по подтверждённой необходимости:
+Only by confirmed need:
 
-- AUTO-002 change classification;
+- AUTO-002 change classification after several real product PRs;
 - AUTO-003 structured evidence;
 - AUTO-004 Playwright browser acceptance;
-- visual regression после принятия design tokens;
+- visual regression after accepted design tokens;
 - automatic development DB reset;
 - trusted preview deployment.
 
+AUTO-002 is not started automatically after AUTO-001. Readiness is assessed after approximately 3–5 real product PRs through the MVP.
+
 ## Дальняя очередь
 
-Только после отдельного решения предприятия:
+Only after separate enterprise decision:
 
 - AD/LDAP;
-- кадровые системы и СЭД;
-- юридически значимая электронная подпись;
-- криптопровайдер и сертификаты;
+- HR/EDMS integrations;
+- legally significant electronic signature;
+- cryptoprovider/certificates;
 - read-only SCADA/CIM integrations;
 - mobile offline mode;
-- отказоустойчивость, репликация и промышленный ввод;
-- отмена бумажного дублирования.
+- high availability and industrial commissioning;
+- cancellation of paper duplication.
 
 ## Правила изменения roadmap
 
-- новый этап не добавляется только потому, что он звучит полезно;
-- изменение направления оформляется записью в `DECISION_LOG.md`;
-- статус `готово` требует Definition of Done and acceptance evidence;
+- новый этап не добавляется только потому, что звучит полезно;
+- direction change записывается в `DECISION_LOG.md`;
+- status `готово` требует Definition of Done and acceptance evidence;
 - provisional UX contract не считается visual acceptance;
-- частично реализованная функция не считается завершённым этапом;
-- infrastructure tasks могут закрывать части поздних этапов досрочно;
-- применимые canonical docs обновляются вместе с каждым принятым изменением.
+- partially implemented feature не считается завершённым этапом;
+- infrastructure scope не расширяется без доказанной необходимости;
+- merge выполняется только по явной команде пользователя.
