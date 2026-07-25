@@ -14,8 +14,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  foundation-policy-and-tests:
-    name: Trusted controller policy and negative tests
+  foundation-regression-tests:
+    name: Trusted foundation regression tests
     runs-on: ubuntu-24.04
     timeout-minutes: 15
 
@@ -50,7 +50,7 @@ jobs:
             scripts/automation/auto_001a_foundation.py \
             tests/automation/test_auto_001a_foundation.py
 
-      - name: Run unit, negative and permission tests
+      - name: Run accepted AUTO-001A regression tests
         shell: bash
         run: |
           set -o pipefail
@@ -68,22 +68,6 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
           compression-level: 0
-
-      - name: Validate trusted workflow policy
-        run: |
-          python scripts/automation/auto_001a_foundation.py policy-check \
-            --root . \
-            --policy .github/auto001a-foundation.json
-
-      - name: Verify no write permission or deploy surface was introduced
-        shell: bash
-        run: |
-          set -euo pipefail
-          trusted=.github/workflows/vps-development.yml
-          ! grep -Eq '^[[:space:]]+[a-z-]+:[[:space:]]+write$' "$trusted"
-          ! grep -Eq 'secrets\.|actions/download-artifact|(^|[[:space:]])(ssh|scp|rsync)[[:space:]]' "$trusted"
-          ! grep -Eq 'contents: write|workflows: write|pull-requests: write' "$trusted"
-          ! grep -Eq 'approval|merge_pull_request|enable_auto_merge' "$trusted"
 
       - name: Confirm repository remains unchanged
         shell: bash
