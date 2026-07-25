@@ -90,6 +90,7 @@ if ! grep -Fqx "$forced_line" "$AUTHORIZED_KEYS"; then
 fi
 
 cat >"$SUDOERS_FILE" <<EOF_SUDOERS
+Defaults:$AUTOMATION_USER env_keep += "SSH_ORIGINAL_COMMAND"
 $AUTOMATION_USER ALL=(root) NOPASSWD: $CONTROLLER ssh-gateway
 EOF_SUDOERS
 chmod 0440 "$SUDOERS_FILE"
