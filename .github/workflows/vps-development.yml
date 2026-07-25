@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: Checkout trusted controller from the default-branch event SHA
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ github.sha }}
           fetch-depth: 1
@@ -48,12 +48,12 @@ jobs:
           echo "Trusted controller SHA: $GITHUB_SHA"
 
       - name: Set up Python 3.13
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.13"
 
       - name: Collect live GitHub request facts
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const fs = require('fs');
@@ -154,7 +154,7 @@ jobs:
           cat auto001a-summary.md >>"$GITHUB_STEP_SUMMARY"
 
       - name: Upload immutable trusted manifest
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: auto001a-manifest-${{ github.run_id }}-${{ github.run_attempt }}
           path: auto001a-manifest.json
