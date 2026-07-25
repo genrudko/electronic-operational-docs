@@ -33,6 +33,21 @@
 | [`project/CURRENT_HANDOFF.md`](project/CURRENT_HANDOFF.md) | Текущая передача контекста |
 | [`project/NEW_CHAT_STARTER.md`](project/NEW_CHAT_STARTER.md) | Стартовый контракт нового интеграционного чата |
 
+## Автоматизация разработки
+
+| Документ | Назначение |
+|---|---|
+| [`automation/README.md`](automation/README.md) | Статус AUTO-000, границы и навигация по пакету автоматизации |
+| [`automation/AUTO_000_SCOPE.md`](automation/AUTO_000_SCOPE.md) | Scope документационного этапа и граница отсутствующей реализации |
+| [`automation/AUTO_000_REVIEW_CHECKLIST.md`](automation/AUTO_000_REVIEW_CHECKLIST.md) | Проверка архитектуры, безопасности и готовности AUTO-000 |
+| [`automation/AUTO_000_IMPLEMENTATION_HANDOFF.md`](automation/AUTO_000_IMPLEMENTATION_HANDOFF.md) | Контракт перехода к отдельной реализации AUTO-001 |
+| [`automation/AUTOMATION_MASTER_PLAN.md`](automation/AUTOMATION_MASTER_PLAN.md) | Программа AUTO-000…AUTO-010 и приоритет минимального MVP |
+| [`automation/AUTO_001_GITHUB_VPS_ORCHESTRATOR.md`](automation/AUTO_001_GITHUB_VPS_ORCHESTRATOR.md) | Функциональный контракт GitHub → development VPS orchestrator |
+| [`automation/AUTO_001_SECURITY_MODEL.md`](automation/AUTO_001_SECURITY_MODEL.md) | Trust boundaries, угрозы и минимальные полномочия |
+| [`automation/AUTO_001_ACCEPTANCE_CONTRACT.md`](automation/AUTO_001_ACCEPTANCE_CONTRACT.md) | Проверяемые functional, security и operational criteria |
+| [`automation/AUTO_001_IMPLEMENTATION_ROADMAP.md`](automation/AUTO_001_IMPLEMENTATION_ROADMAP.md) | Разбиение реализации, тесты и rollback |
+| [`automation/AUTO_001_DECISION_REGISTER.md`](automation/AUTO_001_DECISION_REGISTER.md) | Принятые, предлагаемые, открытые и отклонённые решения |
+
 ## UX/UI
 
 | Документ | Назначение |

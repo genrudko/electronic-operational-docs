@@ -4,7 +4,7 @@
 
 Roadmap управляется доказательствами, а не только исторической нумерацией патчей. Каждый этап начинается после проверки текущего baseline и заканчивается технической и пользовательской приёмкой.
 
-## Последний завершённый этап
+## Последние завершённые этапы
 
 ### DOCS-001 — Project operating system
 
@@ -25,11 +25,71 @@ Roadmap управляется доказательствами, а не тол�
 - paper-first режим журнала ключей;
 - UX-001 parallel workstream.
 
-DOCS-002 затем зафиксировал accepted baseline и PLAN-001 transition как metadata-only follow-up; current main history HEAD `a2d686b0061fac513c02540a2176850640496884` не подменяет application baseline.
+DOCS-002 зафиксировал accepted baseline и PLAN-001 transition как metadata-only follow-up. DOCS-003 сохранил UX-001 v0.3 как provisional contract.
+
+### QUALITY-001 — PostgreSQL test execution repair
+
+**Статус:** принят, squash-merged PR #8.
+
+```text
+current main history HEAD: 4237aadc2cfdee518567024c2b45b653f49c16e7
+full PostgreSQL suite: 497/497 OK
+test command: python manage.py test apps --verbosity 2
+```
+
+Закрыт долг нулевого test discovery. Следующие product slices сохраняют полный suite и добавляют профильные tests/gates.
+
+## Текущий короткий инфраструктурный спринт
+
+### AUTO-000 — Development automation contract
+
+**Тип:** documentation-only.
+
+Выходы:
+
+- automation master plan;
+- GitHub/VPS orchestrator contract;
+- security model;
+- acceptance contract;
+- implementation roadmap;
+- decision register;
+- синхронизация canonical state после QUALITY-001.
+
+AUTO-000 не меняет runtime, workflows, VPS или secrets.
+
+### AUTO-001 — Development orchestrator MVP
+
+Начинается после принятия AUTO-000.
+
+Минимальный infrastructure vertical slice:
+
+```text
+trusted PR trigger
+→ green current-head CI
+→ exact-SHA development deployment
+→ explicit refresh/rebuild
+→ check
+→ test apps
+→ status
+→ evidence in GitHub
+```
+
+Gate завершения:
+
+- два успешных deployment;
+- один negative/failure case;
+- exact-SHA proof;
+- preview isolation proof;
+- штатный цикл без ручных VPS-команд пользователя;
+- automatic merge отсутствует.
+
+После AUTO-001 MVP продуктовая работа возвращается к PLAN-001. AUTO-002+ не являются блокерами.
 
 ## Текущая продуктовая фаза
 
 ### PLAN-001 — ревизия фактической реализации
+
+PR #7 остаётся Draft и продолжается после AUTO-001 MVP.
 
 Цель: установить, что сделано, не сделано, сделано частично или иначе, чем планировалось.
 
@@ -45,7 +105,7 @@ DOCS-002 затем зафиксировал accepted baseline и PLAN-001 trans
 | Demo | presentation data and end-to-end scenarios |
 | Приёмка | подтверждённые видео/логи и открытые дефекты |
 
-Дополнительно PLAN-001 обязан определить минимальный автоматический smoke/integration suite, поскольку текущая Django test command обнаруживает `0 test(s)`.
+PLAN-001 обязан определить минимальный обязательный smoke/integration suite поверх действующего полного PostgreSQL test baseline.
 
 Выход:
 
@@ -212,6 +272,17 @@ Blocking editor repairs не откладываются автоматическ
 - руководство пользователя и администратора;
 - программа и методика испытаний;
 - итоговая функциональная приёмка.
+
+## Automation после MVP
+
+Только по подтверждённой необходимости:
+
+- AUTO-002 change classification;
+- AUTO-003 structured evidence;
+- AUTO-004 Playwright browser acceptance;
+- visual regression после принятия design tokens;
+- automatic development DB reset;
+- trusted preview deployment.
 
 ## Дальняя очередь
 

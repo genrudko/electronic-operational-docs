@@ -1,5 +1,47 @@
 # ЭОД — release notes
 
+## 2026-07-25 — QUALITY-001 PostgreSQL test execution repair
+
+### Статус
+
+Принят пользователем и squash-merged PR #8.
+
+```text
+accepted PR head: 4bf055d681ef35a881c8bf5dc28e8945c1948e0d
+main merge commit: 4237aadc2cfdee518567024c2b45b653f49c16e7
+full PostgreSQL suite: 497/497 OK
+```
+
+### Исправлено
+
+- CI и development runner используют реальный Django label `apps`;
+- test discovery gate включает `EOD_TESTING=1`;
+- PostgreSQL `select_for_update` ограничен основной таблицей;
+- test connections и staticfiles storage корректны;
+- concurrency workers закрывают thread-local connections;
+- synthetic ZIP fixtures детерминированы;
+- удалены устаревшие static test contracts.
+
+Accepted application baseline остаётся `e18872f…` до отдельной фиксации post-merge preview evidence для application merge commit.
+
+## 2026-07-25 — AUTO-000 Development automation contract
+
+### Статус
+
+Documentation-only Draft PR. Runtime, workflows, VPS и secrets не меняются.
+
+### Добавлено
+
+- automation master plan;
+- AUTO-001 functional contract;
+- security model;
+- acceptance contract;
+- implementation roadmap;
+- decision register;
+- актуализация current state, handoff, roadmap and open items.
+
+Следующий этап после принятия — AUTO-001 MVP. Полный набор AUTO-002+ не блокирует возврат к PLAN-001.
+
 ## 2026-07-25 — DOCS-001 Project operating system
 
 ### Статус
@@ -58,6 +100,8 @@ accepted application baseline: e18872face7f27f489056b72fed31e5586121b0c
 
 Django test command обнаружил `0 test(s)`. Это зафиксировано как technical debt и не считается регрессионной защитой. DOCS-001 не менял application behavior, models, migrations or runtime data.
 
+Позднее этот долг закрыт QUALITY-001; текущий подтверждённый полный suite выполняет 497 tests.
+
 ### Post-merge preview
 
 Подтверждено:
@@ -82,6 +126,8 @@ PLAN-001:
 - определение минимального automated smoke/integration suite.
 
 Параллельно выполняется UX-001.
+
+Текущая последовательность работ позднее дополнена коротким AUTO-000/AUTO-001 infrastructure sprint; историческое решение DOCS-001 выше не переписывается.
 
 ## 2026-07-24 — INFRA-003
 
