@@ -18,9 +18,9 @@
     "AUTO-001A Foundation CI"
   ],
   "blocked_path_prefixes": [
-    ".github/workflows/",
-    "scripts/automation/",
-    "deploy/automation/"
+    ".github/workflows",
+    "scripts/automation",
+    "deploy/automation"
   ],
   "blocked_exact_paths": [
     ".github/auto001a-foundation.json",
