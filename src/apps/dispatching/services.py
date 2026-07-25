@@ -168,7 +168,7 @@ def publish_management_revision(
     actor: Employee,
 ) -> ManagementRevision:
     locked = (
-        ManagementRevision.objects.select_for_update()
+        ManagementRevision.objects.select_for_update(of=("self",))
         .select_related(
             "management_object__equipment",
             "management_object__organization",
@@ -233,7 +233,7 @@ def publish_supervision_revision(
     actor: Employee,
 ) -> SupervisionRevision:
     locked = (
-        SupervisionRevision.objects.select_for_update()
+        SupervisionRevision.objects.select_for_update(of=("self",))
         .select_related(
             "supervision_object__equipment",
             "supervision_object__organization",
@@ -285,7 +285,7 @@ def publish_adjacent_relation_revision(
     actor: Employee,
 ) -> AdjacentSubjectRelationRevision:
     locked = (
-        AdjacentSubjectRelationRevision.objects.select_for_update()
+        AdjacentSubjectRelationRevision.objects.select_for_update(of=("self",))
         .select_related(
             "relation__organization",
             "relation__source_subject",

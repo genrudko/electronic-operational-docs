@@ -404,12 +404,18 @@ def synthetic_power_system_package(
         "**Источник:** `synthetic-source.xlsx`\n"
         f"**SHA-256 источника:** `{'1' * 64}`\n"
     ).encode()
+    def write_deterministic(archive: zipfile.ZipFile, name: str, payload: bytes) -> None:
+        info = zipfile.ZipInfo(name, date_time=(2026, 1, 1, 0, 0, 0))
+        info.compress_type = zipfile.ZIP_DEFLATED
+        info.external_attr = 0o600 << 16
+        archive.writestr(info, payload)
+
     output = io.BytesIO()
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr(analysis_name, analysis)
-        archive.writestr(ASSET_FILE, _csv_bytes(ASSET_HEADERS, asset_rows))
-        archive.writestr(AUTHORITY_FILE, _csv_bytes(AUTHORITY_HEADERS, authority_rows))
-        archive.writestr(ALIAS_FILE, _csv_bytes(ALIAS_HEADERS, alias_rows))
-        archive.writestr(TYPE_FILE, _csv_bytes(TYPE_HEADERS, type_rows))
-        archive.writestr(ISSUE_FILE, _csv_bytes(ISSUE_HEADERS, issue_rows))
+        write_deterministic(archive, analysis_name, analysis)
+        write_deterministic(archive, ASSET_FILE, _csv_bytes(ASSET_HEADERS, asset_rows))
+        write_deterministic(archive, AUTHORITY_FILE, _csv_bytes(AUTHORITY_HEADERS, authority_rows))
+        write_deterministic(archive, ALIAS_FILE, _csv_bytes(ALIAS_HEADERS, alias_rows))
+        write_deterministic(archive, TYPE_FILE, _csv_bytes(TYPE_HEADERS, type_rows))
+        write_deterministic(archive, ISSUE_FILE, _csv_bytes(ISSUE_HEADERS, issue_rows))
     return SimpleUploadedFile(filename, output.getvalue(), content_type="application/zip")

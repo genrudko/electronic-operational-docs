@@ -105,7 +105,7 @@ jobs:
         run: python manage.py collectstatic --noinput --clear
 
       - name: Run full Django test suite
-        run: python manage.py test --verbosity 2
+        run: python manage.py test apps --verbosity 2
 
       - name: Verify repository remains unchanged
         shell: bash

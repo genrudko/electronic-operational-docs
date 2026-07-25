@@ -158,7 +158,7 @@ def update_document_draft(
     equipment_assets: Iterable[Any] | None = None,
 ) -> Document:
     locked = (
-        Document.objects.select_for_update()
+        Document.objects.select_for_update(of=("self",))
         .select_related("current_version", "organization")
         .get(pk=document.pk)
     )
@@ -524,7 +524,7 @@ def _register_document_core(
     user: Any | None,
 ) -> RegistrationResult:
     locked = (
-        Document.objects.select_for_update()
+        Document.objects.select_for_update(of=("self",))
         .select_related(
             "document_type",
             "organization",

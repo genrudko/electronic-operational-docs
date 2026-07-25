@@ -34,6 +34,8 @@ def env_bool(name: str, default: bool = False) -> bool:
     }
 
 
+TESTING = "test" in sys.argv or env_bool("EOD_TESTING", False)
+
 EOD_DEPLOYMENT_MODE = os.getenv("EOD_DEPLOYMENT_MODE", "development").strip().lower()
 if EOD_DEPLOYMENT_MODE not in {"development", "ci", "preview"}:
     raise RuntimeError(
@@ -136,7 +138,7 @@ elif DB_ENGINE in {"postgres", "postgresql"}:
             "PASSWORD": os.getenv("POSTGRES_PASSWORD", "eod_local_password"),
             "HOST": os.getenv("POSTGRES_HOST", "127.0.0.1"),
             "PORT": os.getenv("POSTGRES_PORT", "55432"),
-            "CONN_MAX_AGE": 60,
+            "CONN_MAX_AGE": 0 if TESTING else 60,
             "OPTIONS": {"connect_timeout": 5},
         }
     }
@@ -178,7 +180,11 @@ STORAGES = {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": (
+            "django.contrib.staticfiles.storage.StaticFilesStorage"
+            if TESTING
+            else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        ),
     },
 }
 

@@ -170,8 +170,15 @@ def synthetic_personnel_csv_package(
     items = list(content.items())
     if reverse_order:
         items.reverse()
+
+    def write_deterministic(archive: zipfile.ZipFile, name: str, payload: bytes) -> None:
+        info = zipfile.ZipInfo(name, date_time=(2026, 1, 1, 0, 0, 0))
+        info.compress_type = zipfile.ZIP_DEFLATED
+        info.external_attr = 0o600 << 16
+        archive.writestr(info, payload)
+
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for name, data in items:
-            archive.writestr(f"{prefix}{name}", data)
+            write_deterministic(archive, f"{prefix}{name}", data)
     return buffer.getvalue()
