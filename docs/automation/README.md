@@ -2,18 +2,19 @@
 
 ## Статус
 
-Каталог фиксирует архитектурный контракт автоматизации GitHub-first/VPS-first процесса.
+Каталог фиксирует принятый архитектурный контракт автоматизации GitHub-first/VPS-first процесса.
 
-На этапе AUTO-000:
+После принятия AUTO-000:
 
 ```text
-contract: documented
-implementation: absent
+contract: accepted
+AUTO-000 merge: 937d2cd2b187c17fac3088ccfc52079fc4608306
+AUTO-001 implementation: not started
 current VPS workflow: manual
 automatic merge: forbidden
 ```
 
-AUTO-000 не меняет runtime, GitHub Actions, VPS, secrets или способ фактического deployment. До принятия и реализации AUTO-001 продолжает действовать ручной процесс из `docs/process/DEVELOPMENT_WORKFLOW.md`.
+AUTO-000 принят пользователем, squash-merged в `main` и post-merge проверен на preview. Он не менял runtime, GitHub Actions, VPS, secrets или способ фактического deployment. До принятия и реализации AUTO-001 продолжает действовать ручной процесс из `docs/process/DEVELOPMENT_WORKFLOW.md`.
 
 ## Цель
 
@@ -35,8 +36,8 @@ AUTO-000 не меняет runtime, GitHub Actions, VPS, secrets или спос
 
 | Этап | Назначение | Статус |
 |---|---|---|
-| AUTO-000 | архитектура, безопасность, acceptance contract и roadmap | текущий documentation-only этап |
-| AUTO-001 | минимальный GitHub/VPS development orchestrator | следующий короткий инфраструктурный этап |
+| AUTO-000 | архитектура, безопасность, acceptance contract и roadmap | принят, merged и post-merge verified |
+| AUTO-001 | минимальный GitHub/VPS development orchestrator | следующий implementation work item |
 | AUTO-002+ | классификация, browser acceptance, structured evidence и preview deployment | только по подтверждённой необходимости |
 
 ## Документы
