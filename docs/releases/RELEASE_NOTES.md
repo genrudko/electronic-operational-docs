@@ -98,7 +98,9 @@ accepted application baseline: e18872face7f27f489056b72fed31e5586121b0c
 - EOD Development Stack;
 - EOD CI.
 
-На момент DOCS-001 Django test command обнаруживал `0 test(s)`. Этот долг позднее закрыт QUALITY-001; текущий suite выполняет 497 tests.
+Django test command обнаружил `0 test(s)`. Это зафиксировано как technical debt и не считается регрессионной защитой. DOCS-001 не менял application behavior, models, migrations or runtime data.
+
+Позднее этот долг закрыт QUALITY-001; текущий подтверждённый полный suite выполняет 497 tests.
 
 ### Post-merge preview
 
@@ -115,7 +117,17 @@ accepted application baseline: e18872face7f27f489056b72fed31e5586121b0c
 
 ### Следующий этап
 
-PLAN-001 выполняется после короткого AUTO-000/AUTO-001 infrastructure sprint.
+PLAN-001:
+
+- evidence audit реализации;
+- матрица `requirement → code → tests → data → acceptance`;
+- master plan v3.0;
+- выбор ближайшего журнального vertical slice;
+- определение минимального automated smoke/integration suite.
+
+Параллельно выполняется UX-001.
+
+Текущая последовательность работ позднее дополнена коротким AUTO-000/AUTO-001 infrastructure sprint; историческое решение DOCS-001 выше не переписывается.
 
 ## 2026-07-24 — INFRA-003
 
