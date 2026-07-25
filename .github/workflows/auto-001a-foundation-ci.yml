@@ -51,11 +51,23 @@ jobs:
             tests/automation/test_auto_001a_foundation.py
 
       - name: Run unit, negative and permission tests
+        shell: bash
         run: |
+          set -o pipefail
           python -m unittest discover \
             --start-directory tests/automation \
             --pattern 'test_auto_001a_*.py' \
-            --verbose
+            --verbose 2>&1 | tee auto001a-test-results.log
+
+      - name: Upload sanitised test diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: auto001a-foundation-tests-${{ github.run_id }}-${{ github.run_attempt }}
+          path: auto001a-test-results.log
+          if-no-files-found: warn
+          retention-days: 7
+          compression-level: 0
 
       - name: Validate trusted workflow policy
         run: |
