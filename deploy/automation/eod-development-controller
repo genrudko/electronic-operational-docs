@@ -177,7 +177,7 @@ run_isolated_checks_and_tests() {
     docker run --detach --rm \
         --name "$db_container" \
         --network "$network" \
-        --tmpfs /var/lib/postgresql/data:rw,noexec,nosuid,size=1024m \
+        --tmpfs /var/lib/postgresql:rw,noexec,nosuid,size=1024m \
         --env "POSTGRES_DB=$test_db" \
         --env "POSTGRES_USER=$test_user" \
         --env "POSTGRES_PASSWORD=$test_password" \
