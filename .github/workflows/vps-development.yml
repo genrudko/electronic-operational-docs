@@ -1,0 +1,199 @@
+name: EOD Trusted Development Controller
+
+on:
+  pull_request_target:
+    types: [labeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+
+concurrency:
+  group: eod-vps-development
+  cancel-in-progress: false
+
+jobs:
+  validate-trusted-request:
+    name: Validate trusted exact-SHA request
+    if: >-
+      github.event.label.name == 'vps-development-refresh' ||
+      github.event.label.name == 'vps-development-rebuild'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      pr_number: ${{ steps.validate.outputs.pr_number }}
+      head_ref: ${{ steps.validate.outputs.head_ref }}
+      head_sha: ${{ steps.validate.outputs.head_sha }}
+      deployment_profile: ${{ steps.validate.outputs.deployment_profile }}
+      manifest_sha256: ${{ steps.validate.outputs.manifest_sha256 }}
+      vps_state: ${{ steps.validate.outputs.vps_state }}
+
+    steps:
+      - name: Checkout trusted controller from the default-branch event SHA
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify trusted workflow provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$GITHUB_EVENT_NAME" = "pull_request_target"
+          echo "Trusted controller SHA: $GITHUB_SHA"
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+
+      - name: Collect live GitHub request facts
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const fs = require('fs');
+
+            const pullRequest = context.payload.pull_request;
+            if (!pullRequest || !Number.isInteger(pullRequest.number)) {
+              core.setFailed('pull_request_target payload has no valid pull request number.');
+              return;
+            }
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const prNumber = pullRequest.number;
+
+            const { data: livePr } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: prNumber,
+            });
+            const { data: permission } =
+              await github.rest.repos.getCollaboratorPermissionLevel({
+                owner,
+                repo,
+                username: context.actor,
+              });
+            const changedFiles = await github.paginate(
+              github.rest.pulls.listFiles,
+              {
+                owner,
+                repo,
+                pull_number: prNumber,
+                per_page: 100,
+              },
+              (response) => response.data.map((item) => {
+                const changedFile = { filename: item.filename };
+                if (item.previous_filename) {
+                  changedFile.previous_filename = item.previous_filename;
+                }
+                return changedFile;
+              }),
+            );
+            const { data: workflowData } =
+              await github.rest.actions.listWorkflowRunsForRepo({
+                owner,
+                repo,
+                event: 'pull_request',
+                head_sha: livePr.head.sha,
+                per_page: 100,
+              });
+
+            const request = {
+              observed_at: new Date().toISOString(),
+              event: {
+                repository: `${owner}/${repo}`,
+                action: context.payload.action,
+                label: context.payload.label?.name ?? '',
+                actor: context.actor,
+                pr_number: prNumber,
+                base_ref: pullRequest.base?.ref ?? '',
+                head_sha: pullRequest.head?.sha ?? '',
+                head_repo_full_name: pullRequest.head?.repo?.full_name ?? '',
+                workflow_run_id: context.runId,
+                workflow_run_attempt: Number(process.env.GITHUB_RUN_ATTEMPT),
+                trusted_workflow_sha: context.sha,
+              },
+              live_pr: {
+                number: livePr.number,
+                state: livePr.state,
+                base_ref: livePr.base.ref,
+                head_ref: livePr.head.ref,
+                head_sha: livePr.head.sha,
+                head_repo_full_name: livePr.head.repo?.full_name ?? '',
+              },
+              actor_permission: permission.permission,
+              changed_files: changedFiles,
+              workflow_runs: workflowData.workflow_runs.map((run) => ({
+                id: run.id,
+                run_attempt: run.run_attempt,
+                name: run.name,
+                head_sha: run.head_sha,
+                event: run.event,
+                status: run.status,
+                conclusion: run.conclusion,
+              })),
+            };
+
+            fs.writeFileSync(
+              'auto001a-request.json',
+              `${JSON.stringify(request, null, 2)}\n`,
+              { encoding: 'utf8', mode: 0o600 },
+            );
+
+      - name: Validate repository, actor, PR, paths and exact-SHA checks
+        id: validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/automation/auto_001a_foundation.py validate \
+            --request auto001a-request.json \
+            --policy .github/auto001a-foundation.json \
+            --manifest auto001a-manifest.json \
+            --summary auto001a-summary.md \
+            --outputs "$GITHUB_OUTPUT"
+          cat auto001a-summary.md >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Upload immutable trusted manifest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: auto001a-manifest-${{ github.run_id }}-${{ github.run_attempt }}
+          path: auto001a-manifest.json
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+
+  vps-stage-a-blocked:
+    name: VPS phase blocked by Stage A contract
+    needs:
+      - validate-trusted-request
+    if: ${{ needs.validate-trusted-request.result == 'success' }}
+    permissions: {}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Record deterministic Stage A boundary
+        shell: bash
+        env:
+          PR_NUMBER: ${{ needs.validate-trusted-request.outputs.pr_number }}
+          HEAD_SHA: ${{ needs.validate-trusted-request.outputs.head_sha }}
+          PROFILE: ${{ needs.validate-trusted-request.outputs.deployment_profile }}
+          MANIFEST_SHA256: ${{ needs.validate-trusted-request.outputs.manifest_sha256 }}
+        run: |
+          set -euo pipefail
+          test "${{ needs.validate-trusted-request.outputs.vps_state }}" = "BLOCKED"
+          {
+            echo "# AUTO-001A VPS phase"
+            echo
+            echo "**BLOCKED — Stage B is not authorised.**"
+            echo
+            echo "- PR: \`#${PR_NUMBER}\`"
+            echo "- Exact SHA: \`${HEAD_SHA}\`"
+            echo "- Requested profile: \`${PROFILE}\`"
+            echo "- Manifest SHA-256: \`${MANIFEST_SHA256}\`"
+            echo "- VPS access: \`NONE\`"
+            echo "- SSH/deploy secret: \`ABSENT\`"
+          } >>"$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "repository": "genrudko/electronic-operational-docs",
+  "base_ref": "main",
+  "allowed_labels": {
+    "vps-development-refresh": "refresh",
+    "vps-development-rebuild": "rebuild"
+  },
+  "allowed_actor_permissions": [
+    "admin",
+    "maintain",
+    "write"
+  ],
+  "required_workflows": [
+    "EOD CI",
+    "EOD Development Stack",
+    "EOD Documentation Contract",
+    "AUTO-001A Foundation CI"
+  ],
+  "blocked_path_prefixes": [
+    ".github/workflows",
+    "scripts/automation",
+    "deploy/automation"
+  ],
+  "blocked_exact_paths": [
+    ".github/auto001a-foundation.json",
+    "docs/automation/AUTO_001_SECURITY_MODEL.md",
+    "docs/automation/AUTO_001A_TRUSTED_CONTROLLER_FOUNDATION.md",
+    "docs/adr/ADR-AUTO-001A-TRUSTED-CONTROLLER-BOOTSTRAP.md",
+    "docs/runbooks/DEVELOPMENT_AUTOMATION_TRUST_BOOTSTRAP.md"
+  ],
+  "trusted_workflow": ".github/workflows/vps-development.yml",
+  "foundation_ci_workflow": ".github/workflows/auto-001a-foundation-ci.yml",
+  "manifest_schema_version": 1,
+  "artifact_retention_days": 14
+}
