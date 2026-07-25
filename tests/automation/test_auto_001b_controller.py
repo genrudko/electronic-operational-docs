@@ -41,6 +41,7 @@ class ControllerContractTests(unittest.TestCase):
     def test_automation_user_has_no_docker_group_membership(self) -> None:
         self.assertIn('gpasswd --delete "$AUTOMATION_USER" docker', self.bootstrap)
         self.assertIn("NOPASSWD: $CONTROLLER ssh-gateway", self.bootstrap)
+        self.assertIn('env_keep += "SSH_ORIGINAL_COMMAND"', self.bootstrap)
         self.assertNotIn("NOPASSWD: ALL", self.bootstrap)
 
     def test_controller_fetches_exact_pr_head_with_deploy_key(self) -> None:
@@ -113,6 +114,20 @@ class ControllerContractTests(unittest.TestCase):
             "contents: write",
         ):
             self.assertNotIn(forbidden, self.workflow)
+
+    def test_workflow_rolls_back_unconfirmed_failure(self) -> None:
+        self.assertIn(
+            "Roll back an unconfirmed deployment after workflow failure",
+            self.workflow,
+        )
+        self.assertIn(
+            "failure() && steps.deploy.outputs.result_code == '0'",
+            self.workflow,
+        )
+        self.assertIn(
+            "Fallback rollback was requested because the VPS deployment was not confirmed.",
+            self.workflow,
+        )
 
     def test_policy_requires_auto001b_ci(self) -> None:
         policy = json.loads(POLICY.read_text(encoding="utf-8"))
