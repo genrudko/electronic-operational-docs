@@ -14,7 +14,7 @@
 
 Проект является независимым демонстрационным прототипом электронной оперативной документации для энергетики. Инициатива не является официальным поручением работодателя. Производственные серверы, фактические оперативные записи и реальные персональные данные в разработке не используются.
 
-Базовый функциональный, инфраструктурный и процессный скелет существует. GitHub является единственным источником кода и канонической документации. Accepted preview и active development изолированы на VPS.
+GitHub является единственным источником кода и канонической документации. Accepted preview и active development изолированы на VPS.
 
 Последние принятые этапы:
 
@@ -51,7 +51,7 @@ PR #8 принят пользователем и squash-merged в `4237aadc2cfde
 
 PR #9 принят пользователем и squash-merged в `937d2cd2b187c17fac3088ccfc52079fc4608306`.
 
-AUTO-000 является documentation-only operating-system milestone. Он зафиксировал architecture, security boundaries, exact-SHA contract, acceptance criteria и roadmap AUTO-001, но не реализовал automation runtime.
+AUTO-000 — documentation-only operating-system milestone. Он зафиксировал architecture, security boundaries, exact-SHA contract, acceptance criteria и roadmap AUTO-001, но не реализовал automation runtime.
 
 ### Post-merge preview verification
 
@@ -160,7 +160,7 @@ Development-база создаётся как отдельная копия acc
 6. Repair commits создаются в той же branch/PR.
 7. Merge выполняется только после явного разрешения пользователя.
 8. Preview синхронизируется с `main` и проходит post-merge gate.
-9. Применимые canonical docs актуализируются в том же PR или обязательном metadata follow-up.
+9. Canonical docs актуализируются в том же PR или обязательном metadata follow-up.
 
 До принятия AUTO-001 пользователь ещё участвует в механическом VPS execution/log-transfer этапе. Для защиты длинных операций на VPS установлен `tmux`.
 
@@ -178,8 +178,6 @@ runtime impact: none
 DOCS-005 фиксирует уже доказанный baseline `937d2cd…`, AUTO-000 acceptance и handoff для нового Чата 0. Собственный merge SHA DOCS-005 не создаёт новый application baseline.
 
 ### AUTO-001 — следующий implementation work item
-
-Целевой маршрут:
 
 ```text
 trusted PR trigger
@@ -212,7 +210,7 @@ Exit gate:
 
 После AUTO-001 MVP продуктовая работа возвращается к PLAN-001. AUTO-002+ не являются блокерами.
 
-## 8. PLAN-001
+## 8. PLAN-001 — ревизия фактической реализации
 
 PR #7 остаётся Draft. После AUTO-001 необходимо доказательно сопоставить для каждого модуля:
 
@@ -233,6 +231,8 @@ PR #7 остаётся Draft. После AUTO-001 необходимо дока�
 - подтверждённый первый журнальный vertical slice;
 - реалистичная последовательность следующих работ;
 - минимальный обязательный smoke/integration suite поверх полного PostgreSQL baseline.
+
+Рабочий принцип: один журнал полностью → минимальные реальные связи → automated and user acceptance → следующий журнал.
 
 ## 9. UX-001
 
