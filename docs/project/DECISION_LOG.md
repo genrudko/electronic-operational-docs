@@ -159,3 +159,32 @@ AUTO-001 устраняет ручной мост между green PR и VPS dev
 ## 2026-07-25 — ограничения AUTO-001 MVP
 
 AUTO-001 обязан использовать exact PR head SHA, один development deployment одновременно, минимальные права и доказанную preview isolation. Обычный self-hosted runner с `sudo` и Docker socket запрещён. Automation не получает права automatic merge; пользователь остаётся единственным merge gate.
+
+## 2026-07-25 — AUTO-000 принят и разрешает отдельную реализацию AUTO-001
+
+Пользователь принял AUTO-000 и явно разрешил squash merge PR #9. Exact accepted head `3a4b4770e1fce41405813efa1e931288bf1a26b8`; merge commit `937d2cd2b187c17fac3088ccfc52079fc4608306` прошёл post-merge preview verification после rebuild текущего source image.
+
+Принятие AUTO-000 означает:
+
+- architecture/security/acceptance contract утверждены;
+- отдельный AUTO-001 implementation work item разрешён;
+- AUTO-001 ещё не реализован;
+- automatic merge и preview write остаются запрещены;
+- перед executable implementation обязателен actual infrastructure gap analysis;
+- после AUTO-001 MVP работа возвращается к PLAN-001.
+
+Accepted application baseline повышен до `main / 937d2cd2b187c17fac3088ccfc52079fc4608306`.
+
+## 2026-07-25 — постоянный Chat 0 и отдельные work-item chats
+
+Для предотвращения смешения интеграционных решений и implementation detail принят следующий communication workflow:
+
+- один постоянный Chat 0 хранит baseline, priorities, architecture, acceptance and next-work decisions;
+- каждый отдельный work item/PR реализуется в отдельном implementation chat;
+- repairs, CI failures and acceptance fixes остаются в том же work-item chat;
+- research chats отделяются от implementation chats;
+- после каждого accepted merge работа возвращается в Chat 0;
+- Chat 0 не реализует каждый PR внутри себя, а готовит starter/handoff следующего отдельного чата;
+- GitHub и canonical docs остаются source of truth, чат — координационный слой.
+
+Первым применением модели после DOCS-005 является отдельный AUTO-001 implementation chat. PLAN-001 продолжается после принятия AUTO-001 MVP.
