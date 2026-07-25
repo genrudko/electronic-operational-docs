@@ -12,8 +12,6 @@ EXPECTED_READ_PERMISSIONS = {
     "contents": "read",
     "pull-requests": "read",
     "actions": "read",
-    "checks": "read",
-    "statuses": "read",
 }
 FORBIDDEN_TRUSTED_WORKFLOW_FRAGMENTS = (
     "secrets.",
@@ -172,6 +170,28 @@ def path_is_blocked(path: str, policy: dict[str, Any]) -> bool:
     )
 
 
+def changed_file_paths(item: Any) -> list[str]:
+    if not isinstance(item, dict):
+        raise FoundationValidationError(
+            "changed_files item must be an object with filename."
+        )
+    paths = [
+        normalize_repository_path(
+            item.get("filename"),
+            "changed_files item.filename",
+        )
+    ]
+    previous = item.get("previous_filename")
+    if previous is not None:
+        paths.append(
+            normalize_repository_path(
+                previous,
+                "changed_files item.previous_filename",
+            )
+        )
+    return paths
+
+
 def select_latest_required_run(
     runs: list[dict[str, Any]],
     workflow_name: str,
@@ -284,15 +304,15 @@ def validate_request(
     changed_files = request.get("changed_files")
     if not isinstance(changed_files, list):
         raise FoundationValidationError("changed_files must be a list.")
-    normalized_files: list[str] = []
+    normalized_paths: list[str] = []
     for item in changed_files:
-        path = normalize_repository_path(item, "changed_files item")
-        normalized_files.append(path)
-        if path_is_blocked(path, policy):
-            raise FoundationValidationError(
-                f"PR changes blocked automation/security path: {path}"
-            )
-    normalized_files = sorted(set(normalized_files))
+        for path in changed_file_paths(item):
+            normalized_paths.append(path)
+            if path_is_blocked(path, policy):
+                raise FoundationValidationError(
+                    f"PR changes blocked automation/security path: {path}"
+                )
+    normalized_paths = sorted(set(normalized_paths))
 
     workflow_runs = request.get("workflow_runs")
     if not isinstance(workflow_runs, list):
@@ -317,7 +337,7 @@ def validate_request(
             }
         )
 
-    files_payload = ("\n".join(normalized_files) + "\n").encode()
+    files_payload = ("\n".join(normalized_paths) + "\n").encode()
     return {
         "schema_version": policy["manifest_schema_version"],
         "state": "VALIDATED_STAGE_A",
@@ -344,7 +364,7 @@ def validate_request(
             "event.trusted_workflow_sha",
         ),
         "observed_at": require_string(request.get("observed_at"), "observed_at"),
-        "changed_files_count": len(normalized_files),
+        "changed_files_count": len(changed_files),
         "changed_files_sha256": sha256_hex(files_payload),
         "required_workflows": verified,
         "vps_side_effects": "NONE_STAGE_A",
@@ -392,6 +412,7 @@ def validate_trusted_workflow_text(
         "cancel-in-progress: false",
         "ref: ${{ github.sha }}",
         "persist-credentials: false",
+        "previous_filename",
         "vps-stage-a-blocked",
         "BLOCKED",
     )
@@ -500,8 +521,6 @@ def render_summary(manifest: dict[str, Any], manifest_sha256: str) -> str:
         "contents: read",
         "pull-requests: read",
         "actions: read",
-        "checks: read",
-        "statuses: read",
         "```",
         "",
         "No VPS secret, SSH connection, deploy account or forced command.",
