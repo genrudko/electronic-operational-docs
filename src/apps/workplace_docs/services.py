@@ -146,7 +146,7 @@ def approve_revision(
     actor: Employee,
 ) -> WorkplaceDocumentRevision:
     locked = (
-        WorkplaceDocumentRevision.objects.select_for_update()
+        WorkplaceDocumentRevision.objects.select_for_update(of=("self",))
         .select_related(
             "document_list",
             "document_list__workplace",

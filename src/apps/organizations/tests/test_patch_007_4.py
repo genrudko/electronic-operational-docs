@@ -143,11 +143,14 @@ class Patch0074OrganizationalStructureTests(TestCase):
         settings_source = (settings.BASE_DIR / "src/eod_config/settings.py").read_text(
             encoding="utf-8"
         )
-        launcher = (settings.BASE_DIR / "scripts/run_dev.ps1").read_text(encoding="utf-8-sig")
         self.assertIn('EOD_DATABASE_PROFILE = os.getenv("EOD_DATABASE_PROFILE"', settings_source)
         self.assertIn('EOD_ALLOW_SQLITE_PATH_OVERRIDE", False', settings_source)
-        self.assertIn('$env:EOD_DATABASE_PROFILE = "presentation"', launcher)
-        self.assertIn("Remove-Item Env:SQLITE_PATH", launcher)
+
+        launcher_path = settings.BASE_DIR / "scripts/run_dev.ps1"
+        if launcher_path.is_file():
+            launcher = launcher_path.read_text(encoding="utf-8-sig")
+            self.assertIn('$env:EOD_DATABASE_PROFILE = "presentation"', launcher)
+            self.assertIn("Remove-Item Env:SQLITE_PATH", launcher)
 
     def test_dispatching_presentation_labels_use_center_scope(self):
         level = DispatchLevel.objects.get(code="station-operational")

@@ -10,6 +10,7 @@ os.environ.setdefault("DB_ENGINE", "sqlite")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "eod_config.settings")
 os.environ.setdefault("PYTHONUTF8", "1")
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+os.environ.setdefault("EOD_TESTING", "1")
 
 import django  # noqa: E402
 from django.test.runner import DiscoverRunner  # noqa: E402

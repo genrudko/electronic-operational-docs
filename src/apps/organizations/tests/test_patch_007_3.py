@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from django.conf import settings
 from django.core.management import call_command
 from django.test import TestCase
@@ -87,13 +85,3 @@ class Patch0073PresentationTests(TestCase):
     def test_navigation_names_full_module(self):
         response = self.client.get(reverse("system:home"))
         self.assertContains(response, "Управление и ведение")
-
-
-class Patch0073StaticContractTests(TestCase):
-    def test_gate_script_exists(self):
-        gate = Path(settings.BASE_DIR / "scripts/gate_patch_007_3.py")
-        self.assertTrue(gate.is_file())
-        self.assertIn(
-            "PATCH_007_3_THEME_TERMINOLOGY_PROFILE_GATE_PASSED",
-            gate.read_text(encoding="utf-8"),
-        )

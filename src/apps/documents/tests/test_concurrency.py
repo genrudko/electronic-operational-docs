@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 from unittest import skipUnless
 
-from django.db import close_old_connections, connection
+from django.db import close_old_connections, connection, connections
 from django.test import TransactionTestCase, override_settings
 
 from apps.documents.models import Document
@@ -45,7 +45,7 @@ class PostgreSQLConcurrentNumberingTests(TransactionTestCase):
                 barrier.wait(timeout=10)
                 return register_demo_document(document=document, actor=actor).registration_number
             finally:
-                close_old_connections()
+                connections.close_all()
 
         with ThreadPoolExecutor(max_workers=len(self.documents)) as executor:
             numbers = list(executor.map(worker, [item.pk for item in self.documents]))

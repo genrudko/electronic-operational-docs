@@ -1094,7 +1094,7 @@ def decide_power_system_occurrence(
     merge_target_occurrence_id: str = "",
 ) -> PowerSystemAssetOccurrence:
     locked = (
-        PowerSystemAssetOccurrence.objects.select_for_update()
+        PowerSystemAssetOccurrence.objects.select_for_update(of=("self",))
         .select_related("source_revision", "merge_target")
         .get(pk=occurrence.pk)
     )

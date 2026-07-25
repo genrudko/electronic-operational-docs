@@ -2658,7 +2658,7 @@ def publish_import_batch(
         raise ValidationError({"password": "Неверный текущий пароль."})
 
     locked = (
-        ImportBatch.objects.select_for_update()
+        ImportBatch.objects.select_for_update(of=("self",))
         .select_related(
             "organization",
             "created_by",
@@ -2668,7 +2668,7 @@ def publish_import_batch(
         .get(pk=batch.pk)
     )
     list(
-        locked.rows.select_for_update()
+        locked.rows.select_for_update(of=("self",))
         .select_related("decided_by")
         .order_by("row_number")
     )

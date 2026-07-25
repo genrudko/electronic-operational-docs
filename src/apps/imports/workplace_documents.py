@@ -911,7 +911,7 @@ def publish_workplace_document_register(
 ) -> WorkplaceDocumentPublication:
     _require_development_database()
     locked = (
-        WorkplaceDocumentSourceRevision.objects.select_for_update()
+        WorkplaceDocumentSourceRevision.objects.select_for_update(of=("self",))
         .select_related("matched_workplace", "organization", "data_profile")
         .get(pk=source_revision.pk)
     )

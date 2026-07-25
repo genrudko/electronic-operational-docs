@@ -1609,7 +1609,7 @@ def publish_personnel_revision(
     if not password or not user.check_password(password):
         raise ValidationError({"password": "Неверный текущий пароль."})
 
-    locked = PersonnelSourceRevision.objects.select_for_update().select_related(
+    locked = PersonnelSourceRevision.objects.select_for_update(of=("self",)).select_related(
         "organization", "data_profile", "uploaded_by", "published_by"
     ).get(pk=revision.pk)
     if locked.status != PersonnelSourceRevision.Status.STAGED:

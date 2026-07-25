@@ -184,7 +184,7 @@ case "$COMMAND" in
         run_manage makemigrations --check --dry-run
         ;;
     test)
-        run_manage test --verbosity 2
+        run_manage test apps --verbosity 2
         ;;
     migrate)
         run_manage migrate --noinput
