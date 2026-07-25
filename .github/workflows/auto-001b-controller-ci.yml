@@ -1,0 +1,73 @@
+name: AUTO-001B Controller CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auto-001b-controller-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  controller-tests:
+    name: Restricted VPS controller tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+
+      - name: Validate shell syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n deploy/automation/bootstrap_auto001b.sh
+          bash -n deploy/automation/eod-development-controller
+          sh -n deploy/automation/app-entrypoint.sh
+
+      - name: Compile request validator and tests
+        run: |
+          python -m compileall -q \
+            scripts/automation/auto_001b_request.py \
+            tests/automation/test_auto_001b_controller.py
+
+      - name: Run AUTO-001B tests
+        run: |
+          python -m unittest \
+            tests.automation.test_auto_001b_controller \
+            --verbose
+
+      - name: Verify practical boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          controller=deploy/automation/eod-development-controller
+          workflow=.github/workflows/vps-development.yml
+          ! grep -F 'scripts/development_stack.sh' "$controller"
+          ! grep -E 'eod-preview|eod_preview|8765|preview\.env' "$controller"
+          ! grep -E 'merge_pull_request|enable_auto_merge|pull-requests: write|contents: write' "$workflow"
+          grep -F 'refs/pull/$pr_number/head' "$controller"
+          grep -F 'pg_dump --format=custom' "$controller"
+          grep -F 'manage.py test apps --verbosity 2' "$controller"
+          grep -F 'rollback_transaction' "$controller"
+
+      - name: Confirm repository remains unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git diff --exit-code
+          git status --short
