@@ -196,6 +196,7 @@ jobs:
         shell: bash
         run: |
           set +e
+          printf 'attempted=true\n' >>"$GITHUB_OUTPUT"
           ssh_output="$(ssh \
             -p "$VPS_PORT" \
             -i "$HOME/.ssh/eod_automation" \
@@ -273,13 +274,14 @@ jobs:
             echo "Automatic merge: absent"
           } >>"$GITHUB_STEP_SUMMARY"
 
-      - name: Roll back an unconfirmed deployment after workflow failure
-        if: ${{ failure() && steps.deploy.outputs.result_code == '0' }}
+      - name: Roll back an unconfirmed deployment after workflow failure or cancellation
+        if: ${{ (failure() || cancelled()) && steps.deploy.outputs.attempted == 'true' }}
         continue-on-error: true
+        timeout-minutes: 10
         shell: bash
         run: |
-          set -euo pipefail
-          ssh \
+          set +e
+          rollback_output="$(ssh \
             -p "$VPS_PORT" \
             -i "$HOME/.ssh/eod_automation" \
             -o BatchMode=yes \
@@ -287,8 +289,13 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
             "eod-automation@$VPS_HOST" \
-            "rollback $GITHUB_RUN_ID" || true
+            "rollback-pending" 2>&1)"
+          rollback_rc=$?
+          set -e
+          printf '%s\n' "$rollback_output"
           {
             echo
             echo "Fallback rollback was requested because the VPS deployment was not confirmed."
+            echo "Fallback rollback result code: \`$rollback_rc\`"
           } >>"$GITHUB_STEP_SUMMARY"
+          exit "$rollback_rc"
