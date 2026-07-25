@@ -26,11 +26,10 @@ jobs:
       head_ref: ${{ steps.validate.outputs.head_ref }}
       head_sha: ${{ steps.validate.outputs.head_sha }}
       deployment_profile: ${{ steps.validate.outputs.deployment_profile }}
-      manifest_sha256: ${{ steps.validate.outputs.manifest_sha256 }}
-      vps_state: ${{ steps.validate.outputs.vps_state }}
+      trusted_workflow_sha: ${{ steps.validate.outputs.trusted_workflow_sha }}
 
     steps:
-      - name: Checkout trusted controller from the default-branch event SHA
+      - name: Checkout trusted controller from main event SHA
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ github.sha }}
@@ -55,17 +54,14 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-
             const pullRequest = context.payload.pull_request;
             if (!pullRequest || !Number.isInteger(pullRequest.number)) {
               core.setFailed('pull_request_target payload has no valid pull request number.');
               return;
             }
-
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const prNumber = pullRequest.number;
-
             const { data: livePr } = await github.rest.pulls.get({
               owner,
               repo,
@@ -101,7 +97,6 @@ jobs:
                 head_sha: livePr.head.sha,
                 per_page: 100,
               });
-
             const request = {
               observed_at: new Date().toISOString(),
               event: {
@@ -137,9 +132,8 @@ jobs:
                 conclusion: run.conclusion,
               })),
             };
-
             fs.writeFileSync(
-              'auto001a-request.json',
+              'auto001b-request.json',
               `${JSON.stringify(request, null, 2)}\n`,
               { encoding: 'utf8', mode: 0o600 },
             );
@@ -149,51 +143,132 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python scripts/automation/auto_001a_foundation.py validate \
-            --request auto001a-request.json \
+          python scripts/automation/auto_001b_request.py validate \
+            --request auto001b-request.json \
             --policy .github/auto001a-foundation.json \
-            --manifest auto001a-manifest.json \
-            --summary auto001a-summary.md \
+            --summary auto001b-summary.md \
             --outputs "$GITHUB_OUTPUT"
-          cat auto001a-summary.md >>"$GITHUB_STEP_SUMMARY"
+          cat auto001b-summary.md >>"$GITHUB_STEP_SUMMARY"
 
-      - name: Upload immutable trusted manifest
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: auto001a-manifest-${{ github.run_id }}-${{ github.run_attempt }}
-          path: auto001a-manifest.json
-          if-no-files-found: error
-          retention-days: 14
-          compression-level: 0
-
-  vps-stage-a-blocked:
-    name: VPS phase blocked by Stage A contract
+  deploy-development:
+    name: Verify exact SHA on isolated development VPS
     needs:
       - validate-trusted-request
     if: ${{ needs.validate-trusted-request.result == 'success' }}
-    permissions: {}
     runs-on: ubuntu-24.04
-    timeout-minutes: 2
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      pull-requests: read
+    env:
+      VPS_HOST: ${{ secrets.EOD_VPS_HOST }}
+      VPS_PORT: ${{ secrets.EOD_VPS_PORT }}
+      VPS_KEY: ${{ secrets.EOD_VPS_SSH_PRIVATE_KEY }}
+      VPS_HOST_KEY: ${{ secrets.EOD_VPS_HOST_KEY }}
+      PR_NUMBER: ${{ needs.validate-trusted-request.outputs.pr_number }}
+      HEAD_SHA: ${{ needs.validate-trusted-request.outputs.head_sha }}
+      PROFILE: ${{ needs.validate-trusted-request.outputs.deployment_profile }}
+
     steps:
-      - name: Record deterministic Stage A boundary
+      - name: Validate connection configuration
         shell: bash
-        env:
-          PR_NUMBER: ${{ needs.validate-trusted-request.outputs.pr_number }}
-          HEAD_SHA: ${{ needs.validate-trusted-request.outputs.head_sha }}
-          PROFILE: ${{ needs.validate-trusted-request.outputs.deployment_profile }}
-          MANIFEST_SHA256: ${{ needs.validate-trusted-request.outputs.manifest_sha256 }}
         run: |
           set -euo pipefail
-          test "${{ needs.validate-trusted-request.outputs.vps_state }}" = "BLOCKED"
+          test -n "$VPS_HOST"
+          test -n "$VPS_PORT"
+          test -n "$VPS_KEY"
+          test -n "$VPS_HOST_KEY"
+          [[ "$VPS_PORT" =~ ^[0-9]+$ ]]
+          [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]
+
+      - name: Configure restricted SSH client
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 0700 "$HOME/.ssh"
+          printf '%s\n' "$VPS_KEY" >"$HOME/.ssh/eod_automation"
+          chmod 0600 "$HOME/.ssh/eod_automation"
+          printf '%s\n' "$VPS_HOST_KEY" >"$HOME/.ssh/known_hosts"
+          chmod 0600 "$HOME/.ssh/known_hosts"
+
+      - name: Run fixed VPS controller for exact SHA
+        id: deploy
+        shell: bash
+        run: |
+          set +e
+          ssh_output="$(ssh \
+            -p "$VPS_PORT" \
+            -i "$HOME/.ssh/eod_automation" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+            "eod-automation@$VPS_HOST" \
+            "deploy $PROFILE $PR_NUMBER $HEAD_SHA $GITHUB_RUN_ID" 2>&1)"
+          rc=$?
+          set -e
+          printf '%s\n' "$ssh_output"
+          printf 'result_code=%s\n' "$rc" >>"$GITHUB_OUTPUT"
           {
-            echo "# AUTO-001A VPS phase"
+            echo "## VPS controller"
             echo
-            echo "**BLOCKED — Stage B is not authorised.**"
+            echo '```text'
+            printf '%s\n' "$ssh_output"
+            echo '```'
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Stop on controller error
+        if: ${{ steps.deploy.outputs.result_code != '0' }}
+        shell: bash
+        run: |
+          echo "# AUTO-001B result: ERROR" >>"$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      - name: Re-check live PR head after VPS verification
+        id: live
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: Number(process.env.PR_NUMBER),
+            });
+            core.setOutput('head_sha', pr.head.sha);
+
+      - name: Confirm result or rollback stale SHA
+        shell: bash
+        env:
+          LIVE_SHA: ${{ steps.live.outputs.head_sha }}
+        run: |
+          set -euo pipefail
+          ssh_base=(
+            ssh
+            -p "$VPS_PORT"
+            -i "$HOME/.ssh/eod_automation"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts"
+            "eod-automation@$VPS_HOST"
+          )
+          if [[ "$LIVE_SHA" != "$HEAD_SHA" ]]; then
+            "${ssh_base[@]}" "rollback $GITHUB_RUN_ID"
+            {
+              echo "# AUTO-001B result: STALE SHA"
+              echo
+              echo "Expected: \`$HEAD_SHA\`"
+              echo "Current:  \`$LIVE_SHA\`"
+              echo "Development rollback: completed"
+            } >>"$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          "${ssh_base[@]}" "confirm $GITHUB_RUN_ID $HEAD_SHA"
+          {
+            echo "# AUTO-001B result: SUCCESS"
             echo
-            echo "- PR: \`#${PR_NUMBER}\`"
-            echo "- Exact SHA: \`${HEAD_SHA}\`"
-            echo "- Requested profile: \`${PROFILE}\`"
-            echo "- Manifest SHA-256: \`${MANIFEST_SHA256}\`"
-            echo "- VPS access: \`NONE\`"
-            echo "- SSH/deploy secret: \`ABSENT\`"
+            echo "Exact SHA: \`$HEAD_SHA\`"
+            echo "Development: updated"
+            echo "Preview: untouched"
+            echo "Automatic merge: absent"
           } >>"$GITHUB_STEP_SUMMARY"
