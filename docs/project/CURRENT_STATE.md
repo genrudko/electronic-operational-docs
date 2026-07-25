@@ -4,42 +4,57 @@
 
 **Принятый application baseline:** `main / e18872face7f27f489056b72fed31e5586121b0c`
 
-**Текущий Git HEAD main:** `a2d686b0061fac513c02540a2176850640496884`
+**Текущий Git HEAD main:** `4237aadc2cfdee518567024c2b45b653f49c16e7`
 
-**Активная рабочая ветка:** `docs/003-ux001-provisional-contract`
+**Открытые рабочие ветки:**
+
+- `plan/001-evidence-audit` — PR #7, Draft;
+- `docs/004-auto-000-development-automation-contract` — текущий documentation-only AUTO-000.
 
 ## 1. Статус проекта
 
-Проект является независимым демонстрационным прототипом электронной оперативной документации для энергетики. Инициатива не является официальным поручением работодателя. Производственные серверы, фактические оперативные записи и реальные персональные данные в разработке не используются.
+Проект является независимым демонстрационным прототипом электронной оперативной документации для энергетики. Инициатива не является официальным поручением работодателя. Производственные серверы, фактические оперативные записи и реальные персональные данные не используются.
 
-Базовый функциональный, инфраструктурный и процессный скелет проекта существует. DOCS-001 принят и сделал репозиторий главным онлайн-источником истины. DOCS-002 зафиксировал accepted application baseline и переход к PLAN-001. Основной фокус возвращается к продуктовой разработке; инфраструктурные расширения выполняются только по подтверждённой необходимости.
+GitHub является главным онлайн-источником истины. Рабочая модель — GitHub-first/VPS-first. Пользователь задаёт цель, проверяет предметную корректность и UX и единолично разрешает merge; программирование, commits, PR, CI/VPS analysis и repair выполняет AI-разработчик.
 
-## 2. Принятый application baseline и main history
+## 2. Baseline и main history
 
 ```text
-application baseline branch: main
-application baseline HEAD: e18872face7f27f489056b72fed31e5586121b0c
-included: INFRA-001 + INFRA-002 + INFRA-003 + DOCS-001
-current main history HEAD: a2d686b0061fac513c02540a2176850640496884
-current main addition: DOCS-002 metadata follow-up
+accepted application baseline: e18872face7f27f489056b72fed31e5586121b0c
+current main history HEAD: 4237aadc2cfdee518567024c2b45b653f49c16e7
+current main addition: QUALITY-001
 ```
 
-PR #4 `DOCS-001: Project operating system and canonical documentation` принят пользователем и squash-merged 25.07.2026.
+Accepted application baseline остаётся `e18872f…` до отдельной фиксации post-merge preview evidence для нового application commit.
 
-Post-merge preview verification DOCS-001 подтвердил:
+## 3. Последнее принятое изменение
 
-- `/srv/eod/repository` находится на точном merge commit;
-- branch `main`, worktree clean;
-- documentation contract: OK, 43 required files;
-- preview app and database healthy;
-- health endpoint: `{"status": "ok"}`;
-- main page: HTTP 200;
-- database identity: `eod_preview`;
-- pending migrations отсутствуют.
+PR #8 `QUALITY-001: Repair PostgreSQL test execution` принят пользователем и squash-merged в:
 
-PR #5 `DOCS-002: Finalize DOCS-001 accepted baseline` squash-merged в `a2d686b0061fac513c02540a2176850640496884`. Это documentation-only metadata follow-up: он не меняет application behavior, schema, migrations or runtime data и не создаёт новый application baseline. После merge preview синхронизирован, documentation contract прошёл, containers healthy, health endpoint OK и главная страница HTTP 200.
+```text
+4237aadc2cfdee518567024c2b45b653f49c16e7
+```
 
-## 3. Инфраструктура
+На exact PR head подтверждено:
+
+- EOD CI — success;
+- EOD Development Stack — success;
+- EOD Documentation Contract — success;
+- полный PostgreSQL suite: `497/497 OK`;
+- database identity: `eod_development`;
+- clean development worktree.
+
+Исправлены test discovery, test environment, PostgreSQL row locks, staticfiles testing storage, thread-local DB connections и deterministic ZIP fixtures.
+
+Долг `0 test(s)` закрыт. Штатный полный test command:
+
+```text
+python manage.py test apps --verbosity 2
+```
+
+`development_stack.sh test` вызывает этот label.
+
+## 4. Инфраструктура
 
 ### Accepted preview
 
@@ -63,81 +78,66 @@ database/user: eod_development
 secrets: /srv/eod/secrets/development.env
 ```
 
-Оба контура изолированы. PostgreSQL host ports не публикуются. Доступ к приложениям выполняется через SSH tunnel.
-
-## 4. Данные
-
-Accepted preview содержит presentation profile:
-
-- 8303 fixture objects;
-- 84 Django models;
-- две демонстрационные учётные записи;
-- вымышленные персональные данные и безопасные презентационные справочники.
-
-Development-база создаётся как отдельная копия accepted preview, после чего на неё применяются миграции активной ветки.
+Контуры изолированы. PostgreSQL host ports не публикуются. VPS Git deploy key read-only.
 
 ## 5. Реализованные функциональные области
 
-### Подтверждено реализовано
+Подтверждены:
 
-- Django application foundation;
-- организация, подразделения, должности, сотрудники, учётные записи, роли и замещения;
-- документарное ядро: черновики, версии, регистрация, нумерация, связи и аудит;
-- повторная аутентификация, канонический snapshot и SHA-256 integrity status;
-- нормативный реестр и редакции организационной конфигурации;
-- энергообъекты, оборудование, диспетчерские наименования и их история;
-- диспетчерское и технологическое управление и ведение;
-- импорт оборудования, персонала, оперативных прав и документации рабочего места;
-- специализированный оперативный журнал и сменная работа в объёме текущего прототипа;
-- общее ядро структурированных журналов;
-- source-bound каталог рабочих форм;
-- GitHub Actions CI на Linux/PostgreSQL;
-- безопасный preview и изолированный development на VPS;
-- канонический DOCS-контур, runbooks, acceptance documents и documentation CI gate.
+- Django foundation;
+- организация, персонал, роли и замещения;
+- document core, registration, versioning and audit;
+- re-authentication, canonical snapshot and SHA-256 integrity;
+- normative registry and organizational configuration revisions;
+- equipment, dispatch names and authority/supervision;
+- import equipment, personnel, rights and workplace documentation;
+- operational journal and shift work в текущем объёме;
+- common structured-document core;
+- source-bound working forms;
+- Linux/PostgreSQL CI;
+- accepted preview and isolated development;
+- canonical documentation and runbooks;
+- полный обнаруживаемый PostgreSQL test suite.
 
-### Реализовано частично или требует предметной приёмки
+Частично или требует приёмки:
 
-- формы конкретных структурированных журналов;
-- связи между журналами и оперативным журналом;
-- жизненные циклы заявок, распоряжений, дефектов, нарядов и переключений;
-- шаблоны, сокращения и контекстная помощь оперативного журнала;
-- печатные формы, экспорт и архивные представления;
-- роли и переходы состояний полного демонстрационного контура;
-- возможный электронный справочный/контрольный контур журнала ключей.
+- конкретные structured journals;
+- cross-document links;
+- lifecycle заявок, распоряжений, дефектов, нарядов и переключений;
+- operational-journal assistance;
+- print/export/archive;
+- full role/state-transition demonstration;
+- electronic reference/control contour журнала ключей.
 
-### Не подтверждено как завершённое
+Не подтверждено завершённым:
 
 - полный Structured Journals Pack;
-- полноценный реестр нарядов и распоряжений;
-- полный lifecycle допуска и работ;
-- полный контур документов переключений;
+- полный work-permit lifecycle;
+- полный switching contour;
 - автоматическая генерация БП/ТБП/ТПП;
-- юридически значимая электронная подпись;
-- промышленная эксплуатационная готовность.
+- legally significant electronic signature;
+- industrial readiness.
 
-Полный электронный lifecycle выдачи и возврата ключей не входит в обязательный внутренний прототип: основной режим журнала ключей считается paper-first до отдельного предметного и UX-решения.
+## 6. Текущая фаза
 
-## 6. Текущий процесс разработки
-
-1. Ассистент создаёт complete change в отдельной GitHub branch.
-2. GitHub Actions выполняет gates.
-3. VPS development получает branch через `git pull --ff-only`.
-4. Выполняются refresh/check/test/status.
-5. Пользователь проводит предметную и визуальную приёмку.
-6. Merge выполняется только после явного разрешения пользователя.
-7. Preview синхронизируется с `main` и проходит post-merge gate.
-8. Применимые canonical docs актуализируются вместе с изменением или обязательным metadata follow-up.
-
-Пользователь исключён из механической части программирования, но сохраняет постановку задачи и приёмку.
-
-## 7. Текущий обязательный продуктовый этап
-
-`PLAN-001 — ревизия фактической реализации`.
-
-Нужно доказательно сопоставить для каждого модуля:
+Перед продолжением PLAN-001 выполняется короткий infrastructure sprint:
 
 ```text
-требование
+AUTO-000 documentation contract
+→ AUTO-001 MVP
+→ return to PLAN-001
+```
+
+AUTO-000 документирует архитектуру, security model и acceptance. Он не меняет runtime или VPS.
+
+AUTO-001 должен убрать ручной мост `PR → VPS development → logs`, но не реализует полный набор AUTO-002+ и не получает право merge.
+
+## 7. PLAN-001
+
+PR #7 остаётся открытым Draft и выполняет evidence audit:
+
+```text
+requirement
 → models/migrations
 → services/constraints
 → UI routes
@@ -147,50 +147,28 @@ Development-база создаётся как отдельная копия acc
 → remaining deficit
 ```
 
-Результат:
-
-- master plan v3.0;
-- подтверждённый первый журнальный vertical slice;
-- реалистичная последовательность следующих работ;
-- минимальный обязательный smoke/integration test suite.
+После принятого AUTO-001 MVP PLAN-001 продолжается и определяет master plan v3.0 и первый journal vertical slice.
 
 ## 8. UX-001
 
-`UX-001 v0.3` оформляется в отдельной ветке как **предварительный проектный контракт для визуального прототипирования**.
+UX-001 v0.3 остаётся provisional:
 
 ```text
-status: provisional
 visual acceptance: pending
 implementation authorization: not granted
 ```
 
-Структурно пакет включает evidence-based audit, visual direction, principles, candidate tokens, component/interaction contracts, page archetypes, three reference-screen contracts and staged roadmap.
+Следующий gate — два компактных visual directions, выбор пользователя и ограниченный runtime prototype. Массовое внедрение не разрешено.
 
-Сейчас не приняты визуально:
+## 9. Предметные инварианты
 
-- concrete palette;
-- typography scale;
-- density;
-- radii and shadows;
-- shell composition;
-- внешний вид reference screens.
-
-Следующий UX gate: два компактных визуальных направления для application shell и одного показательного structured-journal screen → выбор пользователя → ограниченный runtime prototype → визуальная корректировка → фиксация accepted tokens.
-
-Журнал дефектов остаётся сильным кандидатом на reference vertical slice, но окончательный выбор принимает PLAN-001.
-
-## 9. Согласованное продуктовое направление
-
-```text
-минимальный общий контракт
-→ один журнал полностью
-→ минимальные реальные связи
-→ automated and user acceptance
-→ следующий журнал
-```
-
-Связи не откладываются до завершения всего пакета. Полная универсальная timeline не проектируется заранее без подтверждённых отношений.
-
-## 10. Критический технический долг
-
-Текущая Django test command обнаруживает `0 test(s)`. Это не считается доказательством регрессионной защиты. PLAN-001 должен определить минимальный автоматический набор, а каждый следующий product slice обязан добавлять профильные tests/gates.
+- UI только русский; internals — professional technical English.
+- Operational journal остаётся специализированным.
+- Structured forms только source-bound.
+- Журналы развиваются последовательными vertical slices.
+- Keys journal paper-first до отдельного решения.
+- Управление и ведение раздельны.
+- Информационное ведение — характеристика ведения.
+- ЩПТ и ШОТ — одна equipment family с сохранением исходного обозначения.
+- Electronic work permit не объявляется юридически допустимым без актуального исследования.
+- Secrets и реальные данные не коммитятся.
