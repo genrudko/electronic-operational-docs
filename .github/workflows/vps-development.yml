@@ -272,3 +272,23 @@ jobs:
             echo "Preview: untouched"
             echo "Automatic merge: absent"
           } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Roll back an unconfirmed deployment after workflow failure
+        if: ${{ failure() && steps.deploy.outputs.result_code == '0' }}
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh \
+            -p "$VPS_PORT" \
+            -i "$HOME/.ssh/eod_automation" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+            "eod-automation@$VPS_HOST" \
+            "rollback $GITHUB_RUN_ID" || true
+          {
+            echo
+            echo "Fallback rollback was requested because the VPS deployment was not confirmed."
+          } >>"$GITHUB_STEP_SUMMARY"
