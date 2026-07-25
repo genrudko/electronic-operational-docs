@@ -22,11 +22,11 @@
 - current workflows;
 - backup/restore runbooks.
 
-Дополнительно проверить фактическую сетевую доступность VPS для GitHub-hosted runner и не переносить адреса, ключи или secrets в Git.
+Дополнительно проверить фактическую сетевую доступность VPS для GitHub-hosted runner, effective GitHub permissions, container capabilities and mounts и не переносить адреса, ключи или secrets в Git или чат.
 
 ## 3. Разбиение
 
-### AUTO-001A — local orchestrator
+### AUTO-001A — VPS-local orchestrator
 
 - manifest validator;
 - strict CLI;
@@ -36,7 +36,7 @@
 - evidence JSON;
 - unit/static tests.
 
-Пока запускается локально на VPS одним контролируемым bootstrap command.
+На этом этапе orchestrator запускается непосредственно на VPS одним контролируемым bootstrap command. Локальный репозиторий пользователя не используется; GitHub остаётся единственным источником кода.
 
 ### AUTO-001B — restricted gateway
 
@@ -54,14 +54,16 @@
 - required-check verification;
 - concurrency;
 - gateway invocation;
-- artifact;
-- PR/check summary.
+- private artifact;
+- PR/check summary без repository-write or merge capability.
 
 ### AUTO-001D — acceptance hardening
 
 - superseded handling;
 - preview before/after evidence;
 - redaction test;
+- GitHub permission audit;
+- PR runtime isolation proof;
 - два success и один failure case;
 - final documentation.
 
@@ -98,10 +100,10 @@ docs/runbooks/
 - установить отдельный public key/credential;
 - закрепить forced command;
 - проверить no-shell behavior;
-- добавить GitHub secret;
+- добавить GitHub secret через защищённый интерфейс GitHub;
 - выполнить dry-run.
 
-Bootstrap должен быть одним последовательным проверяемым блоком с rollback. Запрещены Base64 payload, временные part-файлы и self-applying workflow.
+Bootstrap должен быть одним последовательным проверяемым блоком с rollback. Запрещены Base64 payload, временные part-файлы, self-applying workflow и передача private key/secret в чат.
 
 ## 6. Tests
 
@@ -128,7 +130,18 @@ Bootstrap должен быть одним последовательным пр
 - fake Compose commands;
 - failed health/test;
 - lock contention;
-- superseded run.
+- superseded run;
+- reporting without merge/repository-write permission.
+
+### Security negative
+
+- interactive SSH attempt rejected;
+- malformed SHA/path/URL/environment rejected;
+- Docker socket absent;
+- privileged mode absent;
+- host keys and preview credentials absent;
+- writable preview mounts absent;
+- secret marker absent from summary/artifact.
 
 ### VPS
 
@@ -137,7 +150,8 @@ Bootstrap должен быть одним последовательным пр
 - real rebuild;
 - failed test;
 - preview isolation;
-- repeated same SHA.
+- repeated same SHA;
+- exact-SHA and superseded proof.
 
 ## 7. Rollback
 
