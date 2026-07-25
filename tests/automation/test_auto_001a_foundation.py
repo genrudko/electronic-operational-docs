@@ -38,9 +38,9 @@ def build_policy() -> dict[str, object]:
             "AUTO-001A Foundation CI",
         ],
         "blocked_path_prefixes": [
-            ".github/workflows/",
-            "scripts/automation/",
-            "deploy/automation/",
+            ".github/workflows",
+            "scripts/automation",
+            "deploy/automation",
         ],
         "blocked_exact_paths": [
             ".github/auto001a-foundation.json",
@@ -189,6 +189,13 @@ class RequestValidationTests(unittest.TestCase):
                 request = build_request()
                 request["changed_files"] = [path]
                 self.assert_blocked(request, "blocked automation/security path")
+
+    def test_noncanonical_repository_paths_are_rejected(self) -> None:
+        for path in ("../escape", "/absolute", "dir\\windows", "./../escape"):
+            with self.subTest(path=path):
+                request = build_request()
+                request["changed_files"] = [path]
+                self.assert_blocked(request, "repository path")
 
     def test_missing_required_workflow_is_blocked(self) -> None:
         request = build_request()
