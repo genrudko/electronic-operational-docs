@@ -72,9 +72,9 @@ PR head, PR merge ref, PR artifacts и PR-controlled scripts не checkout и н
 contents: read
 pull-requests: read
 actions: read
-checks: read
-statuses: read
 ```
+
+`checks: read` и `statuses: read` удалены: workflow не читает Checks API или commit Statuses API. Список required workflow runs получается через Actions API, для которого достаточно `actions: read`.
 
 Отсутствуют:
 
@@ -107,7 +107,8 @@ Workflow повторно получает live GitHub state и fail-closed пр
 9. event head SHA совпадает с exact current live PR SHA;
 10. все required workflows завершены `success` именно для текущего SHA;
 11. более поздний failed rerun не перекрывается старым success;
-12. PR не изменяет automation/security paths.
+12. PR не изменяет automation/security paths;
+13. при rename проверяются и `filename`, и `previous_filename`.
 
 Allowlisted required workflows:
 
@@ -120,7 +121,7 @@ AUTO-001A Foundation CI
 
 ## 6. Blocked automation/security paths
 
-Обычный deployment request блокируется, если PR меняет:
+Обычный deployment request блокируется, если PR меняет или переименовывает из/в:
 
 ```text
 .github/workflows/**
@@ -132,6 +133,8 @@ docs/automation/AUTO_001A_TRUSTED_CONTROLLER_FOUNDATION.md
 docs/adr/ADR-AUTO-001A-TRUSTED-CONTROLLER-BOOTSTRAP.md
 docs/runbooks/DEVELOPMENT_AUTOMATION_TRUST_BOOTSTRAP.md
 ```
+
+Для переименованного файла проверяются текущее имя `filename` и исходное имя `previous_filename`.
 
 Такие изменения требуют отдельного staged infrastructure review и не могут развёртывать сами себя.
 
@@ -185,6 +188,7 @@ Workflow не содержит реального SSH/deployment path. Его VP
 - fork/cross-repository rejection;
 - actor authorization rejection;
 - blocked-path rejection;
+- rename checks `protected → unprotected`, `unprotected → protected`, `protected → protected`;
 - static permission audit;
 - запрет PR artifact download;
 - запрет SSH/deploy surface;
