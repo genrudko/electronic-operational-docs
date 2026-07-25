@@ -139,3 +139,23 @@ implementation authorization: not granted
 Приняты структурные границы: самостоятельная visual identity, evidence model, component/interaction contracts, page archetypes и reference-screen requirements. Не приняты concrete palette, typography, density, radii, shadows, shell composition и внешний вид reference screens.
 
 Следующий gate — сравнить два компактных визуальных направления на shell и одном показательном structured-journal screen, получить решение пользователя, затем проверить выбранный вариант ограниченным runtime-прототипом. Массовое внедрение до этого не разрешено.
+
+## 2026-07-25 — QUALITY-001 восстанавливает реальное выполнение тестов
+
+PR #8 принят и squash-merged в `4237aadc2cfdee518567024c2b45b653f49c16e7`. Полный PostgreSQL suite выполняется командой `python manage.py test apps --verbosity 2`; на exact accepted PR head подтверждено `497/497 OK`. Нулевое test discovery больше не считается текущим долгом.
+
+## 2026-07-25 — короткий AUTO-спринт перед продолжением PLAN-001
+
+Перед продолжением основной продуктовой разработки выполняются:
+
+```text
+AUTO-000 documentation contract
+→ AUTO-001 development orchestrator MVP
+→ return to PLAN-001
+```
+
+AUTO-001 устраняет ручной мост между green PR и VPS development. Полный набор AUTO-002+ не является блокером продуктовой работы.
+
+## 2026-07-25 — ограничения AUTO-001 MVP
+
+AUTO-001 обязан использовать exact PR head SHA, один development deployment одновременно, минимальные права и доказанную preview isolation. Обычный self-hosted runner с `sudo` и Docker socket запрещён. Automation не получает права automatic merge; пользователь остаётся единственным merge gate.
