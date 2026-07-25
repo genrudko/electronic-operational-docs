@@ -8,8 +8,6 @@ permissions:
   contents: read
   pull-requests: read
   actions: read
-  checks: read
-  statuses: read
 
 concurrency:
   group: eod-vps-development
@@ -87,7 +85,13 @@ jobs:
                 pull_number: prNumber,
                 per_page: 100,
               },
-              (response) => response.data.map((item) => item.filename),
+              (response) => response.data.map((item) => {
+                const changedFile = { filename: item.filename };
+                if (item.previous_filename) {
+                  changedFile.previous_filename = item.previous_filename;
+                }
+                return changedFile;
+              }),
             );
             const { data: workflowData } =
               await github.rest.actions.listWorkflowRunsForRepo({
