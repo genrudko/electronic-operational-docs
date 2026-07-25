@@ -2,180 +2,133 @@
 
 ## 1. Текущий обязательный этап
 
-PLAN-001 — доказательная ревизия фактической реализации.
+### AUTO-000
 
-Нужно установить по каждому модулю:
+- принять automation architecture;
+- принять security boundaries;
+- принять acceptance contract;
+- зафиксировать scope AUTO-001 MVP;
+- не менять runtime.
 
-- что фактически реализовано;
-- что реализовано частично;
-- что сделано иначе, чем планировалось;
-- какие tests/gates реально актуальны;
-- какие presentation scenarios работают;
-- какие этапы утратили актуальность;
-- какое направление и vertical slice выбрать следующим.
+### AUTO-001
 
-Результат должен включать конкретный первый журнальный vertical slice, master plan v3.0 и минимальный automated smoke/integration suite.
+- проверить сетевой маршрут GitHub-hosted runner → VPS;
+- выбрать restricted transport;
+- реализовать exact-SHA orchestrator;
+- реализовать lock;
+- реализовать sanitised evidence;
+- выполнить два success и один failure acceptance case;
+- не предоставить automatic merge.
 
-## 2. Структурированные журналы
+После AUTO-001 продолжается PLAN-001.
 
-Требуют проверки и/или завершения:
+## 2. PLAN-001
 
-- журнал заявок;
-- журнал распоряжений;
-- журнал дефектов оборудования;
-- журнал ввода оборудования в работу;
-- журнал РЗА и телемеханики;
-- журнал учёта работ по нарядам;
-- журнал учёта работ по распоряжениям.
+PR #7 остаётся Draft. Нужно определить:
 
-Для каждой формы нужны source traceability, точные графы, специализированные rules, UI, минимальные реальные связи, presentation data, automated gates и acceptance scenario.
+- фактический статус каждого модуля;
+- первый journal vertical slice;
+- master plan v3.0;
+- актуальный smoke/integration suite поверх уже работающих 497 tests;
+- реальные blockers продукта.
 
-Рабочая стратегия:
+## 3. Структурированные журналы
 
-```text
-один журнал целиком
-→ минимальные реальные связи
-→ automated and user acceptance
-→ следующий журнал
-```
+Требуют проверки/завершения:
 
-Предварительный первый кандидат — журнал дефектов, но PLAN-001 должен подтвердить или опровергнуть эту гипотезу.
+- applications;
+- dispositions;
+- equipment defects;
+- equipment commissioning;
+- relay protection and telemechanics;
+- work under permits;
+- work under dispositions.
 
-## 3. Журнал выдачи и возврата ключей
+Каждый journal получает source-bound form, rules, UI, реальные связи, presentation data, tests and acceptance.
 
-Текущая продуктовая позиция — paper-first:
+## 4. Operational journal
 
-- бумажный журнал остаётся основным рабочим оригиналом;
-- полный электронный lifecycle выдачи/возврата не входит в обязательный внутренний прототип;
-- возможный электронный справочник, outstanding-control или зеркальная регистрация требуют отдельного предметного и UX-решения;
-- демонстрационный сценарий не должен изображать бумажный процесс полностью электронным без реальной необходимости.
+Открыты:
 
-## 4. Наряды и распоряжения
+- caret placement;
+- keyboard navigation;
+- PgUp/PgDown;
+- editable semantic link;
+- marker copy/paste duplication;
+- page jump;
+- templates, abbreviations and context assistance.
 
-Открытые предметные вопросы:
+## 5. Work permits and dispositions
 
-- электронный оригинал наряда;
-- раздельные журналы работ по нарядам и распоряжениям;
-- целевые инструктажи;
-- первичный и ежедневный допуск;
-- изменения состава бригады;
-- переводы;
-- приостановка и возобновление;
-- окончание, закрытие и хранение;
-- доказательства действий и требования к подписям;
-- paper/hybrid/electronic modes.
+Открыты:
 
-Решение принимается после актуального нормативного исследования.
+- paper/hybrid/electronic original;
+- target briefings;
+- initial/daily admission;
+- crew changes;
+- transfers;
+- suspension/resumption;
+- completion/closure/storage;
+- evidence and signatures.
 
-## 5. Эксплуатационные работы
+Решение после актуального нормативного исследования.
 
-Добавить отдельную модель и/или справочники для работ в порядке текущей эксплуатации:
+## 6. Switching
 
-- перечень для оперативного персонала;
-- перечень для ремонтного персонала;
-- связь с рабочим местом, оборудованием и инструкцией;
-- период действия и редакция.
+Нужен minimum registry and lifecycle. Automatic БП/ТБП/ТПП generation and safety engine remain separate.
 
-## 6. Переключения
+## 7. UX-001
 
-Минимальный реестр требует реализации или доказательной ревизии. Автоматическая генерация БП/ТБП/ТПП и safety engine остаются отдельной дальней очередью.
+Открыты:
 
-## 7. Оперативный журнал
-
-Нужна отдельная ревизия редактора и assistance:
-
-- insertion caret в конец записи;
-- Ctrl+Left/Right/Home/End внутри текущей записи;
-- PgUp/PgDown без прокрутки всей страницы;
-- редактирование автоматически вставленной semantic link;
-- отсутствие дублирования link icon при copy/paste;
-- отсутствие скачка страницы при клике вне листа;
-- шаблоны, сокращения и автодополнение.
-
-Runtime-видео подтверждает конечное состояние с повторяющимися semantic markers, но не доказывает точную последовательность воспроизведения. Marker serialization/copy-paste остаётся блокирующим repair candidate.
-
-## 8. UX-001
-
-UX-001 v0.3 подготовлен и сохраняется в репозитории как provisional project contract.
-
-```text
-status: provisional
-visual acceptance: pending
-implementation authorization: not granted
-```
-
-Структурно подготовлены:
-
-- evidence-based audit;
-- runtime video audit;
-- самостоятельное visual direction;
-- UI principles;
-- candidate design tokens;
-- component contract;
-- interaction/keyboard/focus/overlay contract;
-- page archetypes;
-- three textual reference-screen contracts;
-- staged implementation roadmap.
-
-Открытые visual gates:
-
-1. подготовить два компактных визуальных направления на application shell и одном показательном structured-journal screen;
-2. получить выбор/корректировку пользователя;
-3. реализовать ограниченный runtime prototype на development contour;
-4. проверить target desktop, long Russian data, density, states, focus and overlays;
-5. зафиксировать accepted tokens только после визуальной приёмки.
-
-Не приняты:
-
-- concrete palette;
-- typography scale;
-- density;
-- radii and shadows;
-- shell composition;
-- окончательный внешний вид reference screens;
-- dark-theme release scope;
+- two visual directions;
 - target desktop viewport;
-- названия top-level product areas.
+- density;
+- typography;
+- palette;
+- radii/shadows;
+- shell composition;
+- limited runtime prototype;
+- accepted tokens.
 
-Риски:
+## 8. Data and imports
 
-- превратить provisional contract в неизменяемый стандарт без визуальной проверки;
-- развернуть дизайн на все экраны до проверки одного real vertical slice;
-- потерять рабочую информационную плотность ради «воздуха»;
-- смешать visual recommendations с domain lifecycle;
-- создать сходство с identifiable third-party branding;
-- отложить blocking operational-journal repairs до полного редизайна.
+- шесть неоднозначных workplace-document rows в staging;
+- проверить equipment import completeness;
+- сохранить common DC equipment family ЩПТ/ШОТ;
+- controlled RU→EN lexicon;
+- no sensitive production data.
 
-## 9. Импорт и данные
+## 9. Tests and quality
 
-- шесть неоднозначных строк документации рабочего места остаются в staging;
-- проверить полноту и терминологию импорта оборудования;
-- поддерживать общий equipment family для ЩПТ/ШОТ;
-- закрепить управляемый RU→EN domain lexicon;
-- не импортировать реальные чувствительные данные в presentation profile.
+Закрыто QUALITY-001:
 
-## 10. Тесты и quality gates
+```text
+test discovery: fixed
+full suite: 497/497 OK
+command: python manage.py test apps --verbosity 2
+```
 
-- Django test command обнаруживает `0 test(s)`;
-- определить минимальный обязательный smoke/integration suite до крупного product slice;
-- нулевое число обнаруженных tests не считать доказательством регрессионной защиты;
-- добавлять профильные tests/gates вместе с каждым журналом;
-- добавить automated regression для semantic marker copy/paste/save/reload, когда начинается соответствующий repair.
+Открыто:
 
-## 11. Инфраструктура
+- structured machine-readable test evidence;
+- profile tests для каждого product slice;
+- semantic-marker regression;
+- automation negative/security tests.
 
-- определить retention backups;
-- reverse proxy/HTTPS/domain не являются текущим блокером;
-- production hardening относится к отдельному официальному этапу;
-- не расширять инфраструктурный scope без подтверждённой продуктовой необходимости.
+## 10. Infrastructure
 
-DOCS-001 и DOCS-002 post-merge gates уже подтверждены; preview clean, healthy and HTTP 200.
+- AUTO-001 restricted gateway;
+- artifact retention;
+- deploy credential rotation/revoke;
+- stale-lock recovery;
+- backup policy для future automatic migrations;
+- reverse proxy/HTTPS/domain не являются текущим blocker;
+- production hardening — отдельный официальный этап.
 
-## 12. Документационная непрерывность
+## 11. Documentation continuity
 
-- применимые canonical docs обновляются в том же PR, что и изменение;
-- после принятого feature/repair обязательны актуальные `CURRENT_STATE.md` и `CURRENT_HANDOFF.md`;
+- current state/handoff обновляются в каждом принятом significant change;
 - новый application baseline фиксируется после post-merge verification;
-- metadata-only follow-up не создаёт новый baseline только из-за собственного SHA;
-- UX package сохраняется без подмены provisional status визуальной приёмкой;
-- внезапное завершение чата не должно требовать восстановления состояния по памяти.
+- metadata-only follow-up не создаёт рекурсивный baseline;
+- automation docs не должны изображать AUTO-001 реализованным до фактической acceptance.
