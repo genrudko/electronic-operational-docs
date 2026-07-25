@@ -1,0 +1,521 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+CONFIG_FILE="/etc/eod-automation/controller.env"
+COMPOSE_FILE="/etc/eod-automation/compose.development.yaml"
+DOCKERFILE="/etc/eod-automation/Dockerfile.development"
+APP_ENTRYPOINT="/etc/eod-automation/app-entrypoint.sh"
+DEPLOY_KEY="/etc/eod-automation/github_deploy_key"
+GITHUB_KNOWN_HOSTS="/etc/eod-automation/github_known_hosts"
+LOCK_FILE="/run/lock/eod-development-controller.lock"
+
+fail() {
+    printf 'ERROR: %s\n' "$*" >&2
+    exit 1
+}
+
+log() {
+    printf '[AUTO-001B] %s\n' "$*"
+}
+
+require_root() {
+    [[ "${EUID}" -eq 0 ]] || fail "controller must run as root"
+}
+
+require_command() {
+    command -v "$1" >/dev/null 2>&1 || fail "required command is missing: $1"
+}
+
+require_sha() {
+    [[ "$1" =~ ^[0-9a-f]{40}$ ]] || fail "invalid exact SHA: $1"
+}
+
+require_run_id() {
+    [[ "$1" =~ ^[0-9]+$ ]] || fail "invalid workflow run id: $1"
+}
+
+require_pr_number() {
+    [[ "$1" =~ ^[0-9]+$ ]] || fail "invalid pull request number: $1"
+}
+
+load_config() {
+    [[ -f "$CONFIG_FILE" ]] || fail "missing controller config: $CONFIG_FILE"
+    # shellcheck disable=SC1090
+    source "$CONFIG_FILE"
+
+    : "${EOD_REPOSITORY_SSH_URL:?missing EOD_REPOSITORY_SSH_URL}"
+    : "${EOD_REPOSITORY_CACHE:?missing EOD_REPOSITORY_CACHE}"
+    : "${EOD_RELEASES_DIR:?missing EOD_RELEASES_DIR}"
+    : "${EOD_BACKUPS_DIR:?missing EOD_BACKUPS_DIR}"
+    : "${EOD_STATE_DIR:?missing EOD_STATE_DIR}"
+    : "${EOD_DEVELOPMENT_ENV:?missing EOD_DEVELOPMENT_ENV}"
+    : "${EOD_DEVELOPMENT_PORT:?missing EOD_DEVELOPMENT_PORT}"
+
+    [[ "$EOD_DEVELOPMENT_PORT" == "8766" ]] || fail "development port must remain 8766"
+    [[ "$EOD_DEVELOPMENT_ENV" == "/srv/eod/secrets/development.env" ]] || \
+        fail "unexpected development env path"
+    [[ "$EOD_REPOSITORY_SSH_URL" == "git@github.com:genrudko/electronic-operational-docs.git" ]] || \
+        fail "unexpected repository URL"
+
+    [[ -f "$EOD_DEVELOPMENT_ENV" ]] || fail "development env file is missing"
+    [[ -f "$COMPOSE_FILE" ]] || fail "fixed host Compose file is missing"
+    [[ -f "$DOCKERFILE" ]] || fail "fixed host Dockerfile is missing"
+    [[ -x "$APP_ENTRYPOINT" ]] || fail "fixed host app entrypoint is missing"
+    [[ -f "$DEPLOY_KEY" ]] || fail "GitHub deploy key is missing"
+    [[ -f "$GITHUB_KNOWN_HOSTS" ]] || fail "GitHub known_hosts is missing"
+
+    set -a
+    # shellcheck disable=SC1090
+    source "$EOD_DEVELOPMENT_ENV"
+    set +a
+
+    [[ "$EOD_DEVELOPMENT_PORT" == "8766" ]] || fail "development env must keep port 8766"
+    [[ "${POSTGRES_DB:-}" == "eod_development" ]] || fail "POSTGRES_DB must be eod_development"
+    [[ "${POSTGRES_USER:-}" == "eod_development" ]] || fail "POSTGRES_USER must be eod_development"
+    [[ -n "${POSTGRES_PASSWORD:-}" ]] || fail "POSTGRES_PASSWORD is missing"
+    [[ -n "${DJANGO_SECRET_KEY:-}" ]] || fail "DJANGO_SECRET_KEY is missing"
+
+    install -d -m 0700 "$EOD_RELEASES_DIR" "$EOD_BACKUPS_DIR" "$EOD_STATE_DIR"
+}
+
+compose() {
+    EOD_RELEASE_IMAGE="$1" docker compose \
+        --project-name eod-development \
+        --env-file "$EOD_DEVELOPMENT_ENV" \
+        --file "$COMPOSE_FILE" "${@:2}"
+}
+
+wait_for_database() {
+    local image="$1"
+    local container state
+    container="$(compose "$image" ps -q db)"
+    [[ -n "$container" ]] || fail "development database container is absent"
+    for attempt in $(seq 1 30); do
+        state="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container")"
+        [[ "$state" == "healthy" ]] && return 0
+        [[ "$attempt" -eq 30 ]] && fail "development database did not become healthy"
+        sleep 2
+    done
+}
+
+wait_for_application() {
+    local image="$1"
+    local container state
+    container="$(compose "$image" ps -q app)"
+    [[ -n "$container" ]] || return 1
+    for attempt in $(seq 1 36); do
+        state="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container")"
+        if [[ "$state" == "healthy" ]] && \
+            curl --fail --silent --show-error --max-time 5 \
+                "http://127.0.0.1:${EOD_DEVELOPMENT_PORT}/_health/" >/dev/null; then
+            return 0
+        fi
+        [[ "$attempt" -eq 36 ]] && return 1
+        sleep 5
+    done
+}
+
+fetch_release() {
+    local pr_number="$1"
+    local sha="$2"
+    local release_dir="$EOD_RELEASES_DIR/$sha"
+    local ssh_command
+    ssh_command="ssh -i $DEPLOY_KEY -o IdentitiesOnly=yes -o UserKnownHostsFile=$GITHUB_KNOWN_HOSTS -o StrictHostKeyChecking=yes"
+
+    if [[ ! -d "$EOD_REPOSITORY_CACHE" ]]; then
+        git init --bare "$EOD_REPOSITORY_CACHE" >/dev/null
+        git -C "$EOD_REPOSITORY_CACHE" remote add origin "$EOD_REPOSITORY_SSH_URL"
+    fi
+    [[ "$(git -C "$EOD_REPOSITORY_CACHE" remote get-url origin)" == "$EOD_REPOSITORY_SSH_URL" ]] || \
+        fail "repository cache has an unexpected origin"
+
+    GIT_SSH_COMMAND="$ssh_command" git -C "$EOD_REPOSITORY_CACHE" fetch --force --no-tags origin "refs/pull/$pr_number/head"
+    local fetched_sha
+    fetched_sha="$(git -C "$EOD_REPOSITORY_CACHE" rev-parse FETCH_HEAD)"
+    [[ "$fetched_sha" == "$sha" ]] || fail "fetched PR head is stale: expected $sha, got $fetched_sha"
+    git -C "$EOD_REPOSITORY_CACHE" cat-file -e "${sha}^{commit}"
+
+    if [[ ! -d "$release_dir" ]]; then
+        install -d -m 0700 "$release_dir"
+        git -C "$EOD_REPOSITORY_CACHE" archive "$sha" | tar -x -C "$release_dir"
+    fi
+    printf '%s\n' "$release_dir"
+}
+
+build_image() {
+    local profile="$1"
+    local sha="$2"
+    local release_dir="$3"
+    local image="eod-development-app:$sha"
+    local build_args=()
+    [[ "$profile" == "rebuild" ]] && build_args+=(--no-cache)
+
+    docker build "${build_args[@]}" \
+        --file "$DOCKERFILE" \
+        --tag "$image" \
+        "$release_dir" >&2
+    printf '%s\n' "$image"
+}
+
+cleanup_test_resources() {
+    local run_id="$1"
+    docker rm -f "eod-auto-test-db-$run_id" >/dev/null 2>&1 || true
+    docker network rm "eod-auto-test-$run_id" >/dev/null 2>&1 || true
+}
+
+run_isolated_checks_and_tests() {
+    local image="$1"
+    local run_id="$2"
+    local network="eod-auto-test-$run_id"
+    local db_container="eod-auto-test-db-$run_id"
+    local test_db="eod_test_$run_id"
+    local test_user="eod_test_$run_id"
+    local test_password="eod-test-$run_id-not-persistent"
+
+    cleanup_test_resources "$run_id"
+    docker network create "$network" >/dev/null
+    docker run --detach --rm \
+        --name "$db_container" \
+        --network "$network" \
+        --tmpfs /var/lib/postgresql:rw,noexec,nosuid,size=1024m \
+        --env "POSTGRES_DB=$test_db" \
+        --env "POSTGRES_USER=$test_user" \
+        --env "POSTGRES_PASSWORD=$test_password" \
+        postgres:18.4-bookworm >/dev/null
+
+    local ready=0
+    for attempt in $(seq 1 30); do
+        if docker exec "$db_container" pg_isready -U "$test_user" -d "$test_db" >/dev/null 2>&1; then
+            ready=1
+            break
+        fi
+        sleep 2
+    done
+    if [[ "$ready" -ne 1 ]]; then
+        cleanup_test_resources "$run_id"
+        fail "isolated test PostgreSQL did not become ready"
+    fi
+
+    local common=(
+        --rm
+        --network "$network"
+        --entrypoint python
+        --env EOD_DEPLOYMENT_MODE=development
+        --env DJANGO_SECRET_KEY=auto001b-isolated-test-secret
+        --env DJANGO_DEBUG=0
+        --env DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
+        --env DB_ENGINE=postgresql
+        --env "POSTGRES_DB=$test_db"
+        --env "POSTGRES_USER=$test_user"
+        --env "POSTGRES_PASSWORD=$test_password"
+        --env "POSTGRES_HOST=$db_container"
+        --env POSTGRES_PORT=5432
+        --env EOD_DATABASE_PROFILE=development
+        --env EOD_ALLOW_SQLITE_PATH_OVERRIDE=0
+        --env TIME_ZONE=Europe/Moscow
+        "$image"
+    )
+
+    local rc=0
+    set +e
+    docker run "${common[@]}" manage.py check || rc=$?
+    if [[ "$rc" -eq 0 ]]; then
+        docker run "${common[@]}" manage.py makemigrations --check --dry-run || rc=$?
+    fi
+    if [[ "$rc" -eq 0 ]]; then
+        docker run "${common[@]}" manage.py test apps --verbosity 2 || rc=$?
+    fi
+    set -e
+    cleanup_test_resources "$run_id"
+    [[ "$rc" -eq 0 ]] || fail "isolated Django checks or test suite failed"
+}
+
+current_application_image() {
+    local fallback="eod-development-app"
+    local container
+    container="$(compose "$fallback" ps -q app 2>/dev/null || true)"
+    if [[ -n "$container" ]]; then
+        docker inspect --format '{{.Config.Image}}' "$container"
+    else
+        printf '%s\n' "$fallback"
+    fi
+}
+
+stop_application() {
+    local image="$1"
+    compose "$image" stop app >/dev/null 2>&1 || true
+}
+
+start_database() {
+    local image="$1"
+    compose "$image" up --detach db
+    wait_for_database "$image"
+}
+
+create_database_backup() {
+    local image="$1"
+    local run_id="$2"
+    local sha="$3"
+    local backup="$EOD_BACKUPS_DIR/${run_id}-${sha}.dump"
+    start_database "$image" >&2
+    compose "$image" exec -T db \
+        pg_dump --format=custom --no-owner --no-acl \
+        --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" >"$backup"
+    [[ -s "$backup" ]] || fail "development database backup is empty"
+    chmod 0600 "$backup"
+    printf '%s\n' "$backup"
+}
+
+write_transaction() {
+    local run_id="$1" sha="$2" previous_sha="$3" previous_image="$4" new_image="$5" backup="$6"
+    local tx="$EOD_STATE_DIR/pending-$run_id.env"
+    umask 077
+    {
+        printf 'RUN_ID=%q\n' "$run_id"
+        printf 'NEW_SHA=%q\n' "$sha"
+        printf 'PREVIOUS_SHA=%q\n' "$previous_sha"
+        printf 'PREVIOUS_IMAGE=%q\n' "$previous_image"
+        printf 'NEW_IMAGE=%q\n' "$new_image"
+        printf 'BACKUP_FILE=%q\n' "$backup"
+    } >"$tx"
+    printf '%s\n' "$tx"
+}
+
+load_transaction() {
+    local run_id="$1"
+    local tx="$EOD_STATE_DIR/pending-$run_id.env"
+    [[ -f "$tx" ]] || fail "pending transaction not found for run $run_id"
+    # shellcheck disable=SC1090
+    source "$tx"
+    [[ "$RUN_ID" == "$run_id" ]] || fail "transaction run id mismatch"
+    [[ -f "$BACKUP_FILE" ]] || fail "transaction backup is missing"
+    TRANSACTION_FILE="$tx"
+}
+
+single_pending_transaction() {
+    local files=()
+    shopt -s nullglob
+    files=("$EOD_STATE_DIR"/pending-*.env)
+    shopt -u nullglob
+
+    case "${#files[@]}" in
+        0)
+            fail "no pending development transaction"
+            ;;
+        1)
+            printf '%s\n' "${files[0]}"
+            ;;
+        *)
+            fail "multiple pending development transactions require manual inspection"
+            ;;
+    esac
+}
+
+pending_run_id_from_path() {
+    local path="$1"
+    local name="${path##*/}"
+    local run_id="${name#pending-}"
+    run_id="${run_id%.env}"
+    require_run_id "$run_id"
+    printf '%s\n' "$run_id"
+}
+
+apply_migrations() {
+    local image="$1"
+    start_database "$image"
+    compose "$image" run --rm --no-deps --entrypoint python app manage.py migrate --noinput
+}
+
+start_release() {
+    local image="$1"
+    start_database "$image"
+    compose "$image" up --detach --force-recreate app
+    if ! wait_for_application "$image"; then
+        compose "$image" logs --no-color --tail=250 app db >&2 || true
+        return 1
+    fi
+    compose "$image" exec -T app python manage.py check
+}
+
+restore_database() {
+    local image="$1"
+    local backup="$2"
+    start_database "$image"
+    compose "$image" exec -T db psql \
+        --username "$POSTGRES_USER" --dbname postgres \
+        --set ON_ERROR_STOP=1 \
+        --command "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$POSTGRES_DB' AND pid <> pg_backend_pid();"
+    compose "$image" exec -T db dropdb --username "$POSTGRES_USER" --if-exists "$POSTGRES_DB"
+    compose "$image" exec -T db createdb --username "$POSTGRES_USER" "$POSTGRES_DB"
+    compose "$image" exec -T db pg_restore \
+        --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
+        --no-owner --no-acl --exit-on-error <"$backup"
+}
+
+rollback_transaction() {
+    local run_id="$1"
+    load_transaction "$run_id"
+    log "rolling back development transaction $run_id"
+    stop_application "$NEW_IMAGE"
+    restore_database "$PREVIOUS_IMAGE" "$BACKUP_FILE"
+    start_release "$PREVIOUS_IMAGE"
+    printf '%s\n' "$PREVIOUS_SHA" >"$EOD_STATE_DIR/current_sha"
+    mv "$TRANSACTION_FILE" "$EOD_STATE_DIR/rolled-back-$run_id.env"
+    log "rollback completed; previous release restored"
+}
+
+deploy_release() {
+    local profile="$1" pr_number="$2" sha="$3" run_id="$4"
+    [[ "$profile" == "refresh" || "$profile" == "rebuild" ]] || fail "invalid deployment profile"
+    require_pr_number "$pr_number"
+    require_sha "$sha"
+    require_run_id "$run_id"
+    compgen -G "$EOD_STATE_DIR/pending-*.env" >/dev/null && \
+        fail "another deployment transaction is pending; run status or rollback-pending"
+
+    local release_dir image previous_image previous_sha backup transaction
+    release_dir="$(fetch_release "$pr_number" "$sha")"
+    image="$(build_image "$profile" "$sha" "$release_dir")"
+
+    log "running Django checks and full test suite on isolated PostgreSQL"
+    run_isolated_checks_and_tests "$image" "$run_id"
+
+    previous_image="$(current_application_image)"
+    docker image inspect "$previous_image" >/dev/null 2>&1 || fail "current development image is unavailable: $previous_image"
+    previous_sha="UNKNOWN"
+    [[ -f "$EOD_STATE_DIR/current_sha" ]] && previous_sha="$(cat "$EOD_STATE_DIR/current_sha")"
+
+    log "stopping development application before backup"
+    stop_application "$previous_image"
+    if ! backup="$(create_database_backup "$previous_image" "$run_id" "$sha")"; then
+        start_release "$previous_image" || true
+        fail "development database backup failed; previous application restarted"
+    fi
+
+    if ! transaction="$(write_transaction "$run_id" "$sha" "$previous_sha" "$previous_image" "$image" "$backup")"; then
+        start_release "$previous_image" || true
+        fail "could not create deployment transaction; previous application restarted"
+    fi
+    log "backup created: $backup"
+
+    if ! apply_migrations "$image" || ! start_release "$image"; then
+        rollback_transaction "$run_id" || true
+        fail "new release failed; development rollback executed"
+    fi
+
+    [[ -f "$transaction" ]] || fail "deployment transaction disappeared"
+    printf 'DEPLOYED_PENDING_CONFIRMATION sha=%s pr=%s run=%s\n' "$sha" "$pr_number" "$run_id"
+}
+
+confirm_release() {
+    local run_id="$1" sha="$2"
+    require_run_id "$run_id"
+    require_sha "$sha"
+    load_transaction "$run_id"
+    [[ "$NEW_SHA" == "$sha" ]] || fail "confirmation SHA does not match transaction"
+    printf '%s\n' "$sha" >"$EOD_STATE_DIR/current_sha"
+    mv "$TRANSACTION_FILE" "$EOD_STATE_DIR/last-success.env"
+    printf 'SUCCESS sha=%s run=%s\n' "$sha" "$run_id"
+}
+
+manual_rollback_pending() {
+    local transaction run_id
+    transaction="$(single_pending_transaction)"
+    run_id="$(pending_run_id_from_path "$transaction")"
+    rollback_transaction "$run_id"
+    printf 'ROLLBACK_PENDING_SUCCESS run=%s\n' "$run_id"
+}
+
+manual_rollback_last() {
+    local last="$EOD_STATE_DIR/last-success.env"
+    [[ -f "$last" ]] || fail "no confirmed deployment is available for rollback"
+    compgen -G "$EOD_STATE_DIR/pending-*.env" >/dev/null && \
+        fail "pending transaction exists; use rollback-pending first"
+    # shellcheck disable=SC1090
+    source "$last"
+    cp "$last" "$EOD_STATE_DIR/pending-$RUN_ID.env"
+    rollback_transaction "$RUN_ID"
+}
+
+show_status() {
+    local files=()
+    local run_id
+    printf 'current_sha=%s\n' "$(cat "$EOD_STATE_DIR/current_sha" 2>/dev/null || printf UNKNOWN)"
+
+    shopt -s nullglob
+    files=("$EOD_STATE_DIR"/pending-*.env)
+    shopt -u nullglob
+    case "${#files[@]}" in
+        0)
+            printf 'transaction=NONE\n'
+            printf 'pending_run_id=NONE\n'
+            ;;
+        1)
+            run_id="$(pending_run_id_from_path "${files[0]}")"
+            printf 'transaction=PENDING\n'
+            printf 'pending_run_id=%s\n' "$run_id"
+            ;;
+        *)
+            printf 'transaction=ERROR\n'
+            printf 'pending_run_id=MULTIPLE\n'
+            ;;
+    esac
+    printf 'preview=UNTOUCHED\n'
+}
+
+ssh_gateway() {
+    local original="${SSH_ORIGINAL_COMMAND:-}"
+    local args=()
+    read -r -a args <<<"$original"
+    case "${args[0]:-}" in
+        deploy)
+            [[ "${#args[@]}" -eq 5 ]] || fail "invalid deploy command"
+            deploy_release "${args[1]}" "${args[2]}" "${args[3]}" "${args[4]}"
+            ;;
+        confirm)
+            [[ "${#args[@]}" -eq 3 ]] || fail "invalid confirm command"
+            confirm_release "${args[1]}" "${args[2]}"
+            ;;
+        rollback)
+            [[ "${#args[@]}" -eq 2 ]] || fail "invalid rollback command"
+            rollback_transaction "${args[1]}"
+            ;;
+        rollback-pending)
+            [[ "${#args[@]}" -eq 1 ]] || fail "invalid rollback-pending command"
+            manual_rollback_pending
+            ;;
+        *)
+            fail "unsupported forced SSH command"
+            ;;
+    esac
+}
+
+main() {
+    require_root
+    for command in git ssh tar docker curl flock; do
+        require_command "$command"
+    done
+    load_config
+    exec 9>"$LOCK_FILE"
+    flock -n 9 || fail "another controller invocation is running"
+
+    case "${1:-}" in
+        ssh-gateway)
+            ssh_gateway
+            ;;
+        rollback-pending)
+            manual_rollback_pending
+            ;;
+        rollback-last)
+            manual_rollback_last
+            ;;
+        status)
+            show_status
+            ;;
+        *)
+            fail "usage: eod-development-controller {ssh-gateway|rollback-pending|rollback-last|status}"
+            ;;
+    esac
+}
+
+main "$@"

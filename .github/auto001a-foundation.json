@@ -15,7 +15,8 @@
     "EOD CI",
     "EOD Development Stack",
     "EOD Documentation Contract",
-    "AUTO-001A Foundation CI"
+    "AUTO-001A Foundation CI",
+    "AUTO-001B Controller CI"
   ],
   "blocked_path_prefixes": [
     ".github/workflows",
