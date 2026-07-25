@@ -1,0 +1,82 @@
+name: AUTO-001A Foundation CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auto-001a-foundation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  foundation-policy-and-tests:
+    name: Trusted controller policy and negative tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install development dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --editable ".[dev]"
+          python -m pip check
+
+      - name: Compile AUTO-001A sources and tests
+        run: |
+          python -m compileall -q \
+            scripts/automation/auto_001a_foundation.py \
+            tests/automation/test_auto_001a_foundation.py
+
+      - name: Ruff AUTO-001A sources and tests
+        run: |
+          python -m ruff check \
+            scripts/automation/auto_001a_foundation.py \
+            tests/automation/test_auto_001a_foundation.py
+
+      - name: Run unit, negative and permission tests
+        run: |
+          python -m unittest discover \
+            --start-directory tests/automation \
+            --pattern 'test_auto_001a_*.py' \
+            --verbose
+
+      - name: Validate trusted workflow policy
+        run: |
+          python scripts/automation/auto_001a_foundation.py policy-check \
+            --root . \
+            --policy .github/auto001a-foundation.json
+
+      - name: Verify no write permission or deploy surface was introduced
+        shell: bash
+        run: |
+          set -euo pipefail
+          trusted=.github/workflows/vps-development.yml
+          ! grep -Eq '^[[:space:]]+[a-z-]+:[[:space:]]+write$' "$trusted"
+          ! grep -Eq 'secrets\.|actions/download-artifact|(^|[[:space:]])(ssh|scp|rsync)[[:space:]]' "$trusted"
+          ! grep -Eq 'contents: write|workflows: write|pull-requests: write' "$trusted"
+          ! grep -Eq 'approval|merge_pull_request|enable_auto_merge' "$trusted"
+
+      - name: Confirm repository remains unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git diff --exit-code
+          git status --short
