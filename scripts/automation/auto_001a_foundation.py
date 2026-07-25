@@ -4,7 +4,7 @@ import argparse
 import hashlib
 import json
 import re
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
@@ -88,6 +88,21 @@ def require_positive_int(value: Any, field: str) -> int:
     return parsed
 
 
+def normalize_repository_path(value: Any, field: str = "repository path") -> str:
+    path = require_string(value, field)
+    while path.startswith("./"):
+        path = path.removeprefix("./")
+    if not path or path.startswith("/") or "\\" in path or "\x00" in path:
+        raise FoundationValidationError(f"{field} is not a safe repository path.")
+    pure_path = PurePosixPath(path)
+    if any(part in {"", ".", ".."} for part in pure_path.parts):
+        raise FoundationValidationError(f"{field} is not a canonical repository path.")
+    normalized = pure_path.as_posix()
+    if normalized != path:
+        raise FoundationValidationError(f"{field} is not a canonical repository path.")
+    return normalized
+
+
 def validate_policy(policy: dict[str, Any]) -> None:
     if policy.get("schema_version") != 1:
         raise FoundationValidationError(
@@ -98,8 +113,7 @@ def validate_policy(policy: dict[str, Any]) -> None:
         raise FoundationValidationError("policy.base_ref must be main.")
 
     labels = policy.get("allowed_labels")
-    profiles = {"refresh", "rebuild"}
-    if not isinstance(labels, dict) or set(labels.values()) != profiles:
+    if not isinstance(labels, dict) or set(labels.values()) != {"refresh", "rebuild"}:
         raise FoundationValidationError(
             "Policy must map exactly two labels to refresh/rebuild."
         )
@@ -107,8 +121,7 @@ def validate_policy(policy: dict[str, Any]) -> None:
         require_string(label, "policy.allowed_labels label")
         require_string(profile, f"policy.allowed_labels[{label!r}]")
 
-    permissions = policy.get("allowed_actor_permissions")
-    if permissions != ["admin", "maintain", "write"]:
+    if policy.get("allowed_actor_permissions") != ["admin", "maintain", "write"]:
         raise FoundationValidationError(
             "allowed_actor_permissions must be admin, maintain, write."
         )
@@ -129,12 +142,13 @@ def validate_policy(policy: dict[str, Any]) -> None:
         values = policy.get(key)
         if not isinstance(values, list) or not values:
             raise FoundationValidationError(f"{key} must be a non-empty list.")
+        normalized_values = [
+            normalize_repository_path(item, f"policy.{key} item") for item in values
+        ]
+        if normalized_values != values:
+            raise FoundationValidationError(f"{key} must contain canonical paths.")
         if len(values) != len(set(values)):
-            raise FoundationValidationError(
-                f"{key} must not contain duplicates."
-            )
-        for item in values:
-            require_string(item, f"policy.{key} item")
+            raise FoundationValidationError(f"{key} must not contain duplicates.")
 
     if policy.get("manifest_schema_version") != 1:
         raise FoundationValidationError("Unsupported manifest_schema_version.")
@@ -149,11 +163,13 @@ def validate_policy(policy: dict[str, Any]) -> None:
 
 
 def path_is_blocked(path: str, policy: dict[str, Any]) -> bool:
-    normalized = path.strip().lstrip("./")
+    normalized = normalize_repository_path(path)
     if normalized in policy["blocked_exact_paths"]:
         return True
-    prefixes = policy["blocked_path_prefixes"]
-    return any(normalized.startswith(prefix) for prefix in prefixes)
+    return any(
+        normalized.startswith(prefix)
+        for prefix in policy["blocked_path_prefixes"]
+    )
 
 
 def select_latest_required_run(
@@ -181,9 +197,7 @@ def select_latest_required_run(
         )
 
     latest = max(candidates, key=sort_key)
-    completed = latest.get("status") == "completed"
-    successful = latest.get("conclusion") == "success"
-    if not completed or not successful:
+    if latest.get("status") != "completed" or latest.get("conclusion") != "success":
         raise FoundationValidationError(
             f"Latest exact-SHA run for {workflow_name!r} is not successful."
         )
@@ -215,12 +229,11 @@ def validate_request(
         )
 
     label = require_string(event.get("label"), "event.label")
-    allowed_labels = policy["allowed_labels"]
-    if label not in allowed_labels:
+    if label not in policy["allowed_labels"]:
         raise FoundationValidationError(
             "Label is not allowlisted for AUTO-001A."
         )
-    profile = allowed_labels[label]
+    profile = policy["allowed_labels"][label]
 
     event_number = require_positive_int(event.get("pr_number"), "event.pr_number")
     live_number = require_positive_int(live_pr.get("number"), "live_pr.number")
@@ -258,7 +271,6 @@ def validate_request(
             "PR head changed after the label event; request is superseded."
         )
 
-    head_ref = require_string(live_pr.get("head_ref"), "live_pr.head_ref")
     actor = require_string(event.get("actor"), "event.actor")
     actor_permission = require_string(
         request.get("actor_permission"),
@@ -274,7 +286,7 @@ def validate_request(
         raise FoundationValidationError("changed_files must be a list.")
     normalized_files: list[str] = []
     for item in changed_files:
-        path = require_string(item, "changed_files item").lstrip("./")
+        path = normalize_repository_path(item, "changed_files item")
         normalized_files.append(path)
         if path_is_blocked(path, policy):
             raise FoundationValidationError(
@@ -295,14 +307,17 @@ def validate_request(
                     run.get("id"),
                     f"run id for {workflow_name}",
                 ),
-                "run_attempt": int(run.get("run_attempt") or 1),
+                "run_attempt": require_positive_int(
+                    run.get("run_attempt") or 1,
+                    f"run attempt for {workflow_name}",
+                ),
                 "conclusion": "success",
                 "head_sha": live_sha,
                 "event": "pull_request",
             }
         )
 
-    files_payload = f"{'\n'.join(normalized_files)}\n".encode()
+    files_payload = ("\n".join(normalized_files) + "\n").encode()
     return {
         "schema_version": policy["manifest_schema_version"],
         "state": "VALIDATED_STAGE_A",
@@ -310,7 +325,7 @@ def validate_request(
         "repository": expected_repository,
         "pr_number": live_number,
         "base_ref": policy["base_ref"],
-        "head_ref": head_ref,
+        "head_ref": require_string(live_pr.get("head_ref"), "live_pr.head_ref"),
         "head_sha": live_sha,
         "deployment_profile": profile,
         "request_label": label,
@@ -368,9 +383,7 @@ def validate_trusted_workflow_text(
     policy: dict[str, Any],
 ) -> None:
     validate_policy(policy)
-    has_trigger = "pull_request_target:" in workflow_text
-    has_labeled_type = "types: [labeled]" in workflow_text
-    if not has_trigger or not has_labeled_type:
+    if "pull_request_target:" not in workflow_text or "types: [labeled]" not in workflow_text:
         raise FoundationValidationError(
             "Trusted workflow must use pull_request_target labeled only."
         )
@@ -395,8 +408,7 @@ def validate_trusted_workflow_text(
                 f"Forbidden trusted workflow fragment detected: {fragment}"
             )
 
-    permissions = extract_top_level_permissions(workflow_text)
-    if permissions != EXPECTED_READ_PERMISSIONS:
+    if extract_top_level_permissions(workflow_text) != EXPECTED_READ_PERMISSIONS:
         raise FoundationValidationError(
             "Effective workflow permissions differ from read-only contract."
         )
@@ -420,8 +432,7 @@ def validate_foundation_ci_workflow_text(workflow_text: str) -> None:
         raise FoundationValidationError(
             "Foundation CI must not request write permissions."
         )
-    forbidden = ("secrets.", "ssh ", "scp ", "rsync ", "environment:")
-    for fragment in forbidden:
+    for fragment in ("secrets.", "ssh ", "scp ", "rsync ", "environment:"):
         if fragment.lower() in workflow_text.lower():
             raise FoundationValidationError(
                 f"Foundation CI contains forbidden fragment: {fragment}"
@@ -431,10 +442,11 @@ def validate_foundation_ci_workflow_text(workflow_text: str) -> None:
 def run_policy_check(root: Path, policy: dict[str, Any]) -> None:
     trusted_path = root / policy["trusted_workflow"]
     ci_path = root / policy["foundation_ci_workflow"]
-    trusted_text = trusted_path.read_text(encoding="utf-8")
-    ci_text = ci_path.read_text(encoding="utf-8")
-    validate_trusted_workflow_text(trusted_text, policy)
-    validate_foundation_ci_workflow_text(ci_text)
+    validate_trusted_workflow_text(
+        trusted_path.read_text(encoding="utf-8"),
+        policy,
+    )
+    validate_foundation_ci_workflow_text(ci_path.read_text(encoding="utf-8"))
 
 
 def render_summary(manifest: dict[str, Any], manifest_sha256: str) -> str:
