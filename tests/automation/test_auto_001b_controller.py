@@ -64,7 +64,8 @@ class ControllerContractTests(unittest.TestCase):
         stop_call = deploy_body.index('stop_application "$previous_image"')
         self.assertGreater(isolated, 0)
         self.assertLess(test_call, stop_call)
-        self.assertIn("--tmpfs /var/lib/postgresql/data", self.controller)
+        self.assertIn("--tmpfs /var/lib/postgresql:", self.controller)
+        self.assertNotIn("--tmpfs /var/lib/postgresql/data:", self.controller)
         self.assertIn("manage.py test apps --verbosity 2", self.controller)
         self.assertIn("manage.py makemigrations --check --dry-run", self.controller)
 
