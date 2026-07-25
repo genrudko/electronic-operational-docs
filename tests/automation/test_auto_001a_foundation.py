@@ -59,7 +59,7 @@ def build_policy() -> dict[str, object]:
 def build_request() -> dict[str, object]:
     workflow_names = build_policy()["required_workflows"]
     assert isinstance(workflow_names, list)
-    workflow_runs = [
+    runs = [
         {
             "id": index + 100,
             "run_attempt": 1,
@@ -96,7 +96,7 @@ def build_request() -> dict[str, object]:
         },
         "actor_permission": "admin",
         "changed_files": ["src/apps/example.py", "tests/test_example.py"],
-        "workflow_runs": workflow_runs,
+        "workflow_runs": runs,
     }
 
 
@@ -195,7 +195,7 @@ class RequestValidationTests(unittest.TestCase):
         runs = request["workflow_runs"]
         assert isinstance(runs, list)
         runs.pop()
-        self.assert_blocked(request, "has no pull_request run")
+        self.assert_blocked(request, "has no exact-SHA run")
 
     def test_latest_failed_rerun_wins_over_older_success(self) -> None:
         request = build_request()
@@ -212,7 +212,7 @@ class RequestValidationTests(unittest.TestCase):
                 "conclusion": "failure",
             }
         )
-        self.assert_blocked(request, "is not completed/success")
+        self.assert_blocked(request, "is not successful")
 
     def test_run_for_different_sha_does_not_satisfy_gate(self) -> None:
         request = build_request()
@@ -222,7 +222,7 @@ class RequestValidationTests(unittest.TestCase):
             assert isinstance(run, dict)
             if run["name"] == "EOD CI":
                 run["head_sha"] = "4" * 40
-        self.assert_blocked(request, "has no pull_request run")
+        self.assert_blocked(request, "has no exact-SHA run")
 
 
 class WorkflowPolicyTests(unittest.TestCase):
@@ -238,20 +238,30 @@ jobs:
   validate:
     runs-on: ubuntu-24.04
 """
-        self.assertEqual(extract_top_level_permissions(text), EXPECTED_READ_PERMISSIONS)
+        self.assertEqual(
+            extract_top_level_permissions(text),
+            EXPECTED_READ_PERMISSIONS,
+        )
 
     def test_write_permission_is_rejected(self) -> None:
         policy = build_policy()
-        trusted = self._trusted_workflow_text().replace("contents: read", "contents: write")
+        trusted = self._trusted_workflow_text().replace(
+            "contents: read",
+            "contents: write",
+        )
         with self.assertRaisesRegex(FoundationValidationError, "Forbidden"):
             validate_trusted_workflow_text(trusted, policy)
 
     def test_pr_artifact_download_is_rejected(self) -> None:
         policy = build_policy()
         trusted = self._trusted_workflow_text().replace(
-            "actions/upload-artifact@v7", "actions/download-artifact@v7"
+            "actions/upload-artifact@v7",
+            "actions/download-artifact@v7",
         )
-        with self.assertRaisesRegex(FoundationValidationError, "download-artifact"):
+        with self.assertRaisesRegex(
+            FoundationValidationError,
+            "download-artifact",
+        ):
             validate_trusted_workflow_text(trusted, policy)
 
     def test_policy_check_reads_repository_files(self) -> None:
@@ -265,7 +275,10 @@ jobs:
             trusted_path.parent.mkdir(parents=True, exist_ok=True)
             ci_path.parent.mkdir(parents=True, exist_ok=True)
             policy_path.write_text(json.dumps(policy), encoding="utf-8")
-            trusted_path.write_text(self._trusted_workflow_text(), encoding="utf-8")
+            trusted_path.write_text(
+                self._trusted_workflow_text(),
+                encoding="utf-8",
+            )
             ci_path.write_text(
                 """name: AUTO-001A Foundation CI
 on:
