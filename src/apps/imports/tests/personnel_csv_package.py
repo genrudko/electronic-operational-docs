@@ -15,9 +15,6 @@ from apps.imports.personnel import (
 )
 
 
-_DETERMINISTIC_ZIP_DATETIME = (2026, 1, 1, 0, 0, 0)
-
-
 def _csv_bytes(header: tuple[str, ...], rows: Iterable[dict[str, object]]) -> bytes:
     buffer = io.StringIO(newline="")
     writer = csv.DictWriter(buffer, fieldnames=header, lineterminator="\n")
@@ -25,18 +22,6 @@ def _csv_bytes(header: tuple[str, ...], rows: Iterable[dict[str, object]]) -> by
     for row in rows:
         writer.writerow({name: row.get(name, "") for name in header})
     return buffer.getvalue().encode("utf-8")
-
-
-def _write_deterministic_zip_entry(
-    archive: zipfile.ZipFile,
-    *,
-    name: str,
-    data: bytes,
-) -> None:
-    info = zipfile.ZipInfo(name, date_time=_DETERMINISTIC_ZIP_DATETIME)
-    info.compress_type = zipfile.ZIP_DEFLATED
-    info.external_attr = 0o600 << 16
-    archive.writestr(info, data)
 
 
 def synthetic_personnel_csv_files() -> dict[str, bytes]:
@@ -185,12 +170,15 @@ def synthetic_personnel_csv_package(
     items = list(content.items())
     if reverse_order:
         items.reverse()
+
+    def write_deterministic(archive: zipfile.ZipFile, name: str, payload: bytes) -> None:
+        info = zipfile.ZipInfo(name, date_time=(2026, 1, 1, 0, 0, 0))
+        info.compress_type = zipfile.ZIP_DEFLATED
+        info.external_attr = 0o600 << 16
+        archive.writestr(info, payload)
+
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
         for name, data in items:
-            _write_deterministic_zip_entry(
-                archive,
-                name=f"{prefix}{name}",
-                data=data,
-            )
+            write_deterministic(archive, f"{prefix}{name}", data)
     return buffer.getvalue()
