@@ -37,7 +37,7 @@
 
 | Документ | Назначение |
 |---|---|
-| [`automation/README.md`](automation/README.md) | Статус AUTO-000, границы и навигация по пакету автоматизации |
+| [`automation/README.md`](automation/README.md) | Статус AUTO-000/AUTO-001A, границы и навигация по пакету автоматизации |
 | [`automation/AUTO_000_SCOPE.md`](automation/AUTO_000_SCOPE.md) | Scope документационного этапа и граница отсутствующей реализации |
 | [`automation/AUTO_000_REVIEW_CHECKLIST.md`](automation/AUTO_000_REVIEW_CHECKLIST.md) | Проверка архитектуры, безопасности и готовности AUTO-000 |
 | [`automation/AUTO_000_IMPLEMENTATION_HANDOFF.md`](automation/AUTO_000_IMPLEMENTATION_HANDOFF.md) | Контракт перехода к отдельной реализации AUTO-001 |
@@ -47,6 +47,8 @@
 | [`automation/AUTO_001_ACCEPTANCE_CONTRACT.md`](automation/AUTO_001_ACCEPTANCE_CONTRACT.md) | Проверяемые functional, security и operational criteria |
 | [`automation/AUTO_001_IMPLEMENTATION_ROADMAP.md`](automation/AUTO_001_IMPLEMENTATION_ROADMAP.md) | Разбиение реализации, тесты и rollback |
 | [`automation/AUTO_001_DECISION_REGISTER.md`](automation/AUTO_001_DECISION_REGISTER.md) | Принятые, предлагаемые, открытые и отклонённые решения |
+| [`automation/AUTO_001A_TRUSTED_CONTROLLER_FOUNDATION.md`](automation/AUTO_001A_TRUSTED_CONTROLLER_FOUNDATION.md) | Candidate Stage A implementation, permissions, manifest и VPS boundary |
+| [`adr/ADR-AUTO-001A-TRUSTED-CONTROLLER-BOOTSTRAP.md`](adr/ADR-AUTO-001A-TRUSTED-CONTROLLER-BOOTSTRAP.md) | Решение staged bootstrap доверенного controller |
 
 ## UX/UI
 
@@ -85,6 +87,7 @@
 | [`runbooks/BRANCH_SWITCHING.md`](runbooks/BRANCH_SWITCHING.md) | Безопасное переключение active branch |
 | [`runbooks/POST_MERGE_DEPLOYMENT.md`](runbooks/POST_MERGE_DEPLOYMENT.md) | Синхронизация preview после merge |
 | [`runbooks/INCIDENT_AND_ROLLBACK.md`](runbooks/INCIDENT_AND_ROLLBACK.md) | Отказ, диагностика и откат |
+| [`runbooks/DEVELOPMENT_AUTOMATION_TRUST_BOOTSTRAP.md`](runbooks/DEVELOPMENT_AUTOMATION_TRUST_BOOTSTRAP.md) | Review, acceptance baseline и rollback trusted controller Stage A |
 
 Технически подробный исходный runbook INFRA-003 сохраняется в [`../deploy/DEVELOPMENT_RUNBOOK.md`](../deploy/DEVELOPMENT_RUNBOOK.md); канонический пользовательский маршрут расположен в `docs/runbooks/`.
 
