@@ -42,7 +42,7 @@ AUTO-001A содержит только:
 - actor authorization;
 - allowlisted labels;
 - exact-SHA required workflow verification;
-- automation/security path block;
+- rename-aware automation/security path block;
 - GitHub concurrency;
 - immutable manifest;
 - read-only permissions;
@@ -71,9 +71,9 @@ Stage A использует только:
 contents: read
 pull-requests: read
 actions: read
-checks: read
-statuses: read
 ```
+
+`checks: read` и `statuses: read` не нужны: workflow получает required workflow runs через Actions API и не обращается к Checks API или commit Statuses API.
 
 GitHub token не получает repository write, workflow write, PR write, approval или merge capability.
 
@@ -85,6 +85,7 @@ GitHub token не получает repository write, workflow write, PR write, a
 - PR не может изменить controller и сразу использовать его с privileged boundary;
 - Stage B получает проверяемый trusted entry point из `main`;
 - required checks и exact SHA проверяются по live state;
+- rename не позволяет вынести защищённый файл в незащищённый путь или занести файл в защищённый путь;
 - scope Stage A не требует VPS secrets или сетевого доступа;
 - application baseline остаётся неизменным.
 
