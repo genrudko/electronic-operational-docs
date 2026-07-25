@@ -95,7 +95,10 @@ def build_request() -> dict[str, object]:
             "head_repo_full_name": "genrudko/electronic-operational-docs",
         },
         "actor_permission": "admin",
-        "changed_files": ["src/apps/example.py", "tests/test_example.py"],
+        "changed_files": [
+            {"filename": "src/apps/example.py"},
+            {"filename": "tests/test_example.py"},
+        ],
         "workflow_runs": runs,
     }
 
@@ -116,6 +119,7 @@ class RequestValidationTests(unittest.TestCase):
         self.assertEqual(first["vps_side_effects"], "NONE_STAGE_A")
         self.assertEqual(first["head_sha"], HEAD_SHA)
         self.assertEqual(first["deployment_profile"], "refresh")
+        self.assertEqual(first["changed_files_count"], 2)
         self.assertEqual(
             sha256_hex(canonical_json_bytes(first)),
             sha256_hex(canonical_json_bytes(second)),
@@ -187,15 +191,60 @@ class RequestValidationTests(unittest.TestCase):
         for path in blocked_paths:
             with self.subTest(path=path):
                 request = build_request()
-                request["changed_files"] = [path]
+                request["changed_files"] = [{"filename": path}]
                 self.assert_blocked(request, "blocked automation/security path")
+
+    def test_rename_protected_to_unprotected_is_blocked(self) -> None:
+        request = build_request()
+        request["changed_files"] = [
+            {
+                "filename": "src/renamed.py",
+                "previous_filename": ".github/workflows/old.yml",
+            }
+        ]
+        self.assert_blocked(request, "blocked automation/security path")
+
+    def test_rename_unprotected_to_protected_is_blocked(self) -> None:
+        request = build_request()
+        request["changed_files"] = [
+            {
+                "filename": ".github/workflows/new.yml",
+                "previous_filename": "src/old.py",
+            }
+        ]
+        self.assert_blocked(request, "blocked automation/security path")
+
+    def test_rename_protected_to_protected_is_blocked(self) -> None:
+        request = build_request()
+        request["changed_files"] = [
+            {
+                "filename": "scripts/automation/new.py",
+                "previous_filename": ".github/workflows/old.yml",
+            }
+        ]
+        self.assert_blocked(request, "blocked automation/security path")
 
     def test_noncanonical_repository_paths_are_rejected(self) -> None:
         for path in ("../escape", "/absolute", "dir\\windows", "./../escape"):
             with self.subTest(path=path):
                 request = build_request()
-                request["changed_files"] = [path]
+                request["changed_files"] = [{"filename": path}]
                 self.assert_blocked(request, "repository path")
+
+    def test_noncanonical_previous_filename_is_rejected(self) -> None:
+        request = build_request()
+        request["changed_files"] = [
+            {
+                "filename": "src/new.py",
+                "previous_filename": "../escape",
+            }
+        ]
+        self.assert_blocked(request, "previous_filename")
+
+    def test_changed_file_must_be_an_object(self) -> None:
+        request = build_request()
+        request["changed_files"] = ["src/legacy.py"]
+        self.assert_blocked(request, "must be an object")
 
     def test_missing_required_workflow_is_blocked(self) -> None:
         request = build_request()
@@ -238,8 +287,6 @@ class WorkflowPolicyTests(unittest.TestCase):
   contents: read
   pull-requests: read
   actions: read
-  checks: read
-  statuses: read
 
 jobs:
   validate:
@@ -269,6 +316,15 @@ jobs:
             FoundationValidationError,
             "download-artifact",
         ):
+            validate_trusted_workflow_text(trusted, policy)
+
+    def test_previous_filename_collection_is_required(self) -> None:
+        policy = build_policy()
+        trusted = self._trusted_workflow_text().replace(
+            "previous_filename",
+            "old_filename",
+        )
+        with self.assertRaisesRegex(FoundationValidationError, "previous_filename"):
             validate_trusted_workflow_text(trusted, policy)
 
     def test_policy_check_reads_repository_files(self) -> None:
@@ -310,8 +366,6 @@ permissions:
   contents: read
   pull-requests: read
   actions: read
-  checks: read
-  statuses: read
 concurrency:
   group: eod-vps-development
   cancel-in-progress: false
@@ -323,6 +377,7 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
+      - run: echo previous_filename
       - uses: actions/upload-artifact@v7
         with:
           name: manifest
