@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     "apps.imports.apps.ImportsConfig",
     "apps.workplace_docs.apps.WorkplaceDocsConfig",
     "apps.operational_documents.apps.OperationalDocumentsConfig",
+    "apps.equipment_defects.apps.EquipmentDefectsConfig",
     "apps.operational_log.apps.OperationalLogConfig",
 ]
 
