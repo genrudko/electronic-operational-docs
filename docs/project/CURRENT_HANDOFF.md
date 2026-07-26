@@ -6,11 +6,11 @@
 repository:
 genrudko/electronic-operational-docs
 
-current main:
-37a2390a2a45e2abb73e60318d5429ed326efb53
-
 accepted application baseline:
-937d2cd2b187c17fac3088ccfc52079fc4608306
+main / 937d2cd2b187c17fac3088ccfc52079fc4608306
+
+current main history HEAD:
+37a2390a2a45e2abb73e60318d5429ed326efb53
 
 current work:
 PLAN-001 narrow classifier repair

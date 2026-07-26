@@ -19,13 +19,13 @@ Baseline фиксируется после применимых technical gates,
 ## Current main
 
 ```text
-main / 37a2390a2a45e2abb73e60318d5429ed326efb53
+current main history HEAD: 37a2390a2a45e2abb73e60318d5429ed326efb53
 ```
 
 ## Accepted application baseline
 
 ```text
-main history point / 937d2cd2b187c17fac3088ccfc52079fc4608306
+main / 937d2cd2b187c17fac3088ccfc52079fc4608306
 ```
 
 AUTO-001A/B изменили infrastructure/workflow/runtime controller, но не

@@ -3,11 +3,11 @@
 **Дата проверки:** 26.07.2026
 
 ```text
-current main:
-37a2390a2a45e2abb73e60318d5429ed326efb53
-
 accepted application baseline:
-937d2cd2b187c17fac3088ccfc52079fc4608306
+main / 937d2cd2b187c17fac3088ccfc52079fc4608306
+
+current main history HEAD:
+37a2390a2a45e2abb73e60318d5429ed326efb53
 
 active branch:
 plan/001-evidence-audit
