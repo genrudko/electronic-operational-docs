@@ -21,11 +21,12 @@ jobs:
           cache-dependency-path: pyproject.toml
       - name: Install Ruff
         run: python -m pip install "ruff>=0.12,<1"
-      - name: Capture Ruff report
+      - name: Capture canonical Ruff diff
         shell: bash
         run: |
           set +e
-          python -m ruff check . --output-format concise >plan-001-ruff.txt 2>&1
+          python -m ruff check scripts/plan_001_evidence_audit.py \
+            --fix --diff >plan-001-ruff.txt 2>&1
           rc=$?
           set -e
           cat plan-001-ruff.txt
