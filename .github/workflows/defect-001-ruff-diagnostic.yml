@@ -34,7 +34,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m ruff check . --fix --exit-zero
+          python -m ruff check . --fix --unsafe-fixes --exit-zero
           set +e
           python -m ruff check . >ruff-remaining.txt 2>&1
           remaining_status=$?
