@@ -5,7 +5,6 @@ import traceback
 
 from apps.system.plan_001_audit.cli import main
 
-
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
