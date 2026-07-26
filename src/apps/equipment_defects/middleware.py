@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 
@@ -70,9 +70,3 @@ class EquipmentDefectRouteGuardMiddleware:
             if document_type is not None:
                 return redirect("equipment_defects:create")
         return None
-
-
-try:
-    from django.core.exceptions import ObjectDoesNotExist
-except ImportError:  # pragma: no cover - Django always provides this symbol.
-    ObjectDoesNotExist = Any
