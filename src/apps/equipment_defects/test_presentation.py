@@ -44,7 +44,7 @@ class EquipmentDefectPresentationTests(EquipmentDefectSourceBoundBase, TestCase)
         self.assertEqual(detail_response.status_code, 200)
         self.assertContains(detail_response, "Подтвердить срок")
         self.assertContains(detail_response, "authenticated user")
-        self.assertContains(detail_response, "не УКЭП")
+        self.assertContains(detail_response, "не называется УКЭП")
 
         source_response = self.client.get(
             reverse(
