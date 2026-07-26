@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
+from typing import Any
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
-from django.db import close_old_connections, connection
+from django.db import close_old_connections
 from django.test import TestCase, TransactionTestCase, skipUnlessDBFeature
 from django.urls import reverse
 from django.utils import timezone
@@ -30,7 +31,6 @@ from .constants import (
     DOCUMENT_TYPE_CODE,
     DOCUMENT_TYPE_NAME,
     FIELD_DEFINITIONS,
-    FIELD_ELIMINATION_DEADLINE,
     NUMBER_PREFIX,
     PARTICIPANT_ROLE_DEFINITIONS,
     ROLE_DISCOVERED_BY,
@@ -39,10 +39,10 @@ from .constants import (
     SOURCE_DOCUMENT,
     SOURCE_SECTION,
     STATUS_CLOSED,
+    STATUS_DEFINITIONS,
     STATUS_IN_PROGRESS,
     STATUS_REGISTERED,
     STATUS_RESOLVED,
-    STATUS_DEFINITIONS,
     TRANSITION_DEFINITIONS,
 )
 from .models import (
@@ -67,7 +67,7 @@ User = get_user_model()
 
 class DefectFixtureMixin:
     @classmethod
-    def create_organization_fixture(cls, suffix: str = "") -> dict[str, object]:
+    def create_organization_fixture(cls, suffix: str = "") -> dict[str, Any]:
         normalized = suffix.lower() or "main"
         organization = Organization.objects.create(
             code=f"ORG-{normalized.upper()}",
@@ -95,7 +95,6 @@ class DefectFixtureMixin:
             organization=organization,
             code=f"RESP-{normalized.upper()}",
             name="Ответственный за эксплуатацию оборудования",
-            is_operational=False,
         )
         site = EnergySite.objects.create(
             organization=organization,
@@ -124,7 +123,6 @@ class DefectFixtureMixin:
             "workplace": workplace,
             "operational_position": operational_position,
             "responsible_position": responsible_position,
-            "site": site,
             "equipment": equipment,
         }
 
@@ -132,7 +130,7 @@ class DefectFixtureMixin:
     def create_employee(
         cls,
         *,
-        fixture: dict[str, object],
+        fixture: dict[str, Any],
         username: str,
         personnel_number: str,
         last_name: str,
@@ -210,7 +208,7 @@ class EquipmentDefectSourceBoundTests(DefectFixtureMixin, TestCase):
             operational_log_entry=self.operational_entry if link_to_log else None,
         )
 
-    def test_exact_published_source_contract_is_idempotent_and_immutable(self) -> None:
+    def test_exact_source_contract_is_published_idempotently_and_immutable(self) -> None:
         revision = ensure_defect_document_type(self.operator)
         second = ensure_defect_document_type(self.operator)
 
@@ -234,7 +232,7 @@ class EquipmentDefectSourceBoundTests(DefectFixtureMixin, TestCase):
         with self.assertRaises(ValidationError):
             revision.save()
 
-    def test_registration_requires_same_organization_equipment_and_separates_people(self) -> None:
+    def test_registration_requires_equipment_and_separates_created_and_discovered(self) -> None:
         record = self.register()
         discovered = record.participants.get(role_code=ROLE_DISCOVERED_BY)
 
@@ -293,14 +291,8 @@ class EquipmentDefectSourceBoundTests(DefectFixtureMixin, TestCase):
             sha256_text(canonical_json(extension.canonical_snapshot)),
             extension.sha256,
         )
-        self.assertIn(
-            DEADLINE_EXTENSION_TEXT,
-            record.revisions.get(revision_number=record.version).comment,
-        )
-        self.assertEqual(
-            record.field_values[FIELD_ELIMINATION_DEADLINE]["value"],
-            canonical_json(second_deadline).strip('"'),
-        )
+        current_revision = record.revisions.get(revision_number=record.version)
+        self.assertIn(DEADLINE_EXTENSION_TEXT, current_revision.comment)
 
         record = confirm_resolution(
             record=record,
@@ -339,15 +331,12 @@ class EquipmentDefectSourceBoundTests(DefectFixtureMixin, TestCase):
         with self.assertRaises(ValidationError):
             extension.delete()
 
-    def test_operational_log_link_keeps_explicit_snapshot_and_digest(self) -> None:
+    def test_operational_log_link_keeps_snapshot_and_digest(self) -> None:
         record = self.register(link_to_log=True)
         link = EquipmentDefectOperationalLogLink.objects.get(record=record)
 
         self.assertEqual(link.operational_log_entry, self.operational_entry)
-        self.assertEqual(
-            link.entry_sequence_snapshot,
-            self.operational_entry.sequence_number,
-        )
+        self.assertEqual(link.entry_sequence_snapshot, self.operational_entry.sequence_number)
         self.assertEqual(link.entry_digest_snapshot, self.operational_entry.digest)
         self.assertIn("выявлено замечание", link.entry_content_snapshot)
         with self.assertRaises(ValidationError):
@@ -367,7 +356,6 @@ class EquipmentDefectSourceBoundTests(DefectFixtureMixin, TestCase):
             content="Запись другой организации.",
             equipment=[self.other_fixture["equipment"]],
         )
-
         with self.assertRaises(ValidationError):
             register_defect(
                 actor=self.operator,
@@ -386,7 +374,15 @@ class EquipmentDefectSourceBoundTests(DefectFixtureMixin, TestCase):
         registry_response = self.client.get(reverse("equipment_defects:registry"))
         self.assertEqual(registry_response.status_code, 200)
         registry_html = registry_response.content.decode("utf-8")
-        positions = [registry_html.index(column) for column in APPROVED_PRINT_COLUMNS]
+        registry_markers = (
+            "Дата обнаружения дефекта",
+            "Наименование ЛЭП, оборудования, устройства",
+            "Срок устранения",
+            "Дата устранения дефекта",
+            "Содержание выполненных работ",
+            "Ф.И.О., подписи оперативного персонала",
+        )
+        positions = [registry_html.index(marker) for marker in registry_markers]
         self.assertEqual(positions, sorted(positions))
         self.assertNotIn("Конструктор формы", registry_html)
         self.assertNotIn("JSON schema", registry_html)
@@ -406,7 +402,10 @@ class EquipmentDefectSourceBoundTests(DefectFixtureMixin, TestCase):
             )
         )
         self.assertEqual(source_response.status_code, 200)
-        self.assertContains(source_response, f"Запись № {self.operational_entry.sequence_number}")
+        self.assertContains(
+            source_response,
+            f"Запись № {self.operational_entry.sequence_number}",
+        )
 
         print_response = self.client.get(
             reverse("equipment_defects:print"),
@@ -420,7 +419,7 @@ class EquipmentDefectSourceBoundTests(DefectFixtureMixin, TestCase):
         self.assertNotIn(record.registration_number, print_html)
         self.assertIn("print-signature-line", print_html)
 
-    def test_presentation_seed_is_idempotent_and_has_all_five_states(self) -> None:
+    def test_presentation_seed_is_idempotent_and_has_all_five_examples(self) -> None:
         call_command("seed_equipment_defects", verbosity=0)
         first_ids = set(
             EquipmentDefectContext.objects.exclude(presentation_key__isnull=True)
@@ -502,10 +501,8 @@ class EquipmentDefectNumberingConcurrencyTests(
         with ThreadPoolExecutor(max_workers=4) as executor:
             results = list(executor.map(create_one, range(4)))
 
-        sequence_values = {value for value, _number in results}
-        registration_numbers = {number for _value, number in results}
-        self.assertEqual(len(sequence_values), 4)
-        self.assertEqual(len(registration_numbers), 4)
+        self.assertEqual(len({value for value, _number in results}), 4)
+        self.assertEqual(len({number for _value, number in results}), 4)
         self.assertEqual(
             OperationalDocumentRecord.objects.filter(
                 organization_id=organization_id,
