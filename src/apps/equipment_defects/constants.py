@@ -43,6 +43,8 @@ FIELD_DEFINITIONS = [
         "show_in_list": False,
         "searchable": True,
         "help_text": "В утверждённой печатной форме отображается только дата.",
+        "choices": [],
+        "position": 1,
     },
     {
         "code": FIELD_DEFECT_DESCRIPTION,
@@ -52,6 +54,8 @@ FIELD_DEFINITIONS = [
         "show_in_list": True,
         "searchable": True,
         "help_text": "Опишите выявленный дефект или неисправность.",
+        "choices": [],
+        "position": 2,
     },
     {
         "code": FIELD_ELIMINATION_DEADLINE,
@@ -61,6 +65,8 @@ FIELD_DEFINITIONS = [
         "show_in_list": True,
         "searchable": True,
         "help_text": "Устанавливается отдельным подтверждаемым действием.",
+        "choices": [],
+        "position": 3,
     },
     {
         "code": FIELD_RESOLVED_AT,
@@ -70,6 +76,8 @@ FIELD_DEFINITIONS = [
         "show_in_list": False,
         "searchable": True,
         "help_text": "Заполняется при подтверждении устранения.",
+        "choices": [],
+        "position": 4,
     },
     {
         "code": FIELD_RESOLUTION_WORK_SUMMARY,
@@ -79,6 +87,8 @@ FIELD_DEFINITIONS = [
         "show_in_list": True,
         "searchable": True,
         "help_text": "Заполняется ответственным за устранение.",
+        "choices": [],
+        "position": 5,
     },
 ]
 
@@ -89,6 +99,7 @@ STATUS_DEFINITIONS = [
         "is_initial": True,
         "is_terminal": False,
         "tone": "info",
+        "position": 1,
     },
     {
         "code": STATUS_IN_PROGRESS,
@@ -96,6 +107,7 @@ STATUS_DEFINITIONS = [
         "is_initial": False,
         "is_terminal": False,
         "tone": "warning",
+        "position": 2,
     },
     {
         "code": STATUS_RESOLVED,
@@ -103,6 +115,7 @@ STATUS_DEFINITIONS = [
         "is_initial": False,
         "is_terminal": False,
         "tone": "success",
+        "position": 3,
     },
     {
         "code": STATUS_CLOSED,
@@ -110,6 +123,7 @@ STATUS_DEFINITIONS = [
         "is_initial": False,
         "is_terminal": True,
         "tone": "neutral",
+        "position": 4,
     },
 ]
 
@@ -120,6 +134,7 @@ TRANSITION_DEFINITIONS = [
         "from": STATUS_REGISTERED,
         "to": STATUS_IN_PROGRESS,
         "requires_comment": False,
+        "position": 1,
     },
     {
         "code": TRANSITION_CONFIRM_RESOLUTION,
@@ -127,6 +142,7 @@ TRANSITION_DEFINITIONS = [
         "from": STATUS_IN_PROGRESS,
         "to": STATUS_RESOLVED,
         "requires_comment": False,
+        "position": 2,
     },
     {
         "code": TRANSITION_CLOSE,
@@ -134,6 +150,7 @@ TRANSITION_DEFINITIONS = [
         "from": STATUS_RESOLVED,
         "to": STATUS_CLOSED,
         "requires_comment": False,
+        "position": 3,
     },
 ]
 
@@ -143,24 +160,28 @@ PARTICIPANT_ROLE_DEFINITIONS = [
         "name": "Лицо, обнаружившее дефект",
         "required": True,
         "multiple": False,
+        "position": 1,
     },
     {
         "code": ROLE_OPERATIONS_RESPONSIBLE,
         "name": "Ответственный за эксплуатацию",
         "required": False,
         "multiple": False,
+        "position": 2,
     },
     {
         "code": ROLE_RESOLUTION_RESPONSIBLE,
         "name": "Ответственный за устранение",
         "required": False,
         "multiple": False,
+        "position": 3,
     },
     {
         "code": ROLE_OPERATIONAL_ACKNOWLEDGER,
         "name": "Ознакомившийся оперативный персонал",
         "required": False,
         "multiple": True,
+        "position": 4,
     },
 ]
 
