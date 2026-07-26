@@ -1,7 +1,9 @@
 # ЭОД — master plan
 
-**Версия:** post-PLAN-001 integration decision  
-**Актуализировано:** 26.07.2026  
+**Версия:** post-PLAN-001 integration decision
+
+**Актуализировано:** 26.07.2026
+
 **Текущий main:** `37a2390a2a45e2abb73e60318d5429ed326efb53`
 
 ## 1. Цель
