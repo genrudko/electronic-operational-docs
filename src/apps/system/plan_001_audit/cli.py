@@ -27,14 +27,18 @@ from .django_evidence import (
     runtime_smoke,
     setup_django,
 )
+from .domain_runtime import source_bound_form_runtime_inventory
 from .package import write_package
 from .source_evidence import (
+    CHAT0_INTEGRATION_DECISION,
     asset_inventory,
     build_evidence_matrix,
+    classify_runtime_data,
     documentation_inventory,
     domain_hits,
     fixture_inventory,
     python_inventory,
+    source_bound_code_references,
 )
 
 
@@ -151,8 +155,9 @@ def _validate_runtime(database: dict[str, Any]) -> None:
     }
     for field, value in expected.items():
         if database[field] != value:
+            actual = database[field]
             raise SystemExit(
-                f"PLAN-001 unsafe runtime: {field}={database[field]!r}, expected {value!r}"
+                f"PLAN-001 unsafe runtime: {field}={actual!r}, expected {value!r}"
             )
 
 
@@ -182,6 +187,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     fixtures = fixture_inventory(repo_root, assets["fixtures"])
     smoke = runtime_smoke()
     hits = domain_hits(repo_root)
+    source_bound_forms = source_bound_form_runtime_inventory()
+    source_bound_references = source_bound_code_references(
+        repo_root,
+        [row["code"] for row in source_bound_forms],
+    )
+    runtime_data = classify_runtime_data(
+        models,
+        assets,
+        source_bound_forms,
+    )
     matrix = build_evidence_matrix(
         models,
         migrations,
@@ -191,6 +206,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         commands,
         smoke,
         hits,
+        source_bound_runtime=source_bound_forms,
+        source_bound_references=source_bound_references,
     )
     documentation = documentation_inventory(
         repo_root,
@@ -198,7 +215,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         args.accepted_application_baseline,
     )
     data = {
-        "schema_version": 2,
+        "schema_version": 3,
         "project": {
             "generated_at": now(),
             "repository": "genrudko/electronic-operational-docs",
@@ -216,6 +233,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         },
         "database": database,
         "documentation": documentation,
+        "integration_decision": CHAT0_INTEGRATION_DECISION,
         "apps": apps,
         "models": models,
         "migrations": migrations,
@@ -223,6 +241,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         "python": python_rows,
         "assets": assets,
         "fixtures": fixtures,
+        "runtime_data_classification": runtime_data,
+        "source_bound_forms": source_bound_forms,
+        "source_bound_references": source_bound_references,
         "runtime_smoke": smoke,
         "domain_hits": hits,
         "evidence_matrix": matrix,

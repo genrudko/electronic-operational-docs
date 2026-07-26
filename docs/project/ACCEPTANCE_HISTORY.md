@@ -1,240 +1,143 @@
 # ЭОД — история приёмок
 
-Этот документ отделяет технический успех от предметной и визуальной приёмки.
+Этот документ разделяет technical success, runtime evidence, предметную,
+визуальную и integration acceptance.
 
-## Patch 011.6.2 Repair 4
+## Исторические product/infrastructure приёмки
 
-**Статус:** принят технически и визуально.
+| Этап | Статус | Ключевое доказательство |
+|---|---|---|
+| Patch 011.6.2 Repair 4 | Technical + visual accepted | 485 tests |
+| Patch 011.7 Repair 1 Revision 10 | Technical accepted, затем repaired | 495 tests |
+| Patch 011.7 Repair 2 | Technical + visual accepted | Source-bound forms boundary |
+| INFRA-001 | Accepted | Linux/Python/PostgreSQL CI |
+| INFRA-002 | Accepted | Healthy preview, `eod_preview`, HTTP 200 |
+| INFRA-003 | Accepted | Isolated `eod-development`, `eod_development` |
+| DOCS-001 | Accepted | Canonical project operating system |
+| DOCS-002 | Accepted | Baseline metadata |
+| DOCS-003 | Provisional accepted | UX v0.3, no visual acceptance |
+| QUALITY-001 | Technical accepted | `497/497 OK` |
+| AUTO-000 | Accepted | Automation contract and security boundary |
 
-- equipment/personnel/workplace documentation importers;
-- 485 tests, один skipped;
-- baseline `b73510a5b64b4f7faf9d80996c8ad3dba4822d6f`.
+## AUTO-001A/B
 
-## Patch 011.7 Repair 1 Revision 10
+**Статус:** accepted and practically verified.
 
-**Статус:** технически принят; затем потребовал продуктовый Repair 2.
+### Accepted implementation
 
-- operational documentation core;
-- 495 tests, один skipped;
-- commit `fec8bd675f9565b0c4e398124cd22f8fabec02b4`.
+- trusted workflow/controller foundation;
+- restricted `eod-automation` user;
+- forced SSH gateway;
+- read-only GitHub deploy key;
+- root-owned fixed controller/Compose/Dockerfile;
+- exact PR SHA fetch;
+- exact-SHA image;
+- isolated PostgreSQL checks and full tests;
+- development backup/migrations/health;
+- confirm/rollback transaction;
+- preview isolation;
+- no automatic merge.
 
-Визуальная проверка выявила неверную границу: пользователь не должен конструировать произвольные формы журналов.
+### Main history
 
-## Patch 011.7 Repair 2
+```text
+AUTO-001B merge:
+21e101f957808d744052da99709d63f1410b7bc3
 
-**Статус:** технически и визуально принят.
+trusted validator repair/current main:
+37a2390a2a45e2abb73e60318d5429ed326efb53
+```
+
+### Practical verification
+
+Canary exact SHA was deployed to development through trusted controller,
+validated and closed without merge. Preview remained untouched. Controller
+status/rollback path was practically checked.
+
+## PLAN-001 evidence acceptance
+
+**Статус:** evidence collection accepted by permanent integration Chat 0.
+
+```text
+PR:
+#7
+
+evidence exact head:
+fb313f270254720b0f7d7815fffc2cb05d577901
+
+evidence ZIP SHA-256:
+58df47f83d1758d2e6aa8b32e1d5a70efb8c453454d8759e25d913e7f031619a
+
+Django tests:
+502 / OK
+
+manifest:
+VERIFIED
+```
 
 Подтверждено:
 
-- отсутствует кнопка ручного создания рабочего типа;
-- technical schemas не допускают рабочих действий;
-- каталог показывает source document/section/appendix;
-- системные codes и hashes скрыты из обычного слоя;
-- формы и переходы читаемы;
-- обязательный transition comment имеет понятную подсказку;
-- multiple selection работает с поиском и обычным click;
-- пустые formset rows не создают ложных ошибок.
-
-Baseline `bf986433ea33bf932f98925e7daf61b0199e23d0`.
-
-## INFRA-001
-
-**Статус:** принят как CI baseline.
-
-- GitHub-hosted Linux;
-- Python 3.13;
-- PostgreSQL 18.4;
-- актуальные architecture/profile gates;
-- VPS не используется как ordinary self-hosted runner.
-
-## INFRA-002
-
-**Статус:** принят и merged PR #2.
-
-Подтверждено:
-
-- preview checkout on `main`;
-- app and db healthy;
-- app only on `127.0.0.1:8765`;
-- PostgreSQL port unpublished;
-- presentation data imported to `eod_preview`;
-- demo accounts authenticate;
-- main page HTTP 200;
-- visual walkthrough accepted.
-
-Merge commit `ded4571dcacd973184d3121b19c8db8c70e7b08a`.
-
-## INFRA-003
-
-**Статус:** принят и merged PR #3.
-
-Подтверждено:
-
-- development checkout on non-main branch;
-- separate `eod-development` Compose project;
-- separate `eod_development` database/user/volume/networks;
-- app only on `127.0.0.1:8766`;
-- development reset from preview succeeds without changing preview;
-- both contours simultaneously healthy;
-- exact database identities verified;
-- demo accounts authenticate;
-- UI and presentation data work through SSH tunnel;
-- current-head CI success.
-
-Merge commit `abd6066885b060e3e3d2c39098fcaf640bb70416`.
-
-## DOCS-001
-
-**Статус:** принят пользователем, squash-merged PR #4, post-merge verified.
-
-```text
-accepted PR head: 1f0b71b927fbee0ef08957eac157b2480d2e9a8c
-merge commit: e18872face7f27f489056b72fed31e5586121b0c
-merge method: squash
-```
-
-Принято:
-
-- GitHub как главный онлайн-источник истины;
-- canonical documentation tree and index;
-- README/AGENTS entry contracts;
-- GitHub-first/VPS-first workflow;
-- preview/development/database/tunnel/rollback runbooks;
-- PR template and documentation contract gate;
-- последовательная журнальная стратегия;
-- paper-first scope журнала ключей;
-- UX-001 parallel workstream;
-- PLAN-001 как обязательная продуктовая ревизия.
-
-DOCS-001 baseline: `e18872face7f27f489056b72fed31e5586121b0c`.
-
-## DOCS-002
-
-**Статус:** принят и squash-merged PR #5.
-
-- merge commit `a2d686b0061fac513c02540a2176850640496884`;
-- metadata-only фиксация DOCS-001 baseline и перехода к PLAN-001;
-- application behavior/schema/runtime data не менялись;
-- собственный SHA не создавал новый application baseline.
-
-## DOCS-003
-
-**Статус:** принят и squash-merged PR #6 как provisional UX contract.
-
-- merge commit `62ce0a611b0d36a4c0f1f28ac6083cac5d305fb5`;
-- UX-001 v0.3 сохранён в репозитории;
-- visual acceptance отсутствует;
-- implementation authorization отсутствует;
-- runtime/domain lifecycle/data не менялись.
-
-## QUALITY-001
-
-**Статус:** технически принят пользователем и squash-merged PR #8.
-
-```text
-accepted PR head: 4bf055d681ef35a881c8bf5dc28e8945c1948e0d
-merge commit: 4237aadc2cfdee518567024c2b45b653f49c16e7
-merge method: squash
-```
-
-### Exact-head technical evidence
-
-- EOD Documentation Contract — success;
-- EOD Development Stack — success;
-- EOD CI — success;
-- full PostgreSQL suite: `497/497 OK`;
-- database identity: `eod_development`;
-- development worktree clean;
-- current exact head tested.
-
-### Принято содержательно
-
-- реальный Django test label `apps` используется в CI/development runner;
-- test discovery больше не равен нулю;
-- concurrency/database/staticfiles/test fixtures repaired;
-- следующий product slice обязан сохранять full suite и добавлять профильные gates.
-
-QUALITY-001 не получил отдельную visual acceptance, поскольку не менял пользовательский UX.
-
-## AUTO-000
-
-**Статус:** принят пользователем, squash-merged PR #9, post-merge verified.
-
-```text
-accepted PR head: 3a4b4770e1fce41405813efa1e931288bf1a26b8
-merge commit: 937d2cd2b187c17fac3088ccfc52079fc4608306
-merge method: squash
-change type: documentation-only operating-system milestone
-```
-
-### Exact-head CI
-
-- EOD Documentation Contract — success;
-- EOD Development Stack — success;
-- EOD CI — success;
-- container preview smoke — success;
-- development VPS full suite: `497/497 OK`;
-- development database identity: `eod_development`;
-- development exact SHA/worktree clean;
-- preview isolation preserved.
-
-### Принято содержательно
-
-- automation master plan;
-- exact-SHA development deployment contract;
-- restricted gateway boundary;
-- fail-closed behavior;
-- GitHub/VPS concurrency requirements;
-- sanitised evidence contract;
-- automatic merge forbidden;
-- preview write forbidden for AUTO-001;
-- ordinary self-hosted runner with sudo/Docker socket rejected;
-- AUTO-001 limited to MVP eliminating manual PR→VPS bridge;
-- AUTO-002+ not product blockers.
-
-### Post-merge preview verification
-
-На `/srv/eod/repository` подтверждено:
-
-- branch `main`;
-- exact HEAD `937d2cd2b187c17fac3088ccfc52079fc4608306`;
-- clean worktree;
-- app image rebuilt from current checkout;
-- app container recreated and healthy;
-- preview DB container preserved and healthy;
-- health endpoint OK;
-- main page HTTP 200 on `127.0.0.1:8765`;
-- database identity `eod_preview`;
+- exact release/image source parity;
+- development database `eod_development`;
 - migrations clean;
-- host/container source match after excluding generated `electronic_operational_docs.egg-info/*`;
-- final marker `FINAL PREVIEW GATE PASSED`.
+- global executable gates pass;
+- package manifest/checksums valid;
+- development healthy;
+- controller transaction `NONE`;
+- pending run ID `NONE`;
+- preview healthy and `UNTOUCHED`.
 
-### Решение
+## PLAN-001 integration decision
 
-AUTO-000 принят без блокирующих дефектов. Accepted application baseline повышен до:
-
-```text
-main / 937d2cd2b187c17fac3088ccfc52079fc4608306
-```
-
-AUTO-001 implementation ещё отсутствует и требует отдельного work-item chat, branch, Draft PR, gap analysis, CI/VPS acceptance и явного пользовательского merge decision.
-
-## DOCS-005
-
-**Статус:** текущий Draft PR #10, не принят и не merged.
-
-Цель — metadata-only запись уже доказанного baseline, AUTO-000 acceptance и handoff для нового Chat 0. Application behavior, schema, migrations, runtime data, workflows, VPS и secrets не меняются. Собственный будущий merge SHA DOCS-005 не создаёт новый application baseline.
-
-## Шаблон будущей записи
+Это ручное решение Чата 0, не machine verdict:
 
 ```text
-Change/PR:
-Exact head:
-Technical gates:
-VPS gates:
-User scenario:
-Accepted defects/limitations:
-Decision:
-Merge commit:
-Post-merge preview verification:
+generic structured-journal core:
+SUBSTANTIALLY IMPLEMENTED
+
+structured journals pack:
+NOT COMPLETE
+
+operational journal:
+ADVANCED BUT LIFECYCLE INCOMPLETE
+
+work permits/orders:
+NOT IMPLEMENTED AS VERTICAL SLICE
+
+switching documents:
+NOT IMPLEMENTED AS VERTICAL SLICE
+
+repeatable presentation dataset:
+BLOCKING GAP
+
+recommended first vertical slice:
+DEFECT JOURNAL
 ```
+
+## PR #7 acceptance status
+
+```text
+merge:
+BLOCKED PENDING NARROW REPAIR
+
+branch:
+plan/001-evidence-audit
+
+state:
+OPEN / DRAFT / NOT MERGED
+```
+
+До acceptance нужны:
+
+- explicit ownership classifier;
+- absent/unknown/not-applicable semantics;
+- runtime data provenance split;
+- source catalog/published type/records split;
+- false-positive regression;
+- canonical docs;
+- five exact-head CI;
+- one final AUTO-001B deployment/evidence run;
+- separate user merge decision.
+
+Функциональная реализация Defect Journal ещё не начата и не считается частью
+PLAN-001 acceptance.

@@ -53,9 +53,15 @@ def _table(headers: Sequence[str], rows: Sequence[Sequence[Any]]) -> str:
     return "\n".join(lines)
 
 
+def _component_state(row: dict[str, Any], component: str) -> str:
+    return str(row["component_states"][component]["status"])
+
+
 def render_report(data: dict[str, Any]) -> str:
     project = data["project"]
     commands = data["commands"]
+    decision = data["integration_decision"]
+    runtime_categories = data["runtime_data_classification"]["categories"]
     lines = [
         "# PLAN-001 — доказательный снимок фактической реализации",
         "",
@@ -71,9 +77,26 @@ def render_report(data: dict[str, Any]) -> str:
         f"**Generated:** `{project['generated_at']}`",
         "",
         (
-            "> Автоматический аудит фиксирует наблюдаемые факты. "
-            "Он не объявляет модуль готовым, не подтверждает "
-            "предметную приёмку и не выбирает vertical slice."
+            "> Автоматический аудит фиксирует наблюдаемые факты по explicit "
+            "ownership map. Он не объявляет модуль готовым и не подтверждает "
+            "предметную приёмку."
+        ),
+        "",
+        "## Ручное решение интеграционного Чата 0",
+        "",
+        (
+            "> Этот раздел является зафиксированным integration decision, "
+            "**не machine verdict**. Он основан на независимо принятом evidence "
+            f"package `{decision['evidence_package_sha256']}` для exact head "
+            f"`{decision['evidence_exact_head']}`."
+        ),
+        "",
+        _table(
+            ("Область", "Решение"),
+            [
+                (row["area"], row["verdict"])
+                for row in decision["verdicts"]
+            ],
         ),
         "",
         "## Технический срез",
@@ -116,29 +139,86 @@ def render_report(data: dict[str, Any]) -> str:
             ],
         ),
         "",
+        "## Runtime data classification",
+        "",
+        (
+            "> Классификация разделяет canonical, staging/import, "
+            "presentation/demo и system/internal. Непомеченные строки остаются "
+            "`unknown`; staging не повышается до canonical."
+        ),
+        "",
+        _table(
+            ("Класс данных", "Состояние", "Row count", "Примечание"),
+            [
+                (
+                    name,
+                    payload["status"],
+                    payload["row_count"],
+                    payload["note"],
+                )
+                for name, payload in runtime_categories.items()
+            ],
+        ),
+        "",
         "## Evidence matrix",
+        "",
+        (
+            "> Статусы компонентов: `present`, `absent`, `unknown`, "
+            "`not applicable`. Числовой ноль не используется как замена "
+            "неизвестности."
+        ),
         "",
         _table(
             (
                 "Область",
                 "Models",
                 "Services",
-                "UI",
+                "Routes",
                 "Tests",
-                "Data",
+                "Presentation",
+                "Catalog",
+                "Published type",
+                "Records",
                 "Acceptance",
             ),
             [
                 (
                     row["requirement"],
-                    len(row["models"]),
-                    len(row["services"]),
-                    len(row["routes"]) + len(row["views"]),
-                    row["static_test_method_count"],
-                    "yes" if row["presentation_present"] else "not evidenced",
+                    _component_state(row, "models"),
+                    _component_state(row, "services"),
+                    _component_state(row, "routes"),
+                    _component_state(row, "tests"),
+                    _component_state(row, "presentation"),
+                    row["source_catalog_state"],
+                    row["published_type_state"],
+                    row["records_state"],
                     row["subject_acceptance"],
                 )
                 for row in data["evidence_matrix"]
+            ],
+        ),
+        "",
+        "## Source-bound forms",
+        "",
+        _table(
+            (
+                "Code",
+                "Name",
+                "Catalog",
+                "Installed types",
+                "Published types",
+                "Records",
+            ),
+            [
+                (
+                    row["code"],
+                    row["name"],
+                    "present" if row["catalog_present"] else "absent",
+                    row["installed_type_count"],
+                    row["published_type_count"],
+                    row["record_count"],
+                )
+                for row in data["source_bound_forms"]
             ],
         ),
         "",
@@ -160,19 +240,36 @@ def render_report(data: dict[str, Any]) -> str:
             )
             + "`"
         ),
+        (
+            "- PLAN-001 acceptance references: `"
+            + (
+                ", ".join(data["documentation"]["plan001_acceptance_files"])
+                or "none detected automatically"
+            )
+            + "`"
+        ),
         "",
         "## Ограничения",
         "",
         (
-            "- Text classification может давать ложные совпадения "
-            "и пропуски."
+            "- Discovery text hits остаются поисковым указателем и не влияют "
+            "на ownership/readiness."
         ),
-        "- Row count не доказывает качество presentation data.",
+        (
+            "- Наличие source catalog code не подменяет installed published "
+            "type или runtime records."
+        ),
+        (
+            "- Runtime row provenance без явного marker остаётся `unknown`; "
+            "seed-код не доказывает repeatable presentation dataset."
+        ),
         "- Global test success не доказывает lifecycle конкретного журнала.",
         "- Runtime smoke не заменяет браузерную и предметную приёмку.",
         "",
         "```text",
-        "first journal vertical slice: NOT SELECTED",
+        "recommended first vertical slice: DEFECT JOURNAL",
+        "decision source: permanent integration Chat 0",
+        "automatic subject acceptance: NOT ESTABLISHED",
         "merge authorization: ABSENT",
         "```",
         "",
@@ -193,7 +290,7 @@ def build_manifest(output_dir: Path, data: dict[str, Any]) -> dict[str, Any]:
                 }
             )
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "package": "PLAN-001-evidence-audit",
         "generated_at": data["project"]["generated_at"],
         "head_sha": data["project"]["head_sha"],
@@ -236,6 +333,26 @@ def scan_for_secret_leaks(output_dir: Path, secrets: Sequence[str]) -> None:
                 )
 
 
+def _matrix_csv_rows(data: dict[str, Any]) -> Iterable[dict[str, Any]]:
+    for row in data["evidence_matrix"]:
+        yield {
+            **row,
+            **{
+                f"{component}_state": row["component_states"][component]["status"]
+                for component in (
+                    "models",
+                    "services",
+                    "forms",
+                    "views",
+                    "routes",
+                    "templates",
+                    "tests",
+                    "presentation",
+                )
+            },
+        }
+
+
 def write_package(
     output_dir: Path,
     data: dict[str, Any],
@@ -248,6 +365,16 @@ def write_package(
         encoding="utf-8",
     )
     (output_dir / "REPORT.md").write_text(render_report(data), encoding="utf-8")
+    (output_dir / "integration_decision.json").write_text(
+        json.dumps(
+            data["integration_decision"],
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     write_csv(
         output_dir / "apps.csv",
         ("label", "name", "verbose_name", "path", "model_count", "migration_files"),
@@ -257,6 +384,7 @@ def write_package(
         output_dir / "models.csv",
         (
             "label",
+            "app_label",
             "verbose_name",
             "db_table",
             "db_table_exists",
@@ -272,6 +400,34 @@ def write_package(
         data["models"],
     )
     write_csv(
+        output_dir / "runtime_data.csv",
+        (
+            "model",
+            "app_label",
+            "row_count",
+            "data_class",
+            "classification_reason",
+        ),
+        data["runtime_data_classification"]["models"],
+    )
+    write_csv(
+        output_dir / "source_bound_forms.csv",
+        (
+            "code",
+            "name",
+            "purpose",
+            "source_document",
+            "source_section",
+            "source_appendix",
+            "catalog_present",
+            "installed_type_count",
+            "published_revision_count",
+            "published_type_count",
+            "record_count",
+        ),
+        data["source_bound_forms"],
+    )
+    write_csv(
         output_dir / "routes.csv",
         ("route", "name", "namespace", "qualified_name", "callback", "lookup_str"),
         data["routes"],
@@ -281,9 +437,16 @@ def write_package(
         (
             "area",
             "requirement",
+            "ownership",
+            "models_state",
+            "services_state",
+            "forms_state",
+            "views_state",
+            "routes_state",
+            "templates_state",
+            "tests_state",
+            "presentation_state",
             "models",
-            "migration_disk_total",
-            "pending_migrations_total",
             "services",
             "forms",
             "views",
@@ -293,16 +456,19 @@ def write_package(
             "static_test_method_count",
             "global_executed_test_count",
             "presentation_files",
-            "classified_row_count",
+            "source_bound_profiles",
+            "source_catalog_state",
+            "published_type_state",
+            "records_state",
             "runtime_evidence",
             "subject_acceptance",
             "remaining_deficit",
         ),
-        data["evidence_matrix"],
+        _matrix_csv_rows(data),
     )
     write_csv(
         output_dir / "domain_hits.csv",
-        ("area", "path", "line", "token", "excerpt"),
+        ("area", "path", "line", "token", "excerpt", "evidence_role"),
         (hit for hits in data["domain_hits"].values() for hit in hits),
     )
     write_csv(
@@ -338,7 +504,8 @@ def write_package(
     scan_for_secret_leaks(output_dir, secrets)
     package_manifest = build_manifest(output_dir, data)
     (output_dir / "manifest.json").write_text(
-        json.dumps(package_manifest, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        json.dumps(package_manifest, ensure_ascii=False, indent=2, sort_keys=True)
+        + "\n",
         encoding="utf-8",
     )
     verify_manifest(output_dir, package_manifest)
