@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ record.registration_number }} · Журнал дефектов{% endblock %}
+{% block main_class %}defect-main{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'equipment_defects/defects.css' %}?v=defect001">
+{% endblock %}
+
+{% block content %}
+<section class="defect-shell">
+    <header class="defect-detail-title">
+        <div class="defect-eyebrow">ЖУРНАЛ ДЕФЕКТОВ ОБОРУДОВАНИЯ</div>
+        <h1>{{ record.registration_number }}</h1>
+        <div class="defect-detail-meta">
+            <span class="defect-status" data-status="{{ record.status_code }}">
+                {{ record.status_name_snapshot }}
+            </span>
+            <span>Обнаружен {{ record.event_at|date:"d.m.Y H:i" }}</span>
+            <span>Версия {{ record.version }}</span>
+            <span>{{ source.document }}, раздел {{ source.section }}, приложение № {{ source.appendix }}</span>
+        </div>
+        <div class="defect-card-actions defect-screen-only" style="margin-top: 15px;">
+            <a class="defect-button secondary" href="{% url 'equipment_defects:registry' %}">
+                К журналу
+            </a>
+            <a
+                class="defect-button secondary"
+                href="{% url 'equipment_defects:print' %}?volume={{ record.equipment_defect_context.volume.public_id }}"
+            >
+                Печатная форма тома
+            </a>
+        </div>
+    </header>
+
+    <div class="defect-detail-layout">
+        <div class="defect-detail-main">
+            <section class="defect-section">
+                <h2>Выявленный дефект</h2>
+                <dl class="defect-definition-grid">
+                    <div>
+                        <dt>Дата обнаружения</dt>
+                        <dd>{{ record.event_at|date:"d.m.Y H:i" }}</dd>
+                    </div>
+                    <div>
+                        <dt>Оборудование</dt>
+                        <dd>
+                            {% if row.equipment %}
+                                <strong>{{ row.equipment.dispatcher_name_snapshot }}</strong><br>
+                                {{ row.equipment.site_name_snapshot }} · {{ row.equipment.equipment_type_snapshot }}
+                            {% else %}
+                                <strong>Связь с оборудованием отсутствует</strong>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div style="grid-column: 1 / -1;">
+                        <dt>Содержание дефекта</dt>
+                        <dd>{{ row.description }}</dd>
+                    </div>
+                    <div>
+                        <dt>Обнаружил</dt>
+                        <dd>
+                            {% if row.discovered_by %}
+                                <strong>{{ row.discovered_by.employee_full_name_snapshot }}</strong><br>
+                                {{ row.discovered_by.employee_position_snapshot }}
+                            {% else %}—{% endif %}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt>Зарегистрировал в системе</dt>
+                        <dd>
+                            <strong>{{ record.created_by_full_name_snapshot }}</strong><br>
+                            {{ record.created_by_position_snapshot }}
+                        </dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="defect-section">
+                <h2>Срок устранения и ответственный за эксплуатацию</h2>
+                <dl class="defect-definition-grid">
+                    <div>
+                        <dt>Текущий срок</dt>
+                        <dd><strong>{{ row.deadline|default:"Не установлен" }}</strong></dd>
+                    </div>
+                    <div>
+                        <dt>Ответственный за эксплуатацию</dt>
+                        <dd>
+                            {% if row.operations_responsible %}
+                                <strong>{{ row.operations_responsible.employee_full_name_snapshot }}</strong><br>
+                                {{ row.operations_responsible.employee_position_snapshot }}
+                            {% else %}Не назначен{% endif %}
+                        </dd>
+                    </div>
+                </dl>
+                {% if row.extensions %}
+                    <div style="margin-top: 14px;">
+                        {% for extension in row.extensions %}
+                            <div class="defect-extension">
+                                <strong>Срок устранения продлен</strong><br>
+                                {{ extension.previous_deadline|date:"d.m.Y H:i" }} →
+                                {{ extension.new_deadline|date:"d.m.Y H:i" }}<br>
+                                {{ extension.actor_position_snapshot }},
+                                {{ extension.actor_full_name_snapshot }} ·
+                                {{ extension.occurred_at|date:"d.m.Y H:i" }}<br>
+                                Причина: {{ extension.comment }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </section>
+
+            <section class="defect-section">
+                <h2>Устранение дефекта</h2>
+                <dl class="defect-definition-grid">
+                    <div>
+                        <dt>Дата устранения</dt>
+                        <dd><strong>{{ row.resolved_at|default:"Не устранён" }}</strong></dd>
+                    </div>
+                    <div>
+                        <dt>Ответственный за устранение</dt>
+                        <dd>
+                            {% if row.resolution_responsible %}
+                                <strong>{{ row.resolution_responsible.employee_full_name_snapshot }}</strong><br>
+                                {{ row.resolution_responsible.employee_position_snapshot }}
+                            {% else %}Не назначен{% endif %}
+                        </dd>
+                    </div>
+                    <div style="grid-column: 1 / -1;">
+                        <dt>Содержание выполненных работ</dt>
+                        <dd>{{ row.work_summary|default:"—" }}</dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="defect-section">
+                <h2>Ознакомление оперативного персонала</h2>
+                {% if row.acknowledgers %}
+                    <dl class="defect-definition-grid">
+                        {% for acknowledgement in row.acknowledgers %}
+                            <div>
+                                <dt>{{ acknowledgement.occurred_at|date:"d.m.Y H:i" }}</dt>
+                                <dd>
+                                    <strong>{{ acknowledgement.actor_full_name_snapshot }}</strong><br>
+                                    {{ acknowledgement.actor_position_snapshot }}<br>
+                                    Подтверждена версия {{ acknowledgement.record_version }}
+                                </dd>
+                            </div>
+                        {% endfor %}
+                    </dl>
+                {% else %}
+                    <p>Оперативный персонал ещё не ознакомился с записью об устранении.</p>
+                {% endif %}
+            </section>
+
+            {% if row.operational_log_link %}
+                <section class="defect-section">
+                    <h2>Основание в оперативном журнале</h2>
+                    <p>
+                        <a href="{% url 'operational_log:detail' row.operational_log_link.operational_log_entry.journal_id %}#entry-{{ row.operational_log_link.operational_log_entry_id }}">
+                            Запись № {{ row.operational_log_link.entry_sequence_snapshot }}
+                            от {{ row.operational_log_link.entry_event_at_snapshot|date:"d.m.Y H:i" }}
+                        </a>
+                    </p>
+                    <p>{{ row.operational_log_link.entry_content_snapshot }}</p>
+                </section>
+            {% endif %}
+
+            <section class="defect-section">
+                <h2>Хронология действий</h2>
+                <ol class="defect-timeline">
+                    {% for action in actions %}
+                        <li>
+                            <time>{{ action.occurred_at|date:"d.m.Y H:i:s" }}</time>
+                            <div>
+                                <strong>{{ action.get_action_code_display }}</strong><br>
+                                {{ action.actor_full_name_snapshot }}, {{ action.actor_position_snapshot }}
+                                {% if action.comment %}<p>{{ action.comment }}</p>{% endif %}
+                            </div>
+                        </li>
+                    {% empty %}
+                        <li><div>Действия пока не зафиксированы.</div></li>
+                    {% endfor %}
+                </ol>
+            </section>
+
+            {% if ui_preferences.show_technical_details %}
+                <details class="defect-section defect-technical technical-only">
+                    <summary>Технические реквизиты целостности</summary>
+                    <p>Тип: <code>{{ record.document_type.code }}</code></p>
+                    <p>Редакция формы: {{ record.schema_revision.revision_number }}</p>
+                    <p>SHA-256 формы: <code>{{ record.schema_revision.sha256 }}</code></p>
+                    <p>Версия записи: {{ record.version }}</p>
+                    {% for revision in record.revisions.all %}
+                        <p>
+                            Редакция {{ revision.revision_number }} · {{ revision.get_action_display }} ·
+                            <code>{{ revision.sha256 }}</code>
+                        </p>
+                    {% endfor %}
+                </details>
+            {% endif %}
+        </div>
+
+        <aside class="defect-detail-aside defect-screen-only">
+            <section class="defect-action-panel">
+                <h2>Допустимые действия</h2>
+                <div class="defect-action-stack">
+                    {% if can_confirm_deadline %}
+                        <a
+                            class="defect-button"
+                            href="{% url 'equipment_defects:confirm_deadline' record.public_id %}"
+                        >Подтвердить срок</a>
+                    {% endif %}
+                    {% if can_extend_deadline %}
+                        <a
+                            class="defect-button secondary"
+                            href="{% url 'equipment_defects:extend_deadline' record.public_id %}"
+                        >Продлить срок</a>
+                    {% endif %}
+                    {% if can_confirm_resolution %}
+                        <a
+                            class="defect-button"
+                            href="{% url 'equipment_defects:confirm_resolution' record.public_id %}"
+                        >Подтвердить устранение</a>
+                    {% endif %}
+                    {% if can_acknowledge %}
+                        <form method="post" action="{% url 'equipment_defects:acknowledge' record.public_id %}">
+                            {% csrf_token %}
+                            <button class="defect-button" type="submit">Ознакомиться</button>
+                        </form>
+                    {% endif %}
+                    {% if can_close %}
+                        <form method="post" action="{% url 'equipment_defects:close' record.public_id %}">
+                            {% csrf_token %}
+                            <button class="defect-button danger" type="submit">Закрыть дефект</button>
+                        </form>
+                    {% endif %}
+                    {% if record.status_is_terminal %}
+                        <div class="defect-paper-boundary">
+                            Запись находится в конечном состоянии и заблокирована от изменения.
+                        </div>
+                    {% elif not can_confirm_deadline and not can_extend_deadline and not can_confirm_resolution and not can_acknowledge and not can_close %}
+                        <p>Для текущего пользователя доступных действий нет.</p>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="defect-action-panel">
+                <h2>Граница доверия</h2>
+                <div class="defect-paper-boundary">
+                    Действия фиксируются по authenticated user, сотруднику, должности,
+                    времени, версии и SHA-256. Это не называется УКЭП и не отменяет
+                    рукописные подписи утверждённой бумажной формы.
+                </div>
+            </section>
+
+            <section class="defect-action-panel">
+                <h2>Исходный том</h2>
+                <p>
+                    Том {{ record.equipment_defect_context.volume.sequence_number }} ·
+                    {{ record.equipment_defect_context.volume.workplace_name_snapshot }}
+                </p>
+                <p>
+                    Начат {{ record.equipment_defect_context.volume.started_on|date:"d.m.Y" }}.
+                    {% if record.equipment_defect_context.volume.closed_on %}
+                        Окончен {{ record.equipment_defect_context.volume.closed_on|date:"d.m.Y" }}.
+                    {% else %}
+                        Дата окончания ещё не установлена.
+                    {% endif %}
+                </p>
+            </section>
+        </aside>
+    </div>
+</section>
+{% endblock %}
