@@ -165,4 +165,3 @@ class EquipmentDefectSourceBoundBase(DefectFixtureMixin):
             defect_description="Ослаблено крепление защитного кожуха привода.",
             operational_log_entry=self.operational_entry if link_to_log else None,
         )
-
