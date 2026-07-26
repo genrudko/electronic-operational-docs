@@ -2,64 +2,79 @@
 
 **Актуализировано:** 26.07.2026
 
-## 1. Текущий блокер — PR #7
-
-Завершить narrow repair в существующих:
+## 1. Текущий work item — DEFECT-001
 
 ```text
-branch: plan/001-evidence-audit
-PR: #7
-status: Draft / not merged
+branch:
+feature/defect-001-equipment-defect-journal
+
+Draft PR:
+#16
+
+status:
+IMPLEMENTATION IN PROGRESS / NOT DEPLOYED / NOT ACCEPTED
+
+base main:
+b75db8bc073e4b02a3254512e9b99d00f3e6e0e2
+
+preview:
+UNTOUCHED
 ```
 
-Обязательно:
+Implemented in branch:
 
-- explicit ownership map;
-- отдельные `absent`, `unknown`, `not applicable`;
-- runtime data provenance classes;
-- `apps.operational_documents` → structured core;
-- `apps.operational_log` → operational journal;
-- AUTO-001 paths excluded from readiness;
-- approved form code separated from published type/records;
-- manual Chat 0 decision in REPORT;
-- canonical docs sync;
-- regression tests;
-- final exact-head evidence run.
+- exact source-bound type and immutable published revision;
+- source trace to И-00-007-ОР-2025 version 2, section 11, appendix 8;
+- exact six-column registry and browser-print representation;
+- mandatory structured equipment relation and dispatcher-name snapshot;
+- separate registered user and person who discovered the defect;
+- roles, guarded lifecycle and terminal lock;
+- separate deadline extension with previous/new deadline and immutable evidence;
+- acknowledgement before close;
+- explicit immutable operational-log entry relation;
+- minimum non-cloning volume contract;
+- dedicated UI and generic-route guard;
+- deterministic five-state presentation data;
+- focused tests and PostgreSQL concurrency test;
+- canonical documentation for the active slice.
 
-Не начинать Defect Journal до принятия PR #7.
+Still open before product acceptance:
 
-## 2. Final PLAN-001 gate
+1. stable final exact head;
+2. Ruff/compile/Django/migration checks;
+3. focused source-bound test pass;
+4. one full PostgreSQL suite on final exact head;
+5. all five exact-head workflows green;
+6. trusted `vps-development-refresh` deployment;
+7. exact-SHA controller evidence and healthy development runtime;
+8. preview proof remains `UNTOUCHED`;
+9. user product and visual review;
+10. separate explicit merge command.
 
-После repair:
+The user performs no VPS commands, test runs, log collection, patch application or
+configuration edits.
 
-- five exact-head workflows;
-- trusted AUTO-001B deployment;
-- controller status;
-- one final audit;
-- manifest/checksum;
-- corrected FACT MATRIX;
-- development health;
-- transaction `NONE`;
-- pending run ID `NONE`;
-- preview health and `UNTOUCHED`;
-- Draft/not merged confirmation.
+## 2. DEFECT-001 acceptance risks to verify
 
-## 3. Defect Journal Vertical Slice
+- published schema remains exactly source-bound and immutable;
+- no generic create/edit/transition bypass exists;
+- equipment link cannot be omitted;
+- `created_by` and `DISCOVERED_BY` remain independent;
+- deadline extension never silently replaces history;
+- close cannot bypass resolution and acknowledgement;
+- terminal record cannot be changed or physically deleted;
+- cross-organization equipment/person/log relations are rejected;
+- action snapshot and SHA-256 remain consistent;
+- new volume never clones or moves unresolved records;
+- old volume end date equals resolution date of the last unresolved defect;
+- print view has exactly the six approved columns and no technical fields;
+- presentation reset remains deterministic and idempotent;
+- UI states clearly that the contour does not replace the mandatory paper original
+  and does not claim УКЭП.
 
-После отдельного starter определить:
+## 3. Operational Journal
 
-- exact source and columns;
-- statuses/transitions;
-- mandatory roles;
-- remediation deadline ownership;
-- relation type to operational-log entry;
-- basis document requirement;
-- presentation dataset;
-- subject acceptance criteria.
-
-## 4. Operational Journal
-
-Blocking lifecycle gaps:
+Blocking lifecycle gaps outside DEFECT-001:
 
 - draft → immutable registered entry;
 - handover preparation;
@@ -78,21 +93,24 @@ Editor/stability backlog:
 - no page jump outside sheet;
 - templates, abbreviations and suggestions.
 
-## 5. Data
+DEFECT-001 uses only registered entries as an optional basis and does not expand
+these unfinished lifecycles.
 
-Open:
+## 4. Data
+
+Open after the active slice:
 
 - publish accepted canonical power-system dataset;
 - distinguish staging from publication;
 - personnel rights and qualifications;
 - personnel/workplace source publications;
-- deterministic presentation reset;
+- unified deterministic presentation reset beyond the defect slice;
 - managed RU→EN domain lexicon;
 - preserve common ЩПТ/ШОТ equipment family.
 
-## 6. Structured Journals
+## 5. Structured Journals
 
-After Defect Journal:
+After DEFECT-001 acceptance and merge decision:
 
 - Application Journal;
 - Disposition Journal;
@@ -100,10 +118,11 @@ After Defect Journal:
 - RZA/Telemechanics;
 - work journals after normative decision.
 
-Each requires source traceability, specialized rules, UI, links, presentation,
-tests and user acceptance.
+Each requires source traceability, specialized rules, dedicated UI, links,
+presentation data, automated gates and user acceptance. A generic registry alone is
+not a completed journal.
 
-## 7. Work permits and orders
+## 6. Work permits and orders
 
 Open normative/product questions:
 
@@ -118,7 +137,7 @@ Open normative/product questions:
 - signatures/action evidence;
 - current-operation work lists.
 
-## 8. Switching
+## 7. Switching
 
 Minimum contour remains open:
 
@@ -133,7 +152,7 @@ Minimum contour remains open:
 
 Automatic generation/topology/interlocks remain later.
 
-## 9. Keys journal
+## 8. Keys journal
 
 Paper-first:
 
@@ -141,18 +160,18 @@ Paper-first:
 - full electronic issue/return lifecycle is not mandatory;
 - optional reference/control contour requires separate decision.
 
-## 10. UX-001
+## 9. UX-001
 
 Still provisional:
 
 - visual acceptance pending;
 - accepted tokens absent;
-- reference implementation should use a real product slice;
+- DEFECT-001 is the first real structured-journal reference implementation;
 - product correctness takes priority over cosmetic parallel work.
 
-## 11. Infrastructure
+## 10. Infrastructure
 
-AUTO-001A/B accepted. Only evidence-driven follow-ups are open:
+AUTO-001A/B are accepted. Only evidence-driven follow-ups remain open:
 
 - credential rotation/revoke procedure;
 - stale-lock recovery evidence;
@@ -160,4 +179,5 @@ AUTO-001A/B accepted. Only evidence-driven follow-ups are open:
 - backup policy for future migration-heavy product slices;
 - browser automation after product scenarios stabilize.
 
+DEFECT-001 does not create a new controller, gateway, workflow or automation layer.
 Automatic merge and preview write remain forbidden.
