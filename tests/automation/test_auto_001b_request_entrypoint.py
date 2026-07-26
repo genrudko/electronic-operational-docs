@@ -6,13 +6,17 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-REQUEST_VALIDATOR = ROOT / "scripts/automation/auto_001b_request.py"
 
 
 class RequestEntrypointTests(unittest.TestCase):
-    def test_direct_script_entrypoint_imports_project_package(self) -> None:
+    def test_module_entrypoint_imports_project_package(self) -> None:
         completed = subprocess.run(
-            [sys.executable, str(REQUEST_VALIDATOR), "--help"],
+            [
+                sys.executable,
+                "-m",
+                "scripts.automation.auto_001b_request",
+                "--help",
+            ],
             cwd=ROOT,
             check=False,
             capture_output=True,
