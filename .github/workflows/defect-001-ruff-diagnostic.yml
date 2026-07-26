@@ -40,8 +40,10 @@ jobs:
           remaining_status=$?
           set -e
           git diff --binary >ruff-fix.patch
+          git diff --name-only >ruff-fixed-files.txt
+          tar -czf ruff-fixed-files.tar.gz -T ruff-fixed-files.txt
           printf 'remaining_status=%s\n' "$remaining_status" >ruff-summary.txt
-          printf 'changed_files=%s\n' "$(git diff --name-only | wc -l)" >>ruff-summary.txt
+          printf 'changed_files=%s\n' "$(wc -l <ruff-fixed-files.txt)" >>ruff-summary.txt
           cat ruff-summary.txt
           cat ruff-remaining.txt
 
@@ -51,6 +53,8 @@ jobs:
           name: defect-001-ruff-diagnostic-${{ github.sha }}
           path: |
             ruff-fix.patch
+            ruff-fixed-files.txt
+            ruff-fixed-files.tar.gz
             ruff-remaining.txt
             ruff-summary.txt
           if-no-files-found: error
