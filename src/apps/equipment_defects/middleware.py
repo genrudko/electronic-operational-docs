@@ -14,7 +14,6 @@ from apps.operational_documents.models import (
 
 from .constants import DOCUMENT_TYPE_CODE
 
-
 GENERIC_RECORD_ROUTES = {
     "record_detail",
     "record_edit",

@@ -21,7 +21,6 @@ from ...services import (
     register_defect,
 )
 
-
 PRESENTATION_RECORDS = (
     {
         "key": "defect-registered",

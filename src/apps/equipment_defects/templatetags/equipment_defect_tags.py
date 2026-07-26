@@ -7,7 +7,6 @@ from django import template
 from apps.operational_log.models import OperationalLogEntry
 from apps.organizations.models import Employee
 
-
 register = template.Library()
 
 

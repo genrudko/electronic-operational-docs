@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from apps.operational_documents.models import FieldType
 
-
 DOCUMENT_TYPE_CODE = "journal-equipment-defects"
 DOCUMENT_TYPE_NAME = "Журнал дефектов оборудования"
 DOCUMENT_TYPE_SHORT_NAME = "Журнал дефектов"

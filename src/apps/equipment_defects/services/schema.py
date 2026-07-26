@@ -36,7 +36,6 @@ from ..constants import (
     TRANSITION_DEFINITIONS,
 )
 
-
 SOURCE_DESCRIPTION = (
     "Source-bound форма по "
     f"{SOURCE_DOCUMENT}, раздел {SOURCE_SECTION}, приложение № {SOURCE_APPENDIX}. "

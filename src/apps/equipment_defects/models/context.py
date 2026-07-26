@@ -11,7 +11,6 @@ from apps.operational_documents.models import OperationalDocumentRecord
 from .base import ProtectedManager
 from .volume import EquipmentDefectVolume
 
-
 DEFECT_DOCUMENT_TYPE_CODE = "journal-equipment-defects"
 
 
