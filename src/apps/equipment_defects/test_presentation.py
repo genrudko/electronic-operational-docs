@@ -73,12 +73,12 @@ class EquipmentDefectPresentationTests(EquipmentDefectSourceBoundBase, TestCase)
     def test_presentation_seed_is_idempotent_and_has_all_five_examples(self) -> None:
         call_command("seed_equipment_defects", verbosity=0)
         first_ids = set(
-            EquipmentDefectContext.objects.exclude(presentation_key__isnull=True)
+            EquipmentDefectContext.objects.exclude(presentation_key="")
             .values_list("record_id", flat=True)
         )
         call_command("seed_equipment_defects", verbosity=0)
         second_ids = set(
-            EquipmentDefectContext.objects.exclude(presentation_key__isnull=True)
+            EquipmentDefectContext.objects.exclude(presentation_key="")
             .values_list("record_id", flat=True)
         )
 
@@ -100,5 +100,3 @@ class EquipmentDefectPresentationTests(EquipmentDefectSourceBoundBase, TestCase)
                 action_code=DefectActionCode.DEADLINE_EXTENDED,
             ).exists()
         )
-
-
