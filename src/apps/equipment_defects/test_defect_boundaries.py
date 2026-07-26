@@ -157,7 +157,7 @@ class EquipmentDefectBoundaryTests(DefectFixtureMixin, TestCase):
         self.assertTrue(new_volume.accepts_new_records)
         self.assertFalse(original_volume.accepts_new_records)
         self.assertEqual(original_volume.closed_on, resolved_at.date())
-        self.assertEqual(record.equipment_defect_context_id, original_context_id)
+        self.assertEqual(record.equipment_defect_context.pk, original_context_id)
         self.assertEqual(record.equipment_defect_context.volume_id, original_volume.pk)
         self.assertEqual(original_volume.defect_contexts.count(), 1)
         self.assertEqual(new_volume.defect_contexts.count(), 0)
