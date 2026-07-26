@@ -1,0 +1,560 @@
+.defect-main {
+    width: min(1880px, calc(100% - 32px));
+    margin: 0 auto;
+    padding: 24px 0 48px;
+}
+
+.defect-shell {
+    display: grid;
+    gap: 18px;
+}
+
+.defect-hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 22px 24px;
+    border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+    border-radius: 18px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, #2b6cb0 10%, transparent), transparent 58%),
+        var(--surface, #fff);
+    box-shadow: 0 16px 42px rgb(15 23 42 / 8%);
+}
+
+.defect-hero h1,
+.defect-detail-title h1,
+.defect-form-heading h1 {
+    margin: 3px 0 8px;
+    font-size: clamp(1.45rem, 2vw, 2.1rem);
+    line-height: 1.12;
+}
+
+.defect-eyebrow {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    opacity: 0.68;
+}
+
+.defect-source-note {
+    margin: 0;
+    max-width: 980px;
+    opacity: 0.78;
+}
+
+.defect-hero-actions,
+.defect-card-actions,
+.defect-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.defect-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 9px 15px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: #245b9e;
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    line-height: 1.1;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.defect-button:hover {
+    filter: brightness(1.06);
+}
+
+.defect-button.secondary {
+    border-color: color-mix(in srgb, currentColor 18%, transparent);
+    background: transparent;
+    color: inherit;
+}
+
+.defect-button.danger {
+    background: #a43c3c;
+}
+
+.defect-kpis {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(120px, 1fr));
+    gap: 10px;
+}
+
+.defect-kpi {
+    padding: 14px 16px;
+    border: 1px solid color-mix(in srgb, currentColor 11%, transparent);
+    border-radius: 13px;
+    background: var(--surface, #fff);
+}
+
+.defect-kpi strong {
+    display: block;
+    margin-bottom: 2px;
+    font-size: 1.55rem;
+}
+
+.defect-kpi span {
+    font-size: 0.82rem;
+    opacity: 0.72;
+}
+
+.defect-filter-panel {
+    padding: 16px;
+    border: 1px solid color-mix(in srgb, currentColor 11%, transparent);
+    border-radius: 14px;
+    background: var(--surface, #fff);
+}
+
+.defect-filter-grid {
+    display: grid;
+    grid-template-columns: minmax(250px, 2fr) minmax(190px, 1fr) minmax(230px, 1.4fr) repeat(2, minmax(150px, 0.8fr)) auto;
+    gap: 10px;
+    align-items: end;
+}
+
+.defect-field {
+    display: grid;
+    gap: 6px;
+}
+
+.defect-field label {
+    font-size: 0.78rem;
+    font-weight: 750;
+    opacity: 0.76;
+}
+
+.defect-field input,
+.defect-field select,
+.defect-field textarea,
+.defect-form-card input,
+.defect-form-card select,
+.defect-form-card textarea {
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 42px;
+    padding: 9px 11px;
+    border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+    border-radius: 9px;
+    background: var(--surface, #fff);
+    color: inherit;
+    font: inherit;
+}
+
+.defect-field textarea,
+.defect-form-card textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
+.defect-register-wrap {
+    overflow: auto;
+    border: 1px solid color-mix(in srgb, currentColor 13%, transparent);
+    border-radius: 15px;
+    background: var(--surface, #fff);
+    box-shadow: 0 10px 30px rgb(15 23 42 / 6%);
+}
+
+.defect-register {
+    width: 100%;
+    min-width: 1460px;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+}
+
+.defect-register thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 12px 10px;
+    border-bottom: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+    border-right: 1px solid color-mix(in srgb, currentColor 9%, transparent);
+    background: color-mix(in srgb, var(--surface, #fff) 94%, #245b9e 6%);
+    font-size: 0.76rem;
+    line-height: 1.25;
+    text-align: left;
+    vertical-align: bottom;
+}
+
+.defect-register tbody td {
+    padding: 12px 10px;
+    border-bottom: 1px solid color-mix(in srgb, currentColor 9%, transparent);
+    border-right: 1px solid color-mix(in srgb, currentColor 7%, transparent);
+    line-height: 1.32;
+    vertical-align: top;
+}
+
+.defect-register tbody tr:hover td {
+    background: color-mix(in srgb, #245b9e 4%, transparent);
+}
+
+.defect-register tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.defect-register th:nth-child(1),
+.defect-register td:nth-child(1) {
+    width: 9%;
+}
+
+.defect-register th:nth-child(2),
+.defect-register td:nth-child(2) {
+    width: 27%;
+}
+
+.defect-register th:nth-child(3),
+.defect-register td:nth-child(3) {
+    width: 18%;
+}
+
+.defect-register th:nth-child(4),
+.defect-register td:nth-child(4) {
+    width: 15%;
+}
+
+.defect-register th:nth-child(5),
+.defect-register td:nth-child(5) {
+    width: 20%;
+}
+
+.defect-register th:nth-child(6),
+.defect-register td:nth-child(6) {
+    width: 11%;
+}
+
+.defect-record-number {
+    display: block;
+    margin-top: 7px;
+    font-size: 0.72rem;
+    opacity: 0.62;
+}
+
+.defect-cell-equipment {
+    display: block;
+    margin-bottom: 7px;
+    font-weight: 800;
+}
+
+.defect-cell-person {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.8rem;
+    opacity: 0.76;
+}
+
+.defect-cell-person strong {
+    display: block;
+    color: inherit;
+}
+
+.defect-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, #245b9e 12%, transparent);
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.defect-status[data-status="IN_PROGRESS"] {
+    background: color-mix(in srgb, #b7791f 16%, transparent);
+}
+
+.defect-status[data-status="RESOLVED"] {
+    background: color-mix(in srgb, #2f855a 16%, transparent);
+}
+
+.defect-status[data-status="CLOSED"] {
+    background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.defect-extension {
+    margin-top: 8px;
+    padding: 8px 9px;
+    border-left: 3px solid #b7791f;
+    border-radius: 4px 8px 8px 4px;
+    background: color-mix(in srgb, #b7791f 8%, transparent);
+    font-size: 0.78rem;
+}
+
+.defect-empty {
+    padding: 36px 24px !important;
+    text-align: center;
+    opacity: 0.68;
+}
+
+.defect-detail-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 18px;
+    align-items: start;
+}
+
+.defect-detail-main,
+.defect-detail-aside,
+.defect-form-card {
+    display: grid;
+    gap: 16px;
+}
+
+.defect-detail-title,
+.defect-section,
+.defect-action-panel,
+.defect-form-card {
+    padding: 20px;
+    border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+    border-radius: 15px;
+    background: var(--surface, #fff);
+}
+
+.defect-detail-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-top: 11px;
+    font-size: 0.82rem;
+    opacity: 0.74;
+}
+
+.defect-section h2,
+.defect-action-panel h2 {
+    margin: 0 0 13px;
+    font-size: 1.05rem;
+}
+
+.defect-definition-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 24px;
+    margin: 0;
+}
+
+.defect-definition-grid > div {
+    min-width: 0;
+}
+
+.defect-definition-grid dt {
+    margin-bottom: 4px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    opacity: 0.66;
+    text-transform: uppercase;
+}
+
+.defect-definition-grid dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.defect-timeline {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.defect-timeline li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 138px 1fr;
+    gap: 16px;
+    padding: 0 0 18px 21px;
+    border-left: 2px solid color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.defect-timeline li::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: -6px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #245b9e;
+}
+
+.defect-timeline li:last-child {
+    padding-bottom: 0;
+    border-left-color: transparent;
+}
+
+.defect-timeline time {
+    font-size: 0.78rem;
+    opacity: 0.68;
+}
+
+.defect-action-stack {
+    display: grid;
+    gap: 9px;
+}
+
+.defect-action-stack form,
+.defect-action-stack .defect-button {
+    width: 100%;
+}
+
+.defect-action-stack form .defect-button {
+    width: 100%;
+}
+
+.defect-paper-boundary {
+    padding: 13px;
+    border-left: 4px solid #b7791f;
+    border-radius: 8px;
+    background: color-mix(in srgb, #b7791f 8%, transparent);
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
+
+.defect-form-wrap {
+    width: min(900px, 100%);
+    margin: 0 auto;
+}
+
+.defect-form-heading {
+    margin-bottom: 16px;
+}
+
+.defect-form-card .errorlist,
+.defect-form-card .nonfield {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: color-mix(in srgb, #a43c3c 12%, transparent);
+    color: inherit;
+}
+
+.defect-form-row {
+    display: grid;
+    gap: 6px;
+}
+
+.defect-form-row > label {
+    font-weight: 750;
+}
+
+.defect-form-row small {
+    opacity: 0.68;
+}
+
+.defect-technical {
+    font-size: 0.82rem;
+}
+
+.defect-technical code {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 1200px) {
+    .defect-filter-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .defect-detail-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .defect-detail-aside {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .defect-main {
+        width: min(100% - 20px, 1880px);
+        padding-top: 14px;
+    }
+
+    .defect-hero {
+        display: grid;
+        padding: 17px;
+    }
+
+    .defect-kpis,
+    .defect-filter-grid,
+    .defect-detail-aside,
+    .defect-definition-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .defect-register-wrap {
+        overflow: visible;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .defect-register,
+    .defect-register tbody,
+    .defect-register tr,
+    .defect-register td {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+
+    .defect-register thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+    }
+
+    .defect-register tbody tr {
+        margin-bottom: 13px;
+        border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+        border-radius: 13px;
+        background: var(--surface, #fff);
+        overflow: hidden;
+    }
+
+    .defect-register tbody td {
+        display: grid;
+        grid-template-columns: minmax(105px, 32%) 1fr;
+        gap: 12px;
+        border-right: 0;
+    }
+
+    .defect-register tbody td::before {
+        content: attr(data-column-title);
+        font-size: 0.72rem;
+        font-weight: 800;
+        opacity: 0.62;
+    }
+
+    .defect-timeline li {
+        grid-template-columns: 1fr;
+        gap: 3px;
+    }
+}
+
+@media print {
+    .defect-screen-only,
+    .topbar,
+    body > footer,
+    .messages {
+        display: none !important;
+    }
+
+    .defect-main {
+        width: auto;
+        margin: 0;
+        padding: 0;
+    }
+}
