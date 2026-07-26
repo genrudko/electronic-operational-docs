@@ -109,16 +109,7 @@ def preserved_relations(record: OperationalDocumentRecord) -> list[OperationalDo
 
 
 def locked_defect_record(record: OperationalDocumentRecord) -> OperationalDocumentRecord:
-    locked = (
-        OperationalDocumentRecord.objects.select_for_update()
-        .select_related(
-            "document_type",
-            "organization",
-            "schema_revision",
-            "workplace",
-        )
-        .get(pk=record.pk)
-    )
+    locked = OperationalDocumentRecord.objects.select_for_update().get(pk=record.pk)
     if locked.document_type.code != DOCUMENT_TYPE_CODE:
         raise ValidationError("Запись не относится к журналу дефектов оборудования.")
     if not EquipmentDefectContext.objects.filter(record=locked).exists():
