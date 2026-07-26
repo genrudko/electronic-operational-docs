@@ -14,6 +14,18 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.AlterField(
+            model_name="equipmentdefectcontext",
+            name="presentation_key",
+            field=models.CharField(
+                blank=True,
+                default="",
+                editable=False,
+                max_length=96,
+                null=True,
+                verbose_name="Ключ презентационных данных",
+            ),
+        ),
         migrations.RunPython(
             normalize_presentation_keys,
             reverse_code=migrations.RunPython.noop,
