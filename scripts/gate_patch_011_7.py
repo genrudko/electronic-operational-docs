@@ -212,7 +212,7 @@ def main() -> None:
     test_count = sum(
         1
         for node in ast.walk(tree)
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef)
         and node.name.startswith("test_")
     )
     if test_count < 11:
@@ -242,9 +242,9 @@ def main() -> None:
     )
     require(
         current_state,
-        "source-bound каталог рабочих форм",
-        "PLAN-001 — ревизия фактической реализации",
-        "один журнал полностью",
+        "source-bound catalog",
+        "PLAN-001 accepted decision",
+        "equipment defect journal: implementation in Draft PR #16",
     )
     require(decision_log, "рабочие формы только из утверждённых источников")
     require(patch_history, "Patch 011.7 Repair 1 Revision 10", "Patch 011.7 Repair 2")
@@ -256,9 +256,9 @@ def main() -> None:
     )
     require(
         handoff,
-        "GitHub-first/VPS-first",
-        "PLAN-001 — доказательная ревизия плана и реализации",
-        "журналы доводятся по одному",
+        "DEFECT-001 — Source-bound Equipment Defect Journal Vertical Slice",
+        "five green exact-head workflows",
+        "separate explicit merge command",
     )
     for relative in (
         "docs/adr/ADR-011-7-operational-documentation-core.md",
