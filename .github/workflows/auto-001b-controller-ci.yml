@@ -42,12 +42,14 @@ jobs:
         run: |
           python -m compileall -q \
             scripts/automation/auto_001b_request.py \
-            tests/automation/test_auto_001b_controller.py
+            tests/automation/test_auto_001b_controller.py \
+            tests/automation/test_auto_001b_request_entrypoint.py
 
       - name: Run AUTO-001B tests
         run: |
           python -m unittest \
             tests.automation.test_auto_001b_controller \
+            tests.automation.test_auto_001b_request_entrypoint \
             --verbose
 
       - name: Verify practical boundaries

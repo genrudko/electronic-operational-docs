@@ -143,7 +143,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python scripts/automation/auto_001b_request.py validate \
+          python -m scripts.automation.auto_001b_request validate \
             --request auto001b-request.json \
             --policy .github/auto001a-foundation.json \
             --summary auto001b-summary.md \
