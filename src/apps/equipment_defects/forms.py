@@ -86,7 +86,7 @@ class DefectRegistrationForm(forms.Form):
         self.fields["operational_log_entry"].queryset = (
             OperationalLogEntry.objects.filter(journal__organization=organization)
             .select_related("journal", "journal__workplace")
-            .order_by("-registered_at", "-pk")[:300]
+            .order_by("-registered_at", "-pk")
         )
         if not self.is_bound:
             self.initial.setdefault(
