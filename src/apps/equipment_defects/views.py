@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Any
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_http_methods, require_POST
 
 from apps.equipment.models import EquipmentAsset
@@ -18,6 +19,7 @@ from apps.operational_documents.services import (
     require_operational_document_employee,
 )
 from apps.operational_log.models import OperationalLogEntry
+from apps.organizations.models import Employee
 
 from .constants import (
     APPROVED_PRINT_COLUMNS,
@@ -46,11 +48,7 @@ from .forms import (
     DefectRegistrationForm,
     ResolutionConfirmationForm,
 )
-from .models import (
-    DefectActionCode,
-    EquipmentDefectContext,
-    EquipmentDefectVolume,
-)
+from .models import DefectActionCode, EquipmentDefectVolume
 from .services import (
     acknowledge_resolution,
     close_defect,
@@ -73,7 +71,7 @@ def _validation_message(error: ValidationError) -> str:
     return "; ".join(error.messages)
 
 
-def _record_queryset(employee):
+def _record_queryset(employee: Employee) -> QuerySet[OperationalDocumentRecord]:
     return (
         OperationalDocumentRecord.objects.filter(
             organization=employee.organization,
@@ -100,11 +98,8 @@ def _record_queryset(employee):
     )
 
 
-def _record_for_employee(public_id, employee) -> OperationalDocumentRecord:
-    return get_object_or_404(
-        _record_queryset(employee),
-        public_id=public_id,
-    )
+def _record_for_employee(public_id: Any, employee: Employee) -> OperationalDocumentRecord:
+    return get_object_or_404(_record_queryset(employee), public_id=public_id)
 
 
 def _participant(record: OperationalDocumentRecord, role_code: str):
@@ -118,7 +113,7 @@ def _operational_log_link(record: OperationalDocumentRecord):
         return None
 
 
-def _extension_rows(record: OperationalDocumentRecord):
+def _extension_rows(record: OperationalDocumentRecord) -> list[Any]:
     return list(
         record.equipment_defect_actions.filter(
             action_code=DefectActionCode.DEADLINE_EXTENDED
@@ -126,7 +121,7 @@ def _extension_rows(record: OperationalDocumentRecord):
     )
 
 
-def _acknowledgement_rows(record: OperationalDocumentRecord):
+def _acknowledgement_rows(record: OperationalDocumentRecord) -> list[Any]:
     return list(
         record.equipment_defect_actions.filter(
             action_code=DefectActionCode.ACKNOWLEDGED
@@ -140,24 +135,15 @@ def _row(record: OperationalDocumentRecord) -> dict[str, Any]:
         "record": record,
         "equipment": equipment_links[0] if equipment_links else None,
         "discovered_by": _participant(record, ROLE_DISCOVERED_BY),
-        "operations_responsible": _participant(
-            record,
-            ROLE_OPERATIONS_RESPONSIBLE,
-        ),
-        "resolution_responsible": _participant(
-            record,
-            ROLE_RESOLUTION_RESPONSIBLE,
-        ),
+        "operations_responsible": _participant(record, ROLE_OPERATIONS_RESPONSIBLE),
+        "resolution_responsible": _participant(record, ROLE_RESOLUTION_RESPONSIBLE),
         "acknowledgers": _acknowledgement_rows(record),
         "extensions": _extension_rows(record),
         "detected_at": defect_field_display(record, FIELD_DETECTED_AT),
         "description": defect_field_display(record, FIELD_DEFECT_DESCRIPTION),
         "deadline": defect_field_display(record, FIELD_ELIMINATION_DEADLINE),
         "resolved_at": defect_field_display(record, FIELD_RESOLVED_AT),
-        "work_summary": defect_field_display(
-            record,
-            FIELD_RESOLUTION_WORK_SUMMARY,
-        ),
+        "work_summary": defect_field_display(record, FIELD_RESOLUTION_WORK_SUMMARY),
         "operational_log_link": _operational_log_link(record),
     }
 
@@ -170,6 +156,17 @@ def _source_context() -> dict[str, str]:
     }
 
 
+def _valid_date_filter(request: HttpRequest, key: str):
+    raw_value = request.GET.get(key, "").strip()
+    if not raw_value:
+        return "", None
+    parsed = parse_date(raw_value)
+    if parsed is None:
+        messages.warning(request, "Некорректная дата фильтра проигнорирована.")
+        return "", None
+    return raw_value, parsed
+
+
 @login_required
 def registry(request: HttpRequest) -> HttpResponse:
     employee = require_operational_document_employee(request.user)
@@ -179,37 +176,36 @@ def registry(request: HttpRequest) -> HttpResponse:
     query = request.GET.get("q", "").strip()
     status = request.GET.get("status", "").strip().upper()
     equipment_id = request.GET.get("equipment", "").strip()
-    date_from = request.GET.get("date_from", "").strip()
-    date_to = request.GET.get("date_to", "").strip()
+    date_from_raw, date_from = _valid_date_filter(request, "date_from")
+    date_to_raw, date_to = _valid_date_filter(request, "date_to")
 
+    allowed_statuses = {
+        STATUS_REGISTERED,
+        STATUS_IN_PROGRESS,
+        STATUS_RESOLVED,
+        STATUS_CLOSED,
+    }
+    if status and status not in allowed_statuses:
+        messages.warning(request, "Неизвестное состояние фильтра проигнорировано.")
+        status = ""
     if query:
         records = records.filter(search_text__contains=normalize_search_text(query))
     if status:
         records = records.filter(status_code=status)
     if equipment_id:
         records = records.filter(equipment_links__equipment__public_id=equipment_id)
-    if date_from:
+    if date_from is not None:
         records = records.filter(event_at__date__gte=date_from)
-    if date_to:
+    if date_to is not None:
         records = records.filter(event_at__date__lte=date_to)
 
     records = records.distinct().order_by("-event_at", "-pk")
-    rows = [_row(record) for record in records]
     all_records = _record_queryset(employee)
-    status_options = (
-        (STATUS_REGISTERED, "Зарегистрирован"),
-        (STATUS_IN_PROGRESS, "В работе"),
-        (STATUS_RESOLVED, "Устранён"),
-        (STATUS_CLOSED, "Закрыт"),
-    )
-    volumes = EquipmentDefectVolume.objects.filter(
-        organization=employee.organization
-    ).select_related("workplace")
     return render(
         request,
         "equipment_defects/registry.html",
         {
-            "rows": rows,
+            "rows": [_row(record) for record in records],
             "source": _source_context(),
             "document_type_name": DOCUMENT_TYPE_NAME,
             "counts": {
@@ -222,14 +218,21 @@ def registry(request: HttpRequest) -> HttpResponse:
             "equipment_assets": EquipmentAsset.objects.filter(
                 organization=employee.organization
             ).order_by("code")[:500],
-            "status_options": status_options,
-            "volumes": volumes,
+            "status_options": (
+                (STATUS_REGISTERED, "Зарегистрирован"),
+                (STATUS_IN_PROGRESS, "В работе"),
+                (STATUS_RESOLVED, "Устранён"),
+                (STATUS_CLOSED, "Закрыт"),
+            ),
+            "volumes": EquipmentDefectVolume.objects.filter(
+                organization=employee.organization
+            ).select_related("workplace"),
             "filters": {
                 "q": query,
                 "status": status,
                 "equipment": equipment_id,
-                "date_from": date_from,
-                "date_to": date_to,
+                "date_from": date_from_raw,
+                "date_to": date_to_raw,
             },
         },
     )
@@ -296,23 +299,21 @@ def create_from_operational_log(request: HttpRequest, entry_id: int) -> HttpResp
 
 
 @login_required
-def detail(request: HttpRequest, public_id) -> HttpResponse:
+def detail(request: HttpRequest, public_id: Any) -> HttpResponse:
     employee = require_operational_document_employee(request.user)
     record = _record_for_employee(public_id, employee)
-    row = _row(record)
-    action_rows = list(
-        record.equipment_defect_actions.select_related(
-            "actor",
-            "record_revision",
-        ).order_by("occurred_at", "pk")
-    )
     return render(
         request,
         "equipment_defects/detail.html",
         {
-            "row": row,
+            "row": _row(record),
             "record": record,
-            "actions": action_rows,
+            "actions": list(
+                record.equipment_defect_actions.select_related(
+                    "actor",
+                    "record_revision",
+                ).order_by("occurred_at", "pk")
+            ),
             "source": _source_context(),
             "can_confirm_deadline": record.status_code == STATUS_REGISTERED,
             "can_extend_deadline": record.status_code == STATUS_IN_PROGRESS,
@@ -335,9 +336,25 @@ def detail(request: HttpRequest, public_id) -> HttpResponse:
     )
 
 
+def _action_form_context(
+    *,
+    form: Any,
+    record: OperationalDocumentRecord,
+    page_title: str,
+    submit_label: str,
+) -> dict[str, Any]:
+    return {
+        "form": form,
+        "record": record,
+        "page_title": page_title,
+        "submit_label": submit_label,
+        "source": _source_context(),
+    }
+
+
 @login_required
 @require_http_methods(["GET", "POST"])
-def confirm_deadline_view(request: HttpRequest, public_id) -> HttpResponse:
+def confirm_deadline_view(request: HttpRequest, public_id: Any) -> HttpResponse:
     employee = require_operational_document_employee(request.user)
     record = _record_for_employee(public_id, employee)
     form = DeadlineConfirmationForm(request.POST or None, employee=employee)
@@ -357,19 +374,18 @@ def confirm_deadline_view(request: HttpRequest, public_id) -> HttpResponse:
     return render(
         request,
         "equipment_defects/action_form.html",
-        {
-            "form": form,
-            "record": record,
-            "page_title": "Подтвердить срок устранения",
-            "submit_label": "Подтвердить срок",
-            "source": _source_context(),
-        },
+        _action_form_context(
+            form=form,
+            record=record,
+            page_title="Подтвердить срок устранения",
+            submit_label="Подтвердить срок",
+        ),
     )
 
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def extend_deadline_view(request: HttpRequest, public_id) -> HttpResponse:
+def extend_deadline_view(request: HttpRequest, public_id: Any) -> HttpResponse:
     employee = require_operational_document_employee(request.user)
     record = _record_for_employee(public_id, employee)
     form = DeadlineExtensionForm(request.POST or None)
@@ -389,19 +405,18 @@ def extend_deadline_view(request: HttpRequest, public_id) -> HttpResponse:
     return render(
         request,
         "equipment_defects/action_form.html",
-        {
-            "form": form,
-            "record": record,
-            "page_title": "Продлить срок устранения",
-            "submit_label": "Зафиксировать продление",
-            "source": _source_context(),
-        },
+        _action_form_context(
+            form=form,
+            record=record,
+            page_title="Продлить срок устранения",
+            submit_label="Зафиксировать продление",
+        ),
     )
 
 
 @login_required
 @require_http_methods(["GET", "POST"])
-def confirm_resolution_view(request: HttpRequest, public_id) -> HttpResponse:
+def confirm_resolution_view(request: HttpRequest, public_id: Any) -> HttpResponse:
     employee = require_operational_document_employee(request.user)
     record = _record_for_employee(public_id, employee)
     form = ResolutionConfirmationForm(request.POST or None, employee=employee)
@@ -422,19 +437,18 @@ def confirm_resolution_view(request: HttpRequest, public_id) -> HttpResponse:
     return render(
         request,
         "equipment_defects/action_form.html",
-        {
-            "form": form,
-            "record": record,
-            "page_title": "Подтвердить устранение дефекта",
-            "submit_label": "Подтвердить устранение",
-            "source": _source_context(),
-        },
+        _action_form_context(
+            form=form,
+            record=record,
+            page_title="Подтвердить устранение дефекта",
+            submit_label="Подтвердить устранение",
+        ),
     )
 
 
 @login_required
 @require_POST
-def acknowledge_view(request: HttpRequest, public_id) -> HttpResponse:
+def acknowledge_view(request: HttpRequest, public_id: Any) -> HttpResponse:
     employee = require_operational_document_employee(request.user)
     record = _record_for_employee(public_id, employee)
     try:
@@ -449,7 +463,7 @@ def acknowledge_view(request: HttpRequest, public_id) -> HttpResponse:
 
 @login_required
 @require_POST
-def close_view(request: HttpRequest, public_id) -> HttpResponse:
+def close_view(request: HttpRequest, public_id: Any) -> HttpResponse:
     employee = require_operational_document_employee(request.user)
     record = _record_for_employee(public_id, employee)
     try:
@@ -462,7 +476,10 @@ def close_view(request: HttpRequest, public_id) -> HttpResponse:
     return redirect("equipment_defects:detail", public_id=record.public_id)
 
 
-def _volume_for_print(request: HttpRequest, employee) -> EquipmentDefectVolume:
+def _volume_for_print(
+    request: HttpRequest,
+    employee: Employee,
+) -> EquipmentDefectVolume:
     volume_id = request.GET.get("volume", "").strip()
     volumes = EquipmentDefectVolume.objects.filter(
         organization=employee.organization
@@ -470,11 +487,11 @@ def _volume_for_print(request: HttpRequest, employee) -> EquipmentDefectVolume:
     if volume_id:
         return get_object_or_404(volumes, public_id=volume_id)
     if employee.workplace_id:
-        volume = volumes.filter(workplace=employee.workplace).order_by(
+        current = volumes.filter(workplace=employee.workplace).order_by(
             "-sequence_number"
         ).first()
-        if volume is not None:
-            return volume
+        if current is not None:
+            return current
     volume = volumes.order_by("workplace__name", "-sequence_number").first()
     if volume is None:
         raise ValidationError("Нет тома журнала дефектов для печати.")
@@ -492,13 +509,12 @@ def print_view(request: HttpRequest) -> HttpResponse:
     records = _record_queryset(employee).filter(
         equipment_defect_context__volume=volume
     ).order_by("event_at", "pk")
-    rows = [_row(record) for record in records]
     return render(
         request,
         "equipment_defects/print.html",
         {
             "volume": volume,
-            "rows": rows,
+            "rows": [_row(record) for record in records],
             "columns": APPROVED_PRINT_COLUMNS,
             "source": _source_context(),
             "printed_at": timezone.localtime(),
