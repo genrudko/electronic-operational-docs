@@ -56,7 +56,7 @@ class EquipmentDefectContext(models.Model):
     def save(self, *args: Any, **kwargs: Any) -> None:
         if self.pk:
             raise ValidationError("Предметный контекст дефекта неизменяем.")
-        self.presentation_key = self.presentation_key.strip()
+        self.presentation_key = (self.presentation_key or "").strip()
         self.full_clean()
         super().save(*args, **kwargs)
 
