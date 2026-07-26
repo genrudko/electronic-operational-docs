@@ -145,3 +145,9 @@ Automatic audit не подтверждает предметную приёмк�
 - automatic merge;
 - preview write;
 - реальные enterprise data или secrets.
+
+## 8. Сохранённый процессный контракт
+
+Работа продолжается по модели **GitHub-first/VPS-first**. PLAN-001 —
+доказательная ревизия плана и реализации — закрепила правило: **журналы
+доводятся по одному** до automated and user acceptance.
