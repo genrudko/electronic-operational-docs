@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from datetime import timedelta
 from typing import Any
 
@@ -26,11 +27,17 @@ User = get_user_model()
 class DefectFixtureMixin:
     @classmethod
     def create_organization_fixture(cls, suffix: str = "") -> dict[str, Any]:
-        normalized = suffix.lower() or "main"
+        label = suffix or "основная"
+        raw_identifier = suffix.casefold() or "main"
+        normalized = (
+            raw_identifier
+            if raw_identifier.isascii() and raw_identifier.replace("-", "").isalnum()
+            else f"fixture-{hashlib.sha256(raw_identifier.encode('utf-8')).hexdigest()[:12]}"
+        )
         organization = Organization.objects.create(
             code=f"ORG-{normalized.upper()}",
-            name=f"Демонстрационная организация {suffix or 'основная'}",
-            short_name=f"Демо {suffix or 'основная'}",
+            name=f"Демонстрационная организация {label}",
+            short_name=f"Демо {label}",
         )
         division = Division.objects.create(
             organization=organization,
@@ -41,7 +48,7 @@ class DefectFixtureMixin:
             organization=organization,
             division=division,
             code=f"WP-{normalized.upper()}",
-            name=f"Демонстрационная ВЭС {suffix or 'основная'}",
+            name=f"Демонстрационная ВЭС {label}",
         )
         operational_position = Position.objects.create(
             organization=organization,
@@ -57,14 +64,14 @@ class DefectFixtureMixin:
         site = EnergySite.objects.create(
             organization=organization,
             code=f"site-{normalized}",
-            name=f"Демонстрационная ВЭС {suffix or 'основная'}",
-            short_name=f"Демо ВЭС {suffix or 'основная'}",
+            name=f"Демонстрационная ВЭС {label}",
+            short_name=f"Демо ВЭС {label}",
             site_type=EnergySite.SiteType.WIND_POWER_PLANT,
         )
         equipment_type, _created = EquipmentType.objects.get_or_create(
             code=f"test-switch-{normalized}",
             defaults={
-                "name": f"Демонстрационный выключатель {suffix or 'основной'}",
+                "name": f"Демонстрационный выключатель {label}",
                 "category": EquipmentType.Category.SWITCHGEAR,
             },
         )
@@ -73,7 +80,7 @@ class DefectFixtureMixin:
             site=site,
             equipment_type=equipment_type,
             code=f"QF-{normalized.upper()}-01",
-            technical_name=f"Выключатель демонстрационный {suffix or 'основной'}",
+            technical_name=f"Выключатель демонстрационный {label}",
         )
         return {
             "organization": organization,
@@ -151,7 +158,7 @@ class EquipmentDefectSourceBoundBase(DefectFixtureMixin):
             journal=cls.journal,
             actor=cls.operator,
             event_at=timezone.now() - timedelta(hours=3),
-            content="При осмотре выявлено замечание по демонстрационному выключацелю.",
+            content="При осмотре выявлено замечание по демонстрационному выключателю.",
             equipment=[cls.fixture["equipment"]],
         )
 
