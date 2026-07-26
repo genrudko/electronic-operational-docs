@@ -143,4 +143,3 @@ class EquipmentDefectLifecycleTests(EquipmentDefectSourceBoundBase, TestCase):
                 defect_description="Попытка межорганизационной связи.",
                 operational_log_entry=other_entry,
             )
-
