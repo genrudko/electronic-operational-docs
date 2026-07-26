@@ -1,9 +1,9 @@
 name: DEFECT-001 Ruff Diagnostic
 
 on:
-  push:
+  pull_request:
     branches:
-      - feature/defect-001-equipment-defect-journal
+      - main
 
 permissions:
   contents: read
