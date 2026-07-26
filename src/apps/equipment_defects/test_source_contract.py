@@ -69,4 +69,3 @@ class EquipmentDefectSourceContractTests(EquipmentDefectSourceBoundBase, TestCas
                 detected_at=timezone.now() - timedelta(hours=1),
                 defect_description="Недопустимая межорганизационная связь.",
             )
-
