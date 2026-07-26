@@ -57,7 +57,7 @@ class Plan001AuditToolingTests(SimpleTestCase):
             }
             manifest = build_manifest(root, data)
             verify_manifest(root, manifest)
-            report.write_text("changed\n", encoding="utf-8")
+            report.write_text("evil\n", encoding="utf-8")
             with self.assertRaisesRegex(RuntimeError, "checksum mismatch"):
                 verify_manifest(root, manifest)
 
