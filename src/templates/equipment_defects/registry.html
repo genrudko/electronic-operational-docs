@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Журнал дефектов оборудования · ЭОД{% endblock %}
+{% block main_class %}defect-main{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'equipment_defects/defects.css' %}?v=defect001">
+{% endblock %}
+
+{% block content %}
+<section class="defect-shell">
+    <header class="defect-hero">
+        <div>
+            <div class="defect-eyebrow">ОПЕРАТИВНАЯ ДОКУМЕНТАЦИЯ · SOURCE-BOUND ФОРМА</div>
+            <h1>{{ document_type_name }}</h1>
+            <p class="defect-source-note">
+                {{ source.document }}, раздел {{ source.section }}, приложение № {{ source.appendix }}.
+                Электронный справочно-контрольный и демонстрационный контур;
+                утверждённый бумажный оригинал не отменяется.
+            </p>
+        </div>
+        <div class="defect-hero-actions defect-screen-only">
+            <a class="defect-button" href="{% url 'equipment_defects:create' %}">
+                Зарегистрировать дефект
+            </a>
+            {% if volumes %}
+                <a class="defect-button secondary" href="{% url 'equipment_defects:print' %}">
+                    Печатная форма
+                </a>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="defect-kpis defect-screen-only" aria-label="Сводка журнала">
+        <div class="defect-kpi"><strong>{{ counts.total }}</strong><span>Всего записей</span></div>
+        <div class="defect-kpi"><strong>{{ counts.registered }}</strong><span>Без установленного срока</span></div>
+        <div class="defect-kpi"><strong>{{ counts.in_progress }}</strong><span>В работе</span></div>
+        <div class="defect-kpi"><strong>{{ counts.resolved }}</strong><span>Ожидают закрытия</span></div>
+        <div class="defect-kpi"><strong>{{ counts.closed }}</strong><span>Закрыто</span></div>
+    </div>
+
+    <form class="defect-filter-panel defect-screen-only" method="get">
+        <div class="defect-filter-grid">
+            <div class="defect-field">
+                <label for="defect-search">Поиск</label>
+                <input
+                    id="defect-search"
+                    type="search"
+                    name="q"
+                    value="{{ filters.q }}"
+                    placeholder="Номер, оборудование, содержание, сотрудник"
+                >
+            </div>
+            <div class="defect-field">
+                <label for="defect-status">Состояние</label>
+                <select id="defect-status" name="status">
+                    <option value="">Все состояния</option>
+                    {% for code, label in status_options %}
+                        <option value="{{ code }}" {% if filters.status == code %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="defect-field">
+                <label for="defect-equipment">Оборудование</label>
+                <select id="defect-equipment" name="equipment">
+                    <option value="">Всё оборудование</option>
+                    {% for equipment in equipment_assets %}
+                        <option
+                            value="{{ equipment.public_id }}"
+                            {% if filters.equipment == equipment.public_id|stringformat:'s' %}selected{% endif %}
+                        >
+                            {{ equipment.code }} · {{ equipment.technical_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="defect-field">
+                <label for="defect-date-from">Обнаружено с</label>
+                <input id="defect-date-from" type="date" name="date_from" value="{{ filters.date_from }}">
+            </div>
+            <div class="defect-field">
+                <label for="defect-date-to">Обнаружено по</label>
+                <input id="defect-date-to" type="date" name="date_to" value="{{ filters.date_to }}">
+            </div>
+            <div class="defect-hero-actions">
+                <button class="defect-button" type="submit">Применить</button>
+                <a class="defect-button secondary" href="{% url 'equipment_defects:registry' %}">Сбросить</a>
+            </div>
+        </div>
+    </form>
+
+    <div class="defect-register-wrap">
+        <table class="defect-register" aria-label="Журнал дефектов оборудования">
+            <thead>
+                <tr>
+                    <th scope="col">Дата обнаружения дефекта</th>
+                    <th scope="col">
+                        Наименование ЛЭП, оборудования, устройства, содержание дефекта,
+                        Ф.И.О., подпись лица, обнаружившего дефект
+                    </th>
+                    <th scope="col">
+                        Срок устранения, Ф.И.О., подпись ответственного лица за эксплуатацию
+                        ЛЭП, оборудования, устройства, сооружения, здания
+                    </th>
+                    <th scope="col">
+                        Дата устранения дефекта, Ф.И.О., подпись ответственного лица за его устранение
+                    </th>
+                    <th scope="col">Содержание выполненных работ по устранению дефекта</th>
+                    <th scope="col">Ф.И.О., подписи оперативного персонала</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                    <tr>
+                        <td data-column-title="Дата обнаружения">
+                            <a href="{% url 'equipment_defects:detail' row.record.public_id %}">
+                                <strong>{{ row.record.event_at|date:"d.m.Y" }}</strong>
+                            </a>
+                            <span class="defect-record-number">{{ row.record.registration_number }}</span>
+                            <span class="defect-status" data-status="{{ row.record.status_code }}">
+                                {{ row.record.status_name_snapshot }}
+                            </span>
+                        </td>
+                        <td data-column-title="Оборудование и дефект">
+                            {% if row.equipment %}
+                                <span class="defect-cell-equipment">
+                                    {{ row.equipment.dispatcher_name_snapshot }}
+                                </span>
+                            {% endif %}
+                            <a href="{% url 'equipment_defects:detail' row.record.public_id %}">
+                                {{ row.description }}
+                            </a>
+                            {% if row.discovered_by %}
+                                <span class="defect-cell-person">
+                                    Обнаружил:
+                                    <strong>{{ row.discovered_by.employee_full_name_snapshot }}</strong>
+                                    {{ row.discovered_by.employee_position_snapshot }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td data-column-title="Срок и ответственный">
+                            {% if row.deadline %}
+                                <strong>{{ row.deadline }}</strong>
+                            {% else %}
+                                <span>Срок не установлен</span>
+                            {% endif %}
+                            {% if row.operations_responsible %}
+                                <span class="defect-cell-person">
+                                    <strong>{{ row.operations_responsible.employee_full_name_snapshot }}</strong>
+                                    {{ row.operations_responsible.employee_position_snapshot }}
+                                </span>
+                            {% endif %}
+                            {% for extension in row.extensions %}
+                                <div class="defect-extension">
+                                    <strong>Срок устранения продлен</strong><br>
+                                    до {{ extension.new_deadline|date:"d.m.Y H:i" }}<br>
+                                    {{ extension.actor_position_snapshot }},
+                                    {{ extension.actor_full_name_snapshot }}
+                                </div>
+                            {% endfor %}
+                        </td>
+                        <td data-column-title="Устранение">
+                            {% if row.resolved_at %}
+                                <strong>{{ row.resolved_at }}</strong>
+                            {% else %}
+                                <span>Не устранён</span>
+                            {% endif %}
+                            {% if row.resolution_responsible %}
+                                <span class="defect-cell-person">
+                                    <strong>{{ row.resolution_responsible.employee_full_name_snapshot }}</strong>
+                                    {{ row.resolution_responsible.employee_position_snapshot }}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td data-column-title="Выполненные работы">
+                            {% for extension in row.extensions %}
+                                <div class="defect-extension">
+                                    <strong>Срок устранения продлен</strong><br>
+                                    Новый срок: {{ extension.new_deadline|date:"d.m.Y H:i" }}.<br>
+                                    Причина: {{ extension.comment }}
+                                </div>
+                            {% endfor %}
+                            {% if row.work_summary %}
+                                <p>{{ row.work_summary }}</p>
+                            {% elif not row.extensions %}
+                                <span>—</span>
+                            {% endif %}
+                        </td>
+                        <td data-column-title="Ознакомление">
+                            {% for acknowledgement in row.acknowledgers %}
+                                <span class="defect-cell-person">
+                                    <strong>{{ acknowledgement.actor_full_name_snapshot }}</strong>
+                                    {{ acknowledgement.actor_position_snapshot }}<br>
+                                    {{ acknowledgement.occurred_at|date:"d.m.Y H:i" }}
+                                </span>
+                            {% empty %}
+                                <span>—</span>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td class="defect-empty" colspan="6">
+                            Записей по выбранным условиям нет.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
