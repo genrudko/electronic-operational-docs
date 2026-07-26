@@ -1,10 +1,10 @@
 # DEFECT-001 — Source-bound Equipment Defect Journal
 
-**Work item:** `DEFECT-001`  
-**Branch:** `feature/defect-001-equipment-defect-journal`  
-**Draft PR:** `#16`  
-**Base:** `main / b75db8bc073e4b02a3254512e9b99d00f3e6e0e2`  
-**Accepted application baseline:** `937d2cd2b187c17fac3088ccfc52079fc4608306`
+- **Work item:** `DEFECT-001`
+- **Branch:** `feature/defect-001-equipment-defect-journal`
+- **Draft PR:** `#16`
+- **Base:** `main / b75db8bc073e4b02a3254512e9b99d00f3e6e0e2`
+- **Accepted application baseline:** `937d2cd2b187c17fac3088ccfc52079fc4608306`
 
 ## 1. Status
 
