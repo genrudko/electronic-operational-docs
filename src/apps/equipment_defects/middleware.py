@@ -22,7 +22,7 @@ GENERIC_RECORD_ROUTES = {
 
 
 class EquipmentDefectRouteGuardMiddleware:
-    """Keep source-bound defect work out of the generic schema-driven UI."""
+    """Keep installed source-bound defect work out of the generic UI."""
 
     def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:
         self.get_response = get_response
@@ -54,6 +54,7 @@ class EquipmentDefectRouteGuardMiddleware:
                     public_id=view_kwargs.get("public_id"),
                     organization=employee.organization,
                     document_type__code=DOCUMENT_TYPE_CODE,
+                    equipment_defect_context__isnull=False,
                 )
                 .only("public_id")
                 .first()
