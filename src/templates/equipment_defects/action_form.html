@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} · ЭОД{% endblock %}
+{% block main_class %}defect-main{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'equipment_defects/defects.css' %}?v=defect001">
+{% endblock %}
+
+{% block content %}
+<section class="defect-form-wrap">
+    <header class="defect-form-heading">
+        <div class="defect-eyebrow">{{ record.registration_number }}</div>
+        <h1>{{ page_title }}</h1>
+        <p class="defect-source-note">
+            {{ source.document }}, раздел {{ source.section }}, приложение № {{ source.appendix }}.
+            Действие будет привязано к сотруднику, времени и конкретной версии записи.
+        </p>
+    </header>
+
+    <form class="defect-form-card" method="post" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="nonfield">{{ form.non_field_errors }}</div>
+        {% endif %}
+        {% for field in form %}
+            <div class="defect-form-row">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                {{ field.errors }}
+            </div>
+        {% endfor %}
+        <div class="defect-paper-boundary">
+            Это персональное подтверждаемое действие демонстрационного контура,
+            а не УКЭП или заявление о юридически значимой электронной подписи.
+        </div>
+        <div class="defect-form-actions">
+            <button class="defect-button" type="submit">{{ submit_label }}</button>
+            <a
+                class="defect-button secondary"
+                href="{% url 'equipment_defects:detail' record.public_id %}"
+            >
+                Отмена
+            </a>
+        </div>
+    </form>
+</section>
+{% endblock %}
