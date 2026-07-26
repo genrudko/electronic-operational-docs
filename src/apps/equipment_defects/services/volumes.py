@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
+
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Max
@@ -10,6 +13,13 @@ from apps.organizations.models import Employee, Workplace
 from ..constants import FIELD_RESOLVED_AT
 from ..models import EquipmentDefectVolume
 from .helpers import stored_datetime
+
+MOSCOW_TIME_ZONE = ZoneInfo("Europe/Moscow")
+
+
+def _moscow_local_date(value: datetime | None = None) -> date:
+    instant = value if value is not None else timezone.now()
+    return timezone.localdate(instant, timezone=MOSCOW_TIME_ZONE)
 
 
 def try_close_volume(volume: EquipmentDefectVolume) -> bool:
@@ -27,7 +37,8 @@ def try_close_volume(volume: EquipmentDefectVolume) -> bool:
     ]
     if any(value is None for value in resolved_dates):
         return False
-    locked.closed_on = max(value for value in resolved_dates if value is not None).date()
+    last_resolved_at = max(value for value in resolved_dates if value is not None)
+    locked.closed_on = _moscow_local_date(last_resolved_at)
     locked.accepts_new_records = False
     locked.save(update_fields=("accepts_new_records", "closed_on"))
     return True
@@ -66,7 +77,7 @@ def current_defect_volume(
         organization_name_snapshot=actor.organization.name,
         workplace_name_snapshot=workplace.name,
         division_name_snapshot=workplace.division.name if workplace.division_id else "",
-        started_on=timezone.localdate(),
+        started_on=_moscow_local_date(),
         accepts_new_records=True,
         created_by=actor,
     )

@@ -1,6 +1,6 @@
 # ЭОД — открытые вопросы и отложенные задачи
 
-**Актуализировано:** 26.07.2026
+**Актуализировано:** 27.07.2026
 
 ## 1. Текущий work item — DEFECT-001
 
@@ -66,7 +66,9 @@ configuration edits.
 - cross-organization equipment/person/log relations are rejected;
 - action snapshot and SHA-256 remain consistent;
 - new volume never clones or moves unresolved records;
-- old volume end date equals resolution date of the last unresolved defect;
+- old volume end date equals the Europe/Moscow local resolution date of the last
+  unresolved defect;
+- volume start and end dates use one timezone-aware Europe/Moscow date rule;
 - print view has exactly the six approved columns and no technical fields;
 - presentation reset remains deterministic and idempotent;
 - UI states clearly that the contour does not replace the mandatory paper original
@@ -178,6 +180,20 @@ AUTO-001A/B are accepted. Only evidence-driven follow-ups remain open:
 - artifact retention;
 - backup policy for future migration-heavy product slices;
 - browser automation after product scenarios stabilize.
+
+### CI-OPT-001 — after DEFECT-001
+
+```text
+status: FOLLOW-UP
+implementation in DEFECT-001: FORBIDDEN
+```
+
+After DEFECT-001 acceptance, redesign the quality/deployment gates so that:
+
+- the full PostgreSQL suite runs once in GitHub CI on the exact head;
+- VPS deployment does not repeat the full suite;
+- deployment runs migration, runtime and presentation smoke checks;
+- path-based workflow gates skip unrelated jobs without weakening required checks.
 
 DEFECT-001 does not create a new controller, gateway, workflow or automation layer.
 Automatic merge and preview write remain forbidden.
