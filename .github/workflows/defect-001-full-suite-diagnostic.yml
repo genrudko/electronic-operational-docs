@@ -14,9 +14,9 @@ concurrency:
 
 jobs:
   full-suite:
-    name: Capture complete standard-suite failures
+    name: Capture exact PostgreSQL gate failures
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 40
 
     services:
       postgres:
@@ -34,16 +34,21 @@ jobs:
           --health-retries 20
 
     env:
-      DJANGO_SETTINGS_MODULE: eod_config.settings
-      SECRET_KEY: ci-only-not-for-production
-      DEBUG: "0"
-      ALLOWED_HOSTS: localhost,127.0.0.1
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      EOD_DEPLOYMENT_MODE: ci
+      DJANGO_SECRET_KEY: ci-only-not-for-deployment
+      DJANGO_DEBUG: "0"
+      DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost,testserver
+      DB_ENGINE: postgresql
       POSTGRES_DB: eod_ci
       POSTGRES_USER: eod_ci
       POSTGRES_PASSWORD: eod_ci_password
       POSTGRES_HOST: 127.0.0.1
       POSTGRES_PORT: "5432"
-      PYTHONUNBUFFERED: "1"
+      EOD_DATABASE_PROFILE: gate
+      EOD_ALLOW_SQLITE_PATH_OVERRIDE: "0"
+      TIME_ZONE: Europe/Moscow
 
     steps:
       - name: Checkout repository
@@ -55,9 +60,22 @@ jobs:
           python-version: "3.13"
 
       - name: Install project and development dependencies
-        run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --editable ".[dev]"
+          python -m pip check
 
-      - name: Run standard full suite and capture complete output
+      - name: Mirror pre-test gate steps
+        run: |
+          python -m ruff check .
+          python -m compileall -q manage.py src scripts
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+          python manage.py migrate --noinput
+          python scripts/gate_patch_011_7.py
+          python manage.py collectstatic --noinput --clear
+
+      - name: Run exact standard suite and capture complete output
         id: tests
         shell: bash
         run: |
