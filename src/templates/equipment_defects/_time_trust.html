@@ -1,0 +1,23 @@
+{% now "U" as defect_server_epoch %}
+<section
+    class="defect-time-trust"
+    data-defect-time-trust
+    data-server-epoch="{{ defect_server_epoch }}"
+    data-max-drift-seconds="180"
+    aria-live="polite"
+>
+    <div class="defect-time-trust-row">
+        <span>
+            Системное время приложения (МСК):
+            <strong data-defect-server-clock>{% now "d.m.Y H:i:s" %}</strong>
+        </span>
+        <span class="defect-device-clock">
+            Время устройства: <strong data-defect-device-clock>—</strong>
+        </span>
+        <span class="defect-time-ok" data-defect-time-ok>Часы согласованы</span>
+    </div>
+    <div class="defect-time-warning" data-defect-time-warning hidden>
+        Время устройства заметно отличается от системного времени приложения.
+        Подтверждаемое действие заблокировано: проверьте синхронизацию часов устройства.
+    </div>
+</section>
