@@ -58,7 +58,10 @@ CONTROLLED_KEYS = {
 
 
 class Access001PublicHttpsSettingsTests(SimpleTestCase):
-    def run_settings_probe(self, overrides: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+    def run_settings_probe(
+        self,
+        overrides: dict[str, str] | None = None,
+    ) -> subprocess.CompletedProcess[str]:
         env = os.environ.copy()
         for key in CONTROLLED_KEYS:
             env.pop(key, None)
@@ -203,7 +206,9 @@ class Access001InfrastructureContractTests(SimpleTestCase):
 
         config_test = nginx_block.index("    nginx -t")
         enable = nginx_block.index("    systemctl enable nginx", config_test)
-        active_branch = nginx_block.index("    if systemctl is-active --quiet nginx; then", enable)
+        active_branch = nginx_block.index(
+            "    if systemctl is-active --quiet nginx; then", enable
+        )
         reload = nginx_block.index("        systemctl reload nginx", active_branch)
         start = nginx_block.index("        systemctl start nginx", reload)
         host_header = nginx_block.index('--header "Host: $EXPECTED_IP"', start)
@@ -218,9 +223,11 @@ class Access001InfrastructureContractTests(SimpleTestCase):
         self.assertLess(start, host_header)
         self.assertLess(host_header, loopback_probe)
         self.assertIn("for attempt in $(seq 1 10); do", nginx_block)
-        self.assertIn('rm -f "$ACME_ROOT/.well-known/acme-challenge/$token"', nginx_block)
+        self.assertIn(
+            'rm -f "$ACME_ROOT/.well-known/acme-challenge/$token"', nginx_block
+        )
         self.assertNotIn("systemctl enable --now nginx", nginx_block)
-        self.assertNotIn("--resolve \"$EXPECTED_IP:80:127.0.0.1\"", nginx_block)
+        self.assertNotIn('--resolve "$EXPECTED_IP:80:127.0.0.1"', nginx_block)
 
     def test_runbook_documents_manual_gate_and_https_only_user_session(self):
         runbook = self.read("docs/runbooks/PUBLIC_DEVELOPMENT_ACCESS.md")
