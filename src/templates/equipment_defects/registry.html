@@ -4,8 +4,8 @@
 {% block title %}Журнал дефектов оборудования · ЭОД{% endblock %}
 {% block main_class %}defect-main{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'equipment_defects/defects.css' %}?v=defect003">
-<script src="{% static 'equipment_defects/defects.js' %}?v=defect003" defer></script>
+<link rel="stylesheet" href="{% static 'equipment_defects/defects.css' %}?v=defect004">
+<script src="{% static 'equipment_defects/defects.js' %}?v=defect004" defer></script>
 {% endblock %}
 
 {% block content %}
@@ -138,6 +138,8 @@
                 {% for row in rows %}
                     <tr
                         data-defect-sortable-item
+                        data-defect-row-link
+                        data-detail-url="{% url 'equipment_defects:detail' row.record.public_id %}"
                         data-status="{{ row.record.status_code }}"
                         data-sort-number="{{ row.record.sequence_value }}"
                         data-sort-event="{{ row.record.event_at|date:'U' }}"
@@ -149,7 +151,7 @@
                             </a>
                         </td>
                         <td data-column-title="Дата обнаружения">
-                            <a href="{% url 'equipment_defects:detail' row.record.public_id %}"><strong>{{ row.record.event_at|date:"d.m.Y" }}</strong></a>
+                            <strong>{{ row.record.event_at|date:"d.m.Y" }}</strong>
                             <span class="defect-record-time">{{ row.record.event_at|date:"H:i" }}</span>
                             <span class="defect-status" data-status="{{ row.record.status_code }}">{{ row.record.status_name_snapshot }}</span>
                             <span class="defect-record-number">{{ row.record.registration_number }}</span>
