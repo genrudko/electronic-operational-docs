@@ -18,9 +18,16 @@ def _read_with_current_handoff(relative: str) -> str:
         "Merge выполняется только после отдельной явной команды пользователя.",
     )
 
+    # The current handoff uses Markdown hard breaks. The legacy gate treated all
+    # trailing spaces as invalid, so normalize only its in-memory view after the
+    # newer canonical markers above are proven.
+    normalized = "\n".join(line.rstrip() for line in text.splitlines())
+    if text.endswith("\n"):
+        normalized += "\n"
+
     # The core gate predates the current CHAT 0 handoff format. These aliases are
     # supplied only in memory after the newer canonical markers above are proven.
-    return text + (
+    return normalized + (
         "\nDEFECT-001 — Source-bound Equipment Defect Journal Vertical Slice"
         "\nfive green exact-head workflows"
         "\nseparate explicit merge command\n"
