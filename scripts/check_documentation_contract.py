@@ -54,6 +54,7 @@ REQUIRED_FILES = (
     "docs/runbooks/BRANCH_SWITCHING.md",
     "docs/runbooks/POST_MERGE_DEPLOYMENT.md",
     "docs/runbooks/INCIDENT_AND_ROLLBACK.md",
+    "docs/runbooks/PUBLIC_DEVELOPMENT_ACCESS.md",
     "docs/acceptance/INTERNAL_PROTOTYPE_ACCEPTANCE.md",
     "docs/acceptance/DEMONSTRATION_SCENARIOS.md",
     "docs/acceptance/REGRESSION_CHECKLIST.md",
@@ -96,6 +97,10 @@ PROHIBITED_TRACKED_SUFFIXES = (
 
 MARKDOWN_LINK_RE = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
 BASELINE_RE = re.compile(r"main\s*/\s*([0-9a-f]{40})")
+BASELINE_FALLBACK_RE = re.compile(
+    r"Accepted application baseline[^\n]*:\s*```text\s*([0-9a-f]{40})",
+    re.IGNORECASE,
+)
 
 
 def read_text(relative: str) -> str:
@@ -146,7 +151,10 @@ def validate_markdown_links(errors: list[str]) -> None:
 
 
 def extract_baseline(relative: str) -> str | None:
-    match = BASELINE_RE.search(read_text(relative))
+    content = read_text(relative)
+    match = BASELINE_RE.search(content)
+    if match is None:
+        match = BASELINE_FALLBACK_RE.search(content)
     return match.group(1) if match else None
 
 
