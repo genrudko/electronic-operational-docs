@@ -256,9 +256,9 @@ def main() -> None:
     )
     require(
         handoff,
-        "GitHub-first/VPS-first",
-        "PLAN-001 — доказательная ревизия плана и реализации",
-        "журналы доводятся по одному",
+        "GitHub — единственный источник кода",
+        "PLAN-001 merged в `main`",
+        "Один журнал доводится",
     )
     for relative in (
         "docs/adr/ADR-011-7-operational-documentation-core.md",
