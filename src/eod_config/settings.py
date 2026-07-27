@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
@@ -34,6 +35,10 @@ def env_bool(name: str, default: bool = False) -> bool:
     }
 
 
+def env_csv(name: str, default: str = "") -> list[str]:
+    return [value.strip() for value in os.getenv(name, default).split(",") if value.strip()]
+
+
 TESTING = "test" in sys.argv or env_bool("EOD_TESTING", False)
 
 EOD_DEPLOYMENT_MODE = os.getenv("EOD_DEPLOYMENT_MODE", "development").strip().lower()
@@ -45,11 +50,19 @@ if EOD_DEPLOYMENT_MODE not in {"development", "ci", "preview"}:
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "development-only-change-me").strip()
 DEBUG = env_bool("DJANGO_DEBUG", True)
-ALLOWED_HOSTS = [
-    value.strip()
-    for value in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
-    if value.strip()
-]
+ALLOWED_HOSTS = env_csv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost")
+CSRF_TRUSTED_ORIGINS = env_csv("DJANGO_CSRF_TRUSTED_ORIGINS")
+
+DJANGO_TRUST_PROXY_HTTPS = env_bool("DJANGO_TRUST_PROXY_HTTPS", False)
+DJANGO_SECURE_COOKIES = env_bool("DJANGO_SECURE_COOKIES", False)
+EOD_PUBLIC_HTTPS = env_bool("EOD_PUBLIC_HTTPS", False)
+EOD_PUBLIC_HTTPS_ORIGIN = os.getenv("EOD_PUBLIC_HTTPS_ORIGIN", "").strip()
+
+if DJANGO_TRUST_PROXY_HTTPS:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+SESSION_COOKIE_SECURE = DJANGO_SECURE_COOKIES
+CSRF_COOKIE_SECURE = DJANGO_SECURE_COOKIES
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -167,6 +180,53 @@ if EOD_DEPLOYMENT_MODE == "preview":
         details = "; ".join(preview_errors)
         raise RuntimeError(f"Небезопасная конфигурация preview: {details}.")
 
+if EOD_PUBLIC_HTTPS:
+    public_errors: list[str] = []
+    if EOD_DEPLOYMENT_MODE != "development":
+        public_errors.append("EOD_PUBLIC_HTTPS разрешён только для development")
+    if SECRET_KEY in {"", "development-only-change-me"}:
+        public_errors.append("DJANGO_SECRET_KEY должен быть задан явно")
+    if DEBUG:
+        public_errors.append("DJANGO_DEBUG должен быть отключён")
+    if DB_ENGINE not in {"postgres", "postgresql"}:
+        public_errors.append("публичный development допускает только PostgreSQL")
+    if not DJANGO_TRUST_PROXY_HTTPS:
+        public_errors.append("DJANGO_TRUST_PROXY_HTTPS должен быть включён")
+    if not SESSION_COOKIE_SECURE or not CSRF_COOKIE_SECURE:
+        public_errors.append("secure session и CSRF cookies должны быть включены")
+
+    try:
+        public_origin = urlsplit(EOD_PUBLIC_HTTPS_ORIGIN)
+        public_origin_port = public_origin.port
+    except ValueError:
+        public_origin = urlsplit("")
+        public_origin_port = None
+        public_errors.append("EOD_PUBLIC_HTTPS_ORIGIN имеет недопустимый формат")
+
+    if (
+        public_origin.scheme != "https"
+        or not public_origin.hostname
+        or public_origin.username
+        or public_origin.password
+        or public_origin.path not in {"", "/"}
+        or public_origin.query
+        or public_origin.fragment
+        or public_origin_port not in {None, 443}
+    ):
+        public_errors.append("EOD_PUBLIC_HTTPS_ORIGIN должен быть чистым HTTPS origin")
+    else:
+        normalized_origin = f"https://{public_origin.hostname}"
+        if public_origin_port == 443:
+            normalized_origin += ":443"
+        if normalized_origin not in CSRF_TRUSTED_ORIGINS:
+            public_errors.append("публичный HTTPS origin отсутствует в CSRF trusted origins")
+        if public_origin.hostname not in ALLOWED_HOSTS:
+            public_errors.append("публичный HTTPS host отсутствует в DJANGO_ALLOWED_HOSTS")
+
+    if public_errors:
+        details = "; ".join(dict.fromkeys(public_errors))
+        raise RuntimeError(f"Небезопасная конфигурация публичного development: {details}.")
+
 LANGUAGE_CODE = "ru"
 TIME_ZONE = os.getenv("TIME_ZONE", "Europe/Moscow")
 USE_I18N = True
@@ -191,6 +251,7 @@ STORAGES = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
