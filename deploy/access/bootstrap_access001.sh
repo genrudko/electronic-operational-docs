@@ -462,16 +462,28 @@ ensure_nginx() {
     fi
 
     nginx -t
-    systemctl enable --now nginx
+    systemctl enable nginx
+    if systemctl is-active --quiet nginx; then
+        systemctl reload nginx
+    else
+        systemctl start nginx
+    fi
+    systemctl is-active --quiet nginx || fail "nginx is not active after loading ACCESS-001 virtual host"
 
-    local token response
+    local token response attempt
     token="access001-${RUN_ID}-${HEAD_SHA:0:12}"
     printf '%s\n' "$token" >"$ACME_ROOT/.well-known/acme-challenge/$token"
-    response="$(curl --fail --silent --show-error --max-time 10 \
-        --resolve "$EXPECTED_IP:80:127.0.0.1" \
-        "http://$EXPECTED_IP/.well-known/acme-challenge/$token")"
+    response=""
+    for attempt in $(seq 1 10); do
+        response="$(curl --silent --show-error --max-time 10 \
+            --header "Host: $EXPECTED_IP" \
+            "http://127.0.0.1/.well-known/acme-challenge/$token" || true)"
+        [[ "$response" == "$token" ]] && break
+        sleep 1
+    done
     rm -f "$ACME_ROOT/.well-known/acme-challenge/$token"
     [[ "$response" == "$token" ]] || fail "nginx ACME webroot self-test failed"
+    log "nginx ACCESS-001 virtual host is active and serves the ACME webroot"
 }
 
 ufw_rule_exists() {
@@ -519,7 +531,7 @@ ensure_certbot() {
     fi
 
     local version
-    version="$($CERTBOT_BIN --version | sed -nE 's/^certbot[[:space:]]+([^[:space:]]+).*/\1/p')"
+    version="$("$CERTBOT_BIN" --version | sed -nE 's/^certbot[[:space:]]+([^[:space:]]+).*/\1/p')"
     [[ -n "$version" ]] || fail "could not determine Certbot version"
     dpkg --compare-versions "$version" ge "$MIN_CERTBOT_VERSION" || \
         fail "Certbot $version is too old; version $MIN_CERTBOT_VERSION or newer is required"
