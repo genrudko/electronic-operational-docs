@@ -788,8 +788,8 @@ verify_csrf_post() {
     csrf_token="$(sed -n 's/.*name="csrfmiddlewaretoken" value="\([^"]*\)".*/\1/p' \
         "$CSRF_BODY" | sed -n '1p')"
     [[ -n "$csrf_token" ]] || fail "login form did not provide a CSRF token"
-    awk 'BEGIN {IGNORECASE=1} /^set-cookie: csrftoken=/ && /secure/ {found=1} END {exit !found}' \
-        "$CSRF_HEADERS" || fail "CSRF cookie is not marked Secure"
+    grep -Eiq '^set-cookie:[[:space:]]*csrftoken=.*secure' "$CSRF_HEADERS" || \
+        fail "CSRF cookie is not marked Secure"
 
     post_status="$(curl --silent --show-error --max-time 15 \
         --resolve "$EXPECTED_IP:443:127.0.0.1" \
@@ -890,7 +890,7 @@ main() {
     parse_args "$@"
 
     for command in awk bash cat chmod cp curl date docker dpkg grep install ip ln \
-        mktemp openssl python3 rm sed sha256sum sort ss systemctl tee ufw uname; do
+        mktemp openssl python3 rm sed seq sha256sum sleep sort ss systemctl tee ufw uname; do
         require_command "$command"
     done
     verify_operator_gate
