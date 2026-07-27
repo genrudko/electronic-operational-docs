@@ -195,6 +195,33 @@ class Access001InfrastructureContractTests(SimpleTestCase):
         self.assertRegex(digest, r"^[0-9a-f]{64}$")
         print(f"ACCESS001_BOOTSTRAP_SHA256={digest}")
 
+    def test_fresh_nginx_install_loads_virtual_host_before_acme_probe(self):
+        bootstrap = self.read("deploy/access/bootstrap_access001.sh")
+        nginx_block = bootstrap.split("ensure_nginx() {", 1)[1].split(
+            "\n}\n\nufw_rule_exists() {", 1
+        )[0]
+
+        config_test = nginx_block.index("    nginx -t")
+        enable = nginx_block.index("    systemctl enable nginx", config_test)
+        active_branch = nginx_block.index("    if systemctl is-active --quiet nginx; then", enable)
+        reload = nginx_block.index("        systemctl reload nginx", active_branch)
+        start = nginx_block.index("        systemctl start nginx", reload)
+        host_header = nginx_block.index('--header "Host: $EXPECTED_IP"', start)
+        loopback_probe = nginx_block.index(
+            '"http://127.0.0.1/.well-known/acme-challenge/$token"', host_header
+        )
+
+        self.assertLess(config_test, enable)
+        self.assertLess(enable, active_branch)
+        self.assertLess(active_branch, reload)
+        self.assertLess(reload, start)
+        self.assertLess(start, host_header)
+        self.assertLess(host_header, loopback_probe)
+        self.assertIn("for attempt in $(seq 1 10); do", nginx_block)
+        self.assertIn('rm -f "$ACME_ROOT/.well-known/acme-challenge/$token"', nginx_block)
+        self.assertNotIn("systemctl enable --now nginx", nginx_block)
+        self.assertNotIn("--resolve \"$EXPECTED_IP:80:127.0.0.1\"", nginx_block)
+
     def test_runbook_documents_manual_gate_and_https_only_user_session(self):
         runbook = self.read("docs/runbooks/PUBLIC_DEVELOPMENT_ACCESS.md")
 
