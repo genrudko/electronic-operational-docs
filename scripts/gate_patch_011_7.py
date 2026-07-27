@@ -25,6 +25,11 @@ def forbid(text: str, *tokens: str) -> None:
         raise AssertionError("Обнаружены запрещённые маркеры: " + ", ".join(present))
 
 
+def invalid_trailing_whitespace(line: str) -> bool:
+    trailing = line[len(line.rstrip(" \t")) :]
+    return "\t" in trailing or trailing not in {"", "  "}
+
+
 def main() -> None:
     settings = read("src/eod_config/settings.py")
     root_urls = read("src/eod_config/urls.py")
@@ -271,7 +276,7 @@ def main() -> None:
         bad_lines = [
             number
             for number, line in enumerate(read(relative).splitlines(), start=1)
-            if line.endswith((" ", "\t"))
+            if invalid_trailing_whitespace(line)
         ]
         if bad_lines:
             raise AssertionError(f"Trailing whitespace в {relative}: строки {bad_lines}")
