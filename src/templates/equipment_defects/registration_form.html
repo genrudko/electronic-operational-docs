@@ -4,53 +4,62 @@
 {% block title %}Регистрация дефекта · ЭОД{% endblock %}
 {% block main_class %}defect-main{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'equipment_defects/defects.css' %}?v=defect001">
+<link rel="stylesheet" href="{% static 'equipment_defects/defects.css' %}?v=defect003">
+<script src="{% static 'equipment_defects/defects.js' %}?v=defect003" defer></script>
 {% endblock %}
 
 {% block content %}
 <section class="defect-form-wrap">
-    <header class="defect-form-heading">
-        <div class="defect-eyebrow">ЖУРНАЛ ДЕФЕКТОВ ОБОРУДОВАНИЯ</div>
+    <header class="defect-form-heading compact">
+        <div class="defect-eyebrow">Журнал дефектов оборудования</div>
         <h1>Регистрация выявленного дефекта</h1>
-        <p class="defect-source-note">
-            {{ source.document }}, раздел {{ source.section }}, приложение № {{ source.appendix }}.
-            Срок, устранение, ознакомление и закрытие выполняются отдельными действиями.
-        </p>
+        <p>Сначала фиксируется факт обнаружения. Срок, устранение, ознакомление и закрытие выполняются отдельными действиями.</p>
     </header>
 
+    {% include "equipment_defects/_time_trust.html" %}
+
     {% if source_entry %}
-        <aside class="defect-section">
-            <h2>Основание в оперативном журнале</h2>
-            <p>
-                <strong>Запись № {{ source_entry.sequence_number }}</strong>
-                от {{ source_entry.event_at|date:"d.m.Y H:i" }}
-            </p>
+        <aside class="defect-linked-entry-card">
+            <span class="defect-linked-entry-label">Связь установлена автоматически</span>
+            <strong>Запись оперативного журнала № {{ source_entry.sequence_number }}</strong>
+            <time>{{ source_entry.event_at|date:"d.m.Y H:i" }}</time>
             <p>{{ source_entry.content }}</p>
         </aside>
     {% endif %}
 
-    <form class="defect-form-card" method="post" novalidate>
+    <form class="defect-form-card" method="post" novalidate data-time-sensitive-form>
         {% csrf_token %}
-        {% if form.non_field_errors %}
-            <div class="nonfield">{{ form.non_field_errors }}</div>
-        {% endif %}
+        {% if form.non_field_errors %}<div class="nonfield">{{ form.non_field_errors }}</div>{% endif %}
         {% for field in form %}
-            <div class="defect-form-row">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
-                {{ field.errors }}
-            </div>
+            {% if field.name == "operational_log_entry" %}
+                {% if source_entry %}
+                    <div class="defect-hidden-linked-field">{{ field }}</div>
+                {% else %}
+                    <details class="defect-log-link-picker">
+                        <summary>Связать с записью оперативного журнала <span>необязательно</span></summary>
+                        <div class="defect-form-row">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                            {{ field.errors }}
+                        </div>
+                    </details>
+                {% endif %}
+            {% else %}
+                <div class="defect-form-row">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                    {{ field.errors }}
+                </div>
+            {% endif %}
         {% endfor %}
-        <div class="defect-paper-boundary">
-            Регистрация создаёт электронную справочно-контрольную запись и печатное
-            представление утверждённой формы. Она не объявляется заменой бумажного оригинала.
+        <div class="defect-form-note">
+            Регистрация создаёт справочно-контрольную электронную запись. Печатная форма сохраняет графы утверждённого бумажного журнала.
         </div>
         <div class="defect-form-actions">
             <button class="defect-button" type="submit">Зарегистрировать дефект</button>
-            <a class="defect-button secondary" href="{% url 'equipment_defects:registry' %}">
-                Отмена
-            </a>
+            <a class="defect-button secondary" href="{% url 'equipment_defects:registry' %}">Отмена</a>
         </div>
     </form>
 </section>
