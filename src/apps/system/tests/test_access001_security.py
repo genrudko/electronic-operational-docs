@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import subprocess
@@ -157,9 +158,10 @@ class Access001InfrastructureContractTests(SimpleTestCase):
 
     def test_bootstrap_is_syntactically_valid_and_preserves_host_boundaries(self):
         relative = "deploy/access/bootstrap_access001.sh"
+        bootstrap_path = ROOT / relative
         bootstrap = self.read(relative)
         result = subprocess.run(
-            ["bash", "-n", str(ROOT / relative)],
+            ["bash", "-n", str(bootstrap_path)],
             cwd=ROOT,
             text=True,
             capture_output=True,
@@ -188,6 +190,10 @@ class Access001InfrastructureContractTests(SimpleTestCase):
         self.assertNotIn("ufw default", bootstrap.lower())
         self.assertNotIn("base64", bootstrap.lower())
         self.assertNotIn(".part", bootstrap.lower())
+
+        digest = hashlib.sha256(bootstrap_path.read_bytes()).hexdigest()
+        self.assertRegex(digest, r"^[0-9a-f]{64}$")
+        print(f"ACCESS001_BOOTSTRAP_SHA256={digest}")
 
     def test_runbook_documents_manual_gate_and_https_only_user_session(self):
         runbook = self.read("docs/runbooks/PUBLIC_DEVELOPMENT_ACCESS.md")
