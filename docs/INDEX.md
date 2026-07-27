@@ -1,6 +1,6 @@
 # Индекс документации ЭОД
 
-**Актуализировано:** 26.07.2026
+**Актуализировано:** 27.07.2026
 
 Этот индекс определяет канонические документы проекта и порядок их использования.
 При противоречии применяется иерархия источников истины из
@@ -10,27 +10,25 @@
 
 ```text
 current main:
-37a2390a2a45e2abb73e60318d5429ed326efb53
+a84484bb625e462184a4d7c6cfc67139c9fb6592
 
 accepted application baseline:
 937d2cd2b187c17fac3088ccfc52079fc4608306
 
-AUTO-001A/B:
-ACCEPTED AND PRACTICALLY VERIFIED
+ACCESS-001:
+Draft PR #17 / implementation in progress / VPS activation forbidden
 
-PLAN-001 evidence:
-ACCEPTED
+DEFECT-001:
+Draft PR #16 / separate parallel work item / not modified by ACCESS-001
 
-selected next product vertical slice:
-DEFECT JOURNAL
-
-active Draft PR:
-#7 / plan/001-evidence-audit / NOT MERGED
+merge authorization:
+ABSENT
 ```
 
-PR #7 проходит последний узкий repair evidence-классификатора и canonical
-documentation. Функциональная реализация журнала дефектов до завершения этого
-gate не начинается.
+ACCESS-001 реализуется только в
+`infra/access-001-public-development-https` и Draft PR #17. Его VPS activation
+разрешается только после пяти green exact-head workflows. Preview и PR #16
+остаются отдельными неизменяемыми границами.
 
 ## Начать здесь
 
@@ -78,6 +76,8 @@ gate не начинается.
 AUTO-001A/B приняты и практически проверены. Штатный путь:
 trusted label → пять exact-head CI → restricted controller → exact-SHA image →
 host-owned Compose → development. Automatic merge и preview write отсутствуют.
+ACCESS-001 использует отдельный one-time reviewed root bootstrap, потому что его
+host proxy и host Compose находятся за действующей blocked-path boundary.
 
 ## UX/UI
 
@@ -112,9 +112,10 @@ UX-001 остаётся provisional до runtime visual acceptance.
 |---|---|
 | [`runbooks/PREVIEW_RUNBOOK.md`](runbooks/PREVIEW_RUNBOOK.md) | Accepted preview |
 | [`runbooks/DEVELOPMENT_RUNBOOK.md`](runbooks/DEVELOPMENT_RUNBOOK.md) | Active development |
+| [`runbooks/PUBLIC_DEVELOPMENT_ACCESS.md`](runbooks/PUBLIC_DEVELOPMENT_ACCESS.md) | ACCESS-001 public HTTPS, inventory, activation и rollback |
 | [`runbooks/DATABASE_BACKUP_AND_RESTORE.md`](runbooks/DATABASE_BACKUP_AND_RESTORE.md) | Backup/restore |
 | [`runbooks/PRESENTATION_DATA_RESET.md`](runbooks/PRESENTATION_DATA_RESET.md) | Presentation reset |
-| [`runbooks/SSH_TUNNEL_ACCESS.md`](runbooks/SSH_TUNNEL_ACCESS.md) | SSH tunnel |
+| [`runbooks/SSH_TUNNEL_ACCESS.md`](runbooks/SSH_TUNNEL_ACCESS.md) | Технический SSH tunnel и loopback access |
 | [`runbooks/POST_MERGE_DEPLOYMENT.md`](runbooks/POST_MERGE_DEPLOYMENT.md) | Preview после merge |
 | [`runbooks/INCIDENT_AND_ROLLBACK.md`](runbooks/INCIDENT_AND_ROLLBACK.md) | Incident/rollback |
 
