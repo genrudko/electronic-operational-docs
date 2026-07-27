@@ -68,26 +68,33 @@ Official references:
 - <https://letsencrypt.org/2026/03/11/shorter-certs-certbot.html>
 - <https://certbot.eff.org/instructions?os=ubuntufocal&ws=nginx>
 
-A dedicated systemd timer checks renewal twice daily. The deploy hook validates
-nginx configuration and reloads nginx only after successful renewal.
+The deploy hook validates nginx configuration and reloads nginx only after a
+successful renewal. If the host already has an active Certbot renewal timer, it
+is reused. A dedicated twice-daily systemd timer is installed only when no active
+Certbot scheduler exists.
 
 ## 4. Mandatory preflight inventory
 
-The bootstrap prints the following evidence before changing the host:
+The bootstrap prints and validates the following evidence before creating the
+audit directory or changing persistent host configuration:
 
-1. OS and network interfaces;
-2. locally assigned and externally observed public IPv4;
+1. OS, network interfaces and route source;
+2. externally observed public IPv4;
 3. effective `sshd` ports;
 4. owners of TCP 80 and 443;
 5. nginx installation, state and existing virtual hosts;
-6. Certbot installation method and version;
+6. Certbot installation method, version and renewal timers;
 7. complete UFW status and numbered rules;
 8. development and preview container identity;
-9. trusted controller state.
+9. trusted controller state, including absence of a pending transaction.
+
+The accepted inventory snapshot is then copied into the persistent audit log
+before service changes begin.
 
 The factual SSH port is preserved. ACCESS-001 does not create, replace, delete or
 renumber an SSH rule. It adds only the required HTTP and HTTPS UFW rules and does
-not reset UFW defaults or remove unrelated rules.
+not reset UFW defaults or remove unrelated rules. Existing UFW nginx profiles are
+recognised and retained instead of adding duplicate port rules.
 
 If nginx already exists, it is reused. If TCP 80 or 443 is owned by an unrelated
 service, bootstrap aborts instead of replacing that service. An existing Certbot
@@ -131,25 +138,30 @@ No VPS action is performed merely because the implementation commit exists.
 
 After accepted inventory, the bootstrap:
 
-1. asks the existing AUTO-001B controller to deploy and hold the exact PR head in
+1. creates a protected audit and rollback directory;
+2. asks the existing AUTO-001B controller to deploy and hold the exact PR head in
    a pending transaction;
-2. preserves the current development database backup and rollback boundary;
-3. installs nginx only when absent, otherwise reuses it;
-4. installs Certbot through the official snap only when Certbot is absent;
-5. installs an HTTP-only ACME virtual host;
-6. adds the HTTP UFW rule when missing;
-7. obtains staging and production IP certificates;
-8. updates the host-owned development Compose file and only the required
+3. preserves the current development database backup and rollback boundary;
+4. installs nginx only when absent, otherwise reuses it;
+5. installs Certbot through the official snap only when Certbot is absent;
+6. installs an HTTP-only ACME virtual host;
+7. adds the HTTP UFW rule when no equivalent rule or nginx profile exists;
+8. obtains staging and production IP certificates;
+9. updates the host-owned development Compose file and only the required
    non-secret environment keys;
-9. recreates the development application with `DJANGO_DEBUG=0` and the public
-   HTTPS security contract;
-10. installs the TLS virtual host and adds the HTTPS UFW rule when missing;
-11. verifies renewal with a dry run;
-12. verifies local health, HTTPS login page, HTTP redirect, certificate SAN,
-    external health closure, listeners, UFW, timer and preview identity;
-13. confirms the AUTO-001B transaction only after all evidence succeeds.
+10. recreates the development application with `DJANGO_DEBUG=0` and the public
+    HTTPS security contract;
+11. installs the TLS virtual host and adds the HTTPS UFW rule only when needed;
+12. reuses an active Certbot scheduler or installs a fallback twice-daily timer;
+13. verifies renewal with a dry run and executes the nginx deploy hook;
+14. verifies local health, HTTP redirect, HTTPS login, Secure CSRF cookie, a real
+    CSRF-protected invalid-login POST, certificate SAN, external health closure,
+    listeners, UFW, renewal scheduler and preview identity;
+15. confirms the AUTO-001B transaction only after all evidence succeeds.
 
-The bootstrap never prints `development.env` or application secrets.
+Repeated activation replaces the same ACCESS-001 environment block rather than
+duplicating it. The bootstrap never prints `development.env` or application
+secrets.
 
 ## 7. Django public-mode contract
 
@@ -194,9 +206,11 @@ Any failure before controller confirmation triggers automatic rollback:
 - host Compose and `development.env` are restored;
 - the previous nginx configuration and service state are restored;
 - UFW rules added by this run are removed;
-- renewal units and hook are restored;
+- the renewal hook and any fallback units created by this run are restored;
 - the pending AUTO-001B transaction restores the previous application image and
   database backup;
+- staging certificate residue is removed;
+- a newly created production lineage is removed when none existed before;
 - preview identity is compared before and after.
 
 Packages installed during a failed attempt are retained but are stopped or left
