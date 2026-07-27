@@ -5,6 +5,7 @@ EXPECTED_IP="5.181.177.72"
 EXPECTED_PR_NUMBER="17"
 EXPECTED_BRANCH="infra/access-001-public-development-https"
 MIN_CERTBOT_VERSION="5.4"
+STAGING_CERT_NAME="${EXPECTED_IP}-access001-staging"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 HTTP_NGINX_TEMPLATE="$SCRIPT_DIR/nginx/eod-development-http.conf"
@@ -16,8 +17,8 @@ CONTROLLER="/usr/local/sbin/eod-development-controller"
 ACME_ROOT="/var/lib/eod-access001/acme"
 CERT_LIVE_DIR="/etc/letsencrypt/live/$EXPECTED_IP"
 CERTBOT_HOOK="/etc/letsencrypt/renewal-hooks/deploy/eod-access001-nginx-reload"
-RENEW_SERVICE="/etc/systemd/system/eod-access001-certbot-renew.service"
-RENEW_TIMER="/etc/systemd/system/eod-access001-certbot-renew.timer"
+CUSTOM_RENEW_SERVICE="/etc/systemd/system/eod-access001-certbot-renew.service"
+CUSTOM_RENEW_TIMER="/etc/systemd/system/eod-access001-certbot-renew.timer"
 
 PR_NUMBER=""
 HEAD_SHA=""
@@ -31,9 +32,6 @@ CERT_CREATED=0
 CERT_WAS_PRESENT=0
 UFW_ADDED_80=0
 UFW_ADDED_443=0
-NGINX_INSTALLED_BY_SCRIPT=0
-CERTBOT_INSTALLED_BY_SCRIPT=0
-SNAPD_INSTALLED_BY_SCRIPT=0
 NGINX_WAS_ACTIVE=0
 NGINX_WAS_ENABLED=0
 TIMER_WAS_ACTIVE=0
@@ -41,6 +39,7 @@ TIMER_WAS_ENABLED=0
 HOST_BACKUPS_READY=0
 NGINX_BACKUPS_READY=0
 RENEW_BACKUPS_READY=0
+CUSTOM_RENEWAL_CREATED=0
 
 AUDIT_ROOT=""
 BACKUP_ROOT=""
@@ -51,6 +50,12 @@ CERTBOT_BIN=""
 NGINX_BIN=""
 CURRENT_IMAGE=""
 PREVIEW_BEFORE=""
+OBSERVED_PUBLIC_IP=""
+INVENTORY_SNAPSHOT=""
+RENEW_TIMER_UNIT=""
+CSRF_BODY=""
+CSRF_COOKIES=""
+CSRF_HEADERS=""
 
 usage() {
     cat <<'EOF'
@@ -140,6 +145,138 @@ verify_operator_gate() {
         fail "bootstrap checksum mismatch: expected $expected_script_sha, got $actual_script_sha"
 }
 
+controller_command() {
+    local original="$1"
+    SSH_ORIGINAL_COMMAND="$original" "$CONTROLLER" ssh-gateway
+}
+
+capture_preview_state() {
+    docker ps --all \
+        --filter label=com.docker.compose.project=eod-preview \
+        --format '{{.ID}}|{{.Image}}|{{.State}}|{{.Names}}' \
+        | sort
+}
+
+observe_public_ip() {
+    local observed=""
+    observed="$(curl -4 --fail --silent --show-error --max-time 10 https://api.ipify.org || true)"
+    if [[ -z "$observed" ]]; then
+        observed="$(curl -4 --fail --silent --show-error --max-time 10 https://ifconfig.co/ip || true)"
+    fi
+    printf '%s' "${observed//$'\n'/}"
+}
+
+print_inventory() {
+    section "HOST INVENTORY — NO MUTATIONS YET"
+    printf 'expected_branch=%s\n' "$EXPECTED_BRANCH"
+    printf 'pr_number=%s\n' "$PR_NUMBER"
+    printf 'head_sha=%s\n' "$HEAD_SHA"
+    printf 'expected_public_ip=%s\n' "$EXPECTED_IP"
+    printf 'observed_public_ip=%s\n' "${OBSERVED_PUBLIC_IP:-UNAVAILABLE}"
+    printf 'kernel=%s\n' "$(uname -srmo)"
+    printf 'os_release=%s\n' "$(. /etc/os-release && printf '%s %s' "$ID" "$VERSION_ID")"
+
+    printf '\n-- interface addresses --\n'
+    ip -brief address
+
+    printf '\n-- route source --\n'
+    ip -4 route get 1.1.1.1 2>/dev/null || true
+
+    printf '\n-- sshd effective ports --\n'
+    if command -v sshd >/dev/null 2>&1; then
+        sshd -T 2>/dev/null | awk '$1 == "port" {print}' || true
+    else
+        printf 'sshd command unavailable\n'
+    fi
+
+    printf '\n-- listeners on 80/443 --\n'
+    ss -H -ltnp | awk '$4 ~ /:80$/ || $4 ~ /:443$/ {print}' || true
+
+    printf '\n-- nginx inventory --\n'
+    if command -v nginx >/dev/null 2>&1; then
+        nginx -v 2>&1
+        printf 'nginx_active=%s\n' "$(systemctl is-active nginx 2>/dev/null || true)"
+        printf 'nginx_enabled=%s\n' "$(systemctl is-enabled nginx 2>/dev/null || true)"
+    else
+        printf 'nginx=ABSENT\n'
+    fi
+
+    printf '\n-- Certbot inventory --\n'
+    if command -v certbot >/dev/null 2>&1; then
+        certbot --version
+    else
+        printf 'certbot=ABSENT\n'
+    fi
+    if command -v snap >/dev/null 2>&1; then
+        snap list certbot 2>/dev/null || true
+    fi
+    systemctl list-timers --all --no-pager 2>/dev/null | grep -i certbot || true
+
+    printf '\n-- UFW inventory --\n'
+    ufw status verbose
+    ufw status numbered
+
+    printf '\n-- Docker development/preview inventory --\n'
+    docker ps --all \
+        --filter label=com.docker.compose.project=eod-development \
+        --format 'development|{{.ID}}|{{.Image}}|{{.Status}}|{{.Names}}' \
+        | sort
+    docker ps --all \
+        --filter label=com.docker.compose.project=eod-preview \
+        --format 'preview|{{.ID}}|{{.Image}}|{{.Status}}|{{.Names}}' \
+        | sort
+
+    printf '\n-- controller status --\n'
+    "$CONTROLLER" status
+}
+
+validate_inventory() {
+    section "INVENTORY VALIDATION"
+    [[ "$OBSERVED_PUBLIC_IP" == "$EXPECTED_IP" ]] || \
+        fail "observed public IPv4 does not match $EXPECTED_IP"
+
+    [[ "$(ufw status | sed -n '1p')" == "Status: active" ]] || \
+        fail "UFW must already be installed and active"
+
+    local controller_status
+    controller_status="$("$CONTROLLER" status)"
+    grep -Fxq 'transaction=NONE' <<<"$controller_status" || \
+        fail "trusted controller has a pending or invalid transaction"
+    grep -Fxq 'pending_run_id=NONE' <<<"$controller_status" || \
+        fail "trusted controller has a pending run"
+
+    local listener
+    while IFS= read -r listener; do
+        [[ -z "$listener" ]] && continue
+        if [[ "$listener" != *nginx* ]]; then
+            fail "port 80/443 is owned by an unrelated listener: $listener"
+        fi
+    done < <(ss -H -ltnp | awk '$4 ~ /:80$/ || $4 ~ /:443$/ {print}')
+
+    if command -v nginx >/dev/null 2>&1; then
+        local nginx_dump exact_host_count
+        nginx_dump="$(nginx -T 2>&1)" || fail "existing nginx configuration is invalid"
+        exact_host_count="$(grep -Ec 'server_name[[:space:]]+5\.181\.177\.72([[:space:];]|$)' \
+            <<<"$nginx_dump" || true)"
+        if (( exact_host_count > 1 )); then
+            fail "multiple nginx virtual hosts already claim $EXPECTED_IP"
+        fi
+        if (( exact_host_count == 1 )) && \
+            ! grep -Fq 'ACCESS-001 managed public development' <<<"$nginx_dump"; then
+            fail "an unrelated nginx virtual host already owns $EXPECTED_IP"
+        fi
+    fi
+
+    [[ -f "$HTTP_NGINX_TEMPLATE" ]] || fail "missing HTTP nginx template"
+    [[ -f "$TLS_NGINX_TEMPLATE" ]] || fail "missing TLS nginx template"
+    [[ -f "$HOST_COMPOSE_SOURCE" ]] || fail "missing exact-head host Compose source"
+    [[ -f "$HOST_COMPOSE_TARGET" ]] || fail "current host Compose file is missing"
+    [[ -f "$DEVELOPMENT_ENV" ]] || fail "development environment file is missing"
+    [[ -x "$CONTROLLER" ]] || fail "trusted development controller is missing"
+
+    log "inventory accepted; factual SSH port and existing firewall rules remain untouched"
+}
+
 prepare_audit() {
     AUDIT_ROOT="/srv/eod/audits/ACCESS-001_${RUN_ID}_${HEAD_SHA:0:12}"
     BACKUP_ROOT="$AUDIT_ROOT/rollback"
@@ -169,16 +306,10 @@ restore_item() {
     fi
 }
 
-controller_command() {
-    local original="$1"
-    SSH_ORIGINAL_COMMAND="$original" "$CONTROLLER" ssh-gateway
-}
-
-capture_preview_state() {
-    docker ps --all \
-        --filter label=com.docker.compose.project=eod-preview \
-        --format '{{.ID}}|{{.Image}}|{{.State}}|{{.Names}}' \
-        | sort
+cleanup_temp_files() {
+    [[ -z "$CSRF_BODY" ]] || rm -f -- "$CSRF_BODY"
+    [[ -z "$CSRF_COOKIES" ]] || rm -f -- "$CSRF_COOKIES"
+    [[ -z "$CSRF_HEADERS" ]] || rm -f -- "$CSRF_HEADERS"
 }
 
 rollback() {
@@ -190,19 +321,25 @@ rollback() {
 
     section "ROLLBACK"
     log "activation failed with rc=$original_rc; restoring host state"
+    cleanup_temp_files
 
-    systemctl disable --now eod-access001-certbot-renew.timer >/dev/null 2>&1 || true
+    if [[ "$CUSTOM_RENEWAL_CREATED" -eq 1 ]]; then
+        systemctl disable --now eod-access001-certbot-renew.timer >/dev/null 2>&1 || true
+    fi
+
     if [[ -n "$BACKUP_ROOT" && -d "$BACKUP_ROOT" ]]; then
         if [[ "$RENEW_BACKUPS_READY" -eq 1 ]]; then
-            restore_item "$RENEW_SERVICE" renew-service
-            restore_item "$RENEW_TIMER" renew-timer
             restore_item "$CERTBOT_HOOK" certbot-hook
-            systemctl daemon-reload >/dev/null 2>&1 || true
-            if [[ "$TIMER_WAS_ENABLED" -eq 1 ]]; then
-                systemctl enable eod-access001-certbot-renew.timer >/dev/null 2>&1 || true
-            fi
-            if [[ "$TIMER_WAS_ACTIVE" -eq 1 ]]; then
-                systemctl start eod-access001-certbot-renew.timer >/dev/null 2>&1 || true
+            if [[ "$CUSTOM_RENEWAL_CREATED" -eq 1 ]]; then
+                restore_item "$CUSTOM_RENEW_SERVICE" renew-service
+                restore_item "$CUSTOM_RENEW_TIMER" renew-timer
+                systemctl daemon-reload >/dev/null 2>&1 || true
+                if [[ "$TIMER_WAS_ENABLED" -eq 1 ]]; then
+                    systemctl enable eod-access001-certbot-renew.timer >/dev/null 2>&1 || true
+                fi
+                if [[ "$TIMER_WAS_ACTIVE" -eq 1 ]]; then
+                    systemctl start eod-access001-certbot-renew.timer >/dev/null 2>&1 || true
+                fi
             fi
         fi
 
@@ -240,6 +377,10 @@ rollback() {
         ufw --force delete allow 80/tcp >/dev/null 2>&1 || true
     fi
 
+    if [[ -n "$CERTBOT_BIN" ]]; then
+        "$CERTBOT_BIN" delete --non-interactive --cert-name "$STAGING_CERT_NAME" \
+            >/dev/null 2>&1 || true
+    fi
     if [[ "$CERT_CREATED" -eq 1 && "$CERT_WAS_PRESENT" -eq 0 && -n "$CERTBOT_BIN" ]]; then
         "$CERTBOT_BIN" delete --non-interactive --cert-name "$EXPECTED_IP" >/dev/null 2>&1 || true
     fi
@@ -265,121 +406,9 @@ on_exit() {
     fi
 }
 
-print_inventory() {
-    section "HOST INVENTORY — NO MUTATIONS YET"
-    printf 'expected_branch=%s\n' "$EXPECTED_BRANCH"
-    printf 'pr_number=%s\n' "$PR_NUMBER"
-    printf 'head_sha=%s\n' "$HEAD_SHA"
-    printf 'expected_public_ip=%s\n' "$EXPECTED_IP"
-    printf 'kernel=%s\n' "$(uname -srmo)"
-    printf 'os_release=%s\n' "$(. /etc/os-release && printf '%s %s' "$ID" "$VERSION_ID")"
-
-    printf '\n-- interface addresses --\n'
-    ip -brief address
-
-    printf '\n-- observed public IPv4 --\n'
-    local observed_ip=""
-    observed_ip="$(curl -4 --fail --silent --show-error --max-time 10 https://api.ipify.org || true)"
-    if [[ -z "$observed_ip" ]]; then
-        observed_ip="$(curl -4 --fail --silent --show-error --max-time 10 https://ifconfig.co/ip || true)"
-        observed_ip="${observed_ip//$'\n'/}"
-    fi
-    printf '%s\n' "${observed_ip:-UNAVAILABLE}"
-
-    printf '\n-- sshd effective ports --\n'
-    if command -v sshd >/dev/null 2>&1; then
-        sshd -T 2>/dev/null | awk '$1 == "port" {print}' || true
-    else
-        printf 'sshd command unavailable\n'
-    fi
-
-    printf '\n-- listeners on 80/443 --\n'
-    ss -H -ltnp | awk '$4 ~ /:80$/ || $4 ~ /:443$/ {print}' || true
-
-    printf '\n-- nginx inventory --\n'
-    if command -v nginx >/dev/null 2>&1; then
-        nginx -v 2>&1
-        systemctl is-active nginx || true
-        systemctl is-enabled nginx || true
-    else
-        printf 'nginx=ABSENT\n'
-    fi
-
-    printf '\n-- Certbot inventory --\n'
-    if command -v certbot >/dev/null 2>&1; then
-        certbot --version
-    else
-        printf 'certbot=ABSENT\n'
-    fi
-    if command -v snap >/dev/null 2>&1; then
-        snap list certbot 2>/dev/null || true
-    fi
-
-    printf '\n-- UFW inventory --\n'
-    ufw status verbose
-    ufw status numbered
-
-    printf '\n-- Docker development/preview inventory --\n'
-    docker ps --all \
-        --filter label=com.docker.compose.project=eod-development \
-        --format 'development|{{.ID}}|{{.Image}}|{{.Status}}|{{.Names}}' \
-        | sort
-    docker ps --all \
-        --filter label=com.docker.compose.project=eod-preview \
-        --format 'preview|{{.ID}}|{{.Image}}|{{.Status}}|{{.Names}}' \
-        | sort
-
-    printf '\n-- controller status --\n'
-    "$CONTROLLER" status
-
-    OBSERVED_PUBLIC_IP="$observed_ip"
-}
-
-validate_inventory() {
-    section "INVENTORY VALIDATION"
-    [[ "${OBSERVED_PUBLIC_IP:-}" == "$EXPECTED_IP" ]] || \
-        fail "observed public IPv4 does not match $EXPECTED_IP"
-
-    ip -o -4 address show scope global | \
-        awk -v expected="$EXPECTED_IP" \
-            '{split($4, parts, "/"); if (parts[1] == expected) found=1} END {exit !found}' || \
-        fail "expected public IPv4 is not assigned to this host"
-
-    [[ "$(ufw status | sed -n '1p')" == "Status: active" ]] || \
-        fail "UFW must already be installed and active"
-
-    local listener
-    while IFS= read -r listener; do
-        [[ -z "$listener" ]] && continue
-        if [[ "$listener" != *nginx* ]]; then
-            fail "port 80/443 is owned by an unrelated listener: $listener"
-        fi
-    done < <(ss -H -ltnp | awk '$4 ~ /:80$/ || $4 ~ /:443$/ {print}')
-
-    if command -v nginx >/dev/null 2>&1; then
-        nginx -T >"$AUDIT_ROOT/nginx-before.txt" 2>&1
-        if grep -Eq 'server_name[[:space:]]+5\.181\.177\.72([[:space:];]|$)' \
-            "$AUDIT_ROOT/nginx-before.txt"; then
-            if ! grep -Rqs 'ACCESS-001' /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null; then
-                fail "an existing nginx virtual host already owns $EXPECTED_IP"
-            fi
-        fi
-    fi
-
-    [[ -f "$HTTP_NGINX_TEMPLATE" ]] || fail "missing HTTP nginx template"
-    [[ -f "$TLS_NGINX_TEMPLATE" ]] || fail "missing TLS nginx template"
-    [[ -f "$HOST_COMPOSE_SOURCE" ]] || fail "missing exact-head host Compose source"
-    [[ -f "$HOST_COMPOSE_TARGET" ]] || fail "current host Compose file is missing"
-    [[ -f "$DEVELOPMENT_ENV" ]] || fail "development environment file is missing"
-    [[ -x "$CONTROLLER" ]] || fail "trusted development controller is missing"
-
-    PREVIEW_BEFORE="$(capture_preview_state)"
-    log "inventory accepted; no SSH port or existing UFW rule will be replaced"
-}
-
 deploy_exact_head() {
     section "EXACT-HEAD DEVELOPMENT DEPLOYMENT"
-    log "delegating application backup, tests, migration and rollback boundary to AUTO-001B"
+    log "delegating backup, tests, migration and rollback boundary to AUTO-001B"
     controller_command "deploy refresh $PR_NUMBER $HEAD_SHA $RUN_ID"
     CONTROLLER_PENDING=1
 }
@@ -392,10 +421,9 @@ ensure_nginx() {
         log "reusing existing nginx installation"
     else
         require_command apt-get
-        log "nginx is absent; installing without replacing another listener"
+        log "nginx is absent; installing it without replacing another listener"
         apt-get update
         DEBIAN_FRONTEND=noninteractive apt-get install -y nginx
-        NGINX_INSTALLED_BY_SCRIPT=1
     fi
     NGINX_BIN="$(command -v nginx)"
 
@@ -420,9 +448,9 @@ ensure_nginx() {
     backup_item "$DEVELOPMENT_ENV" development-env
     HOST_BACKUPS_READY=1
 
-    backup_item "$RENEW_SERVICE" renew-service
-    backup_item "$RENEW_TIMER" renew-timer
     backup_item "$CERTBOT_HOOK" certbot-hook
+    backup_item "$CUSTOM_RENEW_SERVICE" renew-service
+    backup_item "$CUSTOM_RENEW_TIMER" renew-timer
     RENEW_BACKUPS_READY=1
     systemctl is-active --quiet eod-access001-certbot-renew.timer && TIMER_WAS_ACTIVE=1 || true
     systemctl is-enabled --quiet eod-access001-certbot-renew.timer && TIMER_WAS_ENABLED=1 || true
@@ -436,9 +464,9 @@ ensure_nginx() {
     nginx -t
     systemctl enable --now nginx
 
-    local token="access001-${RUN_ID}-${HEAD_SHA:0:12}"
+    local token response
+    token="access001-${RUN_ID}-${HEAD_SHA:0:12}"
     printf '%s\n' "$token" >"$ACME_ROOT/.well-known/acme-challenge/$token"
-    local response
     response="$(curl --fail --silent --show-error --max-time 10 \
         --resolve "$EXPECTED_IP:80:127.0.0.1" \
         "http://$EXPECTED_IP/.well-known/acme-challenge/$token")"
@@ -447,14 +475,25 @@ ensure_nginx() {
 }
 
 ufw_rule_exists() {
-    local port="$1"
-    ufw status | awk -v target="$port/tcp" '$1 == target && $2 == "ALLOW" {found=1} END {exit !found}'
+    local port="$1" pattern
+    case "$port" in
+        80)
+            pattern='^(80(/tcp)?|Nginx HTTP|Nginx Full)[[:space:]]+ALLOW'
+            ;;
+        443)
+            pattern='^(443(/tcp)?|Nginx HTTPS|Nginx Full)[[:space:]]+ALLOW'
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+    ufw status | grep -Eq "$pattern"
 }
 
-open_required_firewall_ports() {
+open_http_firewall() {
     section "UFW NARROW EXPOSURE"
     if ufw_rule_exists 80; then
-        log "existing allow rule for 80/tcp retained"
+        log "existing allow path for HTTP retained"
     else
         ufw allow 80/tcp comment 'ACCESS-001 ACME and HTTPS redirect'
         UFW_ADDED_80=1
@@ -472,14 +511,11 @@ ensure_certbot() {
             log "snapd is absent; installing it for the official Certbot snap"
             apt-get update
             DEBIAN_FRONTEND=noninteractive apt-get install -y snapd
-            SNAPD_INSTALLED_BY_SCRIPT=1
+            systemctl enable --now snapd.socket
+            snap wait system seed.loaded
         fi
         snap install --classic certbot
-        CERTBOT_INSTALLED_BY_SCRIPT=1
         CERTBOT_BIN="/snap/bin/certbot"
-        if [[ ! -e /usr/local/bin/certbot ]]; then
-            ln -s "$CERTBOT_BIN" /usr/local/bin/certbot
-        fi
     fi
 
     local version
@@ -522,11 +558,10 @@ issue_certificate() {
     fi
 
     if certificate_is_fresh; then
-        log "existing publicly configured IP certificate is still fresh; issuance skipped"
+        log "existing IP certificate is still fresh; issuance skipped"
         return 0
     fi
 
-    local staging_name="${EXPECTED_IP}-access001-staging"
     log "requesting a staging short-lived IP certificate first"
     "$CERTBOT_BIN" certonly \
         --staging \
@@ -537,9 +572,10 @@ issue_certificate() {
         --webroot \
         --webroot-path "$ACME_ROOT" \
         --ip-address "$EXPECTED_IP" \
-        --cert-name "$staging_name" \
+        --cert-name "$STAGING_CERT_NAME" \
         --force-renewal
-    "$CERTBOT_BIN" delete --non-interactive --cert-name "$staging_name" >/dev/null 2>&1 || true
+    "$CERTBOT_BIN" delete --non-interactive --cert-name "$STAGING_CERT_NAME" \
+        >/dev/null 2>&1 || true
 
     log "requesting the publicly trusted short-lived IP certificate"
     local force_args=()
@@ -572,6 +608,7 @@ import tempfile
 from pathlib import Path
 
 path = Path(sys.argv[1])
+marker = "# ACCESS-001 public HTTPS development contract"
 updates = {
     "DJANGO_ALLOWED_HOSTS": "127.0.0.1,localhost,5.181.177.72",
     "DJANGO_CSRF_TRUSTED_ORIGINS": "https://5.181.177.72",
@@ -581,10 +618,11 @@ updates = {
     "EOD_PUBLIC_HTTPS_ORIGIN": "https://5.181.177.72",
 }
 stat = path.stat()
-lines = path.read_text(encoding="utf-8").splitlines()
 kept = []
-for line in lines:
+for line in path.read_text(encoding="utf-8").splitlines():
     stripped = line.strip()
+    if stripped == marker:
+        continue
     if not stripped or stripped.startswith("#") or "=" not in stripped:
         kept.append(line)
         continue
@@ -592,9 +630,9 @@ for line in lines:
     if key not in updates:
         kept.append(line)
 
-if kept and kept[-1] != "":
-    kept.append("")
-kept.append("# ACCESS-001 public HTTPS development contract")
+while kept and kept[-1] == "":
+    kept.pop()
+kept.extend(["", marker])
 kept.extend(f"{key}={value}" for key, value in updates.items())
 content = "\n".join(kept) + "\n"
 
@@ -616,7 +654,7 @@ PY
     container="$(docker ps \
         --filter label=com.docker.compose.project=eod-development \
         --filter label=com.docker.compose.service=app \
-        --format '{{.ID}}' | head -n 1)"
+        --format '{{.ID}}' | sed -n '1p')"
     [[ -n "$container" ]] || fail "development app container is not running after exact-head deployment"
     CURRENT_IMAGE="$(docker inspect --format '{{.Config.Image}}' "$container")"
     [[ "$CURRENT_IMAGE" == "eod-development-app:$HEAD_SHA" ]] || \
@@ -662,11 +700,23 @@ activate_tls_nginx() {
     systemctl reload nginx
 
     if ufw_rule_exists 443; then
-        log "existing allow rule for 443/tcp retained"
+        log "existing allow path for HTTPS retained"
     else
         ufw allow 443/tcp comment 'ACCESS-001 HTTPS development'
         UFW_ADDED_443=1
     fi
+}
+
+find_active_certbot_timer() {
+    local unit state
+    while read -r unit state _; do
+        [[ "$unit" == *certbot*.timer ]] || continue
+        if systemctl is-active --quiet "$unit"; then
+            printf '%s\n' "$unit"
+            return 0
+        fi
+    done < <(systemctl list-unit-files --type=timer --no-legend 2>/dev/null)
+    return 1
 }
 
 install_renewal_contract() {
@@ -680,7 +730,11 @@ $NGINX_BIN -t
 HOOK
     chmod 0755 "$CERTBOT_HOOK"
 
-    cat >"$RENEW_SERVICE" <<EOF
+    RENEW_TIMER_UNIT="$(find_active_certbot_timer || true)"
+    if [[ -n "$RENEW_TIMER_UNIT" ]]; then
+        log "reusing active Certbot scheduler: $RENEW_TIMER_UNIT"
+    else
+        cat >"$CUSTOM_RENEW_SERVICE" <<EOF
 [Unit]
 Description=Renew ACCESS-001 short-lived IP certificate
 After=network-online.target nginx.service
@@ -691,7 +745,7 @@ Type=oneshot
 ExecStart=$CERTBOT_BIN renew --quiet --cert-name $EXPECTED_IP
 EOF
 
-    cat >"$RENEW_TIMER" <<'EOF'
+        cat >"$CUSTOM_RENEW_TIMER" <<'EOF'
 [Unit]
 Description=Twice-daily ACCESS-001 certificate renewal check
 
@@ -704,9 +758,12 @@ Unit=eod-access001-certbot-renew.service
 [Install]
 WantedBy=timers.target
 EOF
-
-    systemctl daemon-reload
-    systemctl enable --now eod-access001-certbot-renew.timer
+        systemctl daemon-reload
+        systemctl enable --now eod-access001-certbot-renew.timer
+        CUSTOM_RENEWAL_CREATED=1
+        RENEW_TIMER_UNIT="eod-access001-certbot-renew.timer"
+        log "no active Certbot scheduler existed; installed $RENEW_TIMER_UNIT"
+    fi
 
     "$CERTBOT_BIN" renew \
         --dry-run \
@@ -714,16 +771,56 @@ EOF
         --run-deploy-hooks
 }
 
+verify_csrf_post() {
+    section "HTTPS CSRF POST PROBE"
+    CSRF_BODY="$(mktemp /tmp/access001-csrf-body.XXXXXX)"
+    CSRF_COOKIES="$(mktemp /tmp/access001-csrf-cookies.XXXXXX)"
+    CSRF_HEADERS="$(mktemp /tmp/access001-csrf-headers.XXXXXX)"
+
+    curl --fail --silent --show-error --max-time 15 \
+        --resolve "$EXPECTED_IP:443:127.0.0.1" \
+        --cookie-jar "$CSRF_COOKIES" \
+        --dump-header "$CSRF_HEADERS" \
+        --output "$CSRF_BODY" \
+        "https://$EXPECTED_IP/accounts/login/"
+
+    local csrf_token post_status
+    csrf_token="$(sed -n 's/.*name="csrfmiddlewaretoken" value="\([^"]*\)".*/\1/p' \
+        "$CSRF_BODY" | sed -n '1p')"
+    [[ -n "$csrf_token" ]] || fail "login form did not provide a CSRF token"
+    awk 'BEGIN {IGNORECASE=1} /^set-cookie: csrftoken=/ && /secure/ {found=1} END {exit !found}' \
+        "$CSRF_HEADERS" || fail "CSRF cookie is not marked Secure"
+
+    post_status="$(curl --silent --show-error --max-time 15 \
+        --resolve "$EXPECTED_IP:443:127.0.0.1" \
+        --cookie "$CSRF_COOKIES" \
+        --cookie-jar "$CSRF_COOKIES" \
+        --referer "https://$EXPECTED_IP/accounts/login/" \
+        --data-urlencode "csrfmiddlewaretoken=$csrf_token" \
+        --data-urlencode 'username=access001-invalid-user' \
+        --data-urlencode 'password=access001-invalid-password' \
+        --output "$CSRF_BODY" \
+        --write-out '%{http_code}' \
+        "https://$EXPECTED_IP/accounts/login/")"
+    [[ "$post_status" == "200" ]] || \
+        fail "HTTPS CSRF form POST returned $post_status instead of the expected invalid-login page"
+
+    printf 'HTTPS_CSRF_POST=PASSED\n'
+    cleanup_temp_files
+    CSRF_BODY=""
+    CSRF_COOKIES=""
+    CSRF_HEADERS=""
+}
+
 verify_final_state() {
     section "FINAL EVIDENCE"
     nginx -t
 
-    curl --fail --silent --show-error --max-time 10 \
-        http://127.0.0.1:8766/_health/ >/tmp/access001-local-health.json
-    cat /tmp/access001-local-health.json
-    rm -f /tmp/access001-local-health.json
+    local local_health redirect_headers login_status health_status controller_status
+    local_health="$(curl --fail --silent --show-error --max-time 10 \
+        http://127.0.0.1:8766/_health/)"
+    printf '%s\n' "$local_health"
 
-    local redirect_headers login_status health_status
     redirect_headers="$(curl --silent --show-error --max-time 10 \
         --resolve "$EXPECTED_IP:80:127.0.0.1" \
         --head "http://$EXPECTED_IP/")"
@@ -738,6 +835,8 @@ verify_final_state() {
         "https://$EXPECTED_IP/accounts/login/")"
     [[ "$login_status" == "200" ]] || fail "HTTPS login page returned $login_status"
 
+    verify_csrf_post
+
     health_status="$(curl --silent --show-error --max-time 15 \
         --resolve "$EXPECTED_IP:443:127.0.0.1" \
         --output /dev/null --write-out '%{http_code}' \
@@ -750,7 +849,8 @@ verify_final_state() {
 
     printf '\n-- host listeners --\n'
     ss -H -ltnp | awk '$4 ~ /:80$/ || $4 ~ /:443$/ || $4 ~ /:8766$/ || $4 ~ /:5432$/ {print}'
-    if ss -H -ltn | awk '$4 ~ /:8766$/ {print $4}' | grep -Ev '^127\.0\.0\.1:8766$' | grep -q .; then
+    if ss -H -ltn | awk '$4 ~ /:8766$/ {print $4}' | \
+        grep -Ev '^127\.0\.0\.1:8766$' | grep -q .; then
         fail "development port 8766 is not restricted to IPv4 loopback"
     fi
     if ss -H -ltn | awk '$4 ~ /:5432$/ {print}' | grep -q .; then
@@ -760,9 +860,9 @@ verify_final_state() {
     printf '\n-- UFW final state --\n'
     ufw status verbose
 
-    printf '\n-- renewal timer --\n'
-    systemctl status eod-access001-certbot-renew.timer --no-pager
-    systemctl list-timers eod-access001-certbot-renew.timer --no-pager
+    printf '\n-- renewal scheduler --\n'
+    systemctl status "$RENEW_TIMER_UNIT" --no-pager
+    systemctl list-timers "$RENEW_TIMER_UNIT" --no-pager
 
     local preview_after
     preview_after="$(capture_preview_state)"
@@ -770,7 +870,12 @@ verify_final_state() {
     printf 'preview=UNTOUCHED\n'
 
     printf '\n-- controller pending state before confirmation --\n'
-    "$CONTROLLER" status
+    controller_status="$("$CONTROLLER" status)"
+    printf '%s\n' "$controller_status"
+    grep -Fxq 'transaction=PENDING' <<<"$controller_status" || \
+        fail "controller transaction is not pending before confirmation"
+    grep -Fxq "pending_run_id=$RUN_ID" <<<"$controller_status" || \
+        fail "controller pending run id does not match ACCESS-001"
 }
 
 confirm_exact_head() {
@@ -783,12 +888,19 @@ confirm_exact_head() {
 main() {
     require_root
     parse_args "$@"
-    verify_operator_gate
 
-    for command in awk bash cp curl cut date docker dpkg grep head install ip openssl \
-        python3 sed sha256sum sort ss systemctl tee ufw uname; do
+    for command in awk bash cat chmod cp curl date docker dpkg grep install ip ln \
+        mktemp openssl python3 rm sed sha256sum sort ss systemctl tee ufw uname; do
         require_command "$command"
     done
+    verify_operator_gate
+
+    OBSERVED_PUBLIC_IP="$(observe_public_ip)"
+    PREVIEW_BEFORE="$(capture_preview_state)"
+    INVENTORY_SNAPSHOT="$(print_inventory)"
+
+    printf '%s\n' "$INVENTORY_SNAPSHOT"
+    validate_inventory
 
     prepare_audit
     trap on_exit EXIT
@@ -797,12 +909,12 @@ main() {
     section "ACCESS-001 START"
     printf 'branch=%s\npr=%s\nhead=%s\nrun=%s\n' \
         "$EXPECTED_BRANCH" "$PR_NUMBER" "$HEAD_SHA" "$RUN_ID"
+    printf '%s\n' "$INVENTORY_SNAPSHOT"
+    section "INVENTORY ACCEPTED BEFORE HOST MUTATION"
 
-    print_inventory
-    validate_inventory
     deploy_exact_head
     ensure_nginx
-    open_required_firewall_ports
+    open_http_firewall
     ensure_certbot
     issue_certificate
     update_development_environment
@@ -812,6 +924,7 @@ main() {
     confirm_exact_head
 
     SUCCESS=1
+    cleanup_temp_files
     section "ACCESS-001 ACTIVATION SUCCESS"
     printf 'exact_head=%s\n' "$HEAD_SHA"
     printf 'public_url=https://%s/\n' "$EXPECTED_IP"
