@@ -30,7 +30,7 @@ class EquipmentDefectRepairThreeUITests(EquipmentDefectSourceBoundBase, TestCase
         )
         self.assertContains(response, "Сначала новые")
         self.assertContains(response, "Быстрый фильтр по состоянию")
-        self.assertContains(response, "defects.js?v=defect003")
+        self.assertContains(response, "defects.js?v=defect004")
         self.assertNotContains(response, "SOURCE-BOUND ФОРМА")
 
     def test_registration_uses_time_trust_and_friendly_log_link(self) -> None:
