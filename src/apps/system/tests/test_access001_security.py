@@ -190,9 +190,9 @@ class Access001InfrastructureContractTests(SimpleTestCase):
     def test_runbook_documents_manual_gate_and_https_only_user_session(self):
         runbook = self.read("docs/runbooks/PUBLIC_DEVELOPMENT_ACCESS.md")
 
-        self.assertIn("пять green exact-head workflows", runbook)
-        self.assertIn("только через HTTPS", runbook)
-        self.assertIn("фактический SSH-порт", runbook)
+        self.assertIn("all five workflows are green", runbook)
+        self.assertIn("only through HTTPS", runbook)
+        self.assertIn("factual SSH port", runbook)
         self.assertIn("/_health/", runbook)
         self.assertIn("preview", runbook.lower())
         self.assertIn("PR #16", runbook)
