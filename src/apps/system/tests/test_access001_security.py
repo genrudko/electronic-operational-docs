@@ -177,8 +177,10 @@ class Access001InfrastructureContractTests(SimpleTestCase):
         self.assertIn("capture_preview_state", bootstrap)
         self.assertIn('controller_command "deploy refresh', bootstrap)
         self.assertIn('controller_command "confirm', bootstrap)
+        self.assertIn("find_active_certbot_timer", bootstrap)
+        self.assertIn("HTTPS_CSRF_POST=PASSED", bootstrap)
         self.assertLess(
-            bootstrap.rfind("    print_inventory"),
+            bootstrap.rfind('INVENTORY_SNAPSHOT="$(print_inventory)"'),
             bootstrap.rfind("    deploy_exact_head"),
         )
         self.assertNotIn("22/tcp", bootstrap)
