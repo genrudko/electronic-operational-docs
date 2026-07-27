@@ -195,6 +195,24 @@
         });
     }
 
+    function initRegistryRowLinks() {
+        document.querySelectorAll("[data-defect-row-link]").forEach((row) => {
+            const detailUrl = row.dataset.detailUrl;
+            if (!detailUrl) return;
+
+            row.style.cursor = "pointer";
+            row.addEventListener("click", (event) => {
+                if (event.defaultPrevented || event.button !== 0) return;
+                if (event.target.closest("a, button, input, select, textarea, summary, details")) return;
+
+                const selection = window.getSelection();
+                if (selection && selection.toString().trim()) return;
+
+                window.location.assign(detailUrl);
+            });
+        });
+    }
+
     function compareItems(a, b, mode) {
         const numberA = Number(a.dataset.sortNumber || 0);
         const numberB = Number(b.dataset.sortNumber || 0);
@@ -241,6 +259,7 @@
         initDateTimeControls();
         initDesktopRegistryFit();
         initInlineErrorClearing();
+        initRegistryRowLinks();
         initSorting();
     });
 })();
