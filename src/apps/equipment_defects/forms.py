@@ -11,20 +11,45 @@ from apps.organizations.models import Employee, Workplace
 
 
 class DateTimeLocalField(forms.DateTimeField):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    """Server-authoritative datetime input progressively enhanced in the browser."""
+
+    def __init__(
+        self,
+        *args: Any,
+        allow_server_now: bool = False,
+        **kwargs: Any,
+    ) -> None:
         kwargs.setdefault("input_formats", ("%Y-%m-%dT%H:%M", "%Y-%m-%dT%H:%M:%S"))
-        kwargs.setdefault(
-            "widget",
-            forms.DateTimeInput(
-                format="%Y-%m-%dT%H:%M",
-                attrs={"type": "datetime-local"},
-            ),
-        )
+        widget = kwargs.pop("widget", None)
+        if widget is None:
+            attrs = {
+                "type": "datetime-local",
+                "step": "60",
+                "autocomplete": "off",
+                "class": "defect-datetime-native",
+                "data-defect-datetime": "true",
+            }
+            if allow_server_now:
+                attrs["data-allow-server-now"] = "true"
+            widget = forms.DateTimeInput(format="%Y-%m-%dT%H:%M", attrs=attrs)
+        kwargs["widget"] = widget
         super().__init__(*args, **kwargs)
 
 
+class OperationalLogEntryChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj: OperationalLogEntry) -> str:
+        event_at = timezone.localtime(obj.event_at)
+        content = " ".join(obj.content.split())
+        if len(content) > 110:
+            content = f"{content[:107]}…"
+        return f"Запись № {obj.sequence_number} · {event_at:%d.%m.%Y %H:%M} · {content}"
+
+
 class DefectRegistrationForm(forms.Form):
-    detected_at = DateTimeLocalField(label="Дата и время обнаружения")
+    detected_at = DateTimeLocalField(
+        label="Дата и время обнаружения",
+        allow_server_now=True,
+    )
     workplace = forms.ModelChoiceField(
         label="ВЭС / ПС и рабочее место",
         queryset=Workplace.objects.none(),
@@ -40,7 +65,7 @@ class DefectRegistrationForm(forms.Form):
         widget=forms.Textarea(
             attrs={
                 "rows": 5,
-                "placeholder": "Опишите обнаруженный дефект или неисправность",
+                "placeholder": "Кратко и однозначно опишите выявленную неисправность",
             }
         ),
     )
@@ -53,11 +78,15 @@ class DefectRegistrationForm(forms.Form):
             "который регистрирует запись."
         ),
     )
-    operational_log_entry = forms.ModelChoiceField(
-        label="Основание в оперативном журнале",
+    operational_log_entry = OperationalLogEntryChoiceField(
+        label="Связанная запись оперативного журнала",
         queryset=OperationalLogEntry.objects.none(),
         required=False,
-        empty_label="Без связи с оперативным журналом",
+        empty_label="Не связывать с оперативным журналом",
+        help_text=(
+            "Основной сценарий — создать дефект непосредственно из записи оперативного "
+            "журнала. Ручная привязка нужна только для уже существующей записи."
+        ),
     )
 
     def __init__(
@@ -104,7 +133,7 @@ class DefectRegistrationForm(forms.Form):
                 self.initial["equipment"] = equipment_links[0].equipment
             self.fields["operational_log_entry"].disabled = True
             self.fields["operational_log_entry"].help_text = (
-                f"Запись № {source_entry.sequence_number}: {source_entry.content[:180]}"
+                f"Связь установлена автоматически с записью № {source_entry.sequence_number}."
             )
 
 
@@ -137,7 +166,10 @@ class DeadlineExtensionForm(forms.Form):
 
 
 class ResolutionConfirmationForm(forms.Form):
-    resolved_at = DateTimeLocalField(label="Дата и время устранения")
+    resolved_at = DateTimeLocalField(
+        label="Дата и время устранения",
+        allow_server_now=True,
+    )
     responsible = forms.ModelChoiceField(
         label="Ответственный за устранение",
         queryset=Employee.objects.none(),
