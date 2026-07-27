@@ -162,6 +162,39 @@
         document.querySelectorAll("input[data-defect-datetime]").forEach(enhanceDateTimeInput);
     }
 
+    function initDesktopRegistryFit() {
+        const register = document.querySelector("[data-defect-desktop-register] .defect-register");
+        if (!register) return;
+
+        register.style.width = "100%";
+        register.style.minWidth = "0";
+        register.querySelectorAll("th, td").forEach((cell) => {
+            cell.style.overflowWrap = "anywhere";
+        });
+    }
+
+    function initInlineErrorClearing() {
+        document.querySelectorAll(".defect-form-row").forEach((row) => {
+            const errors = [...row.querySelectorAll(".errorlist")];
+            if (!errors.length) return;
+
+            let cleared = false;
+            const clear = () => {
+                if (cleared) return;
+                cleared = true;
+                errors.forEach((error) => error.remove());
+                row.querySelectorAll('[aria-invalid="true"]').forEach((control) => {
+                    control.removeAttribute("aria-invalid");
+                });
+            };
+
+            row.querySelectorAll("input, textarea, select").forEach((control) => {
+                control.addEventListener("input", clear, { once: true });
+                control.addEventListener("change", clear, { once: true });
+            });
+        });
+    }
+
     function compareItems(a, b, mode) {
         const numberA = Number(a.dataset.sortNumber || 0);
         const numberB = Number(b.dataset.sortNumber || 0);
@@ -206,6 +239,8 @@
     document.addEventListener("DOMContentLoaded", () => {
         initTimeTrust();
         initDateTimeControls();
+        initDesktopRegistryFit();
+        initInlineErrorClearing();
         initSorting();
     });
 })();
