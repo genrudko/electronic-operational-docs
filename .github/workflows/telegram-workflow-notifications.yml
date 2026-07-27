@@ -1,0 +1,179 @@
+name: EOD Telegram Workflow Notifications
+
+on:
+  workflow_run:
+    workflows:
+      - AUTO-001A Foundation CI
+      - AUTO-001B Controller CI
+      - EOD Development Stack
+      - EOD Documentation Contract
+      - EOD Trusted Development Controller
+    types:
+      - completed
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: telegram-workflow-notification-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    name: Telegram workflow notification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Send workflow result to Telegram
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          import html
+          import json
+          import os
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+
+          token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
+          chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
+          github_token = os.environ.get("GITHUB_TOKEN", "").strip()
+
+          if not token or not chat_id:
+              print("Telegram secrets are not configured; notification skipped.")
+              raise SystemExit(0)
+
+          event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
+          run = event.get("workflow_run") or {}
+
+          repository = str(run.get("repository", {}).get("full_name") or os.environ["GITHUB_REPOSITORY"])
+          workflow_name = str(run.get("name") or "GitHub Actions")
+          conclusion = str(run.get("conclusion") or "unknown").lower()
+          source_event = str(run.get("event") or "unknown")
+          branch = str(run.get("head_branch") or "unknown")
+          commit_sha = str(run.get("head_sha") or "")
+          sha_label = "Run SHA"
+          run_number = str(run.get("run_number") or "?")
+          run_attempt = str(run.get("run_attempt") or "1")
+          run_url = str(run.get("html_url") or "")
+          actor = str(run.get("actor", {}).get("login") or "unknown")
+
+          pull_requests = run.get("pull_requests") or []
+          pr_number = ""
+          pr_url = ""
+          if pull_requests:
+              pr_number = str(pull_requests[0].get("number") or "")
+              pr_url = str(pull_requests[0].get("url") or "")
+
+          # workflow_run.head_sha for pull_request_target may describe the run ref rather
+          # than the current PR head. Resolve the PR explicitly when the payload contains it.
+          if pr_number and github_token:
+              request = urllib.request.Request(
+                  f"https://api.github.com/repos/{repository}/pulls/{pr_number}",
+                  headers={
+                      "Accept": "application/vnd.github+json",
+                      "Authorization": f"Bearer {github_token}",
+                      "User-Agent": "eod-telegram-workflow-notifier",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                  },
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=15) as response:
+                      pull_request = json.load(response)
+                  resolved_sha = str(pull_request.get("head", {}).get("sha") or "")
+                  resolved_branch = str(pull_request.get("head", {}).get("ref") or "")
+                  resolved_url = str(pull_request.get("html_url") or "")
+                  if resolved_sha:
+                      commit_sha = resolved_sha
+                      sha_label = "PR head"
+                  if resolved_branch:
+                      branch = resolved_branch
+                  if resolved_url:
+                      pr_url = resolved_url
+              except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError) as exc:
+                  print(f"Unable to resolve PR head; using workflow payload: {exc}")
+
+          labels = {
+              "success": ("✅", "успешно"),
+              "failure": ("❌", "ошибка"),
+              "cancelled": ("⚪", "отменён"),
+              "skipped": ("⏭", "пропущен"),
+              "timed_out": ("⏱", "превышено время"),
+              "action_required": ("⚠️", "требуется действие"),
+              "neutral": ("ℹ️", "нейтрально"),
+              "stale": ("🕒", "устарел"),
+          }
+          icon, result_label = labels.get(conclusion, ("ℹ️", conclusion))
+
+          lines = [
+              f"{icon} <b>{html.escape(workflow_name)}: {html.escape(result_label)}</b>",
+              "",
+              f"<b>Репозиторий:</b> <code>{html.escape(repository)}</code>",
+              f"<b>Ветка:</b> <code>{html.escape(branch)}</code>",
+          ]
+          if commit_sha:
+              lines.append(
+                  f"<b>{html.escape(sha_label)}:</b> <code>{html.escape(commit_sha[:12])}</code>"
+              )
+          if pr_number:
+              if pr_url:
+                  lines.append(
+                      f'<b>Pull request:</b> <a href="{html.escape(pr_url, quote=True)}">#{html.escape(pr_number)}</a>'
+                  )
+              else:
+                  lines.append(f"<b>Pull request:</b> #{html.escape(pr_number)}")
+          lines.extend(
+              [
+                  f"<b>Запуск:</b> #{html.escape(run_number)} · попытка {html.escape(run_attempt)}",
+                  f"<b>Событие:</b> <code>{html.escape(source_event)}</code>",
+                  f"<b>Автор:</b> <code>{html.escape(actor)}</code>",
+              ]
+          )
+          if run_url:
+              lines.extend(["", f'<a href="{html.escape(run_url, quote=True)}">Открыть workflow run</a>'])
+
+          payload = urllib.parse.urlencode(
+              {
+                  "chat_id": chat_id,
+                  "text": "\n".join(lines),
+                  "parse_mode": "HTML",
+                  "disable_web_page_preview": "true",
+              }
+          ).encode()
+          endpoint = f"https://api.telegram.org/bot{token}/sendMessage"
+
+          last_error: Exception | None = None
+          for attempt in range(1, 4):
+              request = urllib.request.Request(
+                  endpoint,
+                  data=payload,
+                  headers={"Content-Type": "application/x-www-form-urlencoded"},
+                  method="POST",
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=20) as response:
+                      result = json.load(response)
+                  if not result.get("ok"):
+                      raise RuntimeError(f"Telegram API rejected the message: {result}")
+                  print("Telegram workflow notification sent.")
+                  raise SystemExit(0)
+              except SystemExit:
+                  raise
+              except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError, RuntimeError) as exc:
+                  last_error = exc
+                  print(f"Telegram delivery attempt {attempt}/3 failed: {exc}")
+                  if attempt < 3:
+                      time.sleep(2 ** attempt)
+
+          raise SystemExit(f"Telegram notification failed after 3 attempts: {last_error}")
+          PY
