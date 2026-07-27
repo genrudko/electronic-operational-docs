@@ -1,8 +1,8 @@
 # Public development access — ACCESS-001
 
-**Status:** implementation in Draft PR #17  
-**Target:** `https://5.181.177.72/`  
-**Scope:** development only  
+**Status:** implementation in Draft PR #17
+**Target:** `https://5.181.177.72/`
+**Scope:** development only
 **Preview:** must remain untouched
 
 ## 1. Purpose
