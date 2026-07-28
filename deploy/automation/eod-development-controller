@@ -765,7 +765,7 @@ main() {
             show_status
             ;;
         *)
-            fail "unsupported controller command"
+            fail "usage: eod-development-controller {ssh-gateway|rollback-pending|rollback-last|status}"
             ;;
     esac
 }
