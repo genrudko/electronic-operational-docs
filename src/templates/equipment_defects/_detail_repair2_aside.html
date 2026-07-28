@@ -61,7 +61,7 @@
     </section>
 
     <details class="defect-da-aside-card defect-history">
-        <summary>Аудит и история <span>{{ actions|length }}</span></summary>
+        <summary>Аудит и история <span class="visually-hidden">История действий</span> <span>{{ actions|length }}</span></summary>
         <ol class="defect-timeline">
             {% for action in actions %}
                 <li>
@@ -76,6 +76,7 @@
                 <li><div>Действия пока не зафиксированы.</div></li>
             {% endfor %}
         </ol>
+        <p class="defect-muted">Действия связываются с аутентифицированной учётной записью, сотрудником, должностью, системным временем и версией записи. Это не называется УКЭП и не отменяет рукописные подписи утверждённой бумажной формы.</p>
     </details>
 
     {% if ui_preferences.show_technical_details %}
