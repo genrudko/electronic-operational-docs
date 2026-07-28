@@ -4,63 +4,107 @@
 {% block title %}Регистрация дефекта · ЭОД{% endblock %}
 {% block main_class %}defect-main{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'equipment_defects/defects.css' %}?v=defect003">
-<script src="{% static 'equipment_defects/defects.js' %}?v=defect003" defer></script>
+<link rel="stylesheet" href="{% static 'equipment_defects/defects.css' %}?v=defect004">
+<link rel="stylesheet" href="{% static 'equipment_defects/ux_foundation.css' %}?v=uxf001">
+<link rel="stylesheet" href="{% static 'equipment_defects/ux_foundation_legacy_bridge.css' %}?v=uxf001">
+<link rel="stylesheet" href="{% static 'equipment_defects/ux_foundation_repair1.css' %}?v=uxf001r1">
+<script src="{% static 'equipment_defects/defects.js' %}?v=defect004" defer></script>
+<script src="{% static 'equipment_defects/ux_foundation_repair1.js' %}?v=uxf001r1" defer></script>
 {% endblock %}
 
 {% block content %}
-<section class="defect-form-wrap">
-    <header class="defect-form-heading compact">
-        <div class="defect-eyebrow">Журнал дефектов оборудования</div>
-        <h1>Регистрация выявленного дефекта</h1>
-        <p>Сначала фиксируется факт обнаружения. Срок, устранение, ознакомление и закрытие выполняются отдельными действиями.</p>
+<section class="defect-form-workspace">
+    <header class="defect-form-header">
+        <div>
+            <div class="defect-module-kicker">Журнал дефектов оборудования</div>
+            <h1>Регистрация выявленного дефекта</h1>
+            <p>Зафиксируйте только подтверждённый факт обнаружения. Срок, устранение, ознакомление и закрытие выполняются отдельными действиями.</p>
+        </div>
+        <div class="defect-form-steps" aria-label="Этапы работы с дефектом">
+            <div class="defect-form-step is-current"><strong>1. Обнаружение</strong><span>Факт и оборудование</span></div>
+            <div class="defect-form-step"><strong>2. Контроль</strong><span>Срок и ответственный</span></div>
+            <div class="defect-form-step"><strong>3. Завершение</strong><span>Устранение и закрытие</span></div>
+        </div>
     </header>
 
-    {% include "equipment_defects/_time_trust.html" %}
+    <div class="defect-form-layout">
+        <form class="defect-guided-form" method="post" novalidate data-time-sensitive-form>
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="nonfield">{{ form.non_field_errors }}</div>{% endif %}
 
-    {% if source_entry %}
-        <aside class="defect-linked-entry-card">
-            <span class="defect-linked-entry-label">Связь установлена автоматически</span>
-            <strong>Запись оперативного журнала № {{ source_entry.sequence_number }}</strong>
-            <time>{{ source_entry.event_at|date:"d.m.Y H:i" }}</time>
-            <p>{{ source_entry.content }}</p>
-        </aside>
-    {% endif %}
-
-    <form class="defect-form-card" method="post" novalidate data-time-sensitive-form>
-        {% csrf_token %}
-        {% if form.non_field_errors %}<div class="nonfield">{{ form.non_field_errors }}</div>{% endif %}
-        {% for field in form %}
-            {% if field.name == "operational_log_entry" %}
-                {% if source_entry %}
-                    <div class="defect-hidden-linked-field">{{ field }}</div>
-                {% else %}
-                    <details class="defect-log-link-picker">
-                        <summary>Связать с записью оперативного журнала <span>необязательно</span></summary>
-                        <div class="defect-form-row">
-                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                            {{ field }}
-                            {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
-                            {{ field.errors }}
-                        </div>
-                    </details>
-                {% endif %}
-            {% else %}
-                <div class="defect-form-row">
-                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
-                    {{ field.errors }}
+            <section class="defect-form-section">
+                <header>
+                    <h2>Факт обнаружения</h2>
+                    <p>Поля формируют первую запись утверждённого журнала.</p>
+                </header>
+                <div class="defect-form-grid">
+                    {% for field in form %}
+                        {% if field.name != "operational_log_entry" %}
+                            <div class="defect-form-row{% if field.name == 'defect_description' %} is-wide{% endif %}">
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                                {{ field.errors }}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
                 </div>
-            {% endif %}
-        {% endfor %}
-        <div class="defect-form-note">
-            Регистрация создаёт справочно-контрольную электронную запись. Печатная форма сохраняет графы утверждённого бумажного журнала.
-        </div>
-        <div class="defect-form-actions">
-            <button class="defect-button" type="submit">Зарегистрировать дефект</button>
-            <a class="defect-button secondary" href="{% url 'equipment_defects:registry' %}">Отмена</a>
-        </div>
-    </form>
+            </section>
+
+            <section class="defect-form-section">
+                <header>
+                    <h2>Связь с оперативным журналом</h2>
+                    <p>Основной сценарий — создать дефект непосредственно из записи оперативного журнала. Ручная привязка нужна только для уже существующей записи.</p>
+                </header>
+                {% for field in form %}
+                    {% if field.name == "operational_log_entry" %}
+                        {% if source_entry %}
+                            <div class="defect-hidden-linked-field">{{ field }}</div>
+                            <div class="defect-linked-entry-card">
+                                <span class="defect-linked-entry-label">Связь установлена автоматически</span>
+                                <strong>Запись № {{ source_entry.sequence_number }}</strong>
+                                <time>{{ source_entry.event_at|date:"d.m.Y H:i" }}</time>
+                                <p>{{ source_entry.content }}</p>
+                            </div>
+                        {% else %}
+                            <div class="defect-form-row is-wide">
+                                <label for="{{ field.id_for_label }}">Связать с записью оперативного журнала</label>
+                                {{ field }}
+                                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                                {{ field.errors }}
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </section>
+
+            <footer class="defect-form-footer">
+                <span class="defect-form-footer-note">Регистрация создаёт справочно-контрольную электронную запись. Печатная форма сохраняет графы утверждённого бумажного журнала.</span>
+                <div class="defect-form-actions">
+                    <button class="defect-button" type="submit">Зарегистрировать дефект</button>
+                    <a class="defect-button secondary" href="{% url 'equipment_defects:registry' %}">Отмена</a>
+                </div>
+            </footer>
+        </form>
+
+        <aside class="defect-form-context defect-screen-only">
+            <section class="defect-context-card">
+                <h2>Системное время и фиксация</h2>
+                {% include "equipment_defects/_time_trust.html" %}
+            </section>
+            <section class="defect-context-card">
+                <h2>Что произойдёт после регистрации</h2>
+                <ol>
+                    <li>Дефект появится в рабочем списке со статусом «Зарегистрирован».</li>
+                    <li>Ответственный пользователь назначит срок устранения.</li>
+                    <li>Каждое последующее действие сохранится в неизменяемой истории.</li>
+                </ol>
+            </section>
+            <section class="defect-context-card">
+                <h2>Важно</h2>
+                <p>Не объединяйте несколько разных неисправностей в одну запись. Формулировка должна однозначно описывать оборудование и наблюдаемый дефект.</p>
+            </section>
+        </aside>
+    </div>
 </section>
 {% endblock %}
