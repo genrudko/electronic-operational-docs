@@ -10,7 +10,7 @@
 
 ```text
 current main:
-37a2390a2a45e2abb73e60318d5429ed326efb53
+b75db8bc073e4b02a3254512e9b99d00f3e6e0e2
 
 accepted application baseline:
 937d2cd2b187c17fac3088ccfc52079fc4608306
@@ -18,28 +18,33 @@ accepted application baseline:
 AUTO-001A/B:
 ACCEPTED AND PRACTICALLY VERIFIED
 
-PLAN-001 evidence:
-ACCEPTED
+PLAN-001 / PR #7:
+MERGED / ACCEPTED
 
-selected next product vertical slice:
-DEFECT JOURNAL
+active product vertical slice:
+DEFECT-001 — SOURCE-BOUND EQUIPMENT DEFECT JOURNAL
+
+active branch:
+feature/defect-001-equipment-defect-journal
 
 active Draft PR:
-#7 / plan/001-evidence-audit / NOT MERGED
+#16 / OPEN / NOT MERGED
 ```
 
-PR #7 проходит последний узкий repair evidence-классификатора и canonical
-documentation. Функциональная реализация журнала дефектов до завершения этого
-gate не начинается.
+DEFECT-001 реализуется в dedicated source-bound слое поверх
+`apps.operational_documents`. Green CI или наличие кода не равны предметной и
+визуальной приёмке. Preview остаётся нетронутым; merge требует отдельной явной
+команды пользователя.
 
 ## Начать здесь
 
 1. [`../README.md`](../README.md) — назначение и входные точки.
 2. [`project/CURRENT_STATE.md`](project/CURRENT_STATE.md) — проверенные факты.
 3. [`project/CURRENT_HANDOFF.md`](project/CURRENT_HANDOFF.md) — текущий handoff.
-4. [`project/DOMAIN_INVARIANTS.md`](project/DOMAIN_INVARIANTS.md) — предметные правила.
-5. [`process/DEVELOPMENT_WORKFLOW.md`](process/DEVELOPMENT_WORKFLOW.md) — рабочий цикл.
-6. [`../AGENTS.md`](../AGENTS.md) — контракт AI-разработчика.
+4. [`project/DEFECT_001_IMPLEMENTATION.md`](project/DEFECT_001_IMPLEMENTATION.md) — source-bound контракт активного vertical slice.
+5. [`project/DOMAIN_INVARIANTS.md`](project/DOMAIN_INVARIANTS.md) — предметные правила.
+6. [`process/DEVELOPMENT_WORKFLOW.md`](process/DEVELOPMENT_WORKFLOW.md) — рабочий цикл.
+7. [`../AGENTS.md`](../AGENTS.md) — контракт AI-разработчика.
 
 ## Проект
 
@@ -47,6 +52,7 @@ gate не начинается.
 |---|---|
 | [`project/CURRENT_STATE.md`](project/CURRENT_STATE.md) | Фактический baseline, runtime, accepted work и ближайший gate |
 | [`project/CURRENT_HANDOFF.md`](project/CURRENT_HANDOFF.md) | Продолжение работы без восстановления по памяти |
+| [`project/DEFECT_001_IMPLEMENTATION.md`](project/DEFECT_001_IMPLEMENTATION.md) | Точный source-bound контракт журнала дефектов и текущие gates |
 | [`project/MASTER_PLAN.md`](project/MASTER_PLAN.md) | Актуальный продуктовый план после PLAN-001 |
 | [`project/ROADMAP.md`](project/ROADMAP.md) | Очередность этапов и decision gates |
 | [`project/OPEN_ITEMS.md`](project/OPEN_ITEMS.md) | Открытые блокеры и отложенные задачи |

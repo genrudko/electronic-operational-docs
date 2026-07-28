@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ record.registration_number }} · Журнал дефектов{% endblock %}
+{% block main_class %}defect-main{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'equipment_defects/defects.css' %}?v=defect003">
+<script src="{% static 'equipment_defects/defects.js' %}?v=defect003" defer></script>
+{% endblock %}
+
+{% block content %}
+<section class="defect-shell">
+    <header class="defect-detail-hero" data-status="{{ record.status_code }}">
+        <div class="defect-detail-heading">
+            <div class="defect-detail-kicker">Карточка дефекта · № {{ record.sequence_value }}</div>
+            <div class="defect-detail-title-row">
+                <h1>{% if row.equipment %}{{ row.equipment.dispatcher_name_snapshot }}{% else %}{{ record.registration_number }}{% endif %}</h1>
+                <span class="defect-status large" data-status="{{ record.status_code }}">{{ record.status_name_snapshot }}</span>
+            </div>
+            <p class="defect-detail-summary">{{ row.description }}</p>
+            <div class="defect-detail-meta">
+                <span>Обнаружен {{ record.event_at|date:"d.m.Y H:i" }}</span>
+                <span>{{ record.workplace_name_snapshot }}</span>
+                <span>{{ record.registration_number }}</span>
+            </div>
+        </div>
+        <div class="defect-header-actions defect-screen-only">
+            <a class="defect-button secondary" href="{% url 'equipment_defects:registry' %}">К журналу</a>
+            <a class="defect-button secondary" href="{% url 'equipment_defects:print' %}?volume={{ record.equipment_defect_context.volume.public_id }}">Печатная форма</a>
+        </div>
+    </header>
+
+    <div class="defect-detail-layout">
+        <div class="defect-detail-main">
+            <section class="defect-section subject-section">
+                <h2>Что произошло</h2>
+                <div class="defect-fact-grid">
+                    <div class="defect-fact wide"><span>Содержание дефекта</span><strong>{{ row.description }}</strong></div>
+                    <div class="defect-fact"><span>Оборудование</span><strong>{% if row.equipment %}{{ row.equipment.dispatcher_name_snapshot }}{% else %}Не указано{% endif %}</strong>{% if row.equipment %}<small>{{ row.equipment.site_name_snapshot }} · {{ row.equipment.equipment_type_snapshot }}</small>{% endif %}</div>
+                    <div class="defect-fact"><span>Обнаружил</span><strong>{% if row.discovered_by %}{{ row.discovered_by.employee_full_name_snapshot }}{% else %}—{% endif %}</strong>{% if row.discovered_by %}<small>{{ row.discovered_by.employee_position_snapshot }}</small>{% endif %}</div>
+                    <div class="defect-fact"><span>Зарегистрировал</span><strong>{{ record.created_by_full_name_snapshot }}</strong><small>{{ record.created_by_position_snapshot }}</small></div>
+                    <div class="defect-fact"><span>Дата обнаружения</span><strong>{{ record.event_at|date:"d.m.Y H:i" }}</strong></div>
+                </div>
+            </section>
+
+            <section class="defect-section subject-section">
+                <h2>Срок и ответственность</h2>
+                <div class="defect-fact-grid">
+                    <div class="defect-fact"><span>Текущий срок</span><strong>{{ row.deadline|default:"Не установлен" }}</strong></div>
+                    <div class="defect-fact"><span>Ответственный за эксплуатацию</span><strong>{% if row.operations_responsible %}{{ row.operations_responsible.employee_full_name_snapshot }}{% else %}Не назначен{% endif %}</strong>{% if row.operations_responsible %}<small>{{ row.operations_responsible.employee_position_snapshot }}</small>{% endif %}</div>
+                </div>
+                {% for extension in row.extensions %}
+                    <div class="defect-extension prominent">
+                        <strong>Срок устранения продлен</strong>
+                        <span>{{ extension.previous_deadline|date:"d.m.Y H:i" }} → {{ extension.new_deadline|date:"d.m.Y H:i" }}</span>
+                        <span>{{ extension.actor_full_name_snapshot }}, {{ extension.actor_position_snapshot }}</span>
+                        <span>Причина: {{ extension.comment }}</span>
+                    </div>
+                {% endfor %}
+            </section>
+
+            <section class="defect-section subject-section">
+                <h2>Результат устранения</h2>
+                <div class="defect-fact-grid">
+                    <div class="defect-fact"><span>Дата устранения</span><strong>{{ row.resolved_at|default:"Не устранён" }}</strong></div>
+                    <div class="defect-fact"><span>Ответственный за устранение</span><strong>{% if row.resolution_responsible %}{{ row.resolution_responsible.employee_full_name_snapshot }}{% else %}Не назначен{% endif %}</strong>{% if row.resolution_responsible %}<small>{{ row.resolution_responsible.employee_position_snapshot }}</small>{% endif %}</div>
+                    <div class="defect-fact wide"><span>Выполненные работы</span><strong>{{ row.work_summary|default:"—" }}</strong></div>
+                </div>
+            </section>
+
+            <section class="defect-section subject-section">
+                <h2>Ознакомление оперативного персонала</h2>
+                {% if row.acknowledgers %}
+                    <div class="defect-ack-list">
+                        {% for acknowledgement in row.acknowledgers %}
+                            <div><strong>{{ acknowledgement.actor_full_name_snapshot }}</strong><span>{{ acknowledgement.actor_position_snapshot }}</span><time>{{ acknowledgement.occurred_at|date:"d.m.Y H:i" }}</time></div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="defect-muted">Оперативный персонал ещё не ознакомился с записью об устранении.</p>
+                {% endif %}
+            </section>
+
+            {% if row.operational_log_link %}
+                <section class="defect-linked-entry-card in-detail">
+                    <span class="defect-linked-entry-label">Основание в оперативном журнале</span>
+                    <a href="{% url 'operational_log:detail' row.operational_log_link.operational_log_entry.journal_id %}#entry-{{ row.operational_log_link.operational_log_entry_id }}">
+                        Запись № {{ row.operational_log_link.entry_sequence_snapshot }} от {{ row.operational_log_link.entry_event_at_snapshot|date:"d.m.Y H:i" }}
+                    </a>
+                    <p>{{ row.operational_log_link.entry_content_snapshot }}</p>
+                </section>
+            {% endif %}
+
+            <details class="defect-section defect-history">
+                <summary>История действий <span>{{ actions|length }}</span></summary>
+                <ol class="defect-timeline">
+                    {% for action in actions %}
+                        <li><time>{{ action.occurred_at|date:"d.m.Y H:i:s" }}</time><div><strong>{{ action.get_action_code_display }}</strong><span>{{ action.actor_full_name_snapshot }}, {{ action.actor_position_snapshot }}</span>{% if action.comment %}<p>{{ action.comment }}</p>{% endif %}</div></li>
+                    {% empty %}<li><div>Действия пока не зафиксированы.</div></li>{% endfor %}
+                </ol>
+            </details>
+
+            {% if ui_preferences.show_technical_details %}
+                <details class="defect-section defect-technical technical-only">
+                    <summary>Технические реквизиты целостности</summary>
+                    <p>Тип: <code>{{ record.document_type.code }}</code></p>
+                    <p>Редакция формы: {{ record.schema_revision.revision_number }}</p>
+                    <p>SHA-256 формы: <code>{{ record.schema_revision.sha256 }}</code></p>
+                    <p>Версия записи: {{ record.version }}</p>
+                    {% for revision in record.revisions.all %}<p>Редакция {{ revision.revision_number }} · {{ revision.get_action_display }} · <code>{{ revision.sha256 }}</code></p>{% endfor %}
+                </details>
+            {% endif %}
+        </div>
+
+        <aside class="defect-detail-aside defect-screen-only">
+            <section class="defect-action-panel">
+                <h2>Действия</h2>
+                <div class="defect-action-stack">
+                    {% if can_confirm_deadline %}<a class="defect-button" href="{% url 'equipment_defects:confirm_deadline' record.public_id %}">Подтвердить срок</a>{% endif %}
+                    {% if can_extend_deadline %}<a class="defect-button secondary" href="{% url 'equipment_defects:extend_deadline' record.public_id %}">Продлить срок</a>{% endif %}
+                    {% if can_confirm_resolution %}<a class="defect-button" href="{% url 'equipment_defects:confirm_resolution' record.public_id %}">Подтвердить устранение</a>{% endif %}
+                    {% if can_acknowledge %}<form method="post" action="{% url 'equipment_defects:acknowledge' record.public_id %}" data-time-sensitive-form>{% csrf_token %}<button class="defect-button" type="submit">Ознакомиться</button></form>{% endif %}
+                    {% if can_close %}<form method="post" action="{% url 'equipment_defects:close' record.public_id %}" data-time-sensitive-form>{% csrf_token %}<button class="defect-button danger" type="submit">Закрыть дефект</button></form>{% endif %}
+                    {% if record.status_is_terminal %}<div class="defect-terminal-note">Запись закрыта и защищена от изменения.</div>{% elif not can_confirm_deadline and not can_extend_deadline and not can_confirm_resolution and not can_acknowledge and not can_close %}<p>Для текущего пользователя доступных действий нет.</p>{% endif %}
+                </div>
+            </section>
+
+            {% include "equipment_defects/_time_trust.html" %}
+
+            <details class="defect-action-panel defect-trust-details">
+                <summary>Как фиксируются действия</summary>
+                <p>Действия связываются с аутентифицированной учётной записью, сотрудником, должностью, системным временем, версией записи и SHA-256.</p>
+                <p>Это не называется УКЭП и не отменяет рукописные подписи утверждённой бумажной формы.</p>
+            </details>
+
+            <details class="defect-action-panel">
+                <summary>Том журнала</summary>
+                <p>Том {{ record.equipment_defect_context.volume.sequence_number }} · {{ record.equipment_defect_context.volume.workplace_name_snapshot }}</p>
+                <p>Начат {{ record.equipment_defect_context.volume.started_on|date:"d.m.Y" }}.{% if record.equipment_defect_context.volume.closed_on %} Окончен {{ record.equipment_defect_context.volume.closed_on|date:"d.m.Y" }}.{% endif %}</p>
+            </details>
+        </aside>
+    </div>
+</section>
+{% endblock %}

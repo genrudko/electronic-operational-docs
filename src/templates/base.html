@@ -1,4 +1,4 @@
-{% load static %}
+{% load static equipment_defect_tags %}
 <!doctype html>
 <html
     lang="ru"
@@ -25,6 +25,7 @@
     <link rel="icon" href="{% static 'system/favicon.svg' %}" type="image/svg+xml">
     <link rel="stylesheet" href="{% static 'system/app.css' %}?v=011702">
     <script src="{% static 'system/app.js' %}?v=011364" defer></script>
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
 <header class="topbar presentation-topbar">
@@ -54,6 +55,10 @@
             <a href="{% url 'operational_log:registry' %}" {% if request.resolver_match.namespace == 'operational_log' %}class="active"{% endif %}>
                 <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg>
                 <span>Оперативный журнал</span>
+            </a>
+            <a href="{% url 'equipment_defects:registry' %}" {% if request.resolver_match.namespace == 'equipment_defects' %}class="active"{% endif %}>
+                <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-journal"></use></svg>
+                <span>Журнал дефектов</span>
             </a>
             <a href="{% url 'operational_documents:registry' %}" {% if request.resolver_match.namespace == 'operational_documents' %}class="active"{% endif %}>
                 <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-journal"></use></svg>
@@ -117,7 +122,7 @@
         {% else %}
             <a class="primary-link" href="{% url 'organizations:login' %}">
                 <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-user"></use></svg>
-                Персональный вход
+                <span>Персональный вход</span>
             </a>
         {% endif %}
     </nav>
@@ -131,6 +136,58 @@
 
 <main class="{% block main_class %}{% endblock %}">
     {% block content %}{% endblock %}
+    {% operational_defect_entry_rows as operational_defect_rows %}
+    {% if operational_defect_rows %}
+        <section class="panel screen-only" aria-labelledby="operational-defect-links-title">
+            <div class="section-heading">
+                <div>
+                    <div class="eyebrow">СВЯЗЬ С ЖУРНАЛОМ ДЕФЕКТОВ</div>
+                    <h2 id="operational-defect-links-title">Зарегистрированные записи и дефекты</h2>
+                    <p>
+                        Из зарегистрированной записи можно создать связанный дефект;
+                        существующая связь показывается рядом с исходной записью.
+                    </p>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Запись</th>
+                            <th>Содержание</th>
+                            <th>Связанный дефект</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in operational_defect_rows %}
+                            <tr id="entry-{{ row.entry.pk }}">
+                                <td>
+                                    <strong>№ {{ row.entry.sequence_number }}</strong><br>
+                                    {{ row.entry.event_at|date:"d.m.Y H:i" }}
+                                </td>
+                                <td>{{ row.entry.content|truncatechars:260 }}</td>
+                                <td>
+                                    {% for link in row.defect_links %}
+                                        <a href="{% url 'equipment_defects:detail' link.record.public_id %}">
+                                            {{ link.record.registration_number }} —
+                                            {{ link.record.status_name_snapshot }}
+                                        </a>{% if not forloop.last %}<br>{% endif %}
+                                    {% empty %}
+                                        <a
+                                            class="button secondary"
+                                            href="{% url 'equipment_defects:create_from_operational_log' row.entry.pk %}"
+                                        >
+                                            Создать дефект
+                                        </a>
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    {% endif %}
 </main>
 
 <footer>

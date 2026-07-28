@@ -3,33 +3,41 @@
 **Дата проверки:** 26.07.2026
 
 ```text
+repository:
+genrudko/electronic-operational-docs
+
 accepted application baseline:
 main / 937d2cd2b187c17fac3088ccfc52079fc4608306
 
 current main history HEAD:
-37a2390a2a45e2abb73e60318d5429ed326efb53
+b75db8bc073e4b02a3254512e9b99d00f3e6e0e2
+
+last accepted work item:
+PLAN-001 / PR #7 / MERGED / ACCEPTED
+
+active work item:
+DEFECT-001 — Source-bound Equipment Defect Journal Vertical Slice
 
 active branch:
-plan/001-evidence-audit
+feature/defect-001-equipment-defect-journal
 
 active PR:
-#7 / OPEN / DRAFT / NOT MERGED
+#16 / OPEN / DRAFT / NOT MERGED
 ```
 
-## 1. Статус проекта
+## 1. Project boundary
 
 ЭОД — независимый демонстрационный прототип электронной оперативной
 документации для энергетики. Он не является официальной системой работодателя.
-Производственные серверы, реальные оперативные записи, реальные персональные
-данные и secrets предприятия не используются.
+Production servers, real operational records, real personal data and enterprise
+secrets are not used.
 
-GitHub является единственным источником кода и канонической документации. VPS
-является единственным runtime/test-контуром. Accepted preview и active
-development изолированы.
+GitHub is the only source of code and canonical documentation. VPS is the only
+runtime/test contour. Accepted preview and active development remain isolated.
 
-## 2. Принятые инфраструктурные этапы
+## 2. Accepted foundation
 
-Приняты и practically verified:
+Accepted and practically verified:
 
 - INFRA-001–003;
 - DOCS-001–003;
@@ -37,15 +45,16 @@ development изолированы.
 - AUTO-000;
 - AUTO-001A trusted-controller foundation;
 - AUTO-001B restricted VPS development controller;
-- repair trusted request validator.
+- trusted request validator repair;
+- PLAN-001 evidence audit and classifier repair.
 
-Текущий `main` — `37a2390a2a45e2abb73e60318d5429ed326efb53`.
+Current `main` is `b75db8bc073e4b02a3254512e9b99d00f3e6e0e2`.
 
-Штатный AUTO-001B маршрут:
+The accepted AUTO-001B route is:
 
 ```text
 trusted PR label
-→ пять green exact-head workflows
+→ five green exact-head workflows
 → trusted request validation from main
 → restricted forced SSH gateway
 → exact PR SHA fetch
@@ -55,10 +64,9 @@ trusted PR label
 → confirm or rollback
 ```
 
-Automatic merge отсутствует. Preview не используется и не изменяется
-controller’ом.
+Automatic merge is absent. The controller does not write to preview.
 
-## 3. Runtime-контуры
+## 3. Runtime contours
 
 ### Accepted preview
 
@@ -83,38 +91,10 @@ controller: /usr/local/sbin/eod-development-controller
 state: /srv/eod/automation/state
 ```
 
-Development больше не зависит от PR-controlled Git checkout или запуска
-PR-controlled host script от root.
+Development does not depend on a PR-controlled host checkout or a PR-controlled
+root script.
 
-## 4. PLAN-001 evidence
-
-Первый evidence run принят постоянным интеграционным Чатом 0:
-
-```text
-evidence exact head:
-fb313f270254720b0f7d7815fffc2cb05d577901
-
-evidence package SHA-256:
-58df47f83d1758d2e6aa8b32e1d5a70efb8c453454d8759e25d913e7f031619a
-
-result:
-ACCEPTED
-
-executed Django tests:
-502 / OK
-```
-
-Подтверждено:
-
-- development PostgreSQL `eod_development`;
-- exact release/image source parity;
-- migration drift отсутствует;
-- global executable gates passed;
-- manifest и payload checksums корректны;
-- preview остался healthy и untouched;
-- transaction `NONE`, pending run ID `NONE`.
-
-## 5. Решение интеграционного Чата 0
+## 4. PLAN-001 accepted decision
 
 ```text
 generic structured-journal core:
@@ -139,33 +119,64 @@ recommended first vertical slice:
 DEFECT JOURNAL
 ```
 
-Это ручное integration decision, а не machine verdict.
+This was a manual integration decision, not an automatic product-acceptance verdict.
 
-## 6. Фактическая функциональная готовность
+## 5. DEFECT-001 implementation status
 
-### Существенно реализовано
+Implemented in Draft PR #16:
 
-- организация, сотрудники, должности, рабочие места и базовые роли;
+- exact type `journal-equipment-defects`;
+- source reference `И-00-007-ОР-2025 версия 2`, section 11, appendix 8;
+- exact six-column working and print presentation;
+- dedicated registry, card and separate actions;
+- mandatory structured equipment link and dispatcher-name snapshot;
+- participant roles `DISCOVERED_BY`, `OPERATIONS_RESPONSIBLE`,
+  `RESOLUTION_RESPONSIBLE`, `OPERATIONAL_ACKNOWLEDGER`;
+- lifecycle `REGISTERED → IN_PROGRESS → RESOLVED → CLOSED`;
+- versioned deadline extension with old/new deadlines and exact wording
+  `Срок устранения продлен`;
+- authenticated action evidence tied to employee, position, time, record version,
+  canonical snapshot and SHA-256;
+- explicit immutable link to a registered operational-log entry;
+- minimum non-cloning volume contract;
+- deterministic five-state presentation dataset;
+- focused subject tests;
+- guard redirecting generic create/edit/transition routes to the specialized journal.
+
+Not yet proven on the final exact head:
+
+- focused test success;
+- full PostgreSQL suite;
+- five green exact-head workflows;
+- exact-SHA development deployment;
+- development health;
+- user product/visual acceptance.
+
+Therefore DEFECT-001 is `IN IMPLEMENTATION`, not accepted.
+
+## 6. Functional readiness
+
+### Substantially implemented
+
+- organization, personnel, positions and workplaces;
 - equipment/dispatching/import foundation;
-- документационное ядро;
-- документация рабочего места;
+- documentation core;
+- workplace-documentation registry;
 - specialized operational journal;
 - generic `apps.operational_documents` core;
 - source-bound catalog;
 - immutable revisions, snapshots, audit and links;
 - PostgreSQL CI/runtime foundation.
 
-### Частично
+### Current vertical slice
 
-- canonical equipment/personnel/workplace datasets;
-- operational rights and qualifications;
-- конкретные source-bound structured journals;
-- связь structured record ↔ operational-log entry;
-- operational-journal shift finalization/handover;
-- print/export/archive;
-- repeatable presentation reset.
+- equipment defect journal: implementation in Draft PR #16;
+- source-bound UI and print form: present in branch;
+- operational-log link: present in branch;
+- repeatable defect presentation data: present in branch;
+- technical and visual acceptance: pending.
 
-### Не реализовано как vertical slice
+### Not implemented as a vertical slice
 
 - work permits/orders lifecycle;
 - work-permit work journals;
@@ -173,53 +184,35 @@ DEFECT JOURNAL
 - automatic БП/ТБП/ТПП generation;
 - legally significant electronic signature.
 
-Журнал ключей остаётся paper-first.
+The key journal remains paper-first. The defect journal is explicitly a
+reference/control and demonstration contour with a printable approved form.
 
-## 7. Текущая работа
+## 7. Current gate
 
-PR #7 ещё не принят. Он выполняет узкий repair:
+1. Complete focused repairs in PR #16.
+2. Obtain one green focused/full PostgreSQL result on the final exact head.
+3. Obtain five green exact-head workflows.
+4. Apply `vps-development-refresh` only after the exact-head gate.
+5. Verify exact SHA and development health through trusted controller evidence.
+6. Keep preview untouched.
+7. Give the user only the development UI acceptance scenario.
+8. Keep PR Draft/not merged until a separate user merge command.
 
-- explicit ownership map вместо broad keyword readiness;
-- отдельные `absent`, `unknown`, `not applicable`;
-- runtime data classes:
-  `canonical`, `staging/import`, `presentation/demo`, `system/internal`;
-- source catalog отдельно от installed/published type и records;
-- manual Chat 0 decision в `REPORT.md`;
-- canonical documentation sync;
-- regression tests против false zero/false positive.
+## 8. Non-negotiable rules
 
-Product implementation Defect Journal до завершения этого gate не начинается.
+- End-user UI is Russian only.
+- Internals use professional technical English.
+- Operational journal remains specialized.
+- Other journals reuse the generic core through specialized source-bound layers.
+- The operator does not construct arbitrary working forms.
+- ЩПТ and ШОТ are one technical equipment family with source notation preserved.
+- Electronic confirmation is not called УКЭП or a legally significant signature.
+- Paper/hybrid/electronic modes are not declared legally equivalent without a
+  separate normative and organizational decision.
+- Real enterprise data and secrets are not committed.
+- User manual VPS commands for DEFECT-001 are zero.
+- Merge requires a separate explicit user command.
 
-## 8. Следующий gate PR #7
+## 9. Detailed work-item document
 
-1. Новый exact head.
-2. Пять green exact-head workflows.
-3. Обычный AUTO-001B exact-SHA deployment.
-4. Один последний evidence run.
-5. Manifest и ZIP SHA-256.
-6. Исправленная FACT MATRIX без известных false zero/false positive.
-7. Development health, transaction `NONE`, pending `NONE`.
-8. Preview health и `UNTOUCHED`.
-9. Draft/not merged.
-10. Отдельное решение пользователя о merge.
-
-## 9. Непереговорные правила
-
-- UI конечного пользователя только русский.
-- Internals используют professional technical English.
-- Оперативный журнал остаётся специализированным.
-- Остальные журналы используют общее ядро и source-bound формы.
-- Оператор не конструирует произвольные рабочие журналы.
-- ЩПТ и ШОТ — одна technical equipment family с сохранением обозначения.
-- Paper/hybrid/electronic modes не объявляются юридически эквивалентными без
-  нормативного основания.
-- Реальные данные и secrets не коммитятся.
-- Merge выполняется только по явной команде пользователя.
-
-## 10. Сохранённый source-bound контракт
-
-В проекте действует **source-bound каталог рабочих форм**. PLAN-001 — ревизия
-фактической реализации — подтвердила рабочий принцип: **один журнал полностью**
-доводится до automated and user acceptance, затем начинается следующий.
-
-Архитектурные маркеры: source-bound каталог рабочих форм; PLAN-001 — ревизия фактической реализации; один журнал полностью.
+See `docs/project/DEFECT_001_IMPLEMENTATION.md`.

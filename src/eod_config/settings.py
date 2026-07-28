@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     "apps.imports.apps.ImportsConfig",
     "apps.workplace_docs.apps.WorkplaceDocsConfig",
     "apps.operational_documents.apps.OperationalDocumentsConfig",
+    "apps.equipment_defects.apps.EquipmentDefectsConfig",
     "apps.operational_log.apps.OperationalLogConfig",
 ]
 
@@ -78,6 +79,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.equipment_defects.middleware.EquipmentDefectRouteGuardMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
