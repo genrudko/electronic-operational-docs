@@ -1,86 +1,130 @@
 # ЭОД — открытые вопросы и отложенные задачи
 
-**Актуализировано:** 27.07.2026
+**Актуализировано:** 28.07.2026
 
-## 1. Текущий work item — DEFECT-001
+## 1. Фактическое состояние после DEFECT-001
 
 ```text
-branch:
-feature/defect-001-equipment-defect-journal
+accepted product work item:
+DEFECT-001 / PR #16 / MERGED / ACCEPTED
 
-Draft PR:
-#16
+source head:
+79f3db7e5c47e1ac8ab2568028d06e4043c2c70e
 
-status:
-IMPLEMENTATION IN PROGRESS / NOT DEPLOYED / NOT ACCEPTED
+merge commit:
+883a108c8be2a8cd075846fdd175916917911ef6
 
-base main:
-b75db8bc073e4b02a3254512e9b99d00f3e6e0e2
+open product PR:
+NONE
 
 preview:
 UNTOUCHED
 ```
 
-Implemented in branch:
+Предметная и функциональная приёмка журнала дефектов выполнена. Текущий legacy-визуальный стиль не считается принятым целевым UX/UI.
 
-- exact source-bound type and immutable published revision;
-- source trace to И-00-007-ОР-2025 version 2, section 11, appendix 8;
-- exact six-column registry and browser-print representation;
-- mandatory structured equipment relation and dispatcher-name snapshot;
-- separate registered user and person who discovered the defect;
-- roles, guarded lifecycle and terminal lock;
-- separate deadline extension with previous/new deadline and immutable evidence;
-- acknowledgement before close;
-- explicit immutable operational-log entry relation;
-- minimum non-cloning volume contract;
-- dedicated UI and generic-route guard;
-- deterministic five-state presentation data;
-- focused tests and PostgreSQL concurrency test;
-- canonical documentation for the active slice.
+## 2. Следующий active item — DEV-FAST-001
 
-Still open before product acceptance:
+```text
+issue:
+#18 — Trusted hot refresh from PR comment
 
-1. stable final exact head;
-2. Ruff/compile/Django/migration checks;
-3. focused source-bound test pass;
-4. one full PostgreSQL suite on final exact head;
-5. all five exact-head workflows green;
-6. trusted `vps-development-refresh` deployment;
-7. exact-SHA controller evidence and healthy development runtime;
-8. preview proof remains `UNTOUCHED`;
-9. user product and visual review;
-10. separate explicit merge command.
+status:
+READY TO START / IMPLEMENTATION NOT STARTED
+```
 
-The user performs no VPS commands, test runs, log collection, patch application or
-configuration edits.
+Цель — убрать повторяющееся ожидание полного CI/deployment при каждом малом presentation repair.
 
-## 2. DEFECT-001 acceptance risks to verify
+Требуемый контракт:
 
-- published schema remains exactly source-bound and immutable;
-- no generic create/edit/transition bypass exists;
-- equipment link cannot be omitted;
-- `created_by` and `DISCOVERED_BY` remain independent;
-- deadline extension never silently replaces history;
-- close cannot bypass resolution and acknowledgement;
-- terminal record cannot be changed or physically deleted;
-- cross-organization equipment/person/log relations are rejected;
-- action snapshot and SHA-256 remain consistent;
-- new volume never clones or moves unresolved records;
-- old volume end date equals the Europe/Moscow local resolution date of the last
-  unresolved defect;
-- volume start and end dates use one timezone-aware Europe/Moscow date rule;
-- print view has exactly the six approved columns and no technical fields;
-- presentation reset remains deterministic and idempotent;
-- UI states clearly that the contour does not replace the mandatory paper original
-  and does not claim УКЭП.
+```text
+profile repair
+→ focused checks
+→ /eod-hot-refresh <exact-head-sha>
+→ actor / PR / exact SHA / path policy
+→ restricted development-only overlay
+→ collectstatic / restart / health
+→ immediate user check
+```
 
-## 3. Operational Journal
+Разрешённые пути первой версии:
 
-Blocking lifecycle gaps outside DEFECT-001:
+- `src/templates/**`;
+- `src/static/**`.
+
+Явно запрещены:
+
+- models и migrations;
+- settings, URLs, services и management commands;
+- dependencies, Dockerfile и Compose;
+- database operations и presentation reset;
+- preview;
+- automatic merge.
+
+Открытые решения внутри DEV-FAST-001:
+
+1. точный формат служебной PR-команды;
+2. allowlist и проверка diff относительно deployed/base state;
+3. backup/rollback presentation files;
+4. state marker с overlay SHA;
+5. безопасное возвращение к полноценному exact-SHA deployment;
+6. профильные тесты workflow/controller boundary;
+7. однократный final security/runtime gate перед merge.
+
+## 3. ACCESS-001 / PR #17
+
+ACCESS-001 создавался для публичного HTTPS-доступа к development через nginx/Certbot.
+
+Фактическое решение пользовательской задачи было достигнуто более простым host-local механизмом включения/выключения доступа. Большой PR больше не является текущим приоритетом и не должен смешиваться с DEV-FAST-001.
+
+Целевое состояние:
+
+```text
+PR #17:
+CLOSED / NOT MERGED / SUPERSEDED
+
+branch:
+may remain for history
+
+future HTTPS work:
+only by separate explicit decision
+```
+
+## 4. UX/UI foundation
+
+После DEV-FAST-001 требуется узкий общий UI-layer на основе принятого журнала дефектов:
+
+- application shell;
+- навигация;
+- registry/table patterns;
+- mobile list/card patterns;
+- поиск, фильтры и сортировка;
+- формы и date/time controls;
+- статусы и action hierarchy;
+- validation/notifications;
+- typography, spacing, density и CSS tokens.
+
+Цель — создать повторно используемые компоненты перед следующим журналом, а не проводить полную декоративную переработку всего приложения.
+
+## 5. Следующие structured journals
+
+Очередность:
+
+1. Журнал заявок.
+2. Журнал распоряжений.
+3. Ввод оборудования в работу.
+4. РЗА и телемеханика.
+5. Журналы работ — после нормативного решения.
+
+Каждый журнал требует source traceability, специализированных правил, dedicated UI, связей, presentation data, automated gates и user acceptance. Generic registry сам по себе не считается законченным журналом.
+
+## 6. Operational Journal
+
+Blocking lifecycle gaps:
 
 - draft → immutable registered entry;
 - handover preparation;
-- сдача/приёмка;
+- сдача/приёмка смены;
 - close shift;
 - unfinished draft checks;
 - signatures/action evidence.
@@ -95,53 +139,36 @@ Editor/stability backlog:
 - no page jump outside sheet;
 - templates, abbreviations and suggestions.
 
-DEFECT-001 uses only registered entries as an optional basis and does not expand
-these unfinished lifecycles.
+## 7. Data
 
-## 4. Data
+Остаётся открытым:
 
-Open after the active slice:
-
-- publish accepted canonical power-system dataset;
-- distinguish staging from publication;
+- публикация accepted canonical power-system dataset;
+- разделение staging/import и canonical publication;
 - personnel rights and qualifications;
 - personnel/workplace source publications;
-- unified deterministic presentation reset beyond the defect slice;
+- unified deterministic presentation reset beyond defect journal;
 - managed RU→EN domain lexicon;
-- preserve common ЩПТ/ШОТ equipment family.
+- сохранение общей ЩПТ/ШОТ technical equipment family.
 
-## 5. Structured Journals
+## 8. Work permits and orders
 
-After DEFECT-001 acceptance and merge decision:
-
-- Application Journal;
-- Disposition Journal;
-- Equipment Commissioning;
-- RZA/Telemechanics;
-- work journals after normative decision.
-
-Each requires source traceability, specialized rules, dedicated UI, links,
-presentation data, automated gates and user acceptance. A generic registry alone is
-not a completed journal.
-
-## 6. Work permits and orders
-
-Open normative/product questions:
+Открытые нормативные и продуктовые вопросы:
 
 - original mode;
-- separate work journals;
-- target briefings;
-- primary/daily admission;
-- crew changes;
-- workplace transfers;
-- suspension/resumption;
-- completion/closure/storage;
+- отдельные журналы работ;
+- целевые инструктажи;
+- первичный/ежедневный допуск;
+- изменения состава бригады;
+- переводы на другое рабочее место;
+- приостановка/возобновление;
+- завершение/закрытие/хранение;
 - signatures/action evidence;
-- current-operation work lists.
+- перечни эксплуатационных работ.
 
-## 7. Switching
+## 9. Switching
 
-Minimum contour remains open:
+Минимальный контур:
 
 - registry/card;
 - types/statuses;
@@ -152,48 +179,50 @@ Minimum contour remains open:
 - operational-log link;
 - manual operation sequence.
 
-Automatic generation/topology/interlocks remain later.
+Automatic generation, topology и interlocks остаются позже.
 
-## 8. Keys journal
+## 10. Keys journal
 
-Paper-first:
+Paper-first boundary:
 
-- paper remains working original;
-- full electronic issue/return lifecycle is not mandatory;
-- optional reference/control contour requires separate decision.
+- бумажный журнал остаётся рабочим оригиналом;
+- полный электронный issue/return lifecycle не является обязательным для первого прототипа;
+- optional reference/control contour требует отдельного решения.
 
-## 9. UX-001
+## 11. Quality and deployment follow-ups
 
-Still provisional:
+### CI diagnostics — implemented
 
-- visual acceptance pending;
-- accepted tokens absent;
-- DEFECT-001 is the first real structured-journal reference implementation;
-- product correctness takes priority over cosmetic parallel work.
+В `main` добавлено сохранение компактной диагностики Django failures и полного `django-test.log` в artifact. Это не заменяет точное расследование, но исключает зависимость от обрезанного connector log для будущих падений.
 
-## 10. Infrastructure
+### CI-OPT-001 — deferred
 
-AUTO-001A/B are accepted. Only evidence-driven follow-ups remain open:
+После стабилизации DEV-FAST-001:
 
-- credential rotation/revoke procedure;
-- stale-lock recovery evidence;
-- artifact retention;
-- backup policy for future migration-heavy product slices;
-- browser automation after product scenarios stabilize.
+- один полный PostgreSQL suite на final exact head;
+- отсутствие повторного полного suite на VPS deployment;
+- migration/runtime/presentation smoke при deployment;
+- path-based gates без ослабления required checks;
+- optional nightly full suite.
 
-### CI-OPT-001 — after DEFECT-001
+### DATA-DEPLOY-001 — deferred
+
+Убрать безусловную presentation seed-логику из `post_migrate`:
 
 ```text
-status: FOLLOW-UP
-implementation in DEFECT-001: FORBIDDEN
+migrate
+→ explicit presentation seed
+→ explicit seed result
+→ runtime smoke
 ```
 
-After DEFECT-001 acceptance, redesign the quality/deployment gates so that:
+## 12. Непереговорные границы
 
-- the full PostgreSQL suite runs once in GitHub CI on the exact head;
-- VPS deployment does not repeat the full suite;
-- deployment runs migration, runtime and presentation smoke checks;
-- path-based workflow gates skip unrelated jobs without weakening required checks.
-
-DEFECT-001 does not create a new controller, gateway, workflow or automation layer.
-Automatic merge and preview write remain forbidden.
+- GitHub — единственный источник кода и canonical docs;
+- VPS — runtime/test contour, а не источник кода;
+- preview не используется для разработки;
+- automatic merge запрещён;
+- пользователь не выполняет штатные VPS-команды для функциональных PR;
+- микро-repair получают профильные проверки и быстрый refresh;
+- полный gate выполняется один раз на final exact head;
+- контекст обновляется после merge, смены приоритета, появления нового active PR и перед handoff.
