@@ -1,0 +1,71 @@
+<section class="defect-journal-view" data-defect-view-panel="journal" hidden aria-label="Утверждённая форма журнала">
+    <header class="defect-journal-view-header">
+        <div>
+            <strong>Утверждённая форма журнала</strong>
+            <span>{{ source.document }}, раздел {{ source.section }}, приложение № {{ source.appendix }}</span>
+        </div>
+        <span>Экранная нумерация не входит в печатную форму.</span>
+    </header>
+
+    <div class="defect-register-wrap" data-defect-desktop-register>
+        <table class="defect-register" aria-label="Журнал дефектов оборудования">
+            <thead>
+                <tr>
+                    <th class="defect-number-column" scope="col">№</th>
+                    <th scope="col">Дата обнаружения дефекта</th>
+                    <th scope="col">Наименование ЛЭП, оборудования, устройства, содержание дефекта, Ф.И.О., подпись лица, обнаружившего дефект</th>
+                    <th scope="col">Срок устранения, Ф.И.О., подпись ответственного лица за эксплуатацию ЛЭП, оборудования, устройства, сооружения, здания</th>
+                    <th scope="col">Дата устранения дефекта, Ф.И.О., подпись ответственного лица за его устранение</th>
+                    <th scope="col">Содержание выполненных работ по устранению дефекта</th>
+                    <th scope="col">Ф.И.О., подписи оперативного персонала</th>
+                </tr>
+            </thead>
+            <tbody data-defect-sort-container>
+                {% for row in rows %}
+                    <tr
+                        data-defect-sortable-item
+                        data-defect-row-link
+                        data-detail-url="{% url 'equipment_defects:detail' row.record.public_id %}"
+                        data-status="{{ row.record.status_code }}"
+                        data-sort-number="{{ row.record.sequence_value }}"
+                        data-sort-event="{{ row.record.event_at|date:'U' }}"
+                        data-sort-equipment="{% if row.equipment %}{{ row.equipment.dispatcher_name_snapshot }}{% endif %}"
+                    >
+                        <td class="defect-number-column" data-column-title="Номер">
+                            <a class="defect-sequence-number" href="{% url 'equipment_defects:detail' row.record.public_id %}" aria-label="Открыть дефект № {{ row.record.sequence_value }}">{{ row.record.sequence_value }}</a>
+                        </td>
+                        <td data-column-title="Дата обнаружения">
+                            <strong>{{ row.record.event_at|date:"d.m.Y" }}</strong>
+                            <span class="defect-record-time">{{ row.record.event_at|date:"H:i" }}</span>
+                            <span class="defect-status" data-status="{{ row.record.status_code }}">{{ row.record.status_name_snapshot }}</span>
+                            <span class="defect-record-number">{{ row.record.registration_number }}</span>
+                        </td>
+                        <td data-column-title="Оборудование и дефект">
+                            {% if row.equipment %}<span class="defect-cell-equipment">{{ row.equipment.dispatcher_name_snapshot }}</span>{% endif %}
+                            <a class="defect-description-link" href="{% url 'equipment_defects:detail' row.record.public_id %}">{{ row.description }}</a>
+                            {% if row.discovered_by %}<span class="defect-cell-person">Обнаружил: <strong>{{ row.discovered_by.employee_full_name_snapshot }}</strong>{{ row.discovered_by.employee_position_snapshot }}</span>{% endif %}
+                        </td>
+                        <td data-column-title="Срок и ответственный">
+                            {% if row.deadline %}<strong>{{ row.deadline }}</strong>{% else %}<span class="defect-muted">Срок не установлен</span>{% endif %}
+                            {% if row.operations_responsible %}<span class="defect-cell-person"><strong>{{ row.operations_responsible.employee_full_name_snapshot }}</strong>{{ row.operations_responsible.employee_position_snapshot }}</span>{% endif %}
+                            {% for extension in row.extensions %}<div class="defect-extension"><strong>Срок устранения продлен</strong><br>до {{ extension.new_deadline|date:"d.m.Y H:i" }}</div>{% endfor %}
+                        </td>
+                        <td data-column-title="Устранение">
+                            {% if row.resolved_at %}<strong>{{ row.resolved_at }}</strong>{% else %}<span class="defect-muted">Не устранён</span>{% endif %}
+                            {% if row.resolution_responsible %}<span class="defect-cell-person"><strong>{{ row.resolution_responsible.employee_full_name_snapshot }}</strong>{{ row.resolution_responsible.employee_position_snapshot }}</span>{% endif %}
+                        </td>
+                        <td data-column-title="Выполненные работы">
+                            {% for extension in row.extensions %}<div class="defect-extension"><strong>Срок устранения продлен</strong><br>Новый срок: {{ extension.new_deadline|date:"d.m.Y H:i" }}.<br>Причина: {{ extension.comment }}</div>{% endfor %}
+                            {% if row.work_summary %}<p>{{ row.work_summary }}</p>{% elif not row.extensions %}<span>—</span>{% endif %}
+                        </td>
+                        <td data-column-title="Ознакомление">
+                            {% for acknowledgement in row.acknowledgers %}<span class="defect-cell-person"><strong>{{ acknowledgement.actor_full_name_snapshot }}</strong>{{ acknowledgement.actor_position_snapshot }}<br>{{ acknowledgement.occurred_at|date:"d.m.Y H:i" }}</span>{% empty %}<span>—</span>{% endfor %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td class="defect-empty" colspan="7">Записей по выбранным условиям нет.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
