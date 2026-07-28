@@ -5,11 +5,22 @@ import zipfile
 from xml.sax.saxutils import escape
 
 
+_ZIP_TIMESTAMP = (2026, 7, 22, 0, 0, 0)
+
+
 def _column_number(column: str) -> int:
     result = 0
     for character in column:
         result = result * 26 + ord(character) - ord("A") + 1
     return result
+
+
+def _write_archive_text(archive: zipfile.ZipFile, path: str, content: str) -> None:
+    info = zipfile.ZipInfo(path, date_time=_ZIP_TIMESTAMP)
+    info.compress_type = zipfile.ZIP_DEFLATED
+    info.create_system = 3
+    info.external_attr = 0o600 << 16
+    archive.writestr(info, content.encode("utf-8"))
 
 
 def synthetic_personnel_workbook() -> bytes:
@@ -162,9 +173,9 @@ def synthetic_personnel_workbook() -> bytes:
     )
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr("[Content_Types].xml", content_types)
-        archive.writestr("_rels/.rels", root_relationships)
-        archive.writestr("xl/workbook.xml", workbook)
-        archive.writestr("xl/_rels/workbook.xml.rels", relationships)
-        archive.writestr("xl/worksheets/sheet1.xml", worksheet)
+        _write_archive_text(archive, "[Content_Types].xml", content_types)
+        _write_archive_text(archive, "_rels/.rels", root_relationships)
+        _write_archive_text(archive, "xl/workbook.xml", workbook)
+        _write_archive_text(archive, "xl/_rels/workbook.xml.rels", relationships)
+        _write_archive_text(archive, "xl/worksheets/sheet1.xml", worksheet)
     return buffer.getvalue()
