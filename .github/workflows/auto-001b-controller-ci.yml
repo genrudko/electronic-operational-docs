@@ -27,7 +27,21 @@ jobs:
           show-progress: false
 
       - name: Run current architectural gate compatibility
-        run: python scripts/gate_patch_011_7.py
+        id: architectural-gate
+        shell: bash
+        run: |
+          set -o pipefail
+          python scripts/gate_patch_011_7.py 2>&1 | tee architectural-gate.log
+
+      - name: Upload architectural gate diagnostics
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dev-fast-001-architectural-gate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: architectural-gate.log
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
 
       - name: Set up Python 3.13
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
