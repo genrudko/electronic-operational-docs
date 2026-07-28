@@ -25,7 +25,7 @@ def _read_with_current_canonical_state(relative: str) -> str:
     if relative == "docs/project/CURRENT_HANDOFF.md":
         core.require(
             text,
-            "last accepted product merge:",
+            "Последний accepted product merge:",
             "883a108c8be2a8cd075846fdd175916917911ef6",
             "#18 — DEV-FAST-001: Trusted hot refresh from PR comment",
             "Merge выполняется только по отдельной явной команде пользователя.",
