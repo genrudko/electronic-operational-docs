@@ -5,6 +5,7 @@
 {% block main_class %}defect-main{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'equipment_defects/defects.css' %}?v=defect004">
+<link rel="stylesheet" href="{% static 'equipment_defects/ux_foundation.css' %}?v=uxf001">
 <script src="{% static 'equipment_defects/defects.js' %}?v=defect004" defer></script>
 {% endblock %}
 
@@ -35,10 +36,10 @@
 
     <nav class="defect-status-strip defect-screen-only" aria-label="Быстрый фильтр по состоянию">
         <a class="defect-summary-chip{% if not filters.status %} active{% endif %}" href="{% url 'equipment_defects:registry' %}">
-            <span>Все</span><strong>{{ counts.total }}</strong>
+            <span>Все записи</span><strong>{{ counts.total }}</strong>
         </a>
         <a class="defect-summary-chip registered{% if filters.status == 'REGISTERED' %} active{% endif %}" href="?status=REGISTERED">
-            <span>Без срока</span><strong>{{ counts.registered }}</strong>
+            <span>Зарегистрированы</span><strong>{{ counts.registered }}</strong>
         </a>
         <a class="defect-summary-chip in-progress{% if filters.status == 'IN_PROGRESS' %} active{% endif %}" href="?status=IN_PROGRESS">
             <span>В работе</span><strong>{{ counts.in_progress }}</strong>
@@ -59,7 +60,7 @@
                 type="search"
                 name="q"
                 value="{{ filters.q }}"
-                placeholder="Поиск: оборудование, содержание, сотрудник, номер"
+                placeholder="Поиск по оборудованию, описанию, сотруднику или номеру"
             >
         </div>
         <div class="defect-sort-field">
@@ -106,7 +107,7 @@
                 </div>
             </div>
         </details>
-        <button class="defect-button" type="submit">Показать</button>
+        <button class="defect-button" type="submit">Применить</button>
         <a class="defect-button secondary" href="{% url 'equipment_defects:registry' %}">Сбросить</a>
     </form>
 
@@ -114,7 +115,11 @@
         <div class="defect-active-filters defect-screen-only" aria-label="Активные фильтры">
             <span>Активные условия:</span>
             {% if filters.q %}<span class="defect-filter-chip">Поиск: {{ filters.q }}</span>{% endif %}
-            {% if filters.status %}<span class="defect-filter-chip">Состояние: {{ filters.status }}</span>{% endif %}
+            {% if filters.status %}
+                {% for code, label in status_options %}
+                    {% if filters.status == code %}<span class="defect-filter-chip">Состояние: {{ label }}</span>{% endif %}
+                {% endfor %}
+            {% endif %}
             {% if filters.equipment %}<span class="defect-filter-chip">Оборудование выбрано</span>{% endif %}
             {% if filters.date_from %}<span class="defect-filter-chip">С {{ filters.date_from }}</span>{% endif %}
             {% if filters.date_to %}<span class="defect-filter-chip">По {{ filters.date_to }}</span>{% endif %}
