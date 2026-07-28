@@ -3,38 +3,36 @@
 **Проект:** Электронная оперативная документация (ЭОД)  
 **Репозиторий:** `genrudko/electronic-operational-docs`  
 **Дата handoff:** 28.07.2026  
-**Назначение:** восстановление основного интеграционного контекста без опоры на память чата.
+**Назначение:** восстановление основного интеграционного контекста и передача нового work item в отдельный implementation-чат.
 
 ---
 
-## 1. Роль основного интеграционного чата
+## 1. Роли чатов
 
-Основной чат отвечает за:
+Основной интеграционный чат отвечает за:
 
 - архитектурные и процессные решения;
-- проверку фактического состояния GitHub;
 - baseline и accepted state;
-- выбор и запуск новых work item;
-- анализ межмодульных и инфраструктурных рисков;
+- выбор нового work item;
 - итоговую пользовательскую приёмку;
 - отдельное разрешение на merge.
 
-Implementation chats являются расходуемыми рабочими сессиями. Один work item может продолжаться в нескольких чатах, но сохраняет одну ветку и один PR.
+Implementation-чат отвечает за фактическую разработку одного work item, профильные проверки, быстрые development refresh и обработку пользовательских замечаний.
 
 ```text
 work item = одна ветка + один PR
 implementation chat = рабочая сессия
 ```
 
+UX-FOUNDATION-001 должен выполняться в отдельном implementation-чате. Финальное решение о приёмке и merge возвращается в Chat 0.
+
 ---
 
 ## 2. Непереговорные правила
 
 - GitHub — единственный источник кода и canonical documentation.
-- VPS — единственный runtime/test-контур.
-- Локальный репозиторий пользователя не используется как источник истины.
+- VPS — runtime/test-контур, а не источник кода.
 - Пользователь не редактирует код и не выполняет штатные VPS-команды для функциональных PR.
-- Пользователь выполняет предметную, функциональную и визуальную приёмку.
 - Preview не используется для разработки и не изменяется без отдельного решения.
 - Automatic merge запрещён.
 - Merge выполняется только после отдельной явной команды пользователя.
@@ -43,69 +41,41 @@ implementation chat = рабочая сессия
 - Реальные персональные, производственные оперативные данные и enterprise secrets в Git не помещаются.
 - Проект является независимым прототипом, а не официальной системой работодателя.
 
----
-
-## 3. Принцип минимально достаточного решения
+### Минимально достаточное решение
 
 Всегда выбирается наименьшее решение, которое достигает текущей цели и покрывает доказанные риски.
 
-Не создавать большой work item, архитектуру, инфраструктурный контур или release cycle, когда достаточно локального обратимого изменения.
-
-Сложность должна быть оправдана конкретным требованием, угрозой или ограничением. Лишняя работа сама является риском: увеличивает время, поверхность ошибок, стоимость проверки и блокирует пользователя.
-
-### Acceptance loop
-
-Во время серии пользовательских замечаний:
+Во время серии визуальных замечаний:
 
 ```text
 micro-repair
 → focused/profile checks
-→ быстрый development refresh
+→ trusted hot refresh
 → пользовательская проверка
 ```
 
-Не выполнять после каждого малого изменения:
-
-- полный PostgreSQL suite;
-- пять exact-head workflows;
-- rebuild;
-- полноценный trusted deployment;
-- отдельный PR или work item.
-
-Один полный final gate выполняется после подтверждения отсутствия новых замечаний и перед merge.
+Полный PostgreSQL suite, пять exact-head workflows и полноценный trusted deployment не запускаются после каждого малого изменения. Один полный final gate выполняется на окончательном head перед merge.
 
 ---
 
-## 4. Фактический baseline
+## 3. Фактический baseline
 
-Последний accepted product merge:
+Текущий `main` после завершения DEV-FAST-001 repair:
 
 ```text
-DEFECT-001 / PR #16
+6959b9767ce411e74fc4788d5da8dac97f41018f
+Merge PR #21: DEV-FAST-001 container overlay repair
+```
+
+Последний принятый продуктовый vertical slice:
+
+```text
+DEFECT-001 / PR #16 / MERGED / ACCEPTED
 source head:
 79f3db7e5c47e1ac8ab2568028d06e4043c2c70e
-
 merge commit:
 883a108c8be2a8cd075846fdd175916917911ef6
 ```
-
-Документационная синхронизация после merge:
-
-```text
-ROADMAP:
-015bdc9bd93f76bc55e619eecbebd726c578dd6b
-
-OPEN_ITEMS:
-a9f6ebd5cdb383837aadb2dbc6790778d8d81cd6
-```
-
-Текущий `main` на старте DEV-FAST-001:
-
-```text
-54990c386c40dd7bd854330e61ed7285649ef120
-```
-
-Accepted product baseline определяется merge commit `883a108c...`, а не устаревшими SHA из старых handoff.
 
 Accepted application baseline, используемый в проектной документации:
 
@@ -113,99 +83,111 @@ Accepted application baseline, используемый в проектной д
 937d2cd2b187c17fac3088ccfc52079fc4608306
 ```
 
+На момент handoff открытых PR нет.
+
 ---
 
-## 5. DEFECT-001 — завершён и принят
+## 4. DEFECT-001 — reference product slice
 
-```text
-PR:
-#16 / CLOSED / MERGED
+Журнал дефектов принят предметно и функционально.
 
-five exact-head workflows:
-GREEN
+Реализовано:
 
-full PostgreSQL/Django suite:
-SUCCESS
-
-trusted development deployment:
-SUCCESS
-
-user acceptance:
-CONFIRMED
-
-preview:
-UNTOUCHED
-```
-
-Принятый scope:
-
-- source-bound журнал дефектов по И-00-007-ОР-2025, версия 2, раздел 11, приложение 8;
+- source-bound форма по И-00-007-ОР-2025, версия 2, раздел 11, приложение 8;
 - published type `journal-equipment-defects`;
-- шесть утверждённых граф в рабочем и печатном представлении;
-- dedicated registry/card/actions/print;
+- dedicated registry, card, actions and print;
 - обязательная связь с оборудованием и snapshot диспетчерского наименования;
-- роли участников;
 - lifecycle `REGISTERED → IN_PROGRESS → RESOLVED → CLOSED`;
 - отдельное versioned продление срока;
 - immutable action evidence;
 - explicit immutable operational-log link;
-- минимальный non-cloning contract томов;
 - deterministic presentation dataset;
 - desktop/mobile representation;
-- клик по неинтерактивной части строки открывает карточку, не перехватывая ссылки, кнопки, поля и выделение текста.
+- открытие карточки кликом по неинтерактивной части строки без перехвата ссылок, кнопок, полей и выделения текста.
 
-Текущий визуальный стиль является legacy-интерфейсом и не считается принятым целевым UX/UI.
+Текущий визуальный стиль DEFECT-001 является legacy-интерфейсом и не считается принятым целевым UX/UI.
 
 ---
 
-## 6. CI diagnostics
+## 5. DEV-FAST-001 — завершён
 
-Прямо в `main` добавлен узкий механизм сохранения диагностик Django failures:
+GitHub issue:
 
 ```text
-commit:
-14db8089ae3b79d8ef6ae0b3f3293f3724770f48
-
-message:
-CI: preserve actionable Django failure diagnostics
+#18 — DEV-FAST-001: Trusted hot refresh from PR comment
+CLOSED / COMPLETED
 ```
 
-При падении полного Django suite workflow сохраняет:
-
-- `django-test-failure.txt` — компактные failing test names, traceback и итоговый блок;
-- `django-test.log` — полный вывод;
-- Step Summary;
-- artifact `django-test-diagnostics-<run_id>`.
-
-Правило: до получения точного failing test и traceback причина считается гипотезой, а не установленным фактом.
-
----
-
-## 7. ACCESS-001 — закрыт без merge
+Основная реализация:
 
 ```text
-PR:
-#17
-
-state:
-CLOSED / NOT MERGED / SUPERSEDED
-
-branch:
-infra/access-001-public-development-https
-
-preview:
-UNTOUCHED
+PR #19 / MERGED
+source head:
+70b1f2ad4c4889714412d2f3cffd48e6b8b968ec
+merge commit:
+8684fb6f64485171fc2b3ff828d955b32a2104fc
 ```
 
-Большой nginx/Certbot/HTTPS-контур закрыт, потому что практическая задача доступа была решена более простым host-local механизмом. Ветка сохранена только как история исследования и rollback evidence.
+Container-copy repair:
 
-Возвращаться к публичному HTTPS можно только по отдельному явному решению пользователя.
+```text
+PR #21 / MERGED
+final source head:
+302cc560f846788f40630bf9782b0fc60a98f349
+merge commit / current main:
+6959b9767ce411e74fc4788d5da8dac97f41018f
+```
+
+Runtime activation выполнена однократно заменой только:
+
+```text
+/usr/local/sbin/eod-development-controller
+```
+
+Canary:
+
+```text
+PR #20 / CLOSED / NOT MERGED
+head:
+bbdcf32a143623ff1cfa226eef89567bd36f32eb
+```
+
+Доказано:
+
+- presentation-only file из `src/static/**` появился в development без image build;
+- повторный exact PR/SHA run завершился штатно;
+- development health-check успешен;
+- PostgreSQL и migrations не затронуты;
+- preview `UNTOUCHED`;
+- automatic merge отсутствует;
+- тестовый PR закрыт без merge.
+
+Первое падение последнего canary-run было сетевым timeout SSH от GitHub Actions к VPS. Повтор только упавшего job прошёл успешно; controller в первом запуске не выполнялся.
+
+### Рабочий контракт hot refresh
+
+Разрешены только added/modified regular `100644` blobs:
+
+```text
+src/templates/**
+src/static/**
+```
+
+Запрещены deletions, renames, symlinks, executable blobs, models, migrations, settings, urls, services, dependencies, Dockerfile, Compose, database operations, presentation reset, preview и automatic merge.
+
+После локального presentation repair implementation-чат самостоятельно:
+
+1. проверяет diff и профильные тесты;
+2. публикует `/eod-hot-refresh <exact-head-sha>` в активном PR;
+3. отслеживает короткий workflow;
+4. возвращает пользователю адрес проверки;
+5. при ошибке самостоятельно извлекает диагностику и исправляет причину без штатных VPS-команд пользователя.
 
 ---
 
-## 8. Development access
+## 6. Development access
 
-На VPS установлен host-local convenience mechanism:
+Host-local convenience commands:
 
 ```text
 sudo dev-on
@@ -213,133 +195,91 @@ sudo dev-off
 sudo dev-status
 ```
 
-При включённом режиме development доступен по прежнему адресу порта `8766`; публичный HTTP не является шифрованным production-доступом.
+Development URL reference screen:
 
-Этот механизм не является source-controlled продуктовым deployment и не должен расширяться без необходимости.
+```text
+http://5.181.177.72:8766/operations/defects/
+```
+
+Публичный HTTP на `8766` не является production-доступом и включается пользователем только на время проверки.
 
 ---
 
-## 9. Active work item — DEV-FAST-001
+## 7. Утверждённое визуальное направление
 
-GitHub issue:
+Пользователь выбрал **Direction A — спокойное светлое документно-операционное направление**.
 
-```text
-#18 — DEV-FAST-001: Trusted hot refresh from PR comment
-```
+Целевые свойства:
 
-Фактический статус:
+- светлая нейтральная основа;
+- спокойный синий акцент без SCADA-эффекта;
+- высокая рабочая плотность без ощущения admin-panel;
+- компактная шапка;
+- постоянная понятная навигация;
+- полноценный табличный реестр на desktop;
+- отдельная рабочая карточка с блоком связей и файлов;
+- аккуратная status/action hierarchy;
+- меньше декоративных бабблов и технических формулировок;
+- читаемое адаптивное представление на мобильных устройствах.
 
-```text
-branch:
-infra/dev-fast-001-hot-refresh
-
-Draft PR:
-#19 / OPEN / DRAFT / NOT MERGED
-
-runtime activation:
-NOT PERFORMED
-
-preview:
-UNTOUCHED
-```
-
-### Цель
-
-```text
-чат создаёт presentation-only micro-repair в активном PR
-→ выполняет focused checks
-→ публикует /eod-hot-refresh <exact-head-sha>
-→ trusted workflow проверяет actor / PR / exact SHA / paths
-→ restricted controller обновляет development
-→ collectstatic / restart / health-check
-→ чат возвращает адрес пользовательской проверки
-```
-
-Пользователь не выполняет штатные SSH/VPS-команды для последующих hot refresh.
-
-### Утверждённый V1 scope
-
-```text
-src/templates/**
-src/static/**
-```
-
-Разрешены только added/modified regular `100644` blobs.
-
-Явно запрещены:
-
-```text
-deletions
-renames
-copies
-type changes
-symlinks
-executable blobs
-models
-migrations
-settings
-urls
-services
-management commands
-dependencies
-Dockerfile
-Compose
-database operations
-presentation reset
-preview
-automatic merge
-```
-
-### V1 security/runtime contract
-
-- workflow берётся только из `main` и запускается по `issue_comment:created`;
-- команда принимается только в точном формате `/eod-hot-refresh <lowercase-40-hex-sha>`;
-- actor имеет write/admin permission;
-- PR открыт, основан на `main` и находится в том же repository;
-- SHA в команде точно совпадает с live PR head;
-- controller повторно получает `refs/pull/<number>/head` и повторяет SHA/path/blob verification;
-- используется существующий restricted SSH gateway и одна новая command `hot-refresh <pr> <sha> <run_id>`;
-- overlay применяется только к writable layer app-container проекта `eod-development`;
-- app перезапускается отдельно; host-owned entrypoint выполняет Django check и collectstatic;
-- при любой runtime-ошибке app force-recreate выполняется из current full image;
-- separate marker хранится только внутри app-container и не меняет deployment `current_sha`;
-- existing release transactions не обобщаются и не изменяются;
-- PostgreSQL, migrations, image build, Compose, presentation seed и preview не затрагиваются;
-- общий GitHub concurrency group и controller `flock` защищают от одновременного full deployment;
-- full suite не является условием будущего промежуточного hot refresh;
-- один final security/code gate выполняется перед merge самого DEV-FAST-001.
-
-### Activation boundary
-
-Новый `issue_comment` workflow становится trusted только после merge в `main`. После отдельного явного разрешения пользователя на merge выполняется одна controlled root activation только файла:
-
-```text
-/usr/local/sbin/eod-development-controller
-```
-
-Полный bootstrap ключей, sudoers, Compose и secrets не повторяется. После activation отдельный presentation-only canary PR должен доказать `SUCCESS`, `ALREADY_APPLIED`, rollback, development health и `preview=UNTOUCHED`.
+Концепт не копируется буквально. Реальные поля, названия, роли, lifecycle, ссылки и предметные правила берутся из принятого DEFECT-001.
 
 ---
 
-## 10. После DEV-FAST-001
+## 8. Следующий work item — UX-FOUNDATION-001
 
-### UX/UI foundation
+Статус на момент handoff:
 
-На основе журнала дефектов создать минимальный общий слой:
+```text
+issue: NOT CREATED
+branch: NOT CREATED
+PR: NONE
+implementation: NOT STARTED
+```
 
-- application shell;
-- navigation;
-- desktop/mobile registry patterns;
-- tables, search, filters and sorting;
-- cards;
-- forms and date/time controls;
-- status/action hierarchy;
-- validation and notifications;
-- typography, spacing, density and CSS tokens.
+Цель — создать минимальный переиспользуемый UI-layer перед следующим журналом, используя DEFECT-001 как reference screen.
 
-Это не финальная брендовая полировка всего приложения.
+Первый scope:
 
-### Следующий product vertical slice
+- application shell и навигация;
+- compact page header;
+- desktop registry/table pattern;
+- mobile list/card pattern;
+- поиск, фильтры и сортировка;
+- карточка записи и формы;
+- date/time controls;
+- statuses и action hierarchy;
+- validation/notification patterns;
+- typography, spacing, density и CSS tokens.
+
+Это не полная брендовая переработка всего приложения и не новый product vertical slice.
+
+### Обязательные замечания к журналу дефектов
+
+- центрировать заголовки таблицы;
+- уменьшить занимаемое шапкой и служебными блоками пространство;
+- сделать карточки менее техническими;
+- добавить сквозную пользовательскую нумерацию строк;
+- сделать связь с оперативным журналом понятной оператору;
+- добавить настраиваемую сортировку и нормальные фильтры;
+- улучшить date/time controls;
+- сделать статусы визуально явными;
+- обеспечить полноценную мобильную читаемость.
+
+### Граница реализации
+
+- предметная модель, lifecycle и evidence DEFECT-001 не меняются без доказанного UX-блокера;
+- модели, migrations и services не добавляются только ради визуального слоя;
+- существующий PR/branch сохраняется на весь цикл замечаний;
+- промежуточные template/static repairs доставляются через DEV-FAST-001;
+- один full final gate выполняется после завершения пользовательских замечаний;
+- merge разрешается только отдельной командой в Chat 0.
+
+---
+
+## 9. После UX-FOUNDATION-001
+
+Следующий product vertical slice:
 
 ```text
 PRODUCT-D2 — Журнал заявок
@@ -353,47 +293,27 @@ PRODUCT-D3 — Журнал распоряжений
 → другие source-bound journals
 ```
 
----
-
-## 11. Предметные инварианты
-
-- Оперативный журнал остаётся специализированным модулем.
-- Остальные рабочие журналы используют общий structured-document core и source-bound формы.
-- Оператор не конструирует произвольные формы рабочих журналов.
-- ЩПТ и ШОТ относятся к одной technical equipment family; различие сохраняется как исходное обозначение или вариант исполнения.
-- Paper/hybrid/electronic modes не объявляются юридически эквивалентными без нормативного основания.
-- УКЭП/УНЭП не заявляются без подтверждённой реализации и нормативной модели.
-- Наличие модели, route, template или test не означает готовность vertical slice.
-- Один журнал доводится до automated и user acceptance, затем начинается следующий.
+Каждый следующий журнал должен переиспользовать общие UX-компоненты, а не копировать legacy UI.
 
 ---
 
-## 12. Правило сохранения контекста
+## 10. Старт отдельного implementation-чата
 
-`CURRENT_HANDOFF.md` обновляется:
-
-- после каждого merge;
-- при смене приоритета;
-- после создания нового active branch/PR;
-- после важного архитектурного или процессного решения;
-- перед завершением или переносом основного интеграционного чата.
-
-`ROADMAP.md` и `OPEN_ITEMS.md` обновляются при изменении последовательности работ или статуса work item.
-
-GitHub всегда имеет приоритет над текстом handoff при расхождении SHA, PR-state или workflow status.
-
----
-
-## 13. Следующий gate DEV-FAST-001
+Новый чат должен начать работу строго по:
 
 ```text
-1. Final exact head.
-2. Focused validator/controller contract tests.
-3. One full security/code gate.
-4. Draft/not merged until explicit user merge command.
-5. After merge: controller-only root activation from accepted exact main.
-6. Canary PR: SUCCESS / ALREADY_APPLIED / rollback.
-7. Development health and preview UNTOUCHED.
+docs/project/UX_FOUNDATION_001_NEW_CHAT_STARTER.md
 ```
 
-До merge не запускать hot refresh из PR #19: workflow ещё не находится в trusted `main`, а PR содержит security/controller files, а не presentation-only payload.
+До проверки фактических шаблонов, static assets, routes и tests не делать предположений о структуре реализации.
+
+Первый практический результат нового чата:
+
+```text
+FACT
+IMPLEMENTATION CONTRACT
+FIRST DELIVERY SLICE
+READY TO IMPLEMENT / BLOCKED
+```
+
+Результат должен быть коротким и предметным, без большого повторного аудита уже принятых DEFECT-001 и DEV-FAST-001.
