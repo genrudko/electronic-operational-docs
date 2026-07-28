@@ -5,6 +5,13 @@ import gate_patch_011_7_core as core
 _ORIGINAL_READ = core.read
 
 
+def _legacy_view(text: str) -> str:
+    normalized = "\n".join(line.rstrip() for line in text.splitlines())
+    if text.endswith("\n"):
+        normalized += "\n"
+    return normalized
+
+
 def _read_with_current_canonical_state(relative: str) -> str:
     text = _ORIGINAL_READ(relative)
 
@@ -16,7 +23,7 @@ def _read_with_current_canonical_state(relative: str) -> str:
             "infra/dev-fast-001-hot-refresh",
             "Automatic merge is absent",
         )
-        return text + (
+        return _legacy_view(text) + (
             "\nsource-bound catalog"
             "\nPLAN-001 accepted decision"
             "\nequipment defect journal: implementation in Draft PR #16\n"
@@ -34,10 +41,7 @@ def _read_with_current_canonical_state(relative: str) -> str:
         # The historical Patch 011.7 core still checks aliases from the active
         # DEFECT-001 implementation handoff. Supply them only in memory after
         # the current accepted/active work-item markers above are proven.
-        normalized = "\n".join(line.rstrip() for line in text.splitlines())
-        if text.endswith("\n"):
-            normalized += "\n"
-        return normalized + (
+        return _legacy_view(text) + (
             "\nDEFECT-001 — Source-bound Equipment Defect Journal Vertical Slice"
             "\nfive green exact-head workflows"
             "\nseparate explicit merge command\n"
