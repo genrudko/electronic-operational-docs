@@ -2,132 +2,135 @@
 
 **Актуализировано:** 28.07.2026
 
-## 1. Фактическое состояние после DEFECT-001
+## 1. Фактическое состояние
 
 ```text
 accepted product work item:
 DEFECT-001 / PR #16 / MERGED / ACCEPTED
 
-source head:
-79f3db7e5c47e1ac8ab2568028d06e4043c2c70e
-
-merge commit:
+accepted product merge:
 883a108c8be2a8cd075846fdd175916917911ef6
 
-open product PR:
+completed infrastructure work item:
+DEV-FAST-001 / issue #18 / COMPLETED
+
+current documentation main at update:
+44917d56ce60a682bfffacffa8ec5bed8fba625d
+
+open PR:
 NONE
 
 preview:
 UNTOUCHED
 ```
 
-Предметная и функциональная приёмка журнала дефектов выполнена. Текущий legacy-визуальный стиль не считается принятым целевым UX/UI.
+Предметная и функциональная приёмка журнала дефектов выполнена. Его legacy-визуальный стиль не считается принятым целевым UX/UI.
 
-## 2. Active item — DEV-FAST-001
+---
 
-```text
-issue:
-#18 — Trusted hot refresh from PR comment
+## 2. Next item — UX-FOUNDATION-001
 
-branch:
-infra/dev-fast-001-hot-refresh
-
-Draft PR:
-#19 / OPEN / DRAFT / NOT MERGED
-
-status:
-IMPLEMENTATION IN PROGRESS / NOT ACTIVATED
-```
-
-Цель — убрать повторяющееся ожидание полного CI/deployment при каждом малом presentation repair.
-
-Утверждённый V1 contract:
+Статус:
 
 ```text
-profile repair
-→ focused checks
-→ /eod-hot-refresh <exact-head-sha>
-→ actor / PR / exact SHA / path policy
-→ restricted development-only overlay
-→ app restart / collectstatic / health
-→ immediate user check
+issue: NOT CREATED
+branch: NOT CREATED
+Draft PR: NONE
+implementation: NOT STARTED
 ```
 
-Разрешённые пути первой версии:
-
-- `src/templates/**`;
-- `src/static/**`.
-
-Разрешены только added/modified regular `100644` blobs. Deletions, renames, copies, type changes, symlinks и executable blobs запрещены.
-
-Зафиксированные решения:
-
-1. main-controlled `issue_comment:created` workflow;
-2. точный формат `/eod-hot-refresh <lowercase-40-hex-sha>`;
-3. одна новая gateway command `hot-refresh <pr> <sha> <run_id>`;
-4. повторная exact-ref/SHA/path/blob verification на VPS;
-5. overlay только в writable layer current `eod-development` app-container;
-6. rollback через app-only force-recreate из current full image;
-7. separate container-local overlay marker, не изменяющий deployment `current_sha`;
-8. existing release transactions, PostgreSQL, migrations, Compose, image build, presentation reset и preview не меняются;
-9. один final security/code gate перед merge;
-10. после merge — одна controlled root activation только controller-файла и отдельный canary PR.
-
-Оставшиеся gates:
-
-1. exact-head focused/full CI;
-2. отдельное разрешение пользователя на merge;
-3. controller-only root activation из accepted exact `main`;
-4. canary evidence: SUCCESS, ALREADY_APPLIED, rollback, development health, preview untouched.
-
-## 3. ACCESS-001 / PR #17
-
-ACCESS-001 создавался для публичного HTTPS-доступа к development через nginx/Certbot.
-
-Фактическое решение пользовательской задачи было достигнуто более простым host-local механизмом включения/выключения доступа. Большой PR больше не является текущим приоритетом и не должен смешиваться с DEV-FAST-001.
-
-Целевое состояние:
+Implementation должен выполняться в отдельном чате по:
 
 ```text
-PR #17:
-CLOSED / NOT MERGED / SUPERSEDED
-
-branch:
-may remain for history
-
-future HTTPS work:
-only by separate explicit decision
+docs/project/UX_FOUNDATION_001_NEW_CHAT_STARTER.md
 ```
 
-## 4. UX/UI foundation
+Утверждённое визуальное направление:
 
-После DEV-FAST-001 требуется узкий общий UI-layer на основе принятого журнала дефектов:
+```text
+Direction A — спокойное светлое документно-операционное
+```
+
+Цель — минимальный общий UI-layer на основе принятого журнала дефектов:
 
 - application shell;
-- навигация;
+- compact navigation and page header;
 - registry/table patterns;
 - mobile list/card patterns;
-- поиск, фильтры и сортировка;
-- формы и date/time controls;
-- статусы и action hierarchy;
+- search, filters and sorting;
+- cards and forms;
+- date/time controls;
+- statuses and action hierarchy;
 - validation/notifications;
-- typography, spacing, density и CSS tokens.
+- typography, spacing, density and CSS tokens.
 
-Цель — создать повторно используемые компоненты перед следующим журналом, а не проводить полную декоративную переработку всего приложения.
+Обязательные пользовательские замечания:
 
-## 5. Следующие structured journals
+1. центрировать заголовки таблицы;
+2. уменьшить шапку и служебные блоки;
+3. сделать карточки менее техническими;
+4. добавить сквозную пользовательскую нумерацию строк;
+5. сделать связь с оперативной записью понятной оператору;
+6. добавить нормальные сортировку, поиск и фильтры;
+7. переработать date/time controls;
+8. сделать статусы визуально явными;
+9. обеспечить полноценную мобильную читаемость.
 
-Очередность:
+Границы:
 
-1. Журнал заявок.
-2. Журнал распоряжений.
+- не менять модели, migrations, services, lifecycle или evidence только ради визуального слоя;
+- сохранять одну ветку и один Draft PR на весь цикл замечаний;
+- использовать DEV-FAST-001 для промежуточных template/static repairs;
+- выполнить один полный final gate перед merge;
+- не использовать preview;
+- не выполнять automatic merge.
+
+---
+
+## 3. DEV-FAST-001 — closed
+
+```text
+issue #18:
+CLOSED / COMPLETED
+
+PR #19:
+MERGED
+
+repair PR #21:
+MERGED
+
+canary PR #20:
+CLOSED / NOT MERGED
+```
+
+Hot refresh доступен только для added/modified regular `100644` files:
+
+```text
+src/templates/**
+src/static/**
+```
+
+Запрещены deletions, renames, copies, type changes, symlinks, executable blobs, models, migrations, settings, urls, services, dependencies, Dockerfile, Compose, database operations, presentation reset, preview и automatic merge.
+
+При сетевом SSH timeout повторяется только упавший job после подтверждения точной причины; такой timeout не считается дефектом controller.
+
+---
+
+## 4. Следующие structured journals
+
+Очередность после UX-FOUNDATION-001:
+
+1. PRODUCT-D2 — Журнал заявок.
+2. PRODUCT-D3 — Журнал распоряжений.
 3. Ввод оборудования в работу.
 4. РЗА и телемеханика.
 5. Журналы работ — после нормативного решения.
 
 Каждый журнал требует source traceability, специализированных правил, dedicated UI, связей, presentation data, automated gates и user acceptance. Generic registry сам по себе не считается законченным журналом.
 
-## 6. Operational Journal
+---
+
+## 5. Operational Journal
 
 Blocking lifecycle gaps:
 
@@ -148,7 +151,9 @@ Editor/stability backlog:
 - no page jump outside sheet;
 - templates, abbreviations and suggestions.
 
-## 7. Data
+---
+
+## 6. Data
 
 Остаётся открытым:
 
@@ -160,7 +165,9 @@ Editor/stability backlog:
 - managed RU→EN domain lexicon;
 - сохранение общей ЩПТ/ШОТ technical equipment family.
 
-## 8. Work permits and orders
+---
+
+## 7. Work permits and orders
 
 Открытые нормативные и продуктовые вопросы:
 
@@ -175,7 +182,9 @@ Editor/stability backlog:
 - signatures/action evidence;
 - перечни эксплуатационных работ.
 
-## 9. Switching
+---
+
+## 8. Switching
 
 Минимальный контур:
 
@@ -190,7 +199,9 @@ Editor/stability backlog:
 
 Automatic generation, topology и interlocks остаются позже.
 
-## 10. Keys journal
+---
+
+## 9. Keys journal
 
 Paper-first boundary:
 
@@ -198,15 +209,13 @@ Paper-first boundary:
 - полный электронный issue/return lifecycle не является обязательным для первого прототипа;
 - optional reference/control contour требует отдельного решения.
 
-## 11. Quality and deployment follow-ups
+---
 
-### CI diagnostics — implemented
+## 10. Deferred quality/deployment work
 
-В `main` добавлено сохранение компактной диагностики Django failures и полного `django-test.log` в artifact. Это не заменяет точное расследование, но исключает зависимость от обрезанного connector log для будущих падений.
+### CI-OPT-001
 
-### CI-OPT-001 — deferred
-
-После стабилизации DEV-FAST-001:
+После стабилизации UX-FOUNDATION-001:
 
 - один полный PostgreSQL suite на final exact head;
 - отсутствие повторного полного suite на VPS deployment;
@@ -214,7 +223,7 @@ Paper-first boundary:
 - path-based gates без ослабления required checks;
 - optional nightly full suite.
 
-### DATA-DEPLOY-001 — deferred
+### DATA-DEPLOY-001
 
 Убрать безусловную presentation seed-логику из `post_migrate`:
 
@@ -225,13 +234,15 @@ migrate
 → runtime smoke
 ```
 
-## 12. Непереговорные границы
+---
+
+## 11. Непереговорные границы
 
 - GitHub — единственный источник кода и canonical docs;
 - VPS — runtime/test contour, а не источник кода;
 - preview не используется для разработки;
 - automatic merge запрещён;
 - пользователь не выполняет штатные VPS-команды для функциональных PR;
-- микро-repair получают профильные проверки и быстрый refresh;
+- микро-repair получают focused checks и trusted hot refresh;
 - полный gate выполняется один раз на final exact head;
 - контекст обновляется после merge, смены приоритета, появления нового active PR и перед handoff.
