@@ -5,7 +5,7 @@ import zipfile
 from xml.sax.saxutils import escape
 
 
-_ZIP_TIMESTAMP = (2026, 7, 22, 0, 0, 0)
+_SYNTHETIC_PERSONNEL_WORKBOOK: bytes | None = None
 
 
 def _column_number(column: str) -> int:
@@ -15,15 +15,11 @@ def _column_number(column: str) -> int:
     return result
 
 
-def _write_archive_text(archive: zipfile.ZipFile, path: str, content: str) -> None:
-    info = zipfile.ZipInfo(path, date_time=_ZIP_TIMESTAMP)
-    info.compress_type = zipfile.ZIP_DEFLATED
-    info.create_system = 3
-    info.external_attr = 0o600 << 16
-    archive.writestr(info, content.encode("utf-8"))
-
-
 def synthetic_personnel_workbook() -> bytes:
+    global _SYNTHETIC_PERSONNEL_WORKBOOK
+    if _SYNTHETIC_PERSONNEL_WORKBOOK is not None:
+        return _SYNTHETIC_PERSONNEL_WORKBOOK
+
     cells: dict[str, str] = {
         "Y4": "от 22.07.2026",
         "Z4": "№ TEST-0116",
@@ -173,9 +169,10 @@ def synthetic_personnel_workbook() -> bytes:
     )
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        _write_archive_text(archive, "[Content_Types].xml", content_types)
-        _write_archive_text(archive, "_rels/.rels", root_relationships)
-        _write_archive_text(archive, "xl/workbook.xml", workbook)
-        _write_archive_text(archive, "xl/_rels/workbook.xml.rels", relationships)
-        _write_archive_text(archive, "xl/worksheets/sheet1.xml", worksheet)
-    return buffer.getvalue()
+        archive.writestr("[Content_Types].xml", content_types)
+        archive.writestr("_rels/.rels", root_relationships)
+        archive.writestr("xl/workbook.xml", workbook)
+        archive.writestr("xl/_rels/workbook.xml.rels", relationships)
+        archive.writestr("xl/worksheets/sheet1.xml", worksheet)
+    _SYNTHETIC_PERSONNEL_WORKBOOK = buffer.getvalue()
+    return _SYNTHETIC_PERSONNEL_WORKBOOK
