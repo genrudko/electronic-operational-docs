@@ -2,6 +2,7 @@
     <a class="defect-da-back-link" href="{% url 'equipment_defects:registry' %}">← К списку</a>
     <div class="defect-da-record-heading-row">
         <div class="defect-da-record-heading">
+            <div class="defect-module-kicker">Карточка дефекта</div>
             <div class="defect-da-record-title-line">
                 <h1>{{ record.registration_number }}</h1>
                 <span class="defect-status defect-da-status large" data-status="{{ record.status_code }}">{{ record.status_name_snapshot }}</span>
