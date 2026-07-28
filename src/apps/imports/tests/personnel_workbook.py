@@ -4,7 +4,6 @@ import io
 import zipfile
 from xml.sax.saxutils import escape
 
-
 _SYNTHETIC_PERSONNEL_WORKBOOK: bytes | None = None
 
 
