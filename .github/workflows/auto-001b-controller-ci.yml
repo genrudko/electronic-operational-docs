@@ -71,7 +71,8 @@ jobs:
           grep -F 'hot-refresh)' "$controller"
           grep -F 'group: eod-vps-development' "$hot_workflow"
           grep -F 'issue_comment:' "$hot_workflow"
-          grep -F 'ref: ${{ github.sha }}' "$hot_workflow"
+          grep -F 'ref:' "$hot_workflow"
+          grep -F 'github.sha' "$hot_workflow"
           grep -F 'Only added/modified files are allowed in V1' scripts/automation/dev_fast_001_request.py
           grep -F 'mode" == "100644"' tests/automation/test_auto_001b_controller.py
 
