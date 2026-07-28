@@ -38,14 +38,15 @@ jobs:
           bash -n deploy/automation/eod-development-controller
           sh -n deploy/automation/app-entrypoint.sh
 
-      - name: Compile request validator and tests
+      - name: Compile request validators and tests
         run: |
           python -m compileall -q \
             scripts/automation/auto_001b_request.py \
+            scripts/automation/dev_fast_001_request.py \
             tests/automation/test_auto_001b_controller.py \
             tests/automation/test_auto_001b_request_entrypoint.py
 
-      - name: Run AUTO-001B tests
+      - name: Run AUTO-001B and DEV-FAST-001 tests
         run: |
           python -m unittest \
             tests.automation.test_auto_001b_controller \
@@ -58,13 +59,21 @@ jobs:
           set -euo pipefail
           controller=deploy/automation/eod-development-controller
           workflow=.github/workflows/vps-development.yml
+          hot_workflow=.github/workflows/eod-hot-refresh.yml
           ! grep -F 'scripts/development_stack.sh' "$controller"
           ! grep -E 'eod-preview|eod_preview|8765|preview\.env' "$controller"
           ! grep -E 'merge_pull_request|enable_auto_merge|pull-requests: write|contents: write' "$workflow"
+          ! grep -E 'merge_pull_request|enable_auto_merge|pull-requests: write|contents: write' "$hot_workflow"
           grep -F 'refs/pull/$pr_number/head' "$controller"
           grep -F 'pg_dump --format=custom' "$controller"
           grep -F 'manage.py test apps --verbosity 2' "$controller"
           grep -F 'rollback_transaction' "$controller"
+          grep -F 'hot-refresh)' "$controller"
+          grep -F 'group: eod-vps-development' "$hot_workflow"
+          grep -F 'issue_comment:' "$hot_workflow"
+          grep -F 'ref: ${{ github.sha }}' "$hot_workflow"
+          grep -F 'Only added/modified files are allowed in V1' scripts/automation/dev_fast_001_request.py
+          grep -F 'mode" == "100644"' tests/automation/test_auto_001b_controller.py
 
       - name: Confirm repository remains unchanged
         shell: bash
