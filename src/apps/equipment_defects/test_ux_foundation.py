@@ -163,7 +163,8 @@ class EquipmentDefectUXFoundationTests(SimpleTestCase):
                 self.assertIn("equipment_defects/ux_foundation.css", template)
                 self.assertIn("equipment_defects/ux_foundation_legacy_bridge.css", template)
                 self.assertIn("equipment_defects/ux_foundation_repair1.css", template)
-                self.assertIn("defects.js?v=defect004", template)
+                self.assertIn("equipment_defects/defects.js", template)
+                self.assertIn("?v=defect004", template)
 
         self.assertIn("defect-lifecycle", templates["detail"])
         self.assertIn("Следующее действие", templates["detail"])
