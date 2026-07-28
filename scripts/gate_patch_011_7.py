@@ -35,7 +35,7 @@ def _read_with_current_canonical_state(relative: str) -> str:
             "Последний accepted product merge:",
             "883a108c8be2a8cd075846fdd175916917911ef6",
             "#18 — DEV-FAST-001: Trusted hot refresh from PR comment",
-            "Merge выполняется только по отдельной явной команде пользователя.",
+            "Merge выполняется только после отдельной явной команды пользователя.",
         )
 
         # The historical Patch 011.7 core still checks aliases from the active
