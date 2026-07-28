@@ -8,6 +8,12 @@ from django.test import SimpleTestCase
 
 class EquipmentDefectUXFoundationTests(SimpleTestCase):
     def setUp(self) -> None:
+        static_root = (
+            Path(settings.BASE_DIR)
+            / "src"
+            / "static"
+            / "equipment_defects"
+        )
         self.template_path = (
             Path(settings.BASE_DIR)
             / "src"
@@ -15,22 +21,20 @@ class EquipmentDefectUXFoundationTests(SimpleTestCase):
             / "equipment_defects"
             / "registry.html"
         )
-        self.stylesheet_path = (
-            Path(settings.BASE_DIR)
-            / "src"
-            / "static"
-            / "equipment_defects"
-            / "ux_foundation.css"
-        )
+        self.stylesheet_path = static_root / "ux_foundation.css"
+        self.bridge_path = static_root / "ux_foundation_legacy_bridge.css"
 
     def test_registry_loads_isolated_foundation_after_legacy_styles(self) -> None:
         template = self.template_path.read_text(encoding="utf-8")
 
         legacy_marker = "equipment_defects/defects.css"
         foundation_marker = "equipment_defects/ux_foundation.css"
+        bridge_marker = "equipment_defects/ux_foundation_legacy_bridge.css"
         self.assertIn(legacy_marker, template)
         self.assertIn(foundation_marker, template)
+        self.assertIn(bridge_marker, template)
         self.assertLess(template.index(legacy_marker), template.index(foundation_marker))
+        self.assertLess(template.index(foundation_marker), template.index(bridge_marker))
         self.assertIn("?v=uxf001", template)
 
     def test_foundation_declares_light_document_operational_tokens(self) -> None:
@@ -52,6 +56,22 @@ class EquipmentDefectUXFoundationTests(SimpleTestCase):
         for marker in required_contract:
             with self.subTest(marker=marker):
                 self.assertIn(marker, stylesheet)
+
+    def test_legacy_bridge_forces_light_shell_and_compact_mobile_header(self) -> None:
+        bridge = self.bridge_path.read_text(encoding="utf-8")
+
+        required_contract = (
+            "background: rgba(255, 255, 255, .97) !important",
+            "color: var(--ux-text) !important",
+            "color: var(--ux-text-secondary) !important",
+            "@media (max-width: 860px)",
+            "@media (max-width: 760px)",
+            "flex-direction: row",
+            ".presentation-topbar .presentation-nav.open",
+        )
+        for marker in required_contract:
+            with self.subTest(marker=marker):
+                self.assertIn(marker, bridge)
 
     def test_registry_keeps_source_columns_and_interaction_markers(self) -> None:
         template = self.template_path.read_text(encoding="utf-8")
