@@ -46,6 +46,9 @@ jobs:
             tests/automation/test_auto_001b_controller.py \
             tests/automation/test_auto_001b_request_entrypoint.py
 
+      - name: Run current architectural gate compatibility
+        run: python scripts/gate_patch_011_7.py
+
       - name: Run AUTO-001B and DEV-FAST-001 tests
         run: |
           python -m unittest \
