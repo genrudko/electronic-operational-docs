@@ -4,9 +4,22 @@
 
 ## Принцип
 
-Roadmap управляется фактическим состоянием GitHub, runtime evidence и пользовательской приёмкой. Наличие кода или green CI само по себе не завершает продуктовый этап. Для значимого work item сохраняются exact head, профильные проверки, финальный gate, runtime evidence, пользовательское решение и отдельная команда на merge.
+Roadmap управляется фактическим состоянием GitHub, runtime evidence и пользовательской приёмкой. Наличие кода или green CI само по себе не завершает продуктовый этап.
 
-При этом действует принцип минимально достаточного решения: промежуточные микро-repair не должны автоматически запускать полный PostgreSQL suite, пять workflow и полноценный deployment. Полный gate выполняется один раз на окончательном head перед merge.
+Для значимого work item сохраняются exact head, профильные проверки, final gate, runtime evidence, пользовательское решение и отдельная команда на merge.
+
+Во время серии UX-замечаний действует короткий цикл:
+
+```text
+micro-repair
+→ focused checks
+→ trusted hot refresh
+→ пользовательская проверка
+```
+
+Полный gate выполняется один раз на окончательном head перед merge.
+
+---
 
 ## Current baseline
 
@@ -14,18 +27,23 @@ Roadmap управляется фактическим состоянием GitHu
 repository:
 genrudko/electronic-operational-docs
 
-accepted main merge commit:
-883a108c8be2a8cd075846fdd175916917911ef6
+current documentation main at roadmap update:
+13cbfb1a03bd46046f3f33719e3998c93d47d56e
 
-accepted application baseline:
-937d2cd2b187c17fac3088ccfc52079fc4608306
+accepted runtime/application main before documentation handoff:
+6959b9767ce411e74fc4788d5da8dac97f41018f
 
 last accepted product work item:
 DEFECT-001 / PR #16 / MERGED / ACCEPTED
 
+completed infrastructure work item:
+DEV-FAST-001 / issue #18 / COMPLETED
+
 next work item:
-DEV-FAST-001 / issue #18 / NOT STARTED
+UX-FOUNDATION-001 / NOT STARTED
 ```
+
+---
 
 ## Завершено
 
@@ -37,10 +55,13 @@ DEV-FAST-001 / issue #18 / NOT STARTED
 | AUTO-000 | Accepted | Automation/security/acceptance contract |
 | AUTO-001A | Accepted | Trusted controller foundation |
 | AUTO-001B | Accepted | Restricted exact-SHA VPS development controller |
-| PLAN-001 / PR #7 | Accepted and merged | Evidence audit, classifier repair and first slice decision |
-| DEFECT-001 / PR #16 | Accepted and merged | Source-bound equipment defect journal vertical slice |
+| PLAN-001 / PR #7 | Accepted and merged | Evidence audit and first slice decision |
+| DEFECT-001 / PR #16 | Accepted and merged | Source-bound equipment defect journal |
+| DEV-FAST-001 / PR #19 + repair PR #21 | Accepted and merged | Trusted presentation-only hot refresh |
 
-## DEFECT-001 — accepted reference slice
+---
+
+## DEFECT-001 — reference product slice
 
 ```text
 source head:
@@ -49,15 +70,6 @@ source head:
 merge commit:
 883a108c8be2a8cd075846fdd175916917911ef6
 
-five exact-head workflows:
-GREEN
-
-full PostgreSQL/Django suite:
-SUCCESS
-
-trusted development deployment:
-SUCCESS
-
 user acceptance:
 CONFIRMED
 
@@ -65,77 +77,89 @@ preview:
 UNTOUCHED
 ```
 
-Реализовано и принято:
+Журнал дефектов остаётся первым reference screen для общего UX/UI foundation. Предметная модель, lifecycle, evidence и связи считаются принятыми. Legacy-визуальный стиль не считается целевым.
 
-- exact published type `journal-equipment-defects`;
-- source trace к И-00-007-ОР-2025, версия 2, раздел 11, приложение 8;
-- шесть утверждённых граф в рабочем и печатном представлении;
-- dedicated registry, card and action routes;
-- обязательная связь с оборудованием и snapshot диспетчерского наименования;
-- роли участников и lifecycle `REGISTERED → IN_PROGRESS → RESOLVED → CLOSED`;
-- versioned продление срока и immutable action evidence;
-- explicit immutable link с зарегистрированной записью оперативного журнала;
-- минимальный non-cloning contract томов;
-- deterministic presentation dataset;
-- desktop/mobile presentation;
-- финальный row-click repair с сохранением обычного поведения интерактивных элементов и выделения текста.
+---
 
-Текущий визуальный стиль остаётся legacy-интерфейсом и не является принятым целевым UX/UI.
-
-## Следующий work item: DEV-FAST-001
-
-Issue: `#18 — Trusted hot refresh from PR comment`.
-
-Цель:
+## DEV-FAST-001 — completed
 
 ```text
-чат создаёт микро-repair в активном PR
-→ выполняет профильные проверки
-→ публикует /eod-hot-refresh <exact-head-sha>
-→ restricted workflow проверяет actor / PR / SHA / paths
-→ обновляет только разрешённые presentation files в development
-→ restart / collectstatic / health-check
-→ пользователь сразу получает адрес проверки
+issue #18:
+CLOSED / COMPLETED
+
+PR #19:
+MERGED
+
+repair PR #21:
+MERGED
+
+canary PR #20:
+CLOSED / NOT MERGED
+
+preview:
+UNTOUCHED
 ```
 
-Первая версия допускает только:
+Доказано:
+
+- exact PR/SHA validation;
+- presentation-only overlay для `src/templates/**` и `src/static/**`;
+- app-only restart/health;
+- rollback через clean app recreate;
+- повторный exact run;
+- отсутствие database operations и automatic merge.
+
+Механизм применяется для быстрых промежуточных UX/UI repairs. Полный suite не является условием каждого hot refresh.
+
+---
+
+## Следующий work item: UX-FOUNDATION-001
+
+Утверждённое визуальное направление:
 
 ```text
-src/templates/**
-src/static/**
+Direction A — спокойное светлое документно-операционное
 ```
 
-Запрещены модели, миграции, settings, services, dependencies, Compose, controller-controlled product deployment, database operations и preview.
+Цель — создать минимальный переиспользуемый UI-layer на основе журнала дефектов:
 
-DEV-FAST-001 затрагивает trusted security boundary, поэтому выполняется в одном отдельном PR. После однократной полной проверки механизм используется для быстрых промежуточных UX/UI repairs без полного suite на каждый commit.
+- application shell и navigation;
+- compact page header;
+- desktop registry/table pattern;
+- mobile list/card pattern;
+- sorting, search and filters;
+- record cards and forms;
+- date/time controls;
+- status/action hierarchy;
+- validation/notifications;
+- typography, spacing, density and CSS tokens.
 
-## После DEV-FAST-001: UX/UI foundation
+Это не полная брендовая полировка приложения и не новый product vertical slice.
 
-Не косметическая полировка всего приложения, а общий рабочий слой компонентов:
+Implementation выполняется в отдельном чате по:
 
-- application shell и навигация;
-- desktop/mobile registry patterns;
-- таблицы, сортировка, поиск и фильтры;
-- карточки записей;
-- формы и date/time controls;
-- statuses и action hierarchy;
-- validation/notification patterns;
-- typography, spacing, density и CSS tokens.
+```text
+docs/project/UX_FOUNDATION_001_NEW_CHAT_STARTER.md
+```
 
-Журнал дефектов используется как первый reference screen. Следующие журналы должны переиспользовать общие компоненты, а не копировать legacy UI.
+Один work item сохраняет одну ветку и один Draft PR на весь цикл замечаний. Merge выполняется только после финальной приёмки и отдельной команды в Chat 0.
+
+---
 
 ## Следующие product vertical slices
 
-После DEV-FAST-001 и минимального UX/UI foundation:
+После UX-FOUNDATION-001:
 
 1. PRODUCT-D2 — Журнал заявок.
 2. PRODUCT-D3 — Журнал распоряжений.
-3. Operational Journal lifecycle: handover, shift close, action evidence и editor stabilization.
+3. Operational Journal lifecycle: handover, shift close, action evidence and editor stabilization.
 4. PRODUCT-D4 — ввод оборудования в работу.
 5. PRODUCT-D5 — РЗА и телемеханика.
 6. Журналы работ — после нормативного решения.
 
-Каждый slice повторяет source-bound pattern: источник, специализированные правила, dedicated UI, связи, presentation data, automated gates, exact-SHA runtime и пользовательская приёмка.
+Каждый следующий журнал переиспользует принятый UX foundation и повторяет source-bound pattern: источник, специализированные правила, dedicated UI, связи, presentation data, automated gates, runtime evidence и user acceptance.
+
+---
 
 ## Work permits and switching
 
@@ -163,6 +187,8 @@ DEV-FAST-001 затрагивает trusted security boundary, поэтому в
 
 Автоматическая генерация БП/ТБП/ТПП, topology и interlocks остаются более поздними этапами.
 
+---
+
 ## Internal Prototype Release
 
 Exit criteria:
@@ -176,13 +202,15 @@ Exit criteria:
 - честные paper-first ограничения;
 - regression и user acceptance.
 
+---
+
 ## Правила изменения roadmap
 
 - GitHub является источником фактического кода и PR-state;
 - VPS используется только для runtime/test evidence;
-- один work item может продолжаться в нескольких implementation chats, но сохраняет одну ветку и один PR;
-- автоматический merge запрещён;
-- merge требует отдельной явной команды пользователя;
 - preview не используется для разработки;
+- automatic merge запрещён;
 - пользователь не выполняет штатные VPS-команды для функциональных PR;
-- контекст обновляется после каждого merge, смены приоритета, появления нового active PR и перед завершением основного интеграционного чата.
+- микро-repair получают профильные проверки и быстрый refresh;
+- полный gate выполняется один раз на final exact head;
+- canonical context обновляется после merge, смены приоритета и создания нового active PR.
