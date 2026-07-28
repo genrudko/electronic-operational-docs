@@ -22,7 +22,77 @@
         <div class="defect-da-page">
             <section class="defect-shell defect-workspace defect-da-registry">
                 {% include "equipment_defects/_registry_repair2_header.html" %}
-                {% include "equipment_defects/_registry_repair2_worklist.html" %}
+
+                <section data-defect-view-panel="work" aria-label="Рабочий список дефектов">
+                    <div class="defect-da-work-table" data-defect-mobile-register>
+                        <div class="defect-da-work-head" aria-hidden="true">
+                            <span>№</span>
+                            <span>Обнаружен</span>
+                            <span>Оборудование</span>
+                            <span>Описание дефекта</span>
+                            <span>Состояние</span>
+                            <span>Ответственный</span>
+                        </div>
+                        <div class="defect-da-work-body" data-defect-sort-container>
+                            {% for row in rows %}
+                                <article
+                                    class="defect-da-work-row"
+                                    data-defect-sortable-item
+                                    data-defect-row-link
+                                    data-detail-url="{% url 'equipment_defects:detail' row.record.public_id %}"
+                                    data-status="{{ row.record.status_code }}"
+                                    data-sort-number="{{ row.record.sequence_value }}"
+                                    data-sort-event="{{ row.record.event_at|date:'U' }}"
+                                    data-sort-equipment="{% if row.equipment %}{{ row.equipment.dispatcher_name_snapshot }}{% endif %}"
+                                >
+                                    <div class="defect-da-work-number" data-column-title="Номер">
+                                        <a
+                                            class="defect-sequence-number defect-da-sequence-badge"
+                                            data-status="{{ row.record.status_code }}"
+                                            href="{% url 'equipment_defects:detail' row.record.public_id %}"
+                                            aria-label="Открыть дефект № {{ row.record.sequence_value }}"
+                                        >
+                                            {{ row.record.sequence_value }}
+                                        </a>
+                                        <small>{{ row.record.registration_number }}</small>
+                                    </div>
+                                    <div class="defect-da-work-date" data-column-title="Обнаружен">
+                                        <strong>{{ row.record.event_at|date:"d.m.Y" }}</strong>
+                                        <span>{{ row.record.event_at|date:"H:i" }}</span>
+                                        {% if row.discovered_by %}<small>{{ row.discovered_by.employee_full_name_snapshot }}</small>{% endif %}
+                                    </div>
+                                    <div class="defect-da-work-equipment" data-column-title="Оборудование">
+                                        <strong>{% if row.equipment %}{{ row.equipment.dispatcher_name_snapshot }}{% else %}Оборудование не указано{% endif %}</strong>
+                                        {% if row.equipment %}<small>{{ row.equipment.site_name_snapshot }}</small>{% endif %}
+                                    </div>
+                                    <div class="defect-da-work-description" data-column-title="Описание дефекта">
+                                        <a href="{% url 'equipment_defects:detail' row.record.public_id %}">{{ row.description }}</a>
+                                    </div>
+                                    <div class="defect-da-work-status" data-column-title="Состояние">
+                                        <span class="defect-status defect-da-status" data-status="{{ row.record.status_code }}">{{ row.record.status_name_snapshot }}</span>
+                                        {% if row.deadline %}
+                                            <small>Срок: {{ row.deadline }}</small>
+                                        {% elif row.record.status_code != 'CLOSED' %}
+                                            <small>Срок не установлен</small>
+                                        {% endif %}
+                                    </div>
+                                    <div class="defect-da-work-owner" data-column-title="Ответственный">
+                                        {% if row.operations_responsible %}
+                                            <strong>{{ row.operations_responsible.employee_full_name_snapshot }}</strong>
+                                            <small>{{ row.operations_responsible.employee_position_snapshot }}</small>
+                                        {% else %}
+                                            <strong>Не назначен</strong>
+                                            <small>Требуется назначение</small>
+                                        {% endif %}
+                                    </div>
+                                </article>
+                            {% empty %}
+                                <div class="defect-work-empty">Записей по выбранным условиям нет.</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </section>
+
                 {% include "equipment_defects/_registry_repair2_journal.html" %}
             </section>
         </div>
