@@ -24,6 +24,10 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
+          show-progress: false
+
+      - name: Run current architectural gate compatibility
+        run: python scripts/gate_patch_011_7.py
 
       - name: Set up Python 3.13
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
@@ -45,9 +49,6 @@ jobs:
             scripts/automation/dev_fast_001_request.py \
             tests/automation/test_auto_001b_controller.py \
             tests/automation/test_auto_001b_request_entrypoint.py
-
-      - name: Run current architectural gate compatibility
-        run: python scripts/gate_patch_011_7.py
 
       - name: Run AUTO-001B and DEV-FAST-001 tests
         run: |
