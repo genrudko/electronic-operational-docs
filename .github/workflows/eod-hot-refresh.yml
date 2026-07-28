@@ -149,6 +149,7 @@ jobs:
           chmod 0600 "$HOME/.ssh/known_hosts"
 
       - name: Apply exact presentation overlay to development
+        id: apply
         shell: bash
         env:
           PR_NUMBER: ${{ steps.validate.outputs.pr_number }}
@@ -166,7 +167,7 @@ jobs:
             "hot-refresh $PR_NUMBER $HEAD_SHA $GITHUB_RUN_ID" 2>&1)"
           controller_rc=$?
           set -e
-          printf '%s\n' "$controller_output"
+          printf '%s\n' "$controller_output" | tee dev-fast-controller-output.txt
           {
             echo
             echo "## DEV-FAST-001 controller result"
@@ -181,3 +182,12 @@ jobs:
             echo "- Automatic merge: **ABSENT**"
           } >>"$GITHUB_STEP_SUMMARY"
           exit "$controller_rc"
+
+      - name: Upload hot-refresh controller diagnostics
+        if: ${{ failure() && steps.apply.outcome == 'failure' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: dev-fast-controller-diagnostics-${{ github.run_id }}
+          path: dev-fast-controller-output.txt
+          if-no-files-found: error
+          retention-days: 14
