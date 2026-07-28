@@ -390,9 +390,15 @@ copy_hot_refresh_file() {
     local container="$1" source_file="$2" path="$3" run_id="$4"
     local stage="/tmp/eod-hot-refresh-$run_id"
     prepare_container_destination "$container" "$path"
-    docker cp "$source_file" "$container:$stage"
-    docker exec --user root "$container" install -o eod -g eod -m 0644 "$stage" "/app/$path"
-    docker exec --user root "$container" rm -f "$stage"
+    docker exec -i --user root "$container" sh -c '
+        set -eu
+        stage="$1"
+        destination="$2"
+        umask 077
+        cat >"$stage"
+        install -o eod -g eod -m 0644 "$stage" "$destination"
+        rm -f "$stage"
+    ' sh "$stage" "/app/$path" <"$source_file"
 }
 
 write_hot_refresh_marker() {

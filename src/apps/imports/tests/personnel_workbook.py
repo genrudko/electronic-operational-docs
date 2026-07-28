@@ -4,6 +4,8 @@ import io
 import zipfile
 from xml.sax.saxutils import escape
 
+_SYNTHETIC_PERSONNEL_WORKBOOK: bytes | None = None
+
 
 def _column_number(column: str) -> int:
     result = 0
@@ -13,6 +15,10 @@ def _column_number(column: str) -> int:
 
 
 def synthetic_personnel_workbook() -> bytes:
+    global _SYNTHETIC_PERSONNEL_WORKBOOK
+    if _SYNTHETIC_PERSONNEL_WORKBOOK is not None:
+        return _SYNTHETIC_PERSONNEL_WORKBOOK
+
     cells: dict[str, str] = {
         "Y4": "от 22.07.2026",
         "Z4": "№ TEST-0116",
@@ -167,4 +173,5 @@ def synthetic_personnel_workbook() -> bytes:
         archive.writestr("xl/workbook.xml", workbook)
         archive.writestr("xl/_rels/workbook.xml.rels", relationships)
         archive.writestr("xl/worksheets/sheet1.xml", worksheet)
-    return buffer.getvalue()
+    _SYNTHETIC_PERSONNEL_WORKBOOK = buffer.getvalue()
+    return _SYNTHETIC_PERSONNEL_WORKBOOK
