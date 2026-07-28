@@ -7,27 +7,22 @@
 <link rel="stylesheet" href="{% static 'equipment_defects/defects.css' %}?v=defect004">
 <link rel="stylesheet" href="{% static 'equipment_defects/ux_foundation.css' %}?v=uxf001">
 <link rel="stylesheet" href="{% static 'equipment_defects/ux_foundation_legacy_bridge.css' %}?v=uxf001">
+<link rel="stylesheet" href="{% static 'equipment_defects/ux_foundation_repair1.css' %}?v=uxf001r1">
 <script src="{% static 'equipment_defects/defects.js' %}?v=defect004" defer></script>
+<script src="{% static 'equipment_defects/ux_foundation_repair1.js' %}?v=uxf001r1" defer></script>
 {% endblock %}
 
 {% block content %}
-<section class="defect-shell">
-    <header class="defect-journal-header">
-        <div class="defect-journal-title">
-            <div class="defect-eyebrow">Оперативная документация</div>
+<section class="defect-shell defect-workspace">
+    <header class="defect-module-header">
+        <div class="defect-module-heading">
+            <div class="defect-module-kicker">Оперативная работа с неисправностями</div>
             <h1>{{ document_type_name }}</h1>
-            <div class="defect-journal-meta">
-                Показано {{ rows|length }} из {{ counts.total }} записей
-                <details>
-                    <summary>О форме журнала</summary>
-                    <p>
-                        {{ source.document }}, раздел {{ source.section }}, приложение № {{ source.appendix }}.
-                        Электронный справочно-контрольный контур не отменяет утверждённый бумажный оригинал.
-                    </p>
-                </details>
-            </div>
+            <p>
+                Рабочий список показывает, что требует внимания сейчас. Утверждённая шестиграфная форма сохранена отдельным режимом просмотра.
+            </p>
         </div>
-        <div class="defect-header-actions defect-screen-only">
+        <div class="defect-module-actions defect-screen-only">
             <a class="defect-button" href="{% url 'equipment_defects:create' %}">Создать дефект</a>
             {% if volumes %}
                 <a class="defect-button secondary" href="{% url 'equipment_defects:print' %}">Печатная форма</a>
@@ -35,12 +30,12 @@
         </div>
     </header>
 
-    <nav class="defect-status-strip defect-screen-only" aria-label="Быстрый фильтр по состоянию">
+    <nav class="defect-workspace-summary defect-screen-only" aria-label="Быстрый фильтр по состоянию">
         <a class="defect-summary-chip{% if not filters.status %} active{% endif %}" href="{% url 'equipment_defects:registry' %}">
             <span>Все записи</span><strong>{{ counts.total }}</strong>
         </a>
         <a class="defect-summary-chip registered{% if filters.status == 'REGISTERED' %} active{% endif %}" href="?status=REGISTERED">
-            <span>Зарегистрированы</span><strong>{{ counts.registered }}</strong>
+            <span>Новые</span><strong>{{ counts.registered }}</strong>
         </a>
         <a class="defect-summary-chip in-progress{% if filters.status == 'IN_PROGRESS' %} active{% endif %}" href="?status=IN_PROGRESS">
             <span>В работе</span><strong>{{ counts.in_progress }}</strong>
@@ -53,185 +48,233 @@
         </a>
     </nav>
 
-    <form class="defect-toolbar defect-screen-only" method="get">
-        <div class="defect-search-field">
-            <label class="visually-hidden" for="defect-search">Поиск по журналу</label>
-            <input
-                id="defect-search"
-                type="search"
-                name="q"
-                value="{{ filters.q }}"
-                placeholder="Поиск по оборудованию, описанию, сотруднику или номеру"
-            >
-        </div>
-        <div class="defect-sort-field">
-            <label for="defect-sort">Сортировка</label>
-            <select id="defect-sort" data-defect-sort>
-                <option value="event-desc">Сначала новые</option>
-                <option value="event-asc">Сначала старые</option>
-                <option value="number-desc">Номер: по убыванию</option>
-                <option value="number-asc">Номер: по возрастанию</option>
-                <option value="equipment-asc">Оборудование: А–Я</option>
-                <option value="status-asc">По состоянию</option>
-            </select>
-        </div>
-        <details class="defect-filter-drawer"{% if filters.status or filters.equipment or filters.date_from or filters.date_to %} open{% endif %}>
-            <summary>Фильтры</summary>
-            <div class="defect-filter-grid">
-                <div class="defect-field">
-                    <label for="defect-status">Состояние</label>
-                    <select id="defect-status" name="status">
-                        <option value="">Все состояния</option>
-                        {% for code, label in status_options %}
-                            <option value="{{ code }}" {% if filters.status == code %}selected{% endif %}>{{ label }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="defect-field">
-                    <label for="defect-equipment">Оборудование</label>
-                    <select id="defect-equipment" name="equipment">
-                        <option value="">Всё оборудование</option>
-                        {% for equipment in equipment_assets %}
-                            <option value="{{ equipment.public_id }}" {% if filters.equipment == equipment.public_id|stringformat:'s' %}selected{% endif %}>
-                                {{ equipment.code }} · {{ equipment.technical_name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="defect-field">
-                    <label for="defect-date-from">Обнаружено с</label>
-                    <input id="defect-date-from" type="date" name="date_from" value="{{ filters.date_from }}">
-                </div>
-                <div class="defect-field">
-                    <label for="defect-date-to">Обнаружено по</label>
-                    <input id="defect-date-to" type="date" name="date_to" value="{{ filters.date_to }}">
-                </div>
+    <section class="defect-command-center defect-screen-only" aria-label="Поиск, сортировка и представление журнала">
+        <form class="defect-command-topline" method="get">
+            <div class="defect-view-switch" data-defect-view-switch role="group" aria-label="Представление записей">
+                <button type="button" data-defect-view="work" aria-pressed="true">Рабочий список</button>
+                <button type="button" data-defect-view="journal" aria-pressed="false">Форма журнала</button>
             </div>
-        </details>
-        <button class="defect-button" type="submit">Применить</button>
-        <a class="defect-button secondary" href="{% url 'equipment_defects:registry' %}">Сбросить</a>
-    </form>
+            <div class="defect-search-field">
+                <label class="visually-hidden" for="defect-search">Поиск по журналу</label>
+                <input
+                    id="defect-search"
+                    type="search"
+                    name="q"
+                    value="{{ filters.q }}"
+                    placeholder="Оборудование, описание, сотрудник или номер"
+                >
+            </div>
+            <div class="defect-sort-field">
+                <label for="defect-sort">Сортировка</label>
+                <select id="defect-sort" data-defect-sort>
+                    <option value="event-desc">Сначала новые</option>
+                    <option value="event-asc">Сначала старые</option>
+                    <option value="number-desc">Номер: по убыванию</option>
+                    <option value="number-asc">Номер: по возрастанию</option>
+                    <option value="equipment-asc">Оборудование: А–Я</option>
+                    <option value="status-asc">По состоянию</option>
+                </select>
+            </div>
+            <details class="defect-filter-drawer"{% if filters.status or filters.equipment or filters.date_from or filters.date_to %} open{% endif %}>
+                <summary>Фильтры</summary>
+                <div class="defect-filter-grid">
+                    <div class="defect-field">
+                        <label for="defect-status">Состояние</label>
+                        <select id="defect-status" name="status">
+                            <option value="">Все состояния</option>
+                            {% for code, label in status_options %}
+                                <option value="{{ code }}" {% if filters.status == code %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="defect-field">
+                        <label for="defect-equipment">Оборудование</label>
+                        <select id="defect-equipment" name="equipment">
+                            <option value="">Всё оборудование</option>
+                            {% for equipment in equipment_assets %}
+                                <option value="{{ equipment.public_id }}" {% if filters.equipment == equipment.public_id|stringformat:'s' %}selected{% endif %}>
+                                    {{ equipment.code }} · {{ equipment.technical_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="defect-field">
+                        <label for="defect-date-from">Обнаружено с</label>
+                        <input id="defect-date-from" type="date" name="date_from" value="{{ filters.date_from }}">
+                    </div>
+                    <div class="defect-field">
+                        <label for="defect-date-to">Обнаружено по</label>
+                        <input id="defect-date-to" type="date" name="date_to" value="{{ filters.date_to }}">
+                    </div>
+                </div>
+            </details>
+            <button class="defect-button" type="submit">Применить</button>
+            <a class="defect-button secondary" href="{% url 'equipment_defects:registry' %}">Сбросить</a>
+        </form>
 
-    {% if filters.q or filters.status or filters.equipment or filters.date_from or filters.date_to %}
-        <div class="defect-active-filters defect-screen-only" aria-label="Активные фильтры">
-            <span>Активные условия:</span>
-            {% if filters.q %}<span class="defect-filter-chip">Поиск: {{ filters.q }}</span>{% endif %}
-            {% if filters.status %}
-                {% for code, label in status_options %}
-                    {% if filters.status == code %}<span class="defect-filter-chip">Состояние: {{ label }}</span>{% endif %}
-                {% endfor %}
-            {% endif %}
-            {% if filters.equipment %}<span class="defect-filter-chip">Оборудование выбрано</span>{% endif %}
-            {% if filters.date_from %}<span class="defect-filter-chip">С {{ filters.date_from }}</span>{% endif %}
-            {% if filters.date_to %}<span class="defect-filter-chip">По {{ filters.date_to }}</span>{% endif %}
+        {% if filters.q or filters.status or filters.equipment or filters.date_from or filters.date_to %}
+            <div class="defect-active-filters" aria-label="Активные фильтры">
+                <span>Активные условия:</span>
+                {% if filters.q %}<span class="defect-filter-chip">Поиск: {{ filters.q }}</span>{% endif %}
+                {% if filters.status %}
+                    {% for code, label in status_options %}
+                        {% if filters.status == code %}<span class="defect-filter-chip">Состояние: {{ label }}</span>{% endif %}
+                    {% endfor %}
+                {% endif %}
+                {% if filters.equipment %}<span class="defect-filter-chip">Оборудование выбрано</span>{% endif %}
+                {% if filters.date_from %}<span class="defect-filter-chip">С {{ filters.date_from }}</span>{% endif %}
+                {% if filters.date_to %}<span class="defect-filter-chip">По {{ filters.date_to }}</span>{% endif %}
+            </div>
+        {% endif %}
+    </section>
+
+    <section data-defect-view-panel="work" aria-label="Рабочий список дефектов">
+        <div class="defect-worklist" data-defect-mobile-register data-defect-sort-container>
+            {% for row in rows %}
+                <article
+                    class="defect-work-item"
+                    data-defect-sortable-item
+                    data-defect-row-link
+                    data-detail-url="{% url 'equipment_defects:detail' row.record.public_id %}"
+                    data-status="{{ row.record.status_code }}"
+                    data-sort-number="{{ row.record.sequence_value }}"
+                    data-sort-event="{{ row.record.event_at|date:'U' }}"
+                    data-sort-equipment="{% if row.equipment %}{{ row.equipment.dispatcher_name_snapshot }}{% endif %}"
+                >
+                    <div class="defect-work-index">
+                        <a class="defect-sequence-number" href="{% url 'equipment_defects:detail' row.record.public_id %}" aria-label="Открыть дефект № {{ row.record.sequence_value }}">
+                            {{ row.record.sequence_value }}
+                        </a>
+                        <span class="defect-status" data-status="{{ row.record.status_code }}">{{ row.record.status_name_snapshot }}</span>
+                    </div>
+
+                    <div class="defect-work-subject">
+                        <span class="defect-work-equipment">
+                            {% if row.equipment %}{{ row.equipment.dispatcher_name_snapshot }}{% else %}Оборудование не указано{% endif %}
+                        </span>
+                        <a class="defect-work-description" href="{% url 'equipment_defects:detail' row.record.public_id %}">{{ row.description }}</a>
+                        <div class="defect-work-meta">
+                            <span>Обнаружен {{ row.record.event_at|date:"d.m.Y H:i" }}</span>
+                            <span>{{ row.record.registration_number }}</span>
+                            {% if row.discovered_by %}<span>{{ row.discovered_by.employee_full_name_snapshot }}</span>{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="defect-work-control">
+                        <span class="defect-work-label">Контроль срока</span>
+                        {% if row.deadline %}
+                            <span class="defect-work-value">{{ row.deadline }}</span>
+                        {% else %}
+                            <span class="defect-work-value">Срок не установлен</span>
+                        {% endif %}
+                        {% if row.extensions %}
+                            <span class="defect-work-secondary">Срок продлевался {{ row.extensions|length }} раз.</span>
+                        {% elif row.record.status_code == 'REGISTERED' %}
+                            <span class="defect-work-secondary">Нужно назначить срок устранения.</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="defect-work-owner">
+                        <span class="defect-work-label">Ответственный</span>
+                        {% if row.operations_responsible %}
+                            <span class="defect-work-value">{{ row.operations_responsible.employee_full_name_snapshot }}</span>
+                            <span class="defect-work-secondary">{{ row.operations_responsible.employee_position_snapshot }}</span>
+                        {% else %}
+                            <span class="defect-work-value">Не назначен</span>
+                            <span class="defect-work-secondary">Требуется определить ответственного.</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="defect-work-next">
+                        <span class="defect-work-label">Следующий шаг</span>
+                        {% if row.record.status_code == 'REGISTERED' %}
+                            <span class="defect-next-action">Назначить срок и ответственного</span>
+                        {% elif row.record.status_code == 'IN_PROGRESS' %}
+                            <span class="defect-next-action">Контролировать устранение</span>
+                        {% elif row.record.status_code == 'RESOLVED' %}
+                            <span class="defect-next-action">Ознакомление и закрытие</span>
+                        {% else %}
+                            <span class="defect-next-action">Работа завершена</span>
+                        {% endif %}
+                        <a class="defect-open-card" href="{% url 'equipment_defects:detail' row.record.public_id %}">Открыть карточку →</a>
+                    </div>
+                </article>
+            {% empty %}
+                <div class="defect-work-empty">Записей по выбранным условиям нет.</div>
+            {% endfor %}
         </div>
-    {% endif %}
+    </section>
 
-    <div class="defect-register-wrap" data-defect-desktop-register>
-        <table class="defect-register" aria-label="Журнал дефектов оборудования">
-            <thead>
-                <tr>
-                    <th class="defect-number-column" scope="col">№</th>
-                    <th scope="col">Дата обнаружения дефекта</th>
-                    <th scope="col">Наименование ЛЭП, оборудования, устройства, содержание дефекта, Ф.И.О., подпись лица, обнаружившего дефект</th>
-                    <th scope="col">Срок устранения, Ф.И.О., подпись ответственного лица за эксплуатацию ЛЭП, оборудования, устройства, сооружения, здания</th>
-                    <th scope="col">Дата устранения дефекта, Ф.И.О., подпись ответственного лица за его устранение</th>
-                    <th scope="col">Содержание выполненных работ по устранению дефекта</th>
-                    <th scope="col">Ф.И.О., подписи оперативного персонала</th>
-                </tr>
-            </thead>
-            <tbody data-defect-sort-container>
-                {% for row in rows %}
-                    <tr
-                        data-defect-sortable-item
-                        data-defect-row-link
-                        data-detail-url="{% url 'equipment_defects:detail' row.record.public_id %}"
-                        data-status="{{ row.record.status_code }}"
-                        data-sort-number="{{ row.record.sequence_value }}"
-                        data-sort-event="{{ row.record.event_at|date:'U' }}"
-                        data-sort-equipment="{% if row.equipment %}{{ row.equipment.dispatcher_name_snapshot }}{% endif %}"
-                    >
-                        <td class="defect-number-column" data-column-title="Номер">
-                            <a class="defect-sequence-number" href="{% url 'equipment_defects:detail' row.record.public_id %}" aria-label="Открыть дефект № {{ row.record.sequence_value }}">
-                                {{ row.record.sequence_value }}
-                            </a>
-                        </td>
-                        <td data-column-title="Дата обнаружения">
-                            <strong>{{ row.record.event_at|date:"d.m.Y" }}</strong>
-                            <span class="defect-record-time">{{ row.record.event_at|date:"H:i" }}</span>
-                            <span class="defect-status" data-status="{{ row.record.status_code }}">{{ row.record.status_name_snapshot }}</span>
-                            <span class="defect-record-number">{{ row.record.registration_number }}</span>
-                        </td>
-                        <td data-column-title="Оборудование и дефект">
-                            {% if row.equipment %}<span class="defect-cell-equipment">{{ row.equipment.dispatcher_name_snapshot }}</span>{% endif %}
-                            <a class="defect-description-link" href="{% url 'equipment_defects:detail' row.record.public_id %}">{{ row.description }}</a>
-                            {% if row.discovered_by %}
-                                <span class="defect-cell-person">Обнаружил: <strong>{{ row.discovered_by.employee_full_name_snapshot }}</strong>{{ row.discovered_by.employee_position_snapshot }}</span>
-                            {% endif %}
-                        </td>
-                        <td data-column-title="Срок и ответственный">
-                            {% if row.deadline %}<strong>{{ row.deadline }}</strong>{% else %}<span class="defect-muted">Срок не установлен</span>{% endif %}
-                            {% if row.operations_responsible %}
-                                <span class="defect-cell-person"><strong>{{ row.operations_responsible.employee_full_name_snapshot }}</strong>{{ row.operations_responsible.employee_position_snapshot }}</span>
-                            {% endif %}
-                            {% for extension in row.extensions %}
-                                <div class="defect-extension"><strong>Срок устранения продлен</strong><br>до {{ extension.new_deadline|date:"d.m.Y H:i" }}</div>
-                            {% endfor %}
-                        </td>
-                        <td data-column-title="Устранение">
-                            {% if row.resolved_at %}<strong>{{ row.resolved_at }}</strong>{% else %}<span class="defect-muted">Не устранён</span>{% endif %}
-                            {% if row.resolution_responsible %}
-                                <span class="defect-cell-person"><strong>{{ row.resolution_responsible.employee_full_name_snapshot }}</strong>{{ row.resolution_responsible.employee_position_snapshot }}</span>
-                            {% endif %}
-                        </td>
-                        <td data-column-title="Выполненные работы">
-                            {% for extension in row.extensions %}
-                                <div class="defect-extension"><strong>Срок устранения продлен</strong><br>Новый срок: {{ extension.new_deadline|date:"d.m.Y H:i" }}.<br>Причина: {{ extension.comment }}</div>
-                            {% endfor %}
-                            {% if row.work_summary %}<p>{{ row.work_summary }}</p>{% elif not row.extensions %}<span>—</span>{% endif %}
-                        </td>
-                        <td data-column-title="Ознакомление">
-                            {% for acknowledgement in row.acknowledgers %}
-                                <span class="defect-cell-person"><strong>{{ acknowledgement.actor_full_name_snapshot }}</strong>{{ acknowledgement.actor_position_snapshot }}<br>{{ acknowledgement.occurred_at|date:"d.m.Y H:i" }}</span>
-                            {% empty %}<span>—</span>{% endfor %}
-                        </td>
+    <section class="defect-journal-view" data-defect-view-panel="journal" hidden aria-label="Утверждённая форма журнала">
+        <header class="defect-journal-view-header">
+            <div>
+                <strong>Утверждённая форма журнала</strong>
+                <span>{{ source.document }}, раздел {{ source.section }}, приложение № {{ source.appendix }}</span>
+            </div>
+            <span>Экранная нумерация не входит в печатную форму.</span>
+        </header>
+
+        <div class="defect-register-wrap" data-defect-desktop-register>
+            <table class="defect-register" aria-label="Журнал дефектов оборудования">
+                <thead>
+                    <tr>
+                        <th class="defect-number-column" scope="col">№</th>
+                        <th scope="col">Дата обнаружения дефекта</th>
+                        <th scope="col">Наименование ЛЭП, оборудования, устройства, содержание дефекта, Ф.И.О., подпись лица, обнаружившего дефект</th>
+                        <th scope="col">Срок устранения, Ф.И.О., подпись ответственного лица за эксплуатацию ЛЭП, оборудования, устройства, сооружения, здания</th>
+                        <th scope="col">Дата устранения дефекта, Ф.И.О., подпись ответственного лица за его устранение</th>
+                        <th scope="col">Содержание выполненных работ по устранению дефекта</th>
+                        <th scope="col">Ф.И.О., подписи оперативного персонала</th>
                     </tr>
-                {% empty %}
-                    <tr><td class="defect-empty" colspan="7">Записей по выбранным условиям нет.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="defect-mobile-list" data-defect-mobile-register data-defect-sort-container aria-label="Журнал дефектов: мобильное представление">
-        {% for row in rows %}
-            <article
-                class="defect-mobile-card"
-                data-defect-sortable-item
-                data-status="{{ row.record.status_code }}"
-                data-sort-number="{{ row.record.sequence_value }}"
-                data-sort-event="{{ row.record.event_at|date:'U' }}"
-                data-sort-equipment="{% if row.equipment %}{{ row.equipment.dispatcher_name_snapshot }}{% endif %}"
-            >
-                <header>
-                    <a class="defect-mobile-number" href="{% url 'equipment_defects:detail' row.record.public_id %}">№ {{ row.record.sequence_value }}</a>
-                    <span class="defect-status" data-status="{{ row.record.status_code }}">{{ row.record.status_name_snapshot }}</span>
-                </header>
-                {% if row.equipment %}<strong class="defect-mobile-equipment">{{ row.equipment.dispatcher_name_snapshot }}</strong>{% endif %}
-                <a class="defect-mobile-description" href="{% url 'equipment_defects:detail' row.record.public_id %}">{{ row.description }}</a>
-                <dl>
-                    <div><dt>Обнаружен</dt><dd>{{ row.record.event_at|date:"d.m.Y H:i" }}</dd></div>
-                    <div><dt>Срок</dt><dd>{{ row.deadline|default:"Не установлен" }}</dd></div>
-                    {% if row.operations_responsible %}<div><dt>Ответственный</dt><dd>{{ row.operations_responsible.employee_full_name_snapshot }}</dd></div>{% endif %}
-                </dl>
-                <footer>
-                    <span>{{ row.record.registration_number }}</span>
-                    <a class="defect-button secondary" href="{% url 'equipment_defects:detail' row.record.public_id %}">Открыть</a>
-                </footer>
-            </article>
-        {% empty %}
-            <div class="defect-empty-card">Записей по выбранным условиям нет.</div>
-        {% endfor %}
-    </div>
+                </thead>
+                <tbody data-defect-sort-container>
+                    {% for row in rows %}
+                        <tr
+                            data-defect-sortable-item
+                            data-defect-row-link
+                            data-detail-url="{% url 'equipment_defects:detail' row.record.public_id %}"
+                            data-status="{{ row.record.status_code }}"
+                            data-sort-number="{{ row.record.sequence_value }}"
+                            data-sort-event="{{ row.record.event_at|date:'U' }}"
+                            data-sort-equipment="{% if row.equipment %}{{ row.equipment.dispatcher_name_snapshot }}{% endif %}"
+                        >
+                            <td class="defect-number-column" data-column-title="Номер">
+                                <a class="defect-sequence-number" href="{% url 'equipment_defects:detail' row.record.public_id %}" aria-label="Открыть дефект № {{ row.record.sequence_value }}">{{ row.record.sequence_value }}</a>
+                            </td>
+                            <td data-column-title="Дата обнаружения">
+                                <strong>{{ row.record.event_at|date:"d.m.Y" }}</strong>
+                                <span class="defect-record-time">{{ row.record.event_at|date:"H:i" }}</span>
+                                <span class="defect-status" data-status="{{ row.record.status_code }}">{{ row.record.status_name_snapshot }}</span>
+                                <span class="defect-record-number">{{ row.record.registration_number }}</span>
+                            </td>
+                            <td data-column-title="Оборудование и дефект">
+                                {% if row.equipment %}<span class="defect-cell-equipment">{{ row.equipment.dispatcher_name_snapshot }}</span>{% endif %}
+                                <a class="defect-description-link" href="{% url 'equipment_defects:detail' row.record.public_id %}">{{ row.description }}</a>
+                                {% if row.discovered_by %}<span class="defect-cell-person">Обнаружил: <strong>{{ row.discovered_by.employee_full_name_snapshot }}</strong>{{ row.discovered_by.employee_position_snapshot }}</span>{% endif %}
+                            </td>
+                            <td data-column-title="Срок и ответственный">
+                                {% if row.deadline %}<strong>{{ row.deadline }}</strong>{% else %}<span class="defect-muted">Срок не установлен</span>{% endif %}
+                                {% if row.operations_responsible %}<span class="defect-cell-person"><strong>{{ row.operations_responsible.employee_full_name_snapshot }}</strong>{{ row.operations_responsible.employee_position_snapshot }}</span>{% endif %}
+                                {% for extension in row.extensions %}<div class="defect-extension"><strong>Срок устранения продлен</strong><br>до {{ extension.new_deadline|date:"d.m.Y H:i" }}</div>{% endfor %}
+                            </td>
+                            <td data-column-title="Устранение">
+                                {% if row.resolved_at %}<strong>{{ row.resolved_at }}</strong>{% else %}<span class="defect-muted">Не устранён</span>{% endif %}
+                                {% if row.resolution_responsible %}<span class="defect-cell-person"><strong>{{ row.resolution_responsible.employee_full_name_snapshot }}</strong>{{ row.resolution_responsible.employee_position_snapshot }}</span>{% endif %}
+                            </td>
+                            <td data-column-title="Выполненные работы">
+                                {% for extension in row.extensions %}<div class="defect-extension"><strong>Срок устранения продлен</strong><br>Новый срок: {{ extension.new_deadline|date:"d.m.Y H:i" }}.<br>Причина: {{ extension.comment }}</div>{% endfor %}
+                                {% if row.work_summary %}<p>{{ row.work_summary }}</p>{% elif not row.extensions %}<span>—</span>{% endif %}
+                            </td>
+                            <td data-column-title="Ознакомление">
+                                {% for acknowledgement in row.acknowledgers %}<span class="defect-cell-person"><strong>{{ acknowledgement.actor_full_name_snapshot }}</strong>{{ acknowledgement.actor_position_snapshot }}<br>{{ acknowledgement.occurred_at|date:"d.m.Y H:i" }}</span>{% empty %}<span>—</span>{% endfor %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr><td class="defect-empty" colspan="7">Записей по выбранным условиям нет.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 </section>
 {% endblock %}
