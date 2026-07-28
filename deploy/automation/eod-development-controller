@@ -8,6 +8,7 @@ APP_ENTRYPOINT="/etc/eod-automation/app-entrypoint.sh"
 DEPLOY_KEY="/etc/eod-automation/github_deploy_key"
 GITHUB_KNOWN_HOSTS="/etc/eod-automation/github_known_hosts"
 LOCK_FILE="/run/lock/eod-development-controller.lock"
+HOT_REFRESH_MARKER="/app/.eod-hot-refresh.env"
 
 fail() {
     printf 'ERROR: %s\n' "$*" >&2
@@ -113,6 +114,22 @@ wait_for_application() {
         [[ "$attempt" -eq 36 ]] && return 1
         sleep 5
     done
+}
+
+repository_ssh_command() {
+    printf 'ssh -i %q -o IdentitiesOnly=yes -o UserKnownHostsFile=%q -o StrictHostKeyChecking=yes' \
+        "$DEPLOY_KEY" "$GITHUB_KNOWN_HOSTS"
+}
+
+ensure_repository_cache() {
+    if [[ ! -d "$EOD_REPOSITORY_CACHE" ]]; then
+        git init --bare "$EOD_REPOSITORY_CACHE" >/dev/null
+        git -C "$EOD_REPOSITORY_CACHE" remote add origin "$EOD_REPOSITORY_SSH_URL"
+    fi
+    if [[ "$(git -C "$EOD_REPOSITORY_CACHE" remote get-url origin)" != "$EOD_REPOSITORY_SSH_URL" ]]; then
+        printf 'ERROR: repository cache has an unexpected origin\n' >&2
+        return 1
+    fi
 }
 
 fetch_release() {
@@ -239,6 +256,231 @@ current_application_image() {
     else
         printf '%s\n' "$fallback"
     fi
+}
+
+current_application_container() {
+    local image="$1"
+    compose "$image" ps -q app
+}
+
+force_recreate_application_only() {
+    local image="$1"
+    compose "$image" up --detach --force-recreate --no-deps app
+    if ! wait_for_application "$image"; then
+        compose "$image" logs --no-color --tail=250 app >&2 || true
+        return 1
+    fi
+}
+
+restart_application_only() {
+    local image="$1"
+    compose "$image" restart app
+    if ! wait_for_application "$image"; then
+        compose "$image" logs --no-color --tail=250 app >&2 || true
+        return 1
+    fi
+}
+
+fetch_hot_refresh_refs() {
+    local pr_number="$1"
+    local sha="$2"
+    local ssh_command fetched_sha
+    ssh_command="$(repository_ssh_command)"
+    ensure_repository_cache
+    GIT_SSH_COMMAND="$ssh_command" git -C "$EOD_REPOSITORY_CACHE" fetch --force --no-tags origin \
+        "refs/heads/main:refs/remotes/origin/main" \
+        "refs/pull/$pr_number/head:refs/eod-hot-refresh/current"
+    fetched_sha="$(git -C "$EOD_REPOSITORY_CACHE" rev-parse refs/eod-hot-refresh/current)"
+    if [[ "$fetched_sha" != "$sha" ]]; then
+        printf 'ERROR: fetched PR head is stale: expected %s, got %s\n' "$sha" "$fetched_sha" >&2
+        return 1
+    fi
+    git -C "$EOD_REPOSITORY_CACHE" cat-file -e "${sha}^{commit}"
+}
+
+validate_hot_refresh_path() {
+    local path="$1"
+    [[ "$path" =~ ^[A-Za-z0-9._/-]+$ ]] || fail "unsupported repository path characters: $path"
+    [[ "$path" != /* ]] || fail "absolute repository path is forbidden: $path"
+    [[ "$path" != *"//"* ]] || fail "non-canonical repository path is forbidden: $path"
+    [[ "$path" != "." && "$path" != ".." && "$path" != *"/./"* && "$path" != *"/../"* ]] || \
+        fail "path traversal is forbidden: $path"
+    case "$path" in
+        src/templates/*|src/static/*)
+            ;;
+        *)
+            fail "path is outside the hot-refresh allowlist: $path"
+            ;;
+    esac
+    [[ "$path" != "src/templates/" && "$path" != "src/static/" ]] || \
+        fail "hot-refresh path must identify a file"
+}
+
+collect_hot_refresh_files() {
+    local sha="$1"
+    local merge_base status path entry mode type object listed_path
+    HOT_REFRESH_PATHS=()
+    merge_base="$(git -C "$EOD_REPOSITORY_CACHE" merge-base refs/remotes/origin/main "$sha")"
+    [[ -n "$merge_base" ]] || fail "could not determine PR merge base with main"
+    [[ "$merge_base" != "$sha" ]] || fail "hot-refresh PR has no changes relative to main"
+
+    while IFS= read -r -d '' status && IFS= read -r -d '' path; do
+        [[ "$status" == "A" || "$status" == "M" ]] || \
+            fail "V1 allows only added or modified files; got $status for $path"
+        validate_hot_refresh_path "$path"
+        entry="$(git -C "$EOD_REPOSITORY_CACHE" ls-tree "$sha" -- "$path")"
+        [[ -n "$entry" ]] || fail "hot-refresh tree entry is missing: $path"
+        read -r mode type object listed_path <<<"${entry//$'\t'/ }"
+        [[ "$mode" == "100644" && "$type" == "blob" ]] || \
+            fail "V1 accepts only regular non-executable blobs: $path mode=$mode type=$type"
+        [[ "$listed_path" == "$path" ]] || fail "hot-refresh tree path mismatch: $path"
+        git -C "$EOD_REPOSITORY_CACHE" cat-file -e "${object}^{blob}"
+        HOT_REFRESH_PATHS+=("$path")
+    done < <(git -C "$EOD_REPOSITORY_CACHE" diff --name-status --no-renames -z "$merge_base" "$sha")
+
+    [[ "${#HOT_REFRESH_PATHS[@]}" -gt 0 ]] || fail "hot-refresh contains no allowed files"
+}
+
+marker_matches_hot_refresh() {
+    local container="$1" pr_number="$2" sha="$3" marker
+    marker="$(docker exec "$container" cat "$HOT_REFRESH_MARKER" 2>/dev/null || true)"
+    grep -Fxq "PR_NUMBER=$pr_number" <<<"$marker" && \
+        grep -Fxq "OVERLAY_SHA=$sha" <<<"$marker"
+}
+
+prepare_container_destination() {
+    local container="$1" path="$2"
+    docker exec -i --user root "$container" python - "$path" <<'PY'
+from __future__ import annotations
+
+import stat
+import sys
+from pathlib import Path, PurePosixPath
+
+relative = sys.argv[1]
+allowed = ("src/templates/", "src/static/")
+if not relative.startswith(allowed):
+    raise SystemExit("destination outside allowlist")
+pure = PurePosixPath(relative)
+if any(part in {"", ".", ".."} for part in pure.parts):
+    raise SystemExit("non-canonical destination")
+root = Path("/app")
+current = root
+for part in pure.parts[:-1]:
+    current = current / part
+    try:
+        mode = current.lstat().st_mode
+    except FileNotFoundError:
+        current.mkdir(mode=0o755)
+        mode = current.lstat().st_mode
+    if stat.S_ISLNK(mode) or not stat.S_ISDIR(mode):
+        raise SystemExit(f"unsafe destination component: {current}")
+leaf = root.joinpath(*pure.parts)
+try:
+    leaf_mode = leaf.lstat().st_mode
+except FileNotFoundError:
+    pass
+else:
+    if stat.S_ISLNK(leaf_mode) or not stat.S_ISREG(leaf_mode):
+        raise SystemExit(f"unsafe destination leaf: {leaf}")
+PY
+}
+
+copy_hot_refresh_file() {
+    local container="$1" source_file="$2" path="$3" run_id="$4"
+    local stage="/tmp/eod-hot-refresh-$run_id"
+    prepare_container_destination "$container" "$path"
+    docker cp "$source_file" "$container:$stage"
+    docker exec --user root "$container" install -o eod -g eod -m 0644 "$stage" "/app/$path"
+    docker exec --user root "$container" rm -f "$stage"
+}
+
+write_hot_refresh_marker() {
+    local container="$1" pr_number="$2" sha="$3" run_id="$4" applied_at="$5"
+    docker exec -i --user root "$container" sh -s -- \
+        "$HOT_REFRESH_MARKER" "$pr_number" "$sha" "$run_id" "$applied_at" <<'SH'
+set -eu
+marker="$1"
+pr_number="$2"
+sha="$3"
+run_id="$4"
+applied_at="$5"
+tmp="${marker}.tmp"
+umask 077
+{
+    printf 'PR_NUMBER=%s\n' "$pr_number"
+    printf 'OVERLAY_SHA=%s\n' "$sha"
+    printf 'RUN_ID=%s\n' "$run_id"
+    printf 'APPLIED_AT=%s\n' "$applied_at"
+} >"$tmp"
+chown eod:eod "$tmp"
+chmod 0600 "$tmp"
+mv "$tmp" "$marker"
+SH
+}
+
+hot_refresh() {
+    local pr_number="$1" sha="$2" run_id="$3"
+    require_pr_number "$pr_number"
+    require_sha "$sha"
+    require_run_id "$run_id"
+    require_command date
+    require_command mktemp
+    compgen -G "$EOD_STATE_DIR/pending-*.env" >/dev/null && \
+        fail "a full deployment transaction is pending"
+
+    fetch_hot_refresh_refs "$pr_number" "$sha"
+    collect_hot_refresh_files "$sha"
+
+    local image container temp_root index path applied_at rollback_required=0
+    image="$(current_application_image)"
+    docker image inspect "$image" >/dev/null 2>&1 || fail "current development image is unavailable: $image"
+    container="$(current_application_container "$image")"
+    [[ -n "$container" ]] || fail "development app container is absent"
+
+    if marker_matches_hot_refresh "$container" "$pr_number" "$sha"; then
+        if wait_for_application "$image"; then
+            printf 'ALREADY_APPLIED pr=%s overlay_sha=%s image=%s preview=UNTOUCHED\n' \
+                "$pr_number" "$sha" "$image"
+            return 0
+        fi
+        force_recreate_application_only "$image" || fail "could not recover unhealthy development app"
+        fail "existing hot-refresh marker was unhealthy; clean full-image app restored"
+    fi
+
+    temp_root="$(mktemp -d)"
+    index=0
+    for path in "${HOT_REFRESH_PATHS[@]}"; do
+        git -C "$EOD_REPOSITORY_CACHE" show "$sha:$path" >"$temp_root/$index"
+        index=$((index + 1))
+    done
+
+    rollback_required=1
+    trap 'rc=$?; trap - ERR; set +e; if [[ "$rollback_required" == "1" ]]; then log "hot refresh failed; recreating development app from full image"; force_recreate_application_only "$image"; rollback_rc=$?; rm -rf "$temp_root"; if [[ "$rollback_rc" -ne 0 ]]; then printf "ERROR: hot-refresh rollback failed for image %s\n" "$image" >&2; exit "$rollback_rc"; fi; fi; exit "$rc"' ERR
+
+    force_recreate_application_only "$image"
+    container="$(current_application_container "$image")"
+    [[ -n "$container" ]]
+
+    index=0
+    for path in "${HOT_REFRESH_PATHS[@]}"; do
+        copy_hot_refresh_file "$container" "$temp_root/$index" "$path" "$run_id"
+        index=$((index + 1))
+    done
+
+    restart_application_only "$image"
+    fetch_hot_refresh_refs "$pr_number" "$sha"
+    container="$(current_application_container "$image")"
+    [[ -n "$container" ]]
+    applied_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    write_hot_refresh_marker "$container" "$pr_number" "$sha" "$run_id" "$applied_at"
+    wait_for_application "$image"
+
+    rollback_required=0
+    trap - ERR
+    rm -rf "$temp_root"
+    printf 'SUCCESS pr=%s overlay_sha=%s image=%s files=%s full_exact_head=NO database=NONE preview=UNTOUCHED\n' \
+        "$pr_number" "$sha" "$image" "${#HOT_REFRESH_PATHS[@]}"
 }
 
 stop_application() {
@@ -483,6 +725,10 @@ ssh_gateway() {
         rollback-pending)
             [[ "${#args[@]}" -eq 1 ]] || fail "invalid rollback-pending command"
             manual_rollback_pending
+            ;;
+        hot-refresh)
+            [[ "${#args[@]}" -eq 4 ]] || fail "invalid hot-refresh command"
+            hot_refresh "${args[1]}" "${args[2]}" "${args[3]}"
             ;;
         *)
             fail "unsupported forced SSH command"

@@ -99,7 +99,13 @@ OPEN_ITEMS:
 a9f6ebd5cdb383837aadb2dbc6790778d8d81cd6
 ```
 
-Текущий `main` после записи этого handoff необходимо повторно сверять через GitHub. Accepted product baseline определяется merge commit `883a108c...`, а не устаревшими SHA из старых handoff.
+Текущий `main` на старте DEV-FAST-001:
+
+```text
+54990c386c40dd7bd854330e61ed7285649ef120
+```
+
+Accepted product baseline определяется merge commit `883a108c...`, а не устаревшими SHA из старых handoff.
 
 Accepted application baseline, используемый в проектной документации:
 
@@ -213,21 +219,28 @@ sudo dev-status
 
 ---
 
-## 9. Следующий work item — DEV-FAST-001
+## 9. Active work item — DEV-FAST-001
 
 GitHub issue:
 
 ```text
-#18 — Trusted hot refresh from PR comment
+#18 — DEV-FAST-001: Trusted hot refresh from PR comment
 ```
 
-Статус:
+Фактический статус:
 
 ```text
-READY TO START
-implementation: NOT STARTED
-branch: NOT CREATED
-PR: NOT CREATED
+branch:
+infra/dev-fast-001-hot-refresh
+
+Draft PR:
+#19 / OPEN / DRAFT / NOT MERGED
+
+runtime activation:
+NOT PERFORMED
+
+preview:
+UNTOUCHED
 ```
 
 ### Цель
@@ -242,18 +255,26 @@ PR: NOT CREATED
 → чат возвращает адрес пользовательской проверки
 ```
 
-Пользователь не выполняет SSH/VPS-команды.
+Пользователь не выполняет штатные SSH/VPS-команды для последующих hot refresh.
 
-### Разрешённый scope первой версии
+### Утверждённый V1 scope
 
 ```text
 src/templates/**
 src/static/**
 ```
 
-### Явно запрещено
+Разрешены только added/modified regular `100644` blobs.
+
+Явно запрещены:
 
 ```text
+deletions
+renames
+copies
+type changes
+symlinks
+executable blobs
 models
 migrations
 settings
@@ -269,24 +290,34 @@ preview
 automatic merge
 ```
 
-### Security contract
+### V1 security/runtime contract
 
-- workflow берётся только из `main`;
+- workflow берётся только из `main` и запускается по `issue_comment:created`;
+- команда принимается только в точном формате `/eod-hot-refresh <lowercase-40-hex-sha>`;
 - actor имеет write/admin permission;
-- PR открыт и находится в том же repository;
+- PR открыт, основан на `main` и находится в том же repository;
 - SHA в команде точно совпадает с live PR head;
-- controller повторно получает `refs/pull/<number>/head`;
-- changed paths проходят allowlist;
-- используется существующий restricted SSH gateway;
-- overlay применяется только к `eod-development`;
-- перед заменой создаётся backup;
-- при ошибке выполняется rollback;
-- state marker фиксирует overlay SHA;
-- preview остаётся untouched;
-- full suite не является условием промежуточного hot refresh;
-- один полный security/runtime gate выполняется перед merge самого DEV-FAST-001.
+- controller повторно получает `refs/pull/<number>/head` и повторяет SHA/path/blob verification;
+- используется существующий restricted SSH gateway и одна новая command `hot-refresh <pr> <sha> <run_id>`;
+- overlay применяется только к writable layer app-container проекта `eod-development`;
+- app перезапускается отдельно; host-owned entrypoint выполняет Django check и collectstatic;
+- при любой runtime-ошибке app force-recreate выполняется из current full image;
+- separate marker хранится только внутри app-container и не меняет deployment `current_sha`;
+- existing release transactions не обобщаются и не изменяются;
+- PostgreSQL, migrations, image build, Compose, presentation seed и preview не затрагиваются;
+- общий GitHub concurrency group и controller `flock` защищают от одновременного full deployment;
+- full suite не является условием будущего промежуточного hot refresh;
+- один final security/code gate выполняется перед merge самого DEV-FAST-001.
 
-DEV-FAST-001 затрагивает trusted security boundary и поэтому требует одного отдельного PR. После принятия механизм используется для быстрых UX/UI repairs.
+### Activation boundary
+
+Новый `issue_comment` workflow становится trusted только после merge в `main`. После отдельного явного разрешения пользователя на merge выполняется одна controlled root activation только файла:
+
+```text
+/usr/local/sbin/eod-development-controller
+```
+
+Полный bootstrap ключей, sudoers, Compose и secrets не повторяется. После activation отдельный presentation-only canary PR должен доказать `SUCCESS`, `ALREADY_APPLIED`, rollback, development health и `preview=UNTOUCHED`.
 
 ---
 
@@ -353,40 +384,16 @@ GitHub всегда имеет приоритет над текстом handoff 
 
 ---
 
-## 13. Starter для implementation-чата DEV-FAST-001
+## 13. Следующий gate DEV-FAST-001
 
 ```text
-Начинаем DEV-FAST-001 — Trusted hot refresh from PR comment.
-
-Сначала через GitHub проверь фактическое состояние:
-
-1. current main HEAD;
-2. issue #18;
-3. отсутствие открытых PR;
-4. accepted DEFECT-001 merge commit 883a108c8be2a8cd075846fdd175916917911ef6;
-5. существующие trusted workflows, restricted SSH gateway и development controller;
-6. AGENTS.md и принцип минимально достаточного решения.
-
-До завершения gap analysis не создавай ветку, PR и не меняй VPS.
-
-Первый ответ должен содержать:
-
-FACT
-CURRENT TRUST BOUNDARY
-MINIMAL DESIGN
-FILES TO CHANGE
-TEST PLAN
-RISKS
-VERDICT: READY TO IMPLEMENT или BLOCKED
-
-Ограничения:
-
-- цель только presentation-only hot refresh для src/templates/** и src/static/**;
-- не расширять scope на общий deployment redesign, HTTPS, CI optimization или product code;
-- не создавать новый gateway, если достаточно расширить существующий restricted controller;
-- пользовательские VPS-команды: ZERO;
-- preview: UNTOUCHED;
-- automatic merge: FORBIDDEN;
-- один work item = одна ветка + один Draft PR;
-- после gap analysis предложить минимальный branch name и PR contract, но не начинать реализацию без подтверждения пользователя.
+1. Final exact head.
+2. Focused validator/controller contract tests.
+3. One full security/code gate.
+4. Draft/not merged until explicit user merge command.
+5. After merge: controller-only root activation from accepted exact main.
+6. Canary PR: SUCCESS / ALREADY_APPLIED / rollback.
+7. Development health and preview UNTOUCHED.
 ```
+
+До merge не запускать hot refresh из PR #19: workflow ещё не находится в trusted `main`, а PR содержит security/controller files, а не presentation-only payload.

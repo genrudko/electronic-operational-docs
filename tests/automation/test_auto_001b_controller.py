@@ -1,19 +1,27 @@
 from __future__ import annotations
 
+import copy
 import json
 import tempfile
 import unittest
 from pathlib import Path
 
 from scripts.automation.auto_001b_request import render_summary
+from scripts.automation.dev_fast_001_request import (
+    HotRefreshValidationError,
+    parse_command,
+    validate_request,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTROLLER = ROOT / "deploy/automation/eod-development-controller"
 BOOTSTRAP = ROOT / "deploy/automation/bootstrap_auto001b.sh"
 COMPOSE = ROOT / "deploy/automation/compose.development.yaml"
 WORKFLOW = ROOT / ".github/workflows/vps-development.yml"
+HOT_WORKFLOW = ROOT / ".github/workflows/eod-hot-refresh.yml"
 POLICY = ROOT / ".github/auto001a-foundation.json"
 RUNBOOK = ROOT / "docs/runbooks/DEVELOPMENT_AUTOMATION_TRUST_BOOTSTRAP.md"
+HEAD_SHA = "1" * 40
 
 
 class ControllerContractTests(unittest.TestCase):
@@ -23,6 +31,7 @@ class ControllerContractTests(unittest.TestCase):
         cls.bootstrap = BOOTSTRAP.read_text(encoding="utf-8")
         cls.compose = COMPOSE.read_text(encoding="utf-8")
         cls.workflow = WORKFLOW.read_text(encoding="utf-8")
+        cls.hot_workflow = HOT_WORKFLOW.read_text(encoding="utf-8")
         cls.runbook = RUNBOOK.read_text(encoding="utf-8")
 
     def test_private_repository_uses_read_only_deploy_key(self) -> None:
@@ -192,6 +201,55 @@ class ControllerContractTests(unittest.TestCase):
         self.assertIn("AUTO-001B Controller CI", policy["required_workflows"])
         self.assertIn("deploy/automation", policy["blocked_path_prefixes"])
 
+    def test_hot_refresh_uses_existing_gateway_and_shared_lock(self) -> None:
+        self.assertIn("hot-refresh)", self.controller)
+        self.assertIn('hot_refresh "${args[1]}" "${args[2]}" "${args[3]}"', self.controller)
+        self.assertIn('exec 9>"$LOCK_FILE"', self.controller)
+        self.assertIn("group: eod-vps-development", self.hot_workflow)
+        self.assertNotIn("vps-development-refresh", self.hot_workflow)
+
+    def test_hot_refresh_is_main_controlled_and_has_no_pr_checkout(self) -> None:
+        self.assertIn("issue_comment:", self.hot_workflow)
+        self.assertIn("types: [created]", self.hot_workflow)
+        self.assertIn("ref: ${{ github.sha }}", self.hot_workflow)
+        self.assertIn("persist-credentials: false", self.hot_workflow)
+        self.assertNotIn("github.event.pull_request.head.sha", self.hot_workflow)
+        self.assertNotIn("contents: write", self.hot_workflow)
+        self.assertNotIn("pull-requests: write", self.hot_workflow)
+        self.assertNotIn("merge_pull_request", self.hot_workflow)
+        self.assertNotIn("enable_auto_merge", self.hot_workflow)
+
+    def test_hot_refresh_v1_rejects_dangerous_git_entry_types(self) -> None:
+        self.assertIn('[[ "$status" == "A" || "$status" == "M" ]]', self.controller)
+        self.assertIn("--no-renames", self.controller)
+        self.assertIn('[[ "$mode" == "100644" && "$type" == "blob" ]]', self.controller)
+        self.assertIn("src/templates/*|src/static/*", self.controller)
+        self.assertIn("unsafe destination component", self.controller)
+        self.assertIn("unsafe destination leaf", self.controller)
+
+    def test_hot_refresh_changes_only_app_and_rolls_back_by_recreate(self) -> None:
+        hot = self.controller[
+            self.controller.index("hot_refresh()") :
+            self.controller.index("stop_application()")
+        ]
+        self.assertIn("force_recreate_application_only", hot)
+        self.assertIn("restart_application_only", hot)
+        self.assertIn("--no-deps app", self.controller)
+        self.assertNotIn("apply_migrations", hot)
+        self.assertNotIn("create_database_backup", hot)
+        self.assertNotIn("presentation", hot.lower())
+        self.assertIn("preview=UNTOUCHED", hot)
+
+    def test_hot_refresh_marker_is_separate_from_release_state(self) -> None:
+        hot = self.controller[
+            self.controller.index("hot_refresh()") :
+            self.controller.index("stop_application()")
+        ]
+        self.assertIn("HOT_REFRESH_MARKER", hot)
+        self.assertIn("OVERLAY_SHA", self.controller)
+        self.assertNotIn('>"$EOD_STATE_DIR/current_sha"', hot)
+        self.assertIn("ALREADY_APPLIED", hot)
+
 
 class RequestSummaryTests(unittest.TestCase):
     def test_summary_is_simple_and_development_only(self) -> None:
@@ -210,6 +268,107 @@ class RequestSummaryTests(unittest.TestCase):
     def test_no_private_key_fixture_is_created(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             self.assertEqual(list(Path(directory).iterdir()), [])
+
+
+class HotRefreshRequestTests(unittest.TestCase):
+    @staticmethod
+    def build_request() -> dict[str, object]:
+        return {
+            "event": {
+                "repository": "genrudko/electronic-operational-docs",
+                "action": "created",
+                "is_pull_request": True,
+                "actor": "genrudko",
+                "comment_body": f"/eod-hot-refresh {HEAD_SHA}",
+                "pr_number": 18,
+            },
+            "live_pr": {
+                "number": 18,
+                "state": "open",
+                "base_ref": "main",
+                "head_sha": HEAD_SHA,
+                "head_repo_full_name": "genrudko/electronic-operational-docs",
+            },
+            "actor_permission": "write",
+            "changed_files": [
+                {"filename": "src/templates/example.html", "status": "modified"},
+                {"filename": "src/static/example.css", "status": "added"},
+            ],
+        }
+
+    def assert_blocked(self, request: dict[str, object], message: str) -> None:
+        with self.assertRaisesRegex(HotRefreshValidationError, message):
+            validate_request(request)
+
+    def test_exact_command_is_required(self) -> None:
+        self.assertEqual(parse_command(f"/eod-hot-refresh {HEAD_SHA}"), HEAD_SHA)
+        for body in (
+            f" /eod-hot-refresh {HEAD_SHA}",
+            f"/eod-hot-refresh  {HEAD_SHA}",
+            f"/eod-hot-refresh {HEAD_SHA}\n",
+            f"/eod-hot-refresh {HEAD_SHA} extra",
+            "/eod-hot-refresh " + "A" * 40,
+        ):
+            with self.subTest(body=body):
+                with self.assertRaises(HotRefreshValidationError):
+                    parse_command(body)
+
+    def test_valid_request_is_deterministic(self) -> None:
+        request = self.build_request()
+        first = validate_request(request)
+        second = validate_request(copy.deepcopy(request))
+        self.assertEqual(first, second)
+        self.assertEqual(first["head_sha"], HEAD_SHA)
+        self.assertEqual(first["changed_files_count"], 2)
+
+    def test_stale_sha_is_blocked(self) -> None:
+        request = self.build_request()
+        event = request["event"]
+        assert isinstance(event, dict)
+        event["comment_body"] = f"/eod-hot-refresh {'2' * 40}"
+        self.assert_blocked(request, "does not match")
+
+    def test_non_pr_comment_is_blocked(self) -> None:
+        request = self.build_request()
+        event = request["event"]
+        assert isinstance(event, dict)
+        event["is_pull_request"] = False
+        self.assert_blocked(request, "must belong")
+
+    def test_read_actor_is_blocked(self) -> None:
+        request = self.build_request()
+        request["actor_permission"] = "read"
+        self.assert_blocked(request, "write/admin")
+
+    def test_closed_or_fork_pr_is_blocked(self) -> None:
+        for field, value, message in (
+            ("state", "closed", "still be open"),
+            ("base_ref", "release", "base must be main"),
+            ("head_repo_full_name", "attacker/fork", "cross-repository"),
+        ):
+            request = self.build_request()
+            live = request["live_pr"]
+            assert isinstance(live, dict)
+            live[field] = value
+            self.assert_blocked(request, message)
+
+    def test_deleted_renamed_and_executable_candidates_are_blocked_before_vps(self) -> None:
+        for item, message in (
+            ({"filename": "src/static/a.css", "status": "removed"}, "added/modified"),
+            (
+                {
+                    "filename": "src/static/new.css",
+                    "previous_filename": "src/static/old.css",
+                    "status": "renamed",
+                },
+                "added/modified",
+            ),
+            ({"filename": "src/services.py", "status": "modified"}, "allowlist"),
+            ({"filename": "../escape.css", "status": "added"}, "canonical"),
+        ):
+            request = self.build_request()
+            request["changed_files"] = [item]
+            self.assert_blocked(request, message)
 
 
 if __name__ == "__main__":

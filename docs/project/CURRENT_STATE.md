@@ -1,6 +1,6 @@
 # ЭОД — текущее состояние
 
-**Дата проверки:** 26.07.2026
+**Дата проверки:** 28.07.2026
 
 ```text
 repository:
@@ -9,20 +9,20 @@ genrudko/electronic-operational-docs
 accepted application baseline:
 main / 937d2cd2b187c17fac3088ccfc52079fc4608306
 
-current main history HEAD:
-b75db8bc073e4b02a3254512e9b99d00f3e6e0e2
+current main at DEV-FAST-001 start:
+54990c386c40dd7bd854330e61ed7285649ef120
 
 last accepted work item:
-PLAN-001 / PR #7 / MERGED / ACCEPTED
+DEFECT-001 / PR #16 / MERGED / ACCEPTED
 
 active work item:
-DEFECT-001 — Source-bound Equipment Defect Journal Vertical Slice
+DEV-FAST-001 — Trusted hot refresh from PR comment
 
 active branch:
-feature/defect-001-equipment-defect-journal
+infra/dev-fast-001-hot-refresh
 
 active PR:
-#16 / OPEN / DRAFT / NOT MERGED
+#19 / OPEN / DRAFT / NOT MERGED
 ```
 
 ## 1. Project boundary
@@ -46,9 +46,8 @@ Accepted and practically verified:
 - AUTO-001A trusted-controller foundation;
 - AUTO-001B restricted VPS development controller;
 - trusted request validator repair;
-- PLAN-001 evidence audit and classifier repair.
-
-Current `main` is `b75db8bc073e4b02a3254512e9b99d00f3e6e0e2`.
+- PLAN-001 evidence audit and classifier repair;
+- DEFECT-001 source-bound equipment defect journal.
 
 The accepted AUTO-001B route is:
 
@@ -113,17 +112,40 @@ switching documents:
 NOT IMPLEMENTED AS VERTICAL SLICE
 
 repeatable presentation dataset:
-BLOCKING GAP
+PARTIALLY PRESENT THROUGH DEFECT-001
 
-recommended first vertical slice:
+accepted first vertical slice:
 DEFECT JOURNAL
 ```
 
 This was a manual integration decision, not an automatic product-acceptance verdict.
 
-## 5. DEFECT-001 implementation status
+## 5. DEFECT-001 accepted status
 
-Implemented in Draft PR #16:
+```text
+source head:
+79f3db7e5c47e1ac8ab2568028d06e4043c2c70e
+
+merge commit:
+883a108c8be2a8cd075846fdd175916917911ef6
+
+five exact-head workflows:
+GREEN
+
+full PostgreSQL/Django suite:
+SUCCESS
+
+trusted development deployment:
+SUCCESS
+
+user acceptance:
+CONFIRMED
+
+preview:
+UNTOUCHED
+```
+
+Accepted implementation:
 
 - exact type `journal-equipment-defects`;
 - source reference `И-00-007-ОР-2025 версия 2`, section 11, appendix 8;
@@ -140,19 +162,9 @@ Implemented in Draft PR #16:
 - explicit immutable link to a registered operational-log entry;
 - minimum non-cloning volume contract;
 - deterministic five-state presentation dataset;
-- focused subject tests;
-- guard redirecting generic create/edit/transition routes to the specialized journal.
+- desktop/mobile presentation and final row-click repair.
 
-Not yet proven on the final exact head:
-
-- focused test success;
-- full PostgreSQL suite;
-- five green exact-head workflows;
-- exact-SHA development deployment;
-- development health;
-- user product/visual acceptance.
-
-Therefore DEFECT-001 is `IN IMPLEMENTATION`, not accepted.
+The current visual style remains a legacy interface and is not the accepted target UX/UI.
 
 ## 6. Functional readiness
 
@@ -166,15 +178,16 @@ Therefore DEFECT-001 is `IN IMPLEMENTATION`, not accepted.
 - generic `apps.operational_documents` core;
 - source-bound catalog;
 - immutable revisions, snapshots, audit and links;
-- PostgreSQL CI/runtime foundation.
+- PostgreSQL CI/runtime foundation;
+- source-bound equipment defect journal.
 
-### Current vertical slice
+### Accepted reference vertical slice
 
-- equipment defect journal: implementation in Draft PR #16;
-- source-bound UI and print form: present in branch;
-- operational-log link: present in branch;
-- repeatable defect presentation data: present in branch;
-- technical and visual acceptance: pending.
+- equipment defect journal: accepted and merged through PR #16;
+- source-bound UI and print form: accepted;
+- operational-log link: accepted;
+- repeatable defect presentation data: accepted;
+- technical, functional and visual acceptance: confirmed for the agreed DEFECT-001 scope.
 
 ### Not implemented as a vertical slice
 
@@ -187,18 +200,55 @@ Therefore DEFECT-001 is `IN IMPLEMENTATION`, not accepted.
 The key journal remains paper-first. The defect journal is explicitly a
 reference/control and demonstration contour with a printable approved form.
 
-## 7. Current gate
+## 7. DEV-FAST-001 implementation status
 
-1. Complete focused repairs in PR #16.
-2. Obtain one green focused/full PostgreSQL result on the final exact head.
-3. Obtain five green exact-head workflows.
-4. Apply `vps-development-refresh` only after the exact-head gate.
-5. Verify exact SHA and development health through trusted controller evidence.
-6. Keep preview untouched.
-7. Give the user only the development UI acceptance scenario.
-8. Keep PR Draft/not merged until a separate user merge command.
+The active Draft PR implements the approved presentation-only V1:
 
-## 8. Non-negotiable rules
+```text
+trigger:
+main-controlled issue_comment:created
+
+command:
+/eod-hot-refresh <exact-head-sha>
+
+gateway:
+hot-refresh <pr> <sha> <run_id>
+
+allowlist:
+src/templates/**
+src/static/**
+
+allowed Git entries:
+added/modified regular 100644 blobs only
+```
+
+The workflow and controller independently validate actor/PR/exact SHA and path/blob policy. The controller applies exact Git blobs only to the writable layer of the current `eod-development` app container, restarts only app, relies on the host-owned check/collectstatic entrypoint and requires local health.
+
+On any runtime error the app is force-recreated from the current full image. The separate overlay marker is container-local and does not change deployment `current_sha`.
+
+Explicitly unchanged:
+
+- existing release transactions;
+- database and migrations;
+- image build;
+- host-owned Compose/Dockerfile/entrypoint;
+- presentation seed;
+- preview;
+- automatic merge.
+
+Runtime activation cannot occur before trusted code is merged to `main`. After explicit merge authorization, one controlled root activation installs only the reviewed controller file; then a separate presentation-only canary PR proves success, idempotency and rollback.
+
+## 8. Current gate
+
+1. Obtain one final exact head for PR #19.
+2. Pass focused validator/controller contracts.
+3. Pass one full security/code gate.
+4. Keep PR Draft/not merged until a separate user merge command.
+5. After merge, install only the exact accepted controller file on VPS.
+6. Run a separate canary PR for `SUCCESS`, `ALREADY_APPLIED` and rollback evidence.
+7. Verify development health and preview `UNTOUCHED`.
+
+## 9. Non-negotiable rules
 
 - End-user UI is Russian only.
 - Internals use professional technical English.
@@ -210,9 +260,10 @@ reference/control and demonstration contour with a printable approved form.
 - Paper/hybrid/electronic modes are not declared legally equivalent without a
   separate normative and organizational decision.
 - Real enterprise data and secrets are not committed.
-- User manual VPS commands for DEFECT-001 are zero.
+- User manual VPS commands for functional PR acceptance are zero.
 - Merge requires a separate explicit user command.
 
-## 9. Detailed work-item document
+## 10. Detailed work-item sources
 
-See `docs/project/DEFECT_001_IMPLEMENTATION.md`.
+- `docs/project/DEFECT_001_IMPLEMENTATION.md` — accepted product slice contract.
+- GitHub issue `#18` and Draft PR `#19` — active DEV-FAST-001 contract and evidence.

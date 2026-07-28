@@ -23,19 +23,25 @@ UNTOUCHED
 
 Предметная и функциональная приёмка журнала дефектов выполнена. Текущий legacy-визуальный стиль не считается принятым целевым UX/UI.
 
-## 2. Следующий active item — DEV-FAST-001
+## 2. Active item — DEV-FAST-001
 
 ```text
 issue:
 #18 — Trusted hot refresh from PR comment
 
+branch:
+infra/dev-fast-001-hot-refresh
+
+Draft PR:
+#19 / OPEN / DRAFT / NOT MERGED
+
 status:
-READY TO START / IMPLEMENTATION NOT STARTED
+IMPLEMENTATION IN PROGRESS / NOT ACTIVATED
 ```
 
 Цель — убрать повторяющееся ожидание полного CI/deployment при каждом малом presentation repair.
 
-Требуемый контракт:
+Утверждённый V1 contract:
 
 ```text
 profile repair
@@ -43,7 +49,7 @@ profile repair
 → /eod-hot-refresh <exact-head-sha>
 → actor / PR / exact SHA / path policy
 → restricted development-only overlay
-→ collectstatic / restart / health
+→ app restart / collectstatic / health
 → immediate user check
 ```
 
@@ -52,24 +58,27 @@ profile repair
 - `src/templates/**`;
 - `src/static/**`.
 
-Явно запрещены:
+Разрешены только added/modified regular `100644` blobs. Deletions, renames, copies, type changes, symlinks и executable blobs запрещены.
 
-- models и migrations;
-- settings, URLs, services и management commands;
-- dependencies, Dockerfile и Compose;
-- database operations и presentation reset;
-- preview;
-- automatic merge.
+Зафиксированные решения:
 
-Открытые решения внутри DEV-FAST-001:
+1. main-controlled `issue_comment:created` workflow;
+2. точный формат `/eod-hot-refresh <lowercase-40-hex-sha>`;
+3. одна новая gateway command `hot-refresh <pr> <sha> <run_id>`;
+4. повторная exact-ref/SHA/path/blob verification на VPS;
+5. overlay только в writable layer current `eod-development` app-container;
+6. rollback через app-only force-recreate из current full image;
+7. separate container-local overlay marker, не изменяющий deployment `current_sha`;
+8. existing release transactions, PostgreSQL, migrations, Compose, image build, presentation reset и preview не меняются;
+9. один final security/code gate перед merge;
+10. после merge — одна controlled root activation только controller-файла и отдельный canary PR.
 
-1. точный формат служебной PR-команды;
-2. allowlist и проверка diff относительно deployed/base state;
-3. backup/rollback presentation files;
-4. state marker с overlay SHA;
-5. безопасное возвращение к полноценному exact-SHA deployment;
-6. профильные тесты workflow/controller boundary;
-7. однократный final security/runtime gate перед merge.
+Оставшиеся gates:
+
+1. exact-head focused/full CI;
+2. отдельное разрешение пользователя на merge;
+3. controller-only root activation из accepted exact `main`;
+4. canary evidence: SUCCESS, ALREADY_APPLIED, rollback, development health, preview untouched.
 
 ## 3. ACCESS-001 / PR #17
 

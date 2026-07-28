@@ -1,0 +1,183 @@
+name: EOD Trusted Hot Refresh
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+
+concurrency:
+  group: eod-vps-development
+  cancel-in-progress: false
+
+jobs:
+  trusted-hot-refresh:
+    name: Validate and refresh development presentation
+    if: >-
+      github.event.issue.pull_request &&
+      startsWith(github.event.comment.body, '/eod-hot-refresh')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      VPS_HOST: ${{ secrets.EOD_VPS_HOST }}
+      VPS_PORT: ${{ secrets.EOD_VPS_PORT }}
+      VPS_KEY: ${{ secrets.EOD_VPS_SSH_PRIVATE_KEY }}
+      VPS_HOST_KEY: ${{ secrets.EOD_VPS_HOST_KEY }}
+
+    steps:
+      - name: Checkout trusted validator from main event SHA
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify main-controlled workflow provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = "issue_comment"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+
+      - name: Collect live PR, actor and changed-file facts
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const fs = require('fs');
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const prNumber = context.payload.issue?.number;
+            if (!context.payload.issue?.pull_request || !Number.isInteger(prNumber)) {
+              core.setFailed('The command must be a pull request conversation comment.');
+              return;
+            }
+
+            const { data: livePr } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: prNumber,
+            });
+            const { data: permission } =
+              await github.rest.repos.getCollaboratorPermissionLevel({
+                owner,
+                repo,
+                username: context.actor,
+              });
+            const changedFiles = await github.paginate(
+              github.rest.pulls.listFiles,
+              { owner, repo, pull_number: prNumber, per_page: 100 },
+              (response) => response.data.map((item) => {
+                const changedFile = {
+                  filename: item.filename,
+                  status: item.status,
+                };
+                if (item.previous_filename) {
+                  changedFile.previous_filename = item.previous_filename;
+                }
+                return changedFile;
+              }),
+            );
+
+            const request = {
+              event: {
+                repository: `${owner}/${repo}`,
+                action: context.payload.action,
+                is_pull_request: true,
+                actor: context.actor,
+                comment_body: context.payload.comment?.body ?? '',
+                pr_number: prNumber,
+                workflow_run_id: context.runId,
+              },
+              live_pr: {
+                number: livePr.number,
+                state: livePr.state,
+                base_ref: livePr.base.ref,
+                head_sha: livePr.head.sha,
+                head_repo_full_name: livePr.head.repo?.full_name ?? '',
+              },
+              actor_permission: permission.permission,
+              changed_files: changedFiles,
+            };
+            fs.writeFileSync(
+              'dev-fast-001-request.json',
+              `${JSON.stringify(request, null, 2)}\n`,
+              { encoding: 'utf8', mode: 0o600 },
+            );
+
+      - name: Validate exact command, authority, PR, SHA and V1 paths
+        id: validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m scripts.automation.dev_fast_001_request validate \
+            --request dev-fast-001-request.json \
+            --summary dev-fast-001-summary.md \
+            --outputs "$GITHUB_OUTPUT"
+          cat dev-fast-001-summary.md >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Validate restricted SSH configuration
+        shell: bash
+        env:
+          PR_NUMBER: ${{ steps.validate.outputs.pr_number }}
+          HEAD_SHA: ${{ steps.validate.outputs.head_sha }}
+        run: |
+          set -euo pipefail
+          test -n "$VPS_HOST"
+          test -n "$VPS_PORT"
+          test -n "$VPS_KEY"
+          test -n "$VPS_HOST_KEY"
+          [[ "$VPS_PORT" =~ ^[0-9]+$ ]]
+          [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]
+          [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]
+
+      - name: Configure restricted SSH client
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 0700 "$HOME/.ssh"
+          printf '%s\n' "$VPS_KEY" >"$HOME/.ssh/eod_automation"
+          chmod 0600 "$HOME/.ssh/eod_automation"
+          printf '%s\n' "$VPS_HOST_KEY" >"$HOME/.ssh/known_hosts"
+          chmod 0600 "$HOME/.ssh/known_hosts"
+
+      - name: Apply exact presentation overlay to development
+        shell: bash
+        env:
+          PR_NUMBER: ${{ steps.validate.outputs.pr_number }}
+          HEAD_SHA: ${{ steps.validate.outputs.head_sha }}
+        run: |
+          set +e
+          controller_output="$(ssh \
+            -p "$VPS_PORT" \
+            -i "$HOME/.ssh/eod_automation" \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+            "eod-automation@$VPS_HOST" \
+            "hot-refresh $PR_NUMBER $HEAD_SHA $GITHUB_RUN_ID" 2>&1)"
+          controller_rc=$?
+          set -e
+          printf '%s\n' "$controller_output"
+          {
+            echo
+            echo "## DEV-FAST-001 controller result"
+            echo
+            echo '```text'
+            printf '%s\n' "$controller_output"
+            echo '```'
+            echo
+            echo "- Full exact-head deployment: **NO**"
+            echo "- Database operations: **NONE**"
+            echo "- Preview: **UNTOUCHED**"
+            echo "- Automatic merge: **ABSENT**"
+          } >>"$GITHUB_STEP_SUMMARY"
+          exit "$controller_rc"
