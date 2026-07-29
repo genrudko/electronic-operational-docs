@@ -1,0 +1,140 @@
+<div class="draft-row-store" data-row-store hidden>
+{% for draft in drafts %}
+    <article
+        id="draft-{{ draft.public_id }}"
+        class="draft-ledger-row opj-entry-row"
+        data-draft-card
+        data-draft-id="{{ draft.public_id }}"
+        data-entry-date="{{ draft.event_at|date:'Y-m-d' }}"
+        data-entry-date-label="{{ draft.event_at|date:'d.m.Y' }}"
+        data-entry-at="{{ draft.event_at|date:'Y-m-d\TH:i' }}"
+        data-entry-position="{{ draft.position }}"
+        data-created-at="{{ draft.created_at|date:'c' }}"
+        data-entry-filled="{% if draft.content %}true{% else %}false{% endif %}"
+        data-entry-kind="{{ draft.entry_kind }}"
+        data-entry-kind-label="{{ draft.entry_kind_label }}"
+        data-entry-author="{{ draft.updated_by.full_name }}"
+        data-entry-version="{{ draft.version }}"
+        data-entry-status="Сохранена"
+    >
+        {% ifchanged draft.event_at|date:"Y-m-d" %}
+        <div class="draft-inline-date" data-inline-date>{{ draft.event_at|date:"d.m.Y" }}</div>
+        {% endifchanged %}
+
+        <form
+            method="post"
+            action="{% url 'operational_log:autosave_draft' journal.pk draft.public_id %}"
+            class="draft-ledger-form"
+            data-draft-form
+        >
+            {% csrf_token %}
+            <input type="hidden" name="public_id" value="{{ draft.public_id }}">
+            <input type="hidden" name="expected_version" value="{{ draft.version }}" data-draft-version>
+            <input type="hidden" name="event_at" value="{{ draft.event_at|date:'Y-m-d\TH:i' }}" data-event-at>
+            <input type="hidden" name="editor_schema_version" value="{{ draft.editor_schema_version }}" data-editor-schema-version>
+
+            <div class="draft-ledger-time">
+                <input
+                    type="text"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    value="{{ draft.event_at|date:'H:i' }}"
+                    data-quick-time
+                    aria-label="Время события"
+                >
+            </div>
+
+            <div class="draft-ledger-content">
+                <textarea
+                    name="content"
+                    rows="1"
+                    maxlength="20000"
+                    placeholder="Содержание записи…"
+                    aria-label="Содержание записи"
+                    data-auto-grow
+                    data-editor-fallback
+                >{{ draft.content }}</textarea>
+                <textarea
+                    name="editor_payload"
+                    class="draft-editor-payload-field"
+                    data-editor-payload
+                    hidden
+                    aria-hidden="true"
+                    tabindex="-1"
+                    autocomplete="off"
+                >{{ draft.editor_payload_json }}</textarea>
+                <div class="draft-rich-editor-host" data-rich-editor-host></div>
+
+                <div class="draft-ledger-lower">
+                    <div class="draft-ledger-meta">
+                        <span class="draft-save-status is-saved" data-save-status role="status" aria-live="polite">
+                            Сохранено · {{ draft.updated_at|date:"H:i:s" }}
+                        </span>
+                        <span class="draft-meta-chip">Запись № {{ forloop.counter }}</span>
+                        <span class="draft-meta-chip">Версия&nbsp;<span data-version-label>{{ draft.version }}</span></span>
+                    </div>
+
+                    <div class="draft-mini-toolbar draft-row-action-toolbar" data-mini-toolbar aria-label="Действия с записью">
+                        <button
+                            type="button"
+                            class="draft-row-action"
+                            data-date-button
+                            data-current-date="{{ draft.event_at|date:'d.m.Y' }}"
+                            title="Изменить дату записи"
+                            aria-label="Изменить дату записи"
+                            aria-expanded="false"
+                        >
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v3M17 2v3M4 8h16M5 4h14a1 1 0 0 1 1 1v15H4V5a1 1 0 0 1 1-1Z"/><path d="M8 12h3v3H8z"/></svg>
+                        </button>
+                        <span class="draft-row-action-separator" aria-hidden="true"></span>
+                        <button
+                            type="submit"
+                            class="draft-row-action"
+                            formaction="{% url 'operational_log:move_draft' journal.pk draft.public_id %}"
+                            name="direction"
+                            value="up"
+                            title="Переместить запись выше"
+                            aria-label="Переместить запись выше"
+                            {% if forloop.first %}disabled{% endif %}
+                        ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 14 5-5 5 5"/></svg></button>
+                        <button
+                            type="submit"
+                            class="draft-row-action"
+                            formaction="{% url 'operational_log:move_draft' journal.pk draft.public_id %}"
+                            name="direction"
+                            value="down"
+                            title="Переместить запись ниже"
+                            aria-label="Переместить запись ниже"
+                            {% if forloop.last %}disabled{% endif %}
+                        ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button>
+                        <button
+                            type="submit"
+                            class="draft-row-action is-danger"
+                            formaction="{% url 'operational_log:remove_draft' journal.pk draft.public_id %}"
+                            data-remove-draft
+                            data-restore-url="{% url 'operational_log:restore_draft' journal.pk draft.public_id %}"
+                            title="Удалить запись с возможностью восстановления"
+                            aria-label="Удалить запись"
+                        ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg></button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="draft-ledger-visas" data-draft-visas aria-label="Визы и замечания"></div>
+        </form>
+
+        <div class="draft-inline-undo" data-inline-undo role="status" aria-live="polite" hidden>
+            <span class="draft-inline-undo-icon" aria-hidden="true">↶</span>
+            <span class="draft-inline-undo-message">Запись удалена</span>
+            <button type="button" class="draft-inline-undo-button" data-inline-undo-button>Восстановить</button>
+            <span class="draft-inline-undo-countdown" data-inline-undo-countdown>10 с</span>
+            <button type="button" class="draft-inline-undo-close" data-inline-undo-close aria-label="Закрыть без восстановления">×</button>
+        </div>
+    </article>
+{% empty %}
+    <div class="empty-state" data-empty-draft>
+        <h3>Черновых записей пока нет</h3>
+        <p>Добавьте первую запись.</p>
+    </div>
+{% endfor %}
+</div>
