@@ -1,0 +1,52 @@
+{% load static %}
+<header class="da-topbar defect-da-topbar" data-direction-a-topbar>
+    <button
+        class="da-menu-button defect-da-menu-button"
+        type="button"
+        data-direction-a-toggle
+        aria-controls="direction-a-sidebar"
+        aria-expanded="false"
+    >
+        <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-menu"></use></svg>
+        <span>Меню</span>
+    </button>
+
+    <div class="da-workplace defect-da-workplace">
+        <span>Рабочее место</span>
+        <strong>
+            {% if record and record.workplace_name_snapshot %}
+                {{ record.workplace_name_snapshot }}
+            {% elif journal and journal.workplace %}
+                {{ journal.workplace.name }}
+            {% else %}
+                Электронная оперативная документация
+            {% endif %}
+        </strong>
+    </div>
+
+    <div class="da-topbar-tools defect-da-topbar-tools">
+        <span class="da-topbar-value defect-da-topbar-value">
+            <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg>
+            {% now "d.m.Y" %}
+        </span>
+        <span class="da-topbar-value defect-da-topbar-value">
+            <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-history"></use></svg>
+            {% now "H:i" %}
+        </span>
+        <a class="da-icon-button" href="{% url 'system:health' %}" title="Проверка состояния">
+            <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-info"></use></svg>
+            <span class="visually-hidden">Проверка состояния</span>
+        </a>
+        <a class="da-icon-button" href="{% url 'organizations:account' %}" title="Настройки пользователя">
+            <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-user"></use></svg>
+            <span class="visually-hidden">Настройки пользователя</span>
+        </a>
+        <form method="post" action="{% url 'organizations:logout' %}">
+            {% csrf_token %}
+            <button class="da-icon-button" type="submit" title="Выйти">
+                <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-logout"></use></svg>
+                <span class="visually-hidden">Выйти</span>
+            </button>
+        </form>
+    </div>
+</header>
