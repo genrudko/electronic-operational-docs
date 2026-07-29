@@ -1,7 +1,7 @@
 {% load static %}
-<header class="defect-da-topbar">
+<header class="defect-da-topbar da-topbar" data-direction-a-topbar>
     <button
-        class="defect-da-menu-button"
+        class="defect-da-menu-button da-menu-button"
         type="button"
         data-defect-shell-toggle
         aria-controls="defect-direction-a-sidebar"
@@ -11,7 +11,7 @@
         <span>Меню</span>
     </button>
 
-    <div class="defect-da-workplace">
+    <div class="defect-da-workplace da-workplace">
         <span>Рабочее место</span>
         <strong>
             {% if record %}
@@ -22,26 +22,26 @@
         </strong>
     </div>
 
-    <div class="defect-da-topbar-tools">
-        <span class="defect-da-topbar-value">
+    <div class="defect-da-topbar-tools da-topbar-tools">
+        <span class="defect-da-topbar-value da-topbar-value">
             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg>
             {% now "d.m.Y" %}
         </span>
-        <span class="defect-da-topbar-value">
+        <span class="defect-da-topbar-value da-topbar-value">
             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-history"></use></svg>
             {% now "H:i" %}
         </span>
-        <a href="{% url 'system:health' %}" title="Проверка состояния">
+        <a class="da-icon-button" href="{% url 'system:health' %}" title="Проверка состояния">
             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-info"></use></svg>
             <span class="visually-hidden">Проверка состояния</span>
         </a>
-        <a href="{% url 'organizations:account' %}" title="Настройки пользователя">
+        <a class="da-icon-button" href="{% url 'organizations:account' %}" title="Настройки пользователя">
             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-user"></use></svg>
             <span class="visually-hidden">Настройки пользователя</span>
         </a>
         <form method="post" action="{% url 'organizations:logout' %}">
             {% csrf_token %}
-            <button type="submit" title="Выйти">
+            <button class="da-icon-button" type="submit" title="Выйти">
                 <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-logout"></use></svg>
                 <span class="visually-hidden">Выйти</span>
             </button>
