@@ -1,269 +1,280 @@
 # ЭОД — текущее состояние
 
-**Дата проверки:** 28.07.2026
+**Дата проверки:** 29.07.2026
+
+## 1. Фактическая контрольная точка
 
 ```text
 repository:
 genrudko/electronic-operational-docs
 
-accepted application baseline:
-main / 937d2cd2b187c17fac3088ccfc52079fc4608306
+accepted UX/application merge:
+a880a632b750309c7fbfb918af15b49d99b5a93f
 
-current main at DEV-FAST-001 start:
-54990c386c40dd7bd854330e61ed7285649ef120
-
-last accepted work item:
-DEFECT-001 / PR #16 / MERGED / ACCEPTED
+accepted UX source head:
+688ca4ed3f306bcb6e32d145c0da6f32d5f37c89
 
 active work item:
-DEV-FAST-001 — Trusted hot refresh from PR comment
+OPJ-UX-001
+
+active issue / Draft PR:
+#24 / #25
 
 active branch:
-infra/dev-fast-001-hot-refresh
+ux/opj-ux-001
 
-active PR:
-#19 / OPEN / DRAFT / NOT MERGED
+current deployed candidate head:
+663086c9c0b0dfa0d4e970185f0f52269be20a61
+
+preview:
+UNTOUCHED
 ```
 
-## 1. Project boundary
+Documentation-only commits after the accepted application merge do not create a new application baseline.
 
-ЭОД — независимый демонстрационный прототип электронной оперативной
-документации для энергетики. Он не является официальной системой работодателя.
-Production servers, real operational records, real personal data and enterprise
-secrets are not used.
+## 2. Project boundary
 
-GitHub is the only source of code and canonical documentation. VPS is the only
-runtime/test contour. Accepted preview and active development remain isolated.
+ЭОД — независимый демонстрационный прототип электронной оперативной документации для энергетики.
 
-## 2. Accepted foundation
+Не используются:
 
-Accepted and practically verified:
+- production systems работодателя;
+- реальные оперативные записи;
+- реальные персональные данные;
+- enterprise secrets;
+- материалы без права публикации.
 
-- INFRA-001–003;
-- DOCS-001–003;
-- QUALITY-001;
-- AUTO-000;
-- AUTO-001A trusted-controller foundation;
-- AUTO-001B restricted VPS development controller;
-- trusted request validator repair;
-- PLAN-001 evidence audit and classifier repair;
-- DEFECT-001 source-bound equipment defect journal.
+GitHub является source of truth. VPS используется только для runtime/test evidence.
 
-The accepted AUTO-001B route is:
+## 3. Accepted foundation
+
+Accepted and verified:
+
+- Linux/PostgreSQL CI and isolated preview/development;
+- canonical documentation and project operating system;
+- full Django test discovery;
+- trusted exact-SHA development controller;
+- presentation-only trusted hot refresh;
+- PLAN-001 evidence audit;
+- DEFECT-001 source-bound equipment defect journal;
+- UX-FOUNDATION-001 / Direction A.
+
+### UX-FOUNDATION-001
 
 ```text
-trusted PR label
-→ five green exact-head workflows
-→ trusted request validation from main
-→ restricted forced SSH gateway
-→ exact PR SHA fetch
-→ exact-SHA image
-→ isolated PostgreSQL checks and full tests
-→ development backup/migrations/health
-→ confirm or rollback
+issue:
+#22 / CLOSED
+
+PR:
+#23 / MERGED
+
+source head:
+688ca4ed3f306bcb6e32d145c0da6f32d5f37c89
+
+merge commit:
+a880a632b750309c7fbfb918af15b49d99b5a93f
+
+full suite:
+557 / OK
+
+user acceptance:
+mobile + desktop CONFIRMED
 ```
 
-Automatic merge is absent. The controller does not write to preview.
+Direction A является общесистемным visual language, а не feature-local стилем журнала дефектов.
 
-## 3. Runtime contours
+## 4. Runtime contours
 
 ### Accepted preview
 
 ```text
 checkout: /srv/eod/repository
 branch: main only
-compose project: eod-preview
-application: 127.0.0.1:8765
+compose: eod-preview
+app: 127.0.0.1:8765
 database: eod_preview
-secrets: /srv/eod/secrets/preview.env
 ```
 
 ### Active development
 
 ```text
-controller releases: /srv/eod/automation/releases/<exact-sha>
-compose project: eod-development
-application: 127.0.0.1:8766
-database/user: eod_development
-secrets: /srv/eod/secrets/development.env
+compose: eod-development
+app: 127.0.0.1:8766
+database: eod_development
 controller: /usr/local/sbin/eod-development-controller
-state: /srv/eod/automation/state
 ```
 
-Development does not depend on a PR-controlled host checkout or a PR-controlled
-root script.
+Development никогда не остаётся на `main`. Product PR не пишет в preview.
 
-## 4. PLAN-001 accepted decision
+## 5. Active OPJ-UX-001
 
-```text
-generic structured-journal core:
-SUBSTANTIALLY IMPLEMENTED
+Цель:
 
-structured journals pack:
-NOT COMPLETE
+- сделать оперативный журнал вторым реальным потребителем Direction A;
+- выделить минимальный shared system layer;
+- выровнять одинаковые элементы главной страницы, журнала дефектов и operational journal routes;
+- сохранить специализированный editor, ribbon, лист/разворот и трёхграфную форму.
 
-operational journal:
-ADVANCED BUT LIFECYCLE INCOMPLETE
-
-work permits/orders:
-NOT IMPLEMENTED AS VERTICAL SLICE
-
-switching documents:
-NOT IMPLEMENTED AS VERTICAL SLICE
-
-repeatable presentation dataset:
-PARTIALLY PRESENT THROUGH DEFECT-001
-
-accepted first vertical slice:
-DEFECT JOURNAL
-```
-
-This was a manual integration decision, not an automatic product-acceptance verdict.
-
-## 5. DEFECT-001 accepted status
+Current Draft PR #25:
 
 ```text
-source head:
-79f3db7e5c47e1ac8ab2568028d06e4043c2c70e
+exact candidate head:
+663086c9c0b0dfa0d4e970185f0f52269be20a61
 
-merge commit:
-883a108c8be2a8cd075846fdd175916917911ef6
+changed files:
+14
+
+models/migrations/services/routes:
+UNCHANGED
 
 five exact-head workflows:
-GREEN
-
-full PostgreSQL/Django suite:
 SUCCESS
 
-trusted development deployment:
+PostgreSQL suite:
+564 / OK
+
+trusted development delivery:
 SUCCESS
 
-user acceptance:
-CONFIRMED
+rollback:
+NOT REQUIRED
 
 preview:
 UNTOUCHED
 ```
 
-Accepted implementation:
+Текущий gate — пользовательская desktop/mobile приёмка и repairs в том же PR. Новый parallel product PR не создаётся.
 
-- exact type `journal-equipment-defects`;
-- source reference `И-00-007-ОР-2025 версия 2`, section 11, appendix 8;
-- exact six-column working and print presentation;
-- dedicated registry, card and separate actions;
-- mandatory structured equipment link and dispatcher-name snapshot;
-- participant roles `DISCOVERED_BY`, `OPERATIONS_RESPONSIBLE`,
-  `RESOLUTION_RESPONSIBLE`, `OPERATIONAL_ACKNOWLEDGER`;
-- lifecycle `REGISTERED → IN_PROGRESS → RESOLVED → CLOSED`;
-- versioned deadline extension with old/new deadlines and exact wording
-  `Срок устранения продлен`;
-- authenticated action evidence tied to employee, position, time, record version,
-  canonical snapshot and SHA-256;
-- explicit immutable link to a registered operational-log entry;
-- minimum non-cloning volume contract;
-- deterministic five-state presentation dataset;
-- desktop/mobile presentation and final row-click repair.
+Не входят в OPJ-UX-001:
 
-The current visual style remains a legacy interface and is not the accepted target UX/UI.
+- draft registration;
+- shift handover lifecycle;
+- close shift;
+- templates/abbreviations/suggestions;
+- automatic events;
+- action management;
+- offline;
+- SCADA;
+- новые модели и migrations.
 
-## 6. Functional readiness
+## 6. Product and research decisions
 
-### Substantially implemented
-
-- organization, personnel, positions and workplaces;
-- equipment/dispatching/import foundation;
-- documentation core;
-- workplace-documentation registry;
-- specialized operational journal;
-- generic `apps.operational_documents` core;
-- source-bound catalog;
-- immutable revisions, snapshots, audit and links;
-- PostgreSQL CI/runtime foundation;
-- source-bound equipment defect journal.
-
-### Accepted reference vertical slice
-
-- equipment defect journal: accepted and merged through PR #16;
-- source-bound UI and print form: accepted;
-- operational-log link: accepted;
-- repeatable defect presentation data: accepted;
-- technical, functional and visual acceptance: confirmed for the agreed DEFECT-001 scope.
-
-### Not implemented as a vertical slice
-
-- work permits/orders lifecycle;
-- work-permit work journals;
-- switching documents minimum contour;
-- automatic БП/ТБП/ТПП generation;
-- legally significant electronic signature.
-
-The key journal remains paper-first. The defect journal is explicitly a
-reference/control and demonstration contour with a printable approved form.
-
-## 7. DEV-FAST-001 implementation status
-
-The active Draft PR implements the approved presentation-only V1:
+Исследование вертикальных продуктов принято как decision input:
 
 ```text
-trigger:
-main-controlled issue_comment:created
+products/modules:
+16
 
-command:
-/eod-hot-refresh <exact-head-sha>
+sources:
+27
 
-gateway:
-hot-refresh <pr> <sha> <run_id>
+UX patterns:
+18
 
-allowlist:
-src/templates/**
-src/static/**
-
-allowed Git entries:
-added/modified regular 100644 blobs only
+preliminary decisions:
+16
 ```
 
-The workflow and controller independently validate actor/PR/exact SHA and path/blob policy. The controller applies exact Git blobs only to the writable layer of the current `eod-development` app container, restarts only app, relies on the host-owned check/collectstatic entrypoint and requires local health.
+Canonical documents:
 
-On any runtime error the app is force-recreated from the current full image. The separate overlay marker is container-local and does not change deployment `current_sha`.
+```text
+docs/research/VERTICAL_PRODUCTS_RESEARCH_20260729.md
+docs/research/VERTICAL_PRODUCTS_SOURCE_CATALOG_20260729.csv
+docs/research/VERTICAL_PRODUCTS_DECISION_MATRIX_20260729.csv
+docs/project/PRODUCT_UX_PRINCIPLES.md
+```
 
-Explicitly unchanged:
+Accepted principles:
 
-- existing release transactions;
-- database and migrations;
-- image build;
-- host-owned Compose/Dockerfile/entrypoint;
-- presentation seed;
-- preview;
-- automatic merge.
+- best-of-breed critical path;
+- один первичный объект — несколько представлений;
+- authoring отдельно от lifecycle;
+- передача смены — отдельный workflow;
+- обход — отдельная маршрутная сущность;
+- SCADA — optional integration;
+- одинаковые UI elements используют shared contract;
+- evidence `ADOPT/ADAPT/REJECT/DEFER/VERIFY`.
 
-Runtime activation cannot occur before trusted code is merged to `main`. After explicit merge authorization, one controlled root activation installs only the reviewed controller file; then a separate presentation-only canary PR proves success, idempotency and rollback.
+Research observation не становится requirement автоматически.
 
-## 8. Current gate
+## 7. Development process
 
-1. Obtain one final exact head for PR #19.
-2. Pass focused validator/controller contracts.
-3. Pass one full security/code gate.
-4. Keep PR Draft/not merged until a separate user merge command.
-5. After merge, install only the exact accepted controller file on VPS.
-6. Run a separate canary PR for `SUCCESS`, `ALREADY_APPLIED` and rollback evidence.
-7. Verify development health and preview `UNTOUCHED`.
+Current accepted process:
+
+```text
+factual preflight
+→ one issue/branch/Draft PR
+→ focused/profile checks
+→ trusted delivery
+→ user acceptance
+→ repairs
+→ one full final gate
+→ explicit merge
+```
+
+Presentation repair:
+
+```text
+templates/static commit
+→ focused tests
+→ hot refresh
+→ acceptance
+```
+
+Planned after OPJ-UX-001:
+
+1. `CI-OPT-001` — убрать повтор полного suite на GitHub и VPS при доказанном same exact SHA;
+2. `DEV-EVIDENCE-001` — один machine-owned evidence comment;
+3. `UI-CONTRACT-001` — browser/source contract shared UI;
+4. `WORKITEM-BOOTSTRAP-001` — manifest-driven issue/PR/checklist bootstrap.
+
+Это не блокирует текущую OPJ-UX приёмку.
+
+## 8. Functional readiness
+
+### Accepted
+
+- organizations, personnel, workplaces;
+- equipment/import foundation;
+- document core;
+- workplace documentation registry;
+- specialized operational journal core/editor;
+- generic operational-document core;
+- DEFECT-001;
+- Direction A UX foundation;
+- trusted development automation.
+
+### Advanced but lifecycle incomplete
+
+- operational journal:
+  - drafts and revisions;
+  - registered immutable entries;
+  - shift model;
+  - editor schema v4;
+  - semantic references;
+  - missing connected draft registration and full handover/close lifecycle.
+
+### Not implemented as complete vertical slices
+
+- applications;
+- dispositions/orders;
+- work permits and work register;
+- switching-document minimum;
+- rounds;
+- grounding;
+- RZA/TM;
+- offline;
+- SCADA integration.
 
 ## 9. Non-negotiable rules
 
-- End-user UI is Russian only.
-- Internals use professional technical English.
-- Operational journal remains specialized.
-- Other journals reuse the generic core through specialized source-bound layers.
-- The operator does not construct arbitrary working forms.
-- ЩПТ and ШОТ are one technical equipment family with source notation preserved.
-- Electronic confirmation is not called УКЭП or a legally significant signature.
-- Paper/hybrid/electronic modes are not declared legally equivalent without a
-  separate normative and organizational decision.
-- Real enterprise data and secrets are not committed.
-- User manual VPS commands for functional PR acceptance are zero.
-- Merge requires a separate explicit user command.
-
-## 10. Detailed work-item sources
-
-- `docs/project/DEFECT_001_IMPLEMENTATION.md` — accepted product slice contract.
-- GitHub issue `#18` and Draft PR `#19` — active DEV-FAST-001 contract and evidence.
+- end-user UI is Russian;
+- internals use professional English;
+- operational journal remains specialized;
+- source-bound forms are not arbitrary user constructors;
+- registered/history states are immutable;
+- same-purpose UI is shared system behavior;
+- SCADA is not mandatory;
+- paper/hybrid/electronic modes are not declared legally equivalent without evidence;
+- user performs product/UX acceptance, not programming;
+- automatic merge is absent.
