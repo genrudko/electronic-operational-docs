@@ -33,23 +33,28 @@ class StableEntryCreationRepair2Tests(SimpleTestCase):
 
     def test_undo_placeholder_has_close_and_zero_second_finalization(self) -> None:
         workspace = self.source("static/operational_log/draft_workspace.js")
-        template = self.source("templates/operational_log/shift_workspace.html")
-        self.assertIn("data-inline-undo-close", template)
+        rows = self.source(
+            "templates/operational_log/_shift_workspace_rows.html"
+        )
+        self.assertIn("data-inline-undo-close", rows)
         self.assertIn("function dismissInlineRemoval(state)", workspace)
         self.assertIn("seconds === 0", workspace)
         self.assertIn("window.queueMicrotask", workspace)
 
     def test_page_navigation_is_integrated_into_single_sticky_bar(self) -> None:
         workspace = self.source("static/operational_log/draft_workspace.js")
-        template = self.source("templates/operational_log/shift_workspace.html")
-        css = self.source("static/system/app.css")
-        self.assertIn("draft-command-primary-row", template)
-        self.assertIn("data-page-navigation", template)
+        toolbar = self.source(
+            "templates/operational_log/_shift_workspace_toolbar.html"
+        )
+        css = self.source("static/operational_log/opj_ux_001.css")
+        self.assertIn("opj-toolbar-primary", toolbar)
+        self.assertIn("data-page-navigation", toolbar)
         self.assertNotIn('"--draft-page-navigation-top"', workspace)
         self.assertNotIn('"--draft-command-bar-height"', workspace)
         self.assertNotIn("new ResizeObserver", workspace)
-        self.assertIn(".draft-page-navigation {", css)
-        self.assertIn("position: static;", css)
+        self.assertIn(".opj-page-navigation {", css)
+        self.assertIn(".opj-toolbar {", css)
+        self.assertIn("position: sticky;", css)
 
     def test_simplified_time_has_before_and_after_input_paths(self) -> None:
         editor = self.source("static/operational_log/draft_editor.js")
@@ -60,10 +65,12 @@ class StableEntryCreationRepair2Tests(SimpleTestCase):
 
     def test_pz_number_uses_embedded_accessible_workflow(self) -> None:
         editor = self.source("static/operational_log/draft_editor.js")
-        template = self.source("templates/operational_log/shift_workspace.html")
-        self.assertIn("data-pz-number-panel", template)
-        self.assertIn("data-pz-number-input", template)
-        self.assertIn("data-pz-number-preview", template)
+        overlays = self.source(
+            "templates/operational_log/_shift_workspace_overlays.html"
+        )
+        self.assertIn("data-pz-number-panel", overlays)
+        self.assertIn("data-pz-number-input", overlays)
+        self.assertIn("data-pz-number-preview", overlays)
         self.assertIn("function showPzNumberStep", editor)
         self.assertNotIn("window.prompt", editor)
 
