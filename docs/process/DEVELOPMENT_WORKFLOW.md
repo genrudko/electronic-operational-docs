@@ -1,156 +1,294 @@
 # ЭОД — workflow разработки
 
+**Актуализировано:** 29.07.2026
+
 ## 1. Нормальный цикл
 
 ```text
 Пользователь формулирует цель
-→ AI анализирует репозиторий и документы
-→ AI создаёт branch/commits/PR
-→ GitHub Actions выполняет gates
-→ VPS development получает branch
-→ checks/tests/status
-→ пользователь проверяет через SSH tunnel
-→ AI выполняет repair при необходимости
+→ AI проверяет current main, active PR и canonical docs
+→ factual audit затрагиваемого контура
+→ issue / branch / Draft PR
+→ implementation slice
+→ focused/profile checks
+→ trusted exact-head delivery в isolated development
+→ пользователь проходит acceptance route
+→ repairs в том же PR
+→ один full final gate на окончательном head
 → пользователь разрешает merge
-→ AI merges exact head
-→ preview синхронизируется и проверяется
+→ merge commit
+→ post-merge baseline/docs
 ```
 
-## 2. Что пользователь больше не делает
+GitHub — источник кода. VPS — runtime/test contour. Пользователь не является техническим оркестратором.
 
-- не редактирует Python, HTML, CSS, JavaScript или migrations;
+## 2. Что пользователь не делает
+
+- не редактирует code, templates, CSS/JS или migrations;
 - не собирает файлы из фрагментов;
-- не исправляет syntax/lint errors;
-- не применяет автономные patch scripts как нормальный процесс;
-- не выполняет commits, push, PR или merge вручную;
-- не настраивает локальное Python/Django окружение для каждого изменения;
-- не переносит базы между контурами вручную.
+- не исправляет lint/syntax/test failures;
+- не выполняет commits, push, PR и normal deployment;
+- не переносит базы;
+- не собирает вручную evidence по нескольким workflow;
+- не запускает штатные VPS-команды для functional PR.
 
-## 3. Что остаётся пользователю
+Пользователь задаёт цель, предметные правила, UX-оценку и merge decision.
 
-- цель и приоритет;
-- предметные правила;
-- оценка реального рабочего процесса;
-- функциональная и визуальная приёмка;
-- решение принять, отправить на repair или изменить направление;
-- явное разрешение merge.
+## 3. Factual preflight
 
-## 4. Подготовка work item
+До создания branch:
 
-AI-разработчик:
+1. проверить current `main`;
+2. проверить active/open PR и work item;
+3. прочитать `AGENTS.md`, current state/handoff, domain и product/UX principles;
+4. изучить фактические models/services/routes/templates/static/tests;
+5. отделить существующее от предполагаемого;
+6. определить критический пользовательский маршрут;
+7. определить shared и specialized UI;
+8. выбрать risk profile;
+9. сформулировать first delivery slice и acceptance criteria.
 
-1. читает current state, handoff and domain invariants;
-2. проверяет accepted main SHA;
-3. определяет затрагиваемые models/services/UI/tests/data/docs;
-4. формулирует acceptance criteria;
-5. создаёт branch от accepted main;
-6. открывает draft PR до или вскоре после первых commits для прозрачной истории.
+Результат:
 
-## 5. Реализация в GitHub
-
-- commits создаются только в active branch;
-- один commit должен иметь законченную цель, но PR может содержать несколько repair commits;
-- large work item делится на reviewable slices без нарушения vertical behavior;
-- secrets and real data не попадают в branch;
-- documentation changes выполняются вместе с code change.
-
-## 6. CI
-
-Перед VPS deployment должен быть green актуальный head. Для documentation-only change допускается профильный documentation gate, но основной CI не обходится, если workflow запускает его по PR.
-
-AI фиксирует run IDs/conclusions в PR evidence.
-
-## 7. Синхронизация VPS development
-
-```bash
-cd /srv/eod/development
-
-git status --short --branch
-git fetch --prune origin
-git pull --ff-only
+```text
+READY TO IMPLEMENT
 ```
 
-Worktree должен быть clean. При переключении ветки используется runbook `../runbooks/BRANCH_SWITCHING.md`.
+либо:
 
-## 8. Refresh или rebuild
+```text
+BLOCKED — IMPLEMENTATION MUST NOT START
+```
 
-### Refresh
+Повторный большой аудит не проводится без изменения фактов.
 
-Для:
+## 4. Единица работы
 
-- Python source;
+```text
+one work item
+→ one issue
+→ one branch
+→ one Draft PR
+→ all repairs
+```
+
+Новый PR не создаётся для каждого visual repair или CI fix.
+
+Large work item делится на reviewable commits/slices внутри того же PR, пока цель и risk boundary остаются общими.
+
+## 5. Реализация
+
+- code создаётся только в GitHub branch;
+- VPS не является автором source code;
+- commit имеет законченную цель;
+- documentation changes идут вместе с изменением либо обязательным post-merge follow-up;
+- real data и secrets не попадают в Git;
+- feature-specific визуальный слой не копируется для нового модуля;
+- shared component меняется с cross-screen проверкой.
+
+## 6. Risk profiles
+
+### `DOCS`
+
+- canonical docs;
+- research mapping;
+- process contract.
+
+Проверки: documentation contract, links, consistency.
+
+### `PRESENTATION`
+
 - templates;
-- CSS/JavaScript;
-- documentation без container dependency changes.
+- CSS;
+- browser JS без domain state change.
 
-```bash
-sudo bash scripts/development_stack.sh refresh
+Проверки: changed-path validation, focused tests, source-contract tests, hot refresh, browser acceptance.
+
+### `APP_LOGIC`
+
+- views;
+- forms;
+- application services без schema.
+
+Проверки: Ruff, compile, Django check, focused/profile tests, migration check, trusted deployment.
+
+### `SCHEMA_DATA`
+
+- models;
+- migrations;
+- seed/import;
+- data contracts.
+
+Проверки: PostgreSQL migrations/tests, identity, backup/rollback, final gate.
+
+### `SECURITY_INFRA`
+
+- workflows;
+- controller;
+- Compose;
+- security boundaries.
+
+Проверки: dedicated security/infra gates and controlled runtime evidence.
+
+Используется максимальный фактический risk profile затронутого diff.
+
+## 7. Быстрый visual repair loop
+
+Для разрешённых added/modified regular files:
+
+```text
+src/templates/**
+src/static/**
 ```
 
-### Rebuild
+цикл:
 
-Для:
-
-- dependencies;
-- Dockerfile;
-- entrypoint;
-- Compose startup contract.
-
-```bash
-sudo bash scripts/development_stack.sh rebuild
+```text
+repair commit
+→ focused checks
+→ /eod-hot-refresh <exact-head-sha>
+→ app health
+→ acceptance URL
 ```
 
-## 9. Проверки на VPS
+Не выполняются после каждого repair:
+
+- полный PostgreSQL suite;
+- все required workflow;
+- full image rebuild;
+- presentation reset;
+- preview deployment.
+
+При ошибке controller обязан clean-recreate development app из текущего полноценного image.
+
+## 8. Candidate profile
+
+Candidate создаётся, когда delivery slice готов к связной проверке.
 
 Минимум:
 
-```bash
-sudo bash scripts/development_stack.sh check
-sudo bash scripts/development_stack.sh test
-sudo bash scripts/development_stack.sh status
+- exact PR head;
+- diff/path classification;
+- profile tests;
+- Django check;
+- migrations check по применимости;
+- collectstatic/container smoke;
+- trusted deployment;
+- health;
+- acceptance route;
+- machine-readable evidence summary.
+
+Для Python/runtime change используется trusted rebuild/deploy profile. Для presentation-only candidate допускается hot refresh.
+
+## 9. Final gate
+
+Один раз на окончательном принятом head:
+
+- all required exact-head workflows;
+- full current PostgreSQL test suite;
+- migrations;
+- container smoke;
+- preview isolation;
+- trusted development exact-SHA confirmation;
+- desktop/mobile acceptance;
+- no blocking defects;
+- PR evidence.
+
+Любой новый commit после final gate требует актуального final gate заново.
+
+## 10. CI discipline
+
+- required checks не ослабляются;
+- queued/running проверки устаревшего head отменяются по concurrency, если безопасно;
+- diagnostics artifact создаётся при failure/rollback, а не обязательно при success;
+- run IDs and conclusions собираются в один PR evidence comment;
+- flaky retry не маскирует причину первого падения;
+- infrastructure timeout отделяется от code defect;
+- ноль тестов не считается success.
+
+## 11. Trusted development delivery
+
+Обязательны:
+
+- exact requested SHA;
+- live PR head re-check;
+- same-repository PR;
+- authorized actor;
+- serialized deployment transaction;
+- health confirmation;
+- rollback contract;
+- database operations summary;
+- preview `UNTOUCHED`;
+- automatic merge `ABSENT`.
+
+Development никогда не остаётся на `main`.
+
+## 12. Browser acceptance
+
+Пользователю возвращаются:
+
+- exact head;
+- URL;
+- 3–7 конкретных шагов;
+- ожидаемый результат;
+- известные ограничения;
+- что изменено и что сознательно не входит в scope.
+
+Проверяется сценарий, а не один красивый screenshot.
+
+Для shared UX component сравниваются несколько реальных экранов при одинаковых desktop/mobile viewport.
+
+## 13. Repair
+
+```text
+video/log/feedback
+→ exact reproduced fact
+→ smallest sufficient repair
+→ same branch/PR
+→ proportional checks
+→ delivery
+→ repeated acceptance
 ```
 
-Дополнительно по риску:
+Во время серии visual remarks замечания накапливаются и доставляются небольшими пакетами. Full gate откладывается до финального head.
 
-- migrations;
-- reset development database;
-- exact database identity;
-- demo authentication;
-- logs;
-- parallel preview health;
-- data counts or integrity checks.
+## 14. Merge
 
-## 10. Browser acceptance
+Перед merge AI проверяет:
 
-Пользователь открывает development через local port forwarding и проходит заданный маршрут. Ветка, exact head and data state должны быть известны до проверки.
+- PR open and mergeable;
+- Draft/Ready state;
+- exact accepted head;
+- актуальные required checks;
+- accepted runtime evidence;
+- acceptance comment;
+- отсутствие unresolved blocker;
+- явную команду пользователя.
 
-Принимаются не отдельные screenshots, а сценарий с ожидаемым результатом.
+Merge strategy определяется решением Chat 0. Automatic merge запрещён.
 
-## 11. Repair
+## 15. После merge
 
-AI анализирует фактический лог/видео/описание. Repair commit создаётся в той же branch. Пользователь не должен предлагать code-level fix, хотя его предметное объяснение является основным источником для корректировки.
+1. зафиксировать source head и merge commit;
+2. закрыть issue;
+3. удалить branch по решению;
+4. выполнить post-merge deployment только по актуальному release contract;
+5. проверить preview health/data identity;
+6. обновить current state, handoff, roadmap, open items, baseline and acceptance history;
+7. определить следующий work item.
 
-## 12. Merge
+## 16. Documentation-only coordination
 
-Merge не выполняется из фразы вроде «вроде нормально», если контекст неоднозначен. Нужна явная команда принять и слить изменение.
+Небольшой цельный canonical update может быть выполнен direct-to-main, если:
 
-AI перед merge проверяет:
+- нет runtime/schema/data/security change;
+- пользователь явно поручил обновление;
+- нет конфликтующего docs PR;
+- изменение проходит documentation checks;
+- это не обход product review.
 
-- PR state;
-- exact head SHA;
-- latest CI;
-- acceptance evidence;
-- absence of unresolved blocking issues.
+Такой commit не становится новым application baseline только потому, что изменил документацию.
 
-## 13. После merge
+## 17. Emergency fallback
 
-- синхронизировать preview checkout;
-- выполнить необходимый deployment action;
-- проверить health and HTTP;
-- зафиксировать merge commit;
-- обновить baseline docs;
-- переключить development на следующий active branch.
-
-## 14. Emergency fallback
-
-Patch-file workflow используется только при недоступности normal GitHub writes. Он не отменяет необходимость committed source of truth и повторной проверки через CI.
+Patch-file или manual copy используется только при технической невозможности normal GitHub write. Проверяемое состояние обязано быть немедленно воспроизведено committed source и пройти обычные gates.
