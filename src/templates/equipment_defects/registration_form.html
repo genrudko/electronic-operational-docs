@@ -12,9 +12,11 @@
 <link rel="stylesheet" href="{% static 'equipment_defects/ux_foundation_repair3.css' %}?v=uxf001r3">
 <link rel="stylesheet" href="{% static 'equipment_defects/ux_foundation_repair3_form_mobile.css' %}?v=uxf001r3m">
 <link rel="stylesheet" href="{% static 'equipment_defects/ux_foundation_repair3_picker.css' %}?v=uxf001r31">
+<link rel="stylesheet" href="{% static 'equipment_defects/ux_foundation_repair4.css' %}?v=uxf001r4">
 <script src="{% static 'equipment_defects/defects.js' %}?v=defect004" defer></script>
 <script src="{% static 'equipment_defects/ux_foundation_repair1.js' %}?v=uxf001r1" defer></script>
 <script src="{% static 'equipment_defects/ux_foundation_repair2.js' %}?v=uxf001r2" defer></script>
+<script src="{% static 'equipment_defects/ux_foundation_repair4_workplace.js' %}?v=uxf001r4" defer></script>
 <script src="{% static 'equipment_defects/ux_foundation_repair3.js' %}?v=uxf001r3" defer></script>
 <script src="{% static 'equipment_defects/ux_foundation_repair3_picker.js' %}?v=uxf001r31" defer></script>
 {% endblock %}
@@ -52,7 +54,7 @@
                             <div class="defect-form-grid">
                                 {% for field in form %}
                                     {% if field.name != "operational_log_entry" %}
-                                        <div class="defect-form-row{% if field.name == 'defect_description' %} is-wide{% endif %}">
+                                        <div class="defect-form-row{% if field.name == 'defect_description' or field.name == 'workplace' %} is-wide{% endif %}">
                                             <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                                             {{ field }}
                                             {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
