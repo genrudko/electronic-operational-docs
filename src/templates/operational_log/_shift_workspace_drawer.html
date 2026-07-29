@@ -1,0 +1,162 @@
+<aside class="opj-workspace-drawer draft-view-drawer screen-only da-overlay" data-view-drawer hidden aria-label="Смена и настройки отображения">
+    <header class="draft-view-drawer-header">
+        <div>
+            <span class="card-label">РАБОЧИЙ ЖУРНАЛ</span>
+            <h2>Смена и отображение</h2>
+        </div>
+        <button type="button" data-close-view-drawer aria-label="Закрыть панель">×</button>
+    </header>
+
+    <section class="draft-drawer-section">
+        <div class="draft-side-heading">
+            <span class="card-label">ТЕКУЩАЯ СМЕНА</span>
+            <strong>{{ shift.planned_start_at|date:"d.m.Y H:i" }} — {{ shift.planned_end_at|date:"d.m.Y H:i" }}</strong>
+        </div>
+        <ul class="shift-member-list compact-member-list">
+        {% for member in members %}
+            <li>
+                <div>
+                    <strong>{{ member.employee_full_name_snapshot }}</strong>
+                    <span>{{ member.employee_position_snapshot }}</span>
+                </div>
+                {% if member.is_shift_lead %}<em>Старший</em>{% endif %}
+            </li>
+        {% endfor %}
+        </ul>
+    </section>
+
+    <section class="draft-drawer-section draft-quick-view-section">
+        <div class="draft-side-heading">
+            <span class="card-label">ОТОБРАЖЕНИЕ</span>
+            <strong>Тема и типографика</strong>
+        </div>
+
+        <div class="draft-quick-setting">
+            <span class="draft-quick-setting-label">Тема</span>
+            <div class="draft-icon-choice-group" role="group" aria-label="Тема интерфейса">
+                <button type="button" data-theme-choice="system" aria-label="Тема как в системе"><span aria-hidden="true">◐</span><small>Авто</small></button>
+                <button type="button" data-theme-choice="light" aria-label="Светлая тема"><span aria-hidden="true">☀</span><small>Светлая</small></button>
+                <button type="button" data-theme-choice="dark" aria-label="Тёмная тема"><span aria-hidden="true">◑</span><small>Тёмная</small></button>
+            </div>
+        </div>
+
+        <div class="draft-quick-setting">
+            <span class="draft-quick-setting-label">Рабочая ширина</span>
+            <div class="draft-icon-choice-group draft-width-choice-group" role="group" aria-label="Ширина рабочего журнала">
+                <button type="button" data-page-width-choice="standard" aria-label="Стандартная ширина"><span class="draft-width-icon is-standard" aria-hidden="true"></span><small>Обычная</small></button>
+                <button type="button" data-page-width-choice="wide" aria-label="Широкая рабочая область"><span class="draft-width-icon is-wide" aria-hidden="true"></span><small>Широкая</small></button>
+                <button type="button" data-page-width-choice="full" aria-label="На всю доступную ширину"><span class="draft-width-icon is-full" aria-hidden="true"></span><small>Полная</small></button>
+            </div>
+        </div>
+
+        <div class="draft-typography-panel" data-typography-panel>
+            <div class="draft-typography-heading">
+                <span class="draft-quick-setting-label">Размер текста</span>
+                <small>Экранная настройка не изменяет печатную форму.</small>
+            </div>
+            <div class="draft-typography-preset-group" role="group" aria-label="Общий размер текста журнала">
+                <button type="button" data-typography-preset="small" aria-label="Мелкий размер">А−</button>
+                <button type="button" data-typography-preset="normal" aria-label="Обычный размер">А</button>
+                <button type="button" data-typography-preset="large" aria-label="Крупный размер">А+</button>
+                <button type="button" data-typography-preset="extra_large" aria-label="Очень крупный размер">А++</button>
+            </div>
+            <div class="draft-typography-rows">
+                <div class="draft-typography-row">
+                    <span>Записи</span>
+                    <div class="draft-typography-size-group" role="group" aria-label="Размер текста записей">
+                        <button type="button" data-typography-target="entry" data-typography-size="small">А−</button>
+                        <button type="button" data-typography-target="entry" data-typography-size="normal">А</button>
+                        <button type="button" data-typography-target="entry" data-typography-size="large">А+</button>
+                        <button type="button" data-typography-target="entry" data-typography-size="extra_large">А++</button>
+                    </div>
+                </div>
+                <div class="draft-typography-row">
+                    <span>Время</span>
+                    <div class="draft-typography-size-group" role="group" aria-label="Размер времени записи">
+                        <button type="button" data-typography-target="time" data-typography-size="small">А−</button>
+                        <button type="button" data-typography-target="time" data-typography-size="normal">А</button>
+                        <button type="button" data-typography-target="time" data-typography-size="large">А+</button>
+                        <button type="button" data-typography-target="time" data-typography-size="extra_large">А++</button>
+                    </div>
+                </div>
+                <div class="draft-typography-row">
+                    <span>Даты</span>
+                    <div class="draft-typography-size-group" role="group" aria-label="Размер заголовков дат">
+                        <button type="button" data-typography-target="date" data-typography-size="small">А−</button>
+                        <button type="button" data-typography-target="date" data-typography-size="normal">А</button>
+                        <button type="button" data-typography-target="date" data-typography-size="large">А+</button>
+                        <button type="button" data-typography-target="date" data-typography-size="extra_large">А++</button>
+                    </div>
+                </div>
+                <div class="draft-typography-row">
+                    <span>Шапка</span>
+                    <div class="draft-typography-size-group" role="group" aria-label="Размер шапки таблицы">
+                        <button type="button" data-typography-target="tableHeader" data-typography-size="small">А−</button>
+                        <button type="button" data-typography-target="tableHeader" data-typography-size="normal">А</button>
+                        <button type="button" data-typography-target="tableHeader" data-typography-size="large">А+</button>
+                        <button type="button" data-typography-target="tableHeader" data-typography-size="extra_large">А++</button>
+                    </div>
+                </div>
+                <div class="draft-typography-row">
+                    <span>Заголовок</span>
+                    <div class="draft-typography-size-group" role="group" aria-label="Размер заголовка журнала">
+                        <button type="button" data-typography-target="title" data-typography-size="small">А−</button>
+                        <button type="button" data-typography-target="title" data-typography-size="normal">А</button>
+                        <button type="button" data-typography-target="title" data-typography-size="large">А+</button>
+                        <button type="button" data-typography-target="title" data-typography-size="extra_large">А++</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" action="{% url 'operational_log:update_display' journal.pk %}" data-quick-display-form hidden>
+            {% csrf_token %}
+            <input type="hidden" name="workspace_quick_settings" value="1">
+        </form>
+        <p class="draft-quick-setting-status" data-quick-setting-status role="status" aria-live="polite"></p>
+    </section>
+
+    <section class="draft-drawer-section">
+        <div class="draft-side-heading">
+            <span class="card-label">ЗАПИСЕЙ НА СТРАНИЦЕ</span>
+            <strong data-records-summary>15 записей</strong>
+        </div>
+        <div class="draft-record-presets" role="group" aria-label="Количество записей на странице">
+            <button type="button" data-records-preset="auto">Авто</button>
+            <button type="button" data-records-preset="10">10</button>
+            <button type="button" data-records-preset="15">15</button>
+            <button type="button" data-records-preset="20">20</button>
+            <button type="button" data-records-preset="25">25</button>
+            <button type="button" data-records-preset="30">30</button>
+        </div>
+        <div class="draft-custom-records">
+            <label><span>Своё значение</span><input type="number" min="5" max="50" step="1" value="15" data-records-custom></label>
+            <button type="button" class="da-button is-secondary" data-apply-custom-records>Применить</button>
+        </div>
+    </section>
+
+    <section class="draft-drawer-section">
+        <div class="draft-side-heading"><span class="card-label">ЧЕРНОВИК</span><strong>Рабочее состояние</strong></div>
+        <dl class="shift-draft-facts">
+            <dt>Активных записей</dt><dd>{{ drafts|length }}</dd>
+            <dt>Убрано</dt><dd>{{ removed_drafts|length }}</dd>
+            <dt>Официальные номера</dt><dd>Не назначены</dd>
+            <dt>Зарегистрированный журнал</dt><dd>Не изменён</dd>
+        </dl>
+    </section>
+
+    {% if removed_drafts %}
+    <details class="draft-drawer-section removed-drafts-section">
+        <summary>Убранные записи — {{ removed_drafts|length }}</summary>
+        {% for draft in removed_drafts %}
+        <article class="removed-draft-row">
+            <div><strong>{{ draft.event_at|date:"d.m.Y H:i" }}</strong><p>{{ draft.content|default:"Пустая запись" }}</p></div>
+            <form method="post" action="{% url 'operational_log:restore_draft' journal.pk draft.public_id %}">
+                {% csrf_token %}
+                <button class="da-button is-secondary" type="submit">Вернуть</button>
+            </form>
+        </article>
+        {% endfor %}
+    </details>
+    {% endif %}
+</aside>
