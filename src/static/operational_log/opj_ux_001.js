@@ -29,67 +29,84 @@
         return /^\/operations\/journal\/\d+\/$/.test(path) ? path : null;
     }
 
-    function addWorkBoundary() {
-        const workspace = main.querySelector("[data-draft-workspace]");
-        if (!workspace || main.querySelector("[data-opj-work-boundary]")) {
-            return;
-        }
-        const boundary = element("section", "opj-work-boundary da-alert");
-        boundary.dataset.opjWorkBoundary = "";
-        const copy = element("div");
-        copy.append(
-            element("strong", "", "Рабочий черновик"),
-            element("p", "", "Записи текущей смены сохраняются автоматически"),
+    function forceSinglePagePresentation() {
+        const workspace = main.querySelector(
+            '[data-draft-workspace][data-opj-presentation-mode="single"]',
         );
-        boundary.append(copy, element("span", "opj-boundary-chip da-status is-success", "Автосохранение"));
-        workspace.before(boundary);
-    }
-
-    function renameRegisteredAction() {
-        const link = main.querySelector(".draft-clean-copy-action");
-        if (!link) {
+        if (!workspace) {
             return;
         }
-        link.textContent = "Зарегистрированный журнал";
-        link.title = "Открыть зарегистрированные записи по утверждённой форме";
-        link.setAttribute("aria-label", link.title);
-        link.classList.add("da-button", "is-secondary", "is-compact");
+        try {
+            window.localStorage.setItem("eod-draft-view-mode", "single");
+        } catch (_error) {
+            // The rewritten workspace remains single-page through its server markup.
+        }
+        workspace.dataset.viewMode = "single";
+        const secondaryPage = workspace.querySelector('[data-page-shell="right"]');
+        if (secondaryPage) {
+            secondaryPage.hidden = true;
+            secondaryPage.setAttribute("aria-hidden", "true");
+        }
     }
 
     function sanitizeRegisteredTable(table) {
         const clone = table.cloneNode(true);
         clone.querySelectorAll("[id]").forEach((node) => node.removeAttribute("id"));
-        clone.querySelectorAll("form, button").forEach((node) => node.remove());
+        clone.querySelectorAll("form, button, dialog, .screen-only").forEach(
+            (node) => node.remove(),
+        );
         clone.classList.add("da-table");
         return clone;
     }
 
-    async function addRegisteredContext() {
+    function ensureRegisteredContext() {
         const workspace = main.querySelector("[data-draft-workspace]");
-        const url = detailUrl();
-        if (!workspace || !url || main.querySelector("[data-opj-registered-context]")) {
-            return;
+        if (!workspace) {
+            return null;
         }
-
-        const context = element("details", "opj-registered-context da-panel-flat is-loading");
+        let context = main.querySelector("[data-opj-registered-context]");
+        if (context) {
+            return context;
+        }
+        context = element("details", "opj-registered-context da-panel-flat");
         context.dataset.opjRegisteredContext = "";
-        context.open = false;
         const summary = element("summary");
         const heading = element("span", "opj-registered-context-heading");
         heading.append(
             element("span", "da-chip", "Только чтение"),
             element("strong", "", "Зарегистрированные записи"),
         );
-        const meta = element("span", "opj-registered-context-meta", "Загрузка…");
-        summary.append(heading, meta);
-        const body = element(
-            "div",
-            "opj-registered-context-body",
-            "Загрузка зарегистрированного журнала…",
+        summary.append(
+            heading,
+            element("span", "opj-registered-context-meta", "Загрузка…"),
         );
-        context.append(summary, body);
-        const boundary = main.querySelector("[data-opj-work-boundary]");
-        (boundary || workspace).before(context);
+        context.append(
+            summary,
+            element(
+                "div",
+                "opj-registered-context-body",
+                "Загрузка зарегистрированного журнала…",
+            ),
+        );
+        workspace.before(context);
+        return context;
+    }
+
+    async function loadRegisteredContext() {
+        const url = detailUrl();
+        const context = ensureRegisteredContext();
+        if (!url || !context || context.dataset.opjRegisteredLoaded === "true") {
+            return;
+        }
+        context.dataset.opjRegisteredLoaded = "true";
+        context.classList.add("is-loading");
+        context.open = false;
+
+        const body = context.querySelector(".opj-registered-context-body");
+        const meta = context.querySelector(".opj-registered-context-meta");
+        if (!body || !meta) {
+            return;
+        }
 
         try {
             const response = await fetch(url, {
@@ -111,24 +128,38 @@
             const count = table.querySelectorAll("tbody tr").length;
             const note = element("div", "opj-registered-context-note");
             note.append(
-                element("span", "", "Хронологический read-only контекст зарегистрированного журнала"),
+                element(
+                    "span",
+                    "",
+                    "Хронологический контекст зарегистрированного журнала",
+                ),
             );
-            const fullLink = element("a", "da-button is-secondary is-compact", "Открыть форму");
+            const fullLink = element(
+                "a",
+                "da-button is-secondary is-compact",
+                "Открыть утверждённую форму",
+            );
             fullLink.href = url;
             note.append(fullLink);
             const wrap = element("div", "opj-registered-table-wrap da-table-wrap");
             wrap.append(table);
             body.replaceChildren(note, wrap);
             meta.textContent = `${count} ${count === 1 ? "запись" : "записей"}`;
-            context.classList.remove("is-loading");
         } catch (_error) {
             const fallback = element("div", "opj-registered-context-note");
-            fallback.append(element("span", "", "Не удалось встроить зарегистрированные записи"));
-            const link = element("a", "da-button is-secondary is-compact", "Открыть журнал");
+            fallback.append(
+                element("span", "", "Не удалось загрузить зарегистрированные записи"),
+            );
+            const link = element(
+                "a",
+                "da-button is-secondary is-compact",
+                "Открыть журнал",
+            );
             link.href = url;
             fallback.append(link);
             body.replaceChildren(fallback);
             meta.textContent = "Открыть отдельно";
+        } finally {
             context.classList.remove("is-loading");
         }
     }
@@ -171,14 +202,19 @@
         }
         const nodeText = (node.textContent || "").trim();
         return [...items]
-            .sort((left, right) => String(right.label || "").length - String(left.label || "").length)
+            .sort(
+                (left, right) => String(right.label || "").length
+                    - String(left.label || "").length,
+            )
             .find((item) => nodeText.includes(String(item.label || ""))) || null;
     }
 
     function enhanceEquipmentHierarchy() {
         const picker = document.querySelector("[data-reference-picker]");
         const results = picker?.querySelector("[data-reference-results]");
-        const equipmentTab = picker?.querySelector('[data-reference-kind-option="equipment"]');
+        const equipmentTab = picker?.querySelector(
+            '[data-reference-kind-option="equipment"]',
+        );
         if (!picker || !results || !equipmentTab) {
             return;
         }
@@ -191,7 +227,9 @@
             if (grouping || equipmentTab.getAttribute("aria-pressed") !== "true") {
                 return;
             }
-            const sourceItems = Array.isArray(catalog.equipment) ? catalog.equipment : [];
+            const sourceItems = Array.isArray(catalog.equipment)
+                ? catalog.equipment
+                : [];
             const candidates = Array.from(results.children).filter(
                 (node) => !node.classList.contains("opj-reference-tree"),
             );
@@ -257,41 +295,26 @@
         window.requestAnimationFrame(regroup);
     }
 
-    function applySharedPrimitiveClasses() {
-        main.querySelectorAll(".page-heading, .journal-workspace-bar, .shift-book-header").forEach(
-            (node) => node.classList.add("da-page-header"),
-        );
-        main.querySelector(".shift-book-header")?.classList.add("da-page-header-compact");
+    function adoptSharedPrimitives() {
         main.querySelectorAll(".journal-workspace-actions").forEach(
             (node) => node.classList.add("da-actions"),
         );
-        main.querySelectorAll(".journal-workspace-actions .button, .draft-command-actions .button").forEach(
-            (node) => node.classList.add("da-button"),
-        );
         main.querySelectorAll(".button.secondary").forEach(
-            (node) => node.classList.add("is-secondary"),
+            (node) => node.classList.add("da-button", "is-secondary"),
         );
-        main.querySelectorAll(".profile-card, .paged-draft-workspace").forEach(
-            (node) => node.classList.add("da-panel"),
-        );
-        main.querySelectorAll(".draft-view-switch").forEach(
-            (node) => node.classList.add("da-segmented"),
-        );
-        main.querySelectorAll(".draft-command-search input, .draft-command-search select").forEach(
-            (node) => node.classList.add("da-field"),
-        );
-        main.querySelectorAll("dialog").forEach((node) => node.classList.add("da-overlay"));
         main.querySelectorAll(".approved-journal-table, .journal-registry-table").forEach(
             (node) => node.classList.add("da-table"),
         );
         main.querySelectorAll(".table-wrap, .approved-journal-table-wrap").forEach(
             (node) => node.classList.add("da-table-wrap"),
         );
+        main.querySelectorAll("dialog").forEach(
+            (node) => node.classList.add("da-overlay"),
+        );
     }
 
-    applySharedPrimitiveClasses();
-    renameRegisteredAction();
-    addWorkBoundary();
-    void addRegisteredContext();
+    forceSinglePagePresentation();
+    adoptSharedPrimitives();
+    void loadRegisteredContext();
     enhanceEquipmentHierarchy();
 })();
