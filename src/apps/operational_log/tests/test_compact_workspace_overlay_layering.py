@@ -14,37 +14,43 @@ class CompactWorkspaceOverlayLayeringTests(SimpleTestCase):
 
     def test_workspace_has_one_sticky_control_surface(self) -> None:
         template = self.source("templates/operational_log/shift_workspace.html")
+        toolbar = self.source(
+            "templates/operational_log/_shift_workspace_toolbar.html"
+        )
         workspace = self.source("static/operational_log/draft_workspace.js")
-        css = self.source("static/system/app.css")
-        self.assertIn("draft-command-primary-row", template)
-        self.assertEqual(template.count("data-page-navigation"), 1)
-        self.assertIn("draft-clean-copy-action", template)
-        self.assertNotIn("shift-book-clean-copy", template)
+        css = self.source("static/operational_log/opj_ux_001.css")
+        self.assertEqual(
+            template.count(
+                'operational_log/_shift_workspace_toolbar.html'
+            ),
+            1,
+        )
+        self.assertIn("opj-toolbar-primary", toolbar)
+        self.assertEqual(toolbar.count("data-page-navigation"), 1)
+        self.assertIn("draft-clean-copy-action", toolbar)
+        self.assertNotIn("shift-book-clean-copy", toolbar)
         self.assertNotIn("--draft-page-navigation-top", workspace)
         self.assertNotIn("--draft-command-bar-height", workspace)
         self.assertNotIn("new ResizeObserver", workspace)
-        self.assertIn("--layer-journal-sticky", css)
-        self.assertIn("position: static;", css)
+        self.assertIn(".opj-toolbar {", css)
+        self.assertIn("position: sticky;", css)
 
-    def test_compact_ribbon_is_default_and_persisted_locally(self) -> None:
-        template = self.source("templates/operational_log/shift_workspace.html")
+    def test_editor_toolbar_is_expanded_without_legacy_ribbon_toggle(self) -> None:
+        toolbar = self.source(
+            "templates/operational_log/_shift_workspace_toolbar.html"
+        )
         workspace = self.source("static/operational_log/draft_workspace.js")
-        self.assertIn('data-ribbon-mode="compact"', template)
-        self.assertIn("data-ribbon-mode-toggle", template)
-        self.assertIn('aria-expanded="false"', template)
-        self.assertIn("draft-ribbon-mode-label", template)
-        self.assertIn("draft-ribbon-mode-chevron", template)
-        self.assertNotIn("data-ribbon-mode-icon", template)
-        self.assertNotIn('title="Развернуть ленту редактора"', template)
-        panel_index = template.index("data-open-view-drawer")
-        toggle_index = template.index("data-ribbon-mode-toggle")
-        clean_copy_index = template.index("draft-clean-copy-action")
-        self.assertLess(panel_index, toggle_index)
-        self.assertLess(toggle_index, clean_copy_index)
+        self.assertIn('data-ribbon-mode="expanded"', toolbar)
+        self.assertIn("data-editor-ribbon", toolbar)
+        self.assertIn("data-editor-ribbon-status", toolbar)
+        self.assertNotIn("data-ribbon-mode-toggle", toolbar)
+        self.assertNotIn("draft-ribbon-mode-label", toolbar)
+        self.assertNotIn("draft-ribbon-mode-chevron", toolbar)
+        self.assertNotIn("data-ribbon-mode-icon", toolbar)
+        self.assertNotIn('title="Развернуть ленту редактора"', toolbar)
         self.assertIn("eod.operationalJournal.ribbonMode", workspace)
         self.assertIn("function normalizeRibbonMode", workspace)
         self.assertIn("function applyRibbonMode", workspace)
-        self.assertIn('ribbonMode === "compact" ? "expanded" : "compact"', workspace)
         self.assertNotIn("data-ribbon-mode-icon", workspace)
         self.assertNotIn("ribbonModeToggle.title", workspace)
 
