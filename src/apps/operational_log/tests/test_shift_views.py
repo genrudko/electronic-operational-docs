@@ -12,9 +12,7 @@ from .base import OperationalLogTestCase
 class OperationalShiftViewTests(OperationalLogTestCase):
     def setUp(self) -> None:
         self.client = Client()
-        self.user = get_user_model().objects.get(
-            username="operator.demo"
-        )
+        self.user = get_user_model().objects.get(username="operator.demo")
 
     def test_shift_workspace_requires_authentication(self) -> None:
         response = self.client.get(
@@ -48,6 +46,7 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             "journal-title-size-normal",
         ):
             self.assertContains(detail, marker)
+
         workspace = self.client.get(
             reverse(
                 "operational_log:shift_workspace",
@@ -56,19 +55,19 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         )
         self.assertEqual(workspace.status_code, 200)
         for marker in (
+            "data-direction-a-shell",
+            "data-direction-a-sidebar",
+            "data-direction-a-topbar",
             "Рабочий черновик",
             "Автосохранение включено",
-            "Одна страница",
-            "Разворот",
+            'data-opj-presentation-mode="single"',
             "Поиск по записям",
             "Дата и время записи",
             "Визы и замечания",
             "data-page-input",
             "data-page-buttons",
-            "draft-command-primary-row",
-            'data-ribbon-mode="compact"',
-            "data-ribbon-mode-toggle",
-            "Развернуть ленту редактора",
+            "opj-toolbar-primary",
+            'data-ribbon-mode="expanded"',
             "data-view-drawer",
             "data-column-resizer",
             "data-records-preset",
@@ -78,7 +77,6 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             "data-default-entry-date-iso",
             "data-shift-start",
             "data-shift-end",
-            "screen-journal-theme",
             "data-apply-custom-records",
             "data-theme-choice",
             "data-page-width-choice",
@@ -92,7 +90,6 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             "data-typography-target",
             "data-typography-size",
             "data-quick-display-form",
-            "stable-page-layout-workspace",
             "data-quick-time",
             "data-editor-fallback",
             "data-editor-payload",
@@ -103,30 +100,33 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             "draft-editor-payload-field",
             "draft_editor.js",
             "draft_workspace.js",
+            "draft_reference_navigation.js",
         ):
             self.assertContains(workspace, marker)
-        self.assertNotContains(workspace, "Сохранить сейчас")
-        self.assertNotContains(workspace, "↑ Выше")
-        self.assertNotContains(workspace, "↓ Ниже")
-        self.assertNotContains(workspace, 'data-page-size="8"')
-        self.assertNotContains(workspace, 'type="range"')
-        self.assertNotContains(workspace, "draft-workspace-layout")
+        for forbidden in (
+            "Разворот",
+            "data-ribbon-mode-toggle",
+            "Развернуть ленту редактора",
+            "Сохранить сейчас",
+            "↑ Выше",
+            "↓ Ниже",
+            'data-page-size="8"',
+            'type="range"',
+            "draft-workspace-layout",
+            "stable-page-layout-workspace",
+            "draft-paper-stage",
+            "hybrid-paper-theme",
+        ):
+            self.assertNotContains(workspace, forbidden)
         self.assertContains(workspace, "15 записей")
         self.assertContains(workspace, "+ Запись")
-        self.assertContains(workspace, "Панель")
-        self.assertContains(workspace, "Чистовик")
-        self.assertContains(
-            workspace,
-            "ЗАПИСЕЙ НА СТРАНИЦЕ",
-        )
+        self.assertContains(workspace, "Смена и вид")
+        self.assertContains(workspace, "Зарегистрированный журнал")
+        self.assertContains(workspace, "ЗАПИСЕЙ НА СТРАНИЦЕ")
         self.assertNotContains(workspace, "ШИРИНА ГРАФ")
-        self.assertNotContains(
-            workspace,
-            "data-column-time-number",
-        )
+        self.assertNotContains(workspace, "data-column-time-number")
         self.assertNotContains(workspace, "data-measure-page")
         self.assertNotContains(workspace, "data-view-drawer-backdrop")
-        self.assertNotContains(workspace, "hybrid-paper-theme")
 
         quick_settings = self.client.post(
             reverse(
@@ -154,18 +154,12 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         self.assertEqual(preferences.journal_width, "FULL")
         self.assertEqual(preferences.journal_font_size, "LARGE")
         self.assertEqual(preferences.journal_time_font_size, "SMALL")
-        self.assertEqual(
-            preferences.journal_date_font_size,
-            "EXTRA_LARGE",
-        )
+        self.assertEqual(preferences.journal_date_font_size, "EXTRA_LARGE")
         self.assertEqual(
             preferences.journal_table_header_font_size,
             "LARGE",
         )
-        self.assertEqual(
-            preferences.journal_title_font_size,
-            "EXTRA_LARGE",
-        )
+        self.assertEqual(preferences.journal_title_font_size, "EXTRA_LARGE")
         self.assertTrue(preferences.journal_simplified_time_input)
         self.assertTrue(
             quick_settings.json()["journal_simplified_time_input"]
@@ -205,12 +199,9 @@ class OperationalShiftViewTests(OperationalLogTestCase):
 
         preferences = self.user.interface_preference
         preferences.refresh_from_db()
-        self.assertEqual(
-            preferences.journal_time_font_size,
-            "NORMAL",
-        )
+        self.assertEqual(preferences.journal_time_font_size, "NORMAL")
 
-    def test_workspace_uses_word_like_editor_controls(self) -> None:
+    def test_workspace_uses_rewritten_editor_controls(self) -> None:
         self.client.force_login(self.user)
         response = self.client.get(
             reverse(
@@ -221,39 +212,26 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         self.assertEqual(response.status_code, 200)
         html = response.content.decode("utf-8")
         for marker in (
-            "Мини-лента редактора записи",
             "РЕДАКТОР ЗАПИСИ",
             "Щёлкните по тексту записи",
             'data-editor-ribbon-status',
             'data-editor-floating-toolbar',
             "Форматирование выделенного текста",
-            "Шрифт",
-            "Абзац",
-            "История",
+            "Текст",
+            "Абзац и история",
             "Тип записи",
-            "Связь",
+            "Связанные объекты",
+            "Нормативные отметки",
         ):
             self.assertIn(marker, html)
-        self.assertEqual(
-            html.count('data-editor-command="bold"'),
-            2,
-        )
-        self.assertEqual(
-            html.count('data-editor-command="underline"'),
-            2,
-        )
-        self.assertEqual(
-            html.count('data-editor-command="undo"'),
-            1,
-        )
+        self.assertEqual(html.count('data-editor-command="bold"'), 2)
+        self.assertEqual(html.count('data-editor-command="underline"'), 2)
+        self.assertEqual(html.count('data-editor-command="undo"'), 1)
         self.assertNotIn(
             'aria-label="Редактор и действия с записью"',
             html,
         )
-        self.assertIn(
-            'aria-label="Действия с записью"',
-            html,
-        )
+        self.assertIn('aria-label="Действия с записью"', html)
 
     def test_editor_payload_is_a_non_visual_form_field(self) -> None:
         self.client.force_login(self.user)
@@ -265,9 +243,7 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         )
         self.assertEqual(response.status_code, 200)
         html = response.content.decode("utf-8")
-        expected = self.shift.draft_entries.filter(
-            is_removed=False
-        ).count()
+        expected = self.shift.draft_entries.filter(is_removed=False).count()
         self.assertEqual(
             html.count('class="draft-editor-payload-field"'),
             expected,
@@ -296,12 +272,12 @@ class OperationalShiftViewTests(OperationalLogTestCase):
                 args=(journal.pk,),
             ),
             {
-                "planned_start_at": timezone.localtime(
-                    start_at
-                ).strftime("%Y-%m-%dT%H:%M"),
-                "planned_end_at": timezone.localtime(
-                    end_at
-                ).strftime("%Y-%m-%dT%H:%M"),
+                "planned_start_at": timezone.localtime(start_at).strftime(
+                    "%Y-%m-%dT%H:%M"
+                ),
+                "planned_end_at": timezone.localtime(end_at).strftime(
+                    "%Y-%m-%dT%H:%M"
+                ),
             },
         )
         self.assertRedirects(
@@ -328,22 +304,13 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             )
         )
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(
-            self.shift.draft_entries.count(),
-            before + 1,
-        )
+        self.assertEqual(self.shift.draft_entries.count(), before + 1)
         entry = self.shift.draft_entries.order_by("-pk").first()
         self.assertEqual(entry.content, "")
         self.assertEqual(entry.version, 1)
         self.assertEqual(entry.revisions.count(), 1)
-        self.assertGreaterEqual(
-            entry.event_at,
-            self.shift.planned_start_at,
-        )
-        self.assertLessEqual(
-            entry.event_at,
-            self.shift.planned_end_at,
-        )
+        self.assertGreaterEqual(entry.event_at, self.shift.planned_start_at)
+        self.assertLessEqual(entry.event_at, self.shift.planned_end_at)
 
         target_event_at = timezone.localtime(
             self.shift.planned_start_at
@@ -358,16 +325,10 @@ class OperationalShiftViewTests(OperationalLogTestCase):
                 "operational_log:add_draft",
                 args=(self.journal.pk,),
             ),
-            {
-                "event_at": target_event_at.strftime(
-                    "%Y-%m-%dT%H:%M"
-                ),
-            },
+            {"event_at": target_event_at.strftime("%Y-%m-%dT%H:%M")},
         )
         self.assertEqual(response.status_code, 302)
-        dated_entry = self.shift.draft_entries.order_by(
-            "-pk"
-        ).first()
+        dated_entry = self.shift.draft_entries.order_by("-pk").first()
         self.assertEqual(
             timezone.localtime(dated_entry.event_at),
             target_event_at,
@@ -383,23 +344,18 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             {"event_at": "not-a-date"},
         )
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(
-            self.shift.draft_entries.count(),
-            before + 2,
-        )
+        self.assertEqual(self.shift.draft_entries.count(), before + 2)
 
-        outside_event_at = (
-            self.shift.planned_end_at + timedelta(minutes=1)
-        )
+        outside_event_at = self.shift.planned_end_at + timedelta(minutes=1)
         response = self.client.post(
             reverse(
                 "operational_log:add_draft",
                 args=(self.journal.pk,),
             ),
             {
-                "event_at": timezone.localtime(
-                    outside_event_at
-                ).strftime("%Y-%m-%dT%H:%M"),
+                "event_at": timezone.localtime(outside_event_at).strftime(
+                    "%Y-%m-%dT%H:%M"
+                )
             },
         )
         self.assertEqual(response.status_code, 400)
@@ -408,16 +364,11 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             "интервал смены",
             status_code=400,
         )
-        self.assertEqual(
-            self.shift.draft_entries.count(),
-            before + 2,
-        )
+        self.assertEqual(self.shift.draft_entries.count(), before + 2)
 
     def test_autosave_updates_draft_and_returns_version(self) -> None:
         self.client.force_login(self.user)
-        entry = self.shift.draft_entries.filter(
-            is_removed=False
-        ).first()
+        entry = self.shift.draft_entries.filter(is_removed=False).first()
         response = self.client.post(
             reverse(
                 "operational_log:autosave_draft",
@@ -426,9 +377,9 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             {
                 "public_id": str(entry.public_id),
                 "expected_version": entry.version,
-                "event_at": timezone.localtime(
-                    entry.event_at
-                ).strftime("%Y-%m-%dT%H:%M"),
+                "event_at": timezone.localtime(entry.event_at).strftime(
+                    "%Y-%m-%dT%H:%M"
+                ),
                 "content": "Текст сохранён через автосохранение",
             },
         )
@@ -443,9 +394,7 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         )
 
         saved_event_at = entry.event_at
-        outside_event_at = (
-            self.shift.planned_end_at + timedelta(minutes=1)
-        )
+        outside_event_at = self.shift.planned_end_at + timedelta(minutes=1)
         outside = self.client.post(
             reverse(
                 "operational_log:autosave_draft",
@@ -454,9 +403,9 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             {
                 "public_id": str(entry.public_id),
                 "expected_version": payload["version"],
-                "event_at": timezone.localtime(
-                    outside_event_at
-                ).strftime("%Y-%m-%dT%H:%M"),
+                "event_at": timezone.localtime(outside_event_at).strftime(
+                    "%Y-%m-%dT%H:%M"
+                ),
                 "content": entry.content,
             },
         )
@@ -467,8 +416,7 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         self.assertEqual(entry.version, payload["version"])
 
         ordered_entries = list(
-            self.shift.draft_entries.filter(is_removed=False)
-            .order_by("pk")[:2]
+            self.shift.draft_entries.filter(is_removed=False).order_by("pk")[:2]
         )
         earlier, later = ordered_entries
         earlier.event_at = self.shift.planned_start_at + timedelta(minutes=1)
@@ -493,9 +441,7 @@ class OperationalShiftViewTests(OperationalLogTestCase):
 
     def test_autosave_rejects_unknown_editor_mark(self) -> None:
         self.client.force_login(self.user)
-        entry = self.shift.draft_entries.filter(
-            is_removed=False
-        ).first()
+        entry = self.shift.draft_entries.filter(is_removed=False).first()
         before_version = entry.version
         response = self.client.post(
             reverse(
@@ -505,19 +451,15 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             {
                 "public_id": str(entry.public_id),
                 "expected_version": entry.version,
-                "event_at": timezone.localtime(
-                    entry.event_at
-                ).strftime("%Y-%m-%dT%H:%M"),
-                "content": entry.content,
-                "editor_schema_version": (
-                    "operational-draft-editor.v1"
+                "event_at": timezone.localtime(entry.event_at).strftime(
+                    "%Y-%m-%dT%H:%M"
                 ),
+                "content": entry.content,
+                "editor_schema_version": "operational-draft-editor.v1",
                 "editor_payload": (
-                    '{"schema_version":'
-                    '"operational-draft-editor.v1",'
+                    '{"schema_version":"operational-draft-editor.v1",'
                     '"blocks":[{"type":"paragraph",'
-                    '"segments":[{"text":"x",'
-                    '"marks":["html"]}]}]}'
+                    '"segments":[{"text":"x","marks":["html"]}]}]}'
                 ),
             },
         )
@@ -528,9 +470,7 @@ class OperationalShiftViewTests(OperationalLogTestCase):
 
     def test_autosave_returns_conflict_for_stale_version(self) -> None:
         self.client.force_login(self.user)
-        entry = self.shift.draft_entries.filter(
-            is_removed=False
-        ).first()
+        entry = self.shift.draft_entries.filter(is_removed=False).first()
         url = reverse(
             "operational_log:autosave_draft",
             args=(self.journal.pk, entry.public_id),
@@ -538,33 +478,28 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         data = {
             "public_id": str(entry.public_id),
             "expected_version": entry.version,
-            "event_at": timezone.localtime(
-                entry.event_at
-            ).strftime("%Y-%m-%dT%H:%M"),
+            "event_at": timezone.localtime(entry.event_at).strftime(
+                "%Y-%m-%dT%H:%M"
+            ),
             "content": "Первая сохранённая редакция",
         }
         self.assertEqual(self.client.post(url, data).status_code, 200)
         stale = self.client.post(
             url,
-            {
-                **data,
-                "content": "Устаревшая редакция",
-            },
+            {**data, "content": "Устаревшая редакция"},
         )
         self.assertEqual(stale.status_code, 409)
         self.assertTrue(stale.json()["conflict"])
         entry.refresh_from_db()
-        self.assertEqual(
-            entry.content,
-            "Первая сохранённая редакция",
-        )
+        self.assertEqual(entry.content, "Первая сохранённая редакция")
 
     def test_move_remove_and_restore_endpoints(self) -> None:
         self.client.force_login(self.user)
         entries = list(
-            self.shift.draft_entries.filter(
-                is_removed=False
-            ).order_by("position", "pk")
+            self.shift.draft_entries.filter(is_removed=False).order_by(
+                "position",
+                "pk",
+            )
         )
         first, second = entries[:2]
         response = self.client.post(
