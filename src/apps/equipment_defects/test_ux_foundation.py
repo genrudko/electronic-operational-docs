@@ -11,6 +11,9 @@ class EquipmentDefectUXFoundationTests(SimpleTestCase):
         self.template_root = (
             Path(settings.BASE_DIR) / "src" / "templates" / "equipment_defects"
         )
+        self.shared_template_root = (
+            Path(settings.BASE_DIR) / "src" / "templates" / "shared" / "direction_a"
+        )
         self.static_root = (
             Path(settings.BASE_DIR) / "src" / "static" / "equipment_defects"
         )
@@ -24,8 +27,9 @@ class EquipmentDefectUXFoundationTests(SimpleTestCase):
         self.detail_aside_path = self.template_root / "_detail_repair2_aside.html"
         self.registration_path = self.template_root / "registration_form.html"
         self.action_path = self.template_root / "action_form.html"
-        self.sidebar_path = self.template_root / "_direction_a_sidebar.html"
-        self.topbar_path = self.template_root / "_direction_a_topbar.html"
+        self.sidebar_path = self.shared_template_root / "_sidebar.html"
+        self.topbar_path = self.shared_template_root / "_topbar.html"
+        self.shared_base_path = self.shared_template_root / "base.html"
         self.stylesheet_path = self.static_root / "ux_foundation.css"
         self.bridge_path = self.static_root / "ux_foundation_legacy_bridge.css"
         self.repair2_stylesheet_paths = (
@@ -90,11 +94,13 @@ class EquipmentDefectUXFoundationTests(SimpleTestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, bridge)
 
-    def test_direction_a_shell_is_sidebar_first_and_uses_real_routes(self) -> None:
+    def test_direction_a_shell_is_shared_sidebar_first_and_uses_real_routes(self) -> None:
         sidebar = self.sidebar_path.read_text(encoding="utf-8")
         topbar = self.topbar_path.read_text(encoding="utf-8")
+        shared_base = self.shared_base_path.read_text(encoding="utf-8")
         for marker in (
-            "defect-da-sidebar",
+            "da-sidebar defect-da-sidebar",
+            "data-direction-a-sidebar",
             "ЭОД",
             "Рабочий стол",
             "Оперативная документация",
@@ -110,14 +116,19 @@ class EquipmentDefectUXFoundationTests(SimpleTestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, sidebar)
         for marker in (
-            "defect-da-topbar",
+            "da-topbar defect-da-topbar",
+            "data-direction-a-topbar",
             "Рабочее место",
+            "data-direction-a-toggle",
             "data-defect-shell-toggle",
             "system:health",
             "organizations:logout",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, topbar)
+        self.assertIn('data-direction-a-shell', shared_base)
+        self.assertIn('shared/direction_a/_sidebar.html', shared_base)
+        self.assertIn('shared/direction_a/_topbar.html', shared_base)
 
     def test_registry_uses_dense_work_list_and_retains_exact_journal_view(self) -> None:
         template = self._read(
@@ -220,9 +231,15 @@ class EquipmentDefectUXFoundationTests(SimpleTestCase):
         self.assertNotIn("Системное время и фиксация", template)
         self.assertNotIn("Как фиксируются действия", template)
 
-    def test_detail_and_forms_share_direction_a_shell(self) -> None:
+    def test_detail_uses_shared_shell_and_forms_keep_accepted_contract(self) -> None:
+        detail = self.detail_path.read_text(encoding="utf-8")
+        self.assertIn('{% extends "shared/direction_a/base.html" %}', detail)
+        self.assertIn("equipment_defects/ux_foundation_repair2.css", detail)
+        self.assertIn("equipment_defects/ux_foundation_repair2.js", detail)
+        self.assertIn("equipment_defects/defects.js", detail)
+        self.assertIn("?v=defect004", detail)
+
         templates = {
-            "detail": self.detail_path.read_text(encoding="utf-8"),
             "registration": self.registration_path.read_text(encoding="utf-8"),
             "action": self.action_path.read_text(encoding="utf-8"),
         }
