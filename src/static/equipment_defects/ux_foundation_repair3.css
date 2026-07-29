@@ -1,0 +1,638 @@
+/* UX-FOUNDATION-001 Repair 3: mobile acceptance and hierarchical selectors. */
+
+html,
+body {
+    max-width: 100%;
+    overflow-x: clip;
+}
+
+.defect-da-shell,
+.defect-da-stage,
+.defect-da-page,
+.defect-da-registry,
+.defect-da-detail,
+.defect-da-record-layout,
+.defect-record-main,
+.defect-record-aside,
+.defect-da-form-page,
+.defect-form-layout,
+.defect-guided-form,
+.defect-form-context {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.defect-da-detail code,
+.defect-da-detail pre,
+.defect-da-detail .technical-only,
+.defect-da-detail .defect-timeline,
+.defect-da-detail .defect-linked-entry-card,
+.defect-da-detail .defect-record-section {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.defect-journal-view,
+.defect-journal-view .defect-register-wrap {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.defect-journal-view .defect-register-wrap {
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.defect-native-select--enhanced {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+    border: 0 !important;
+    white-space: nowrap !important;
+}
+
+.defect-tree-selector {
+    position: relative;
+    display: grid;
+    min-width: 0;
+}
+
+.defect-tree-control {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 38px;
+    min-width: 0;
+    border: 1px solid var(--da-border-strong, #c7d1dc);
+    border-radius: 8px;
+    background: #fff;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.defect-tree-selector.is-open .defect-tree-control,
+.defect-tree-control:focus-within {
+    border-color: var(--da-blue, #2077b5);
+    box-shadow: 0 0 0 3px rgba(32, 119, 181, .14);
+}
+
+.defect-tree-input {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 9px 10px;
+    border: 0 !important;
+    border-radius: 8px 0 0 8px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--da-text, #20344d);
+    font: inherit;
+}
+
+.defect-tree-input::placeholder {
+    color: #7a8797;
+}
+
+.defect-tree-clear {
+    display: grid;
+    width: 38px;
+    min-height: 40px;
+    place-items: center;
+    border: 0;
+    border-left: 1px solid #e3e8ee;
+    border-radius: 0 8px 8px 0;
+    background: #f7f9fc;
+    color: #66768a;
+    cursor: pointer;
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.defect-tree-clear:hover {
+    background: #edf3f8;
+    color: #24445f;
+}
+
+.defect-tree-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    left: 0;
+    z-index: 60;
+    min-width: min(620px, calc(100vw - 40px));
+    max-height: min(520px, 58vh);
+    overflow: hidden;
+    border: 1px solid #b9c7d5;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 16px 38px rgba(29, 48, 70, .18);
+}
+
+.defect-tree-panel[hidden] {
+    display: none !important;
+}
+
+.defect-tree-panel-header {
+    display: grid;
+    gap: 2px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #dde4eb;
+    background: #f4f8fc;
+}
+
+.defect-tree-panel-header strong {
+    color: #21364e;
+    font-size: .8rem;
+}
+
+.defect-tree-panel-header small {
+    color: #6e7d90;
+    font-size: .66rem;
+}
+
+.defect-tree-panel-body {
+    max-height: min(455px, 50vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 8px;
+}
+
+.defect-tree-content {
+    display: grid;
+    gap: 6px;
+}
+
+.defect-tree-group {
+    overflow: hidden;
+    border: 1px solid #dce4ec;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.defect-tree-group > summary,
+.defect-tree-position > summary {
+    cursor: pointer;
+    list-style: none;
+}
+
+.defect-tree-group > summary::-webkit-details-marker,
+.defect-tree-position > summary::-webkit-details-marker {
+    display: none;
+}
+
+.defect-tree-group > summary {
+    position: relative;
+    padding: 9px 32px 9px 11px;
+    background: #eef5fb;
+    color: #26445f;
+    font-size: .74rem;
+    font-weight: 850;
+}
+
+.defect-tree-group > summary::after,
+.defect-tree-position > summary::after {
+    content: "›";
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%) rotate(90deg);
+    transition: transform 120ms ease;
+}
+
+.defect-tree-group:not([open]) > summary::after,
+.defect-tree-position:not([open]) > summary::after {
+    transform: translateY(-50%) rotate(0);
+}
+
+.defect-tree-group-body {
+    display: grid;
+    gap: 4px;
+    padding: 6px;
+}
+
+.defect-tree-position {
+    overflow: hidden;
+    border: 1px solid #e4e9ef;
+    border-radius: 7px;
+}
+
+.defect-tree-position > summary {
+    position: relative;
+    padding: 8px 30px 8px 10px;
+    background: #fafbfd;
+    color: #45586d;
+    font-size: .7rem;
+    font-weight: 800;
+}
+
+.defect-tree-position-options {
+    display: grid;
+    gap: 3px;
+    padding: 4px;
+}
+
+.defect-tree-node {
+    min-width: 0;
+}
+
+.defect-tree-node-line {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 3px;
+    align-items: stretch;
+}
+
+.defect-tree-branch-toggle,
+.defect-tree-branch-spacer {
+    display: grid;
+    width: 28px;
+    min-height: 42px;
+    place-items: center;
+}
+
+.defect-tree-branch-toggle {
+    border: 0;
+    border-radius: 6px;
+    background: #edf3f8;
+    color: #3d5b75;
+    cursor: pointer;
+    font-weight: 900;
+}
+
+.defect-tree-children {
+    display: grid;
+    gap: 3px;
+    margin: 3px 0 3px 14px;
+    padding-left: 10px;
+    border-left: 1px solid #cdd9e4;
+}
+
+.defect-tree-option {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    gap: 2px;
+    justify-items: start;
+    padding: 8px 10px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: #21364e;
+    cursor: pointer;
+    text-align: left;
+}
+
+.defect-tree-option:hover,
+.defect-tree-option:focus-visible {
+    border-color: #b7cee2;
+    background: #edf6fd;
+    outline: none;
+}
+
+.defect-tree-option[aria-selected="true"] {
+    border-color: #6ea7d2;
+    background: #e5f2fc;
+    box-shadow: inset 3px 0 0 #2077b5;
+}
+
+.defect-tree-option strong {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    font-size: .74rem;
+    line-height: 1.3;
+}
+
+.defect-tree-option small {
+    color: #6d7d90;
+    font-size: .64rem;
+    line-height: 1.25;
+}
+
+.defect-tree-empty {
+    padding: 22px 14px;
+    color: #6c7b8d;
+    text-align: center;
+}
+
+.defect-datetime-native--repair3 {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    clip-path: inset(50%) !important;
+    border: 0 !important;
+}
+
+.defect-manual-datetime {
+    display: grid;
+    grid-template-columns: minmax(145px, .8fr) minmax(112px, .55fr) auto;
+    gap: 8px;
+    align-items: end;
+}
+
+.defect-manual-datetime-part {
+    display: grid;
+    gap: 4px;
+}
+
+.defect-manual-datetime-part > span {
+    color: #5e6f82;
+    font-size: .65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.defect-manual-datetime input {
+    width: 100%;
+    min-height: 42px;
+    padding: 9px 10px;
+    border: 1px solid var(--da-border-strong, #c7d1dc);
+    border-radius: 8px;
+    background: #fff;
+    color: #21364e;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+}
+
+.defect-manual-datetime input:focus {
+    border-color: var(--da-blue, #2077b5);
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(32, 119, 181, .14);
+}
+
+.defect-manual-datetime input.is-invalid {
+    border-color: #b64545;
+    background: #fff7f7;
+}
+
+.defect-manual-now {
+    min-height: 42px;
+    padding: 8px 12px;
+    border: 1px solid #aac2d8;
+    border-radius: 8px;
+    background: #edf6fd;
+    color: #24537a;
+    cursor: pointer;
+    font: inherit;
+    font-size: .7rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.defect-manual-datetime-error {
+    grid-column: 1 / -1;
+    color: #a23b3b;
+    font-size: .67rem;
+    font-weight: 700;
+}
+
+@media (max-width: 720px) {
+    .defect-da-page {
+        width: 100%;
+        padding-right: 8px;
+        padding-left: 8px;
+    }
+
+    .defect-da-registry .defect-workspace-summary {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        overflow: visible !important;
+    }
+
+    .defect-da-registry .defect-summary-chip {
+        min-width: 0 !important;
+        min-height: 48px;
+        padding: 7px 6px;
+        border-right: 1px solid var(--da-border);
+        border-bottom: 1px solid var(--da-border);
+    }
+
+    .defect-da-registry .defect-summary-chip span {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        font-size: .64rem;
+        text-align: center;
+    }
+
+    .defect-da-registry .defect-summary-chip strong {
+        min-width: 25px;
+        padding-inline: 6px;
+    }
+
+    .defect-da-registry .defect-command-heading,
+    .defect-da-registry .defect-da-sort-field,
+    .defect-da-registry .defect-da-filter-form {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .defect-da-filter-form {
+        grid-template-columns: 1fr !important;
+    }
+
+    .defect-da-filter-form > * {
+        grid-column: 1 !important;
+        width: 100%;
+        min-width: 0;
+    }
+
+    .defect-da-work-table {
+        overflow: visible !important;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .defect-da-work-head {
+        display: none !important;
+    }
+
+    .defect-da-work-body {
+        display: grid;
+        gap: 9px;
+    }
+
+    .defect-da-work-row {
+        --mobile-status: var(--da-blue, #2077b5);
+        display: grid !important;
+        grid-template-columns: 62px minmax(0, 1fr) !important;
+        grid-template-areas:
+            "number date"
+            "equipment equipment"
+            "description description"
+            "status status"
+            "owner owner";
+        min-width: 0 !important;
+        min-height: 0;
+        overflow: hidden;
+        border: 1px solid #d7e0e9;
+        border-left: 5px solid var(--mobile-status);
+        border-radius: 10px;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(31, 53, 79, .055);
+    }
+
+    .defect-da-work-row[data-status="IN_PROGRESS"] {
+        --mobile-status: var(--da-orange, #c76512);
+    }
+
+    .defect-da-work-row[data-status="RESOLVED"] {
+        --mobile-status: var(--da-green, #247849);
+    }
+
+    .defect-da-work-row[data-status="CLOSED"] {
+        --mobile-status: var(--da-slate, #4d5e73);
+    }
+
+    .defect-da-work-row > div {
+        min-width: 0;
+        padding: 9px 10px;
+        border-right: 0 !important;
+        border-bottom: 1px solid #edf1f5;
+    }
+
+    .defect-da-work-row > div:last-child {
+        border-bottom: 0;
+    }
+
+    .defect-da-work-number {
+        grid-area: number;
+        align-content: center;
+        border-right: 1px solid #edf1f5 !important;
+        background: #f8fafc;
+    }
+
+    .defect-da-work-number small {
+        display: none;
+    }
+
+    .defect-da-work-date {
+        grid-area: date;
+        grid-template-columns: auto auto;
+        align-items: center;
+        justify-content: start;
+        gap: 3px 8px !important;
+        background: #f8fafc;
+    }
+
+    .defect-da-work-date small {
+        grid-column: 1 / -1;
+    }
+
+    .defect-da-work-equipment {
+        grid-area: equipment;
+    }
+
+    .defect-da-work-description {
+        grid-area: description;
+    }
+
+    .defect-da-work-status {
+        grid-area: status;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 6px 10px !important;
+    }
+
+    .defect-da-work-owner {
+        grid-area: owner;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+    }
+
+    .defect-da-work-owner::before {
+        content: "Ответственный";
+        grid-column: 1 / -1;
+        color: #718094;
+        font-size: .6rem;
+        font-weight: 850;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+
+    .defect-da-work-row strong {
+        font-size: .76rem;
+    }
+
+    .defect-da-work-description a {
+        font-size: .78rem;
+    }
+
+    .defect-da-record-heading-row,
+    .defect-da-record-title-line,
+    .defect-da-record-context,
+    .defect-record-layout,
+    .defect-record-aside,
+    .defect-record-main {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .defect-da-record-title-line {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr);
+        justify-items: start;
+    }
+
+    .defect-da-record-title-line h1 {
+        max-width: 100%;
+        overflow-wrap: anywhere;
+        font-size: 1.45rem;
+    }
+
+    .defect-da-detail .defect-lifecycle {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    .defect-manual-datetime {
+        grid-template-columns: minmax(0, 1fr) minmax(96px, .62fr);
+    }
+
+    .defect-manual-now {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    .defect-tree-panel {
+        position: fixed;
+        top: 64px;
+        right: 8px;
+        bottom: max(8px, env(safe-area-inset-bottom));
+        left: 8px;
+        min-width: 0;
+        max-height: none;
+        border-radius: 12px;
+    }
+
+    .defect-tree-panel-body {
+        max-height: calc(100dvh - 142px);
+    }
+}
+
+@media (max-width: 430px) {
+    .defect-da-registry .defect-workspace-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .defect-da-work-status,
+    .defect-da-work-owner {
+        grid-template-columns: 1fr;
+        justify-items: start;
+    }
+
+    .defect-manual-datetime {
+        grid-template-columns: 1fr;
+    }
+
+    .defect-manual-now,
+    .defect-manual-datetime-error {
+        grid-column: 1;
+    }
+}
