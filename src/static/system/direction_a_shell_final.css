@@ -31,6 +31,20 @@ body.da-active .da-topbar {
     padding: 8px 24px;
 }
 
+body.da-active .da-page {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 24px var(--da-page-inline) 42px;
+}
+
+body.da-active .da-page > main {
+    width: 100%;
+    max-width: var(--da-page-max);
+    min-width: 0;
+    margin: 0 auto;
+}
+
 body.da-active .da-menu-button {
     display: none;
 }
@@ -81,5 +95,15 @@ body.da-active .da-menu-button {
 
     body.da-active .da-topbar {
         padding-inline: 14px;
+    }
+
+    body.da-active .da-page {
+        padding: 18px 14px 30px;
+    }
+}
+
+@media (max-width: 620px) {
+    body.da-active .da-page {
+        padding-inline: 10px;
     }
 }
