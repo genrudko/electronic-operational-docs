@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "shared/direction_a/base.html" %}
 {% load static %}
 
 {% block title %}Журнал дефектов оборудования · ЭОД{% endblock %}
@@ -19,18 +19,10 @@
 {% endblock %}
 
 {% block content %}
-<div class="defect-da-shell da-shell" data-direction-a-shell>
-    {% include "equipment_defects/_direction_a_sidebar.html" %}
-    <div class="defect-da-stage da-stage">
-        {% include "equipment_defects/_direction_a_topbar.html" %}
-        <div class="defect-da-page da-page">
-            <section class="defect-shell defect-workspace defect-da-registry">
-                {% include "equipment_defects/_registry_repair2_header.html" %}
-                {# Stable row-link source contract lives in the included worklist partial: data-defect-row-link · data-detail-url="{% url 'equipment_defects:detail' row.record.public_id %}" · <strong>{{ row.record.event_at|date:"d.m.Y" }}</strong> #}
-                {% include "equipment_defects/_registry_repair2_worklist.html" %}
-                {% include "equipment_defects/_registry_repair2_journal.html" %}
-            </section>
-        </div>
-    </div>
-</div>
+<section class="defect-shell defect-workspace defect-da-registry">
+    {% include "equipment_defects/_registry_repair2_header.html" %}
+    {# Stable row-link source contract lives in the included worklist partial: data-defect-row-link · data-detail-url="{% url 'equipment_defects:detail' row.record.public_id %}" · <strong>{{ row.record.event_at|date:"d.m.Y" }}</strong> #}
+    {% include "equipment_defects/_registry_repair2_worklist.html" %}
+    {% include "equipment_defects/_registry_repair2_journal.html" %}
+</section>
 {% endblock %}
