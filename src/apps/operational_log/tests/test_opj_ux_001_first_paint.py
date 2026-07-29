@@ -48,12 +48,17 @@ class OpjDirectionAFirstPaintTests(SimpleTestCase):
         for marker in (
             "body.da-active .da-shell",
             "body.da-active .da-sidebar",
+            "body.da-active .da-topbar",
+            "body.da-active .da-page",
+            "body.da-active .da-page > main",
+            "max-width: var(--da-page-max)",
             "@media (max-width: 1320px) and (min-width: 981px)",
             "--da-sidebar-width: 232px",
             "@media (max-width: 980px)",
             "width: min(310px, 88vw)",
             "body.da-active.da-nav-open .da-sidebar",
             "body.da-active .da-menu-button",
+            "padding: 18px 14px 30px",
         ):
             self.assertIn(marker, shell_css)
 
