@@ -7,25 +7,9 @@
     }
 
     const main = document.querySelector("main");
-    const originalTopbar = document.querySelector("body > .topbar");
-    if (!main || document.querySelector("[data-opj-direction-a-shell]")) {
+    if (!main) {
         return;
     }
-
-    const iconsUrl = "/static/system/icons.svg";
-    const userName = (
-        originalTopbar?.querySelector(".user-menu-label")?.textContent
-        || "Пользователь"
-    ).trim();
-    const userRole = (
-        originalTopbar?.querySelector(".user-menu-identity span")?.textContent
-        || "Оперативный персонал"
-    ).trim();
-    const userInitial = (
-        originalTopbar?.querySelector(".user-avatar")?.textContent
-        || userName.slice(0, 1)
-        || "П"
-    ).trim();
 
     function element(tag, className = "", text = "") {
         const node = document.createElement(tag);
@@ -38,61 +22,6 @@
         return node;
     }
 
-    function icon(name) {
-        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.classList.add("ui-icon");
-        svg.setAttribute("aria-hidden", "true");
-        const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
-        use.setAttribute("href", `${iconsUrl}#icon-${name}`);
-        svg.append(use);
-        return svg;
-    }
-
-    function hrefFor(label, fallback) {
-        const link = Array.from(originalTopbar?.querySelectorAll("a") || []).find(
-            (candidate) => candidate.textContent.trim() === label,
-        );
-        return link?.href || fallback;
-    }
-
-    function navLink(label, fallback, iconName, active = false, child = false) {
-        const link = element("a", child ? "eod-da-nav-child" : "");
-        link.href = hrefFor(label, fallback);
-        if (active) {
-            link.classList.add("is-active");
-            link.setAttribute("aria-current", "page");
-        }
-        if (!child) {
-            link.append(icon(iconName));
-        }
-        link.append(element("span", "", label));
-        return link;
-    }
-
-    function navGroup(title, iconName, links) {
-        const group = element("section", "eod-da-nav-group");
-        const heading = element("div", "eod-da-nav-group-title");
-        heading.append(icon(iconName), element("span", "", title));
-        group.append(heading, ...links);
-        return group;
-    }
-
-    function currentTitle() {
-        return (
-            main.querySelector("h1")?.textContent
-            || document.title.split("·")[0]
-            || "Оперативный журнал"
-        ).trim();
-    }
-
-    function currentContext() {
-        return (
-            main.querySelector(".shift-book-meta-period")?.textContent
-            || main.querySelector(".journal-workplace")?.textContent
-            || "Рабочий контур оперативного журнала"
-        ).trim();
-    }
-
     function detailUrl() {
         if (path.includes("/shift/")) {
             return path.replace("/shift/", "/");
@@ -100,161 +29,19 @@
         return /^\/operations\/journal\/\d+\/$/.test(path) ? path : null;
     }
 
-    function workspaceUrl() {
-        const match = path.match(/^\/operations\/journal\/(\d+)\/(?:shift\/)?$/);
-        return match ? `/operations/journal/${match[1]}/shift/` : null;
-    }
-
-    function buildSidebar() {
-        const sidebar = element("aside", "eod-da-sidebar");
-        sidebar.id = "eod-direction-a-sidebar";
-        sidebar.dataset.opjDirectionASidebar = "";
-
-        const brand = element("a", "eod-da-brand");
-        brand.href = hrefFor("Главная", "/");
-        brand.append(element("span", "eod-da-brand-mark", "ЭОД"));
-        const brandCopy = element("span", "eod-da-brand-copy");
-        brandCopy.append(
-            element("strong", "", "ЭОД"),
-            element("small", "", "Оперативная документация"),
-        );
-        brand.append(brandCopy);
-
-        const context = element("section", "eod-da-context");
-        context.setAttribute("aria-label", "Рабочий контекст");
-        context.append(
-            element("span", "", path.includes("/shift/") ? "Рабочая смена" : "Оперативный журнал"),
-            element("strong", "", currentTitle()),
-            element("small", "", currentContext()),
-        );
-
-        const navigation = element("nav", "eod-da-navigation");
-        navigation.setAttribute("aria-label", "Навигация ЭОД");
-        navigation.append(
-            navLink("Главная", "/", "home"),
-            navGroup("Оперативная документация", "document", [
-                navLink("Оперативный журнал", "/operations/journal/", "document", true, true),
-            ]),
-            navGroup("Журналы", "journal", [
-                navLink("Журнал дефектов", "/operations/defects/", "journal", false, true),
-                navLink("Оперативные документы", "/operational-documents/", "journal", false, true),
-            ]),
-            navLink("Документы", "/documents/", "document"),
-            navLink("Оборудование", "/equipment/", "equipment"),
-            navLink("Управление и ведение", "/dispatching/", "management"),
-            navGroup("Справочники и данные", "directory", [
-                navLink("Организация и персонал", "/organization/", "directory", false, true),
-                navLink("Перечни документации", "/workplace-documentation/", "directory", false, true),
-                navLink("Импорт данных", "/imports/", "directory", false, true),
-            ]),
-        );
-
-        const user = element("a", "eod-da-user");
-        user.href = hrefFor("Учётная запись и интерфейс", "/accounts/me/");
-        user.append(element("span", "eod-da-user-avatar", userInitial));
-        const userCopy = element("span", "eod-da-user-copy");
-        userCopy.append(
-            element("strong", "", userName),
-            element("small", "", userRole),
-        );
-        user.append(userCopy, icon("settings"));
-
-        sidebar.append(brand, context, navigation, user);
-        return sidebar;
-    }
-
-    function buildTopbar() {
-        const topbar = element("header", "eod-da-topbar");
-        const mainArea = element("div", "eod-da-topbar-main");
-        const menuButton = element("button", "eod-da-menu-button");
-        menuButton.type = "button";
-        menuButton.dataset.opjMenuToggle = "";
-        menuButton.setAttribute("aria-label", "Открыть навигацию");
-        menuButton.setAttribute("aria-controls", "eod-direction-a-sidebar");
-        menuButton.setAttribute("aria-expanded", "false");
-        menuButton.append(icon("menu"));
-
-        const copy = element("div", "eod-da-topbar-copy");
-        copy.append(
-            element("span", "", path.includes("/shift/") ? "Рабочая область смены" : "Оперативная документация"),
-            element("strong", "", currentTitle()),
-        );
-        mainArea.append(menuButton, copy);
-
-        const actions = element("div", "eod-da-topbar-actions");
-        const registered = detailUrl();
-        const workspace = workspaceUrl();
-        if (path.includes("/shift/") && registered) {
-            const link = element("a", "", "Зарегистрированный журнал");
-            link.href = registered;
-            actions.append(link);
-        } else if (workspace && !path.endsWith("/shift/")) {
-            const link = element("a", "is-primary", "Рабочая смена");
-            link.href = workspace;
-            actions.append(link);
-        }
-        topbar.append(mainArea, actions);
-        return topbar;
-    }
-
-    function activateShell() {
-        const shell = element("div", "eod-da-shell");
-        shell.dataset.opjDirectionAShell = "";
-        const stage = element("div", "eod-da-stage");
-        const content = element("div", "eod-da-content");
-        const messages = document.querySelector("body > .messages");
-        shell.append(buildSidebar());
-        stage.append(buildTopbar());
-        if (messages) {
-            content.append(messages);
-        }
-        content.append(main);
-        stage.append(content);
-        shell.append(stage);
-        document.body.insertBefore(shell, document.body.firstChild);
-
-        const scrim = element("button", "eod-da-sidebar-scrim");
-        scrim.type = "button";
-        scrim.hidden = true;
-        scrim.dataset.opjMenuScrim = "";
-        scrim.setAttribute("aria-label", "Закрыть навигацию");
-        document.body.append(scrim);
-        document.body.classList.add("eod-da-active", "opj-direction-a");
-
-        const toggle = shell.querySelector("[data-opj-menu-toggle]");
-        const setOpen = (open) => {
-            document.body.classList.toggle("eod-da-nav-open", open);
-            scrim.hidden = !open;
-            toggle?.setAttribute("aria-expanded", String(open));
-        };
-        toggle?.addEventListener("click", () => {
-            setOpen(!document.body.classList.contains("eod-da-nav-open"));
-        });
-        scrim.addEventListener("click", () => setOpen(false));
-        document.addEventListener("keydown", (event) => {
-            if (event.key === "Escape" && document.body.classList.contains("eod-da-nav-open")) {
-                setOpen(false);
-            }
-        });
-    }
-
     function addWorkBoundary() {
         const workspace = main.querySelector("[data-draft-workspace]");
         if (!workspace || main.querySelector("[data-opj-work-boundary]")) {
             return;
         }
-        const boundary = element("section", "opj-work-boundary");
+        const boundary = element("section", "opj-work-boundary da-alert");
         boundary.dataset.opjWorkBoundary = "";
         const copy = element("div");
         copy.append(
-            element("strong", "", "Рабочий черновик текущей смены"),
-            element(
-                "p",
-                "",
-                "Черновые записи сохраняются отдельно от зарегистрированного журнала. Регистрация, передача и закрытие смены в OPJ-UX-001 не выполняются.",
-            ),
+            element("strong", "", "Рабочий черновик"),
+            element("p", "", "Записи текущей смены сохраняются автоматически"),
         );
-        boundary.append(copy, element("span", "opj-boundary-chip", "Автосохранение активно"));
+        boundary.append(copy, element("span", "opj-boundary-chip da-status is-success", "Автосохранение"));
         workspace.before(boundary);
     }
 
@@ -266,12 +53,14 @@
         link.textContent = "Зарегистрированный журнал";
         link.title = "Открыть зарегистрированные записи по утверждённой форме";
         link.setAttribute("aria-label", link.title);
+        link.classList.add("da-button", "is-secondary", "is-compact");
     }
 
     function sanitizeRegisteredTable(table) {
         const clone = table.cloneNode(true);
         clone.querySelectorAll("[id]").forEach((node) => node.removeAttribute("id"));
         clone.querySelectorAll("form, button").forEach((node) => node.remove());
+        clone.classList.add("da-table");
         return clone;
     }
 
@@ -282,18 +71,22 @@
             return;
         }
 
-        const context = element("details", "opj-registered-context is-loading");
+        const context = element("details", "opj-registered-context da-panel-flat is-loading");
         context.dataset.opjRegisteredContext = "";
-        context.open = true;
+        context.open = false;
         const summary = element("summary");
         const heading = element("span", "opj-registered-context-heading");
         heading.append(
-            element("span", "", "Только чтение"),
+            element("span", "da-chip", "Только чтение"),
             element("strong", "", "Зарегистрированные записи"),
         );
         const meta = element("span", "opj-registered-context-meta", "Загрузка…");
         summary.append(heading, meta);
-        const body = element("div", "opj-registered-context-body", "Загрузка зарегистрированного журнала…");
+        const body = element(
+            "div",
+            "opj-registered-context-body",
+            "Загрузка зарегистрированного журнала…",
+        );
         context.append(summary, body);
         const boundary = main.querySelector("[data-opj-work-boundary]");
         (boundary || workspace).before(context);
@@ -318,20 +111,20 @@
             const count = table.querySelectorAll("tbody tr").length;
             const note = element("div", "opj-registered-context-note");
             note.append(
-                element("span", "", "Записи показаны в хронологическом порядке и не редактируются из рабочей области."),
+                element("span", "", "Хронологический read-only контекст зарегистрированного журнала"),
             );
-            const fullLink = element("a", "", "Открыть утверждённую форму");
+            const fullLink = element("a", "da-button is-secondary is-compact", "Открыть форму");
             fullLink.href = url;
             note.append(fullLink);
-            const wrap = element("div", "opj-registered-table-wrap");
+            const wrap = element("div", "opj-registered-table-wrap da-table-wrap");
             wrap.append(table);
             body.replaceChildren(note, wrap);
             meta.textContent = `${count} ${count === 1 ? "запись" : "записей"}`;
             context.classList.remove("is-loading");
         } catch (_error) {
             const fallback = element("div", "opj-registered-context-note");
-            fallback.append(element("span", "", "Не удалось встроить зарегистрированные записи."));
-            const link = element("a", "", "Открыть журнал");
+            fallback.append(element("span", "", "Не удалось встроить зарегистрированные записи"));
+            const link = element("a", "da-button is-secondary is-compact", "Открыть журнал");
             link.href = url;
             fallback.append(link);
             body.replaceChildren(fallback);
@@ -376,10 +169,10 @@
         if (exact) {
             return exact;
         }
-        const text = (node.textContent || "").trim();
+        const nodeText = (node.textContent || "").trim();
         return [...items]
             .sort((left, right) => String(right.label || "").length - String(left.label || "").length)
-            .find((item) => text.includes(String(item.label || ""))) || null;
+            .find((item) => nodeText.includes(String(item.label || ""))) || null;
     }
 
     function enhanceEquipmentHierarchy() {
@@ -414,7 +207,7 @@
 
             grouping = true;
             observer?.disconnect();
-            const tree = element("div", "opj-reference-tree");
+            const tree = element("div", "opj-reference-tree da-hierarchy");
             tree.dataset.opjEquipmentHierarchy = "";
             const sites = new Map();
             mapped.forEach(({node, item}) => {
@@ -429,7 +222,10 @@
                 types.get(identity.type).push(node);
             });
             sites.forEach((types, site) => {
-                const siteGroup = element("details", "opj-reference-tree-site");
+                const siteGroup = element(
+                    "details",
+                    "opj-reference-tree-site da-hierarchy-group",
+                );
                 siteGroup.open = true;
                 siteGroup.append(element("summary", "", site));
                 types.forEach((nodes, type) => {
@@ -461,7 +257,39 @@
         window.requestAnimationFrame(regroup);
     }
 
-    activateShell();
+    function applySharedPrimitiveClasses() {
+        main.querySelectorAll(".page-heading, .journal-workspace-bar, .shift-book-header").forEach(
+            (node) => node.classList.add("da-page-header"),
+        );
+        main.querySelector(".shift-book-header")?.classList.add("da-page-header-compact");
+        main.querySelectorAll(".journal-workspace-actions").forEach(
+            (node) => node.classList.add("da-actions"),
+        );
+        main.querySelectorAll(".journal-workspace-actions .button, .draft-command-actions .button").forEach(
+            (node) => node.classList.add("da-button"),
+        );
+        main.querySelectorAll(".button.secondary").forEach(
+            (node) => node.classList.add("is-secondary"),
+        );
+        main.querySelectorAll(".profile-card, .paged-draft-workspace").forEach(
+            (node) => node.classList.add("da-panel"),
+        );
+        main.querySelectorAll(".draft-view-switch").forEach(
+            (node) => node.classList.add("da-segmented"),
+        );
+        main.querySelectorAll(".draft-command-search input, .draft-command-search select").forEach(
+            (node) => node.classList.add("da-field"),
+        );
+        main.querySelectorAll("dialog").forEach((node) => node.classList.add("da-overlay"));
+        main.querySelectorAll(".approved-journal-table, .journal-registry-table").forEach(
+            (node) => node.classList.add("da-table"),
+        );
+        main.querySelectorAll(".table-wrap, .approved-journal-table-wrap").forEach(
+            (node) => node.classList.add("da-table-wrap"),
+        );
+    }
+
+    applySharedPrimitiveClasses();
     renameRegisteredAction();
     addWorkBoundary();
     void addRegisteredContext();
