@@ -24,6 +24,7 @@
         .print-toolbar {
             position: sticky;
             top: 0;
+            z-index: 5;
             display: flex;
             gap: 10px;
             align-items: center;
@@ -43,6 +44,10 @@
             color: #000;
             text-decoration: none;
             cursor: pointer;
+        }
+
+        .print-mobile-hint {
+            display: none;
         }
 
         .print-title-sheet {
@@ -150,8 +155,63 @@
             font-size: 7.5pt;
         }
 
+        @media screen and (max-width: 760px) {
+            body {
+                overflow-x: hidden;
+                background: #eef2f6;
+            }
+
+            .print-toolbar {
+                flex-wrap: wrap;
+                padding: 8px;
+            }
+
+            .print-toolbar button,
+            .print-toolbar a {
+                flex: 1 1 145px;
+                min-height: 42px;
+                text-align: center;
+            }
+
+            .print-mobile-hint {
+                display: block;
+                margin: 8px;
+                padding: 9px 11px;
+                border: 1px solid #c7d6e4;
+                border-radius: 8px;
+                background: #f7fbff;
+                color: #35516b;
+                font: 12px/1.4 system-ui, sans-serif;
+            }
+
+            .print-preview-scroll {
+                width: 100%;
+                overflow-x: auto;
+                overscroll-behavior-inline: contain;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .print-document {
+                width: 1120px;
+                min-width: 1120px;
+                padding: 14px;
+                background: #fff;
+            }
+
+            .print-title-sheet {
+                min-height: 660px;
+            }
+        }
+
         @media print {
-            .print-toolbar { display: none; }
+            .print-toolbar,
+            .print-mobile-hint { display: none; }
+            .print-preview-scroll { overflow: visible; }
+            .print-document {
+                width: auto;
+                min-width: 0;
+                padding: 0;
+            }
             thead { display: table-header-group; }
             tr { break-inside: avoid; }
         }
@@ -162,104 +222,112 @@
         <button type="button" onclick="window.print()">Печать / сохранить в PDF</button>
         <a href="{% url 'equipment_defects:registry' %}">Вернуться в журнал</a>
     </div>
+    <p class="print-mobile-hint">
+        Альбомный лист A4 показан без уменьшения текста. Перемещайте лист внутри области просмотра;
+        при печати и сохранении в PDF масштаб останется штатным.
+    </p>
 
-    <section class="print-title-sheet">
-        <p>{{ volume.division_name_snapshot|default:"ЦОТУиЭ ВЭС" }}</p>
-        <p>{{ volume.workplace_name_snapshot }}</p>
-        <h1>Журнал дефектов оборудования</h1>
-        <div class="print-dates">
-            <p>Дата начала: <strong>{{ volume.started_on|date:"d.m.Y" }}</strong></p>
-            <p>
-                Дата окончания:
-                {% if volume.closed_on %}
-                    <strong>{{ volume.closed_on|date:"d.m.Y" }}</strong>
-                {% else %}
-                    ____________________
-                {% endif %}
+    <div class="print-preview-scroll">
+        <div class="print-document">
+            <section class="print-title-sheet">
+                <p>{{ volume.division_name_snapshot|default:"ЦОТУиЭ ВЭС" }}</p>
+                <p>{{ volume.workplace_name_snapshot }}</p>
+                <h1>Журнал дефектов оборудования</h1>
+                <div class="print-dates">
+                    <p>Дата начала: <strong>{{ volume.started_on|date:"d.m.Y" }}</strong></p>
+                    <p>
+                        Дата окончания:
+                        {% if volume.closed_on %}
+                            <strong>{{ volume.closed_on|date:"d.m.Y" }}</strong>
+                        {% else %}
+                            ____________________
+                        {% endif %}
+                    </p>
+                </div>
+                <p class="print-source">
+                    Форма: {{ source.document }}, раздел {{ source.section }}, приложение № {{ source.appendix }}.
+                </p>
+            </section>
+
+            <table class="print-journal-table">
+                <thead>
+                    <tr>
+                        {% for column in columns %}<th scope="col">{{ column }}</th>{% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                        <tr>
+                            <td>{{ row.record.event_at|date:"d.m.Y" }}</td>
+                            <td>
+                                {% if row.equipment %}
+                                    <span class="print-equipment">{{ row.equipment.dispatcher_name_snapshot }}</span>
+                                {% endif %}
+                                <div>{{ row.description }}</div>
+                                {% if row.discovered_by %}
+                                    <div class="print-person">
+                                        {{ row.discovered_by.employee_full_name_snapshot }},
+                                        {{ row.discovered_by.employee_position_snapshot }}
+                                    </div>
+                                {% endif %}
+                                <span class="print-signature-line" title="Подпись лица, обнаружившего дефект"></span>
+                            </td>
+                            <td>
+                                {% if row.deadline %}<strong>{{ row.deadline }}</strong>{% endif %}
+                                {% if row.operations_responsible %}
+                                    <div class="print-person">
+                                        {{ row.operations_responsible.employee_full_name_snapshot }},
+                                        {{ row.operations_responsible.employee_position_snapshot }}
+                                    </div>
+                                {% endif %}
+                                <span class="print-signature-line" title="Подпись ответственного за эксплуатацию"></span>
+                            </td>
+                            <td>
+                                {% if row.resolved_at %}<strong>{{ row.resolved_at }}</strong>{% endif %}
+                                {% if row.resolution_responsible %}
+                                    <div class="print-person">
+                                        {{ row.resolution_responsible.employee_full_name_snapshot }},
+                                        {{ row.resolution_responsible.employee_position_snapshot }}
+                                    </div>
+                                {% endif %}
+                                <span class="print-signature-line" title="Подпись ответственного за устранение"></span>
+                            </td>
+                            <td>
+                                {% for extension in row.extensions %}
+                                    <div class="print-extension">
+                                        <strong>Срок устранения продлен</strong><br>
+                                        Новый срок: {{ extension.new_deadline|date:"d.m.Y H:i" }}.<br>
+                                        {{ extension.actor_position_snapshot }},
+                                        {{ extension.actor_full_name_snapshot }}.<br>
+                                        Причина: {{ extension.comment }}
+                                        <span class="print-signature-line" title="Подпись уполномоченного работника"></span>
+                                    </div>
+                                {% endfor %}
+                                {% if row.work_summary %}{{ row.work_summary }}{% endif %}
+                            </td>
+                            <td>
+                                {% for acknowledgement in row.acknowledgers %}
+                                    <div class="print-person">
+                                        {{ acknowledgement.actor_full_name_snapshot }}<br>
+                                        {{ acknowledgement.actor_position_snapshot }}<br>
+                                        {{ acknowledgement.occurred_at|date:"d.m.Y H:i" }}
+                                        <span class="print-signature-line" title="Рукописная подпись"></span>
+                                    </div>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr class="print-empty-row">
+                            <td colspan="6">В томе нет записей.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <p class="print-footer-note">
+                Электронное представление сформировано для справочно-контрольного и демонстрационного использования.
+                Графы для рукописных подписей сохранены по утверждённой форме.
             </p>
         </div>
-        <p class="print-source">
-            Форма: {{ source.document }}, раздел {{ source.section }}, приложение № {{ source.appendix }}.
-        </p>
-    </section>
-
-    <table class="print-journal-table">
-        <thead>
-            <tr>
-                {% for column in columns %}<th scope="col">{{ column }}</th>{% endfor %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in rows %}
-                <tr>
-                    <td>{{ row.record.event_at|date:"d.m.Y" }}</td>
-                    <td>
-                        {% if row.equipment %}
-                            <span class="print-equipment">{{ row.equipment.dispatcher_name_snapshot }}</span>
-                        {% endif %}
-                        <div>{{ row.description }}</div>
-                        {% if row.discovered_by %}
-                            <div class="print-person">
-                                {{ row.discovered_by.employee_full_name_snapshot }},
-                                {{ row.discovered_by.employee_position_snapshot }}
-                            </div>
-                        {% endif %}
-                        <span class="print-signature-line" title="Подпись лица, обнаружившего дефект"></span>
-                    </td>
-                    <td>
-                        {% if row.deadline %}<strong>{{ row.deadline }}</strong>{% endif %}
-                        {% if row.operations_responsible %}
-                            <div class="print-person">
-                                {{ row.operations_responsible.employee_full_name_snapshot }},
-                                {{ row.operations_responsible.employee_position_snapshot }}
-                            </div>
-                        {% endif %}
-                        <span class="print-signature-line" title="Подпись ответственного за эксплуатацию"></span>
-                    </td>
-                    <td>
-                        {% if row.resolved_at %}<strong>{{ row.resolved_at }}</strong>{% endif %}
-                        {% if row.resolution_responsible %}
-                            <div class="print-person">
-                                {{ row.resolution_responsible.employee_full_name_snapshot }},
-                                {{ row.resolution_responsible.employee_position_snapshot }}
-                            </div>
-                        {% endif %}
-                        <span class="print-signature-line" title="Подпись ответственного за устранение"></span>
-                    </td>
-                    <td>
-                        {% for extension in row.extensions %}
-                            <div class="print-extension">
-                                <strong>Срок устранения продлен</strong><br>
-                                Новый срок: {{ extension.new_deadline|date:"d.m.Y H:i" }}.<br>
-                                {{ extension.actor_position_snapshot }},
-                                {{ extension.actor_full_name_snapshot }}.<br>
-                                Причина: {{ extension.comment }}
-                                <span class="print-signature-line" title="Подпись уполномоченного работника"></span>
-                            </div>
-                        {% endfor %}
-                        {% if row.work_summary %}{{ row.work_summary }}{% endif %}
-                    </td>
-                    <td>
-                        {% for acknowledgement in row.acknowledgers %}
-                            <div class="print-person">
-                                {{ acknowledgement.actor_full_name_snapshot }}<br>
-                                {{ acknowledgement.actor_position_snapshot }}<br>
-                                {{ acknowledgement.occurred_at|date:"d.m.Y H:i" }}
-                                <span class="print-signature-line" title="Рукописная подпись"></span>
-                            </div>
-                        {% endfor %}
-                    </td>
-                </tr>
-            {% empty %}
-                <tr class="print-empty-row">
-                    <td colspan="6">В томе нет записей.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <p class="print-footer-note">
-        Электронное представление сформировано для справочно-контрольного и демонстрационного использования.
-        Графы для рукописных подписей сохранены по утверждённой форме.
-    </p>
+    </div>
 </body>
 </html>

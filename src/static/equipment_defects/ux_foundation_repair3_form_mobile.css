@@ -1,0 +1,20 @@
+/* Keep the active tree search field visible above the mobile selector sheet. */
+@media (max-width: 720px) {
+    .defect-tree-selector.is-open .defect-tree-control {
+        position: fixed;
+        top: 64px;
+        right: 8px;
+        left: 8px;
+        z-index: 62;
+        background: #fff;
+        box-shadow: 0 8px 22px rgba(29, 48, 70, .16);
+    }
+
+    .defect-tree-selector.is-open .defect-tree-panel {
+        top: 114px;
+    }
+
+    .defect-tree-selector.is-open .defect-tree-panel-body {
+        max-height: calc(100dvh - 192px);
+    }
+}

@@ -1,0 +1,218 @@
+/* UX-FOUNDATION-001 Repair 4: final desktop acceptance fixes. */
+
+:root {
+    --da-sidebar-width: 292px;
+    --da-complete: #2f789f;
+    --da-complete-soft: #e8f3f8;
+}
+
+/* Sidebar labels and the signed-in employee must remain readable. */
+.defect-da-navigation > a,
+.defect-da-nav-group-title,
+.defect-da-nav-child {
+    min-width: 0;
+    line-height: 1.28;
+    white-space: normal;
+}
+
+.defect-da-navigation > a > span,
+.defect-da-nav-group-title > span,
+.defect-da-nav-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.defect-da-user {
+    min-height: 78px;
+    align-items: start;
+}
+
+.defect-da-user strong,
+.defect-da-user small {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.25;
+}
+
+.defect-da-user strong {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+/* Registry labels must stay inside the status column. */
+.defect-da-work-head,
+.defect-da-work-row {
+    grid-template-columns:
+        92px
+        135px
+        minmax(220px, 1fr)
+        minmax(250px, 1.3fr)
+        176px
+        minmax(215px, .82fr);
+}
+
+.defect-da-work-status,
+.defect-da-work-owner {
+    min-width: 0;
+}
+
+.defect-da-status {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+    line-height: 1.15;
+}
+
+/*
+ * One lifecycle colour system:
+ * - completed previous steps: calm teal-blue + check mark;
+ * - current step: the semantic colour of the current status;
+ * - future steps: neutral and strongly muted.
+ */
+.defect-da-lifecycle-card .defect-lifecycle li {
+    opacity: .28;
+}
+
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="REGISTERED"],
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="REGISTERED"],
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="IN_PROGRESS"],
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="REGISTERED"],
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="IN_PROGRESS"],
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="RESOLVED"] {
+    border-color: #8bb9cf;
+    background: var(--da-complete-soft);
+    color: var(--da-complete);
+    opacity: 1;
+    box-shadow: none;
+}
+
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="REGISTERED"] .defect-lifecycle-marker,
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="REGISTERED"] .defect-lifecycle-marker,
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="IN_PROGRESS"] .defect-lifecycle-marker,
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="REGISTERED"] .defect-lifecycle-marker,
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="IN_PROGRESS"] .defect-lifecycle-marker,
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="RESOLVED"] .defect-lifecycle-marker {
+    border-color: var(--da-complete);
+    background: var(--da-complete);
+    color: transparent;
+    position: relative;
+}
+
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="REGISTERED"] .defect-lifecycle-marker::after,
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="REGISTERED"] .defect-lifecycle-marker::after,
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="IN_PROGRESS"] .defect-lifecycle-marker::after,
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="REGISTERED"] .defect-lifecycle-marker::after,
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="IN_PROGRESS"] .defect-lifecycle-marker::after,
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="RESOLVED"] .defect-lifecycle-marker::after {
+    content: "✓";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: .86rem;
+    font-weight: 900;
+}
+
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="REGISTERED"] [data-step="REGISTERED"],
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="IN_PROGRESS"],
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="RESOLVED"],
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="CLOSED"] {
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+/* Workplace hierarchy reuses the same selector shell as equipment and personnel. */
+.defect-form-row:has(select[data-defect-tree-select="workplace"]) {
+    grid-column: 1 / -1;
+}
+
+.defect-tree-selector--workplace {
+    width: 100%;
+    max-width: 100%;
+}
+
+.defect-tree-workplace-division {
+    overflow: hidden;
+    border: 1px solid #dfe6ed;
+    border-radius: 7px;
+    background: #fff;
+}
+
+.defect-tree-workplace-division + .defect-tree-workplace-division {
+    margin-top: 5px;
+}
+
+.defect-tree-workplace-division > summary {
+    position: relative;
+    padding: 9px 32px 9px 11px;
+    list-style: none;
+    cursor: pointer;
+    background: #f7fafc;
+    color: #344c63;
+    font-size: .72rem;
+    font-weight: 820;
+}
+
+.defect-tree-workplace-division > summary::-webkit-details-marker {
+    display: none;
+}
+
+.defect-tree-workplace-division > summary::after {
+    content: "›";
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%) rotate(90deg);
+    transition: transform 120ms ease;
+}
+
+.defect-tree-workplace-division:not([open]) > summary::after {
+    transform: translateY(-50%);
+}
+
+.defect-tree-workplace-body {
+    display: grid;
+    gap: 4px;
+    padding: 5px;
+}
+
+.defect-tree-workplace-body > .defect-tree-workplace-division {
+    margin-left: 10px;
+    border-left: 2px solid #b9d3e5;
+}
+
+@media (max-width: 1180px) and (min-width: 721px) {
+    :root {
+        --da-sidebar-width: 272px;
+    }
+
+    .defect-da-work-head,
+    .defect-da-work-row {
+        grid-template-columns:
+            82px
+            125px
+            minmax(195px, 1fr)
+            minmax(225px, 1.2fr)
+            164px
+            minmax(190px, .8fr);
+    }
+}
+
+@media (max-width: 720px) {
+    :root {
+        --da-sidebar-width: min(88vw, 330px);
+    }
+
+    .defect-da-user strong {
+        -webkit-line-clamp: 3;
+    }
+
+    .defect-form-row:has(select[data-defect-tree-select="workplace"]) {
+        grid-column: auto;
+    }
+}

@@ -36,6 +36,180 @@ class DateTimeLocalField(forms.DateTimeField):
         super().__init__(*args, **kwargs)
 
 
+class EquipmentTreeSelect(forms.Select):
+    """Native select fallback enriched with equipment hierarchy metadata."""
+
+    def __init__(self, attrs: dict[str, Any] | None = None) -> None:
+        merged = {
+            "data-defect-tree-select": "equipment",
+            "data-tree-placeholder": "Введите код или название оборудования",
+            "autocomplete": "off",
+        }
+        if attrs:
+            merged.update(attrs)
+        super().__init__(attrs=merged)
+
+    def create_option(
+        self,
+        name: str,
+        value: Any,
+        label: str,
+        selected: bool,
+        index: int,
+        subindex: int | None = None,
+        attrs: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        option = super().create_option(
+            name,
+            value,
+            label,
+            selected,
+            index,
+            subindex=subindex,
+            attrs=attrs,
+        )
+        instance = getattr(value, "instance", None)
+        if instance is not None:
+            option["attrs"].update(
+                {
+                    "data-tree-id": str(instance.pk),
+                    "data-tree-parent": str(instance.parent_id or ""),
+                    "data-tree-site-id": str(instance.site_id),
+                    "data-tree-site": instance.site.short_name or instance.site.name,
+                    "data-tree-type": instance.equipment_type.name,
+                    "data-tree-code": instance.code,
+                }
+            )
+        return option
+
+
+class PersonnelTreeSelect(forms.Select):
+    """Native select fallback enriched with division and position metadata."""
+
+    def __init__(self, attrs: dict[str, Any] | None = None) -> None:
+        merged = {
+            "data-defect-tree-select": "personnel",
+            "data-tree-placeholder": "Введите Ф.И.О. или должность",
+            "autocomplete": "off",
+        }
+        if attrs:
+            merged.update(attrs)
+        super().__init__(attrs=merged)
+
+    def create_option(
+        self,
+        name: str,
+        value: Any,
+        label: str,
+        selected: bool,
+        index: int,
+        subindex: int | None = None,
+        attrs: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        option = super().create_option(
+            name,
+            value,
+            label,
+            selected,
+            index,
+            subindex=subindex,
+            attrs=attrs,
+        )
+        instance = getattr(value, "instance", None)
+        if instance is not None:
+            option["attrs"].update(
+                {
+                    "data-tree-id": str(instance.pk),
+                    "data-tree-division-id": str(instance.division_id),
+                    "data-tree-division-parent": str(instance.division.parent_id or ""),
+                    "data-tree-division": instance.division.name,
+                    "data-tree-position-id": str(instance.position_id),
+                    "data-tree-position": instance.position.name,
+                    "data-tree-workplace": (
+                        instance.workplace.name if instance.workplace_id else ""
+                    ),
+                }
+            )
+        return option
+
+
+class WorkplaceTreeSelect(forms.Select):
+    """Native fallback enriched with organization and division hierarchy metadata."""
+
+    def __init__(self, attrs: dict[str, Any] | None = None) -> None:
+        merged = {
+            "data-defect-tree-select": "workplace",
+            "data-tree-placeholder": "Введите подразделение или рабочее место",
+            "autocomplete": "off",
+        }
+        if attrs:
+            merged.update(attrs)
+        super().__init__(attrs=merged)
+
+    def create_option(
+        self,
+        name: str,
+        value: Any,
+        label: str,
+        selected: bool,
+        index: int,
+        subindex: int | None = None,
+        attrs: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        option = super().create_option(
+            name,
+            value,
+            label,
+            selected,
+            index,
+            subindex=subindex,
+            attrs=attrs,
+        )
+        instance = getattr(value, "instance", None)
+        if instance is not None:
+            division = instance.division
+            parent = division.parent if division is not None else None
+            option["attrs"].update(
+                {
+                    "data-tree-id": str(instance.pk),
+                    "data-tree-code": instance.code,
+                    "data-tree-organization": str(instance.organization),
+                    "data-tree-division-id": str(instance.division_id or ""),
+                    "data-tree-division": division.name if division else "",
+                    "data-tree-division-parent": str(parent.pk if parent else ""),
+                    "data-tree-division-parent-name": parent.name if parent else "",
+                }
+            )
+        return option
+
+
+class EquipmentChoiceField(forms.ModelChoiceField):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs.setdefault("widget", EquipmentTreeSelect())
+        super().__init__(*args, **kwargs)
+
+    def label_from_instance(self, obj: EquipmentAsset) -> str:
+        return f"{obj.code} · {obj.technical_name}"
+
+
+class PersonnelChoiceField(forms.ModelChoiceField):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs.setdefault("widget", PersonnelTreeSelect())
+        super().__init__(*args, **kwargs)
+
+    def label_from_instance(self, obj: Employee) -> str:
+        return f"{obj.full_name} · {obj.position.name}"
+
+
+class WorkplaceChoiceField(forms.ModelChoiceField):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs.setdefault("widget", WorkplaceTreeSelect())
+        super().__init__(*args, **kwargs)
+
+    def label_from_instance(self, obj: Workplace) -> str:
+        return f"{obj.name} · {obj.code}"
+
+
 class OperationalLogEntryChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj: OperationalLogEntry) -> str:
         event_at = timezone.localtime(obj.event_at)
@@ -50,12 +224,12 @@ class DefectRegistrationForm(forms.Form):
         label="Дата и время обнаружения",
         allow_server_now=True,
     )
-    workplace = forms.ModelChoiceField(
+    workplace = WorkplaceChoiceField(
         label="ВЭС / ПС и рабочее место",
         queryset=Workplace.objects.none(),
         empty_label="Выберите рабочее место",
     )
-    equipment = forms.ModelChoiceField(
+    equipment = EquipmentChoiceField(
         label="ЛЭП, оборудование или устройство",
         queryset=EquipmentAsset.objects.none(),
         empty_label="Выберите оборудование",
@@ -69,7 +243,7 @@ class DefectRegistrationForm(forms.Form):
             }
         ),
     )
-    discovered_by = forms.ModelChoiceField(
+    discovered_by = PersonnelChoiceField(
         label="Лицо, обнаружившее дефект",
         queryset=Employee.objects.none(),
         empty_label="Выберите сотрудника",
@@ -98,19 +272,29 @@ class DefectRegistrationForm(forms.Form):
     ) -> None:
         super().__init__(*args, **kwargs)
         organization = employee.organization
-        self.fields["workplace"].queryset = Workplace.objects.filter(
-            organization=organization,
-            is_active=True,
-        ).order_by("name")
+        self.fields["workplace"].queryset = (
+            Workplace.objects.filter(
+                organization=organization,
+                is_active=True,
+            )
+            .select_related("organization", "division", "division__parent")
+            .order_by("division__name", "name")
+        )
         self.fields["equipment"].queryset = (
             EquipmentAsset.objects.filter(organization=organization)
-            .select_related("site", "equipment_type")
-            .order_by("site__name", "code")
+            .select_related("site", "equipment_type", "parent")
+            .order_by("site__name", "parent_id", "code")
         )
         self.fields["discovered_by"].queryset = (
             Employee.objects.filter(organization=organization, is_active=True)
-            .select_related("position", "division")
-            .order_by("last_name", "first_name", "middle_name")
+            .select_related("position", "division", "workplace")
+            .order_by(
+                "division__name",
+                "position__name",
+                "last_name",
+                "first_name",
+                "middle_name",
+            )
         )
         self.fields["operational_log_entry"].queryset = (
             OperationalLogEntry.objects.filter(journal__organization=organization)
@@ -139,7 +323,7 @@ class DefectRegistrationForm(forms.Form):
 
 class DeadlineConfirmationForm(forms.Form):
     elimination_deadline = DateTimeLocalField(label="Срок устранения")
-    responsible = forms.ModelChoiceField(
+    responsible = PersonnelChoiceField(
         label="Ответственный за эксплуатацию",
         queryset=Employee.objects.none(),
         empty_label="Выберите сотрудника",
@@ -152,8 +336,14 @@ class DeadlineConfirmationForm(forms.Form):
                 organization=employee.organization,
                 is_active=True,
             )
-            .select_related("position", "division")
-            .order_by("last_name", "first_name", "middle_name")
+            .select_related("position", "division", "workplace")
+            .order_by(
+                "division__name",
+                "position__name",
+                "last_name",
+                "first_name",
+                "middle_name",
+            )
         )
 
 
@@ -170,7 +360,7 @@ class ResolutionConfirmationForm(forms.Form):
         label="Дата и время устранения",
         allow_server_now=True,
     )
-    responsible = forms.ModelChoiceField(
+    responsible = PersonnelChoiceField(
         label="Ответственный за устранение",
         queryset=Employee.objects.none(),
         empty_label="Выберите сотрудника",
@@ -187,8 +377,14 @@ class ResolutionConfirmationForm(forms.Form):
                 organization=employee.organization,
                 is_active=True,
             )
-            .select_related("position", "division")
-            .order_by("last_name", "first_name", "middle_name")
+            .select_related("position", "division", "workplace")
+            .order_by(
+                "division__name",
+                "position__name",
+                "last_name",
+                "first_name",
+                "middle_name",
+            )
         )
         if not self.is_bound:
             self.initial.setdefault(

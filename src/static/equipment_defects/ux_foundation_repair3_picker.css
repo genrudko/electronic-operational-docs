@@ -1,0 +1,435 @@
+/* UX-FOUNDATION-001 Repair 3.1: custom light date and time pickers. */
+
+html.defect-picker-open,
+html.defect-picker-open body {
+    overflow: hidden;
+}
+
+.defect-picker-field {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    min-width: 0;
+    border: 1px solid var(--da-border-strong, #c7d1dc);
+    border-radius: 8px;
+    background: #fff;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.defect-picker-field:focus-within {
+    border-color: var(--da-blue, #2077b5);
+    box-shadow: 0 0 0 3px rgba(32, 119, 181, .14);
+}
+
+.defect-manual-datetime .defect-picker-field > input {
+    min-width: 0;
+    border: 0 !important;
+    border-radius: 8px 0 0 8px !important;
+    box-shadow: none !important;
+}
+
+.defect-picker-trigger {
+    display: grid;
+    width: 42px;
+    min-height: 42px;
+    place-items: center;
+    border: 0;
+    border-left: 1px solid #dce4ec;
+    border-radius: 0 8px 8px 0;
+    background: #f3f7fb;
+    color: #28668f;
+    cursor: pointer;
+}
+
+.defect-picker-trigger:hover,
+.defect-picker-trigger:focus-visible {
+    background: #e6f1fa;
+    color: #145e91;
+    outline: 0;
+}
+
+.defect-picker-trigger svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.defect-picker-root {
+    position: fixed;
+    inset: 0;
+    z-index: 260;
+    display: grid;
+    place-items: center;
+    padding: 18px;
+}
+
+.defect-picker-root[hidden] {
+    display: none !important;
+}
+
+.defect-picker-backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: rgba(17, 31, 49, .48);
+    cursor: default;
+}
+
+.defect-picker-panel {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    width: min(480px, 100%);
+    max-height: min(720px, calc(100dvh - 36px));
+    overflow: hidden;
+    border: 1px solid #b9c8d6;
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 24px 64px rgba(16, 35, 55, .28);
+    color: #21364e;
+}
+
+.defect-picker-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    gap: 12px;
+    align-items: start;
+    padding: 16px 16px 13px;
+    border-bottom: 1px solid #dce4ec;
+    background: #f5f9fc;
+}
+
+.defect-picker-heading {
+    display: grid;
+    gap: 3px;
+}
+
+.defect-picker-heading h2 {
+    margin: 0;
+    color: #1d344c;
+    font-size: 1rem;
+    line-height: 1.25;
+}
+
+.defect-picker-heading p {
+    margin: 0;
+    color: #6b7c8f;
+    font-size: .68rem;
+}
+
+.defect-picker-close {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    border: 1px solid #d2dce6;
+    border-radius: 9px;
+    background: #fff;
+    color: #53677c;
+    cursor: pointer;
+    font-size: 1.45rem;
+    line-height: 1;
+}
+
+.defect-picker-close:hover,
+.defect-picker-close:focus-visible {
+    border-color: #9db7cc;
+    background: #edf5fb;
+    outline: 0;
+}
+
+.defect-picker-current-value {
+    margin: 0;
+    padding: 12px 16px 0;
+    color: #244d6d;
+    font-size: .78rem;
+    font-weight: 800;
+    text-transform: capitalize;
+}
+
+.defect-picker-body {
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: 14px 16px;
+}
+
+.defect-calendar-navigation {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) 42px;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.defect-calendar-nav {
+    display: grid;
+    width: 42px;
+    height: 38px;
+    place-items: center;
+    border: 1px solid #cfd9e3;
+    border-radius: 8px;
+    background: #fff;
+    color: #315a79;
+    cursor: pointer;
+    font-size: 1.45rem;
+}
+
+.defect-calendar-nav:hover,
+.defect-calendar-nav:focus-visible {
+    border-color: #7faac9;
+    background: #edf6fd;
+    outline: 0;
+}
+
+.defect-calendar-month {
+    color: #203a54;
+    font-size: .86rem;
+    text-align: center;
+    text-transform: capitalize;
+}
+
+.defect-calendar-weekdays,
+.defect-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.defect-calendar-weekdays {
+    margin-bottom: 4px;
+}
+
+.defect-calendar-weekdays span {
+    padding: 5px 2px;
+    color: #718195;
+    font-size: .62rem;
+    font-weight: 850;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.defect-calendar-grid {
+    gap: 4px;
+}
+
+.defect-calendar-day {
+    position: relative;
+    display: grid;
+    min-width: 0;
+    min-height: 42px;
+    place-items: center;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: #fff;
+    color: #263d55;
+    cursor: pointer;
+    font: inherit;
+    font-size: .76rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 750;
+}
+
+.defect-calendar-day:hover,
+.defect-calendar-day:focus-visible {
+    border-color: #9ec2dd;
+    background: #edf6fd;
+    outline: 0;
+}
+
+.defect-calendar-day.is-adjacent {
+    color: #a5afba;
+}
+
+.defect-calendar-day.is-today::after {
+    content: "";
+    position: absolute;
+    bottom: 4px;
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
+    background: #2383c5;
+}
+
+.defect-calendar-day.is-selected {
+    border-color: #176fa8;
+    background: #197fbd;
+    color: #fff;
+    box-shadow: 0 3px 8px rgba(25, 127, 189, .24);
+}
+
+.defect-calendar-day.is-selected::after {
+    background: #fff;
+}
+
+.defect-picker-quick-actions {
+    display: flex;
+    justify-content: flex-start;
+    padding-top: 12px;
+}
+
+.defect-picker-link-button {
+    min-height: 36px;
+    padding: 7px 11px;
+    border: 1px solid #b9cede;
+    border-radius: 8px;
+    background: #edf6fd;
+    color: #245b82;
+    cursor: pointer;
+    font: inherit;
+    font-size: .7rem;
+    font-weight: 800;
+}
+
+.defect-time-picker-display {
+    padding: 15px 16px 4px;
+    color: #176fa8;
+    font-size: 2rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-align: center;
+}
+
+.defect-time-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.defect-time-column {
+    display: grid;
+    min-width: 0;
+    gap: 6px;
+}
+
+.defect-time-column h3 {
+    margin: 0;
+    color: #66778a;
+    font-size: .66rem;
+    font-weight: 850;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.defect-time-wheel {
+    display: grid;
+    max-height: 244px;
+    gap: 4px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 4px;
+    border: 1px solid #d9e1e9;
+    border-radius: 10px;
+    background: #f7f9fc;
+    scroll-snap-type: y proximity;
+}
+
+.defect-time-option {
+    min-height: 42px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: #fff;
+    color: #29435d;
+    cursor: pointer;
+    font: inherit;
+    font-size: .82rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    scroll-snap-align: center;
+}
+
+.defect-time-option:hover,
+.defect-time-option:focus-visible {
+    border-color: #9cbfd9;
+    background: #eaf4fb;
+    outline: 0;
+}
+
+.defect-time-option.is-selected {
+    border-color: #176fa8;
+    background: #197fbd;
+    color: #fff;
+}
+
+.defect-picker-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 13px 16px max(13px, env(safe-area-inset-bottom));
+    border-top: 1px solid #dce4ec;
+    background: #fafcff;
+}
+
+.defect-picker-button {
+    min-height: 43px;
+    padding: 9px 14px;
+    border-radius: 9px;
+    cursor: pointer;
+    font: inherit;
+    font-size: .75rem;
+    font-weight: 850;
+}
+
+.defect-picker-button.secondary {
+    border: 1px solid #bfcbd7;
+    background: #fff;
+    color: #425b73;
+}
+
+.defect-picker-button.primary {
+    border: 1px solid #176fa8;
+    background: #197fbd;
+    color: #fff;
+}
+
+@media (max-width: 620px) {
+    .defect-picker-root {
+        place-items: end stretch;
+        padding: 0;
+    }
+
+    .defect-picker-panel {
+        width: 100%;
+        max-height: min(88dvh, 760px);
+        border-right: 0;
+        border-bottom: 0;
+        border-left: 0;
+        border-radius: 16px 16px 0 0;
+        box-shadow: 0 -12px 42px rgba(16, 35, 55, .28);
+    }
+
+    .defect-picker-header {
+        padding-top: 13px;
+    }
+
+    .defect-calendar-day {
+        min-height: 43px;
+    }
+
+    .defect-time-wheel {
+        max-height: min(38dvh, 280px);
+    }
+}
+
+@media (max-width: 390px) {
+    .defect-picker-body {
+        padding-right: 10px;
+        padding-left: 10px;
+    }
+
+    .defect-calendar-grid {
+        gap: 2px;
+    }
+
+    .defect-calendar-day {
+        min-height: 39px;
+        border-radius: 7px;
+        font-size: .72rem;
+    }
+}

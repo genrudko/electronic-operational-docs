@@ -1,0 +1,142 @@
+<div class="defect-record-main">
+    <section class="defect-record-section defect-da-information-card">
+        <header><h2>Основная информация</h2></header>
+        <div class="defect-record-section-body">
+            <dl class="defect-da-definition-list">
+                <div>
+                    <dt>Дата и время обнаружения</dt>
+                    <dd>{{ record.event_at|date:"d.m.Y H:i" }}</dd>
+                </div>
+                <div>
+                    <dt>Оборудование</dt>
+                    <dd>
+                        {% if row.equipment %}
+                            <strong>{{ row.equipment.dispatcher_name_snapshot }}</strong>
+                            <small>{{ row.equipment.site_name_snapshot }} · {{ row.equipment.equipment_type_snapshot }}</small>
+                        {% else %}
+                            Не указано
+                        {% endif %}
+                    </dd>
+                </div>
+                <div>
+                    <dt>Описание дефекта</dt>
+                    <dd>{{ row.description }}</dd>
+                </div>
+                <div>
+                    <dt>Обнаружил</dt>
+                    <dd>
+                        {% if row.discovered_by %}
+                            <strong>{{ row.discovered_by.employee_full_name_snapshot }}</strong>
+                            <small>{{ row.discovered_by.employee_position_snapshot }}</small>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </dd>
+                </div>
+                <div>
+                    <dt>Зарегистрировал</dt>
+                    <dd>
+                        <strong>{{ record.created_by_full_name_snapshot }}</strong>
+                        <small>{{ record.created_by_position_snapshot }}</small>
+                    </dd>
+                </div>
+                <div>
+                    <dt>Рабочее место</dt>
+                    <dd>{{ record.workplace_name_snapshot }}</dd>
+                </div>
+            </dl>
+        </div>
+    </section>
+
+    <section class="defect-record-section">
+        <header><h2>Срок и ответственность</h2></header>
+        <div class="defect-record-section-body">
+            <dl class="defect-da-definition-list compact">
+                <div>
+                    <dt>Текущий срок</dt>
+                    <dd><strong>{{ row.deadline|default:"Не установлен" }}</strong></dd>
+                </div>
+                <div>
+                    <dt>Ответственный за эксплуатацию</dt>
+                    <dd>
+                        {% if row.operations_responsible %}
+                            <strong>{{ row.operations_responsible.employee_full_name_snapshot }}</strong>
+                            <small>{{ row.operations_responsible.employee_position_snapshot }}</small>
+                        {% else %}
+                            Не назначен
+                        {% endif %}
+                    </dd>
+                </div>
+            </dl>
+            {% for extension in row.extensions %}
+                <div class="defect-extension prominent">
+                    <strong>Срок устранения продлен</strong>
+                    <span>{{ extension.previous_deadline|date:"d.m.Y H:i" }} → {{ extension.new_deadline|date:"d.m.Y H:i" }}</span>
+                    <span>{{ extension.actor_full_name_snapshot }}, {{ extension.actor_position_snapshot }}</span>
+                    <span>Причина: {{ extension.comment }}</span>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="defect-record-section">
+        <header><h2>Результат устранения</h2></header>
+        <div class="defect-record-section-body">
+            <dl class="defect-da-definition-list compact">
+                <div>
+                    <dt>Дата устранения</dt>
+                    <dd><strong>{{ row.resolved_at|default:"Не устранён" }}</strong></dd>
+                </div>
+                <div>
+                    <dt>Ответственный за устранение</dt>
+                    <dd>
+                        {% if row.resolution_responsible %}
+                            <strong>{{ row.resolution_responsible.employee_full_name_snapshot }}</strong>
+                            <small>{{ row.resolution_responsible.employee_position_snapshot }}</small>
+                        {% else %}
+                            Не назначен
+                        {% endif %}
+                    </dd>
+                </div>
+                <div class="wide">
+                    <dt>Выполненные работы</dt>
+                    <dd>{{ row.work_summary|default:"—" }}</dd>
+                </div>
+            </dl>
+        </div>
+    </section>
+
+    {% if row.operational_log_link %}
+        <section class="defect-record-section">
+            <header><h2>Связь с оперативным журналом</h2></header>
+            <div class="defect-record-section-body">
+                <div class="defect-linked-entry-card in-detail">
+                    <span class="defect-linked-entry-label">Основание в оперативном журнале</span>
+                    <a href="{% url 'operational_log:detail' row.operational_log_link.operational_log_entry.journal_id %}#entry-{{ row.operational_log_link.operational_log_entry_id }}">
+                        Запись № {{ row.operational_log_link.entry_sequence_snapshot }} от {{ row.operational_log_link.entry_event_at_snapshot|date:"d.m.Y H:i" }}
+                    </a>
+                    <p>{{ row.operational_log_link.entry_content_snapshot }}</p>
+                </div>
+            </div>
+        </section>
+    {% endif %}
+
+    <section class="defect-record-section">
+        <header><h2>Ознакомление оперативного персонала</h2></header>
+        <div class="defect-record-section-body">
+            {% if row.acknowledgers %}
+                <div class="defect-ack-list">
+                    {% for acknowledgement in row.acknowledgers %}
+                        <div>
+                            <strong>{{ acknowledgement.actor_full_name_snapshot }}</strong>
+                            <span>{{ acknowledgement.actor_position_snapshot }}</span>
+                            <time>{{ acknowledgement.occurred_at|date:"d.m.Y H:i" }}</time>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="defect-muted">Оперативный персонал ещё не ознакомился с записью об устранении.</p>
+            {% endif %}
+        </div>
+    </section>
+</div>

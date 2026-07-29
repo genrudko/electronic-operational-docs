@@ -1,0 +1,116 @@
+<header class="defect-da-page-header">
+    <div>
+        <h1>{{ document_type_name }}</h1>
+        <p class="defect-da-source-line">
+            Источник формы: {{ source.document }}, раздел {{ source.section }}, приложение № {{ source.appendix }}
+        </p>
+    </div>
+    <div class="defect-module-actions defect-screen-only">
+        <a class="defect-button" href="{% url 'equipment_defects:create' %}">+ Новый дефект</a>
+        {% if volumes %}
+            <a class="defect-button secondary" href="{% url 'equipment_defects:print' %}">Печатная форма</a>
+        {% endif %}
+    </div>
+</header>
+
+<nav class="defect-workspace-summary defect-screen-only" aria-label="Быстрый фильтр по состоянию">
+    <a class="defect-summary-chip{% if not filters.status %} active{% endif %}" href="{% url 'equipment_defects:registry' %}">
+        <span>Все записи</span><strong>{{ counts.total }}</strong>
+    </a>
+    <a class="defect-summary-chip registered{% if filters.status == 'REGISTERED' %} active{% endif %}" href="?status=REGISTERED">
+        <span>Зарегистрированы</span><strong>{{ counts.registered }}</strong>
+    </a>
+    <a class="defect-summary-chip in-progress{% if filters.status == 'IN_PROGRESS' %} active{% endif %}" href="?status=IN_PROGRESS">
+        <span>В работе</span><strong>{{ counts.in_progress }}</strong>
+    </a>
+    <a class="defect-summary-chip resolved{% if filters.status == 'RESOLVED' %} active{% endif %}" href="?status=RESOLVED">
+        <span>Устранены</span><strong>{{ counts.resolved }}</strong>
+    </a>
+    <a class="defect-summary-chip closed{% if filters.status == 'CLOSED' %} active{% endif %}" href="?status=CLOSED">
+        <span>Закрыты</span><strong>{{ counts.closed }}</strong>
+    </a>
+</nav>
+
+<section class="defect-command-center defect-screen-only" aria-label="Поиск, сортировка и представление журнала">
+    <div class="defect-da-command-heading">
+        <div class="defect-view-switch" data-defect-view-switch role="group" aria-label="Представление записей">
+            <button type="button" data-defect-view="work" aria-pressed="true">Рабочий список</button>
+            <button type="button" data-defect-view="journal" aria-pressed="false">Форма журнала</button>
+        </div>
+        <div class="defect-sort-field defect-da-sort-field">
+            <label for="defect-sort">Сортировка</label>
+            <select id="defect-sort" data-defect-sort>
+                <option value="event-desc">Сначала новые</option>
+                <option value="event-asc">Сначала старые</option>
+                <option value="number-desc">Номер: по убыванию</option>
+                <option value="number-asc">Номер: по возрастанию</option>
+                <option value="equipment-asc">Оборудование: А–Я</option>
+                <option value="status-asc">По состоянию</option>
+            </select>
+            <small data-defect-sort-persistence>Выбор сохраняется до следующего изменения.</small>
+        </div>
+    </div>
+
+    <form class="defect-command-topline defect-da-filter-form" method="get">
+        <div class="defect-search-field">
+            <label class="visually-hidden" for="defect-search">Поиск по журналу</label>
+            <input
+                id="defect-search"
+                type="search"
+                name="q"
+                value="{{ filters.q }}"
+                placeholder="Поиск по оборудованию, описанию, сотруднику или номеру"
+            >
+        </div>
+        <details class="defect-filter-drawer"{% if filters.status or filters.equipment or filters.date_from or filters.date_to %} open{% endif %}>
+            <summary>Фильтры</summary>
+            <div class="defect-filter-grid">
+                <div class="defect-field">
+                    <label for="defect-status">Состояние</label>
+                    <select id="defect-status" name="status">
+                        <option value="">Все состояния</option>
+                        {% for code, label in status_options %}
+                            <option value="{{ code }}" {% if filters.status == code %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="defect-field">
+                    <label for="defect-equipment">Оборудование</label>
+                    <select id="defect-equipment" name="equipment">
+                        <option value="">Всё оборудование</option>
+                        {% for equipment in equipment_assets %}
+                            <option value="{{ equipment.public_id }}" {% if filters.equipment == equipment.public_id|stringformat:'s' %}selected{% endif %}>
+                                {{ equipment.code }} · {{ equipment.technical_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="defect-field">
+                    <label for="defect-date-from">Обнаружено с</label>
+                    <input id="defect-date-from" type="date" name="date_from" value="{{ filters.date_from }}">
+                </div>
+                <div class="defect-field">
+                    <label for="defect-date-to">Обнаружено по</label>
+                    <input id="defect-date-to" type="date" name="date_to" value="{{ filters.date_to }}">
+                </div>
+            </div>
+        </details>
+        <button class="defect-button" type="submit">Применить</button>
+        <a class="defect-button secondary" href="{% url 'equipment_defects:registry' %}">Сбросить</a>
+    </form>
+
+    {% if filters.q or filters.status or filters.equipment or filters.date_from or filters.date_to %}
+        <div class="defect-active-filters" aria-label="Активные фильтры">
+            <span>Активные условия:</span>
+            {% if filters.q %}<span class="defect-filter-chip">Поиск: {{ filters.q }}</span>{% endif %}
+            {% if filters.status %}
+                {% for code, label in status_options %}
+                    {% if filters.status == code %}<span class="defect-filter-chip">Состояние: {{ label }}</span>{% endif %}
+                {% endfor %}
+            {% endif %}
+            {% if filters.equipment %}<span class="defect-filter-chip">Оборудование выбрано</span>{% endif %}
+            {% if filters.date_from %}<span class="defect-filter-chip">С {{ filters.date_from }}</span>{% endif %}
+            {% if filters.date_to %}<span class="defect-filter-chip">По {{ filters.date_to }}</span>{% endif %}
+        </div>
+    {% endif %}
+</section>

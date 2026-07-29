@@ -1,0 +1,53 @@
+.defect-da-form-page{gap:14px;}
+.defect-da-form-page .defect-form-header{padding:4px 0 15px;border:0;border-bottom:1px solid var(--da-border);border-radius:0;background:transparent;box-shadow:none;}
+.defect-da-form-page .defect-form-header h1{margin-top:8px;font-size:clamp(1.55rem,2.6vw,2.1rem);}
+.defect-da-form-page .defect-form-layout{grid-template-columns:minmax(0,1.55fr) minmax(310px,.72fr);gap:14px;}
+.defect-da-form-page .defect-guided-form,.defect-da-form-page .defect-context-card{border-color:var(--da-border);border-radius:10px;background:var(--da-surface);box-shadow:0 2px 10px rgba(32,52,77,.05);}
+.defect-da-form-page .defect-form-section{padding:17px;}
+.defect-da-form-page .defect-form-footer{padding:14px 17px;background:#fafcff;}
+.defect-da-form-trust-note{border-left:3px solid #83acd0 !important;}
+html.defect-shell-open{overflow:hidden;}
+@media (max-width:1320px){:root{--da-sidebar-width:232px;}
+.defect-da-work-head,.defect-da-work-row{grid-template-columns:82px 122px minmax(190px,.9fr) minmax(230px,1.2fr) 130px minmax(160px,.68fr);}
+.defect-da-lifecycle-card .defect-lifecycle{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media (max-width:1040px){.defect-da-record-layout,.defect-da-form-page .defect-form-layout{grid-template-columns:1fr !important;}
+.defect-da-detail .defect-record-aside,.defect-da-form-page .defect-form-context{grid-template-columns:repeat(2,minmax(0,1fr));}
+.defect-da-lifecycle-card{grid-column:1 / -1;}
+.defect-da-work-table{overflow-x:auto;}
+.defect-da-work-head,.defect-da-work-row{min-width:980px;}}
+@media (max-width:860px){.defect-da-shell{display:block;}
+.defect-da-sidebar{position:fixed;top:0;bottom:0;left:0;z-index:90;width:min(310px,88vw);height:100vh;transform:translateX(-103%);transition:transform 180ms ease;}
+.defect-da-sidebar.is-open{transform:translateX(0);}
+.defect-da-sidebar-scrim{position:fixed;inset:0;z-index:80;background:rgba(17,31,49,.38);}
+.defect-da-sidebar-scrim:not([hidden]){display:block;}
+.defect-da-menu-button{display:inline-flex;min-height:38px;gap:7px;align-items:center;padding:7px 10px;border:1px solid var(--da-border);border-radius:8px;background:#fff;color:var(--da-text);cursor:pointer;font:inherit;font-size:.72rem;font-weight:750;}
+.defect-da-menu-button .ui-icon{width:18px;height:18px;}
+.defect-da-topbar{padding-inline:14px;}
+.defect-da-workplace strong{max-width:340px;}
+.defect-da-topbar-value{display:none;}
+.defect-da-page{padding:18px 14px 30px;}
+.defect-da-page-header{grid-template-columns:1fr;}
+.defect-da-page-header .defect-module-actions{justify-content:flex-start;}
+.defect-da-command-heading{align-items:stretch;flex-direction:column;}
+.defect-da-sort-field{grid-template-columns:90px minmax(0,1fr);}
+.defect-da-filter-form{grid-template-columns:minmax(0,1fr) auto !important;}
+.defect-da-filter-form .defect-search-field{grid-column:1 / -1;}
+.defect-da-detail .defect-record-aside,.defect-da-form-page .defect-form-context{grid-template-columns:1fr;}}
+@media (max-width:620px){.defect-da-topbar-tools > a{display:none;}
+.defect-da-workplace strong{max-width:190px;}
+.defect-da-page{padding-inline:10px;}
+.defect-da-page-header h1{font-size:1.55rem;}
+.defect-da-registry .defect-workspace-summary{display:flex;overflow-x:auto;}
+.defect-da-registry .defect-summary-chip{min-width:136px;}
+.defect-da-registry .defect-view-switch{display:grid;grid-template-columns:1fr 1fr;}
+.defect-da-registry .defect-view-switch button{padding-inline:9px;}
+.defect-da-filter-form{grid-template-columns:1fr 1fr !important;}
+.defect-da-filter-form .defect-filter-drawer{grid-column:1 / -1;}
+.defect-da-record-heading-row,.defect-da-form-page .defect-form-header{grid-template-columns:1fr;}
+.defect-da-definition-list > div{grid-template-columns:1fr;gap:4px;}
+.defect-da-definition-list.compact{grid-template-columns:1fr;}
+.defect-da-definition-list.compact > div.wide{grid-column:auto;}
+.defect-da-lifecycle-card .defect-lifecycle{grid-template-columns:1fr 1fr;}
+.defect-da-form-page .defect-form-steps{min-width:0;grid-template-columns:1fr;}}
+@media print{.defect-da-sidebar,.defect-da-topbar,.defect-da-sidebar-scrim{display:none !important;}
+.defect-da-page{padding:0;}}

@@ -1,0 +1,94 @@
+<aside class="defect-record-aside defect-screen-only">
+    <section class="defect-da-aside-card defect-da-lifecycle-card" data-status="{{ record.status_code }}">
+        <h2>Состояние жизненного цикла</h2>
+        <ol class="defect-lifecycle" data-current-status="{{ record.status_code }}" aria-label="Состояние дефекта">
+            <li data-step="REGISTERED">
+                <span class="defect-lifecycle-marker">1</span>
+                <span><strong>Зарегистрирован</strong><small>Факт зафиксирован</small></span>
+            </li>
+            <li data-step="IN_PROGRESS">
+                <span class="defect-lifecycle-marker">2</span>
+                <span><strong>В работе</strong><small>Срок и ответственный</small></span>
+            </li>
+            <li data-step="RESOLVED">
+                <span class="defect-lifecycle-marker">3</span>
+                <span><strong>Устранён</strong><small>Результат подтверждён</small></span>
+            </li>
+            <li data-step="CLOSED">
+                <span class="defect-lifecycle-marker">4</span>
+                <span><strong>Закрыт</strong><small>Цикл завершён</small></span>
+            </li>
+        </ol>
+    </section>
+
+    <section class="defect-primary-action-panel defect-da-action-card" style="--record-status: var(--ux-blue);">
+        <h2>Доступное действие</h2>
+        {% if record.status_code == 'REGISTERED' %}
+            <p>Назначьте срок устранения и ответственного за эксплуатацию.</p>
+        {% elif record.status_code == 'IN_PROGRESS' %}
+            <p>Зафиксируйте устранение либо продлите срок с обязательной причиной.</p>
+        {% elif record.status_code == 'RESOLVED' %}
+            <p>Оперативному персоналу необходимо ознакомиться с результатом и закрыть запись.</p>
+        {% else %}
+            <p>Дефект закрыт. Запись доступна только для просмотра и печати.</p>
+        {% endif %}
+        <div class="defect-action-stack">
+            {% if can_confirm_deadline %}<a class="defect-button" href="{% url 'equipment_defects:confirm_deadline' record.public_id %}">Подтвердить срок</a>{% endif %}
+            {% if can_extend_deadline %}<a class="defect-button secondary" href="{% url 'equipment_defects:extend_deadline' record.public_id %}">Продлить срок</a>{% endif %}
+            {% if can_confirm_resolution %}<a class="defect-button" href="{% url 'equipment_defects:confirm_resolution' record.public_id %}">Подтвердить устранение</a>{% endif %}
+            {% if can_acknowledge %}<form method="post" action="{% url 'equipment_defects:acknowledge' record.public_id %}" data-time-sensitive-form>{% csrf_token %}<button class="defect-button" type="submit">Ознакомиться</button></form>{% endif %}
+            {% if can_close %}<form method="post" action="{% url 'equipment_defects:close' record.public_id %}" data-time-sensitive-form>{% csrf_token %}<button class="defect-button danger" type="submit">Закрыть дефект</button></form>{% endif %}
+            {% if record.status_is_terminal %}
+                <div class="defect-terminal-note">Запись закрыта и защищена от изменения.</div>
+            {% elif not can_confirm_deadline and not can_extend_deadline and not can_confirm_resolution and not can_acknowledge and not can_close %}
+                <p>Для текущего пользователя доступных действий нет.</p>
+            {% endif %}
+        </div>
+        <div class="defect-time-trust-sentinel">
+            {% include "equipment_defects/_time_trust.html" %}
+        </div>
+    </section>
+
+    <section class="defect-da-aside-card">
+        <h2>Источник формы</h2>
+        <p>Журнал дефектов оборудования</p>
+        <p class="defect-muted">Редакция формы {{ record.schema_revision.revision_number }}</p>
+        <details>
+            <summary>Показать сведения</summary>
+            <p>Том {{ record.equipment_defect_context.volume.sequence_number }} · {{ record.equipment_defect_context.volume.workplace_name_snapshot }}</p>
+            <p>Начат {{ record.equipment_defect_context.volume.started_on|date:"d.m.Y" }}.{% if record.equipment_defect_context.volume.closed_on %} Окончен {{ record.equipment_defect_context.volume.closed_on|date:"d.m.Y" }}.{% endif %}</p>
+        </details>
+    </section>
+
+    <details class="defect-da-aside-card defect-history">
+        <summary>Аудит и история <span class="visually-hidden">История действий</span> <span>{{ actions|length }}</span></summary>
+        <ol class="defect-timeline">
+            {% for action in actions %}
+                <li>
+                    <time>{{ action.occurred_at|date:"d.m.Y H:i:s" }}</time>
+                    <div>
+                        <strong>{{ action.get_action_code_display }}</strong>
+                        <span>{{ action.actor_full_name_snapshot }}, {{ action.actor_position_snapshot }}</span>
+                        {% if action.comment %}<p>{{ action.comment }}</p>{% endif %}
+                    </div>
+                </li>
+            {% empty %}
+                <li><div>Действия пока не зафиксированы.</div></li>
+            {% endfor %}
+        </ol>
+        <p class="defect-muted">Действия связываются с аутентифицированной учётной записью, сотрудником, должностью, системным временем и версией записи. Это не называется УКЭП и не отменяет рукописные подписи утверждённой бумажной формы.</p>
+    </details>
+
+    {% if ui_preferences.show_technical_details %}
+        <details class="defect-da-aside-card defect-technical technical-only">
+            <summary>Технические реквизиты целостности</summary>
+            <p>Тип: <code>{{ record.document_type.code }}</code></p>
+            <p>Редакция формы: {{ record.schema_revision.revision_number }}</p>
+            <p>SHA-256 формы: <code>{{ record.schema_revision.sha256 }}</code></p>
+            <p>Версия записи: {{ record.version }}</p>
+            {% for revision in record.revisions.all %}
+                <p>Редакция {{ revision.revision_number }} · {{ revision.get_action_display }} · <code>{{ revision.sha256 }}</code></p>
+            {% endfor %}
+        </details>
+    {% endif %}
+</aside>

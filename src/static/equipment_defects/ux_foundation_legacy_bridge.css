@@ -1,0 +1,81 @@
+/*
+ * Temporary compatibility bridge between the accepted legacy application shell
+ * and the isolated UX-FOUNDATION-001 reference screen. The selectors are
+ * intentionally narrow: no other application page loads this stylesheet.
+ */
+.presentation-topbar {
+    flex-direction: row;
+    align-items: center;
+    background: rgba(255, 255, 255, .97) !important;
+    border-color: var(--ux-border) !important;
+    color: var(--ux-text) !important;
+}
+
+.presentation-topbar .brand,
+.presentation-topbar .brand:hover,
+.presentation-topbar .brand strong,
+.presentation-topbar .brand-copy,
+.presentation-topbar .user-avatar {
+    color: var(--ux-text) !important;
+}
+
+.presentation-topbar .prototype-label {
+    color: var(--ux-text-muted) !important;
+}
+
+.presentation-topbar .presentation-nav > a,
+.presentation-topbar .nav-menu > summary {
+    color: var(--ux-text-secondary) !important;
+}
+
+.presentation-topbar .presentation-nav > a:hover,
+.presentation-topbar .presentation-nav > a.active,
+.presentation-topbar .nav-menu:hover > summary,
+.presentation-topbar .nav-menu.active > summary,
+.presentation-topbar .nav-menu[open] > summary {
+    border-color: #c9d8ea !important;
+    background: var(--ux-blue-soft) !important;
+    color: var(--ux-blue-strong) !important;
+}
+
+.presentation-topbar .nav-toggle {
+    border-color: var(--ux-border) !important;
+    background: var(--ux-surface) !important;
+    color: var(--ux-text) !important;
+}
+
+@media (max-width: 860px) {
+    .presentation-topbar {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .presentation-topbar .presentation-nav {
+        flex: 1 0 100%;
+        align-items: stretch;
+    }
+
+    .presentation-topbar .presentation-nav.open {
+        display: flex;
+    }
+}
+
+@media (max-width: 760px) {
+    .presentation-topbar {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .presentation-topbar .brand {
+        flex: 1 1 auto;
+    }
+
+    .presentation-topbar .nav-toggle {
+        flex: 0 0 auto;
+        margin-left: auto;
+    }
+
+    .presentation-topbar .presentation-nav {
+        flex-basis: 100%;
+    }
+}
