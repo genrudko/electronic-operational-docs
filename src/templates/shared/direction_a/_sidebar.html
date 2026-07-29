@@ -3,6 +3,7 @@
     class="da-sidebar defect-da-sidebar"
     id="direction-a-sidebar"
     data-direction-a-sidebar
+    data-defect-shell-sidebar
 >
     <a class="da-brand defect-da-brand" href="{% url 'system:home' %}">
         <span class="da-brand-mark defect-da-brand-mark" aria-hidden="true">ЭОД</span>
@@ -81,4 +82,9 @@
         <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-settings"></use></svg>
     </a>
 </aside>
-<div class="da-sidebar-scrim defect-da-sidebar-scrim" data-direction-a-scrim hidden></div>
+<div
+    class="da-sidebar-scrim defect-da-sidebar-scrim"
+    data-direction-a-scrim
+    data-defect-shell-scrim
+    hidden
+></div>
