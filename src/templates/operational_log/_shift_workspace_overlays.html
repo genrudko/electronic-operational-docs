@@ -1,0 +1,103 @@
+<div class="draft-entry-kind-menu screen-only da-overlay" data-entry-kind-menu role="menu" aria-label="Тип записи" hidden>
+    <button type="button" role="menuitemradio" data-entry-kind-option="normal"><b>○</b><span>Обычная запись</span></button>
+    <button type="button" role="menuitemradio" data-entry-kind-option="command"><b>К</b><span>Команда</span></button>
+    <button type="button" role="menuitemradio" data-entry-kind-option="permission"><b>Р</b><span>Разрешение</span></button>
+    <button type="button" role="menuitemradio" data-entry-kind-option="message"><b>С</b><span>Сообщение</span></button>
+    <button type="button" role="menuitemradio" data-entry-kind-option="warning"><b>!</b><span>Предупреждение</span></button>
+    <button type="button" role="menuitemradio" data-entry-kind-option="carryover"><b>→</b><span>На следующую смену</span></button>
+</div>
+
+<div class="draft-normative-menu screen-only da-overlay" data-normative-menu role="menu" aria-label="Нормативные отметки оперативного журнала" hidden>
+    <header>
+        <div>
+            <strong>Нормативная отметка</strong>
+            <span data-normative-menu-status>Выделите относящийся к операции текст</span>
+        </div>
+        <button type="button" data-normative-close aria-label="Закрыть">×</button>
+    </header>
+
+    <div class="draft-normative-actions" data-normative-actions>
+        <button type="button" role="menuitem" data-normative-action="emergency" aria-pressed="false">
+            <b class="is-emergency">!</b><span><strong data-emergency-action-title>Аварийное событие</strong><small data-emergency-action-hint>Красная обводка времени</small></span>
+        </button>
+        <button type="button" role="menuitem" data-normative-action="zn_on"><b class="is-red">ϟ</b><span><strong>Включён ЗН</strong><small>Красная молния и линия</small></span></button>
+        <button type="button" role="menuitem" data-normative-action="pz_install"><b class="is-red">ПЗ<br>ϟ</b><span><strong>Установлено ПЗ</strong><small>Номер будет под молнией</small></span></button>
+        <button type="button" role="menuitem" data-normative-action="zn_off"><b class="is-blue">ϟ</b><span><strong>Отключён ЗН</strong><small>Синий X на исходной отметке</small></span></button>
+        <button type="button" role="menuitem" data-normative-action="pz_remove"><b class="is-blue">ПЗ<br>ϟ</b><span><strong>Снято ПЗ</strong><small>Выбор исходного номера ПЗ</small></span></button>
+    </div>
+
+    <section class="draft-normative-step draft-pz-number-step" data-pz-number-panel aria-label="Ввод номера переносного заземления" hidden>
+        <div class="draft-normative-step-heading">
+            <span>ПЕРЕНОСНОЕ ЗАЗЕМЛЕНИЕ</span>
+            <strong data-pz-number-title>Укажите номер ПЗ</strong>
+            <small>Номер будет показан под нормативной молнией.</small>
+        </div>
+        <div class="draft-pz-number-layout">
+            <label class="draft-pz-number-field"><span aria-hidden="true">№</span><input type="text" inputmode="numeric" maxlength="32" autocomplete="off" placeholder="109" data-pz-number-input aria-label="Номер ПЗ"></label>
+            <div class="draft-pz-marker-preview" aria-label="Предпросмотр отметки ПЗ"><span>ПЗ</span><b aria-hidden="true">ϟ</b><strong data-pz-number-preview>№—</strong></div>
+        </div>
+        <p class="draft-normative-step-error" data-pz-number-error role="alert"></p>
+        <div class="draft-normative-step-actions">
+            <button type="button" class="da-button is-secondary" data-pz-number-cancel>Назад</button>
+            <button type="button" class="da-button" data-pz-number-apply>Применить отметку</button>
+        </div>
+    </section>
+
+    <section class="draft-normative-step draft-normative-source-step" data-normative-source-panel aria-label="Выбор исходной нормативной отметки" hidden>
+        <div class="draft-normative-step-heading">
+            <span>СВЯЗАННАЯ ОТМЕТКА</span>
+            <strong>Что именно снимается или отключается?</strong>
+            <small>Выберите действующую исходную отметку.</small>
+        </div>
+        <div class="draft-normative-source-list" data-normative-source-list></div>
+        <p class="draft-normative-step-error" data-normative-source-error role="alert"></p>
+        <div class="draft-normative-step-actions"><button type="button" class="da-button is-secondary" data-normative-source-cancel>Назад</button></div>
+    </section>
+
+    <footer data-normative-main-footer>
+        <button type="button" class="da-button is-danger" data-normative-remove-emergency hidden>Снять аварийную отметку с записи</button>
+        <button type="button" class="da-button is-danger" data-normative-action="remove">Снять отметку с текста</button>
+        <button type="button" class="da-button is-secondary" data-normative-close>Закрыть</button>
+    </footer>
+</div>
+
+<div class="draft-reference-picker screen-only da-overlay" data-reference-picker role="dialog" aria-label="Связать текст с объектом" hidden>
+    <header>
+        <div><strong>Связать текст с объектом</strong><span data-reference-selection>Выделите текст или поставьте курсор</span></div>
+        <button type="button" data-reference-close aria-label="Закрыть">×</button>
+    </header>
+    <div class="draft-reference-kind-tabs da-segmented" role="toolbar" aria-label="Вид объекта">
+        <button type="button" data-reference-kind-option="equipment" aria-pressed="true"><b>Э</b><span>Оборудование</span></button>
+        <button type="button" data-reference-kind-option="document" aria-pressed="false"><b>Д</b><span>Документ</span></button>
+        <button type="button" data-reference-kind-option="person" aria-pressed="false"><b>Л</b><span>Сотрудник</span></button>
+        <button type="button" data-reference-kind-option="related_entry" aria-pressed="false"><b>№</b><span>Запись</span></button>
+        <button type="button" data-reference-kind-option="event_time" aria-pressed="false"><b>В</b><span>Время</span></button>
+    </div>
+    <label class="draft-reference-search-label">
+        <span>Поиск в справочнике</span>
+        <input class="da-field" type="search" autocomplete="off" placeholder="Начните вводить наименование…" data-reference-search>
+    </label>
+    <div class="draft-reference-results" data-reference-results></div>
+    <footer>
+        <small data-reference-hint>Выбранное наименование будет вставлено в позицию курсора.</small>
+        <div>
+            <button type="button" class="da-button is-danger" data-reference-remove hidden>Снять связь</button>
+            <button type="button" class="da-button is-secondary" data-reference-close>Закрыть</button>
+        </div>
+    </footer>
+</div>
+
+<div class="draft-editor-floating-toolbar screen-only" data-editor-floating-toolbar role="toolbar" aria-label="Форматирование выделенного текста" hidden>
+    <button type="button" data-editor-command="bold" aria-label="Полужирный" aria-pressed="false"><strong>Ж</strong></button>
+    <button type="button" data-editor-command="italic" aria-label="Курсив" aria-pressed="false"><i>К</i></button>
+    <button type="button" data-editor-command="underline" aria-label="Подчёркивание" aria-pressed="false"><u>Ч</u></button>
+    <span class="draft-editor-floating-separator" aria-hidden="true"></span>
+    <button type="button" data-editor-command="bullet_list" aria-label="Маркированный список" aria-pressed="false">•≡</button>
+    <button type="button" data-editor-command="ordered_list" aria-label="Нумерованный список" aria-pressed="false">1≡</button>
+    <button type="button" class="draft-floating-kind-trigger" data-entry-kind-trigger aria-label="Задать тип записи" aria-haspopup="menu" aria-expanded="false"><span aria-hidden="true">○</span><span data-entry-kind-current>Тип записи</span></button>
+    <button type="button" data-reference-trigger aria-label="Вставить связанную ссылку" aria-haspopup="dialog" aria-expanded="false">↗</button>
+    <button type="button" data-normative-trigger aria-label="Нормативные отметки" aria-haspopup="menu" aria-expanded="false">ϟ</button>
+    <button type="button" data-editor-command="clear" aria-label="Очистить форматирование">Tx</button>
+</div>
+
+{{ semantic_reference_catalog|json_script:"draft-semantic-reference-catalog" }}
