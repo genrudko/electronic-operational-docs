@@ -8,7 +8,6 @@ from django.urls import reverse
 
 from .base import OperationalLogTestCase
 
-
 ROOT = Path(__file__).resolve().parents[3]
 ASSET_REVISION = "opjux00101"
 
