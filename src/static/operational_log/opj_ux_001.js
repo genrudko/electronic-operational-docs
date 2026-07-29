@@ -7,12 +7,12 @@
     }
 
     const main = document.querySelector("main");
+    const originalTopbar = document.querySelector("body > .topbar");
     if (!main || document.querySelector("[data-opj-direction-a-shell]")) {
         return;
     }
 
     const iconsUrl = "/static/system/icons.svg";
-    const originalTopbar = document.querySelector("body > .topbar");
     const userName = (
         originalTopbar?.querySelector(".user-menu-label")?.textContent
         || "Пользователь"
@@ -48,9 +48,16 @@
         return svg;
     }
 
-    function navLink(label, href, iconName, active = false, child = false) {
+    function hrefFor(label, fallback) {
+        const link = Array.from(originalTopbar?.querySelectorAll("a") || []).find(
+            (candidate) => candidate.textContent.trim() === label,
+        );
+        return link?.href || fallback;
+    }
+
+    function navLink(label, fallback, iconName, active = false, child = false) {
         const link = element("a", child ? "eod-da-nav-child" : "");
-        link.href = href;
+        link.href = hrefFor(label, fallback);
         if (active) {
             link.classList.add("is-active");
             link.setAttribute("aria-current", "page");
@@ -79,20 +86,18 @@
     }
 
     function currentContext() {
-        const period = main.querySelector(".shift-book-meta-period")?.textContent?.trim();
-        if (period) {
-            return period;
-        }
-        const workplace = main.querySelector(".journal-workplace")?.textContent?.trim();
-        return workplace || "Рабочий контур оперативного журнала";
+        return (
+            main.querySelector(".shift-book-meta-period")?.textContent
+            || main.querySelector(".journal-workplace")?.textContent
+            || "Рабочий контур оперативного журнала"
+        ).trim();
     }
 
     function detailUrl() {
         if (path.includes("/shift/")) {
             return path.replace("/shift/", "/");
         }
-        const match = path.match(/^\/operations\/journal\/(\d+)\/$/);
-        return match ? path : null;
+        return /^\/operations\/journal\/\d+\/$/.test(path) ? path : null;
     }
 
     function workspaceUrl() {
@@ -106,10 +111,8 @@
         sidebar.dataset.opjDirectionASidebar = "";
 
         const brand = element("a", "eod-da-brand");
-        brand.href = "/";
-        brand.append(
-            element("span", "eod-da-brand-mark", "ЭОД"),
-        );
+        brand.href = hrefFor("Главная", "/");
+        brand.append(element("span", "eod-da-brand-mark", "ЭОД"));
         const brandCopy = element("span", "eod-da-brand-copy");
         brandCopy.append(
             element("strong", "", "ЭОД"),
@@ -128,26 +131,26 @@
         const navigation = element("nav", "eod-da-navigation");
         navigation.setAttribute("aria-label", "Навигация ЭОД");
         navigation.append(
-            navLink("Рабочий стол", "/", "home"),
+            navLink("Главная", "/", "home"),
             navGroup("Оперативная документация", "document", [
                 navLink("Оперативный журнал", "/operations/journal/", "document", true, true),
             ]),
             navGroup("Журналы", "journal", [
                 navLink("Журнал дефектов", "/operations/defects/", "journal", false, true),
-                navLink("Оперативные документы", "/operations/documents/", "journal", false, true),
+                navLink("Оперативные документы", "/operational-documents/", "journal", false, true),
             ]),
             navLink("Документы", "/documents/", "document"),
             navLink("Оборудование", "/equipment/", "equipment"),
             navLink("Управление и ведение", "/dispatching/", "management"),
             navGroup("Справочники и данные", "directory", [
                 navLink("Организация и персонал", "/organization/", "directory", false, true),
-                navLink("Перечни документации", "/workplace-documents/", "directory", false, true),
+                navLink("Перечни документации", "/workplace-documentation/", "directory", false, true),
                 navLink("Импорт данных", "/imports/", "directory", false, true),
             ]),
         );
 
         const user = element("a", "eod-da-user");
-        user.href = "/organization/account/";
+        user.href = hrefFor("Учётная запись и интерфейс", "/accounts/me/");
         user.append(element("span", "eod-da-user-avatar", userInitial));
         const userCopy = element("span", "eod-da-user-copy");
         userCopy.append(
@@ -216,7 +219,6 @@
         scrim.dataset.opjMenuScrim = "";
         scrim.setAttribute("aria-label", "Закрыть навигацию");
         document.body.append(scrim);
-
         document.body.classList.add("eod-da-active", "opj-direction-a");
 
         const toggle = shell.querySelector("[data-opj-menu-toggle]");
@@ -304,8 +306,10 @@
             if (!response.ok) {
                 throw new Error(`registered_context_${response.status}`);
             }
-            const html = await response.text();
-            const parsed = new DOMParser().parseFromString(html, "text/html");
+            const parsed = new DOMParser().parseFromString(
+                await response.text(),
+                "text/html",
+            );
             const sourceTable = parsed.querySelector(".approved-journal-table");
             if (!sourceTable) {
                 throw new Error("registered_table_missing");
@@ -349,11 +353,14 @@
     }
 
     function equipmentIdentity(item) {
-        const [site = "Без энергообъекта", type = "Оборудование"] = String(item.meta || "")
+        const values = String(item.meta || "")
             .split("·")
             .map((value) => value.trim())
             .filter(Boolean);
-        return {site, type};
+        return {
+            site: values[0] || "Без энергообъекта",
+            type: values[1] || "Оборудование",
+        };
     }
 
     function matchEquipment(node, items) {
@@ -363,11 +370,11 @@
             || node.getAttribute("data-reference")
             || ""
         );
-        if (reference) {
-            const exact = items.find((item) => item.reference === reference);
-            if (exact) {
-                return exact;
-            }
+        const exact = reference
+            ? items.find((item) => item.reference === reference)
+            : null;
+        if (exact) {
+            return exact;
         }
         const text = (node.textContent || "").trim();
         return [...items]
