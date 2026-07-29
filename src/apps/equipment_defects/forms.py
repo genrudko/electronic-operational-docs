@@ -133,6 +133,56 @@ class PersonnelTreeSelect(forms.Select):
         return option
 
 
+class WorkplaceTreeSelect(forms.Select):
+    """Native fallback enriched with organization and division hierarchy metadata."""
+
+    def __init__(self, attrs: dict[str, Any] | None = None) -> None:
+        merged = {
+            "data-defect-tree-select": "workplace",
+            "data-tree-placeholder": "Введите подразделение или рабочее место",
+            "autocomplete": "off",
+        }
+        if attrs:
+            merged.update(attrs)
+        super().__init__(attrs=merged)
+
+    def create_option(
+        self,
+        name: str,
+        value: Any,
+        label: str,
+        selected: bool,
+        index: int,
+        subindex: int | None = None,
+        attrs: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        option = super().create_option(
+            name,
+            value,
+            label,
+            selected,
+            index,
+            subindex=subindex,
+            attrs=attrs,
+        )
+        instance = getattr(value, "instance", None)
+        if instance is not None:
+            division = instance.division
+            parent = division.parent if division is not None else None
+            option["attrs"].update(
+                {
+                    "data-tree-id": str(instance.pk),
+                    "data-tree-code": instance.code,
+                    "data-tree-organization": str(instance.organization),
+                    "data-tree-division-id": str(instance.division_id or ""),
+                    "data-tree-division": division.name if division else "",
+                    "data-tree-division-parent": str(parent.pk if parent else ""),
+                    "data-tree-division-parent-name": parent.name if parent else "",
+                }
+            )
+        return option
+
+
 class EquipmentChoiceField(forms.ModelChoiceField):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         kwargs.setdefault("widget", EquipmentTreeSelect())
@@ -151,6 +201,15 @@ class PersonnelChoiceField(forms.ModelChoiceField):
         return f"{obj.full_name} · {obj.position.name}"
 
 
+class WorkplaceChoiceField(forms.ModelChoiceField):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs.setdefault("widget", WorkplaceTreeSelect())
+        super().__init__(*args, **kwargs)
+
+    def label_from_instance(self, obj: Workplace) -> str:
+        return f"{obj.name} · {obj.code}"
+
+
 class OperationalLogEntryChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj: OperationalLogEntry) -> str:
         event_at = timezone.localtime(obj.event_at)
@@ -165,7 +224,7 @@ class DefectRegistrationForm(forms.Form):
         label="Дата и время обнаружения",
         allow_server_now=True,
     )
-    workplace = forms.ModelChoiceField(
+    workplace = WorkplaceChoiceField(
         label="ВЭС / ПС и рабочее место",
         queryset=Workplace.objects.none(),
         empty_label="Выберите рабочее место",
@@ -213,10 +272,14 @@ class DefectRegistrationForm(forms.Form):
     ) -> None:
         super().__init__(*args, **kwargs)
         organization = employee.organization
-        self.fields["workplace"].queryset = Workplace.objects.filter(
-            organization=organization,
-            is_active=True,
-        ).order_by("name")
+        self.fields["workplace"].queryset = (
+            Workplace.objects.filter(
+                organization=organization,
+                is_active=True,
+            )
+            .select_related("organization", "division", "division__parent")
+            .order_by("division__name", "name")
+        )
         self.fields["equipment"].queryset = (
             EquipmentAsset.objects.filter(organization=organization)
             .select_related("site", "equipment_type", "parent")
