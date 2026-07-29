@@ -3,23 +3,23 @@
 
     const DATE_SELECTOR = ".defect-manual-date";
     const TIME_SELECTOR = ".defect-manual-time";
+    const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
     const MONTH_FORMATTER = new Intl.DateTimeFormat("ru-RU", {
         month: "long",
         year: "numeric",
     });
-    const FULL_DATE_FORMATTER = new Intl.DateTimeFormat("ru-RU", {
+    const DATE_FORMATTER = new Intl.DateTimeFormat("ru-RU", {
         weekday: "long",
         day: "numeric",
         month: "long",
         year: "numeric",
     });
-    const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
-    function element(tag, className, text) {
-        const node = document.createElement(tag);
-        if (className) node.className = className;
-        if (text !== undefined) node.textContent = text;
-        return node;
+    function node(tag, className, text) {
+        const result = document.createElement(tag);
+        if (className) result.className = className;
+        if (text !== undefined) result.textContent = text;
+        return result;
     }
 
     function two(value) {
@@ -68,22 +68,15 @@
                 minute: "2-digit",
                 hourCycle: "h23",
             }).formatToParts(current());
-            const map = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+            const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
             return {
-                year: Number(map.year),
-                month: Number(map.month),
-                day: Number(map.day),
-                hour: Number(map.hour),
-                minute: Number(map.minute),
+                year: Number(values.year),
+                month: Number(values.month),
+                day: Number(values.day),
+                hour: Number(values.hour),
+                minute: Number(values.minute),
             };
         };
-    }
-
-    function svgIcon(kind) {
-        const paths = kind === "date"
-            ? '<rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18"></path><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"></path>'
-            : '<circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path>';
-        return `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${paths}</svg>`;
     }
 
     function dispatchInput(input) {
@@ -91,59 +84,64 @@
         input.dispatchEvent(new Event("change", { bubbles: true }));
     }
 
-    function enhanceInput(input, kind, openPicker) {
+    function icon(kind) {
+        const content = kind === "date"
+            ? '<rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18"></path><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"></path>'
+            : '<circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path>';
+        return `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${content}</svg>`;
+    }
+
+    function enhanceInput(input, kind, open) {
         if (input.dataset.customPickerEnhanced === "true") return;
         input.dataset.customPickerEnhanced = "true";
 
-        const field = element("div", "defect-picker-field");
+        const field = node("div", "defect-picker-field");
         input.insertAdjacentElement("beforebegin", field);
         field.appendChild(input);
 
-        const trigger = element("button", "defect-picker-trigger");
+        const trigger = node("button", "defect-picker-trigger");
         trigger.type = "button";
-        trigger.innerHTML = svgIcon(kind);
+        trigger.innerHTML = icon(kind);
+        trigger.title = kind === "date" ? "Выбрать дату" : "Выбрать время";
         trigger.setAttribute(
             "aria-label",
             kind === "date" ? "Открыть календарь" : "Открыть выбор времени",
         );
-        trigger.title = kind === "date" ? "Выбрать дату" : "Выбрать время";
         trigger.addEventListener("click", (event) => {
             event.preventDefault();
             event.stopPropagation();
-            openPicker(kind, input, trigger);
+            open(kind, input, trigger);
         });
         field.appendChild(trigger);
     }
 
     function createPicker(now) {
-        const root = element("div", "defect-picker-root");
+        const root = node("div", "defect-picker-root");
         root.hidden = true;
-        const backdrop = element("button", "defect-picker-backdrop");
+        const backdrop = node("button", "defect-picker-backdrop");
         backdrop.type = "button";
         backdrop.setAttribute("aria-label", "Закрыть выбор даты и времени");
-        const panel = element("section", "defect-picker-panel");
+        const panel = node("section", "defect-picker-panel");
         panel.setAttribute("role", "dialog");
         panel.setAttribute("aria-modal", "true");
         panel.setAttribute("aria-labelledby", "defect-picker-title");
         root.append(backdrop, panel);
         document.body.appendChild(root);
 
-        let activeInput = null;
-        let activeTrigger = null;
-        let activeKind = null;
-        let dateState = null;
-        let monthState = null;
-        let timeState = null;
+        let input = null;
+        let trigger = null;
+        let selectedDate = null;
+        let shownMonth = null;
+        let selectedTime = null;
 
-        const close = (restoreFocus = true) => {
+        function close(restoreFocus = true) {
             root.hidden = true;
             panel.replaceChildren();
             document.documentElement.classList.remove("defect-picker-open");
-            if (restoreFocus && activeTrigger) activeTrigger.focus();
-            activeInput = null;
-            activeTrigger = null;
-            activeKind = null;
-        };
+            if (restoreFocus && trigger) trigger.focus();
+            input = null;
+            trigger = null;
+        }
 
         backdrop.addEventListener("click", () => close());
         document.addEventListener("keydown", (event) => {
@@ -153,33 +151,33 @@
             }
         });
 
-        function makeHeader(titleText, subtitleText) {
-            const header = element("header", "defect-picker-header");
-            const heading = element("div", "defect-picker-heading");
-            const title = element("h2", "", titleText);
-            title.id = "defect-picker-title";
-            heading.append(title, element("p", "", subtitleText));
-            const closeButton = element("button", "defect-picker-close", "×");
+        function header(title, subtitle) {
+            const result = node("header", "defect-picker-header");
+            const heading = node("div", "defect-picker-heading");
+            const titleNode = node("h2", "", title);
+            titleNode.id = "defect-picker-title";
+            heading.append(titleNode, node("p", "", subtitle));
+            const closeButton = node("button", "defect-picker-close", "×");
             closeButton.type = "button";
             closeButton.setAttribute("aria-label", "Закрыть");
             closeButton.addEventListener("click", () => close());
-            header.append(heading, closeButton);
-            return header;
+            result.append(heading, closeButton);
+            return result;
         }
 
-        function makeFooter(apply) {
-            const footer = element("footer", "defect-picker-footer");
-            const cancel = element("button", "defect-picker-button secondary", "Отмена");
+        function footer(apply) {
+            const result = node("footer", "defect-picker-footer");
+            const cancel = node("button", "defect-picker-button secondary", "Отмена");
             cancel.type = "button";
             cancel.addEventListener("click", () => close());
-            const accept = element("button", "defect-picker-button primary", "Применить");
+            const accept = node("button", "defect-picker-button primary", "Применить");
             accept.type = "button";
             accept.addEventListener("click", apply);
-            footer.append(cancel, accept);
-            return footer;
+            result.append(cancel, accept);
+            return result;
         }
 
-        function sameDate(left, right) {
+        function datesEqual(left, right) {
             return left && right
                 && left.year === right.year
                 && left.month === right.month
@@ -188,38 +186,41 @@
 
         function renderCalendar(body, announcement) {
             body.replaceChildren();
-            const navigation = element("div", "defect-calendar-navigation");
-            const previous = element("button", "defect-calendar-nav", "‹");
+            const navigation = node("div", "defect-calendar-navigation");
+            const previous = node("button", "defect-calendar-nav", "‹");
+            const next = node("button", "defect-calendar-nav", "›");
             previous.type = "button";
-            previous.setAttribute("aria-label", "Предыдущий месяц");
-            const monthLabel = element(
-                "strong",
-                "defect-calendar-month",
-                MONTH_FORMATTER.format(new Date(monthState.year, monthState.month - 1, 1)),
-            );
-            const next = element("button", "defect-calendar-nav", "›");
             next.type = "button";
+            previous.setAttribute("aria-label", "Предыдущий месяц");
             next.setAttribute("aria-label", "Следующий месяц");
             previous.addEventListener("click", () => {
-                const probe = new Date(monthState.year, monthState.month - 2, 1);
-                monthState = { year: probe.getFullYear(), month: probe.getMonth() + 1 };
+                const probe = new Date(shownMonth.year, shownMonth.month - 2, 1);
+                shownMonth = { year: probe.getFullYear(), month: probe.getMonth() + 1 };
                 renderCalendar(body, announcement);
             });
             next.addEventListener("click", () => {
-                const probe = new Date(monthState.year, monthState.month, 1);
-                monthState = { year: probe.getFullYear(), month: probe.getMonth() + 1 };
+                const probe = new Date(shownMonth.year, shownMonth.month, 1);
+                shownMonth = { year: probe.getFullYear(), month: probe.getMonth() + 1 };
                 renderCalendar(body, announcement);
             });
-            navigation.append(previous, monthLabel, next);
+            navigation.append(
+                previous,
+                node(
+                    "strong",
+                    "defect-calendar-month",
+                    MONTH_FORMATTER.format(new Date(shownMonth.year, shownMonth.month - 1, 1)),
+                ),
+                next,
+            );
 
-            const weekdays = element("div", "defect-calendar-weekdays");
-            WEEKDAYS.forEach((weekday) => weekdays.appendChild(element("span", "", weekday)));
-
-            const grid = element("div", "defect-calendar-grid");
+            const weekdays = node("div", "defect-calendar-weekdays");
+            WEEKDAYS.forEach((weekday) => weekdays.appendChild(node("span", "", weekday)));
+            const grid = node("div", "defect-calendar-grid");
             grid.setAttribute("role", "grid");
-            const first = new Date(monthState.year, monthState.month - 1, 1);
-            const mondayIndex = (first.getDay() + 6) % 7;
-            const start = new Date(monthState.year, monthState.month - 1, 1 - mondayIndex);
+
+            const first = new Date(shownMonth.year, shownMonth.month - 1, 1);
+            const offset = (first.getDay() + 6) % 7;
+            const start = new Date(shownMonth.year, shownMonth.month - 1, 1 - offset);
             const today = now();
 
             for (let index = 0; index < 42; index += 1) {
@@ -229,33 +230,34 @@
                     month: date.getMonth() + 1,
                     day: date.getDate(),
                 };
-                const button = element("button", "defect-calendar-day", String(value.day));
-                button.type = "button";
-                button.setAttribute("role", "gridcell");
-                button.setAttribute("aria-label", FULL_DATE_FORMATTER.format(date));
-                if (value.month !== monthState.month) button.classList.add("is-adjacent");
-                if (sameDate(value, today)) button.classList.add("is-today");
-                if (sameDate(value, dateState)) {
-                    button.classList.add("is-selected");
-                    button.setAttribute("aria-selected", "true");
+                const day = node("button", "defect-calendar-day", String(value.day));
+                day.type = "button";
+                day.setAttribute("role", "gridcell");
+                day.setAttribute("aria-label", DATE_FORMATTER.format(date));
+                if (value.month !== shownMonth.month) day.classList.add("is-adjacent");
+                if (datesEqual(value, today)) day.classList.add("is-today");
+                if (datesEqual(value, selectedDate)) {
+                    day.classList.add("is-selected");
+                    day.setAttribute("aria-selected", "true");
                 }
-                button.addEventListener("click", () => {
-                    dateState = value;
-                    monthState = { year: value.year, month: value.month };
-                    announcement.textContent = FULL_DATE_FORMATTER.format(date);
+                day.addEventListener("click", () => {
+                    selectedDate = value;
+                    shownMonth = { year: value.year, month: value.month };
+                    announcement.textContent = DATE_FORMATTER.format(date);
                     renderCalendar(body, announcement);
                 });
-                grid.appendChild(button);
+                grid.appendChild(day);
             }
 
-            const quick = element("div", "defect-picker-quick-actions");
-            const todayButton = element("button", "defect-picker-link-button", "Сегодня");
+            const quick = node("div", "defect-picker-quick-actions");
+            const todayButton = node("button", "defect-picker-link-button", "Сегодня");
             todayButton.type = "button";
             todayButton.addEventListener("click", () => {
-                dateState = { year: today.year, month: today.month, day: today.day };
-                monthState = { year: today.year, month: today.month };
-                announcement.textContent = FULL_DATE_FORMATTER.format(
-                    new Date(today.year, today.month - 1, today.day),
+                const value = now();
+                selectedDate = { year: value.year, month: value.month, day: value.day };
+                shownMonth = { year: value.year, month: value.month };
+                announcement.textContent = DATE_FORMATTER.format(
+                    new Date(value.year, value.month - 1, value.day),
                 );
                 renderCalendar(body, announcement);
             });
@@ -264,121 +266,107 @@
         }
 
         function renderDatePicker() {
-            const current = parseDate(activeInput.value) || now();
-            dateState = { year: current.year, month: current.month, day: current.day };
-            monthState = { year: current.year, month: current.month };
-
-            panel.appendChild(makeHeader("Выберите дату", "Календарь · московское время"));
-            const announcement = element(
+            const current = parseDate(input.value) || now();
+            selectedDate = { year: current.year, month: current.month, day: current.day };
+            shownMonth = { year: current.year, month: current.month };
+            panel.appendChild(header("Выберите дату", "Календарь · московское время"));
+            const announcement = node(
                 "p",
                 "defect-picker-current-value",
-                FULL_DATE_FORMATTER.format(
-                    new Date(dateState.year, dateState.month - 1, dateState.day),
+                DATE_FORMATTER.format(
+                    new Date(selectedDate.year, selectedDate.month - 1, selectedDate.day),
                 ),
             );
             announcement.setAttribute("aria-live", "polite");
             panel.appendChild(announcement);
-            const body = element("div", "defect-picker-body defect-calendar-body");
+            const body = node("div", "defect-picker-body defect-calendar-body");
             renderCalendar(body, announcement);
-            panel.appendChild(body);
-            panel.appendChild(makeFooter(() => {
-                activeInput.value = `${two(dateState.day)}.${two(dateState.month)}.${dateState.year}`;
-                dispatchInput(activeInput);
+            panel.append(body, footer(() => {
+                input.value = `${two(selectedDate.day)}.${two(selectedDate.month)}.${selectedDate.year}`;
+                dispatchInput(input);
                 close();
             }));
         }
 
-        function renderTimePicker() {
-            const current = parseTime(activeInput.value) || now();
-            timeState = { hour: current.hour, minute: current.minute };
+        function buildTimeColumn(label, count, selected, update, display) {
+            const column = node("section", "defect-time-column");
+            column.appendChild(node("h3", "", label));
+            const list = node("div", "defect-time-wheel");
+            list.setAttribute("role", "listbox");
+            for (let value = 0; value < count; value += 1) {
+                const option = node("button", "defect-time-option", two(value));
+                option.type = "button";
+                option.setAttribute("role", "option");
+                if (value === selected) {
+                    option.classList.add("is-selected");
+                    option.setAttribute("aria-selected", "true");
+                }
+                option.addEventListener("click", () => {
+                    update(value);
+                    display.textContent = `${two(selectedTime.hour)}:${two(selectedTime.minute)}`;
+                    list.querySelectorAll(".defect-time-option").forEach((candidate) => {
+                        const active = Number(candidate.textContent) === value;
+                        candidate.classList.toggle("is-selected", active);
+                        candidate.setAttribute("aria-selected", active ? "true" : "false");
+                    });
+                });
+                list.appendChild(option);
+            }
+            column.appendChild(list);
+            return { column, list };
+        }
 
-            panel.appendChild(makeHeader("Выберите время", "Часы и минуты · МСК"));
-            const display = element(
+        function renderTimePicker() {
+            const current = parseTime(input.value) || now();
+            selectedTime = { hour: current.hour, minute: current.minute };
+            panel.appendChild(header("Выберите время", "Часы и минуты · МСК"));
+            const display = node(
                 "div",
                 "defect-time-picker-display",
-                `${two(timeState.hour)}:${two(timeState.minute)}`,
+                `${two(selectedTime.hour)}:${two(selectedTime.minute)}`,
             );
             display.setAttribute("aria-live", "polite");
             panel.appendChild(display);
 
-            const body = element("div", "defect-picker-body defect-time-picker-body");
-            const columns = element("div", "defect-time-columns");
-
-            const buildColumn = (label, count, selected, setter) => {
-                const column = element("section", "defect-time-column");
-                column.appendChild(element("h3", "", label));
-                const list = element("div", "defect-time-wheel");
-                list.setAttribute("role", "listbox");
-                for (let value = 0; value < count; value += 1) {
-                    const button = element("button", "defect-time-option", two(value));
-                    button.type = "button";
-                    button.setAttribute("role", "option");
-                    if (value === selected) {
-                        button.classList.add("is-selected");
-                        button.setAttribute("aria-selected", "true");
-                    }
-                    button.addEventListener("click", () => {
-                        setter(value);
-                        display.textContent = `${two(timeState.hour)}:${two(timeState.minute)}`;
-                        list.querySelectorAll(".defect-time-option").forEach((option) => {
-                            const active = Number(option.textContent) === value;
-                            option.classList.toggle("is-selected", active);
-                            option.setAttribute("aria-selected", active ? "true" : "false");
-                        });
-                    });
-                    list.appendChild(button);
-                }
-                column.appendChild(list);
-                return { column, list };
-            };
-
-            const hours = buildColumn("Часы", 24, timeState.hour, (value) => {
-                timeState.hour = value;
-            });
-            const minutes = buildColumn("Минуты", 60, timeState.minute, (value) => {
-                timeState.minute = value;
-            });
+            const body = node("div", "defect-picker-body defect-time-picker-body");
+            const columns = node("div", "defect-time-columns");
+            const hours = buildTimeColumn(
+                "Часы",
+                24,
+                selectedTime.hour,
+                (value) => { selectedTime.hour = value; },
+                display,
+            );
+            const minutes = buildTimeColumn(
+                "Минуты",
+                60,
+                selectedTime.minute,
+                (value) => { selectedTime.minute = value; },
+                display,
+            );
             columns.append(hours.column, minutes.column);
-
-            const quick = element("div", "defect-picker-quick-actions");
-            const nowButton = element("button", "defect-picker-link-button", "Сейчас по МСК");
-            nowButton.type = "button";
-            nowButton.addEventListener("click", () => {
-                const currentNow = now();
-                timeState = { hour: currentNow.hour, minute: currentNow.minute };
-                renderTimePickerFresh();
-            });
-            quick.appendChild(nowButton);
-            body.append(columns, quick);
-            panel.appendChild(body);
-            panel.appendChild(makeFooter(() => {
-                activeInput.value = `${two(timeState.hour)}:${two(timeState.minute)}`;
-                dispatchInput(activeInput);
+            body.appendChild(columns);
+            panel.append(body, footer(() => {
+                input.value = `${two(selectedTime.hour)}:${two(selectedTime.minute)}`;
+                dispatchInput(input);
                 close();
             }));
-
             requestAnimationFrame(() => {
                 hours.list.querySelector(".is-selected")?.scrollIntoView({ block: "center" });
                 minutes.list.querySelector(".is-selected")?.scrollIntoView({ block: "center" });
             });
         }
 
-        function renderTimePickerFresh() {
-            panel.replaceChildren();
-            renderTimePicker();
-        }
-
-        const open = (kind, input, trigger) => {
-            activeKind = kind;
-            activeInput = input;
-            activeTrigger = trigger;
+        function open(kind, activeInput, activeTrigger) {
+            input = activeInput;
+            trigger = activeTrigger;
             panel.replaceChildren();
             root.hidden = false;
             document.documentElement.classList.add("defect-picker-open");
-            if (activeKind === "date") renderDatePicker();
+            if (kind === "date") renderDatePicker();
             else renderTimePicker();
             requestAnimationFrame(() => panel.querySelector("button")?.focus());
-        };
+        }
 
         return { open };
     }
