@@ -1,21 +1,24 @@
 # ЭОД — открытые вопросы и отложенные задачи
 
-**Актуализировано:** 28.07.2026
+**Актуализировано:** 29.07.2026
 
 ## 1. Фактическое состояние
 
 ```text
-accepted product work item:
-DEFECT-001 / PR #16 / MERGED / ACCEPTED
+accepted UX work item:
+UX-FOUNDATION-001 / issue #22 / PR #23 / MERGED / ACCEPTED
 
-accepted product merge:
-883a108c8be2a8cd075846fdd175916917911ef6
+accepted UX source head:
+688ca4ed3f306bcb6e32d145c0da6f32d5f37c89
+
+accepted main merge:
+a880a632b750309c7fbfb918af15b49d99b5a93f
+
+accepted product vertical slice:
+DEFECT-001 / PR #16 / MERGED / ACCEPTED
 
 completed infrastructure work item:
 DEV-FAST-001 / issue #18 / COMPLETED
-
-current documentation main at update:
-44917d56ce60a682bfffacffa8ec5bed8fba625d
 
 open PR:
 NONE
@@ -24,11 +27,17 @@ preview:
 UNTOUCHED
 ```
 
-Предметная и функциональная приёмка журнала дефектов выполнена. Его legacy-визуальный стиль не считается принятым целевым UX/UI.
+UX-FOUNDATION-001 принят на mobile и desktop. Direction A, hierarchy selectors, first-party pickers, responsive registry/cards, status chips и lifecycle presentation считаются reusable baseline.
 
 ---
 
-## 2. Next item — UX-FOUNDATION-001
+## 2. Next planned item — OPJ-UX-001
+
+Рабочее название:
+
+```text
+OPJ-UX-001 — Direction A operational journal workspace
+```
 
 Статус:
 
@@ -39,68 +48,94 @@ Draft PR: NONE
 implementation: NOT STARTED
 ```
 
-Implementation должен выполняться в отдельном чате по:
+Starter:
 
 ```text
-docs/project/UX_FOUNDATION_001_NEW_CHAT_STARTER.md
+docs/project/OPJ_UX_001_NEW_CHAT_STARTER.md
 ```
 
-Утверждённое визуальное направление:
+Первый implementation result должен установить фактическое состояние operational journal и разделить:
 
-```text
-Direction A — спокойное светлое документно-операционное
-```
+- presentation-only changes;
+- editor interaction/stability repairs;
+- lifecycle/domain gaps;
+- reusable components;
+- work, который нельзя безопасно включать в первый UX slice.
 
-Цель — минимальный общий UI-layer на основе принятого журнала дефектов:
+До factual audit не создавать branch или Draft PR.
 
-- application shell;
-- compact navigation and page header;
-- registry/table patterns;
-- mobile list/card patterns;
-- search, filters and sorting;
-- cards and forms;
-- date/time controls;
-- statuses and action hierarchy;
-- validation/notifications;
-- typography, spacing, density and CSS tokens.
+### UX scope
 
-Обязательные пользовательские замечания:
+- Direction A shell and navigation;
+- compact shift/journal context;
+- chronological registered-entry workspace;
+- active entry editor;
+- templates, abbreviations and suggestions;
+- semantic equipment/personnel/document links;
+- accepted hierarchy selectors where applicable;
+- accepted date/time picker where applicable;
+- responsive mobile representation;
+- keyboard-first work.
 
-1. центрировать заголовки таблицы;
-2. уменьшить шапку и служебные блоки;
-3. сделать карточки менее техническими;
-4. добавить сквозную пользовательскую нумерацию строк;
-5. сделать связь с оперативной записью понятной оператору;
-6. добавить нормальные сортировку, поиск и фильтры;
-7. переработать date/time controls;
-8. сделать статусы визуально явными;
-9. обеспечить полноценную мобильную читаемость.
+### Existing operational journal gaps
 
-Границы:
+Lifecycle:
 
-- не менять модели, migrations, services, lifecycle или evidence только ради визуального слоя;
-- сохранять одну ветку и один Draft PR на весь цикл замечаний;
-- использовать DEV-FAST-001 для промежуточных template/static repairs;
-- выполнить один полный final gate перед merge;
-- не использовать preview;
-- не выполнять automatic merge.
+- draft → immutable registered entry;
+- handover preparation;
+- сдача/приёмка смены;
+- close shift;
+- unfinished draft checks;
+- signatures/action evidence.
+
+Editor/stability:
+
+- caret at end;
+- Ctrl+Left/Right/Home/End within current entry;
+- PgUp/PgDown without page scroll;
+- editable semantic links;
+- no duplicated marker on copy/paste;
+- no page jump outside sheet;
+- templates, abbreviations and suggestions.
+
+Первый UX work item не должен молча объявлять эти lifecycle gaps решёнными.
 
 ---
 
-## 3. DEV-FAST-001 — closed
+## 3. UX foundation follow-ups
+
+Выносить selectors, pickers и shell в общий reusable layer следует при появлении второго реального потребителя, а не отдельным абстрактным refactor без использования.
+
+При OPJ-UX-001 проверить:
+
+- какие части текущего equipment-defect shell уже безопасно переиспользуются;
+- какие CSS/JS файлы являются фактическим reusable baseline;
+- требуется ли минимальная консолидация Repair-файлов;
+- не ломает ли консолидация accepted reference screen.
+
+Не проводить массовый cleanup только ради красивой структуры файлов.
+
+---
+
+## 4. Следующие structured journals
+
+Очередность после OPJ-UX-001:
+
+1. PRODUCT-D2 — Журнал заявок.
+2. PRODUCT-D3 — Журнал распоряжений.
+3. Ввод оборудования в работу.
+4. РЗА и телемеханика.
+5. Журналы работ — после нормативного решения.
+
+Каждый журнал требует source traceability, специализированных правил, dedicated UI, связей, presentation data, automated gates and user acceptance. Generic registry сам по себе не считается законченным журналом.
+
+---
+
+## 5. DEV-FAST-001 — closed
 
 ```text
-issue #18:
+#18 — DEV-FAST-001: Trusted hot refresh from PR comment
 CLOSED / COMPLETED
-
-PR #19:
-MERGED
-
-repair PR #21:
-MERGED
-
-canary PR #20:
-CLOSED / NOT MERGED
 ```
 
 Hot refresh доступен только для added/modified regular `100644` files:
@@ -116,44 +151,29 @@ src/static/**
 
 ---
 
-## 4. Следующие structured journals
+## 6. Hosting migration
 
-Очередность после UX-FOUNDATION-001:
+Текущий development VPS повторно демонстрирует длительные сетевые простои и блокирует пользовательскую приёмку.
 
-1. PRODUCT-D2 — Журнал заявок.
-2. PRODUCT-D3 — Журнал распоряжений.
-3. Ввод оборудования в работу.
-4. РЗА и телемеханика.
-5. Журналы работ — после нормативного решения.
+После окончания оплаченного периода требуется отдельный migration work item:
 
-Каждый журнал требует source traceability, специализированных правил, dedicated UI, связей, presentation data, automated gates и user acceptance. Generic registry сам по себе не считается законченным журналом.
+```text
+HOST-MOVE-001 — migrate isolated development runtime to a new provider
+```
 
----
+До начала:
 
-## 5. Operational Journal
+- выбрать provider и конфигурацию;
+- проверить доступность IPv4, SSH, snapshots/backups и допустимость GitHub Actions access;
+- не смешивать migration с активным product acceptance;
+- сохранить старый VPS как rollback на ограниченный переходный период;
+- не переносить preview без отдельного решения.
 
-Blocking lifecycle gaps:
-
-- draft → immutable registered entry;
-- handover preparation;
-- сдача/приёмка смены;
-- close shift;
-- unfinished draft checks;
-- signatures/action evidence.
-
-Editor/stability backlog:
-
-- caret at end;
-- Ctrl+Left/Right/Home/End within entry;
-- PgUp/PgDown without page scroll;
-- editable semantic links;
-- no duplicated marker on copy/paste;
-- no page jump outside sheet;
-- templates, abbreviations and suggestions.
+Provider пока не выбран.
 
 ---
 
-## 6. Data
+## 7. Data
 
 Остаётся открытым:
 
@@ -167,7 +187,7 @@ Editor/stability backlog:
 
 ---
 
-## 7. Work permits and orders
+## 8. Work permits and orders
 
 Открытые нормативные и продуктовые вопросы:
 
@@ -184,7 +204,7 @@ Editor/stability backlog:
 
 ---
 
-## 8. Switching
+## 9. Switching
 
 Минимальный контур:
 
@@ -197,11 +217,11 @@ Editor/stability backlog:
 - operational-log link;
 - manual operation sequence.
 
-Automatic generation, topology и interlocks остаются позже.
+Automatic generation, topology and interlocks остаются позже.
 
 ---
 
-## 9. Keys journal
+## 10. Keys journal
 
 Paper-first boundary:
 
@@ -211,11 +231,9 @@ Paper-first boundary:
 
 ---
 
-## 10. Deferred quality/deployment work
+## 11. Deferred quality/deployment work
 
 ### CI-OPT-001
-
-После стабилизации UX-FOUNDATION-001:
 
 - один полный PostgreSQL suite на final exact head;
 - отсутствие повторного полного suite на VPS deployment;
@@ -236,13 +254,13 @@ migrate
 
 ---
 
-## 11. Непереговорные границы
+## 12. Непереговорные границы
 
 - GitHub — единственный источник кода и canonical docs;
 - VPS — runtime/test contour, а не источник кода;
 - preview не используется для разработки;
 - automatic merge запрещён;
 - пользователь не выполняет штатные VPS-команды для функциональных PR;
-- микро-repair получают focused checks и trusted hot refresh;
+- микро-repair получают focused checks and trusted hot refresh;
 - полный gate выполняется один раз на final exact head;
 - контекст обновляется после merge, смены приоритета, появления нового active PR и перед handoff.
