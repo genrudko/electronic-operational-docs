@@ -2,265 +2,296 @@
 
 **Актуализировано:** 29.07.2026
 
-## 1. Фактическое состояние
+## 1. Current active work
 
 ```text
-accepted UX work item:
-UX-FOUNDATION-001 / issue #22 / PR #23 / MERGED / ACCEPTED
+work item:
+OPJ-UX-001
 
-accepted UX source head:
-688ca4ed3f306bcb6e32d145c0da6f32d5f37c89
+issue:
+#24
 
-accepted main merge:
-a880a632b750309c7fbfb918af15b49d99b5a93f
+Draft PR:
+#25
 
-accepted product vertical slice:
-DEFECT-001 / PR #16 / MERGED / ACCEPTED
+branch:
+ux/opj-ux-001
 
-completed infrastructure work item:
-DEV-FAST-001 / issue #18 / COMPLETED
+candidate head:
+663086c9c0b0dfa0d4e970185f0f52269be20a61
 
-open PR:
-NONE
+state:
+OPEN / DRAFT / NOT MERGED
 
 preview:
 UNTOUCHED
 ```
 
-UX-FOUNDATION-001 принят на mobile и desktop. Direction A, hierarchy selectors, first-party pickers, responsive registry/cards, status chips и lifecycle presentation считаются reusable baseline.
+Current blocker: отсутствует. Ожидается пользовательская desktop/mobile приёмка и repairs в том же PR.
 
----
+## 2. OPJ-UX-001 acceptance
 
-## 2. Next planned item — OPJ-UX-001
+Проверить:
 
-Рабочее название:
+- одинаковый shell на home/defect/OPJ;
+- единые page headers, buttons, fields, tabs, panels and status language;
+- registry and registered form;
+- shift workspace;
+- editor/ribbon/focus/keyboard;
+- hierarchy selectors;
+- mobile without two-page imitation;
+- overlays within viewport;
+- no regression of accepted defect UX.
 
-```text
-OPJ-UX-001 — Direction A operational journal workspace
-```
+Не добавлять:
 
-Статус:
+- draft registration;
+- handover/close endpoints;
+- false lifecycle controls;
+- templates/abbreviations;
+- automatic events;
+- offline/SCADA.
 
-```text
-issue: NOT CREATED
-branch: NOT CREATED
-Draft PR: NONE
-implementation: NOT STARTED
-```
+## 3. Shared UX/UI
 
-Starter:
-
-```text
-docs/project/OPJ_UX_001_NEW_CHAT_STARTER.md
-```
-
-Первый implementation result должен установить фактическое состояние operational journal и разделить:
-
-- presentation-only changes;
-- editor interaction/stability repairs;
-- lifecycle/domain gaps;
-- reusable components;
-- work, который нельзя безопасно включать в первый UX slice.
-
-До factual audit не создавать branch или Draft PR.
-
-### UX scope
-
-- Direction A shell and navigation;
-- compact shift/journal context;
-- chronological registered-entry workspace;
-- active entry editor;
-- templates, abbreviations and suggestions;
-- semantic equipment/personnel/document links;
-- accepted hierarchy selectors where applicable;
-- accepted date/time picker where applicable;
-- responsive mobile representation;
-- keyboard-first work.
-
-### Existing operational journal gaps
-
-Lifecycle:
-
-- draft → immutable registered entry;
-- handover preparation;
-- сдача/приёмка смены;
-- close shift;
-- unfinished draft checks;
-- signatures/action evidence.
-
-Editor/stability:
-
-- caret at end;
-- Ctrl+Left/Right/Home/End within current entry;
-- PgUp/PgDown without page scroll;
-- editable semantic links;
-- no duplicated marker on copy/paste;
-- no page jump outside sheet;
-- templates, abbreviations and suggestions.
-
-Первый UX work item не должен молча объявлять эти lifecycle gaps решёнными.
-
----
-
-## 3. UX foundation follow-ups
-
-Выносить selectors, pickers и shell в общий reusable layer следует при появлении второго реального потребителя, а не отдельным абстрактным refactor без использования.
-
-При OPJ-UX-001 проверить:
-
-- какие части текущего equipment-defect shell уже безопасно переиспользуются;
-- какие CSS/JS файлы являются фактическим reusable baseline;
-- требуется ли минимальная консолидация Repair-файлов;
-- не ломает ли консолидация accepted reference screen.
-
-Не проводить массовый cleanup только ради красивой структуры файлов.
-
----
-
-## 4. Следующие structured journals
-
-Очередность после OPJ-UX-001:
-
-1. PRODUCT-D2 — Журнал заявок.
-2. PRODUCT-D3 — Журнал распоряжений.
-3. Ввод оборудования в работу.
-4. РЗА и телемеханика.
-5. Журналы работ — после нормативного решения.
-
-Каждый журнал требует source traceability, специализированных правил, dedicated UI, связей, presentation data, automated gates and user acceptance. Generic registry сам по себе не считается законченным журналом.
-
----
-
-## 5. DEV-FAST-001 — closed
+Canonical:
 
 ```text
-#18 — DEV-FAST-001: Trusted hot refresh from PR comment
-CLOSED / COMPLETED
+docs/project/PRODUCT_UX_PRINCIPLES.md
 ```
 
-Hot refresh доступен только для added/modified regular `100644` files:
+Open implementation debt after PR #25:
+
+- confirm all accepted defect routes consume shared system assets;
+- eliminate remaining visual-only feature duplication when a second consumer exists;
+- create `UI-CONTRACT-001`;
+- define stable browser fixture/route matrix;
+- decide when screenshot comparison becomes blocking;
+- measure visual test flaky rate before pixel-perfect gate.
+
+Rule: no new independent module design system.
+
+## 4. Research decisions
+
+Canonical traceability:
 
 ```text
-src/templates/**
-src/static/**
+docs/research/VERTICAL_PRODUCTS_DECISION_MATRIX_20260729.csv
 ```
 
-Запрещены deletions, renames, copies, type changes, symlinks, executable blobs, models, migrations, settings, urls, services, dependencies, Dockerfile, Compose, database operations, presentation reset, preview и automatic merge.
+### Accepted principles
 
-При сетевом SSH timeout повторяется только упавший job после подтверждения точной причины; такой timeout не считается дефектом controller.
+- best-of-breed critical path;
+- authoring vs lifecycle;
+- derived registers, not duplicate databases;
+- separate shift handover;
+- separate rounds;
+- optional SCADA boundary;
+- history instead of overwrite;
+- acknowledgement/instruction/knowledge/signature separation.
 
----
+### VERIFY
 
-## 6. Hosting migration
+- electronic signature modes;
+- exact work-order lifecycle;
+- automatic BP/TBP/TPP;
+- RZA/TM model;
+- grounding location model;
+- legal status of two-sided key confirmation.
 
-Текущий development VPS повторно демонстрирует длительные сетевые простои и блокирует пользовательскую приёмку.
+### DEFER
 
-После окончания оплаченного периода требуется отдельный migration work item:
+- offline;
+- rounds implementation;
+- SCADA integration;
+- engineering switching;
+- action-management layer.
+
+## 5. Development optimization
+
+Canonical:
 
 ```text
-HOST-MOVE-001 — migrate isolated development runtime to a new provider
+docs/process/DEVELOPMENT_ACCELERATION.md
 ```
 
-До начала:
+### Immediate process rules
 
-- выбрать provider и конфигурацию;
-- проверить доступность IPv4, SSH, snapshots/backups и допустимость GitHub Actions access;
-- не смешивать migration с активным product acceptance;
-- сохранить старый VPS как rollback на ограниченный переходный период;
-- не переносить preview без отдельного решения.
+- one PR per work item;
+- focused checks for micro-repair;
+- hot refresh for allowed templates/static;
+- one full final gate;
+- failure-only diagnostics;
+- user manual commands target `0`.
 
-Provider пока не выбран.
+### CI-OPT-001 — next short process slice
 
----
+Open questions:
 
-## 7. Data
+- which exact CI run is source of full-suite trust;
+- how controller proves same SHA/environment;
+- which VPS smoke replaces repeated full suite;
+- whether migration/data changes require mandatory VPS full tests;
+- path/risk profile selection;
+- documentation/required-check impact.
 
-Остаётся открытым:
+Must not weaken required checks or exact-SHA security.
 
-- публикация accepted canonical power-system dataset;
-- разделение staging/import и canonical publication;
-- personnel rights and qualifications;
-- personnel/workplace source publications;
-- unified deterministic presentation reset beyond defect journal;
-- managed RU→EN domain lexicon;
-- сохранение общей ЩПТ/ШОТ technical equipment family.
+### DEV-EVIDENCE-001
 
----
+- one machine-owned PR comment;
+- run IDs;
+- test count;
+- migrations;
+- deployed SHA;
+- rollback;
+- DB operations;
+- preview state;
+- acceptance URL.
 
-## 8. Work permits and orders
+### WORKITEM-BOOTSTRAP-001
 
-Открытые нормативные и продуктовые вопросы:
+- small manifest;
+- issue/branch/PR/checklist;
+- risk profile;
+- test groups;
+- protected boundaries.
 
-- original mode;
-- отдельные журналы работ;
-- целевые инструктажи;
-- первичный/ежедневный допуск;
-- изменения состава бригады;
-- переводы на другое рабочее место;
-- приостановка/возобновление;
-- завершение/закрытие/хранение;
-- signatures/action evidence;
-- перечни эксплуатационных работ.
+Must not generate domain decisions.
 
----
+## 6. Operational journal product gaps
+
+### OPJ-LIFECYCLE-001
+
+- connect draft to immutable registration;
+- event/registration times;
+- source type;
+- correction/cancellation;
+- links and integrity;
+- tests/routes/services.
+
+### OPJ-ASSISTANCE-001
+
+- templates;
+- abbreviations;
+- suggestions;
+- copy/repeat validation;
+- minimal typing;
+- no interference with manual entry.
+
+### SHIFT-HANDOVER-001
+
+- preparation;
+- report;
+- active documents;
+- unfinished actions;
+- both sides;
+- roles/evidence;
+- close semantics.
+
+## 7. Applications and dispositions
+
+### PRODUCT-D2
+
+Open:
+
+- source-bound form;
+- statuses;
+- requested/factual intervals;
+- equipment state;
+- conflict presentation;
+- roles;
+- OPJ/disposition/switching links.
+
+### PRODUCT-D3
+
+Open:
+
+- document vs fact of execution;
+- participant changes;
+- deadlines;
+- history;
+- work register as derived view;
+- links.
+
+## 8. Permits and works
+
+### PERMIT-AUTHORING-001
+
+- copy/template;
+- personnel eligibility;
+- standard measures;
+- print preview;
+- paper/PDF;
+- benchmark against narrow authoring tools.
+
+### PERMIT-LIFECYCLE-001
+
+Blocked by normative/domain decisions:
+
+- signature/evidence modes;
+- instructions;
+- admission;
+- daily admission;
+- team changes;
+- transfer;
+- suspension/resume;
+- close/storage.
 
 ## 9. Switching
 
-Минимальный контур:
+### SWITCHING-DOCUMENTS-001
 
 - registry/card;
-- types/statuses;
-- equipment;
-- application/disposition basis;
+- type/status;
+- structured operation sequence;
+- versions;
+- equipment/basis;
 - executor/controller;
-- dates/file;
-- operational-log link;
-- manual operation sequence.
+- print.
 
-Automatic generation, topology and interlocks остаются позже.
+### Deferred engineering contour
 
----
+- topology;
+- interlocks;
+- RZA;
+- automatic generation;
+- scheme state.
 
-## 10. Keys journal
+## 10. Data
 
-Paper-first boundary:
+Open:
 
-- бумажный журнал остаётся рабочим оригиналом;
-- полный электронный issue/return lifecycle не является обязательным для первого прототипа;
-- optional reference/control contour требует отдельного решения.
+- canonical published power-system dataset;
+- personnel rights/qualifications;
+- workplace and document publications;
+- managed RU→EN domain lexicon;
+- deterministic presentation scenarios beyond defect;
+- preserve common ЩПТ/ШОТ family.
 
----
+## 11. Hosting
 
-## 11. Deferred quality/deployment work
+`HOST-MOVE-001` after current paid period:
 
-### CI-OPT-001
+- select provider;
+- reproducible Ubuntu/Docker/PostgreSQL bootstrap;
+- restore backup;
+- controller activation;
+- GitHub Actions connectivity;
+- dev/preview isolation;
+- DNS/HTTPS if required;
+- keep old VPS as rollback window.
 
-- один полный PostgreSQL suite на final exact head;
-- отсутствие повторного полного suite на VPS deployment;
-- migration/runtime/presentation smoke при deployment;
-- path-based gates без ослабления required checks;
-- optional nightly full suite.
+Repeated current-host outages are documented operational risk.
 
-### DATA-DEPLOY-001
+## 12. Non-negotiable boundaries
 
-Убрать безусловную presentation seed-логику из `post_migrate`:
-
-```text
-migrate
-→ explicit presentation seed
-→ explicit seed result
-→ runtime smoke
-```
-
----
-
-## 12. Непереговорные границы
-
-- GitHub — единственный источник кода и canonical docs;
-- VPS — runtime/test contour, а не источник кода;
-- preview не используется для разработки;
-- automatic merge запрещён;
-- пользователь не выполняет штатные VPS-команды для функциональных PR;
-- микро-repair получают focused checks and trusted hot refresh;
-- полный gate выполняется один раз на final exact head;
-- контекст обновляется после merge, смены приоритета, появления нового active PR и перед handoff.
+- GitHub is source of truth;
+- preview is not development;
+- development is not `main`;
+- automatic merge prohibited;
+- user does not program or orchestrate normal deployment;
+- same-purpose UI uses shared contract;
+- research is not automatic requirement;
+- full gate once on final head;
+- no claim without evidence.
