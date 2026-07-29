@@ -1,0 +1,254 @@
+/* OPJ-UX-001 Repair 1: compact journal hierarchy and defect-journal visual parity. */
+.opj-direction-a .eod-da-content {
+    padding-top: 18px;
+}
+
+.opj-direction-a .shift-book-header,
+.opj-direction-a .journal-workspace-bar,
+.opj-direction-a .page-heading {
+    margin: 0 0 10px;
+    border: 0;
+    border-bottom: 1px solid var(--eod-da-border);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.opj-direction-a .shift-book-header {
+    min-height: 0;
+    padding: 3px 0 10px;
+}
+
+.opj-direction-a .shift-book-title {
+    min-width: 0;
+}
+
+.opj-direction-a .shift-book-title h1,
+.opj-direction-a .page-heading h1 {
+    font-size: clamp(1.38rem, 2.15vw, 1.82rem);
+    letter-spacing: -0.025em;
+    line-height: 1.12;
+}
+
+.opj-direction-a .shift-book-meta {
+    margin-top: 5px;
+    gap: 0;
+    color: var(--eod-da-text-soft);
+}
+
+.opj-direction-a .shift-book-meta-chip,
+.opj-direction-a .shift-autosave-indicator,
+.opj-direction-a .shift-draft-status-chip {
+    min-height: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--eod-da-text-soft);
+    font-size: 0.69rem;
+    font-weight: 650;
+}
+
+.opj-direction-a .shift-book-meta-chip + .shift-book-meta-chip::before,
+.opj-direction-a .shift-book-meta-chip + .shift-autosave-indicator::before,
+.opj-direction-a .shift-autosave-indicator + .shift-draft-status-chip::before {
+    margin-inline: 7px;
+    color: #a5b1bf;
+    content: "•";
+}
+
+.opj-direction-a .shift-autosave-indicator {
+    color: #247849;
+}
+
+.opj-direction-a .shift-draft-status-chip {
+    color: #c76512;
+}
+
+.opj-work-boundary {
+    min-height: 38px;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 8px;
+    padding: 7px 10px;
+    border: 1px solid var(--eod-da-border);
+    border-left: 3px solid #1267a5;
+    border-radius: 8px;
+    background: #f8fbfe;
+}
+
+.opj-work-boundary > div {
+    display: flex;
+    min-width: 0;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.opj-work-boundary strong {
+    margin: 0;
+    color: var(--eod-da-text);
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+.opj-work-boundary p {
+    overflow: hidden;
+    margin: 0;
+    color: var(--eod-da-text-soft);
+    font-size: 0.69rem;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.opj-boundary-chip {
+    min-height: auto;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #247849;
+    font-size: 0.68rem;
+    font-weight: 750;
+}
+
+.opj-boundary-chip::before {
+    width: 6px;
+    height: 6px;
+    background: #247849;
+}
+
+.opj-registered-context {
+    margin: 0 0 8px;
+    border-radius: 8px;
+    box-shadow: none;
+}
+
+.opj-registered-context > summary {
+    min-height: 40px;
+    gap: 10px;
+    padding: 7px 10px;
+}
+
+.opj-registered-context-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.opj-registered-context-heading span {
+    display: inline-flex;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: #e9eef3;
+    color: #4d5e73;
+    font-size: 0.62rem;
+    font-weight: 750;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.opj-registered-context-heading strong {
+    font-size: 0.78rem;
+}
+
+.opj-registered-context-meta {
+    font-size: 0.68rem;
+}
+
+.opj-registered-context-meta::after {
+    width: 7px;
+    height: 7px;
+}
+
+.opj-registered-context-note {
+    padding: 7px 10px;
+    font-size: 0.68rem;
+}
+
+.opj-registered-context .approved-journal-table th,
+.opj-registered-context .approved-journal-table td {
+    padding: 8px 10px;
+}
+
+.opj-direction-a .paged-draft-workspace {
+    border-radius: 9px;
+    box-shadow: 0 8px 24px rgba(32, 54, 82, 0.08);
+}
+
+.opj-direction-a .draft-command-bar {
+    top: calc(var(--eod-da-topbar-height) + 1px);
+    border-radius: 9px 9px 0 0;
+    box-shadow: 0 5px 16px rgba(32, 54, 82, 0.055);
+}
+
+.opj-direction-a .draft-command-primary-row {
+    min-height: 46px;
+    padding: 5px 8px;
+}
+
+.opj-direction-a .draft-paper-stage {
+    padding: 12px;
+    background: #edf2f6;
+}
+
+.opj-direction-a .draft-book {
+    box-shadow: 0 9px 26px rgba(32, 54, 82, 0.11);
+}
+
+.opj-direction-a .draft-clean-copy-action {
+    border-color: #bdcad8 !important;
+    background: #ffffff !important;
+    color: #0d5489 !important;
+}
+
+.opj-direction-a .draft-reference-kind-tabs button[aria-pressed="true"] {
+    background: #e6f1fb;
+    color: #0d5489;
+}
+
+.opj-reference-tree-site > summary {
+    background: #edf6ff;
+    color: #0d5489;
+}
+
+@media (max-width: 720px) {
+    .opj-direction-a .eod-da-content {
+        padding-top: 10px;
+    }
+
+    .opj-direction-a .shift-book-header {
+        padding-bottom: 8px;
+    }
+
+    .opj-direction-a .shift-book-title h1,
+    .opj-direction-a .page-heading h1 {
+        font-size: 1.18rem;
+    }
+
+    .opj-work-boundary {
+        align-items: center;
+        flex-direction: row;
+    }
+
+    .opj-work-boundary > div {
+        display: block;
+    }
+
+    .opj-work-boundary p {
+        display: none;
+    }
+
+    .opj-boundary-chip {
+        margin-left: auto;
+        white-space: nowrap;
+    }
+
+    .opj-registered-context-note {
+        gap: 5px;
+        padding: 7px 9px;
+    }
+
+    .opj-direction-a .draft-paper-stage {
+        padding: 6px;
+    }
+}
