@@ -1,10 +1,10 @@
 # ЭОД — roadmap
 
-**Актуализировано:** 28.07.2026
+**Актуализировано:** 29.07.2026
 
 ## Принцип
 
-Roadmap управляется фактическим состоянием GitHub, runtime evidence и пользовательской приёмкой. Наличие кода или green CI само по себе не завершает продуктовый этап.
+Roadmap управляется фактическим состоянием GitHub, runtime evidence и пользовательской приёмкой. Наличие кода или green CI само по себе не завершает этап.
 
 Для значимого work item сохраняются exact head, профильные проверки, final gate, runtime evidence, пользовательское решение и отдельная команда на merge.
 
@@ -27,20 +27,23 @@ micro-repair
 repository:
 genrudko/electronic-operational-docs
 
-current documentation main at roadmap update:
-13cbfb1a03bd46046f3f33719e3998c93d47d56e
+accepted main merge:
+a880a632b750309c7fbfb918af15b49d99b5a93f
 
-accepted runtime/application main before documentation handoff:
-6959b9767ce411e74fc4788d5da8dac97f41018f
+last accepted UX work item:
+UX-FOUNDATION-001 / issue #22 / PR #23 / MERGED / ACCEPTED
 
-last accepted product work item:
+accepted UX source head:
+688ca4ed3f306bcb6e32d145c0da6f32d5f37c89
+
+last accepted product vertical slice:
 DEFECT-001 / PR #16 / MERGED / ACCEPTED
 
 completed infrastructure work item:
 DEV-FAST-001 / issue #18 / COMPLETED
 
-next work item:
-UX-FOUNDATION-001 / NOT STARTED
+next planned work item:
+OPJ-UX-001 / NOT STARTED
 ```
 
 ---
@@ -57,107 +60,104 @@ UX-FOUNDATION-001 / NOT STARTED
 | AUTO-001B | Accepted | Restricted exact-SHA VPS development controller |
 | PLAN-001 / PR #7 | Accepted and merged | Evidence audit and first slice decision |
 | DEFECT-001 / PR #16 | Accepted and merged | Source-bound equipment defect journal |
-| DEV-FAST-001 / PR #19 + repair PR #21 | Accepted and merged | Trusted presentation-only hot refresh |
+| DEV-FAST-001 / PR #19 + PR #21 | Accepted and merged | Trusted presentation-only hot refresh |
+| UX-FOUNDATION-001 / PR #23 | Accepted and merged | Direction A shell, responsive registry/cards, hierarchy selectors, first-party pickers and status/lifecycle patterns |
 
 ---
 
-## DEFECT-001 — reference product slice
+## UX-FOUNDATION-001 — accepted baseline
 
 ```text
+issue #22:
+CLOSED / COMPLETED
+
+PR #23:
+MERGED
+
 source head:
-79f3db7e5c47e1ac8ab2568028d06e4043c2c70e
+688ca4ed3f306bcb6e32d145c0da6f32d5f37c89
 
 merge commit:
-883a108c8be2a8cd075846fdd175916917911ef6
+a880a632b750309c7fbfb918af15b49d99b5a93f
 
-user acceptance:
+five exact-head workflows:
+SUCCESS
+
+EOD CI:
+557 / OK
+
+mobile and desktop acceptance:
 CONFIRMED
 
 preview:
 UNTOUCHED
 ```
 
-Журнал дефектов остаётся первым reference screen для общего UX/UI foundation. Предметная модель, lifecycle, evidence и связи считаются принятыми. Legacy-визуальный стиль не считается целевым.
+Принятый foundation:
+
+- Direction A — спокойное светлое документно-операционное направление;
+- reusable shell and navigation;
+- desktop registry and mobile card patterns;
+- searchable equipment/personnel/workplace trees;
+- first-party light date/time pickers with manual input;
+- persistent sorting and view mode;
+- reusable status chips and lifecycle semantics;
+- contained print preview without changing the A4 contract.
 
 ---
 
-## DEV-FAST-001 — completed
+## Следующий work item: OPJ-UX-001
+
+Рабочее название:
 
 ```text
-issue #18:
-CLOSED / COMPLETED
-
-PR #19:
-MERGED
-
-repair PR #21:
-MERGED
-
-canary PR #20:
-CLOSED / NOT MERGED
-
-preview:
-UNTOUCHED
+OPJ-UX-001 — Direction A operational journal workspace
 ```
 
-Доказано:
+Цель — перевести существующий оперативный журнал на принятый UX foundation без механического превращения его в generic registry.
 
-- exact PR/SHA validation;
-- presentation-only overlay для `src/templates/**` и `src/static/**`;
-- app-only restart/health;
-- rollback через clean app recreate;
-- повторный exact run;
-- отсутствие database operations и automatic merge.
+Переиспользовать:
 
-Механизм применяется для быстрых промежуточных UX/UI repairs. Полный suite не является условием каждого hot refresh.
+- shell, navigation and page hierarchy;
+- typography, density and CSS tokens;
+- buttons, alerts and action hierarchy;
+- hierarchy selectors;
+- date/time picker;
+- responsive patterns.
 
----
+Специализированный scope:
 
-## Следующий work item: UX-FOUNDATION-001
+- контекст смены и состояние журнала;
+- последовательная лента зарегистрированных записей;
+- рабочий редактор новой записи;
+- templates, abbreviations and suggestions;
+- semantic links;
+- keyboard behavior;
+- незавершённые дела;
+- подготовка, сдача и приёмка смены;
+- draft/registration boundaries and action evidence.
 
-Утверждённое визуальное направление:
+До branch/PR implementation-чат обязан проверить фактические models, services, routes, templates, static assets and tests.
+
+Starter:
 
 ```text
-Direction A — спокойное светлое документно-операционное
+docs/project/OPJ_UX_001_NEW_CHAT_STARTER.md
 ```
-
-Цель — создать минимальный переиспользуемый UI-layer на основе журнала дефектов:
-
-- application shell и navigation;
-- compact page header;
-- desktop registry/table pattern;
-- mobile list/card pattern;
-- sorting, search and filters;
-- record cards and forms;
-- date/time controls;
-- status/action hierarchy;
-- validation/notifications;
-- typography, spacing, density and CSS tokens.
-
-Это не полная брендовая полировка приложения и не новый product vertical slice.
-
-Implementation выполняется в отдельном чате по:
-
-```text
-docs/project/UX_FOUNDATION_001_NEW_CHAT_STARTER.md
-```
-
-Один work item сохраняет одну ветку и один Draft PR на весь цикл замечаний. Merge выполняется только после финальной приёмки и отдельной команды в Chat 0.
 
 ---
 
 ## Следующие product vertical slices
 
-После UX-FOUNDATION-001:
+После OPJ-UX-001:
 
 1. PRODUCT-D2 — Журнал заявок.
 2. PRODUCT-D3 — Журнал распоряжений.
-3. Operational Journal lifecycle: handover, shift close, action evidence and editor stabilization.
-4. PRODUCT-D4 — ввод оборудования в работу.
-5. PRODUCT-D5 — РЗА и телемеханика.
-6. Журналы работ — после нормативного решения.
+3. PRODUCT-D4 — ввод оборудования в работу.
+4. PRODUCT-D5 — РЗА и телемеханика.
+5. Журналы работ — после нормативного решения.
 
-Каждый следующий журнал переиспользует принятый UX foundation и повторяет source-bound pattern: источник, специализированные правила, dedicated UI, связи, presentation data, automated gates, runtime evidence и user acceptance.
+Каждый structured journal переиспользует accepted UX foundation и повторяет source-bound pattern: источник, специализированные правила, dedicated UI, связи, presentation data, automated gates, runtime evidence и user acceptance.
 
 ---
 
@@ -174,7 +174,7 @@ docs/project/UX_FOUNDATION_001_NEW_CHAT_STARTER.md
 - приостановка/возобновление;
 - окончание/закрытие/хранение;
 - paper/hybrid/electronic boundaries;
-- подписи и action evidence.
+- signatures and action evidence.
 
 ### Минимальный контур переключений
 
@@ -189,6 +189,12 @@ docs/project/UX_FOUNDATION_001_NEW_CHAT_STARTER.md
 
 ---
 
+## Infrastructure follow-up
+
+Текущий development VPS периодически испытывает длительные сетевые простои. После окончания оплаченного периода планируется отдельный migration work item на другого hosting provider. До этого VPS остаётся действующим runtime/test-контуром.
+
+---
+
 ## Internal Prototype Release
 
 Exit criteria:
@@ -200,7 +206,7 @@ Exit criteria:
 - operational journal lifecycle;
 - basic permit/switching registries;
 - честные paper-first ограничения;
-- regression и user acceptance.
+- regression and user acceptance.
 
 ---
 
@@ -211,6 +217,6 @@ Exit criteria:
 - preview не используется для разработки;
 - automatic merge запрещён;
 - пользователь не выполняет штатные VPS-команды для функциональных PR;
-- микро-repair получают профильные проверки и быстрый refresh;
+- микро-repair получают focused checks and trusted hot refresh;
 - полный gate выполняется один раз на final exact head;
 - canonical context обновляется после merge, смены приоритета и создания нового active PR.
