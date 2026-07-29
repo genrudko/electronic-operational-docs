@@ -1,0 +1,85 @@
+/*
+ * Direction A final shell ownership.
+ *
+ * This layer is deliberately loaded after feature styles. It owns only the
+ * application shell geometry and responsive navigation while legacy feature
+ * presentation layers are being retired.
+ */
+
+body.da-active .da-shell {
+    display: grid;
+    grid-template-columns: var(--da-sidebar-width) minmax(0, 1fr);
+    min-height: 100vh;
+}
+
+body.da-active .da-sidebar {
+    position: sticky;
+    inset: auto;
+    top: 0;
+    width: auto;
+    height: 100vh;
+    transform: none;
+    transition: none;
+}
+
+body.da-active .da-stage {
+    min-width: 0;
+}
+
+body.da-active .da-topbar {
+    min-height: var(--da-topbar-height);
+    padding: 8px 24px;
+}
+
+body.da-active .da-menu-button {
+    display: none;
+}
+
+@media (max-width: 1320px) and (min-width: 981px) {
+    :root {
+        --da-sidebar-width: 232px;
+    }
+}
+
+@media (max-width: 980px) {
+    body.da-active .da-shell {
+        display: block;
+        grid-template-columns: none;
+    }
+
+    body.da-active .da-sidebar {
+        position: fixed;
+        inset: 0 auto 0 0;
+        z-index: 90;
+        width: min(310px, 88vw);
+        height: 100vh;
+        transform: translateX(-103%);
+        transition: transform 180ms ease;
+        box-shadow: 16px 0 40px rgba(24, 42, 52, 0.18);
+    }
+
+    body.da-active.da-nav-open .da-sidebar,
+    body.da-active .da-sidebar.is-open {
+        transform: translateX(0);
+    }
+
+    body.da-active .da-sidebar-scrim {
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        border: 0;
+        background: rgba(17, 31, 49, 0.38);
+    }
+
+    body.da-active .da-sidebar-scrim:not([hidden]) {
+        display: block;
+    }
+
+    body.da-active .da-menu-button {
+        display: inline-grid;
+    }
+
+    body.da-active .da-topbar {
+        padding-inline: 14px;
+    }
+}
