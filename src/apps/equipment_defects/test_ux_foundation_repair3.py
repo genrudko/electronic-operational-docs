@@ -91,11 +91,11 @@ class EquipmentDefectUXFoundationRepairThreeTests(SimpleTestCase):
             "buildEquipmentTree",
             "buildPersonnelTree",
             "data-defect-tree-select",
-            "data-tree-parent",
-            "data-tree-position",
+            "treeParent",
+            "treePosition",
             "Энергообъект → оборудование",
             "Подразделение → должность → сотрудник",
-            "role\", \"combobox",
+            'role", "combobox',
             "aria-selected",
         )
         for marker in required:
@@ -142,3 +142,19 @@ class EquipmentDefectUXFoundationRepairThreeTests(SimpleTestCase):
         for marker in required:
             with self.subTest(marker=marker):
                 self.assertIn(marker, stylesheet)
+
+    def test_mobile_print_preview_does_not_shrink_the_a4_landscape_sheet(self) -> None:
+        template = (self.template_root / "print.html").read_text(encoding="utf-8")
+        required = (
+            "print-mobile-hint",
+            "print-preview-scroll",
+            "print-document",
+            "width: 1120px",
+            "overflow-x: auto",
+            "@media print",
+            "width: auto",
+            "min-width: 0",
+        )
+        for marker in required:
+            with self.subTest(marker=marker):
+                self.assertIn(marker, template)
