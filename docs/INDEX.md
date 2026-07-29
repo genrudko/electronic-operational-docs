@@ -1,6 +1,6 @@
 # Индекс документации ЭОД
 
-**Актуализировано:** 29.07.2026
+**Актуализировано:** 30.07.2026
 
 Этот индекс определяет canonical documents и порядок их использования. Фактические SHA и active work item проверяются в GitHub и `project/CURRENT_HANDOFF.md`; metadata-only documentation commit не является новым application baseline.
 
@@ -61,6 +61,12 @@ UNTOUCHED
 | [`research/VERTICAL_PRODUCTS_RESEARCH_20260729.md`](research/VERTICAL_PRODUCTS_RESEARCH_20260729.md) | Принятый итог исследования вертикальных продуктов |
 | [`research/VERTICAL_PRODUCTS_SOURCE_CATALOG_20260729.csv`](research/VERTICAL_PRODUCTS_SOURCE_CATALOG_20260729.csv) | 27 атрибутированных источников |
 | [`research/VERTICAL_PRODUCTS_DECISION_MATRIX_20260729.csv`](research/VERTICAL_PRODUCTS_DECISION_MATRIX_20260729.csv) | Traceability решений к evidence и current work items |
+| [`research/SPECIALIZED_WORKFLOW_BENCHMARK_20260729_v1_2.md`](research/SPECIALIZED_WORKFLOW_BENCHMARK_20260729_v1_2.md) | 20 ежедневных сценариев по 10 специализированным контурам; accepted research evidence v1.2 |
+| [`research/SPECIALIZED_WORKFLOW_PRODUCT_EVIDENCE_20260729_v1_2.csv`](research/SPECIALIZED_WORKFLOW_PRODUCT_EVIDENCE_20260729_v1_2.csv) | PRODUCT EVIDENCE, locators, confidence, decision basis и acceptance benchmarks |
+| [`research/SPECIALIZED_WORKFLOW_NORMATIVE_EVIDENCE_20260729_v1_2.csv`](research/SPECIALIZED_WORKFLOW_NORMATIVE_EVIDENCE_20260729_v1_2.csv) | Отдельная первичная NORMATIVE EVIDENCE matrix и явные evidence gaps |
+| [`research/SPECIALIZED_WORKFLOW_CHANGELOG_v1_1_to_v1_2.md`](research/SPECIALIZED_WORKFLOW_CHANGELOG_v1_1_to_v1_2.md) | Узкие исправления SWB-04, N-05 и N-06 |
+
+Исходный архив `eod_specialized_workflow_benchmark_20260729_v1_2.zip`: SHA-256 `ad043c8d0f65fc546403271bb6b1e9d5bc9377bb554d6c97a5bfb857b26687b6`. Архив не коммитится: canonical content хранится в текстовых MD/CSV.
 
 Сторонние screenshots/PDF/video не коммитятся в публичный repository без подтверждённого права публикации.
 
