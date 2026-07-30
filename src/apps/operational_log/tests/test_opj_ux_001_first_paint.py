@@ -45,8 +45,10 @@ class OpjDirectionAFirstPaintTests(SimpleTestCase):
         extra_head = base.index("{% block extra_head %}{% endblock %}")
         final_layer = base.index("system/direction_a_shell_final.css")
         self.assertLess(extra_head, final_layer)
-        self.assertIn("direction_a_shell_final.css' %}?v=opjux00105", base)
+        self.assertIn("direction_a_shell_final.css' %}?v=opjux00106", base)
         for marker in (
+            "html:has(body.da-active)",
+            "scrollbar-gutter: stable",
             "body.da-active {",
             "--da-sidebar-width: 272px",
             "body.da-active .visually-hidden",
