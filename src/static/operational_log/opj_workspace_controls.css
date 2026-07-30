@@ -1,0 +1,839 @@
+/*
+ * OPJ workspace control surface.
+ *
+ * This component owns only the compact shift header, registered-context rail,
+ * command ribbon, display drawer and single/spread presentation geometry.
+ * Shared application shell and journal row/editor internals remain owned by
+ * direction_a.css and opj_ux_001.css respectively.
+ */
+
+.opj-command-symbols {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.opj-command-icon {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+/* Compact page heading and one-line registered/draft context. */
+.opj-workspace-page .opj-workspace-header {
+    min-height: 0;
+    align-items: center;
+    gap: 16px;
+    margin: 0 0 8px;
+    padding: 0 0 10px;
+}
+
+.opj-workspace-page .opj-workspace-header .eyebrow {
+    margin-bottom: 3px;
+    font-size: 0.61rem;
+}
+
+.opj-workspace-page .opj-workspace-header h1 {
+    font-size: clamp(1.42rem, 1.9vw, 1.82rem);
+    line-height: 1.08;
+}
+
+.opj-workspace-page .opj-workspace-meta {
+    gap: 5px;
+    margin-top: 5px;
+    font-size: 0.67rem;
+}
+
+.opj-workspace-page .opj-workspace-meta .da-status {
+    min-height: 23px;
+    padding: 3px 8px;
+    font-size: 0.64rem;
+}
+
+.opj-workspace-page .opj-workspace-header .da-button {
+    min-height: 34px;
+    padding: 6px 10px;
+    font-size: 0.7rem;
+}
+
+.opj-workspace-page .opj-registered-context {
+    margin: 0 0 8px;
+    overflow: hidden;
+}
+
+.opj-workspace-page .opj-registered-context > summary {
+    min-height: 38px;
+    padding: 6px 9px;
+}
+
+.opj-workspace-page .opj-registered-context-heading {
+    gap: 7px;
+}
+
+.opj-workspace-page .opj-registered-context-heading .da-chip {
+    min-height: 22px;
+    padding: 3px 7px;
+    font-size: 0.62rem;
+}
+
+.opj-workspace-page .opj-registered-context-heading strong {
+    font-size: 0.74rem;
+}
+
+.opj-workspace-page .opj-registered-context-meta {
+    font-size: 0.65rem;
+    font-weight: 700;
+}
+
+.opj-workspace-page .opj-registered-context-meta::after {
+    margin-left: 5px;
+}
+
+.opj-workspace-page .opj-work-boundary {
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    padding: 0 0 0 10px;
+    border-left: 1px solid var(--da-border);
+    background: transparent;
+    box-shadow: none;
+}
+
+.opj-workspace-page .opj-work-boundary > span:first-child {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+}
+
+.opj-workspace-page .opj-work-boundary strong {
+    font-size: 0.69rem;
+    line-height: 1.1;
+}
+
+.opj-workspace-page .opj-work-boundary small {
+    color: var(--da-muted);
+    font-size: 0.58rem;
+    line-height: 1.1;
+}
+
+.opj-workspace-page .opj-boundary-chip {
+    width: 22px;
+    min-width: 22px;
+    min-height: 22px;
+    padding: 0;
+    justify-content: center;
+    font-size: 0.55rem;
+}
+
+/* Compact primary command surface. */
+.opj-workspace-page .opj-toolbar {
+    border-radius: var(--da-radius) var(--da-radius) 0 0;
+}
+
+.opj-workspace-page .opj-toolbar-primary {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 7px;
+}
+
+.opj-workspace-page .opj-toolbar-search {
+    display: grid;
+    min-width: 250px;
+    flex: 1 1 430px;
+    grid-template-columns: minmax(180px, 1fr) 142px;
+    gap: 6px;
+}
+
+.opj-workspace-page .opj-toolbar-search .da-field {
+    min-height: 34px;
+    padding: 6px 9px;
+    font-size: 0.7rem;
+}
+
+.opj-workspace-page .opj-page-navigation {
+    flex: 0 0 auto;
+    gap: 4px;
+    font-size: 0.65rem;
+}
+
+.opj-workspace-page .opj-page-navigation .da-icon-button {
+    width: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
+}
+
+.opj-workspace-page .opj-page-navigation input {
+    width: 42px;
+    min-height: 32px;
+    padding: 3px 5px;
+    font-size: 0.7rem;
+}
+
+.opj-workspace-page .opj-toolbar-actions {
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.opj-workspace-page .opj-toolbar-actions .da-button,
+.opj-workspace-page .opj-ribbon-toggle {
+    display: inline-flex;
+    min-height: 34px;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 5px 9px;
+    border-radius: 7px;
+    font: inherit;
+    font-size: 0.68rem;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.opj-workspace-page .opj-ribbon-toggle {
+    border: 1px solid var(--da-border);
+    background: #fff;
+    color: #3d526b;
+    cursor: pointer;
+}
+
+.opj-workspace-page .opj-ribbon-toggle:hover {
+    border-color: #aebdcb;
+    background: #f4f8fc;
+    color: var(--da-blue-dark);
+}
+
+.opj-view-switch {
+    display: inline-flex;
+    min-height: 34px;
+    overflow: hidden;
+    border: 1px solid var(--da-border-strong);
+    border-radius: 7px;
+    background: #fff;
+}
+
+.opj-view-switch > button {
+    display: inline-flex;
+    min-width: 0;
+    min-height: 32px;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border: 0;
+    border-right: 1px solid var(--da-border);
+    background: transparent;
+    color: #52647a;
+    font: inherit;
+    font-size: 0.66rem;
+    font-weight: 750;
+    cursor: pointer;
+}
+
+.opj-view-switch > button:last-child {
+    border-right: 0;
+}
+
+.opj-view-switch > button:hover {
+    background: #f3f7fb;
+    color: var(--da-blue-dark);
+}
+
+.opj-view-switch > button.is-active,
+.opj-view-switch > button[aria-pressed="true"] {
+    background: var(--da-blue-soft);
+    color: var(--da-blue-dark);
+    box-shadow: inset 0 0 0 1px #9ac2df;
+}
+
+/* Ribbon: compact by default, expanded only on demand. */
+.opj-workspace-page .opj-editor-toolbar {
+    display: grid;
+    min-height: 44px;
+    grid-template-columns: minmax(138px, 175px) minmax(0, 1fr);
+    align-items: stretch;
+}
+
+.opj-workspace-page .opj-editor-toolbar-context {
+    gap: 1px;
+    padding: 5px 8px;
+}
+
+.opj-workspace-page .opj-editor-toolbar-context > span {
+    font-size: 0.56rem;
+}
+
+.opj-workspace-page .opj-editor-toolbar-context strong {
+    font-size: 0.68rem;
+}
+
+.opj-workspace-page .opj-editor-toolbar-context small {
+    font-size: 0.57rem;
+}
+
+.opj-workspace-page .opj-editor-tools {
+    min-height: 0;
+    align-items: stretch;
+}
+
+.opj-workspace-page .opj-tool-group {
+    gap: 2px;
+    padding: 4px 6px 3px;
+}
+
+.opj-workspace-page .opj-tool-group .draft-editor-ribbon-buttons {
+    gap: 2px;
+}
+
+.opj-workspace-page .opj-tool-group .draft-editor-ribbon-button {
+    min-width: 30px;
+    min-height: 30px;
+    gap: 4px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    font-size: 0.68rem;
+}
+
+.opj-workspace-page .opj-tool-group .draft-editor-ribbon-button:disabled {
+    opacity: 0.5;
+}
+
+.opj-workspace-page .opj-tool-group .draft-entry-kind-trigger {
+    min-width: 104px;
+}
+
+.opj-workspace-page .opj-tool-group > small {
+    font-size: 0.55rem;
+}
+
+.opj-text-colour-icon {
+    position: relative;
+    display: inline-grid;
+    min-width: 14px;
+    place-items: center;
+    font-weight: 850;
+    line-height: 1;
+}
+
+.opj-text-colour-icon::after {
+    position: absolute;
+    right: 0;
+    bottom: -3px;
+    left: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    content: "";
+}
+
+.opj-time-mode-label {
+    font-size: 0.61rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.opj-toolbar[data-ribbon-mode="compact"] .opj-editor-toolbar-context > span,
+.opj-toolbar[data-ribbon-mode="compact"] .opj-editor-toolbar-context small,
+.opj-toolbar[data-ribbon-mode="compact"] .opj-tool-group > small {
+    display: none;
+}
+
+.opj-toolbar[data-ribbon-mode="compact"] .opj-editor-toolbar-context {
+    align-content: center;
+}
+
+.opj-toolbar[data-ribbon-mode="expanded"] .opj-editor-toolbar {
+    min-height: 56px;
+    grid-template-columns: minmax(155px, 190px) minmax(0, 1fr);
+}
+
+.opj-toolbar[data-ribbon-mode="expanded"] .opj-tool-group {
+    padding-top: 5px;
+    padding-bottom: 4px;
+}
+
+.opj-toolbar[data-ribbon-mode="expanded"] .opj-ribbon-toggle {
+    background: var(--da-blue-soft);
+    color: var(--da-blue-dark);
+}
+
+/* Sticky ledger header follows the actual compact/expanded command height. */
+.opj-toolbar[data-ribbon-mode="compact"] + .opj-editor-container .opj-ledger-header,
+.opj-toolbar[data-ribbon-mode="compact"] + .opj-editor-container .draft-table-header {
+    top: calc(var(--da-topbar-height) + 90px);
+}
+
+.opj-toolbar[data-ribbon-mode="expanded"] + .opj-editor-container .opj-ledger-header,
+.opj-toolbar[data-ribbon-mode="expanded"] + .opj-editor-container .draft-table-header {
+    top: calc(var(--da-topbar-height) + 102px);
+}
+
+/* New presentation modes: the same ledger component in one- or two-page form. */
+.opj-workspace[data-view-mode="single"] .opj-editor-container {
+    display: block;
+    padding: 0;
+    background: var(--opj-editor-surface);
+}
+
+.opj-workspace[data-view-mode="single"] .opj-secondary-page,
+.opj-secondary-page[hidden] {
+    display: none !important;
+}
+
+.opj-workspace[data-view-mode="spread"] .opj-editor-container {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(650px, 1fr));
+    gap: 10px;
+    padding: 10px;
+    overflow-x: auto;
+    background: #edf2f7;
+    overscroll-behavior-inline: contain;
+}
+
+.opj-workspace[data-view-mode="spread"] .opj-ledger-surface {
+    display: block !important;
+    min-width: 650px !important;
+    overflow: hidden;
+    border: 1px solid var(--opj-grid-strong) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 5px 16px rgba(34, 55, 78, 0.08) !important;
+}
+
+.opj-workspace[data-view-mode="spread"] .opj-secondary-page:not([hidden]) {
+    display: block !important;
+}
+
+.opj-workspace[data-view-mode="spread"] .opj-ledger-header,
+.opj-workspace[data-view-mode="spread"] .draft-table-header {
+    position: sticky;
+}
+
+/* Narrow, card-based settings drawer. */
+.opj-workspace-page .opj-workspace-drawer {
+    width: min(360px, 100vw);
+    background: #f3f6fa;
+}
+
+.opj-workspace-page .opj-workspace-drawer .draft-view-drawer-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    align-items: flex-start;
+    padding: 11px 12px;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(12px);
+}
+
+.opj-workspace-page .opj-workspace-drawer h2 {
+    margin: 1px 0 0;
+    font-size: 0.94rem;
+}
+
+.opj-workspace-page .opj-workspace-drawer header p {
+    margin: 3px 0 0;
+    color: var(--da-muted);
+    font-size: 0.62rem;
+    line-height: 1.3;
+}
+
+.opj-drawer-body {
+    display: grid;
+    gap: 8px;
+    padding: 9px;
+}
+
+.opj-drawer-shift-summary {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 9px;
+    border: 1px solid var(--da-border);
+    border-radius: 9px;
+    background: #fff;
+}
+
+.opj-drawer-summary-icon {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: 8px;
+    background: var(--da-blue-soft);
+    color: var(--da-blue-dark);
+}
+
+.opj-drawer-shift-summary > div {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+}
+
+.opj-drawer-shift-summary > div > span {
+    color: var(--da-muted);
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: 0.035em;
+    text-transform: uppercase;
+}
+
+.opj-drawer-shift-summary strong {
+    overflow: hidden;
+    font-size: 0.68rem;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.opj-drawer-shift-summary .da-status {
+    min-height: 23px;
+    padding: 3px 7px;
+    font-size: 0.6rem;
+}
+
+.opj-workspace-page .opj-workspace-drawer .draft-drawer-section {
+    padding: 10px;
+    border: 1px solid var(--da-border);
+    border-radius: 9px;
+    background: #fff;
+}
+
+.opj-workspace-page .opj-workspace-drawer .draft-side-heading {
+    gap: 2px;
+    margin-bottom: 8px;
+}
+
+.opj-workspace-page .opj-workspace-drawer .draft-quick-setting,
+.opj-workspace-page .opj-workspace-drawer .draft-typography-panel {
+    gap: 5px;
+    margin-top: 8px;
+}
+
+.opj-workspace-page .opj-workspace-drawer .draft-quick-setting:first-of-type {
+    margin-top: 0;
+}
+
+.opj-view-switch--drawer {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.opj-view-switch--drawer > button {
+    min-height: 38px;
+}
+
+.opj-drawer-setting-grid {
+    display: grid;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.opj-workspace-page .opj-workspace-drawer .draft-icon-choice-group {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.opj-workspace-page .opj-workspace-drawer .draft-icon-choice-group button {
+    min-width: 0;
+    min-height: 40px;
+    padding: 5px 3px;
+    gap: 2px;
+}
+
+.opj-workspace-page .opj-workspace-drawer .draft-icon-choice-group button small {
+    font-size: 0.58rem;
+}
+
+.opj-drawer-card {
+    overflow: hidden;
+    border: 1px solid var(--da-border);
+    border-radius: 9px;
+    background: #fff;
+}
+
+.opj-drawer-card > summary {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.opj-drawer-card > summary::-webkit-details-marker,
+.opj-drawer-advanced > summary::-webkit-details-marker {
+    display: none;
+}
+
+.opj-drawer-card > summary > span:first-child {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+}
+
+.opj-drawer-card > summary strong {
+    font-size: 0.72rem;
+}
+
+.opj-drawer-card > summary small {
+    overflow: hidden;
+    color: var(--da-muted);
+    font-size: 0.61rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.opj-drawer-chevron {
+    flex: 0 0 auto;
+    color: var(--da-muted);
+    transition: transform 140ms ease;
+}
+
+.opj-drawer-card[open] > summary {
+    border-bottom: 1px solid var(--da-border);
+    background: #f9fbfd;
+}
+
+.opj-drawer-card[open] > summary .opj-drawer-chevron {
+    transform: rotate(180deg);
+}
+
+.opj-drawer-card-body {
+    padding: 9px 10px;
+}
+
+.opj-workspace-page .opj-workspace-drawer .draft-typography-preset-group,
+.opj-workspace-page .opj-workspace-drawer .draft-typography-size-group,
+.opj-workspace-page .opj-workspace-drawer .draft-record-presets {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.opj-workspace-page .opj-workspace-drawer .draft-record-presets {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.opj-workspace-page .opj-workspace-drawer .draft-typography-preset-group button,
+.opj-workspace-page .opj-workspace-drawer .draft-typography-size-group button,
+.opj-workspace-page .opj-workspace-drawer .draft-record-presets button {
+    min-width: 0;
+    min-height: 32px;
+    padding: 4px 3px;
+    font-size: 0.64rem;
+}
+
+.opj-drawer-advanced {
+    margin-top: 8px;
+    border-top: 1px solid var(--da-border);
+}
+
+.opj-drawer-advanced > summary {
+    padding: 8px 0 3px;
+    color: var(--da-blue-dark);
+    font-size: 0.65rem;
+    font-weight: 750;
+    cursor: pointer;
+    list-style: none;
+}
+
+.opj-drawer-advanced .draft-typography-rows {
+    gap: 5px;
+    padding-top: 5px;
+}
+
+.opj-workspace-page .opj-workspace-drawer .draft-typography-row {
+    grid-template-columns: 66px minmax(0, 1fr);
+    gap: 6px;
+    font-size: 0.65rem;
+}
+
+.opj-drawer-note {
+    display: block;
+    margin-top: 7px;
+    color: var(--da-muted);
+    font-size: 0.58rem;
+    line-height: 1.35;
+}
+
+.opj-workspace-page .opj-workspace-drawer .draft-custom-records {
+    margin-top: 7px;
+}
+
+.opj-workspace-page .opj-workspace-drawer .draft-custom-records input {
+    width: 78px;
+    min-height: 32px;
+}
+
+.opj-workspace-page .opj-workspace-drawer .shift-member-list {
+    gap: 5px;
+}
+
+.opj-workspace-page .opj-workspace-drawer .shift-member-list li {
+    padding: 7px 8px;
+}
+
+.opj-workspace-page .opj-workspace-drawer .draft-quick-setting-status {
+    position: sticky;
+    bottom: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0 4px;
+    background: rgba(243, 246, 250, 0.95);
+    color: var(--da-muted);
+    font-size: 0.61rem;
+}
+
+@media (max-width: 1450px) {
+    .opj-workspace-page .opj-toolbar-primary {
+        flex-wrap: wrap;
+    }
+
+    .opj-workspace-page .opj-toolbar-search {
+        flex-basis: calc(100% - 490px);
+    }
+
+    .opj-workspace-page .opj-page-navigation {
+        order: 3;
+    }
+
+    .opj-workspace-page .opj-toolbar-actions {
+        margin-left: auto;
+    }
+
+    .opj-toolbar[data-ribbon-mode="compact"] + .opj-editor-container .opj-ledger-header,
+    .opj-toolbar[data-ribbon-mode="compact"] + .opj-editor-container .draft-table-header {
+        top: calc(var(--da-topbar-height) + 126px);
+    }
+
+    .opj-toolbar[data-ribbon-mode="expanded"] + .opj-editor-container .opj-ledger-header,
+    .opj-toolbar[data-ribbon-mode="expanded"] + .opj-editor-container .draft-table-header {
+        top: calc(var(--da-topbar-height) + 138px);
+    }
+}
+
+@media (max-width: 1080px) {
+    .opj-workspace-page .opj-toolbar-search {
+        flex: 1 1 100%;
+        order: 1;
+    }
+
+    .opj-workspace-page .opj-page-navigation {
+        order: 2;
+    }
+
+    .opj-workspace-page .opj-toolbar-actions {
+        order: 3;
+    }
+
+    .opj-workspace-page .opj-editor-toolbar {
+        grid-template-columns: 1fr;
+    }
+
+    .opj-workspace-page .opj-editor-toolbar-context {
+        display: flex;
+        min-height: 32px;
+        align-items: center;
+        justify-content: space-between;
+        border-right: 0;
+        border-bottom: 1px solid var(--da-border);
+    }
+
+    .opj-workspace[data-view-mode="spread"] .opj-editor-container {
+        grid-template-columns: repeat(2, minmax(720px, 1fr));
+    }
+
+    .opj-workspace[data-view-mode="spread"] .opj-ledger-surface {
+        min-width: 720px !important;
+    }
+}
+
+@media (max-width: 720px) {
+    .opj-workspace-page .opj-workspace-header {
+        align-items: start;
+    }
+
+    .opj-workspace-page .opj-registered-context > summary {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .opj-workspace-page .opj-work-boundary {
+        justify-content: space-between;
+        padding: 6px 0 0;
+        border-top: 1px solid var(--da-border);
+        border-left: 0;
+    }
+
+    .opj-workspace-page .opj-toolbar-primary {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .opj-workspace-page .opj-toolbar-search {
+        min-width: 0;
+        grid-template-columns: 1fr;
+    }
+
+    .opj-workspace-page .opj-page-navigation,
+    .opj-workspace-page .opj-toolbar-actions {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .opj-workspace-page .opj-toolbar-actions {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+    }
+
+    .opj-workspace-page .opj-toolbar-actions form,
+    .opj-workspace-page .opj-toolbar-actions form .da-button {
+        width: 100%;
+    }
+
+    .opj-workspace-page .opj-toolbar-actions .da-button > span,
+    .opj-workspace-page .opj-ribbon-toggle > span,
+    .opj-view-switch:not(.opj-view-switch--drawer) > button > span,
+    .opj-page-label {
+        display: none;
+    }
+
+    .opj-workspace-page .opj-editor-toolbar-context {
+        min-height: 34px;
+    }
+
+    .opj-workspace-page .opj-workspace-drawer {
+        width: 100vw;
+    }
+}
+
+@media print {
+    body.opj-workspace-page .opj-workspace[data-view-mode="spread"] .opj-editor-container {
+        display: block;
+        padding: 0;
+        background: #fff;
+    }
+
+    body.opj-workspace-page .opj-secondary-page {
+        display: none !important;
+    }
+}
