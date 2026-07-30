@@ -16,8 +16,9 @@ def csv_rows(path):
  with path.open(encoding='utf-8',newline='') as f: return list(csv.DictReader(f,delimiter=';'))
 def validate(plan):
  errors=[]
- if plan.get('version')!='1.0-candidate' or plan.get('release')!='DEMO-RELEASE' or plan.get('baseline_status')!='AT_REVIEW': errors.append('release identity/version/status invalid')
- if plan.get('accepted_main')!='50d96842e8700540832210990993e64fc2e3636d': errors.append('accepted main baseline invalid')
+ if plan.get('version')!='1.0' or plan.get('release')!='DEMO-RELEASE' or plan.get('baseline_status')!='ACCEPTED': errors.append('release identity/version/status invalid')
+ if plan.get('accepted_main')!='2a9b92362b90861501cf11d073668478655fd191': errors.append('accepted main baseline invalid')
+ if plan.get('active')!={'work_item':None,'issue':None,'pr':None}: errors.append('accepted baseline must not retain stale active work item')
  if set(plan.get('statuses',[]))!=RS or set(plan.get('depths',[]))!=DS or set(plan.get('code_statuses',[]))!=CS: errors.append('status vocabularies invalid')
  owners=plan.get('owners',{})
  expected_owners={'state':'docs/project/CURRENT_STATE.md','plan':'docs/project/DEMO_RELEASE_PLAN.yaml','coverage_source':'docs/product/REFERENCE_OPERATIONAL_DOCUMENTATION_COVERAGE.csv','coverage_decisions':'docs/product/REFERENCE_OPERATIONAL_DOCUMENTATION_DECISIONS.csv'}
@@ -117,6 +118,6 @@ def validate(plan):
  for item in queue:
   if item['work_item'] not in sequence: errors.append(f"sequence missing {item['work_item']}")
  state=(ROOT/'docs/project/CURRENT_STATE.md').read_text(encoding='utf-8'); handoff=(ROOT/'docs/project/CURRENT_HANDOFF.md').read_text(encoding='utf-8')
- if 'main / 50d96842e8700540832210990993e64fc2e3636d' not in state or 'PROJECT-BASELINE-001' not in state: errors.append('CURRENT_STATE owner invalid')
+ if 'main / 2a9b92362b90861501cf11d073668478655fd191' not in state or 'PROJECT-BASELINE-001' not in state or '1.0 / ACCEPTED' not in state: errors.append('CURRENT_STATE owner invalid')
  if re.search(r'\b[0-9a-f]{40}\b',handoff) or 'active work item:' in handoff.lower(): errors.append('CURRENT_HANDOFF duplicates volatile state')
  return errors

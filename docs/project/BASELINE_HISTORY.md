@@ -15,12 +15,13 @@ Baseline фиксируется после применимых technical gates,
 | 2026-07-26 | `b75db8bc073e4b02a3254512e9b99d00f3e6e0e2` | PLAN-001 merge | accepted evidence baseline |
 | 2026-07-27 | `883a108c8be2a8cd075846fdd175916917911ef6` | DEFECT-001 merge | accepted product slice |
 | 2026-07-28 | `a880a632b750309c7fbfb918af15b49d99b5a93f` | UX-FOUNDATION-001 merge | accepted UX foundation |
-| 2026-07-30 | `50d96842e8700540832210990993e64fc2e3636d` | OPJ-UX-001 merge | accepted current main baseline |
+| 2026-07-30 | `50d96842e8700540832210990993e64fc2e3636d` | OPJ-UX-001 merge | accepted product/UX baseline |
+| 2026-07-30 | `2a9b92362b90861501cf11d073668478655fd191` | PROJECT-BASELINE-001 merge | accepted DEMO-RELEASE BASELINE V1.0 |
 
 ## Accepted main baseline
 
 ```text
-main / 50d96842e8700540832210990993e64fc2e3636d
+main / 2a9b92362b90861501cf11d073668478655fd191
 ```
 
-`PROJECT-BASELINE-001` в Draft PR #27 является documentation candidate и не изменяет accepted main до merge.
+`PROJECT-BASELINE-001` завершён; следующим work item утверждён `UX-THEME-001`.

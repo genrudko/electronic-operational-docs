@@ -5,15 +5,17 @@
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted main baseline: main / 50d96842e8700540832210990993e64fc2e3636d
-active work item: PROJECT-BASELINE-001 / Stage 2
-active issue / Draft PR: #26 / #27
-active branch: docs/project-baseline-001
-plan version: 1.0-candidate / CHAT 0 REVIEW REQUIRED
+accepted main baseline: main / 2a9b92362b90861501cf11d073668478655fd191
+completed work item: PROJECT-BASELINE-001
+closed issue / merged PR: #26 / #27
+plan version: 1.0 / ACCEPTED
+next work item: UX-THEME-001
 preview: UNTOUCHED
 active development: UNTOUCHED
 ```
 
-Documentation candidate не меняет accepted application baseline. Приняты foundations, `DEFECT-001`, Direction A и `OPJ-UX-001`; release detail принадлежит [`DEMO_RELEASE_PLAN.yaml`](DEMO_RELEASE_PLAN.yaml).
+`DEMO-RELEASE BASELINE V1.0` принят пользователем и слит обычным merge commit `2a9b92362b90861501cf11d073668478655fd191`.
 
-Review packet: [`../product/MODULE_MAP.md`](../product/MODULE_MAP.md), [`../product/IMPLEMENTATION_SEQUENCE.md`](../product/IMPLEMENTATION_SEQUENCE.md), [`DEMO_RELEASE_MASTER_CHECKLIST.md`](DEMO_RELEASE_MASTER_CHECKLIST.md), [`../product/REFERENCE_OPERATIONAL_DOCUMENTATION_COVERAGE.csv`](../product/REFERENCE_OPERATIONAL_DOCUMENTATION_COVERAGE.csv), [`../product/REFERENCE_OPERATIONAL_DOCUMENTATION_DECISIONS.csv`](../product/REFERENCE_OPERATIONAL_DOCUMENTATION_DECISIONS.csv).
+Текущего активного feature PR пока нет. Следующий work item по утверждённой очереди — `UX-THEME-001`; release detail принадлежит [`DEMO_RELEASE_PLAN.yaml`](DEMO_RELEASE_PLAN.yaml).
+
+Навигация: [`../product/MODULE_MAP.md`](../product/MODULE_MAP.md), [`../product/IMPLEMENTATION_SEQUENCE.md`](../product/IMPLEMENTATION_SEQUENCE.md), [`DEMO_RELEASE_MASTER_CHECKLIST.md`](DEMO_RELEASE_MASTER_CHECKLIST.md).

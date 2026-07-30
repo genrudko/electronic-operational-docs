@@ -18,10 +18,10 @@ def _read_with_current_canonical_state(relative: str) -> str:
     if relative == "docs/project/CURRENT_STATE.md":
         core.require(
             text,
-            "accepted main baseline: main / 50d96842e8700540832210990993e64fc2e3636d",
-            "active work item: PROJECT-BASELINE-001 / Stage 2",
+            "accepted main baseline: main / 2a9b92362b90861501cf11d073668478655fd191",
+            "completed work item: PROJECT-BASELINE-001",
+            "plan version: 1.0 / ACCEPTED",
             "preview: UNTOUCHED",
-            "Documentation candidate не меняет accepted application baseline",
         )
         return _legacy_view(text) + (
             "\nDEFECT-001 source-bound equipment defect journal"
@@ -42,7 +42,8 @@ def _read_with_current_canonical_state(relative: str) -> str:
             text,
             "Volatile state: [`CURRENT_STATE.md`](CURRENT_STATE.md)",
             "Release/module state: [`DEMO_RELEASE_PLAN.yaml`](DEMO_RELEASE_PLAN.yaml)",
-            "PR #27 = Draft",
+            "baseline = `1.0` / `ACCEPTED`",
+            "PR #27 = merged",
             "preview = `UNTOUCHED`",
         )
         return _legacy_view(text) + (
