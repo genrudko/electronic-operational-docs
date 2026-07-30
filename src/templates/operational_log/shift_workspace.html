@@ -5,7 +5,7 @@
 {% block body_class %}direction-a-body da-active opj-direction-a opj-workspace-page{% endblock %}
 {% block main_class %}opj-main opj-shift-main{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'operational_log/opj_workspace_controls.css' %}?v=opjux00104">
+<link rel="stylesheet" href="{% static 'operational_log/opj_workspace_controls.css' %}?v=opjux00105">
 {% endblock %}
 
 {% block content %}
@@ -13,20 +13,21 @@
     class="opj-workspace-header shift-book-header da-page-header"
     data-journal-title-size="{{ ui_preferences.journal_title_font_size|lower }}"
 >
-    <div>
-        <div class="eyebrow">ОПЕРАТИВНЫЙ ЖУРНАЛ · РАБОЧАЯ СМЕНА</div>
+    <div class="opj-title-cluster">
+        <span class="eyebrow">ОПЕРАТИВНЫЙ ЖУРНАЛ</span>
         <h1>{{ journal.title }}</h1>
-        {% if shift %}
-        <div class="opj-workspace-meta">
-            <span>{{ shift.planned_start_at|date:"d.m.Y H:i" }} — {{ shift.planned_end_at|date:"d.m.Y H:i" }}</span>
-            <span class="da-status">{{ drafts|length }} записей</span>
-            <span class="da-status is-success shift-autosave-indicator">Автосохранение включено</span>
-        </div>
-        {% endif %}
     </div>
-    <div class="da-actions">
-        <a class="da-button is-secondary is-compact" href="{% url 'operational_log:detail' journal.pk %}">Зарегистрированный журнал</a>
+    {% if shift %}
+    <div class="opj-workspace-meta" aria-label="Параметры текущей смены">
+        <span class="opj-shift-period">{{ shift.planned_start_at|date:"d.m.Y H:i" }} — {{ shift.planned_end_at|date:"d.m.Y H:i" }}</span>
+        <span class="opj-meta-item">{{ drafts|length }} записей</span>
+        <span class="opj-meta-item is-success shift-autosave-indicator">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
+            Автосохранение
+        </span>
     </div>
+    {% endif %}
+    <a class="da-button is-secondary is-compact opj-registered-link" href="{% url 'operational_log:detail' journal.pk %}">Зарегистрированный журнал</a>
 </header>
 
 {% if not shift %}
@@ -55,20 +56,22 @@
 <details class="opj-registered-context da-panel-flat" data-opj-registered-context>
     <summary>
         <span class="opj-registered-context-heading">
-            <span class="da-chip">Только чтение</span>
+            <svg class="opj-context-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5"/></svg>
             <strong>Зарегистрированные записи</strong>
             <span class="opj-registered-context-meta">Загрузка…</span>
         </span>
         <span class="opj-work-boundary" data-opj-work-boundary>
-            <span><strong>Рабочий черновик</strong><small>Автосохранение</small></span>
-            <span class="opj-boundary-chip da-status is-success" aria-label="Автосохранение включено">●</span>
+            <svg class="opj-context-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6zM14 3v5h5M9 12h6M9 16h4"/></svg>
+            <strong>Рабочий черновик</strong>
+            <small>Автосохранение</small>
+            <svg class="opj-autosave-check" viewBox="0 0 24 24" role="img" aria-label="Автосохранение включено"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
         </span>
     </summary>
     <div class="opj-registered-context-body">Загрузка зарегистрированного журнала…</div>
 </details>
 
 <section
-    class="opj-workspace da-panel"
+    class="opj-workspace da-panel screen-journal-theme"
     data-draft-workspace
     data-opj-presentation-mode="single-spread"
     data-autosave-delay="1000"
@@ -77,7 +80,7 @@
     data-shift-start="{{ shift.planned_start_at|date:'Y-m-d\TH:i' }}"
     data-shift-end="{{ shift.planned_end_at|date:'Y-m-d\TH:i' }}"
     data-initial-theme="{{ ui_preferences.theme|lower }}"
-    data-initial-page-width="full"
+    data-initial-page-width="{{ ui_preferences.journal_width|lower }}"
     data-initial-journal-entry-size="{{ ui_preferences.journal_font_size|lower }}"
     data-initial-journal-time-size="{{ ui_preferences.journal_time_font_size|lower }}"
     data-initial-journal-date-size="{{ ui_preferences.journal_date_font_size|lower }}"
@@ -123,6 +126,6 @@
 <script src="{% static 'operational_log/draft_editor.js' %}?v=011364" defer></script>
 <script src="{% static 'operational_log/draft_workspace.js' %}?v=011364" defer></script>
 <script src="{% static 'operational_log/draft_reference_navigation.js' %}?v=011364" defer></script>
-<script src="{% static 'operational_log/opj_workspace_controls.js' %}?v=opjux00104" defer></script>
+<script src="{% static 'operational_log/opj_workspace_controls.js' %}?v=opjux00105" defer></script>
 {% endif %}
 {% endblock %}
