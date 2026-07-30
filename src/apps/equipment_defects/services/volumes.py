@@ -38,7 +38,7 @@ def try_close_volume(volume: EquipmentDefectVolume) -> bool:
     if any(value is None for value in resolved_dates):
         return False
     last_resolved_at = max(value for value in resolved_dates if value is not None)
-    locked.closed_on = _moscow_local_date(last_resolved_at)
+    locked.closed_on = max(locked.started_on, _moscow_local_date(last_resolved_at))
     locked.accepts_new_records = False
     locked.save(update_fields=("accepts_new_records", "closed_on"))
     return True
