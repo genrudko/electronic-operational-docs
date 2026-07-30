@@ -45,13 +45,20 @@ class OpjDirectionAFirstPaintTests(SimpleTestCase):
         extra_head = base.index("{% block extra_head %}{% endblock %}")
         final_layer = base.index("system/direction_a_shell_final.css")
         self.assertLess(extra_head, final_layer)
+        self.assertIn("direction_a_shell_final.css' %}?v=opjux00105", base)
         for marker in (
+            "body.da-active {",
+            "--da-sidebar-width: 272px",
+            "body.da-active .visually-hidden",
+            "clip-path: inset(50%)",
             "body.da-active .da-shell",
             "body.da-active .da-sidebar",
             "body.da-active .da-topbar",
             "body.da-active .da-page",
             "body.da-active .da-page > main",
             "max-width: var(--da-page-max)",
+            "body.da-active .da-user",
+            "-webkit-line-clamp: 2",
             "@media (max-width: 1320px) and (min-width: 981px)",
             "--da-sidebar-width: 232px",
             "@media (max-width: 980px)",
