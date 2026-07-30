@@ -22,7 +22,7 @@
         {% endif %}
     </div>
     <div class="da-actions">
-        <a class="da-button is-secondary" href="{% url 'operational_log:detail' journal.pk %}">Зарегистрированный журнал</a>
+        <a class="da-button is-secondary is-compact" href="{% url 'operational_log:detail' journal.pk %}">Зарегистрированный журнал</a>
     </div>
 </header>
 
@@ -54,24 +54,20 @@
         <span class="opj-registered-context-heading">
             <span class="da-chip">Только чтение</span>
             <strong>Зарегистрированные записи</strong>
+            <span class="opj-registered-context-meta">Загрузка…</span>
         </span>
-        <span class="opj-registered-context-meta">Загрузка…</span>
+        <span class="opj-work-boundary" data-opj-work-boundary>
+            <span><strong>Рабочий черновик</strong><small>Автосохранение</small></span>
+            <span class="opj-boundary-chip da-status is-success" aria-label="Автосохранение включено">●</span>
+        </span>
     </summary>
     <div class="opj-registered-context-body">Загрузка зарегистрированного журнала…</div>
 </details>
 
-<section class="opj-work-boundary da-alert" data-opj-work-boundary>
-    <div>
-        <strong>Рабочий черновик</strong>
-        <p>Записи текущей смены сохраняются автоматически.</p>
-    </div>
-    <span class="opj-boundary-chip da-status is-success">Автосохранение</span>
-</section>
-
 <section
     class="opj-workspace da-panel"
     data-draft-workspace
-    data-opj-presentation-mode="single"
+    data-opj-presentation-mode="single-spread"
     data-autosave-delay="1000"
     data-default-entry-date="{{ shift.planned_start_at|date:'d.m.Y' }}"
     data-default-entry-date-iso="{{ shift.planned_start_at|date:'Y-m-d' }}"
@@ -104,15 +100,15 @@
             <footer class="opj-ledger-footer draft-page-footer"><span data-page-number="left"></span></footer>
         </section>
 
-        <section class="draft-page-shell opj-secondary-page" data-page-shell="right" hidden aria-hidden="true">
-            <div class="draft-table-header">
+        <section class="opj-ledger-surface draft-page-shell opj-secondary-page" data-page-shell="right" hidden aria-hidden="true">
+            <div class="opj-ledger-header draft-table-header">
                 <div>Дата и время записи</div>
                 <div>Содержание записей в течение смены, подписи о приёмке и сдаче смены</div>
                 <div>Визы и замечания административно-технического персонала</div>
             </div>
-            <div class="draft-page-date" data-page-date="right"></div>
-            <div class="draft-page-body" data-page-body="right"></div>
-            <footer class="draft-page-footer"><span data-page-number="right"></span></footer>
+            <div class="opj-ledger-date draft-page-date" data-page-date="right"></div>
+            <div class="opj-ledger-body draft-page-body" data-page-body="right"></div>
+            <footer class="opj-ledger-footer draft-page-footer"><span data-page-number="right"></span></footer>
         </section>
     </div>
 
