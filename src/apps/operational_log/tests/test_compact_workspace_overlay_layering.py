@@ -32,7 +32,7 @@ class CompactWorkspaceOverlayLayeringTests(SimpleTestCase):
         self.assertNotIn("new ResizeObserver", workspace)
         self.assertIn(".opj-workspace-page .opj-toolbar-primary", css)
         self.assertIn("min-height: 40px", css)
-        self.assertIn(".opj-title-cluster", template)
+        self.assertIn('class="opj-title-cluster"', template)
         self.assertIn(".opj-title-cluster", css)
 
     def test_editor_toolbar_starts_compact_with_local_svg_commands(self) -> None:
