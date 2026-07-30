@@ -1,4 +1,30 @@
-<div class="opj-toolbar draft-command-bar screen-only" data-ribbon-mode="expanded">
+{% load static %}
+<svg class="opj-command-symbols" aria-hidden="true" focusable="false">
+    <symbol id="opj-icon-arrow-left" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol>
+    <symbol id="opj-icon-arrow-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+    <symbol id="opj-icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="opj-icon-page" viewBox="0 0 24 24"><path d="M6 3h9l3 3v15H6zM15 3v4h4"/></symbol>
+    <symbol id="opj-icon-spread" viewBox="0 0 24 24"><path d="M3 5.5c3.5-.8 6.5-.3 9 1.5v13c-2.5-1.8-5.5-2.3-9-1.5zM21 5.5c-3.5-.8-6.5-.3-9 1.5v13c2.5-1.8 5.5-2.3 9-1.5z"/></symbol>
+    <symbol id="opj-icon-sliders" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M7 14v6"/></symbol>
+    <symbol id="opj-icon-ribbon" viewBox="0 0 24 24"><path d="M4 6h16v12H4zM4 10h16M9 10v8M15 10v8"/></symbol>
+    <symbol id="opj-icon-bold" viewBox="0 0 24 24"><path d="M8 4h6a4 4 0 0 1 0 8H8zM8 12h7a4 4 0 0 1 0 8H8z"/></symbol>
+    <symbol id="opj-icon-italic" viewBox="0 0 24 24"><path d="M10 4h8M6 20h8M14 4 10 20"/></symbol>
+    <symbol id="opj-icon-underline" viewBox="0 0 24 24"><path d="M7 4v7a5 5 0 0 0 10 0V4M5 21h14"/></symbol>
+    <symbol id="opj-icon-strike" viewBox="0 0 24 24"><path d="M6 8c.6-2.5 2.7-4 6-4 3.1 0 5.2 1.3 6 3.5M5 12h14M7 16.5c1 2.2 2.8 3.5 5.5 3.5 3.2 0 5.5-1.5 5.5-4"/></symbol>
+    <symbol id="opj-icon-eraser" viewBox="0 0 24 24"><path d="m4 15 8-10 8 7-7 8H8zM11 20h9"/></symbol>
+    <symbol id="opj-icon-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+    <symbol id="opj-icon-list-number" viewBox="0 0 24 24"><path d="M10 6h10M10 12h10M10 18h10M4 4h2v4M4 11h2l-2 4h2M4 18h2v3H4"/></symbol>
+    <symbol id="opj-icon-undo" viewBox="0 0 24 24"><path d="M9 8 4 12l5 4M5 12h8a6 6 0 0 1 6 6"/></symbol>
+    <symbol id="opj-icon-redo" viewBox="0 0 24 24"><path d="m15 8 5 4-5 4M19 12h-8a6 6 0 0 0-6 6"/></symbol>
+    <symbol id="opj-icon-tag" viewBox="0 0 24 24"><path d="M4 4h7l9 9-7 7-9-9zM8 8h.01"/></symbol>
+    <symbol id="opj-icon-link" viewBox="0 0 24 24"><path d="m9 15 6-6M7.5 17.5l-1 1a3.5 3.5 0 0 1-5-5l4-4a3.5 3.5 0 0 1 5 0M16.5 6.5l1-1a3.5 3.5 0 0 1 5 5l-4 4a3.5 3.5 0 0 1-5 0"/></symbol>
+    <symbol id="opj-icon-sparkle" viewBox="0 0 24 24"><path d="m12 3 1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></symbol>
+    <symbol id="opj-icon-scan" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5M9 12h6M12 9v6"/></symbol>
+    <symbol id="opj-icon-bolt" viewBox="0 0 24 24"><path d="M13 2 5 14h7l-1 8 8-12h-7z"/></symbol>
+    <symbol id="opj-icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+</svg>
+
+<div class="opj-toolbar draft-command-bar screen-only" data-ribbon-mode="compact">
     <div class="opj-toolbar-primary">
         <div class="opj-toolbar-search draft-command-search">
             <input class="da-field" type="search" placeholder="Поиск по записям…" data-draft-search aria-label="Поиск по записям">
@@ -9,65 +35,87 @@
             </select>
         </div>
 
-        <nav class="opj-page-navigation draft-page-navigation" data-page-navigation aria-label="Навигация по записям">
-            <button type="button" class="da-icon-button" data-page-prev aria-label="Предыдущая страница">←</button>
+        <nav class="opj-page-navigation draft-page-navigation" data-page-navigation aria-label="Навигация по страницам журнала">
+            <button type="button" class="da-icon-button" data-page-prev aria-label="Предыдущая страница">
+                <svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-arrow-left"></use></svg>
+            </button>
             <span class="draft-page-jump">
-                Страница
+                <span class="opj-page-label">Страница</span>
                 <input type="number" min="1" value="1" data-page-input aria-label="Номер страницы">
-                из <strong data-page-total>1</strong>
+                <span>/</span><strong data-page-total>1</strong>
             </span>
             <div class="draft-page-buttons" data-page-buttons aria-label="Номера страниц"></div>
-            <button type="button" class="da-icon-button" data-page-next aria-label="Следующая страница">→</button>
+            <button type="button" class="da-icon-button" data-page-next aria-label="Следующая страница">
+                <svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-arrow-right"></use></svg>
+            </button>
             <span class="draft-page-range" data-page-range>Страница 1 из 1</span>
         </nav>
 
-        <div class="opj-toolbar-actions draft-command-actions da-actions">
+        <div class="opj-toolbar-actions draft-command-actions">
             <form method="post" action="{% url 'operational_log:add_draft' journal.pk %}" data-add-draft-form>
                 {% csrf_token %}
-                <button class="da-button" type="submit">+ Запись</button>
+                <button class="da-button is-compact" type="submit">
+                    <svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-plus"></use></svg>
+                    <span>Запись</span>
+                </button>
             </form>
-            <button class="da-button is-secondary" type="button" data-open-view-drawer>Смена и вид</button>
-            <a class="da-button is-secondary draft-clean-copy-action" href="{% url 'operational_log:detail' journal.pk %}">Зарегистрированный журнал</a>
+            <div class="opj-view-switch" role="group" aria-label="Режим отображения журнала">
+                <button type="button" data-view-mode="single" aria-label="Одна страница" aria-pressed="true">
+                    <svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-page"></use></svg>
+                    <span>Страница</span>
+                </button>
+                <button type="button" data-view-mode="spread" aria-label="Разворот из двух страниц" aria-pressed="false">
+                    <svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-spread"></use></svg>
+                    <span>Разворот</span>
+                </button>
+            </div>
+            <button class="da-button is-secondary is-compact" type="button" data-open-view-drawer>
+                <svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-sliders"></use></svg>
+                <span>Настройки</span>
+            </button>
+            <button class="opj-ribbon-toggle" type="button" data-ribbon-mode-toggle aria-expanded="false" title="Показать или скрыть подписи ленты">
+                <svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-ribbon"></use></svg>
+                <span>Лента</span>
+            </button>
         </div>
     </div>
 
     <div id="draft-editor-ribbon" class="opj-editor-toolbar draft-editor-ribbon" data-editor-ribbon role="toolbar" aria-label="Редактор записи">
         <div class="opj-editor-toolbar-context draft-editor-ribbon-context">
-            <span>РЕДАКТОР ЗАПИСИ</span>
-            <strong data-editor-ribbon-status>Щёлкните по тексту записи</strong>
-            <small>Ctrl+Enter — сохранить и завершить · Esc — выйти</small>
+            <span>РЕДАКТОР</span>
+            <strong data-editor-ribbon-status>Выберите запись</strong>
+            <small>Ctrl+Enter — завершить · Esc — выйти</small>
         </div>
 
         <div class="opj-editor-tools draft-editor-ribbon-groups">
             <section class="opj-tool-group draft-editor-ribbon-group" aria-label="Шрифт">
                 <div class="draft-editor-ribbon-buttons">
-                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="bold" title="Полужирный (Ctrl+B)" aria-label="Полужирный" aria-pressed="false" disabled><strong>Ж</strong></button>
-                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="italic" title="Курсив (Ctrl+I)" aria-label="Курсив" aria-pressed="false" disabled><i>К</i></button>
-                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="underline" title="Подчёркивание (Ctrl+U)" aria-label="Подчёркивание" aria-pressed="false" disabled><u>Ч</u></button>
-                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="strike" title="Зачёркивание" aria-label="Зачёркивание" aria-pressed="false" disabled><s>abc</s></button>
-                    <button type="button" class="draft-editor-ribbon-button is-text-red" data-editor-command="text_red" title="Красный текст" aria-label="Красный текст" aria-pressed="false" disabled>А</button>
-                    <button type="button" class="draft-editor-ribbon-button is-text-blue" data-editor-command="text_blue" title="Синий текст" aria-label="Синий текст" aria-pressed="false" disabled>А</button>
-                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="clear" title="Очистить форматирование (Ctrl+\)" aria-label="Очистить форматирование" disabled>Tx</button>
+                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="bold" title="Полужирный (Ctrl+B)" aria-label="Полужирный" aria-pressed="false" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-bold"></use></svg></button>
+                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="italic" title="Курсив (Ctrl+I)" aria-label="Курсив" aria-pressed="false" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-italic"></use></svg></button>
+                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="underline" title="Подчёркивание (Ctrl+U)" aria-label="Подчёркивание" aria-pressed="false" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-underline"></use></svg></button>
+                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="strike" title="Зачёркивание" aria-label="Зачёркивание" aria-pressed="false" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-strike"></use></svg></button>
+                    <button type="button" class="draft-editor-ribbon-button is-text-red" data-editor-command="text_red" title="Красный текст" aria-label="Красный текст" aria-pressed="false" disabled><span class="opj-text-colour-icon">А</span></button>
+                    <button type="button" class="draft-editor-ribbon-button is-text-blue" data-editor-command="text_blue" title="Синий текст" aria-label="Синий текст" aria-pressed="false" disabled><span class="opj-text-colour-icon">А</span></button>
+                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="clear" title="Очистить форматирование (Ctrl+\)" aria-label="Очистить форматирование" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-eraser"></use></svg></button>
                 </div>
                 <small>Текст</small>
             </section>
 
             <section class="opj-tool-group draft-editor-ribbon-group" aria-label="Абзац и история">
                 <div class="draft-editor-ribbon-buttons">
-                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="bullet_list" title="Маркированный список" aria-label="Маркированный список" aria-pressed="false" disabled>•≡</button>
-                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="ordered_list" title="Нумерованный список" aria-label="Нумерованный список" aria-pressed="false" disabled>1≡</button>
-                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="undo" title="Отменить (Ctrl+Z)" aria-label="Отменить" disabled>↶</button>
-                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="redo" title="Повторить (Ctrl+Y)" aria-label="Повторить" disabled>↷</button>
+                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="bullet_list" title="Маркированный список" aria-label="Маркированный список" aria-pressed="false" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-list"></use></svg></button>
+                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="ordered_list" title="Нумерованный список" aria-label="Нумерованный список" aria-pressed="false" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-list-number"></use></svg></button>
+                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="undo" title="Отменить (Ctrl+Z)" aria-label="Отменить" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-undo"></use></svg></button>
+                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="redo" title="Повторить (Ctrl+Y)" aria-label="Повторить" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-redo"></use></svg></button>
                 </div>
-                <small>Абзац и история</small>
+                <small>Абзац</small>
             </section>
 
             <section class="opj-tool-group draft-editor-ribbon-group" aria-label="Тип записи">
                 <div class="draft-editor-ribbon-buttons">
                     <button type="button" class="draft-editor-ribbon-button draft-entry-kind-trigger" data-entry-kind-trigger aria-haspopup="menu" aria-expanded="false" disabled>
-                        <span aria-hidden="true">◈</span>
+                        <svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-tag"></use></svg>
                         <span data-entry-kind-current>Тип записи</span>
-                        <span aria-hidden="true">⌄</span>
                     </button>
                 </div>
                 <small>Тип записи</small>
@@ -75,23 +123,25 @@
 
             <section class="opj-tool-group draft-editor-ribbon-group" aria-label="Связанные объекты">
                 <div class="draft-editor-ribbon-buttons">
-                    <button type="button" class="draft-editor-ribbon-button" data-reference-trigger title="Связать текст с объектом (Ctrl+Shift+M)" aria-label="Вставить связанную ссылку" aria-haspopup="dialog" aria-expanded="false" disabled>↗</button>
-                    <button type="button" class="draft-editor-ribbon-button draft-auto-reference-toggle" data-auto-reference-toggle title="Автоматически находить однозначные связи" aria-label="Автоматическое определение связей" aria-pressed="true">✦</button>
-                    <button type="button" class="draft-editor-ribbon-button" data-auto-reference-scan title="Найти связи в текущей записи" aria-label="Найти связи в текущей записи" disabled>⌕</button>
+                    <button type="button" class="draft-editor-ribbon-button" data-reference-trigger title="Связать текст с объектом (Ctrl+Shift+M)" aria-label="Вставить связанную ссылку" aria-haspopup="dialog" aria-expanded="false" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-link"></use></svg></button>
+                    <button type="button" class="draft-editor-ribbon-button draft-auto-reference-toggle" data-auto-reference-toggle title="Автоматически находить однозначные связи" aria-label="Автоматическое определение связей" aria-pressed="true"><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-sparkle"></use></svg></button>
+                    <button type="button" class="draft-editor-ribbon-button" data-auto-reference-scan title="Найти связи в текущей записи" aria-label="Найти связи в текущей записи" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-scan"></use></svg></button>
                 </div>
-                <small data-auto-reference-label>Связь · авто включено</small>
+                <small data-auto-reference-label>Связи · авто</small>
             </section>
 
             <section class="opj-tool-group draft-editor-ribbon-group" aria-label="Нормативные отметки">
                 <div class="draft-editor-ribbon-buttons">
-                    <button type="button" class="draft-editor-ribbon-button draft-normative-trigger" data-normative-trigger title="Нормативные отметки ПЗ, ЗН и аварий" aria-label="Открыть нормативные отметки" aria-haspopup="menu" aria-expanded="false" disabled>ϟ</button>
+                    <button type="button" class="draft-editor-ribbon-button draft-normative-trigger" data-normative-trigger title="Нормативные отметки ПЗ, ЗН и аварий" aria-label="Открыть нормативные отметки" aria-haspopup="menu" aria-expanded="false" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-bolt"></use></svg></button>
                 </div>
                 <small>Отметки</small>
             </section>
 
             <section class="opj-tool-group draft-editor-ribbon-group" aria-label="Ввод времени">
                 <div class="draft-editor-ribbon-buttons">
-                    <button type="button" class="draft-editor-ribbon-button draft-simplified-time-toggle" data-simplified-time-toggle title="Вводить 1120 вместо 11:20" aria-label="Упрощённый ввод времени" aria-pressed="{% if ui_preferences.journal_simplified_time_input %}true{% else %}false{% endif %}">12:34</button>
+                    <button type="button" class="draft-editor-ribbon-button draft-simplified-time-toggle" data-simplified-time-toggle title="Вводить 1120 вместо 11:20" aria-label="Упрощённый ввод времени" aria-pressed="{% if ui_preferences.journal_simplified_time_input %}true{% else %}false{% endif %}">
+                        <svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-clock"></use></svg><span class="opj-time-mode-label">1234</span>
+                    </button>
                 </div>
                 <small data-simplified-time-label>Время · {% if ui_preferences.journal_simplified_time_input %}упрощённо{% else %}обычно{% endif %}</small>
             </section>
