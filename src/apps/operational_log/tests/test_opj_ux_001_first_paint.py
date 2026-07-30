@@ -66,7 +66,7 @@ class OpjDirectionAFirstPaintTests(SimpleTestCase):
         extra_head = base.index("{% block extra_head %}{% endblock %}")
         final_layer = base.index("system/direction_a_shell_final.css")
         self.assertLess(extra_head, final_layer)
-        self.assertIn("direction_a_shell_final.css' %}?v=opjux00109", base)
+        self.assertIn("direction_a_shell_final.css' %}?v=opjux00110", base)
         for marker in (
             "html:has(body.da-active)",
             "scrollbar-gutter: stable",
@@ -112,6 +112,9 @@ class OpjDirectionAFirstPaintTests(SimpleTestCase):
             ".da-user-avatar",
             ".da-button.is-secondary",
             ".opj-meta-item.is-success",
+            ".opj-editor-container",
+            'data-view-mode="spread"',
+            "rgba(0, 0, 0, 0.34)",
         ):
             self.assertIn(marker, shell_css)
 
