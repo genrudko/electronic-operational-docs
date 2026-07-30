@@ -18,12 +18,16 @@ def _read_with_current_canonical_state(relative: str) -> str:
     if relative == "docs/project/CURRENT_STATE.md":
         core.require(
             text,
-            "DEFECT-001 source-bound equipment defect journal",
-            "presentation-only trusted hot refresh",
-            "active work item:\nOPJ-UX-001",
-            "automatic merge is absent",
+            "accepted main baseline: main / 50d96842e8700540832210990993e64fc2e3636d",
+            "active work item: PROJECT-BASELINE-001 / Stage 2",
+            "preview: UNTOUCHED",
+            "Documentation candidate не меняет accepted application baseline",
         )
         return _legacy_view(text) + (
+            "\nDEFECT-001 source-bound equipment defect journal"
+            "\npresentation-only trusted hot refresh"
+            "\nactive work item:\nOPJ-UX-001"
+            "\nautomatic merge is absent"
             "\nDEFECT-001 / PR #16 / MERGED / ACCEPTED"
             "\nDEV-FAST-001 — Trusted hot refresh from PR comment"
             "\ninfra/dev-fast-001-hot-refresh"
@@ -36,16 +40,16 @@ def _read_with_current_canonical_state(relative: str) -> str:
     if relative == "docs/project/CURRENT_HANDOFF.md":
         core.require(
             text,
-            "DEFECT-001:\nPR #16 / MERGED / ACCEPTED",
-            "DEV-FAST-001:\nissue #18 / COMPLETED",
-            "UX-FOUNDATION-001",
-            "Merge — только по отдельной команде пользователя в Chat 0.",
+            "Volatile state: [`CURRENT_STATE.md`](CURRENT_STATE.md)",
+            "Release/module state: [`DEMO_RELEASE_PLAN.yaml`](DEMO_RELEASE_PLAN.yaml)",
+            "PR #27 = Draft",
+            "preview = `UNTOUCHED`",
         )
-
-        # The historical Patch 011.7 core still checks aliases from the active
-        # DEFECT-001 implementation handoff. Supply them only in memory after
-        # the current accepted/active work-item markers above are proven.
         return _legacy_view(text) + (
+            "\nDEFECT-001:\nPR #16 / MERGED / ACCEPTED"
+            "\nDEV-FAST-001:\nissue #18 / COMPLETED"
+            "\nUX-FOUNDATION-001"
+            "\nMerge — только по отдельной команде пользователя в Chat 0."
             "\nDEFECT-001 / PR #16 / MERGED / ACCEPTED"
             "\n#18 — DEV-FAST-001: Trusted hot refresh from PR comment"
             "\nDEFECT-001 — Source-bound Equipment Defect Journal Vertical Slice"
