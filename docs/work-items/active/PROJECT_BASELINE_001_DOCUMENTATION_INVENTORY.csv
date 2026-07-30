@@ -1,0 +1,137 @@
+path,classification,finding,proposed_action
+docs/FINAL_DEVELOPMENT_PLAN.md,SUPERSEDED-CANDIDATE,Legacy plan competes with ROADMAP/MASTER_PLAN,ARCHIVE-CANDIDATE
+docs/GIT_WORKFLOW.md,SUPERSEDED-CANDIDATE,Root-level duplicate competes with docs/process canonical document,ARCHIVE-CANDIDATE; do not delete before link audit
+docs/INDEX.md,CANONICAL,,KEEP
+docs/PROJECT_OPERATING_SYSTEM.md,SUPERSEDED-CANDIDATE,Root-level duplicate competes with docs/process canonical document,ARCHIVE-CANDIDATE; do not delete before link audit
+docs/acceptance/DEMONSTRATION_SCENARIOS.md,CANONICAL,,KEEP
+docs/acceptance/INTERNAL_PROTOTYPE_ACCEPTANCE.md,CANONICAL,,KEEP
+docs/acceptance/KNOWN_LIMITATIONS.md,CANONICAL,,KEEP
+docs/acceptance/REGRESSION_CHECKLIST.md,CANONICAL,,KEEP
+docs/adr/ADR-001-local-sqlite-profile.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-002-personal-accounts-and-organizational-scope.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-003-document-core-registration-and-immutability.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-004-system-signature-and-integrity.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-005-normative-registry-and-configuration-revisions.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-006-1-scalable-equipment-selector.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-006-2-repository-history-sanitization.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-006-equipment-registry-and-dispatcher-names.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-007-2-presentation-ux-and-demo-profile.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-007-3-theme-terminology-and-presentation-profile.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-007-4-organizational-structure-and-runtime-profile.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-007-management-and-supervision-registry.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-008-1-import-staging-preview.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-008-2-import-mapping-review.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-008-3-controlled-import-publication.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-008-4-typed-xlsx-cells.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-009-1-workplace-document-registry.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-010-1-1-approved-journal-form-contract.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-010-1-operational-log-core.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-010-2-journal-presentation-preferences.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-010-3-1-paged-draft-ux.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-010-3-1-repair2-book-layout.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-010-3-1-repair3-large-book.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-010-3-1-repair4-stable-input-lines.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-010-3-1-repair5-layout-stabilization.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-010-3-1-repair6-record-pagination.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-010-3-1-repair7-1-date-dark-theme.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-010-3-1-repair7-2-repair1-dark-date-editor.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-010-3-1-repair7-3-quick-view-chronology.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-010-3-1-repair7-inline-creation.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-010-3-operational-shift-draft.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-1-journal-typography.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-2-controlled-journal-editor.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-2-repair1-word-like-editor-ui.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-3-1-entry-completion-undo-ux.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-3-2-inline-undo-intelligent-references.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-3-3-context-aware-entity-resolver.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-3-4-repair2-stable-entry-creation.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-3-4-repair3-stable-finish-emergency.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-3-4-repair4-atomic-viewport-restore.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-3-4-rich-previews-normative-marks.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-3-5-compact-workspace-overlay-layering.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-3-6-stable-caret-keyboard-editable-references.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-3-semantic-journal-elements.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-4-data-profiles-import-foundation.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-5-power-system-asset-importer.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-6-1-personnel-operational-authority-importer.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-6-1a-normalized-personnel-csv-package.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-6-2-workplace-document-register-importer.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-011-7-operational-documentation-core.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-AUTO-001A-TRUSTED-CONTROLLER-BOOTSTRAP.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-INFRA-001-github-actions-ci.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-INFRA-002-container-preview.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/adr/ADR-INFRA-003-isolated-vps-development.md,CANONICAL,"Historical baseline references are provenance, not current-head markers",KEEP IMMUTABLE/HISTORICAL
+docs/automation/AUTOMATION_MASTER_PLAN.md,CANONICAL,,KEEP
+docs/automation/AUTO_000_IMPLEMENTATION_HANDOFF.md,CANONICAL,,KEEP
+docs/automation/AUTO_000_REVIEW_CHECKLIST.md,CANONICAL,,KEEP
+docs/automation/AUTO_000_SCOPE.md,CANONICAL,,KEEP
+docs/automation/AUTO_001A_TRUSTED_CONTROLLER_FOUNDATION.md,CANONICAL,,KEEP
+docs/automation/AUTO_001_ACCEPTANCE_CONTRACT.md,CANONICAL,,KEEP
+docs/automation/AUTO_001_DECISION_REGISTER.md,CANONICAL,,KEEP
+docs/automation/AUTO_001_GITHUB_VPS_ORCHESTRATOR.md,CANONICAL,,KEEP
+docs/automation/AUTO_001_IMPLEMENTATION_ROADMAP.md,CANONICAL,,KEEP
+docs/automation/AUTO_001_SECURITY_MODEL.md,CANONICAL,,KEEP
+docs/automation/README.md,CANONICAL,,KEEP
+docs/domain/technical-english-glossary.md,CANONICAL,,KEEP
+docs/process/BRANCH_AND_PR_POLICY.md,CANONICAL,,KEEP
+docs/process/CI_AND_QUALITY_GATES.md,CANONICAL,,KEEP
+docs/process/DEFINITION_OF_DONE.md,CANONICAL,,KEEP
+docs/process/DEVELOPMENT_ACCELERATION.md,CANONICAL,,KEEP
+docs/process/DEVELOPMENT_WORKFLOW.md,CANONICAL,,KEEP
+docs/process/DOCUMENTATION_MAINTENANCE.md,CANONICAL,,KEEP
+docs/process/GIT_WORKFLOW.md,CANONICAL,,KEEP
+docs/process/PARALLEL_CHAT_WORKFLOW.md,CANONICAL,,KEEP
+docs/process/PROJECT_OPERATING_SYSTEM.md,CANONICAL,,KEEP
+docs/process/RELEASE_PROCESS.md,CANONICAL,,KEEP
+docs/project/ACCEPTANCE_HISTORY.md,CANONICAL,,KEEP
+docs/project/BASELINE_HISTORY.md,CANONICAL,"Historical by design, but current-main summary at lines 22-28 is stale",Preserve history; move volatile summary ownership
+docs/project/CURRENT_HANDOFF.md,CURRENT-DYNAMIC,Contains active status/SHA; snapshot is OPJ-UX-001 and predates PROJECT-BASELINE-001,STAGE-2 reconcile single active-state owner
+docs/project/CURRENT_STATE.md,CURRENT-DYNAMIC,Contains active status/SHA; snapshot is OPJ-UX-001 and predates PROJECT-BASELINE-001,STAGE-2 reconcile single active-state owner
+docs/project/DATA_AND_PRIVACY_POLICY.md,CANONICAL,,KEEP
+docs/project/DECISION_LOG.md,CANONICAL,,KEEP
+docs/project/DEFECT_001_IMPLEMENTATION.md,HISTORICAL,,KEEP
+docs/project/DOMAIN_INVARIANTS.md,CANONICAL,,KEEP
+docs/project/MASTER_PLAN.md,HISTORICAL,,KEEP
+docs/project/MODULE_MAP.md,CURRENT-DYNAMIC,Preliminary module status conflicts with newer code/tests and source-input scope,STAGE-2 replace after decisions
+docs/project/NEW_CHAT_STARTER.md,HISTORICAL,,KEEP
+docs/project/OPEN_ITEMS.md,CURRENT-DYNAMIC,Contains active status/SHA; snapshot is OPJ-UX-001 and predates PROJECT-BASELINE-001,STAGE-2 reconcile single active-state owner
+docs/project/OPJ_UX_001_NEW_CHAT_STARTER.md,HISTORICAL,,KEEP
+docs/project/PATCH_HISTORY.md,CANONICAL,,KEEP
+docs/project/PRODUCT_UX_PRINCIPLES.md,CANONICAL,,KEEP
+docs/project/ROADMAP.md,CURRENT-DYNAMIC,Contains active status/SHA; snapshot is OPJ-UX-001 and predates PROJECT-BASELINE-001,STAGE-2 reconcile single active-state owner
+docs/project/SCOPE_AND_BOUNDARIES.md,CANONICAL,,KEEP
+docs/project/SYSTEM_ARCHITECTURE.md,CANONICAL,,KEEP
+docs/project/UX_001_UI_DESIGN_SYSTEM_CHAT_BRIEF.md,HISTORICAL,,KEEP
+docs/project/UX_FOUNDATION_001_NEW_CHAT_STARTER.md,HISTORICAL,,KEEP
+docs/releases/RELEASE_NOTES.md,CANONICAL,,KEEP
+docs/research/SPECIALIZED_WORKFLOW_BENCHMARK_20260729_v1_2.md,EVIDENCE,,KEEP
+docs/research/SPECIALIZED_WORKFLOW_CHANGELOG_v1_1_to_v1_2.md,EVIDENCE,,KEEP
+docs/research/SPECIALIZED_WORKFLOW_NORMATIVE_EVIDENCE_20260729_v1_2.csv,EVIDENCE,,KEEP
+docs/research/SPECIALIZED_WORKFLOW_PRODUCT_EVIDENCE_20260729_v1_2.csv,EVIDENCE,,KEEP
+docs/research/VERTICAL_PRODUCTS_DECISION_MATRIX_20260729.csv,EVIDENCE,,KEEP
+docs/research/VERTICAL_PRODUCTS_RESEARCH_20260729.md,EVIDENCE,,KEEP
+docs/research/VERTICAL_PRODUCTS_SOURCE_CATALOG_20260729.csv,EVIDENCE,,KEEP
+docs/runbooks/BRANCH_SWITCHING.md,CANONICAL,,KEEP
+docs/runbooks/DATABASE_BACKUP_AND_RESTORE.md,CANONICAL,,KEEP
+docs/runbooks/DEVELOPMENT_AUTOMATION_TRUST_BOOTSTRAP.md,CANONICAL,,KEEP
+docs/runbooks/DEVELOPMENT_RUNBOOK.md,CANONICAL,,KEEP
+docs/runbooks/INCIDENT_AND_ROLLBACK.md,CANONICAL,,KEEP
+docs/runbooks/POST_MERGE_DEPLOYMENT.md,CANONICAL,,KEEP
+docs/runbooks/PRESENTATION_DATA_RESET.md,CANONICAL,,KEEP
+docs/runbooks/PREVIEW_RUNBOOK.md,CANONICAL,,KEEP
+docs/runbooks/SSH_TUNNEL_ACCESS.md,CANONICAL,,KEEP
+docs/ux/README.md,EVIDENCE,"Accepted UX evidence pins historical baseline e18872f; valid evidence, not current state",KEEP AS VERSIONED EVIDENCE
+docs/ux/UX-001_v0.3/COMPONENT_CONTRACT.md,EVIDENCE,"Accepted UX evidence pins historical baseline e18872f; valid evidence, not current state",KEEP AS VERSIONED EVIDENCE
+docs/ux/UX-001_v0.3/DESIGN_TOKENS.md,EVIDENCE,"Accepted UX evidence pins historical baseline e18872f; valid evidence, not current state",KEEP AS VERSIONED EVIDENCE
+docs/ux/UX-001_v0.3/INTERACTION_CONTRACT.md,EVIDENCE,"Accepted UX evidence pins historical baseline e18872f; valid evidence, not current state",KEEP AS VERSIONED EVIDENCE
+docs/ux/UX-001_v0.3/PAGE_ARCHETYPES.md,EVIDENCE,"Accepted UX evidence pins historical baseline e18872f; valid evidence, not current state",KEEP AS VERSIONED EVIDENCE
+docs/ux/UX-001_v0.3/REFERENCE_SCREENS.md,EVIDENCE,"Accepted UX evidence pins historical baseline e18872f; valid evidence, not current state",KEEP AS VERSIONED EVIDENCE
+docs/ux/UX-001_v0.3/UI_AUDIT.md,EVIDENCE,"Accepted UX evidence pins historical baseline e18872f; valid evidence, not current state",KEEP AS VERSIONED EVIDENCE
+docs/ux/UX-001_v0.3/UI_PRINCIPLES.md,EVIDENCE,"Accepted UX evidence pins historical baseline e18872f; valid evidence, not current state",KEEP AS VERSIONED EVIDENCE
+docs/ux/UX-001_v0.3/UX_001_INDEX.md,EVIDENCE,"Accepted UX evidence pins historical baseline e18872f; valid evidence, not current state",KEEP AS VERSIONED EVIDENCE
+docs/ux/UX-001_v0.3/UX_IMPLEMENTATION_ROADMAP.md,EVIDENCE,"Accepted UX evidence pins historical baseline e18872f; valid evidence, not current state",KEEP AS VERSIONED EVIDENCE
+docs/ux/UX-001_v0.3/VIDEO_EVIDENCE_AUDIT.md,EVIDENCE,"Accepted UX evidence pins historical baseline e18872f; valid evidence, not current state",KEEP AS VERSIONED EVIDENCE
+docs/ux/UX-001_v0.3/VISUAL_DIRECTION.md,EVIDENCE,"Accepted UX evidence pins historical baseline e18872f; valid evidence, not current state",KEEP AS VERSIONED EVIDENCE
+docs/ux/UX-001_v0.3/manifest.json,EVIDENCE,"Accepted UX evidence pins historical baseline e18872f; valid evidence, not current state",KEEP AS VERSIONED EVIDENCE
+docs/work-items/active/PROJECT_BASELINE_001_CODEX_AUDIT_PROMPT.md,WORK-ITEM,,KEEP
+docs/work-items/active/PROJECT_BASELINE_001_SOURCE_INPUT.md,WORK-ITEM,,KEEP

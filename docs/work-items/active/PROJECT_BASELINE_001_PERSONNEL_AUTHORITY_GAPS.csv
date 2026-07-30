@@ -1,0 +1,13 @@
+area,repository_evidence,evidence_status,coverage,gap
+organizations,Organization/Division models,FACT,IMPLEMENTED-PARTIAL,hierarchy exists; external organization semantics limited
+positions_personnel,Position/Employee,FACT,IMPLEMENTED-PARTIAL,employment/history snapshots not shown
+shifts,OperationalShift/Member,FACT,IMPLEMENTED-PARTIAL,handover and eligibility enforcement missing
+qualifications_groups,EmployeeQualification,FACT,FOUNDATION-ONLY,qualification types/verification-at-action contract
+domain_rights,OperationalRightDefinition/EmployeeOperationalRight,FACT,FOUNDATION-ONLY,not application Role; action checks not proven
+validity_scope,valid_from/valid_until and scope fields in authority models,FACT,FOUNDATION-ONLY,consistent scope evaluator required
+contractors_visitors,Personnel importer distinguishes source rows; no dedicated lifecycle proof,VERIFY,VERIFY,contractor/seconded identity and authority contract
+action_time_check,no shared action-time authority service found,FACT,ABSENT,"must evaluate right, scope, validity and substitutions"
+historical_snapshot,document/person/equipment snapshots exist selectively; authority snapshot absent,FACT,ABSENT,immutable authority evidence at event time
+pep_link,DocumentSignature and AuthenticationEvent exist,FACT,FOUNDATION-ONLY,bind domain authority + identity + reauth + event
+audit_link,multiple module audit events,FACT,IMPLEMENTED-PARTIAL,unified evidence semantics/correlation absent
+application_role_separation,Role/RoleAssignment coexist with OperationalRightDefinition,FACT,FOUNDATION-ONLY,enforce explicit separation in services/UI/tests

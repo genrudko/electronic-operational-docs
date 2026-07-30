@@ -1,0 +1,20 @@
+reference_id,source_class,normalized_class,functional_contour,candidate_module,source_locator,normative_status,current_code_coverage,proposed_demo_depth,gap_open_decision
+REF-001,Оперативный журнал,оперативный журнал,оперативное ведение,OPJ,SOURCE_INPUT §5,USER-ACCEPTED-DOMAIN-DECISION,IMPLEMENTED-PARTIAL,FULL candidate,registration/handover contracts missing
+REF-002,Журнал дефектов,журнал дефектов оборудования,дефекты,DEFECT,SOURCE_INPUT §5,USER-ACCEPTED-DOMAIN-DECISION,IMPLEMENTED-ACCEPTED,FULL,classifiers/future depth
+REF-003,Наряд-допуск,наряд-допуск,безопасность работ,PERMIT,SOURCE_INPUT §4,USER-ACCEPTED-DOMAIN-DECISION,ABSENT,HYBRID,approved form/lifecycle/roles required
+REF-004,Журнал работ по нарядам,учёт работ по нарядам,работы,WORK-REGISTER,SOURCE_INPUT §4,USER-ACCEPTED-DOMAIN-DECISION,ABSENT,FULL electronic,approved form required
+REF-005,Журнал распоряжений,журнал распоряжений,распоряжения,DISPOSITIONS,SOURCE_INPUT §4,USER-ACCEPTED-DOMAIN-DECISION,ABSENT,PAPER + MIRROR,mirror evidence contract
+REF-006,Журнал работ по распоряжениям,учёт работ по распоряжениям,работы,WORK-REGISTER,SOURCE_INPUT §4,USER-ACCEPTED-DOMAIN-DECISION,ABSENT,PAPER + MIRROR,derived vs mirror boundary
+REF-007,Работы текущей эксплуатации,график/перечень/факт выполнения,работы,CURRENT-MAINTENANCE,SOURCE_INPUT §5,USER-ACCEPTED-DOMAIN-DECISION,ABSENT,BOUNDED,three-part contract required
+REF-008,Заземления,инвентарь и установка/снятие заземлений,оперативные операции,GROUNDING,SOURCE_INPUT §5,USER-ACCEPTED-DOMAIN-DECISION,ABSENT,FULL candidate,identity/location/handover rules
+REF-009,Схемы,утверждённые и оперативные схемы,документация рабочего места,SCHEMES,SOURCE_INPUT §5,USER-ACCEPTED-DOMAIN-DECISION,FOUNDATION-ONLY,BOUNDED,scheme-specific registry/version/view/print absent
+REF-010,Осмотры/обходы,осмотр и маршрутный обход,осмотры,ROUNDS,SOURCE_INPUT open decisions,VERIFY,ABSENT,VERIFY,route/checklist/mobile boundary
+REF-011,РЗА/ТМ,журнал РЗА/ТМ,специализированные журналы,RZA-TM,SOURCE_INPUT open decisions; D-13,VERIFY,ABSENT,VERIFY,forms/roles/lifecycle unknown
+REF-012,Ввод оборудования,журнал ввода оборудования в работу,оборудование,COMMISSIONING,SOURCE_INPUT open decisions,VERIFY,ABSENT,VERIFY,source form/basis/checks/roles
+REF-013,Токи КЗ,учёт токов КЗ выключателей,оборудование,BREAKER-FAULT-CURRENT,SOURCE_INPUT open decisions,VERIFY,ABSENT,VERIFY,requisites/resource/source
+REF-014,Аккумуляторная батарея,журнал осмотра аккумуляторной батареи,осмотры,BATTERY-INSPECTION,SOURCE_INPUT open decisions,VERIFY,ABSENT,VERIFY,approved form/limits/defect relation
+REF-015,Заявки,оперативная заявка,заявки,APPLICATIONS,ROADMAP PRODUCT-D2; task process list,INFERENCE,ABSENT,BOUNDED candidate,approved lifecycle and form
+REF-016,Переключения,БП/ТБП/программа переключений,переключения,SWITCHING-DOCUMENTS,SOURCE_INPUT §5; D-06,USER-ACCEPTED-DOMAIN-DECISION,ABSENT,POST-DEMO specialized,manual contour depth decision remains
+REF-017,Ключи,журнал выдачи/возврата ключей,учёт ключей,KEYS,SOURCE_INPUT §5; D-10,USER-ACCEPTED-DOMAIN-DECISION,ABSENT,POST-DEMO,paper-first current boundary
+REF-018,Документация рабочего места,перечни/инструкции/программы/графики,документация рабочего места,WORKPLACE-DOCS,SOURCE_INPUT §2-3,FACT,IMPLEMENTED-PARTIAL,REFERENCE-ONLY/BOUNDED,exact source row import absent
+REF-019,Передача смены,рапорт передачи смены,смена,SHIFT-HANDOVER,D-07; task process list,USER-ACCEPTED-DOMAIN-DECISION,FOUNDATION-ONLY,FULL candidate,report/participants/evidence/result missing
