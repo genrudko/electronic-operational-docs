@@ -6,6 +6,10 @@
  * presentation layers are being retired.
  */
 
+html:has(body.da-active) {
+    scrollbar-gutter: stable;
+}
+
 body.da-active {
     --da-sidebar-width: 272px;
 }
