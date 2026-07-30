@@ -29,26 +29,6 @@
         return /^\/operations\/journal\/\d+\/$/.test(path) ? path : null;
     }
 
-    function forceSinglePagePresentation() {
-        const workspace = main.querySelector(
-            '[data-draft-workspace][data-opj-presentation-mode="single"]',
-        );
-        if (!workspace) {
-            return;
-        }
-        try {
-            window.localStorage.setItem("eod-draft-view-mode", "single");
-        } catch (_error) {
-            // The rewritten workspace remains single-page through its server markup.
-        }
-        workspace.dataset.viewMode = "single";
-        const secondaryPage = workspace.querySelector('[data-page-shell="right"]');
-        if (secondaryPage) {
-            secondaryPage.hidden = true;
-            secondaryPage.setAttribute("aria-hidden", "true");
-        }
-    }
-
     function sanitizeRegisteredTable(table) {
         const clone = table.cloneNode(true);
         clone.querySelectorAll("[id]").forEach((node) => node.removeAttribute("id"));
@@ -313,7 +293,6 @@
         );
     }
 
-    forceSinglePagePresentation();
     adoptSharedPrimitives();
     void loadRegisteredContext();
     enhanceEquipmentHierarchy();
