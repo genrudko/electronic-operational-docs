@@ -137,10 +137,10 @@
                 <small>Отметки</small>
             </section>
 
-            <section class="opj-tool-group draft-editor-ribbon-group" aria-label="Ввод времени">
+            <section class="opj-tool-group draft-editor-ribbon-group opj-time-format-group" aria-label="Быстрый ввод времени">
                 <div class="draft-editor-ribbon-buttons">
-                    <button type="button" class="draft-editor-ribbon-button draft-simplified-time-toggle" data-simplified-time-toggle title="Вводить 1120 вместо 11:20" aria-label="Упрощённый ввод времени" aria-pressed="{% if ui_preferences.journal_simplified_time_input %}true{% else %}false{% endif %}">
-                        <svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-clock"></use></svg><span class="opj-time-mode-label">1234</span>
+                    <button type="button" class="draft-editor-ribbon-button draft-simplified-time-toggle opj-time-format-toggle" data-simplified-time-toggle title="Разрешить ввод 1234 как 12:34" aria-label="Быстрый ввод времени 1234 как 12:34" aria-pressed="{% if ui_preferences.journal_simplified_time_input %}true{% else %}false{% endif %}">
+                        <span class="opj-time-format-example" aria-hidden="true"><b>1234</b><i>→</i><b>12:34</b></span>
                     </button>
                 </div>
                 <small data-simplified-time-label>Время · {% if ui_preferences.journal_simplified_time_input %}упрощённо{% else %}обычно{% endif %}</small>
