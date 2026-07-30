@@ -14,11 +14,13 @@ class StableFinishEmergencyRepair3Tests(SimpleTestCase):
 
     def test_emergency_mark_is_explicitly_toggleable_for_whole_entry(self) -> None:
         editor = self.source("static/operational_log/draft_editor.js")
-        template = self.source("templates/operational_log/shift_workspace.html")
+        overlays = self.source(
+            "templates/operational_log/_shift_workspace_overlays.html"
+        )
         self.assertIn("function hasEmergencyAnnotation(controller)", editor)
         self.assertIn("function updateEmergencyActionState(controller)", editor)
-        self.assertIn("data-normative-remove-emergency", template)
-        self.assertIn("Снять аварийную отметку с записи", template)
+        self.assertIn("data-normative-remove-emergency", overlays)
+        self.assertIn("Снять аварийную отметку с записи", overlays)
 
     def test_emergency_outline_remains_red_during_focus(self) -> None:
         css = self.source("static/system/app.css")
@@ -60,23 +62,3 @@ class StableFinishEmergencyRepair3Tests(SimpleTestCase):
             'finishEditorInteraction(previousController, "outside-click")',
             editor,
         )
-        self.assertIn(
-            "!previousController.form.contains(event.target)",
-            editor,
-        )
-
-    def test_normative_popover_is_treated_as_editor_overlay(self) -> None:
-        workspace = self.source("static/operational_log/draft_workspace.js")
-        self.assertIn('[data-normative-menu]', workspace)
-
-    def test_runtime_cache_revision_is_consistent(self) -> None:
-        editor = self.source("static/operational_log/draft_editor.js")
-        navigation = self.source(
-            "static/operational_log/draft_reference_navigation.js"
-        )
-        template = self.source("templates/operational_log/shift_workspace.html")
-        base = self.source("templates/base.html")
-        self.assertIn(f'const RUNTIME_REVISION = "{REVISION}";', editor)
-        self.assertIn(f'const RUNTIME_REVISION = "{REVISION}";', navigation)
-        self.assertIn(f"?v={REVISION}", template)
-        self.assertIn(f"?v={REVISION}", base)

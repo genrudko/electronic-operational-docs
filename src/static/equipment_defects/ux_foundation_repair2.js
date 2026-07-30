@@ -77,6 +77,8 @@
     }
 
     function initDirectionAShell() {
+        if (document.querySelector("[data-direction-a-shell]")) return;
+
         const toggle = document.querySelector("[data-defect-shell-toggle]");
         const sidebar = document.querySelector("[data-defect-shell-sidebar]");
         const scrim = document.querySelector("[data-defect-shell-scrim]");
