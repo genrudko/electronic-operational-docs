@@ -10,6 +10,7 @@ from .base import OperationalLogTestCase
 
 ROOT = Path(__file__).resolve().parents[3]
 ASSET_REVISION = "opjux00103"
+WORKSPACE_REVISION = "opjux00104"
 
 
 class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
@@ -33,7 +34,6 @@ class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
         shared_base = self.source("templates/shared/direction_a/base.html")
         sidebar = self.source("templates/shared/direction_a/_sidebar.html")
         topbar = self.source("templates/shared/direction_a/_topbar.html")
-
         for marker in (
             "data-direction-a-shell",
             "shared/direction_a/_sidebar.html",
@@ -55,19 +55,17 @@ class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
             'class="da-workplace"',
         ):
             self.assertIn(marker, topbar)
-
         shared_shell = "\n".join((shared_base, sidebar, topbar))
         self.assertNotIn("defect-da-", shared_shell)
         self.assertNotIn("data-defect-shell-", shared_shell)
 
-    def test_shell_javascript_never_constructs_or_moves_application_layout(self) -> None:
+    def test_shell_javascript_never_constructs_application_layout(self) -> None:
         script = self.source("static/system/direction_a.js")
         for marker in (
             "[data-direction-a-shell]",
             "[data-direction-a-sidebar]",
             "[data-direction-a-scrim]",
             "[data-direction-a-toggle]",
-            'document.body.classList.add("da-active")',
         ):
             self.assertIn(marker, script)
         for forbidden in (
@@ -94,11 +92,17 @@ class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
                 relative_path,
             )
 
-    def test_shift_workspace_is_new_single_page_composition(self) -> None:
+    def test_shift_workspace_supports_single_and_spread_without_legacy_book(self) -> None:
         workspace = self.source("templates/operational_log/shift_workspace.html")
+        toolbar = self.source(
+            "templates/operational_log/_shift_workspace_toolbar.html"
+        )
+        drawer = self.source(
+            "templates/operational_log/_shift_workspace_drawer.html"
+        )
         for marker in (
             "data-draft-workspace",
-            'data-opj-presentation-mode="single"',
+            'data-opj-presentation-mode="single-spread"',
             "operational_log/_shift_workspace_toolbar.html",
             "operational_log/_shift_workspace_rows.html",
             "operational_log/_shift_workspace_drawer.html",
@@ -106,18 +110,24 @@ class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
             'data-page-shell="left"',
             'data-page-body="left"',
             'data-page-shell="right"',
+            'class="opj-ledger-surface draft-page-shell opj-secondary-page"',
+            "opj_workspace_controls.css",
+            "opj_workspace_controls.js",
+            WORKSPACE_REVISION,
             "draft_editor.js",
             "draft_workspace.js",
             "draft_reference_navigation.js",
         ):
             self.assertIn(marker, workspace)
+        for source in (toolbar, drawer):
+            self.assertIn('data-view-mode="single"', source)
+            self.assertIn('data-view-mode="spread"', source)
+            self.assertIn("Разворот", source)
         for forbidden in (
             "paged-draft-workspace",
             "large-book-workspace",
             'class="draft-book"',
             "draft-paper-stage",
-            'data-view-mode="spread"',
-            "Разворот",
             "CSS zoom",
         ):
             self.assertNotIn(forbidden, workspace)
@@ -139,8 +149,9 @@ class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
             "data-inline-undo",
         ):
             self.assertIn(marker, rows)
-
-        toolbar = self.source("templates/operational_log/_shift_workspace_toolbar.html")
+        toolbar = self.source(
+            "templates/operational_log/_shift_workspace_toolbar.html"
+        )
         for command in (
             "bold",
             "italic",
@@ -183,32 +194,41 @@ class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
         ):
             self.assertIn(marker, overlays)
 
-    def test_opj_enhancer_only_adapts_existing_server_markup(self) -> None:
-        script = self.source("static/operational_log/opj_ux_001.js")
+    def test_presentation_javascript_adapts_existing_markup_only(self) -> None:
+        enhancer = self.source("static/operational_log/opj_ux_001.js")
+        controls = self.source("static/operational_log/opj_workspace_controls.js")
         for marker in (
-            "forceSinglePagePresentation",
-            'window.localStorage.setItem("eod-draft-view-mode", "single")',
             'parsed.querySelector(".approved-journal-table")',
             "draft-semantic-reference-catalog",
             "opj-reference-tree",
-            "MutationObserver",
             "loadRegisteredContext",
         ):
-            self.assertIn(marker, script)
-        for forbidden in (
-            "buildSidebar",
-            "buildTopbar",
-            "buildGeneratedShell",
-            "register_entry(",
-            "/shift/register/",
-            "/shift/handover/",
-            "/shift/close/",
-            "Подписать чистовик",
+            self.assertIn(marker, enhancer)
+        for marker in (
+            'data-opj-presentation-mode="single-spread"',
+            "syncPresentationState",
+            "syncDrawerState",
+            "MutationObserver",
         ):
-            self.assertNotIn(forbidden, script)
+            self.assertIn(marker, controls)
+        for source in (enhancer, controls):
+            for forbidden in (
+                "buildSidebar",
+                "buildTopbar",
+                "buildGeneratedShell",
+                "register_entry(",
+                "/shift/register/",
+                "/shift/handover/",
+                "/shift/close/",
+                "Подписать чистовик",
+            ):
+                self.assertNotIn(forbidden, source)
 
-    def test_new_css_has_normal_scale_and_responsive_workspace(self) -> None:
-        css = self.source("static/operational_log/opj_ux_001.css")
+    def test_css_has_normal_scale_compact_controls_and_spread(self) -> None:
+        core_css = self.source("static/operational_log/opj_ux_001.css")
+        controls_css = self.source(
+            "static/operational_log/opj_workspace_controls.css"
+        )
         for marker in (
             ".opj-workspace-header",
             ".opj-toolbar",
@@ -218,19 +238,28 @@ class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
             ".opj-workspace .draft-ledger-form",
             ".opj-registered-context",
             ".opj-reference-tree-site",
-            "@media (max-width: 980px)",
+        ):
+            self.assertIn(marker, core_css)
+        for marker in (
+            ".opj-command-symbols",
+            ".opj-view-switch",
+            'data-ribbon-mode="compact"',
+            'data-view-mode="spread"',
+            "width: min(360px, 100vw)",
+            ".opj-drawer-card",
             "@media (max-width: 720px)",
         ):
-            self.assertIn(marker, css)
-        for forbidden in (
-            "zoom:",
-            "transform: scale(",
-            ".eod-da-shell",
-            ".eod-da-sidebar",
-            ".eod-da-topbar",
-            ".opj-da-",
-        ):
-            self.assertNotIn(forbidden, css)
+            self.assertIn(marker, controls_css)
+        for source in (core_css, controls_css):
+            for forbidden in (
+                "zoom:",
+                "transform: scale(",
+                ".eod-da-shell",
+                ".eod-da-sidebar",
+                ".eod-da-topbar",
+                ".opj-da-",
+            ):
+                self.assertNotIn(forbidden, source)
 
 
 class OpjPresentationRewriteViewTests(OperationalLogTestCase):
@@ -240,7 +269,7 @@ class OpjPresentationRewriteViewTests(OperationalLogTestCase):
             get_user_model().objects.get(username="operator.demo")
         )
 
-    def test_registry_and_workspace_render_the_server_shell_immediately(self) -> None:
+    def test_registry_and_workspace_render_server_shell_immediately(self) -> None:
         for route_name, args in (
             ("operational_log:registry", ()),
             ("operational_log:detail", (self.journal.pk,)),
@@ -253,14 +282,20 @@ class OpjPresentationRewriteViewTests(OperationalLogTestCase):
             self.assertContains(response, "data-direction-a-topbar", count=1)
             self.assertNotContains(response, "data-direction-a-generated")
 
-    def test_workspace_keeps_functional_contracts_without_fake_lifecycle(self) -> None:
+    def test_workspace_keeps_functional_contracts_and_restores_spread(self) -> None:
         response = self.client.get(
             reverse("operational_log:shift_workspace", args=(self.journal.pk,))
         )
         self.assertEqual(response.status_code, 200)
         for marker in (
             "data-draft-workspace",
-            'data-opj-presentation-mode="single"',
+            'data-opj-presentation-mode="single-spread"',
+            'data-view-mode="single"',
+            'data-view-mode="spread"',
+            "Разворот",
+            "data-ribbon-mode-toggle",
+            "opj_workspace_controls.css",
+            "opj_workspace_controls.js",
             "draft_editor.js",
             "draft_workspace.js",
             "draft_reference_navigation.js",
@@ -271,6 +306,5 @@ class OpjPresentationRewriteViewTests(OperationalLogTestCase):
             "Передать смену",
             "Принять смену",
             "Закрыть смену",
-            "Разворот",
         ):
             self.assertNotContains(response, forbidden)
