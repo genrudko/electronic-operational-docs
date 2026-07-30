@@ -6,6 +6,23 @@
  * presentation layers are being retired.
  */
 
+body.da-active {
+    --da-sidebar-width: 272px;
+}
+
+body.da-active .visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
 body.da-active .da-shell {
     display: grid;
     grid-template-columns: var(--da-sidebar-width) minmax(0, 1fr);
@@ -45,12 +62,47 @@ body.da-active .da-page > main {
     margin: 0 auto;
 }
 
+body.da-active .da-navigation > a,
+body.da-active .da-nav-group-title,
+body.da-active .da-nav-child {
+    min-width: 0;
+    line-height: 1.28;
+    white-space: normal;
+}
+
+body.da-active .da-navigation > a > span,
+body.da-active .da-nav-group-title > span,
+body.da-active .da-nav-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+body.da-active .da-user {
+    min-height: 78px;
+    align-items: start;
+}
+
+body.da-active .da-user strong,
+body.da-active .da-user small {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.25;
+}
+
+body.da-active .da-user strong {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
 body.da-active .da-menu-button {
     display: none;
 }
 
 @media (max-width: 1320px) and (min-width: 981px) {
-    :root {
+    body.da-active {
         --da-sidebar-width: 232px;
     }
 }
