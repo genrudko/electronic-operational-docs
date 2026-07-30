@@ -1,10 +1,9 @@
 {% load static %}
-<header class="da-topbar defect-da-topbar" data-direction-a-topbar>
+<header class="da-topbar" data-direction-a-topbar>
     <button
-        class="da-menu-button defect-da-menu-button"
+        class="da-menu-button"
         type="button"
         data-direction-a-toggle
-        data-defect-shell-toggle
         aria-controls="direction-a-sidebar"
         aria-expanded="false"
     >
@@ -12,7 +11,7 @@
         <span>Меню</span>
     </button>
 
-    <div class="da-workplace defect-da-workplace">
+    <div class="da-workplace">
         <span>Рабочее место</span>
         <strong>
             {% if record and record.workplace_name_snapshot %}
@@ -25,12 +24,12 @@
         </strong>
     </div>
 
-    <div class="da-topbar-tools defect-da-topbar-tools">
-        <span class="da-topbar-value defect-da-topbar-value">
+    <div class="da-topbar-tools">
+        <span class="da-topbar-value">
             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg>
             {% now "d.m.Y" %}
         </span>
-        <span class="da-topbar-value defect-da-topbar-value">
+        <span class="da-topbar-value">
             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-history"></use></svg>
             {% now "H:i" %}
         </span>
