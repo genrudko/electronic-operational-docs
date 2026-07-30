@@ -1,14 +1,14 @@
-<header class="defect-da-page-header">
+<header class="defect-da-page-header da-page-header">
     <div>
         <h1>{{ document_type_name }}</h1>
-        <p class="defect-da-source-line">
+        <p class="defect-da-source-line da-source-line">
             Источник формы: {{ source.document }}, раздел {{ source.section }}, приложение № {{ source.appendix }}
         </p>
     </div>
-    <div class="defect-module-actions defect-screen-only">
-        <a class="defect-button" href="{% url 'equipment_defects:create' %}">+ Новый дефект</a>
+    <div class="defect-module-actions da-actions defect-screen-only">
+        <a class="defect-button da-button" href="{% url 'equipment_defects:create' %}">+ Новый дефект</a>
         {% if volumes %}
-            <a class="defect-button secondary" href="{% url 'equipment_defects:print' %}">Печатная форма</a>
+            <a class="defect-button da-button secondary is-secondary" href="{% url 'equipment_defects:print' %}">Печатная форма</a>
         {% endif %}
     </div>
 </header>
@@ -31,13 +31,13 @@
     </a>
 </nav>
 
-<section class="defect-command-center defect-screen-only" aria-label="Поиск, сортировка и представление журнала">
+<section class="defect-command-center da-panel-flat defect-screen-only" aria-label="Поиск, сортировка и представление журнала">
     <div class="defect-da-command-heading">
-        <div class="defect-view-switch" data-defect-view-switch role="group" aria-label="Представление записей">
+        <div class="defect-view-switch da-segmented" data-defect-view-switch role="group" aria-label="Представление записей">
             <button type="button" data-defect-view="work" aria-pressed="true">Рабочий список</button>
             <button type="button" data-defect-view="journal" aria-pressed="false">Форма журнала</button>
         </div>
-        <div class="defect-sort-field defect-da-sort-field">
+        <div class="defect-sort-field defect-da-sort-field da-field">
             <label for="defect-sort">Сортировка</label>
             <select id="defect-sort" data-defect-sort>
                 <option value="event-desc">Сначала новые</option>
@@ -52,7 +52,7 @@
     </div>
 
     <form class="defect-command-topline defect-da-filter-form" method="get">
-        <div class="defect-search-field">
+        <div class="defect-search-field da-field">
             <label class="visually-hidden" for="defect-search">Поиск по журналу</label>
             <input
                 id="defect-search"
@@ -65,7 +65,7 @@
         <details class="defect-filter-drawer"{% if filters.status or filters.equipment or filters.date_from or filters.date_to %} open{% endif %}>
             <summary>Фильтры</summary>
             <div class="defect-filter-grid">
-                <div class="defect-field">
+                <div class="defect-field da-field">
                     <label for="defect-status">Состояние</label>
                     <select id="defect-status" name="status">
                         <option value="">Все состояния</option>
@@ -74,7 +74,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="defect-field">
+                <div class="defect-field da-field">
                     <label for="defect-equipment">Оборудование</label>
                     <select id="defect-equipment" name="equipment">
                         <option value="">Всё оборудование</option>
@@ -85,32 +85,32 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="defect-field">
+                <div class="defect-field da-field">
                     <label for="defect-date-from">Обнаружено с</label>
                     <input id="defect-date-from" type="date" name="date_from" value="{{ filters.date_from }}">
                 </div>
-                <div class="defect-field">
+                <div class="defect-field da-field">
                     <label for="defect-date-to">Обнаружено по</label>
                     <input id="defect-date-to" type="date" name="date_to" value="{{ filters.date_to }}">
                 </div>
             </div>
         </details>
-        <button class="defect-button" type="submit">Применить</button>
-        <a class="defect-button secondary" href="{% url 'equipment_defects:registry' %}">Сбросить</a>
+        <button class="defect-button da-button" type="submit">Применить</button>
+        <a class="defect-button da-button secondary is-secondary" href="{% url 'equipment_defects:registry' %}">Сбросить</a>
     </form>
 
     {% if filters.q or filters.status or filters.equipment or filters.date_from or filters.date_to %}
         <div class="defect-active-filters" aria-label="Активные фильтры">
             <span>Активные условия:</span>
-            {% if filters.q %}<span class="defect-filter-chip">Поиск: {{ filters.q }}</span>{% endif %}
+            {% if filters.q %}<span class="defect-filter-chip da-chip">Поиск: {{ filters.q }}</span>{% endif %}
             {% if filters.status %}
                 {% for code, label in status_options %}
-                    {% if filters.status == code %}<span class="defect-filter-chip">Состояние: {{ label }}</span>{% endif %}
+                    {% if filters.status == code %}<span class="defect-filter-chip da-chip">Состояние: {{ label }}</span>{% endif %}
                 {% endfor %}
             {% endif %}
-            {% if filters.equipment %}<span class="defect-filter-chip">Оборудование выбрано</span>{% endif %}
-            {% if filters.date_from %}<span class="defect-filter-chip">С {{ filters.date_from }}</span>{% endif %}
-            {% if filters.date_to %}<span class="defect-filter-chip">По {{ filters.date_to }}</span>{% endif %}
+            {% if filters.equipment %}<span class="defect-filter-chip da-chip">Оборудование выбрано</span>{% endif %}
+            {% if filters.date_from %}<span class="defect-filter-chip da-chip">С {{ filters.date_from }}</span>{% endif %}
+            {% if filters.date_to %}<span class="defect-filter-chip da-chip">По {{ filters.date_to }}</span>{% endif %}
         </div>
     {% endif %}
 </section>

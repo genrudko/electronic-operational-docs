@@ -1,39 +1,39 @@
 {% load static %}
-<aside class="defect-da-sidebar" id="defect-direction-a-sidebar" data-defect-shell-sidebar>
-    <a class="defect-da-brand" href="{% url 'system:home' %}">
-        <span class="defect-da-brand-mark" aria-hidden="true">ЭОД</span>
-        <span class="defect-da-brand-copy">
+<aside class="defect-da-sidebar da-sidebar" id="defect-direction-a-sidebar" data-defect-shell-sidebar data-direction-a-sidebar>
+    <a class="defect-da-brand da-brand" href="{% url 'system:home' %}">
+        <span class="defect-da-brand-mark da-brand-mark" aria-hidden="true">ЭОД</span>
+        <span class="defect-da-brand-copy da-brand-copy">
             <strong>ЭОД</strong>
             <small>Оперативная документация</small>
         </span>
     </a>
 
-    <section class="defect-da-shift" aria-label="Рабочий контекст">
+    <section class="defect-da-shift da-context" aria-label="Рабочий контекст">
         <span>Рабочая смена</span>
         <strong>Демонстрационный контур</strong>
     </section>
 
-    <nav class="defect-da-navigation" aria-label="Навигация ЭОД">
+    <nav class="defect-da-navigation da-navigation" aria-label="Навигация ЭОД">
         <a href="{% url 'system:home' %}">
             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-home"></use></svg>
             <span>Рабочий стол</span>
         </a>
 
-        <section class="defect-da-nav-group is-open">
-            <div class="defect-da-nav-group-title">
+        <section class="defect-da-nav-group da-nav-group is-open">
+            <div class="defect-da-nav-group-title da-nav-group-title">
                 <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg>
                 <span>Оперативная документация</span>
             </div>
-            <a class="defect-da-nav-child" href="{% url 'operational_log:registry' %}">Оперативный журнал</a>
+            <a class="defect-da-nav-child da-nav-child" href="{% url 'operational_log:registry' %}">Оперативный журнал</a>
         </section>
 
-        <section class="defect-da-nav-group is-open">
-            <div class="defect-da-nav-group-title">
+        <section class="defect-da-nav-group da-nav-group is-open">
+            <div class="defect-da-nav-group-title da-nav-group-title">
                 <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-journal"></use></svg>
                 <span>Журналы</span>
             </div>
-            <a class="defect-da-nav-child is-active" href="{% url 'equipment_defects:registry' %}" aria-current="page">Журнал дефектов</a>
-            <a class="defect-da-nav-child" href="{% url 'operational_documents:registry' %}">Оперативные документы</a>
+            <a class="defect-da-nav-child da-nav-child is-active" href="{% url 'equipment_defects:registry' %}" aria-current="page">Журнал дефектов</a>
+            <a class="defect-da-nav-child da-nav-child" href="{% url 'operational_documents:registry' %}">Оперативные документы</a>
         </section>
 
         <a href="{% url 'documents:list' %}">
@@ -49,24 +49,24 @@
             <span>Управление и ведение</span>
         </a>
 
-        <section class="defect-da-nav-group">
-            <div class="defect-da-nav-group-title">
+        <section class="defect-da-nav-group da-nav-group">
+            <div class="defect-da-nav-group-title da-nav-group-title">
                 <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-directory"></use></svg>
                 <span>Справочники и данные</span>
             </div>
-            <a class="defect-da-nav-child" href="{% url 'organizations:directory' %}">Организация и персонал</a>
-            <a class="defect-da-nav-child" href="{% url 'workplace_docs:registry' %}">Перечни документации</a>
-            <a class="defect-da-nav-child" href="{% url 'imports:list' %}">Импорт данных</a>
+            <a class="defect-da-nav-child da-nav-child" href="{% url 'organizations:directory' %}">Организация и персонал</a>
+            <a class="defect-da-nav-child da-nav-child" href="{% url 'workplace_docs:registry' %}">Перечни документации</a>
+            <a class="defect-da-nav-child da-nav-child" href="{% url 'imports:list' %}">Импорт данных</a>
         </section>
     </nav>
 
-    <a class="defect-da-user" href="{% url 'organizations:account' %}">
-        <span class="defect-da-user-avatar">{{ user_initial }}</span>
-        <span>
+    <a class="defect-da-user da-user" href="{% url 'organizations:account' %}">
+        <span class="defect-da-user-avatar da-user-avatar">{{ user_initial }}</span>
+        <span class="da-user-copy">
             <strong>{{ user_display_name }}</strong>
             <small>{{ user_display_role|default:"Пользователь" }}</small>
         </span>
         <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-settings"></use></svg>
     </a>
 </aside>
-<div class="defect-da-sidebar-scrim" data-defect-shell-scrim hidden></div>
+<div class="defect-da-sidebar-scrim da-sidebar-scrim" data-defect-shell-scrim data-direction-a-scrim hidden></div>

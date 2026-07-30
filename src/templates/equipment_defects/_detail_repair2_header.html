@@ -1,11 +1,11 @@
-<header class="defect-da-record-header" data-status="{{ record.status_code }}">
+<header class="defect-da-record-header da-page-header" data-status="{{ record.status_code }}">
     <a class="defect-da-back-link" href="{% url 'equipment_defects:registry' %}">← К списку</a>
     <div class="defect-da-record-heading-row">
         <div class="defect-da-record-heading">
             <div class="defect-module-kicker">Карточка дефекта</div>
             <div class="defect-da-record-title-line">
                 <h1>{{ record.registration_number }}</h1>
-                <span class="defect-status defect-da-status large" data-status="{{ record.status_code }}">{{ record.status_name_snapshot }}</span>
+                <span class="defect-status defect-da-status da-status large" data-status="{{ record.status_code }}">{{ record.status_name_snapshot }}</span>
             </div>
             <p class="defect-da-record-subject"><span class="visually-hidden">Что произошло: </span>{{ row.description }}</p>
             <div class="defect-da-record-context">
@@ -14,8 +14,8 @@
                 <span>№ {{ record.sequence_value }}</span>
             </div>
         </div>
-        <div class="defect-module-actions defect-screen-only">
-            <a class="defect-button secondary" href="{% url 'equipment_defects:print' %}?volume={{ record.equipment_defect_context.volume.public_id }}">Печатная форма</a>
+        <div class="defect-module-actions da-actions defect-screen-only">
+            <a class="defect-button da-button secondary is-secondary" href="{% url 'equipment_defects:print' %}?volume={{ record.equipment_defect_context.volume.public_id }}">Печатная форма</a>
         </div>
     </div>
 </header>

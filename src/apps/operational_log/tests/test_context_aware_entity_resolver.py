@@ -43,9 +43,11 @@ class ContextAwareEntityResolverRuntimeTests(SimpleTestCase):
     def test_simplified_time_is_user_scoped_and_safe(self) -> None:
         editor = self.source("static/operational_log/draft_editor.js")
         workspace = self.source("static/operational_log/draft_workspace.js")
-        template = self.source("templates/operational_log/shift_workspace.html")
+        toolbar = self.source(
+            "templates/operational_log/_shift_workspace_toolbar.html"
+        )
         model = self.source("apps/organizations/models.py")
-        self.assertIn("data-simplified-time-toggle", template)
+        self.assertIn("data-simplified-time-toggle", toolbar)
         self.assertIn("journal_simplified_time_input", model)
         self.assertIn("eod:simplified-time-setting", workspace)
         self.assertIn("function simplifiedTimeValue", editor)

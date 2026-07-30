@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "shared/direction_a/base.html" %}
 {% load static %}
 
 {% block title %}{{ record.registration_number }} · Журнал дефектов{% endblock %}
@@ -19,21 +19,11 @@
 {% endblock %}
 
 {% block content %}
-<div class="defect-da-shell">
-    {% include "equipment_defects/_direction_a_sidebar.html" %}
-    <div class="defect-da-stage">
-        {% include "equipment_defects/_direction_a_topbar.html" %}
-        <div class="defect-da-page">
-            <section class="defect-shell defect-da-detail">
-                {% include "equipment_defects/_detail_repair2_header.html" %}
-
-                <div class="defect-record-layout defect-da-record-layout">
-                    {% include "equipment_defects/_detail_repair2_main.html" %}
-
-                    {% include "equipment_defects/_detail_repair2_aside.html" %}
-                </div>
-            </section>
-        </div>
+<section class="defect-shell defect-da-detail">
+    {% include "equipment_defects/_detail_repair2_header.html" %}
+    <div class="defect-record-layout defect-da-record-layout">
+        {% include "equipment_defects/_detail_repair2_main.html" %}
+        {% include "equipment_defects/_detail_repair2_aside.html" %}
     </div>
-</div>
+</section>
 {% endblock %}

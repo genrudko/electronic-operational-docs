@@ -1,9 +1,11 @@
-{% extends "base.html" %}
+{% extends "shared/direction_a/base.html" %}
 
 {% block title %}Оперативные журналы · ЭОД{% endblock %}
+{% block body_class %}direction-a-body da-active opj-direction-a{% endblock %}
+{% block main_class %}opj-main opj-registry-main{% endblock %}
 
 {% block content %}
-<section class="page-heading">
+<section class="page-heading da-page-header">
     <div>
         <div class="eyebrow">ОПЕРАТИВНАЯ ДОКУМЕНТАЦИЯ</div>
         <h1>Оперативные журналы</h1>
@@ -14,12 +16,14 @@
     </div>
 </section>
 
-<section class="notice-card success-notice approved-form-notice">
-    <strong>Утверждённая форма является обязательным контрактом журнала</strong>
-    <p>
-        Поиск, связи, серверное время и контроль целостности работают вне формы
-        и не подменяют её собственными карточками или произвольными колонками.
-    </p>
+<section class="notice-card success-notice approved-form-notice da-alert is-success">
+    <div>
+        <strong>Утверждённая форма является обязательным контрактом журнала</strong>
+        <p>
+            Поиск, связи, серверное время и контроль целостности работают вне формы
+            и не подменяют её собственными карточками или произвольными колонками.
+        </p>
+    </div>
 </section>
 
 <section class="journal-registry-facts" aria-label="Сводка оперативных журналов">
@@ -28,15 +32,15 @@
     <span><strong>{{ form_contract.columns|length }}</strong> графы утверждённой формы</span>
 </section>
 
-<section class="profile-card journal-registry-card">
-    <div class="section-heading">
+<section class="profile-card journal-registry-card da-panel">
+    <div class="section-heading da-panel-heading">
         <div>
             <div class="eyebrow">РАБОЧИЕ МЕСТА</div>
             <h2>Доступные журналы</h2>
         </div>
     </div>
-    <div class="table-wrap">
-        <table class="journal-registry-table">
+    <div class="table-wrap da-table-wrap">
+        <table class="journal-registry-table da-table">
             <thead>
                 <tr>
                     <th>Рабочее место</th>

@@ -1,0 +1,88 @@
+{% load static %}
+<aside
+    class="da-sidebar"
+    id="direction-a-sidebar"
+    data-direction-a-sidebar
+>
+    <a class="da-brand" href="{% url 'system:home' %}">
+        <span class="da-brand-mark" aria-hidden="true">ЭОД</span>
+        <span class="da-brand-copy">
+            <strong>ЭОД</strong>
+            <small>Оперативная документация</small>
+        </span>
+    </a>
+
+    <section class="da-context" aria-label="Рабочий контекст">
+        <span>Рабочая смена</span>
+        <strong>Демонстрационный контур</strong>
+    </section>
+
+    <nav class="da-navigation" aria-label="Навигация ЭОД">
+        <a href="{% url 'system:home' %}"{% if request.resolver_match.namespace == 'system' %} class="is-active" aria-current="page"{% endif %}>
+            <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-home"></use></svg>
+            <span>Рабочий стол</span>
+        </a>
+
+        <section class="da-nav-group is-open">
+            <div class="da-nav-group-title">
+                <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg>
+                <span>Оперативная документация</span>
+            </div>
+            <a
+                class="da-nav-child{% if request.resolver_match.namespace == 'operational_log' %} is-active{% endif %}"
+                href="{% url 'operational_log:registry' %}"
+                {% if request.resolver_match.namespace == 'operational_log' %}aria-current="page"{% endif %}
+            >Оперативный журнал</a>
+        </section>
+
+        <section class="da-nav-group is-open">
+            <div class="da-nav-group-title">
+                <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-journal"></use></svg>
+                <span>Журналы</span>
+            </div>
+            <a
+                class="da-nav-child{% if request.resolver_match.namespace == 'equipment_defects' %} is-active{% endif %}"
+                href="{% url 'equipment_defects:registry' %}"
+                {% if request.resolver_match.namespace == 'equipment_defects' %}aria-current="page"{% endif %}
+            >Журнал дефектов</a>
+            <a class="da-nav-child" href="{% url 'operational_documents:registry' %}">Оперативные документы</a>
+        </section>
+
+        <a href="{% url 'documents:list' %}">
+            <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg>
+            <span>Документы</span>
+        </a>
+        <a href="{% url 'equipment:registry' %}">
+            <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-equipment"></use></svg>
+            <span>Оборудование</span>
+        </a>
+        <a href="{% url 'dispatching:registry' %}">
+            <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-management"></use></svg>
+            <span>Управление и ведение</span>
+        </a>
+
+        <section class="da-nav-group">
+            <div class="da-nav-group-title">
+                <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-directory"></use></svg>
+                <span>Справочники и данные</span>
+            </div>
+            <a class="da-nav-child" href="{% url 'organizations:directory' %}">Организация и персонал</a>
+            <a class="da-nav-child" href="{% url 'workplace_docs:registry' %}">Перечни документации</a>
+            <a class="da-nav-child" href="{% url 'imports:list' %}">Импорт данных</a>
+        </section>
+    </nav>
+
+    <a class="da-user" href="{% url 'organizations:account' %}">
+        <span class="da-user-avatar">{{ user_initial }}</span>
+        <span class="da-user-copy">
+            <strong>{{ user_display_name }}</strong>
+            <small>{{ user_display_role|default:'Пользователь' }}</small>
+        </span>
+        <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-settings"></use></svg>
+    </a>
+</aside>
+<div
+    class="da-sidebar-scrim"
+    data-direction-a-scrim
+    hidden
+></div>
