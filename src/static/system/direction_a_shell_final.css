@@ -11,8 +11,15 @@ html:has(body.da-active) {
 
 body.da-active {
     --da-sidebar-width: 272px;
+    --da-page-padding-top: 24px;
+    --da-page-padding-top-mobile: 18px;
     font-family: Inter, "Segoe UI", Arial, sans-serif;
     font-size: 14px;
+}
+
+body.da-active.opj-workspace-page {
+    --da-page-padding-top: 4px;
+    --da-page-padding-top-mobile: 8px;
 }
 
 body.da-active .da-shell,
@@ -90,7 +97,7 @@ body.da-active .da-page {
     width: 100%;
     max-width: none;
     margin: 0;
-    padding: 24px var(--da-page-inline) 42px;
+    padding: var(--da-page-padding-top) var(--da-page-inline) 42px;
 }
 
 body.da-active .da-page > main {
@@ -179,6 +186,108 @@ body.da-active .da-menu-button {
     display: none;
 }
 
+/* The OPJ theme control changes the complete visible Direction A route,
+ * not only the ledger. Shared shell DOM remains identical in both themes. */
+html[data-theme="dark"] body.da-active.opj-workspace-page {
+    --da-canvas: #0b1420;
+    --da-surface: #111d2a;
+    --da-surface-soft: #172333;
+    --da-border: #35465a;
+    --da-border-strong: #4a5e74;
+    --da-text: #e6edf5;
+    --da-muted: #9aabc0;
+    --da-blue: #4f9ed8;
+    --da-blue-dark: #83c8ef;
+    --da-blue-soft: #17334a;
+    --da-green: #64d69b;
+    --da-green-soft: #102b22;
+    background: var(--da-canvas);
+    color: var(--da-text);
+}
+
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-shell {
+    background: var(--da-canvas);
+    color: var(--da-text);
+    color-scheme: dark;
+}
+
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-sidebar,
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-topbar {
+    border-color: var(--da-border);
+    background: rgba(15, 26, 39, 0.98);
+    color: var(--da-text);
+    box-shadow: none;
+}
+
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-brand,
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-user,
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-context {
+    border-color: var(--da-border);
+    color: var(--da-text);
+}
+
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-brand-mark {
+    border-color: #3aa6d8;
+    background: #13283a;
+    color: #8bd0f3;
+}
+
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-context {
+    background: var(--da-surface);
+}
+
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-navigation > a,
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-nav-group-title,
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-nav-child,
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-topbar-value,
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-topbar-tools > a,
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-topbar-tools button {
+    color: #b7c4d4;
+}
+
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-navigation > a:hover,
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-nav-child:hover,
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-user:hover,
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-topbar-tools > a:hover,
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-topbar-tools button:hover {
+    border-color: var(--da-border);
+    background: #17283a;
+    color: #8bd0f3;
+}
+
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-nav-child.is-active,
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-nav-child[aria-current="page"] {
+    background: linear-gradient(90deg, #15314a, #10283d);
+    color: #8bd0f3;
+}
+
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-user-avatar {
+    background: #17334a;
+    color: #8bd0f3;
+}
+
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-button.is-secondary,
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-button.secondary,
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-icon-button {
+    border-color: var(--da-border-strong);
+    background: var(--da-surface);
+    color: #b7c4d4;
+}
+
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-button.is-secondary:hover,
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-button.secondary:hover,
+html[data-theme="dark"] body.da-active.opj-workspace-page .da-icon-button:hover {
+    border-color: #627a92;
+    background: #17283a;
+    color: #8bd0f3;
+}
+
+html[data-theme="dark"] body.da-active.opj-workspace-page .opj-meta-item.is-success {
+    border-color: #27684a;
+    background: #102b22;
+    color: #64d69b;
+}
+
 @media (max-width: 1320px) and (min-width: 981px) {
     body.da-active {
         --da-sidebar-width: 232px;
@@ -228,7 +337,7 @@ body.da-active .da-menu-button {
     }
 
     body.da-active .da-page {
-        padding: 18px 14px 30px;
+        padding: var(--da-page-padding-top-mobile) 14px 30px;
     }
 }
 
