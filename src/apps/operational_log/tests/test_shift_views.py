@@ -60,14 +60,18 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             "data-direction-a-topbar",
             "Рабочий черновик",
             "Автосохранение включено",
-            'data-opj-presentation-mode="single"',
+            'data-opj-presentation-mode="single-spread"',
+            'data-ribbon-mode="compact"',
+            "data-ribbon-mode-toggle",
+            'data-view-mode="single"',
+            'data-view-mode="spread"',
+            "Разворот",
             "Поиск по записям",
             "Дата и время записи",
             "Визы и замечания",
             "data-page-input",
             "data-page-buttons",
             "opj-toolbar-primary",
-            'data-ribbon-mode="expanded"',
             "data-view-drawer",
             "data-column-resizer",
             "data-records-preset",
@@ -98,15 +102,14 @@ class OperationalShiftViewTests(OperationalLogTestCase):
             "data-editor-ribbon-status",
             "data-editor-floating-toolbar",
             "draft-editor-payload-field",
+            "opj_workspace_controls.css",
+            "opj_workspace_controls.js",
             "draft_editor.js",
             "draft_workspace.js",
             "draft_reference_navigation.js",
         ):
             self.assertContains(workspace, marker)
         for forbidden in (
-            "Разворот",
-            "data-ribbon-mode-toggle",
-            "Развернуть ленту редактора",
             "Сохранить сейчас",
             "↑ Выше",
             "↓ Ниже",
@@ -119,10 +122,10 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         ):
             self.assertNotContains(workspace, forbidden)
         self.assertContains(workspace, "15 записей")
-        self.assertContains(workspace, "+ Запись")
-        self.assertContains(workspace, "Смена и вид")
+        self.assertContains(workspace, "Запись")
+        self.assertContains(workspace, "Настройки")
         self.assertContains(workspace, "Зарегистрированный журнал")
-        self.assertContains(workspace, "ЗАПИСЕЙ НА СТРАНИЦЕ")
+        self.assertContains(workspace, "Записи на странице")
         self.assertNotContains(workspace, "ШИРИНА ГРАФ")
         self.assertNotContains(workspace, "data-column-time-number")
         self.assertNotContains(workspace, "data-measure-page")
@@ -212,13 +215,14 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         self.assertEqual(response.status_code, 200)
         html = response.content.decode("utf-8")
         for marker in (
-            "РЕДАКТОР ЗАПИСИ",
-            "Щёлкните по тексту записи",
+            "РЕДАКТОР",
+            "Выберите запись",
             'data-editor-ribbon-status',
             'data-editor-floating-toolbar',
+            "opj-command-symbols",
             "Форматирование выделенного текста",
             "Текст",
-            "Абзац и история",
+            "Абзац",
             "Тип записи",
             "Связанные объекты",
             "Нормативные отметки",
@@ -227,6 +231,7 @@ class OperationalShiftViewTests(OperationalLogTestCase):
         self.assertEqual(html.count('data-editor-command="bold"'), 2)
         self.assertEqual(html.count('data-editor-command="underline"'), 2)
         self.assertEqual(html.count('data-editor-command="undo"'), 1)
+        self.assertIn("data-ribbon-mode-toggle", html)
         self.assertNotIn(
             'aria-label="Редактор и действия с записью"',
             html,
