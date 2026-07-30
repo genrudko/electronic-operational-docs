@@ -4,6 +4,9 @@
 {% block title %}Рабочая смена · {{ journal.title }} · ЭОД{% endblock %}
 {% block body_class %}direction-a-body da-active opj-direction-a opj-workspace-page{% endblock %}
 {% block main_class %}opj-main opj-shift-main{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'operational_log/opj_workspace_controls.css' %}?v=opjux00104">
+{% endblock %}
 
 {% block content %}
 <header
@@ -120,5 +123,6 @@
 <script src="{% static 'operational_log/draft_editor.js' %}?v=011364" defer></script>
 <script src="{% static 'operational_log/draft_workspace.js' %}?v=011364" defer></script>
 <script src="{% static 'operational_log/draft_reference_navigation.js' %}?v=011364" defer></script>
+<script src="{% static 'operational_log/opj_workspace_controls.js' %}?v=opjux00104" defer></script>
 {% endif %}
 {% endblock %}
