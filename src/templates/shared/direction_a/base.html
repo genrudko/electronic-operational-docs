@@ -4,9 +4,9 @@
 {% block body_class %}direction-a-body da-active{% endblock %}
 
 {% block body %}
-<div class="da-shell defect-da-shell" data-direction-a-shell>
+<div class="da-shell" data-direction-a-shell>
     {% include "shared/direction_a/_sidebar.html" %}
-    <div class="da-stage defect-da-stage">
+    <div class="da-stage">
         {% include "shared/direction_a/_topbar.html" %}
 
         {% if messages %}
@@ -15,7 +15,7 @@
         </section>
         {% endif %}
 
-        <div class="da-page defect-da-page">
+        <div class="da-page">
             <main class="{% block main_class %}{% endblock %}">
                 {% block content %}{% endblock %}
                 {% operational_defect_entry_rows as operational_defect_rows %}
