@@ -30,6 +30,7 @@ from .services import (
     open_new_defect_volume,
     register_defect,
 )
+from .services.helpers import stored_datetime
 from .tests import DefectFixtureMixin
 
 MOSCOW_TIME_ZONE = ZoneInfo("Europe/Moscow")
@@ -175,6 +176,69 @@ class EquipmentDefectBoundaryTests(DefectFixtureMixin, TestCase):
             ).count(),
             2,
         )
+
+    def test_volume_close_date_does_not_precede_start_at_moscow_midnight(self) -> None:
+        fixed_utc_now = datetime(2026, 7, 26, 21, 30, tzinfo=UTC)
+        resolved_at = fixed_utc_now - timedelta(hours=1)
+        expected_started_on = date(2026, 7, 27)
+        expected_resolved_on = date(2026, 7, 26)
+
+        self.assertEqual(
+            timezone.localdate(fixed_utc_now, timezone=MOSCOW_TIME_ZONE),
+            expected_started_on,
+        )
+        self.assertEqual(
+            timezone.localdate(resolved_at, timezone=MOSCOW_TIME_ZONE),
+            expected_resolved_on,
+        )
+
+        with patch(
+            "apps.equipment_defects.services.volumes.timezone.now",
+            return_value=fixed_utc_now,
+        ):
+            detected_at = resolved_at - timedelta(hours=1)
+            record = register_defect(
+                actor=self.operator,
+                workplace=self.fixture["workplace"],
+                equipment=self.fixture["equipment"],
+                discovered_by=self.responsible,
+                detected_at=detected_at,
+                defect_description="Проверка закрытия тома на границе московской даты.",
+            )
+            record = confirm_deadline(
+                record=record,
+                actor=self.responsible,
+                responsible=self.responsible,
+                deadline=fixed_utc_now + timedelta(days=1),
+            )
+            record = confirm_resolution(
+                record=record,
+                actor=self.responsible,
+                responsible=self.responsible,
+                resolved_at=resolved_at,
+                work_summary="Историческое время устранения сохранено без изменения.",
+            )
+            record = acknowledge_resolution(record=record, actor=self.operator)
+            record = close_defect(record=record, actor=self.responsible)
+            original_volume = record.equipment_defect_context.volume
+            original_context_id = record.equipment_defect_context.pk
+
+            new_volume = open_new_defect_volume(
+                workplace=self.fixture["workplace"],
+                actor=self.operator,
+            )
+
+        original_volume.refresh_from_db()
+        record.refresh_from_db()
+        self.assertEqual(original_volume.started_on, expected_started_on)
+        self.assertEqual(original_volume.closed_on, expected_started_on)
+        self.assertGreaterEqual(original_volume.closed_on, original_volume.started_on)
+        self.assertEqual(stored_datetime(record, FIELD_RESOLVED_AT), resolved_at)
+        self.assertEqual(new_volume.sequence_number, original_volume.sequence_number + 1)
+        self.assertEqual(record.equipment_defect_context.pk, original_context_id)
+        self.assertEqual(record.equipment_defect_context.volume_id, original_volume.pk)
+        self.assertEqual(original_volume.defect_contexts.count(), 1)
+        self.assertEqual(new_volume.defect_contexts.count(), 0)
 
     def test_volume_dates_use_moscow_day_across_utc_midnight(self) -> None:
         fixed_utc_now = datetime(2026, 7, 26, 21, 30, tzinfo=UTC)
