@@ -1,9 +1,8 @@
 /*
- * Direction A final shell ownership.
+ * Direction A canonical shell ownership.
  *
- * This layer is deliberately loaded after feature styles. It owns only the
- * application shell geometry and responsive navigation while legacy feature
- * presentation layers are being retired.
+ * This layer is deliberately loaded after feature styles. Shared navigation,
+ * topbar typography and responsive geometry must never be feature-owned.
  */
 
 html:has(body.da-active) {
@@ -12,6 +11,16 @@ html:has(body.da-active) {
 
 body.da-active {
     --da-sidebar-width: 272px;
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    font-size: 14px;
+}
+
+body.da-active .da-shell,
+body.da-active .da-shell button,
+body.da-active .da-shell input,
+body.da-active .da-shell select,
+body.da-active .da-shell textarea {
+    font-family: inherit;
 }
 
 body.da-active .visually-hidden {
@@ -41,6 +50,8 @@ body.da-active .da-sidebar {
     height: 100vh;
     transform: none;
     transition: none;
+    font-size: 14px;
+    font-weight: 400;
 }
 
 body.da-active .da-stage {
@@ -50,6 +61,29 @@ body.da-active .da-stage {
 body.da-active .da-topbar {
     min-height: var(--da-topbar-height);
     padding: 8px 24px;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+body.da-active .da-brand-copy strong {
+    font-size: 1.35rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+body.da-active .da-brand-copy small {
+    font-size: 0.68rem;
+    font-weight: 400;
+}
+
+body.da-active .da-context span {
+    font-size: 0.68rem;
+    font-weight: 400;
+}
+
+body.da-active .da-context strong {
+    font-size: 0.78rem;
+    font-weight: 700;
 }
 
 body.da-active .da-page {
@@ -70,8 +104,21 @@ body.da-active .da-navigation > a,
 body.da-active .da-nav-group-title,
 body.da-active .da-nav-child {
     min-width: 0;
+    font-size: 0.79rem;
     line-height: 1.28;
     white-space: normal;
+}
+
+body.da-active .da-navigation > a {
+    font-weight: 700;
+}
+
+body.da-active .da-nav-group-title {
+    font-weight: 800;
+}
+
+body.da-active .da-nav-child {
+    font-weight: 650;
 }
 
 body.da-active .da-navigation > a > span,
@@ -84,6 +131,8 @@ body.da-active .da-nav-child {
 body.da-active .da-user {
     min-height: 78px;
     align-items: start;
+    font-size: 14px;
+    font-weight: 400;
 }
 
 body.da-active .da-user strong,
@@ -97,8 +146,33 @@ body.da-active .da-user small {
 
 body.da-active .da-user strong {
     display: -webkit-box;
+    font-size: 0.78rem;
+    font-weight: 700;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+}
+
+body.da-active .da-user small {
+    font-size: 0.68rem;
+    font-weight: 400;
+}
+
+body.da-active .da-workplace span {
+    font-size: 0.68rem;
+    font-weight: 400;
+}
+
+body.da-active .da-workplace strong {
+    font-size: 0.83rem;
+    font-weight: 700;
+}
+
+body.da-active .da-topbar-value,
+body.da-active .da-topbar-tools > a,
+body.da-active .da-topbar-tools button {
+    font-size: 0.76rem;
+    font-weight: 700;
+    line-height: 1.2;
 }
 
 body.da-active .da-menu-button {
