@@ -6,7 +6,7 @@ from django.test import SimpleTestCase
 
 ROOT = Path(__file__).resolve().parents[3]
 RUNTIME_REVISION = "011364"
-WORKSPACE_REVISION = "opjux00104"
+WORKSPACE_REVISION = "opjux00105"
 
 
 class CompactWorkspaceOverlayLayeringTests(SimpleTestCase):
@@ -31,7 +31,9 @@ class CompactWorkspaceOverlayLayeringTests(SimpleTestCase):
         self.assertNotIn("--draft-command-bar-height", workspace)
         self.assertNotIn("new ResizeObserver", workspace)
         self.assertIn(".opj-workspace-page .opj-toolbar-primary", css)
-        self.assertIn("min-height: 44px", css)
+        self.assertIn("min-height: 40px", css)
+        self.assertIn(".opj-title-cluster", template)
+        self.assertIn(".opj-title-cluster", css)
 
     def test_editor_toolbar_starts_compact_with_local_svg_commands(self) -> None:
         toolbar = self.source(
@@ -44,6 +46,9 @@ class CompactWorkspaceOverlayLayeringTests(SimpleTestCase):
         self.assertIn("opj-command-symbols", toolbar)
         for icon in ("bold", "list", "link", "bolt"):
             self.assertIn(f'id="opj-icon-{icon}"', toolbar)
+        self.assertIn("opj-time-format-example", toolbar)
+        self.assertIn("1234", toolbar)
+        self.assertIn("12:34", toolbar)
         self.assertIn("eod.operationalJournal.ribbonMode", workspace)
         self.assertIn("function applyRibbonMode", workspace)
         self.assertIn('data-ribbon-mode="compact"', css)
@@ -59,6 +64,7 @@ class CompactWorkspaceOverlayLayeringTests(SimpleTestCase):
         )
         workspace = self.source("static/operational_log/draft_workspace.js")
         controls = self.source("static/operational_log/opj_workspace_controls.js")
+        css = self.source("static/operational_log/opj_workspace_controls.css")
         for source in (toolbar, drawer):
             self.assertIn('data-view-mode="single"', source)
             self.assertIn('data-view-mode="spread"', source)
@@ -68,6 +74,46 @@ class CompactWorkspaceOverlayLayeringTests(SimpleTestCase):
         self.assertIn('viewMode === "spread"', workspace)
         self.assertIn("renderCurrentPages", workspace)
         self.assertIn("syncPresentationState", controls)
+        self.assertIn('data-view-mode="spread"', css)
+        self.assertIn("position: static !important", css)
+        self.assertIn("top: auto !important", css)
+
+    def test_display_preferences_have_runtime_css_contracts(self) -> None:
+        template = self.source("templates/operational_log/shift_workspace.html")
+        workspace = self.source("static/operational_log/draft_workspace.js")
+        css = self.source("static/operational_log/opj_workspace_controls.css")
+        self.assertIn(
+            'data-initial-page-width="{{ ui_preferences.journal_width|lower }}"',
+            template,
+        )
+        for marker in (
+            "workspace.dataset.pageWidth",
+            "workspace.dataset.journalEntrySize",
+            "workspace.dataset.journalTimeSize",
+            "workspace.dataset.journalDateSize",
+            "workspace.dataset.journalTableHeaderSize",
+        ):
+            self.assertIn(marker, workspace)
+        for marker in (
+            'data-page-width="standard"',
+            'data-page-width="wide"',
+            'data-page-width="full"',
+            'data-journal-entry-size="small"',
+            'data-journal-time-size="large"',
+            'data-journal-date-size="extra_large"',
+            'data-journal-table-header-size="normal"',
+            'html[data-theme="dark"]',
+        ):
+            self.assertIn(marker, css)
+
+    def test_ledger_rows_are_content_driven_not_fixed_82_pixels(self) -> None:
+        core = self.source("static/operational_log/opj_ux_001.css")
+        controls = self.source("static/operational_log/opj_workspace_controls.css")
+        self.assertIn("min-height: 82px", core)
+        self.assertIn("min-height: 0", controls)
+        self.assertIn("min-height: 24px", controls)
+        self.assertIn(".opj-workspace .draft-empty-record", controls)
+        self.assertIn("min-height: 36px", controls)
 
     def test_drawer_is_narrow_card_based_and_state_synced(self) -> None:
         drawer = self.source(
