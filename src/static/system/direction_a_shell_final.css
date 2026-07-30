@@ -289,6 +289,14 @@ html[data-theme="dark"] body.da-active.opj-workspace-page .opj-meta-item.is-succ
     color: #64d69b;
 }
 
+html[data-theme="dark"] body.da-active.opj-workspace-page .opj-editor-container {
+    background: var(--da-canvas) !important;
+}
+
+html[data-theme="dark"] body.da-active.opj-workspace-page .opj-workspace[data-view-mode="spread"] .opj-ledger-surface {
+    box-shadow: 0 4px 13px rgba(0, 0, 0, 0.34) !important;
+}
+
 @media (max-width: 1320px) and (min-width: 981px) {
     body.da-active {
         --da-sidebar-width: 232px;
