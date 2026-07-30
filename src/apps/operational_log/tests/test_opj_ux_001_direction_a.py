@@ -35,36 +35,38 @@ class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
         topbar = self.source("templates/shared/direction_a/_topbar.html")
 
         for marker in (
-            'data-direction-a-shell',
-            'shared/direction_a/_sidebar.html',
-            'shared/direction_a/_topbar.html',
-            'class="da-stage defect-da-stage"',
-            'class="da-page defect-da-page"',
+            "data-direction-a-shell",
+            "shared/direction_a/_sidebar.html",
+            "shared/direction_a/_topbar.html",
+            'class="da-stage"',
+            'class="da-page"',
         ):
             self.assertIn(marker, shared_base)
         for marker in (
-            'data-direction-a-sidebar',
-            'data-defect-shell-sidebar',
-            'class="da-navigation defect-da-navigation"',
-            'Оперативный журнал',
-            'Журнал дефектов',
+            "data-direction-a-sidebar",
+            'class="da-navigation"',
+            "Оперативный журнал",
+            "Журнал дефектов",
         ):
             self.assertIn(marker, sidebar)
         for marker in (
-            'data-direction-a-topbar',
-            'data-direction-a-toggle',
-            'data-defect-shell-toggle',
-            'class="da-workplace defect-da-workplace"',
+            "data-direction-a-topbar",
+            "data-direction-a-toggle",
+            'class="da-workplace"',
         ):
             self.assertIn(marker, topbar)
+
+        shared_shell = "\n".join((shared_base, sidebar, topbar))
+        self.assertNotIn("defect-da-", shared_shell)
+        self.assertNotIn("data-defect-shell-", shared_shell)
 
     def test_shell_javascript_never_constructs_or_moves_application_layout(self) -> None:
         script = self.source("static/system/direction_a.js")
         for marker in (
-            '[data-direction-a-shell]',
-            '[data-direction-a-sidebar]',
-            '[data-direction-a-scrim]',
-            '[data-direction-a-toggle]',
+            "[data-direction-a-shell]",
+            "[data-direction-a-sidebar]",
+            "[data-direction-a-scrim]",
+            "[data-direction-a-toggle]",
             'document.body.classList.add("da-active")',
         ):
             self.assertIn(marker, script)
@@ -95,18 +97,18 @@ class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
     def test_shift_workspace_is_new_single_page_composition(self) -> None:
         workspace = self.source("templates/operational_log/shift_workspace.html")
         for marker in (
-            'data-draft-workspace',
+            "data-draft-workspace",
             'data-opj-presentation-mode="single"',
-            'operational_log/_shift_workspace_toolbar.html',
-            'operational_log/_shift_workspace_rows.html',
-            'operational_log/_shift_workspace_drawer.html',
-            'operational_log/_shift_workspace_overlays.html',
+            "operational_log/_shift_workspace_toolbar.html",
+            "operational_log/_shift_workspace_rows.html",
+            "operational_log/_shift_workspace_drawer.html",
+            "operational_log/_shift_workspace_overlays.html",
             'data-page-shell="left"',
             'data-page-body="left"',
             'data-page-shell="right"',
-            'draft_editor.js',
-            'draft_workspace.js',
-            'draft_reference_navigation.js',
+            "draft_editor.js",
+            "draft_workspace.js",
+            "draft_reference_navigation.js",
         ):
             self.assertIn(marker, workspace)
         for forbidden in (
@@ -125,16 +127,16 @@ class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
         for marker in (
             "operational_log:autosave_draft",
             'name="expected_version"',
-            'data-draft-version',
+            "data-draft-version",
             'name="editor_schema_version"',
-            'data-editor-schema-version',
+            "data-editor-schema-version",
             'name="editor_payload"',
-            'data-editor-payload',
-            'data-rich-editor-host',
+            "data-editor-payload",
+            "data-rich-editor-host",
             "operational_log:move_draft",
             "operational_log:remove_draft",
             "operational_log:restore_draft",
-            'data-inline-undo',
+            "data-inline-undo",
         ):
             self.assertIn(marker, rows)
 
@@ -154,19 +156,19 @@ class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
         ):
             self.assertIn(f'data-editor-command="{command}"', toolbar)
         for marker in (
-            'data-entry-kind-trigger',
-            'data-reference-trigger',
-            'data-auto-reference-toggle',
-            'data-auto-reference-scan',
-            'data-normative-trigger',
-            'data-simplified-time-toggle',
+            "data-entry-kind-trigger",
+            "data-reference-trigger",
+            "data-auto-reference-toggle",
+            "data-auto-reference-scan",
+            "data-normative-trigger",
+            "data-simplified-time-toggle",
         ):
             self.assertIn(marker, toolbar)
 
     def test_semantic_and_normative_presentations_keep_existing_contracts(self) -> None:
         overlays = self.source("templates/operational_log/_shift_workspace_overlays.html")
         for marker in (
-            'data-reference-picker',
+            "data-reference-picker",
             'data-reference-kind-option="equipment"',
             'data-reference-kind-option="document"',
             'data-reference-kind-option="person"',
@@ -177,7 +179,7 @@ class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
             'data-normative-action="pz_install"',
             'data-normative-action="zn_off"',
             'data-normative-action="pz_remove"',
-            'draft-semantic-reference-catalog',
+            "draft-semantic-reference-catalog",
         ):
             self.assertIn(marker, overlays)
 
@@ -258,7 +260,7 @@ class OpjPresentationRewriteViewTests(OperationalLogTestCase):
         self.assertEqual(response.status_code, 200)
         for marker in (
             "data-draft-workspace",
-            "data-opj-presentation-mode=\"single\"",
+            'data-opj-presentation-mode="single"',
             "draft_editor.js",
             "draft_workspace.js",
             "draft_reference_navigation.js",
