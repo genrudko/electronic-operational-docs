@@ -38,28 +38,53 @@ class OpjDirectionAFirstPaintTests(SimpleTestCase):
         ):
             self.assertNotIn(forbidden, shell_script)
 
-    def test_final_shared_shell_layer_owns_desktop_and_mobile_geometry(self) -> None:
+    def test_shared_shell_templates_have_one_class_and_data_contract(self) -> None:
+        shared_shell = "\n".join(
+            (
+                self.source("templates/shared/direction_a/base.html"),
+                self.source("templates/shared/direction_a/_sidebar.html"),
+                self.source("templates/shared/direction_a/_topbar.html"),
+            )
+        )
+
+        for marker in (
+            'class="da-shell"',
+            'class="da-sidebar"',
+            'class="da-topbar"',
+            "data-direction-a-shell",
+            "data-direction-a-sidebar",
+            "data-direction-a-topbar",
+        ):
+            self.assertIn(marker, shared_shell)
+        self.assertNotIn("defect-da-", shared_shell)
+        self.assertNotIn("data-defect-shell-", shared_shell)
+
+    def test_final_shared_shell_layer_owns_presentation_and_geometry(self) -> None:
         base = self.source("templates/base.html")
         shell_css = self.source("static/system/direction_a_shell_final.css")
 
         extra_head = base.index("{% block extra_head %}{% endblock %}")
         final_layer = base.index("system/direction_a_shell_final.css")
         self.assertLess(extra_head, final_layer)
-        self.assertIn("direction_a_shell_final.css' %}?v=opjux00106", base)
+        self.assertIn("direction_a_shell_final.css' %}?v=opjux00107", base)
         for marker in (
             "html:has(body.da-active)",
             "scrollbar-gutter: stable",
-            "body.da-active {",
-            "--da-sidebar-width: 272px",
-            "body.da-active .visually-hidden",
-            "clip-path: inset(50%)",
+            "font-family: Inter",
+            "font-size: 14px",
             "body.da-active .da-shell",
             "body.da-active .da-sidebar",
             "body.da-active .da-topbar",
+            "body.da-active .da-brand-copy strong",
+            "body.da-active .da-nav-group-title",
+            "body.da-active .da-user strong",
+            "body.da-active .da-workplace strong",
+            "body.da-active .da-topbar-value",
+            "body.da-active .visually-hidden",
+            "clip-path: inset(50%)",
             "body.da-active .da-page",
             "body.da-active .da-page > main",
             "max-width: var(--da-page-max)",
-            "body.da-active .da-user",
             "-webkit-line-clamp: 2",
             "@media (max-width: 1320px) and (min-width: 981px)",
             "--da-sidebar-width: 232px",
