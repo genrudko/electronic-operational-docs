@@ -105,6 +105,7 @@ body.da-active .da-page > main {
     max-width: var(--da-page-max);
     min-width: 0;
     margin: 0 auto;
+    padding: 0;
 }
 
 body.da-active .da-navigation > a,
