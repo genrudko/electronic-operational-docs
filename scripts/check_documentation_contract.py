@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import check_documentation_contract_core as core
 import check_demo_release_plan
+import check_documentation_contract_core as core
 
 _ORIGINAL_EXTRACT_BASELINE = core.extract_baseline
 _CURRENT_STATE = "docs/project/CURRENT_STATE.md"
