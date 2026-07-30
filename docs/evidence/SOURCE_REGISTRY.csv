@@ -1,0 +1,10 @@
+source_id;source_type;title;repository_locator;evidence_status;limitations
+SRC-AUDIT-STAGE1;REPOSITORY_AUDIT;Stage 1 factual audit;docs/work-items/active/PROJECT_BASELINE_001_AUDIT.md;ACCEPTED_AS_EVIDENCE;not canonical decision
+SRC-DEC-STAGE2;USER_DECISION;Stage 2 decisions;docs/work-items/active/PROJECT_BASELINE_001_STAGE2_DECISIONS.md;USER-ACCEPTED-DOMAIN-DECISION;candidate until merge
+SRC-RESEARCH-VERTICAL;PRODUCT_RESEARCH;Vertical products research;docs/research/VERTICAL_PRODUCTS_RESEARCH_20260729.md;ACCEPTED_RESEARCH_INPUT;vendor claims not requirements
+SRC-RESEARCH-SPECIALIZED;PRODUCT_RESEARCH;Specialized workflow benchmark v1.2;docs/research/SPECIALIZED_WORKFLOW_BENCHMARK_20260729_v1_2.md;ACCEPTED_RESEARCH_INPUT;targeted benchmark may remain required
+SRC-UX-DIRECTION-A;UX_DECISION;Direction A;docs/project/PRODUCT_UX_PRINCIPLES.md;ACCEPTED_UX_DECISION;theme debt is separate UX-THEME-001
+REF-OD-CATALOG;REFERENCE_TRANSCRIPTION;66-row reference operational documentation list;docs/product/REFERENCE_OPERATIONAL_DOCUMENTATION_COVERAGE.csv;REFERENCE_SOURCE_TRANSCRIPTION;each REF-OD row remains individually addressable
+N-01;NORMATIVE;Приказ Минтруда России №903н;docs/research/SPECIALIZED_WORKFLOW_NORMATIVE_EVIDENCE_20260729_v1_2.csv;NORMATIVE_EVIDENCE;use consolidated applicable edition
+N-04;NORMATIVE;Приказ Минэнерго России №1070;docs/research/SPECIALIZED_WORKFLOW_NORMATIVE_EVIDENCE_20260729_v1_2.csv;NORMATIVE_EVIDENCE;target fields/legal modes require point evidence
+N-09;NORMATIVE;Приказ Минэнерго России №796;docs/research/SPECIALIZED_WORKFLOW_NORMATIVE_EVIDENCE_20260729_v1_2.csv;NORMATIVE_EVIDENCE;do not equate acknowledgement/training/knowledge check

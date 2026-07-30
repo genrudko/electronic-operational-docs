@@ -1,0 +1,5 @@
+route_group;reference;source_id;decision;viewports;states;acceptance
+home;Direction A shell;SRC-UX-DIRECTION-A;ADOPT;1440x900|390x844;default|loading|empty|error;shared shell and navigation density
+defect;accepted DEFECT-001;SRC-UX-DIRECTION-A;ADOPT;1440x900|390x844;default|filter|drawer|readonly;preserve accepted composition and lifecycle states
+OPJ;accepted OPJ-UX-001;SRC-UX-DIRECTION-A;ADAPT;1440x900|1024x768|390x844;default|editing|readonly|overlay;specialized workspace inside shared shell
+all routes theme;UX-THEME-001;SRC-DEC-STAGE2;ADOPT;1440x900|1024x768|390x844;light|dark|system|first-paint;no mixed surfaces and no wrong-theme flash

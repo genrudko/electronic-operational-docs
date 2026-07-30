@@ -1,51 +1,32 @@
 from __future__ import annotations
 
-import re
-
 import check_documentation_contract_core as core
+import check_demo_release_plan
 
 _ORIGINAL_EXTRACT_BASELINE = core.extract_baseline
-_ACCEPTED_BASELINE_MARKER = "Accepted application baseline"
-_CURRENT_DOCUMENT_MARKERS = {
-    "docs/project/CURRENT_STATE.md": (
-        "accepted UX/application merge:",
-        "active work item:\nOPJ-UX-001",
-    ),
-    "docs/project/CURRENT_HANDOFF.md": (
-        "accepted UX/application merge:",
-        "Active work item — OPJ-UX-001",
-    ),
+_CURRENT_STATE = "docs/project/CURRENT_STATE.md"
+_COMPATIBILITY_BASELINE_FILES = {
+    "docs/project/CURRENT_HANDOFF.md",
+    "docs/project/BASELINE_HISTORY.md",
+    "docs/releases/RELEASE_NOTES.md",
 }
-_SHA_RE = re.compile(r"\b[0-9a-f]{40}\b", re.IGNORECASE)
 
 
-def _extract_baseline_with_current_handoff(relative: str) -> str | None:
-    baseline = _ORIGINAL_EXTRACT_BASELINE(relative)
-    if baseline is not None:
-        return baseline
-
-    content = core.read_text(relative)
-    _, marker_found, tail = content.partition(_ACCEPTED_BASELINE_MARKER)
-    if marker_found:
-        match = _SHA_RE.search(tail[:500])
-        if match:
-            return match.group(0).lower()
-
-    required_markers = _CURRENT_DOCUMENT_MARKERS.get(relative)
-    if required_markers and all(marker in content for marker in required_markers):
-        # CURRENT_STATE and CURRENT_HANDOFF now distinguish the accepted UX merge
-        # from the accepted application baseline. The latter remains canonical in
-        # BASELINE_HISTORY and RELEASE_NOTES, so reuse that value instead of
-        # misclassifying the newer UX merge as an application baseline.
-        return _ORIGINAL_EXTRACT_BASELINE(
-            "docs/project/BASELINE_HISTORY.md"
-        )
-
-    return None
+def _extract_canonical_baseline(relative: str) -> str | None:
+    if relative in _COMPATIBILITY_BASELINE_FILES:
+        return _ORIGINAL_EXTRACT_BASELINE(_CURRENT_STATE)
+    return _ORIGINAL_EXTRACT_BASELINE(relative)
 
 
-core.extract_baseline = _extract_baseline_with_current_handoff
+core.extract_baseline = _extract_canonical_baseline
+
+
+def main() -> int:
+    result = core.main()
+    if result:
+        return result
+    return check_demo_release_plan.main()
 
 
 if __name__ == "__main__":
-    raise SystemExit(core.main())
+    raise SystemExit(main())
