@@ -10,7 +10,7 @@ from .base import OperationalLogTestCase
 
 ROOT = Path(__file__).resolve().parents[3]
 ASSET_REVISION = "opjux00103"
-WORKSPACE_REVISION = "opjux00104"
+WORKSPACE_REVISION = "opjux00105"
 
 
 class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
@@ -173,6 +173,7 @@ class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
             "data-auto-reference-scan",
             "data-normative-trigger",
             "data-simplified-time-toggle",
+            "opj-time-format-example",
         ):
             self.assertIn(marker, toolbar)
 
@@ -245,6 +246,9 @@ class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
             ".opj-view-switch",
             'data-ribbon-mode="compact"',
             'data-view-mode="spread"',
+            'data-page-width="standard"',
+            'data-journal-entry-size="small"',
+            "position: static !important",
             "width: min(360px, 100vw)",
             ".opj-drawer-card",
             "@media (max-width: 720px)",
