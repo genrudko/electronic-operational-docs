@@ -99,7 +99,7 @@ class EquipmentDefectUXFoundationTests(SimpleTestCase):
         topbar = self.topbar_path.read_text(encoding="utf-8")
         shared_base = self.shared_base_path.read_text(encoding="utf-8")
         for marker in (
-            "da-sidebar defect-da-sidebar",
+            'class="da-sidebar"',
             "data-direction-a-sidebar",
             "ЭОД",
             "Рабочий стол",
@@ -116,19 +116,21 @@ class EquipmentDefectUXFoundationTests(SimpleTestCase):
             with self.subTest(marker=marker):
                 self.assertIn(marker, sidebar)
         for marker in (
-            "da-topbar defect-da-topbar",
+            'class="da-topbar"',
             "data-direction-a-topbar",
             "Рабочее место",
             "data-direction-a-toggle",
-            "data-defect-shell-toggle",
             "system:health",
             "organizations:logout",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, topbar)
-        self.assertIn('data-direction-a-shell', shared_base)
-        self.assertIn('shared/direction_a/_sidebar.html', shared_base)
-        self.assertIn('shared/direction_a/_topbar.html', shared_base)
+        self.assertIn("data-direction-a-shell", shared_base)
+        self.assertIn("shared/direction_a/_sidebar.html", shared_base)
+        self.assertIn("shared/direction_a/_topbar.html", shared_base)
+        shared_shell = "\n".join((shared_base, sidebar, topbar))
+        self.assertNotIn("defect-da-", shared_shell)
+        self.assertNotIn("data-defect-shell-", shared_shell)
 
     def test_registry_uses_dense_work_list_and_retains_exact_journal_view(self) -> None:
         template = self._read(
