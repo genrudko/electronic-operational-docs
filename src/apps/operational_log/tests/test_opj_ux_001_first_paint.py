@@ -66,7 +66,7 @@ class OpjDirectionAFirstPaintTests(SimpleTestCase):
         extra_head = base.index("{% block extra_head %}{% endblock %}")
         final_layer = base.index("system/direction_a_shell_final.css")
         self.assertLess(extra_head, final_layer)
-        self.assertIn("direction_a_shell_final.css' %}?v=opjux00107", base)
+        self.assertIn("direction_a_shell_final.css' %}?v=opjux00108", base)
         for marker in (
             "html:has(body.da-active)",
             "scrollbar-gutter: stable",
@@ -92,7 +92,25 @@ class OpjDirectionAFirstPaintTests(SimpleTestCase):
             "width: min(310px, 88vw)",
             "body.da-active.da-nav-open .da-sidebar",
             "body.da-active .da-menu-button",
-            "padding: 18px 14px 30px",
+            "padding: var(--da-page-padding-top-mobile) 14px 30px",
+        ):
+            self.assertIn(marker, shell_css)
+
+    def test_opj_compact_start_and_dark_theme_cover_the_shared_shell(self) -> None:
+        shell_css = self.source("static/system/direction_a_shell_final.css")
+        for marker in (
+            "body.da-active.opj-workspace-page",
+            "--da-page-padding-top: 4px",
+            "--da-page-padding-top-mobile: 8px",
+            'html[data-theme="dark"] body.da-active.opj-workspace-page',
+            "color-scheme: dark",
+            ".da-sidebar",
+            ".da-topbar",
+            ".da-navigation > a",
+            ".da-nav-child.is-active",
+            ".da-user-avatar",
+            ".da-button.is-secondary",
+            ".opj-meta-item.is-success",
         ):
             self.assertIn(marker, shell_css)
 
