@@ -1,0 +1,153 @@
+/* UX-THEME-001: the sole semantic colour owner for screen UI. Feature CSS owns geometry only. */
+:root {
+    --theme-canvas: #f4f7fb;
+    --theme-surface: #ffffff;
+    --theme-surface-soft: #f8fafc;
+    --theme-surface-raised: #ffffff;
+    --theme-border: #d9e2ec;
+    --theme-border-strong: #b8c6d6;
+    --theme-text: #182338;
+    --theme-text-muted: #68788e;
+    --theme-control: #ffffff;
+    --theme-control-hover: #edf4fb;
+    --theme-primary: #1267a5;
+    --theme-primary-hover: #0d5489;
+    --theme-primary-soft: #e6f1fb;
+    --theme-success: #247849;
+    --theme-success-soft: #e4f4ea;
+    --theme-warning: #9a5418;
+    --theme-warning-soft: #fff0df;
+    --theme-danger: #a33b35;
+    --theme-danger-soft: #fbe9e7;
+    --theme-focus: #1683c5;
+    --theme-overlay: rgba(24, 35, 56, 0.48);
+    --theme-shadow: 0 8px 24px rgba(32, 54, 82, 0.10);
+    --theme-shadow-overlay: 0 22px 56px rgba(24, 42, 52, 0.22);
+
+    /* Compatibility aliases: old layers consume the same semantic owner. */
+    --bg: var(--theme-canvas);
+    --panel: var(--theme-surface);
+    --panel-2: var(--theme-surface-soft);
+    --panel-3: var(--theme-control-hover);
+    --border: var(--theme-border);
+    --text: var(--theme-text);
+    --muted: var(--theme-text-muted);
+    --accent: var(--theme-success);
+    --accent-2: var(--theme-primary);
+    --warning: var(--theme-warning);
+    --danger: var(--theme-danger);
+    --shadow: var(--theme-shadow);
+    --da-canvas: var(--theme-canvas);
+    --da-surface: var(--theme-surface);
+    --da-surface-soft: var(--theme-surface-soft);
+    --da-border: var(--theme-border);
+    --da-border-strong: var(--theme-border-strong);
+    --da-text: var(--theme-text);
+    --da-muted: var(--theme-text-muted);
+    --da-blue: var(--theme-primary);
+    --da-blue-dark: var(--theme-primary-hover);
+    --da-blue-soft: var(--theme-primary-soft);
+    --da-orange: var(--theme-warning);
+    --da-orange-soft: var(--theme-warning-soft);
+    --da-green: var(--theme-success);
+    --da-green-soft: var(--theme-success-soft);
+    --da-red: var(--theme-danger);
+    --da-red-soft: var(--theme-danger-soft);
+    --da-slate: var(--theme-text-muted);
+    --da-slate-soft: var(--theme-control-hover);
+    --da-shadow: var(--theme-shadow);
+    --da-shadow-overlay: var(--theme-shadow-overlay);
+}
+
+:root[data-theme="dark"] {
+    --theme-canvas: #0d141d;
+    --theme-surface: #151f2b;
+    --theme-surface-soft: #1a2634;
+    --theme-surface-raised: #202e3e;
+    --theme-border: #34465a;
+    --theme-border-strong: #536980;
+    --theme-text: #edf3f9;
+    --theme-text-muted: #a9b8c8;
+    --theme-control: #111b26;
+    --theme-control-hover: #243446;
+    --theme-primary: #67b7ee;
+    --theme-primary-hover: #91cdf4;
+    --theme-primary-soft: #173951;
+    --theme-success: #67d09a;
+    --theme-success-soft: #173d2b;
+    --theme-warning: #f0b56f;
+    --theme-warning-soft: #49331d;
+    --theme-danger: #f0948e;
+    --theme-danger-soft: #4a2929;
+    --theme-focus: #72c7ff;
+    --theme-overlay: rgba(2, 7, 12, 0.72);
+    --theme-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+    --theme-shadow-overlay: 0 24px 60px rgba(0, 0, 0, 0.52);
+}
+
+html, body { background-color: var(--theme-canvas); color: var(--theme-text); }
+body { background-image: none; }
+a { color: var(--theme-primary); }
+a:hover { color: var(--theme-primary-hover); }
+
+/* Shared shell and screen primitives. */
+.topbar, .presentation-topbar, .da-sidebar, .da-topbar, .da-mobile-navigation,
+.nav-menu-panel, footer, .da-footer { background: var(--theme-surface); color: var(--theme-text); border-color: var(--theme-border); }
+.da-shell, .da-stage, .da-page, body.da-active { background: var(--theme-canvas); color: var(--theme-text); }
+.da-navigation > a, .da-nav-group-title, .da-nav-child, .da-brand,
+.da-user-trigger, .brand, h1, h2, h3, h4, strong { color: var(--theme-text); }
+.da-navigation > a:hover, .da-nav-child:hover, .da-user-trigger:hover,
+.topnav a:hover, .nav-menu-panel a:hover { background: var(--theme-control-hover); color: var(--theme-primary-hover); }
+.da-nav-child.is-active, .da-nav-child[aria-current="page"], .active {
+    background-color: var(--theme-primary-soft); color: var(--theme-primary-hover);
+}
+
+.panel, .profile-card, .card, .hero, .login-callout, .directory-card,
+.principles, .empty-state, .auth-card, .metric, .da-panel, .da-panel-flat,
+.da-context, .da-stat-card, .da-filter-bar, .da-table-wrap, .message,
+.account-setting-card, .opj-workspace, .opj-registered-context,
+.defect-command-deck, .defect-worklist, .defect-journal-surface {
+    background: var(--theme-surface); color: var(--theme-text); border-color: var(--theme-border);
+    box-shadow: var(--theme-shadow);
+}
+
+input, select, textarea, button, .button, .da-button, [role="button"],
+.draft-field, .draft-reference-input, .opj-toolbar button {
+    background-color: var(--theme-control); color: var(--theme-text); border-color: var(--theme-border-strong);
+}
+input::placeholder, textarea::placeholder { color: var(--theme-text-muted); opacity: 1; }
+input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible {
+    outline: 2px solid var(--theme-focus); outline-offset: 2px;
+}
+th, td, table, .da-table th, .da-table td { color: var(--theme-text); border-color: var(--theme-border); }
+th, label, small, .muted, .page-heading p, .da-muted, .da-context span,
+.da-context small, .card-label { color: var(--theme-text-muted); }
+
+dialog, .dialog-card, .drawer, .opj-settings-drawer, .opj-overlay-panel,
+.equipment-dialog-card, .equipment-picker-dialog, .draft-reference-dialog {
+    background: var(--theme-surface-raised); color: var(--theme-text); border-color: var(--theme-border);
+    box-shadow: var(--theme-shadow-overlay);
+}
+dialog::backdrop, .dialog-backdrop, .drawer-backdrop, .opj-overlay { background: var(--theme-overlay); }
+
+/* Specialized screens keep their accepted layout while inheriting shared colours. */
+.opj-toolbar, .opj-command-toolbar, .opj-ledger-header, .opj-ledger-date,
+.opj-ledger-body, .opj-ledger-footer, .draft-page-shell, .opj-ledger-surface,
+.draft-entry-row, .draft-entry-cell, .draft-reference-panel,
+.defect-journal-toolbar, .defect-journal-header, .defect-journal-row,
+.defect-detail-main, .defect-detail-aside, .defect-worklist-row {
+    background-color: var(--theme-surface); color: var(--theme-text); border-color: var(--theme-border);
+}
+.opj-toolbar, .opj-command-toolbar, .opj-ledger-header, .defect-journal-header {
+    background-color: var(--theme-surface-soft);
+}
+.status-chip, .da-chip { border-color: var(--theme-border-strong); }
+.status-draft, .is-warning { background: var(--theme-warning-soft); color: var(--theme-warning); }
+.status-registered, .is-success { background: var(--theme-success-soft); color: var(--theme-success); }
+.is-danger, .status-danger { background: var(--theme-danger-soft); color: var(--theme-danger); }
+
+@media print {
+    :root, :root[data-theme="dark"] { color-scheme: light !important; }
+    html, body, main, .print-sheet { background: #fff !important; color: #000 !important; }
+    * { box-shadow: none !important; }
+}
