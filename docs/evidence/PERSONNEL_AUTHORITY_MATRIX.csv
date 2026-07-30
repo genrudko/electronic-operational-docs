@@ -1,0 +1,6 @@
+authority_id;entity;target_model;scope;validity;basis_revision;contractor_seconded_semantics;substitution;action_time_evaluation;immutable_snapshot;evidence_pep_link;consuming_actions;current_status
+AUTH-ORG;organization;Organization;org/division/workplace;validity/history;basis revision;contractor affiliation;substitution does not change org;evaluate at action;organization snapshot;authentication evidence;all actions;IMPLEMENTED-PARTIAL
+AUTH-PERSON;person;Employee;identified person;active relation;personnel basis;external person with basis;named substitute;evaluate identity/relation;person snapshot;authentication/PEP;signature/action;IMPLEMENTED-PARTIAL
+AUTH-POSITION;position/category;Position;position/category;valid period;appointment revision;external category;acting position dates;evaluate at action;position snapshot;authority evidence;OPJ/SHIFT/work;IMPLEMENTED-PARTIAL
+AUTH-QUAL;qualification/group;EmployeeQualification;qualification scope;valid period;certificate revision;same rules;not inherited;evaluate expiry/scope;qualification snapshot;knowledge-check;permit/switching/inspection;FOUNDATION-ONLY
+AUTH-RIGHT;operational right;GrantedOperationalRight;right+object/action scope;valid period;order/local-act revision;granting org;explicit delegation;allow/deny reason;right/scope/basis snapshot;confirmation/PEP;registration/handover;ABSENT

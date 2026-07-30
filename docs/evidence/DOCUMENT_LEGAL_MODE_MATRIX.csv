@@ -1,0 +1,12 @@
+document_or_event;module_id;product_target_mode;product_boundary_status;normative_evidence_status;local_act_status;proven_legal_mode;source_ids;open_gap
+registered OPJ entry;OPJ;ELECTRONIC_ORIGINAL_TARGET;TARGET_ONLY;PARTIAL;VERIFY;VERIFY;N-04;Consolidated normative evidence and applicable local act required.
+equipment defect entry;DEFECT;ELECTRONIC_ORIGINAL_TARGET;TARGET_ONLY;PARTIAL;VERIFY;VERIFY;N-04;Consolidated normative evidence and applicable local act required.
+permit to work;WORK-PERMIT;HYBRID;USER_ACCEPTED_PRODUCT_BOUNDARY;PARTIAL;VERIFY;VERIFY;N-01|N-02;Consolidated normative evidence and applicable local act required.
+permit work journal;PERMIT-WORK-JOURNAL;ELECTRONIC_ORIGINAL_TARGET;TARGET_ONLY;VERIFY;VERIFY;VERIFY;N-01|N-02;Consolidated normative evidence and applicable local act required.
+operational order journal;OPERATIONAL-ORDERS;PAPER_MIRROR;USER_ACCEPTED_PRODUCT_BOUNDARY;CONFIRMED_PRODUCT_BOUNDARY;VERIFY;VERIFY;SRC-DEC-STAGE2;Consolidated normative evidence and applicable local act required.
+order work journal;ORDER-WORK-JOURNAL;PAPER_MIRROR;USER_ACCEPTED_PRODUCT_BOUNDARY;CONFIRMED_PRODUCT_BOUNDARY;VERIFY;VERIFY;N-01|SRC-DEC-STAGE2;Consolidated normative evidence and applicable local act required.
+signature evidence;NORMATIVE-EVIDENCE;EVIDENCE_EVENT;TARGET_ONLY;VERIFY;VERIFY;VERIFY;N-01|N-04;Consolidated normative evidence and applicable local act required.
+acknowledgement;NORMATIVE-EVIDENCE;EVIDENCE_EVENT;TARGET_ONLY;VERIFY;VERIFY;VERIFY;N-04;Consolidated normative evidence and applicable local act required.
+instruction;NORMATIVE-EVIDENCE;EVIDENCE_EVENT;TARGET_ONLY;VERIFY;VERIFY;VERIFY;N-01|N-09;Consolidated normative evidence and applicable local act required.
+knowledge check;PERSONNEL-AUTHORITY;EVIDENCE_EVENT;TARGET_ONLY;VERIFY;VERIFY;VERIFY;N-09;Consolidated normative evidence and applicable local act required.
+action confirmation;NORMATIVE-EVIDENCE;EVIDENCE_EVENT;TARGET_ONLY;VERIFY;VERIFY;VERIFY;SRC-DEC-STAGE2;Consolidated normative evidence and applicable local act required.

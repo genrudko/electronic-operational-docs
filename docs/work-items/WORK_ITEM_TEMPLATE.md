@@ -1,0 +1,35 @@
+# WORK ITEM execution package
+
+Каждый implementation work item обязан содержать:
+
+```text
+WORK ITEM ID
+PARENT RELEASE
+PARENT MODULE
+CAPABILITY IDS
+EXACT BASELINE SHA
+GOAL
+USER SCENARIO
+BUSINESS RESULT
+IN SCOPE
+OUT OF SCOPE
+DEPENDENCIES
+DOMAIN CONTRACT
+LEGAL MODE / VERIFY OWNER
+SOURCE IDS
+COMPETITOR BENCHMARK
+UX REFERENCES / LOCATORS
+VIEWPORTS / STATES
+ALLOWED FILES
+PROTECTED FILES
+FORBIDDEN CHANGES
+DATA / FIXTURES
+ACCEPTANCE IDS
+REQUIRED CHECKS
+DELIVERY PROFILE
+COMMIT / PR RULES
+REPORT FORMAT
+STOP CONDITIONS
+```
+
+Задача не стартует при отсутствии exact baseline, source/UX/acceptance/file boundary. Исключение — явно зафиксированный `VERIFY` с владельцем решения и запретом выдумывать недостающий контракт.

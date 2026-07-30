@@ -1,0 +1,18 @@
+document_or_event,mode,depth,status,current_evidence,gap
+normative model and PEP,ELECTRONIC-ORIGINAL,Demo,USER-ACCEPTED-DOMAIN-DECISION,Document signature/integrity foundation,"Define local-act applicability, event taxonomy, retention/correction"
+operational journal registered entry,ELECTRONIC-ORIGINAL,Demo,INFERENCE,Immutable entry/audit foundation,Complete registration/correction/cancellation and authority snapshot
+equipment defect journal,ELECTRONIC-ORIGINAL,Demo,IMPLEMENTED-ACCEPTED,Accepted separate lifecycle,Confirm approved form and retention per deployment context
+permit-to-work,HYBRID,Demo,USER-ACCEPTED-DOMAIN-DECISION,No implementation,Electronic authoring plus paper original/signatures boundary
+permit work register,ELECTRONIC-ORIGINAL,Demo,USER-ACCEPTED-DOMAIN-DECISION,No implementation,Approved form/lifecycle/print
+disposition journal,PAPER-WITH-ELECTRONIC-MIRROR,Demo,USER-ACCEPTED-DOMAIN-DECISION,No implementation,"Mirror provenance, corrections and non-original labeling"
+disposition work register,PAPER-WITH-ELECTRONIC-MIRROR,Demo,USER-ACCEPTED-DOMAIN-DECISION,No implementation,Primary paper source and derived/mirror rules
+workplace documentation,REFERENCE-ONLY,Demo,FACT,Versioned generic registry,Per-class storage/original/status rules
+schemes,REFERENCE-ONLY,Demo,USER-ACCEPTED-DOMAIN-DECISION,Generic foundation only,Current revision approval/view/print; editor excluded
+scheme editor/topology/interlocks,POST-DEMO,Post-demo,USER-ACCEPTED-DOMAIN-DECISION,Absent,Separate engineering evidence
+keys electronic register,POST-DEMO,Post-demo,USER-ACCEPTED-DOMAIN-DECISION,Absent,Paper-first mode
+switching engineering automation,POST-DEMO,Post-demo,USER-ACCEPTED-DOMAIN-DECISION,Absent,Topology/RZA/responsibility evidence
+signature,VERIFY,Demo,FACT,DocumentSignature exists,Do not equate with acknowledgement/instruction/knowledge/action confirmation
+acknowledgement,VERIFY,Demo,USER-ACCEPTED-DOMAIN-DECISION,Defect acknowledgement action only,Generic evidence event and normative basis
+instruction,VERIFY,Demo,USER-ACCEPTED-DOMAIN-DECISION,No generic model,Distinct participants/content/time evidence
+knowledge check,VERIFY,Demo,USER-ACCEPTED-DOMAIN-DECISION,Qualification foundation only,Result/validity/source evidence
+action confirmation,VERIFY,Demo,USER-ACCEPTED-DOMAIN-DECISION,Module-specific actions exist,Separate evidence semantics and authority-at-time

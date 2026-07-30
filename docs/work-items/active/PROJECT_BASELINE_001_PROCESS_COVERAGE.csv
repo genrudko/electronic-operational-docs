@@ -1,0 +1,23 @@
+process,primary_facts,derived_views,roles,documents,relations,status,missing_contracts
+начало смены,OperationalShift/open_shift,shift/member,оператор,OPJ,OPJ draft,IMPLEMENTED-PARTIAL,close/handover authority
+ведение и регистрация записи ОЖ,draft autosave/editor; immutable entry model,draft→entry intended,оператор,ОЖ,equipment/document links,IMPLEMENTED-PARTIAL,registration/correction/cancel incomplete
+оперативные переговоры,No process-specific model/service/route found,VERIFY,VERIFY,оперативные переговоры,proposed only,ABSENT,"Source form, lifecycle, roles, authority, evidence and acceptance required"
+дефект оборудования,EquipmentDefectVolume lifecycle,OPJ/equipment/action evidence,оператор/ответственные,дефект/ОЖ,explicit link,IMPLEMENTED-ACCEPTED,accepted bounded
+заявка,No process-specific model/service/route found,VERIFY,VERIFY,заявка,proposed only,ABSENT,"Source form, lifecycle, roles, authority, evidence and acceptance required"
+журнал распоряжений,No process-specific model/service/route found,VERIFY,VERIFY,журнал распоряжений,proposed only,ABSENT,"Source form, lifecycle, roles, authority, evidence and acceptance required"
+наряд-допуск,No process-specific model/service/route found,VERIFY,VERIFY,наряд-допуск,proposed only,ABSENT,"Source form, lifecycle, roles, authority, evidence and acceptance required"
+журнал работ по нарядам,No process-specific model/service/route found,VERIFY,VERIFY,журнал работ по нарядам,proposed only,ABSENT,"Source form, lifecycle, roles, authority, evidence and acceptance required"
+работа и журнал по распоряжению,No process-specific model/service/route found,VERIFY,VERIFY,работа и журнал по распоряжению,proposed only,ABSENT,"Source form, lifecycle, roles, authority, evidence and acceptance required"
+работы в порядке текущей эксплуатации,No process-specific model/service/route found,VERIFY,VERIFY,работы в порядке текущей эксплуатации,proposed only,ABSENT,"Source form, lifecycle, roles, authority, evidence and acceptance required"
+установка и снятие заземлений,No process-specific model/service/route found,VERIFY,VERIFY,установка и снятие заземлений,proposed only,ABSENT,"Source form, lifecycle, roles, authority, evidence and acceptance required"
+ручной документальный контур переключений,No process-specific model/service/route found,VERIFY,VERIFY,ручной документальный контур переключений,proposed only,ABSENT,"Source form, lifecycle, roles, authority, evidence and acceptance required"
+осмотр/обход,No process-specific model/service/route found,VERIFY,VERIFY,осмотр/обход,proposed only,ABSENT,"Source form, lifecycle, roles, authority, evidence and acceptance required"
+ввод оборудования в работу,No process-specific model/service/route found,VERIFY,VERIFY,ввод оборудования в работу,proposed only,ABSENT,"Source form, lifecycle, roles, authority, evidence and acceptance required"
+РЗА/ТМ,No process-specific model/service/route found,VERIFY,VERIFY,РЗА/ТМ,proposed only,ABSENT,"Source form, lifecycle, roles, authority, evidence and acceptance required"
+токи КЗ выключателей,No process-specific model/service/route found,VERIFY,VERIFY,токи КЗ выключателей,proposed only,ABSENT,"Source form, lifecycle, roles, authority, evidence and acceptance required"
+осмотр аккумуляторной батареи,No process-specific model/service/route found,VERIFY,VERIFY,осмотр аккумуляторной батареи,proposed only,ABSENT,"Source form, lifecycle, roles, authority, evidence and acceptance required"
+документация рабочего места,WorkplaceDocument revisions,organization/workplace,authorized staff,list/revision/entry,source metadata,IMPLEMENTED-PARTIAL,specialized use contracts
+схемы как документы,generic workplace/document cores only,equipment/document links,VERIFY,scheme revision,generic links,IMPLEMENTED-PARTIAL,scheme-specific contract absent
+передача смены,No process-specific model/service/route found,VERIFY,VERIFY,передача смены,proposed only,ABSENT,"Source form, lifecycle, roles, authority, evidence and acceptance required"
+dashboard/reporting,Home/presentation exists; no derived reporting contract,VERIFY,VERIFY,dashboard/reporting,proposed only,PRESENTATION-ONLY,Define primary facts and minimum derived views; prohibit second database
+междокументные связи,generic DocumentLink; operational links/relations,typed links,authorized users,documents/records,several link models,IMPLEMENTED-PARTIAL,cross-module semantics/snapshots
