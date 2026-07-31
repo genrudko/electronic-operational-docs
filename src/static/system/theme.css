@@ -21,6 +21,7 @@
     --theme-primary: #1267a5;
     --theme-primary-hover: #0d5489;
     --theme-primary-soft: #e6f1fb;
+    --theme-on-primary: #ffffff;
     --theme-info: #1267a5;
     --theme-info-soft: #e6f1fb;
     --theme-success: #247849;
@@ -94,6 +95,7 @@
     --theme-primary: #67b7ee;
     --theme-primary-hover: #91cdf4;
     --theme-primary-soft: #173951;
+    --theme-on-primary: #0d141d;
     --theme-info: #67b7ee;
     --theme-info-soft: #173951;
     --theme-success: #67d09a;
@@ -265,6 +267,102 @@ html[data-theme] .approved-journal-shell {
 .drawer-backdrop,
 .opj-overlay {
     background: var(--theme-overlay);
+}
+
+/* Transient controls use the same semantic palette as their parent routes. */
+html[data-theme] .defect-picker-panel {
+    border-color: var(--theme-border-strong);
+    background: var(--theme-surface-raised);
+    color: var(--theme-text);
+    box-shadow: var(--theme-shadow-overlay);
+}
+
+html[data-theme] .defect-picker-header,
+html[data-theme] .defect-picker-footer,
+html[data-theme] .defect-time-wheel {
+    border-color: var(--theme-border);
+    background: var(--theme-surface-soft);
+    color: var(--theme-text);
+}
+
+html[data-theme] .defect-picker-heading h2,
+html[data-theme] .defect-calendar-month,
+html[data-theme] .defect-calendar-day,
+html[data-theme] .defect-time-option,
+html[data-theme] .defect-picker-button.secondary {
+    color: var(--theme-text);
+}
+
+html[data-theme] .defect-picker-heading p,
+html[data-theme] .defect-calendar-weekdays span,
+html[data-theme] .defect-calendar-day.is-adjacent,
+html[data-theme] .defect-time-column h3 {
+    color: var(--theme-text-muted);
+}
+
+html[data-theme] .defect-picker-current-value,
+html[data-theme] .defect-time-picker-display,
+html[data-theme] .defect-picker-trigger,
+html[data-theme] .defect-picker-close,
+html[data-theme] .defect-calendar-nav,
+html[data-theme] .defect-picker-link-button {
+    color: var(--theme-primary);
+}
+
+html[data-theme] .defect-picker-trigger,
+html[data-theme] .defect-picker-close,
+html[data-theme] .defect-calendar-nav,
+html[data-theme] .defect-calendar-day,
+html[data-theme] .defect-time-option,
+html[data-theme] .defect-picker-button.secondary {
+    border-color: var(--theme-border);
+    background: var(--theme-control);
+}
+
+html[data-theme] .defect-picker-trigger:hover,
+html[data-theme] .defect-picker-trigger:focus-visible,
+html[data-theme] .defect-picker-close:hover,
+html[data-theme] .defect-picker-close:focus-visible,
+html[data-theme] .defect-calendar-nav:hover,
+html[data-theme] .defect-calendar-nav:focus-visible,
+html[data-theme] .defect-calendar-day:hover,
+html[data-theme] .defect-calendar-day:focus-visible,
+html[data-theme] .defect-time-option:hover,
+html[data-theme] .defect-time-option:focus-visible {
+    border-color: var(--theme-primary);
+    background: var(--theme-control-hover);
+    color: var(--theme-primary-hover);
+}
+
+html[data-theme] .defect-picker-link-button {
+    border-color: var(--theme-border-strong);
+    background: var(--theme-primary-soft);
+}
+
+html[data-theme] .defect-calendar-day.is-today::after {
+    background: var(--theme-primary);
+}
+
+html[data-theme] .defect-calendar-day.is-selected,
+html[data-theme] .defect-time-option.is-selected,
+html[data-theme] .defect-picker-button.primary {
+    border-color: var(--theme-primary);
+    background: var(--theme-primary);
+    color: var(--theme-on-primary);
+}
+
+html[data-theme] .defect-calendar-day.is-selected::after {
+    background: var(--theme-on-primary);
+}
+
+html[data-theme] .opj-workspace-page .opj-workspace-drawer {
+    background: var(--theme-surface-soft);
+    color: var(--theme-text);
+}
+
+html[data-theme] .opj-workspace-page .opj-drawer-card[open] > summary {
+    background: var(--theme-control-hover);
+    color: var(--theme-text);
 }
 
 @media print {
