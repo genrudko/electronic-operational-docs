@@ -56,7 +56,7 @@ def style(node):
 
 def theme(page, value):
     page.evaluate("v=>window.EODTheme.apply(v,'browser-theme')", value)
-    page.wait_for_function("v=>document.documentElement.dataset.theme===v", value)
+    page.wait_for_function("v=>document.documentElement.dataset.theme===v", arg=value)
 
 
 def discover(page):
