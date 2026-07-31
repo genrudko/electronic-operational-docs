@@ -54,6 +54,21 @@ def style(node):
     )
 
 
+def resolved_background(page, token):
+    return page.locator("html").evaluate(
+        """(root, token) => {
+            const probe = document.createElement("span");
+            probe.style.backgroundColor = `var(${token})`;
+            probe.style.display = "none";
+            root.appendChild(probe);
+            const value = getComputedStyle(probe).backgroundColor;
+            probe.remove();
+            return value;
+        }""",
+        token,
+    )
+
+
 def theme(page, value):
     page.evaluate("v=>window.EODTheme.apply(v,'browser-theme')", value)
     page.wait_for_function("v=>document.documentElement.dataset.theme===v", arg=value)
@@ -94,19 +109,18 @@ def main():
                     theme(page, mode)
                     node = need(page, SELECTORS[route])
                     actual = style(node)
-                    expected = page.locator("html").evaluate(
-                        "(n,t)=>getComputedStyle(n).getPropertyValue(t).trim()", TOKENS[route]
-                    )
+                    expected = resolved_background(page, TOKENS[route])
+                    key = f"{route}__{mode}__{width}x{height}"
+                    report["baseline"][key] = {**actual, "expected_background": expected}
+                    page.screenshot(path=shots / f"{key}.png", full_page=True)
                     if (
                         actual["background"].replace(" ", "") != expected.replace(" ", "")
                         or mode not in style(page.locator("html"))["scheme"].split()
                     ):
                         raise AssertionError(f"theme mismatch {route} {mode}: {actual} {expected}")
-                    key = f"{route}__{mode}__{width}x{height}"
-                    report["baseline"][key] = actual
-                    page.screenshot(path=shots / f"{key}.png", full_page=True)
         if len(report["baseline"]) != 42:
             raise AssertionError("must contain exactly 42 files")
+        page.set_viewport_size({"width": 1440, "height": 900})
         page.goto(BASE + ROUTES["defect_registry"])
         theme(page, "dark")
         need(page, ".defect-filter-drawer > summary").click()
