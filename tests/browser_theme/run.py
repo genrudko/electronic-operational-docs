@@ -80,6 +80,29 @@ def theme(page, value):
     page.wait_for_function("v=>document.documentElement.dataset.theme===v", arg=value)
 
 
+def activate_editor_caret(page):
+    editor = need(page, '.draft-rich-editor-host [contenteditable="true"]')
+    editor.click()
+    prepared = editor.evaluate(
+        """editor => {
+            const block = editor.querySelector('p, li');
+            if (!block) return false;
+            const range = document.createRange();
+            range.selectNodeContents(block);
+            range.collapse(false);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            editor.focus({preventScroll: true});
+            document.dispatchEvent(new Event('selectionchange'));
+            return true;
+        }"""
+    )
+    if not prepared:
+        raise AssertionError(f"missing editable paragraph at {page.url}")
+    page.wait_for_timeout(80)
+
+
 def defect_detail_path(hrefs):
     for href in hrefs:
         match = re.fullmatch(r"/operations/defects/([^/]+)/", href)
@@ -167,7 +190,7 @@ def main():
         need(page, "[data-open-view-drawer]").click()
         report["open_states"]["opj_drawer"] = style(need(page, "[data-view-drawer]"))
         need(page, "[data-close-view-drawer]").click()
-        need(page, '.draft-rich-editor-host [contenteditable="true"]').click()
+        activate_editor_caret(page)
         need(page, "[data-reference-trigger]:not([disabled])").click()
         report["open_states"]["opj_reference"] = style(need(page, "[data-reference-picker]"))
         page.goto(BASE + ROUTES["account_settings"])
