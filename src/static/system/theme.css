@@ -17,6 +17,7 @@
     --theme-control-hover: #edf4fb;
     --theme-control-readonly: #f2f5f8;
     --theme-control-disabled: #e6ebf0;
+    --theme-placeholder: #7b899b;
     --theme-primary: #1267a5;
     --theme-primary-hover: #0d5489;
     --theme-primary-soft: #e6f1fb;
@@ -89,6 +90,7 @@
     --theme-control-hover: #243446;
     --theme-control-readonly: #1a2634;
     --theme-control-disabled: #283545;
+    --theme-placeholder: #8fa0b2;
     --theme-primary: #67b7ee;
     --theme-primary-hover: #91cdf4;
     --theme-primary-soft: #173951;

@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 from django.conf import settings
@@ -92,7 +93,7 @@ class GlobalThemeContractTests(SimpleTestCase):
 
     def test_theme_layer_does_not_recolour_generic_feature_elements(self):
         css = self.source("src/static/system/theme.css").split("@media print", 1)[0]
-        for selector in ("[role=\"button\"]", "th, td", "strong {", ".active {"):
+        for selector in ('[role="button"]', "th, td", "strong {", ".active {"):
             self.assertNotIn(selector, css)
 
     def test_print_colours_are_isolated_from_screen_components(self):
@@ -101,3 +102,40 @@ class GlobalThemeContractTests(SimpleTestCase):
         self.assertNotIn("!important", screen)
         self.assertIn("background: #fff !important", print_rules)
         self.assertIn("color: #000 !important", print_rules)
+
+    def test_repair_two_removes_local_theme_owners(self):
+        direction = self.source("src/static/system/direction_a.css").split("@media print", 1)[0]
+        workspace = self.source("src/static/operational_log/opj_workspace_controls.css")
+        self.assertNotRegex(direction, r"color-scheme\s*:\s*light")
+        self.assertNotIn('html[data-theme="dark"] body.opj-workspace-page', workspace)
+        self.assertIn("--theme-placeholder", self.source("src/static/system/theme.css"))
+
+    def test_browser_job_and_matrix_are_blocking(self):
+        workflow = self.source(".github/workflows/ci.yml")
+        runner = self.source("tests/browser_theme/run.py")
+        self.assertIn("browser-theme:", workflow)
+        self.assertIn("postgres:18.4-bookworm", workflow)
+        self.assertIn("python tests/browser_theme/run.py", workflow)
+        self.assertIn("browser-theme-evidence-${{ github.sha }}", workflow)
+        self.assertIn("VIEWPORTS = ((1440, 900), (1024, 768), (390, 844))", runner)
+        self.assertIn('THEMES = ("light", "dark")', runner)
+        self.assertIn("must contain exactly 42 files", runner)
+        for selector in (
+            ".defect-filter-grid",
+            ".defect-picker-panel",
+            ".journal-settings-dialog",
+            "[data-view-drawer]",
+            "[data-reference-picker]",
+        ):
+            self.assertIn(selector, runner)
+
+    def test_audited_components_reject_near_white_screen_colours(self):
+        declaration = re.compile(r"(?:background(?:-color)?|color)\s*:\s*([^;{}]+)", re.I)
+        legacy = re.compile(r"#fff(?:fff)?\b|rgba?\(\s*255\s*,\s*255\s*,\s*255", re.I)
+        for path in (
+            "src/static/system/direction_a.css",
+            "src/static/operational_log/opj_ux_001.css",
+            "src/static/operational_log/opj_workspace_controls.css",
+        ):
+            screen = self.source(path).split("@media print", 1)[0]
+            self.assertEqual([v for v in declaration.findall(screen) if legacy.search(v)], [], path)
