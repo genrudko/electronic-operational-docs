@@ -127,6 +127,8 @@
     --topbar-border: var(--theme-border);
     --topbar-text: var(--theme-text);
     --topbar-muted: var(--theme-text-muted);
+    --da-complete: var(--theme-info);
+    --da-complete-soft: var(--theme-info-soft);
 }
 
 html, body {
@@ -188,7 +190,7 @@ body.da-active {
 
 .da-nav-child.is-active,
 .da-nav-child[aria-current="page"] {
-    background-color: var(--theme-primary-soft);
+    background: var(--theme-primary-soft);
     color: var(--theme-primary-hover);
 }
 
@@ -363,6 +365,74 @@ html[data-theme] .opj-workspace-page .opj-workspace-drawer {
 html[data-theme] .opj-workspace-page .opj-drawer-card[open] > summary {
     background: var(--theme-control-hover);
     color: var(--theme-text);
+}
+
+/* Shared alerts and lifecycle indicators must not retain light-only owners. */
+html[data-theme] .da-alert {
+    border-color: var(--theme-border);
+    border-left-color: var(--theme-primary);
+    background: var(--theme-surface-soft);
+    color: var(--theme-text);
+}
+
+html[data-theme] .da-alert p {
+    color: var(--theme-text-muted);
+}
+
+html[data-theme] .da-alert.is-success {
+    border-left-color: var(--theme-success);
+    background: var(--theme-success-soft);
+}
+
+html[data-theme] .da-alert.is-warning {
+    border-left-color: var(--theme-warning);
+    background: var(--theme-warning-soft);
+}
+
+html[data-theme] .da-alert.is-danger {
+    border-left-color: var(--theme-danger);
+    background: var(--theme-danger-soft);
+}
+
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle li {
+    border-color: var(--theme-border);
+    background: var(--theme-surface-soft);
+    color: var(--theme-text-muted);
+}
+
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="REGISTERED"],
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="REGISTERED"],
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="IN_PROGRESS"],
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="REGISTERED"],
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="IN_PROGRESS"],
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="RESOLVED"] {
+    border-color: var(--theme-info);
+    background: var(--theme-info-soft);
+    color: var(--theme-info);
+}
+
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="REGISTERED"] [data-step="REGISTERED"] {
+    border-color: var(--theme-primary);
+    background: var(--theme-primary-soft);
+    color: var(--theme-primary);
+}
+
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="IN_PROGRESS"] {
+    border-color: var(--theme-warning);
+    background: var(--theme-warning-soft);
+    color: var(--theme-warning);
+}
+
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="RESOLVED"] {
+    border-color: var(--theme-success);
+    background: var(--theme-success-soft);
+    color: var(--theme-success);
+}
+
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="CLOSED"] {
+    border-color: var(--theme-border-strong);
+    background: var(--theme-control-hover);
+    color: var(--theme-text-muted);
 }
 
 @media print {
