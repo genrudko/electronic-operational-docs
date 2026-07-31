@@ -147,7 +147,10 @@ def main():
         page.goto(BASE + "/operations/defects/new/")
         theme(page, "dark")
         need(page, ".defect-picker-trigger").click()
-        report["open_states"]["defect_datetime"] = style(need(page, ".defect-picker-panel"))
+        picker = need(page, ".defect-picker-panel")
+        report["open_states"]["defect_datetime"] = style(picker)
+        page.keyboard.press("Escape")
+        picker.wait_for(state="hidden")
         for kind in ("equipment", "personnel", "workplace"):
             field = need(page, f".defect-tree-selector--{kind} .defect-tree-input")
             field.click()
