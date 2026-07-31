@@ -111,6 +111,22 @@
     --theme-shadow-overlay: 0 24px 60px rgba(0, 0, 0, 0.52);
 }
 
+/* Patch 007.3 compatibility: its !important consumers resolve through the semantic owner. */
+:root[data-theme="light"],
+:root[data-theme="dark"] {
+    --surface: var(--theme-surface);
+    --surface-soft: var(--theme-surface-soft);
+    --surface-muted: var(--theme-control-hover);
+    --surface-text: var(--theme-text);
+    --surface-secondary-text: var(--theme-text-muted);
+    --field-bg: var(--theme-control);
+    --link: var(--theme-primary);
+    --topbar-bg: var(--theme-surface);
+    --topbar-border: var(--theme-border);
+    --topbar-text: var(--theme-text);
+    --topbar-muted: var(--theme-text-muted);
+}
+
 html, body {
     background-color: var(--theme-canvas);
     color: var(--theme-text);
