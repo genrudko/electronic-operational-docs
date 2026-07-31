@@ -5,6 +5,7 @@ import json
 import os
 import re
 from pathlib import Path
+from uuid import UUID
 
 from playwright.sync_api import sync_playwright
 
@@ -70,8 +71,26 @@ def resolved_background(page, token):
 
 
 def theme(page, value):
+    available = page.evaluate(
+        "()=>Boolean(window.EODTheme && typeof window.EODTheme.apply === 'function')"
+    )
+    if not available:
+        raise AssertionError(f"missing window.EODTheme at {page.url}")
     page.evaluate("v=>window.EODTheme.apply(v,'browser-theme')", value)
     page.wait_for_function("v=>document.documentElement.dataset.theme===v", arg=value)
+
+
+def defect_detail_path(hrefs):
+    for href in hrefs:
+        match = re.fullmatch(r"/operations/defects/([^/]+)/", href)
+        if not match:
+            continue
+        try:
+            UUID(match.group(1))
+        except ValueError:
+            continue
+        return href
+    raise AssertionError(f"missing UUID defect detail link: {hrefs}")
 
 
 def discover(page):
@@ -79,7 +98,7 @@ def discover(page):
     hrefs = page.locator('a[href*="/operations/defects/"]').evaluate_all(
         "ns=>ns.map(n=>new URL(n.href).pathname)"
     )
-    ROUTES["defect_detail"] = next(h for h in hrefs if re.fullmatch(r"/operations/defects/(?!new/)[^/]+/", h))
+    ROUTES["defect_detail"] = defect_detail_path(hrefs)
     page.goto(BASE + ROUTES["opj_registry"])
     hrefs = page.locator('a[href*="/operations/journal/"]').evaluate_all(
         "ns=>ns.map(n=>new URL(n.href).pathname)"

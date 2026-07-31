@@ -99,7 +99,8 @@ class GlobalThemeContractTests(SimpleTestCase):
     def test_print_colours_are_isolated_from_screen_components(self):
         css = self.source("src/static/system/theme.css")
         screen, print_rules = css.split("@media print", 1)
-        self.assertNotIn("!important", screen)
+        screen_without_comments = re.sub(r"/\*.*?\*/", "", screen, flags=re.S)
+        self.assertNotIn("!important", screen_without_comments)
         self.assertIn("background: #fff !important", print_rules)
         self.assertIn("color: #000 !important", print_rules)
 
