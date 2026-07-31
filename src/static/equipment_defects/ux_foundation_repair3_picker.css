@@ -11,7 +11,7 @@ html.defect-picker-open body {
     min-width: 0;
     border: 1px solid var(--da-border-strong, #c7d1dc);
     border-radius: 8px;
-    background: #fff;
+    background: var(--theme-surface);
     transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 
@@ -90,7 +90,7 @@ html.defect-picker-open body {
     overflow: hidden;
     border: 1px solid #b9c8d6;
     border-radius: 15px;
-    background: #fff;
+    background: var(--theme-surface);
     box-shadow: 0 24px 64px rgba(16, 35, 55, .28);
     color: #21364e;
 }
@@ -130,7 +130,7 @@ html.defect-picker-open body {
     place-items: center;
     border: 1px solid #d2dce6;
     border-radius: 9px;
-    background: #fff;
+    background: var(--theme-surface);
     color: #53677c;
     cursor: pointer;
     font-size: 1.45rem;
@@ -175,7 +175,7 @@ html.defect-picker-open body {
     place-items: center;
     border: 1px solid #cfd9e3;
     border-radius: 8px;
-    background: #fff;
+    background: var(--theme-surface);
     color: #315a79;
     cursor: pointer;
     font-size: 1.45rem;
@@ -226,7 +226,7 @@ html.defect-picker-open body {
     place-items: center;
     border: 1px solid transparent;
     border-radius: 9px;
-    background: #fff;
+    background: var(--theme-surface);
     color: #263d55;
     cursor: pointer;
     font: inherit;
@@ -264,7 +264,7 @@ html.defect-picker-open body {
 }
 
 .defect-calendar-day.is-selected::after {
-    background: #fff;
+    background: var(--theme-surface);
 }
 
 .defect-picker-quick-actions {
@@ -334,7 +334,7 @@ html.defect-picker-open body {
     min-height: 42px;
     border: 1px solid transparent;
     border-radius: 8px;
-    background: #fff;
+    background: var(--theme-surface);
     color: #29435d;
     cursor: pointer;
     font: inherit;
@@ -378,7 +378,7 @@ html.defect-picker-open body {
 
 .defect-picker-button.secondary {
     border: 1px solid #bfcbd7;
-    background: #fff;
+    background: var(--theme-surface);
     color: #425b73;
 }
 

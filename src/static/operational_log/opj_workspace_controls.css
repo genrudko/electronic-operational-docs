@@ -357,7 +357,7 @@
 
 .opj-workspace-page .opj-ribbon-toggle {
     border: 1px solid var(--da-border);
-    background: #fff;
+    background: var(--theme-surface);
     color: #3d526b;
     cursor: pointer;
 }
@@ -368,7 +368,7 @@
     overflow: hidden;
     border: 1px solid var(--da-border-strong);
     border-radius: 6px;
-    background: #fff;
+    background: var(--theme-surface);
 }
 
 .opj-view-switch > button {
@@ -756,7 +756,7 @@
     padding: 8px;
     border: 1px solid var(--da-border);
     border-radius: 8px;
-    background: #fff;
+    background: var(--theme-surface);
 }
 
 .opj-drawer-summary-icon {
@@ -802,7 +802,7 @@
     overflow: hidden;
     border: 1px solid var(--da-border);
     border-radius: 8px;
-    background: #fff;
+    background: var(--theme-surface);
 }
 
 .opj-workspace-page .opj-workspace-drawer .draft-drawer-section {

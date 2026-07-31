@@ -64,10 +64,11 @@ class EquipmentDefectUXFoundationTests(SimpleTestCase):
         self.assertEqual(positions, sorted(positions))
         self.assertIn("?v=uxf001r2", template)
 
-    def test_foundation_declares_light_document_operational_tokens(self) -> None:
+    def test_foundation_consumes_shared_operational_tokens(self) -> None:
         stylesheet = self.stylesheet_path.read_text(encoding="utf-8")
         required_contract = (
-            "color-scheme: light",
+            "--ux-canvas: var(--theme-canvas)",
+            "--ux-surface: var(--theme-surface)",
             "--ux-canvas:",
             "--ux-surface:",
             "--ux-blue:",

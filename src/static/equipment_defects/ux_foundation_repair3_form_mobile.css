@@ -6,7 +6,7 @@
         right: 8px;
         left: 8px;
         z-index: 62;
-        background: #fff;
+        background: var(--theme-surface);
         box-shadow: 0 8px 22px rgba(29, 48, 70, .16);
     }
 

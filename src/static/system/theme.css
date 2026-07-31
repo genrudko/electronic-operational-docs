@@ -4,21 +4,33 @@
     --theme-surface: #ffffff;
     --theme-surface-soft: #f8fafc;
     --theme-surface-raised: #ffffff;
+    --theme-surface-document: #ffffff;
+    --theme-table-header: #eef3f7;
+    --theme-table-row: #ffffff;
+    --theme-table-hover: #f2f7fc;
+    --theme-table-selected: #e6f1fb;
     --theme-border: #d9e2ec;
     --theme-border-strong: #b8c6d6;
     --theme-text: #182338;
     --theme-text-muted: #68788e;
     --theme-control: #ffffff;
     --theme-control-hover: #edf4fb;
+    --theme-control-readonly: #f2f5f8;
+    --theme-control-disabled: #e6ebf0;
     --theme-primary: #1267a5;
     --theme-primary-hover: #0d5489;
     --theme-primary-soft: #e6f1fb;
+    --theme-info: #1267a5;
+    --theme-info-soft: #e6f1fb;
     --theme-success: #247849;
     --theme-success-soft: #e4f4ea;
     --theme-warning: #9a5418;
     --theme-warning-soft: #fff0df;
     --theme-danger: #a33b35;
     --theme-danger-soft: #fbe9e7;
+    --theme-lifecycle-inactive: #b8c6d6;
+    --theme-lifecycle-current: #1267a5;
+    --theme-lifecycle-completed: #247849;
     --theme-focus: #1683c5;
     --theme-overlay: rgba(24, 35, 56, 0.48);
     --theme-shadow: 0 8px 24px rgba(32, 54, 82, 0.10);
@@ -64,21 +76,33 @@
     --theme-surface: #151f2b;
     --theme-surface-soft: #1a2634;
     --theme-surface-raised: #202e3e;
+    --theme-surface-document: #182433;
+    --theme-table-header: #202e3e;
+    --theme-table-row: #151f2b;
+    --theme-table-hover: #243446;
+    --theme-table-selected: #173951;
     --theme-border: #34465a;
     --theme-border-strong: #536980;
     --theme-text: #edf3f9;
     --theme-text-muted: #a9b8c8;
     --theme-control: #111b26;
     --theme-control-hover: #243446;
+    --theme-control-readonly: #1a2634;
+    --theme-control-disabled: #283545;
     --theme-primary: #67b7ee;
     --theme-primary-hover: #91cdf4;
     --theme-primary-soft: #173951;
+    --theme-info: #67b7ee;
+    --theme-info-soft: #173951;
     --theme-success: #67d09a;
     --theme-success-soft: #173d2b;
     --theme-warning: #f0b56f;
     --theme-warning-soft: #49331d;
     --theme-danger: #f0948e;
     --theme-danger-soft: #4a2929;
+    --theme-lifecycle-inactive: #536980;
+    --theme-lifecycle-current: #67b7ee;
+    --theme-lifecycle-completed: #67d09a;
     --theme-focus: #72c7ff;
     --theme-overlay: rgba(2, 7, 12, 0.72);
     --theme-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
@@ -90,61 +114,31 @@ body { background-image: none; }
 a { color: var(--theme-primary); }
 a:hover { color: var(--theme-primary-hover); }
 
-/* Shared shell and screen primitives. */
+/* Shared shell and explicitly named screen primitives. */
 .topbar, .presentation-topbar, .da-sidebar, .da-topbar, .da-mobile-navigation,
 .nav-menu-panel, footer, .da-footer { background: var(--theme-surface); color: var(--theme-text); border-color: var(--theme-border); }
 .da-shell, .da-stage, .da-page, body.da-active { background: var(--theme-canvas); color: var(--theme-text); }
-.da-navigation > a, .da-nav-group-title, .da-nav-child, .da-brand,
-.da-user-trigger, .brand, h1, h2, h3, h4, strong { color: var(--theme-text); }
+.da-navigation > a, .da-nav-group-title, .da-nav-child, .da-brand, .da-user-trigger,
+.brand { color: var(--theme-text); }
 .da-navigation > a:hover, .da-nav-child:hover, .da-user-trigger:hover,
 .topnav a:hover, .nav-menu-panel a:hover { background: var(--theme-control-hover); color: var(--theme-primary-hover); }
-.da-nav-child.is-active, .da-nav-child[aria-current="page"], .active {
+.da-nav-child.is-active, .da-nav-child[aria-current="page"] {
     background-color: var(--theme-primary-soft); color: var(--theme-primary-hover);
 }
-
-.panel, .profile-card, .card, .hero, .login-callout, .directory-card,
-.principles, .empty-state, .auth-card, .metric, .da-panel, .da-panel-flat,
-.da-context, .da-stat-card, .da-filter-bar, .da-table-wrap, .message,
-.account-setting-card, .opj-workspace, .opj-registered-context,
-.defect-command-deck, .defect-worklist, .defect-journal-surface {
+.account-setting-card, .profile-card, .auth-card {
     background: var(--theme-surface); color: var(--theme-text); border-color: var(--theme-border);
     box-shadow: var(--theme-shadow);
 }
-
-input, select, textarea, button, .button, .da-button, [role="button"],
-.draft-field, .draft-reference-input, .opj-toolbar button {
-    background-color: var(--theme-control); color: var(--theme-text); border-color: var(--theme-border-strong);
+.account-setting-card input, .account-setting-card select, .account-setting-card textarea,
+.auth-card input, .auth-card select {
+    background: var(--theme-control); color: var(--theme-text); border-color: var(--theme-border-strong);
 }
-input::placeholder, textarea::placeholder { color: var(--theme-text-muted); opacity: 1; }
-input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible {
-    outline: 2px solid var(--theme-focus); outline-offset: 2px;
-}
-th, td, table, .da-table th, .da-table td { color: var(--theme-text); border-color: var(--theme-border); }
-th, label, small, .muted, .page-heading p, .da-muted, .da-context span,
-.da-context small, .card-label { color: var(--theme-text-muted); }
-
-dialog, .dialog-card, .drawer, .opj-settings-drawer, .opj-overlay-panel,
+.dialog-card, .drawer, .opj-settings-drawer, .opj-overlay-panel,
 .equipment-dialog-card, .equipment-picker-dialog, .draft-reference-dialog {
     background: var(--theme-surface-raised); color: var(--theme-text); border-color: var(--theme-border);
     box-shadow: var(--theme-shadow-overlay);
 }
-dialog::backdrop, .dialog-backdrop, .drawer-backdrop, .opj-overlay { background: var(--theme-overlay); }
-
-/* Specialized screens keep their accepted layout while inheriting shared colours. */
-.opj-toolbar, .opj-command-toolbar, .opj-ledger-header, .opj-ledger-date,
-.opj-ledger-body, .opj-ledger-footer, .draft-page-shell, .opj-ledger-surface,
-.draft-entry-row, .draft-entry-cell, .draft-reference-panel,
-.defect-journal-toolbar, .defect-journal-header, .defect-journal-row,
-.defect-detail-main, .defect-detail-aside, .defect-worklist-row {
-    background-color: var(--theme-surface); color: var(--theme-text); border-color: var(--theme-border);
-}
-.opj-toolbar, .opj-command-toolbar, .opj-ledger-header, .defect-journal-header {
-    background-color: var(--theme-surface-soft);
-}
-.status-chip, .da-chip { border-color: var(--theme-border-strong); }
-.status-draft, .is-warning { background: var(--theme-warning-soft); color: var(--theme-warning); }
-.status-registered, .is-success { background: var(--theme-success-soft); color: var(--theme-success); }
-.is-danger, .status-danger { background: var(--theme-danger-soft); color: var(--theme-danger); }
+.dialog-backdrop, .drawer-backdrop, .opj-overlay { background: var(--theme-overlay); }
 
 @media print {
     :root, :root[data-theme="dark"] { color-scheme: light !important; }

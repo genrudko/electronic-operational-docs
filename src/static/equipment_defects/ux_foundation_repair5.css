@@ -98,7 +98,7 @@
 
 .defect-da-lifecycle-card .defect-lifecycle li .defect-lifecycle-marker {
     border-color: #d2d9e0;
-    background: #fff;
+    background: var(--theme-surface);
     color: #9aa5b0;
 }
 

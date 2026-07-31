@@ -478,7 +478,7 @@ a.da-button {
 .da-button.is-secondary,
 .da-button.secondary {
     border-color: var(--da-border-strong);
-    background: #fff;
+    background: var(--theme-surface);
     color: var(--da-blue-dark);
 }
 
@@ -670,7 +670,7 @@ a.da-button {
 .da-segmented button[aria-pressed="true"],
 .da-segmented .is-active,
 .da-segmented a[aria-current="page"] {
-    background: #fff;
+    background: var(--theme-surface);
     color: var(--da-blue-dark);
     box-shadow: 0 1px 4px rgba(32, 54, 82, 0.12);
 }
@@ -698,7 +698,7 @@ textarea.da-field {
     padding: 8px 10px;
     border: 1px solid var(--da-border-strong);
     border-radius: var(--da-radius-sm);
-    background: #fff;
+    background: var(--theme-surface);
     color: var(--da-text);
     font: inherit;
     font-size: 0.78rem;
@@ -731,7 +731,7 @@ textarea.da-field:focus {
 .da-table {
     width: 100%;
     border-collapse: collapse;
-    background: #fff;
+    background: var(--theme-surface);
 }
 
 .da-table th,
@@ -759,7 +759,7 @@ textarea.da-field:focus {
 dialog.da-overlay {
     border: 1px solid var(--da-border-strong);
     border-radius: var(--da-radius-lg);
-    background: #fff;
+    background: var(--theme-surface);
     color: var(--da-text);
     box-shadow: var(--da-shadow-overlay);
 }
@@ -779,7 +779,7 @@ dialog.da-overlay::backdrop {
     overflow: hidden;
     border: 1px solid var(--da-border);
     border-radius: var(--da-radius);
-    background: #fff;
+    background: var(--theme-surface);
 }
 
 .da-hierarchy-group > summary {
@@ -825,7 +825,7 @@ dialog.da-overlay::backdrop {
         place-items: center;
         border: 1px solid var(--da-border);
         border-radius: var(--da-radius-sm);
-        background: #fff;
+        background: var(--theme-surface);
         color: var(--da-text);
     }
 
