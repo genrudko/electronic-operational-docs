@@ -9,6 +9,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 GLOBS = ("src/static/system/*.css", "src/static/equipment_defects/*.css", "src/static/operational_log/*.css")
+AUDIT_ROOTS = (
+    "src/static/system",
+    "src/static/equipment_defects",
+    "src/static/operational_log",
+)
 PROPS = {
     "background",
     "background-color",
@@ -26,6 +31,20 @@ RULE = re.compile(r"(?P<selector>[^{}]+)\{(?P<body>[^{}]*)\}", re.S)
 DECL = re.compile(r"(?P<property>[-\w]+)\s*:\s*(?P<value>[^;{}]*!important)", re.I)
 
 
+def paths(ref=None):
+    if not ref:
+        return sorted({path for glob in GLOBS for path in ROOT.glob(glob)})
+
+    result = subprocess.run(
+        ["git", "ls-tree", "-r", "--name-only", ref, "--", *AUDIT_ROOTS],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return [ROOT / name for name in result.stdout.splitlines() if name.endswith(".css")]
+
+
 def read(path, ref):
     if not ref:
         return path.read_text(encoding="utf-8")
@@ -40,7 +59,7 @@ def read(path, ref):
 
 def audit(ref=None):
     findings = []
-    for path in sorted({p for glob in GLOBS for p in ROOT.glob(glob)}):
+    for path in paths(ref):
         css = re.sub(r"/\*.*?\*/", "", read(path, ref), flags=re.S)
         print_at = css.find("@media print")
         for rule in RULE.finditer(css):
