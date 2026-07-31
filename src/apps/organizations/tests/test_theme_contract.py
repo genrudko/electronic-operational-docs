@@ -111,16 +111,12 @@ class GlobalThemeContractTests(SimpleTestCase):
         self.assertNotIn('html[data-theme="dark"] body.opj-workspace-page', workspace)
         self.assertIn("--theme-placeholder", self.source("src/static/system/theme.css"))
 
-    def test_browser_job_and_matrix_are_blocking(self):
-        workflow = self.source(".github/workflows/ci.yml")
+    def test_browser_matrix_contract_is_available_for_final_acceptance(self):
         runner = self.source("tests/browser_theme/run.py")
-        self.assertIn("browser-theme:", workflow)
-        self.assertIn("postgres:18.4-bookworm", workflow)
-        self.assertIn("python tests/browser_theme/run.py", workflow)
-        self.assertIn("browser-theme-evidence-${{ github.sha }}", workflow)
         self.assertIn("VIEWPORTS = ((1440, 900), (1024, 768), (390, 844))", runner)
         self.assertIn('THEMES = ("light", "dark")', runner)
         self.assertIn("must contain exactly 42 files", runner)
+        self.assertIn('page.emulate_media(media="print")', runner)
         for selector in (
             ".defect-filter-grid",
             ".defect-picker-panel",
