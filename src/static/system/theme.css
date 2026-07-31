@@ -111,39 +111,161 @@
     --theme-shadow-overlay: 0 24px 60px rgba(0, 0, 0, 0.52);
 }
 
-html, body { background-color: var(--theme-canvas); color: var(--theme-text); }
-body { background-image: none; }
-a { color: var(--theme-primary); }
-a:hover { color: var(--theme-primary-hover); }
+html, body {
+    background-color: var(--theme-canvas);
+    color: var(--theme-text);
+}
+
+body {
+    background-image: none;
+}
+
+a {
+    color: var(--theme-primary);
+}
+
+a:hover {
+    color: var(--theme-primary-hover);
+}
 
 /* Shared shell and explicitly named screen primitives. */
-.topbar, .presentation-topbar, .da-sidebar, .da-topbar, .da-mobile-navigation,
-.nav-menu-panel, footer, .da-footer { background: var(--theme-surface); color: var(--theme-text); border-color: var(--theme-border); }
-.da-shell, .da-stage, .da-page, body.da-active { background: var(--theme-canvas); color: var(--theme-text); }
-.da-navigation > a, .da-nav-group-title, .da-nav-child, .da-brand, .da-user-trigger,
-.brand { color: var(--theme-text); }
-.da-navigation > a:hover, .da-nav-child:hover, .da-user-trigger:hover,
-.topnav a:hover, .nav-menu-panel a:hover { background: var(--theme-control-hover); color: var(--theme-primary-hover); }
-.da-nav-child.is-active, .da-nav-child[aria-current="page"] {
-    background-color: var(--theme-primary-soft); color: var(--theme-primary-hover);
+html[data-theme] body > .topbar,
+html[data-theme] body > .presentation-topbar,
+html[data-theme] body > footer,
+html[data-theme] .da-sidebar,
+html[data-theme] .da-topbar,
+html[data-theme] .da-mobile-navigation,
+html[data-theme] .nav-menu-panel,
+html[data-theme] .da-footer {
+    border-color: var(--theme-border);
+    background: var(--theme-surface);
+    color: var(--theme-text);
 }
-.account-setting-card, .profile-card, .auth-card {
-    background: var(--theme-surface); color: var(--theme-text); border-color: var(--theme-border);
+
+.da-shell,
+.da-stage,
+.da-page,
+body.da-active {
+    background: var(--theme-canvas);
+    color: var(--theme-text);
+}
+
+.da-navigation > a,
+.da-nav-group-title,
+.da-nav-child,
+.da-brand,
+.da-user-trigger,
+.brand {
+    color: var(--theme-text);
+}
+
+.da-navigation > a:hover,
+.da-nav-child:hover,
+.da-user-trigger:hover,
+.topnav a:hover,
+.nav-menu-panel a:hover {
+    background: var(--theme-control-hover);
+    color: var(--theme-primary-hover);
+}
+
+.da-nav-child.is-active,
+.da-nav-child[aria-current="page"] {
+    background-color: var(--theme-primary-soft);
+    color: var(--theme-primary-hover);
+}
+
+/* Legacy home/dashboard components are theme consumers, never palette owners. */
+html[data-theme] .hero,
+html[data-theme] .login-callout,
+html[data-theme] .directory-card,
+html[data-theme] .profile-card,
+html[data-theme] .principles,
+html[data-theme] .empty-state,
+html[data-theme] .metric.da-card,
+html[data-theme] .card {
+    border-color: var(--theme-border);
+    background: var(--theme-surface);
+    color: var(--theme-text);
     box-shadow: var(--theme-shadow);
 }
-.account-setting-card input, .account-setting-card select, .account-setting-card textarea,
-.auth-card input, .auth-card select {
-    background: var(--theme-control); color: var(--theme-text); border-color: var(--theme-border-strong);
+
+html[data-theme] .directory-columns > div,
+html[data-theme] .role-list li {
+    border-color: var(--theme-border);
+    background: var(--theme-surface-soft);
+    color: var(--theme-text);
 }
-.dialog-card, .drawer, .opj-settings-drawer, .opj-overlay-panel,
-.equipment-dialog-card, .equipment-picker-dialog, .draft-reference-dialog {
-    background: var(--theme-surface-raised); color: var(--theme-text); border-color: var(--theme-border);
+
+/* Browser-gated route roots have deterministic semantic surfaces. */
+html[data-theme] .defect-da-work-table,
+html[data-theme] .defect-record-section,
+html[data-theme] .journal-registry-card,
+html[data-theme] .opj-workspace,
+html[data-theme] .account-setting-card {
+    border-color: var(--theme-border);
+    background: var(--theme-surface);
+    color: var(--theme-text);
+}
+
+html[data-theme] .approved-journal-shell {
+    border-color: var(--theme-border);
+    background: var(--theme-surface-document);
+    color: var(--theme-text);
+}
+
+.account-setting-card,
+.profile-card,
+.auth-card {
+    border-color: var(--theme-border);
+    background: var(--theme-surface);
+    color: var(--theme-text);
+    box-shadow: var(--theme-shadow);
+}
+
+.account-setting-card input,
+.account-setting-card select,
+.account-setting-card textarea,
+.auth-card input,
+.auth-card select {
+    border-color: var(--theme-border-strong);
+    background: var(--theme-control);
+    color: var(--theme-text);
+}
+
+.dialog-card,
+.drawer,
+.opj-settings-drawer,
+.opj-overlay-panel,
+.equipment-dialog-card,
+.equipment-picker-dialog,
+.draft-reference-dialog {
+    border-color: var(--theme-border);
+    background: var(--theme-surface-raised);
+    color: var(--theme-text);
     box-shadow: var(--theme-shadow-overlay);
 }
-.dialog-backdrop, .drawer-backdrop, .opj-overlay { background: var(--theme-overlay); }
+
+.dialog-backdrop,
+.drawer-backdrop,
+.opj-overlay {
+    background: var(--theme-overlay);
+}
 
 @media print {
-    :root, :root[data-theme="dark"] { color-scheme: light !important; }
-    html, body, main, .print-sheet { background: #fff !important; color: #000 !important; }
-    * { box-shadow: none !important; }
+    :root,
+    :root[data-theme="dark"] {
+        color-scheme: light !important;
+    }
+
+    html,
+    body,
+    main,
+    .print-sheet {
+        background: #fff !important;
+        color: #000 !important;
+    }
+
+    * {
+        box-shadow: none !important;
+    }
 }
