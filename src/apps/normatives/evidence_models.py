@@ -1,3 +1,4 @@
+# ruff: noqa: DJ012
 from __future__ import annotations
 
 import hashlib
@@ -24,7 +25,6 @@ from .evidence import (
     canonical_json,
 )
 from .models import NormativeRevision, PublicationStatus
-
 
 _ENUM_LABELS: dict[str, str] = {
     "ELECTRONIC_ORIGINAL_TARGET": "Электронный оригинал — целевой режим",
