@@ -9,7 +9,7 @@ repository: genrudko/electronic-operational-docs
 accepted main baseline: main / 6e5171776cd6bc02fcbc45eb9532a6a0e58e15f0
 active work item: PERSONNEL-AUTHORITY-001
 active issue: #42
-active PR: #43 / DRAFT
+active PR: #43 / OPEN / DRAFT / NOT MERGED
 active branch: feature/personnel-authority-001
 runtime impact: NONE
 preview: UNTOUCHED
