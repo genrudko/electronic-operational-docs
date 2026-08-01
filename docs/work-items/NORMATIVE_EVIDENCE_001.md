@@ -1,287 +1,299 @@
 # NORMATIVE-EVIDENCE-001 — execution package
 
-**Issue:** #40
-**Branch:** `feature/normative-evidence-001`
-**Starting main tip:** `c05ace785f054233aa878ddead491def47525140`
+**Issue:** #40  
+**Draft PR:** #41  
+**Branch:** `feature/normative-evidence-001`  
+**Starting main tip:** `c05ace785f054233aa878ddead491def47525140`  
 **Accepted application baseline:** `b644048f1ec17e19e03c2e4fb538fc0cfc1f5feb`
 
-## WORK ITEM ID
-
-`NORMATIVE-EVIDENCE-001`
-
-## PARENT RELEASE
-
-`DEMO-RELEASE BASELINE V1.0`
-
-## PARENT MODULE
-
-`NORMATIVE-EVIDENCE` — нормативные режимы и evidence-события.
-
-## CAPABILITY IDS
-
-- `CAP-NORMATIVE-LEGAL-MODES`;
-- `CAP-NORMATIVE-EVENTS`;
-- `CAP-NORMATIVE-PEP`.
-
-## EXACT BASELINE SHA
+## WORK ITEM
 
 ```text
-current main tip: c05ace785f054233aa878ddead491def47525140
-accepted application baseline: b644048f1ec17e19e03c2e4fb538fc0cfc1f5feb
+ID: NORMATIVE-EVIDENCE-001
+PARENT RELEASE: DEMO-RELEASE BASELINE V1.0
+PARENT MODULE: NORMATIVE-EVIDENCE
+CAPABILITIES:
+- CAP-NORMATIVE-LEGAL-MODES
+- CAP-NORMATIVE-EVENTS
+- CAP-NORMATIVE-PEP
 ```
-
-Ветка создана непосредственно от current main tip. Поздние documentation-only commits не объявляются новым accepted application baseline.
 
 ## GOAL
 
-Создать единый bounded-контур, который:
+Создать один bounded-контур, который:
 
-1. раздельно хранит product target и доказанный legal mode;
+1. хранит product target отдельно от доказанного legal mode;
 2. различает подпись, ознакомление, инструктаж, проверку знаний и подтверждение действия;
-3. связывает evidence event с конкретным subject, actor, серверным временем, способом подтверждения, digest и нормативным основанием;
-4. переиспользует существующие immutable snapshot/signature/re-auth/integrity primitives;
-5. не выдаёт техническую неизменяемость или повторную аутентификацию за автоматически доказанную юридическую значимость.
-
-## USER SCENARIO
-
-Пользователь выполняет контролируемое действие в предметном модуле. Система показывает, какое именно подтверждение создаётся, при необходимости требует повторно подтвердить текущую учётную запись, фиксирует отдельное append-only evidence event и позволяет позднее доказуемо увидеть:
-
-- кто совершил действие;
-- что именно подтверждено;
-- когда это произошло;
-- каким способом подтверждена учётная запись;
-- какой immutable payload зафиксирован;
-- на какую нормативную редакцию/source trace опиралось решение;
-- является режим лишь product target либо имеет доказанный статус.
-
-## BUSINESS RESULT
-
-Последующие `PERSONNEL-AUTHORITY`, OPJ, SHIFT, WORK-PERMIT и иные controlled workflows получают один общий evidence contract вместо несовместимых локальных флагов и текстовых отметок.
+3. связывает evidence event с subject, actor snapshot, серверным временем, confirmation method, payload digest и traceable basis;
+4. переиспользует существующие `SignedSnapshot`, `DocumentSignature`, password re-authentication и integrity primitives;
+5. не выдаёт техническую неизменяемость, SHA-256 или повторную аутентификацию за автоматически доказанную юридическую значимость.
 
 ## FACTUAL START
 
-- `apps.normatives` содержит `NormativeDocument`, immutable published `NormativeRevision`, `NormativeRequirement` и `RequirementTrace`.
-- `apps.documents` содержит immutable `SignedSnapshot`, `DocumentSignature`, canonical JSON, SHA-256, password re-authentication и integrity verification.
-- `apps.organizations` содержит identity, login/logout `AuthenticationEvent`, роли и частичные operational-right foundations.
-- Единой persisted taxonomy evidence events нет.
-- Legal-mode matrix уже различает product target и proven mode; доказанные режимы сохраняют `VERIFY`, пока нормативное и локальное основание не подтверждено.
+До work item существовали:
 
-## IN SCOPE
+- `NormativeDocument`, immutable published `NormativeRevision`, `NormativeRequirement`, `RequirementTrace`;
+- immutable `SignedSnapshot` и `DocumentSignature`;
+- canonical JSON, SHA-256, password re-authentication и document integrity verification;
+- identity, employee snapshots, roles и authentication audit foundations.
 
-1. Machine-readable legal-mode contract:
-   - product target;
-   - normative evidence status;
-   - local-act status;
-   - proven legal mode;
-   - basis revision/source IDs;
-   - запрет недоказанного повышения `VERIFY`.
-2. Evidence-event taxonomy:
-   - `SIGNATURE`;
-   - `ACKNOWLEDGEMENT`;
-   - `INSTRUCTION`;
-   - `KNOWLEDGE_CHECK`;
-   - `ACTION_CONFIRMATION`.
-3. Canonical payload и digest без secrets.
-4. Явная re-auth requirement и confirmation method.
-5. Append-only persistence/services после принятия pure contract slice.
-6. Focused tests semantic separation, validation, integrity и secret handling.
-7. Read-only bounded views после стабилизации model/service contract.
-8. Traceability к `NormativeRevision` и source IDs.
+Не существовали:
 
-## FIRST IMPLEMENTATION SLICE
+- единая persisted taxonomy evidence-событий;
+- append-only legal-mode decisions;
+- единая read-only поверхность для target/proven mismatch и evidence history.
 
-Pure domain contract, без schema/data migration:
+## DOMAIN CONTRACT
+
+1. `product_target_mode` и `proven_legal_mode` — разные поля и разные утверждения.
+2. `VERIFY` является честным состоянием, а не ошибкой или временным UI placeholder.
+3. Non-`VERIFY` требует опубликованную нормативную редакцию с SHA-256 и закрытый local-act gate.
+4. `ACKNOWLEDGEMENT` не доказывает `INSTRUCTION`, `KNOWLEDGE_CHECK` или `SIGNATURE`.
+5. `SIGNATURE` не доказывает предметное право actor; authority-at-action остаётся downstream capability.
+6. Password re-authentication не сохраняет пароль и не объявляется УКЭП или УНЭП.
+7. Historical decisions/events append-only; изменение оформляется новой связанной записью.
+8. Реальные локальные акты, персональные данные и enterprise evidence в Git не добавляются.
+
+## IMPLEMENTED SLICE 1 — PURE CONTRACT
 
 ```text
 src/apps/normatives/evidence.py
 src/apps/normatives/tests/test_evidence_contract.py
 ```
 
-Цель slice — зафиксировать enums, validation и canonical digest до создания persistent models. Это предотвращает преждевременное закрепление ошибочной юридической семантики в миграции.
+Реализованы:
 
-## OUT OF SCOPE
+- `ProductTargetMode`, `ProvenLegalMode`;
+- `NormativeEvidenceStatus`, `LocalActStatus`;
+- `EvidenceEventType` для пяти раздельных semantics;
+- `EvidenceConfirmationMethod`;
+- required payload contract для каждого event type;
+- deeply immutable actor snapshot/payload;
+- deterministic canonical JSON/SHA-256;
+- recursive secret-like field rejection;
+- compatibility rules и запрет недоказанного повышения `VERIFY`.
 
-- юридическое заключение по конкретному документу или организации;
-- автоматическое определение применимости права;
-- УКЭП/УНЭП, сертификаты, внешний ключ, timestamp authority;
-- полноценный authority-at-action evaluator;
-- предметные lifecycle ОЖ, смены, наряда, распоряжения и иных журналов;
-- production retention/security/HA;
-- изменение accepted preview.
+Slice 1 прошёл все пять exact-head workflows на `5268b8266138d671ac2573a92e8ea18bef9fde84`.
 
-## DEPENDENCIES
+## IMPLEMENTED SLICE 2 — PERSISTENCE AND SERVICES
 
-- `PLATFORM` — identity, audit, transactional services;
-- существующие `NORMATIVES`, `DOCUMENTS`, `ORGANIZATIONS` foundations;
-- `PERSONNEL-AUTHORITY-001` является downstream consumer, а не частью этой задачи.
+Добавлены append-only модели:
 
-## DOMAIN CONTRACT
+### `LegalModeDecision`
 
-1. `product_target_mode != proven_legal_mode` по смыслу и хранению.
-2. Значение `VERIFY` является честным состоянием, а не ошибкой, которую нужно скрыть.
-3. Non-`VERIFY` proven mode требует traceable basis, достаточный normative evidence status и закрытый local-act status.
-4. Evidence event types не взаимозаменяемы.
-5. `ACKNOWLEDGEMENT` не доказывает `INSTRUCTION` или `KNOWLEDGE_CHECK`.
-6. `SIGNATURE` не доказывает предметное право actor; это задача authority evaluator.
-7. Password re-authentication не сохраняет пароль и не объявляется квалифицированной либо неквалифицированной электронной подписью.
-8. Canonical payload фиксирует только проверяемые факты и snapshots.
-9. Исторические события append-only; correction создаёт новое связанное событие.
-10. Доменный модуль определяет required evidence type; нормативный модуль не заменяет его lifecycle.
+- organization/global scope;
+- target/proven/evidence/local-act states;
+- published normative/local revision links и immutable basis-code snapshots;
+- source IDs, decision basis, decision-maker snapshot, server time;
+- supersedes link;
+- canonical JSON, SHA-256 и tamper verification;
+- запрет update/delete/bulk update через manager/model boundary.
 
-## LEGAL MODE / VERIFY OWNER
+### `EvidenceEvent`
 
-- Владелец product boundary: canonical decision/release plan.
-- Владелец нормативного доказательства: traceable official consolidated source.
-- Владелец local-act applicability: отдельный подтверждённый локальный документ организации.
-- До закрытия обоих evidence layers: `proven_legal_mode = VERIFY`.
-- Код не создаёт юридическое заключение автоматически.
+- пять самостоятельных event types;
+- organization, subject type/id, actor snapshot, server time;
+- confirmation method и explicit re-auth requirement;
+- normative revision/source IDs;
+- correlation ID, correction link и idempotency;
+- immutable payload, canonical JSON, SHA-256;
+- optional verified link to existing `DocumentSignature`;
+- tenant-bounded read access.
 
-## SOURCE IDS
+### Transactional services
+
+- active actor row locking без `FOR UPDATE` на nullable outer joins;
+- personal-session validation;
+- password re-authentication with no password persistence;
+- atomic rollback on invalid credentials/contract/basis;
+- published-revision validation;
+- correlation idempotency and conflicting reuse rejection;
+- nested savepoint recovery for unique-key races;
+- semantic equality check before returning a concurrent event;
+- correction as a new linked event;
+- integrity verification against canonical state.
+
+### Existing signature integration
+
+`DocumentSignature` остаётся владельцем системного подтверждения документа. `post_save` создаёт ровно одно отдельное `SIGNATURE` evidence-событие, содержащее:
+
+- snapshot digest;
+- purpose;
+- signature checksum;
+- honest confirmation method;
+- actor snapshot and server time.
+
+Новый модуль не создаёт параллельную signature/hash/authentication framework.
+
+## IMPLEMENTED SLICE 3 — READ-ONLY ACCEPTANCE SURFACE
+
+Добавлены tenant-bounded read-only страницы:
+
+- registry legal-mode decisions;
+- registry последних evidence events;
+- legal-mode decision details;
+- evidence event details;
+- explicit `VERIFY` explanation;
+- Russian labels instead of raw enum values;
+- integrity status and technical traceability details.
+
+Admin surfaces также read-only: add/change/delete запрещены.
+
+## MIGRATION
 
 ```text
-SRC-DEC-STAGE2
-SRC-RESEARCH-SPECIALIZED
-N-01
-N-04
-N-09
-SRC-AUDIT-STAGE1
+src/apps/normatives/migrations/0002_normative_evidence.py
 ```
 
-Дополнительные изменения актов учитываются только через проверенную консолидированную редакцию и отдельную source trace.
+Migration создаёт две новые таблицы, индексы и partial unique constraints:
 
-## COMPETITOR BENCHMARK
+- correlation ID уникален в организации, когда не пуст;
+- один `SIGNATURE` evidence event на `DocumentSignature`.
 
-Применимые принятые решения:
+Historical migrations не переписывались. PostgreSQL migration chain и `makemigrations --check` проходят.
 
-- `D-02` — полностью электронная подпись всех участников остаётся `VERIFY`;
-- `D-14` — acknowledgement нельзя приравнивать к инструктажу, проверке знаний или подписи.
-
-Vendor claims не повышают legal mode и не становятся requirement автоматически.
-
-## UX REFERENCES / LOCATORS
-
-- Direction A shared shell и primitives;
-- common status chips/readonly details/dialog/re-auth patterns;
-- технические детали скрыты по умолчанию, но traceability доступна в evidence details;
-- пользователь должен видеть точное действие: «Ознакомиться», «Пройти инструктаж», «Подтвердить действие», а не универсальную кнопку «Подписать всё».
-
-## VIEWPORTS / STATES
+## FINAL CHANGED-FILE BOUNDARY
 
 ```text
-1440×900
-1024×768
-390×844
-```
-
-Состояния: loading, empty, error, readonly, long Russian data, `VERIFY`, confirmed target/proven mismatch, invalid credentials, integrity failure.
-
-UI не входит в первый pure contract slice.
-
-## ALLOWED FILES
-
-```text
+docs/project/CURRENT_STATE.md
 docs/work-items/NORMATIVE_EVIDENCE_001.md
+src/apps/normatives/apps.py
 src/apps/normatives/evidence.py
-src/apps/normatives/models.py
-src/apps/normatives/services.py
-src/apps/normatives/admin.py
-src/apps/normatives/migrations/00*.py
-src/apps/normatives/tests/**
-src/apps/documents/models.py
-src/apps/documents/services.py
-src/apps/documents/admin.py
-src/apps/documents/migrations/00*.py
-src/apps/documents/tests/**
-src/apps/organizations/models.py
-src/apps/organizations/migrations/00*.py
-src/apps/organizations/tests/**
-applicable canonical documentation and focused gates
+src/apps/normatives/evidence_admin.py
+src/apps/normatives/evidence_models.py
+src/apps/normatives/evidence_services.py
+src/apps/normatives/evidence_signals.py
+src/apps/normatives/migrations/0002_normative_evidence.py
+src/apps/normatives/tests/test_evidence_contract.py
+src/apps/normatives/tests/test_evidence_persistence.py
+src/apps/normatives/urls.py
+src/apps/normatives/views.py
+src/templates/normatives/evidence_event_detail.html
+src/templates/normatives/evidence_registry.html
+src/templates/normatives/legal_mode_decision_detail.html
+src/templates/normatives/registry.html
 ```
 
-Изменения `organizations` разрешены только при доказанной необходимости расширить audit повторной аутентификации; предпочтительно переиспользовать текущие primitives без расширения boundary.
+`pyproject.toml` был временно изменён только для диагностики Ruff и полностью восстановлен; в итоговый PR diff не входит.
 
-## PROTECTED FILES
+Не изменены:
 
-- OPJ/SHIFT/DEFECT lifecycle, templates и static;
+- OPJ/SHIFT/DEFECT lifecycle;
 - imports/master-data implementation;
 - equipment/dispatching foundations;
-- historical migrations;
-- preview/deployment configuration;
-- реальные enterprise/local-act/source files;
 - accepted print geometry;
-- release scope и shared UX contract без отдельного decision.
+- deployment/preview configuration;
+- product release scope.
 
-## FORBIDDEN CHANGES
+## FOCUSED TEST COVERAGE
 
-- automatic legal conclusion;
-- generic «подпись» вместо различимых evidence events;
-- сохранение password/secret/token в model, payload, audit или log;
-- parallel hash/signature/authentication framework;
-- mutable historical evidence;
-- retroactive reconstruction of authority or legal status;
-- automatic publication;
-- preview write;
-- Ready for Review, auto-merge или merge без явной команды пользователя.
+Проверяются:
 
-## DATA / FIXTURES
+- target/proven separation;
+- non-`VERIFY` basis gates;
+- five-type taxonomy and semantic non-substitution;
+- deterministic digest and deep immutability;
+- recursive secret rejection;
+- invalid password rollback and absence of password in stored corpus;
+- append-only update/delete rejection;
+- other-organization local act rejection;
+- correlation idempotency and conflicting reuse;
+- simulated unique race recovery after savepoint;
+- correction link behavior;
+- raw database tamper detection;
+- automatic `DocumentSignature → SIGNATURE EvidenceEvent` projection;
+- tenant isolation in read-only views;
+- Russian `VERIFY`/event labels;
+- prohibition of user-created `LEGACY_MIGRATION`.
 
-Только безопасные вымышленные fixtures. Реальные персональные данные, локальные акты, внутренние журналы и enterprise source files в Git не добавляются.
+## ACCEPTANCE MAPPING
 
-## ACCEPTANCE IDS
+### AC-NORMATIVE-LEGAL-MODES-001
 
-- `AC-NORMATIVE-LEGAL-MODES-001`;
-- `AC-NORMATIVE-EVENTS-001`;
-- `AC-NORMATIVE-PEP-001`.
+- target/proven/evidence/local-act states persisted separately;
+- unsupported decision remains `VERIFY`;
+- non-`VERIFY` without sufficient published basis rejected;
+- local act cannot substitute official/industry basis and vice versa.
 
-## ACCEPTANCE CRITERIA
+### AC-NORMATIVE-EVENTS-001
 
-1. Target/proven/evidence/local-act states существуют раздельно.
-2. Non-`VERIFY` proven mode без достаточного basis отклоняется.
-3. Все пять event types имеют самостоятельные semantics и required evidence fields.
-4. Canonical digest детерминирован.
-5. Secret-like payload fields отклоняются рекурсивно.
-6. Re-auth-required event не создаётся без соответствующего confirmation method.
-7. Persistent records append-only и traceable к subject/actor/basis.
-8. Existing document integrity/signature tests остаются зелёными.
-9. PostgreSQL migration/test profile и full final gate проходят на одном exact head.
-10. Accepted preview остаётся `UNTOUCHED`.
-11. Пользователь принимает critical workflow отдельно до Ready/Merge.
+- all five event types persisted separately;
+- payload requirements enforced per type;
+- subject/actor/time/method/basis/digest traceable;
+- historical records append-only;
+- correction creates a new linked event.
 
-## REQUIRED CHECKS
+### AC-NORMATIVE-PEP-001
 
-### First slice
+- password re-auth required where declared;
+- wrong password creates no event;
+- password/secret/token fields never enter payload/canonical storage;
+- existing `DocumentSignature` reused rather than duplicated;
+- mechanism is not labelled УКЭП/УНЭП.
 
-- Ruff для новых файлов;
-- Python compile;
-- focused `apps.normatives.tests.test_evidence_contract`;
-- Django system check;
-- migration consistency check подтверждает отсутствие случайной schema change.
+## TECHNICAL GATE
 
-### Persistence slice
-
-- migration consistency;
-- PostgreSQL migration chain;
-- focused normatives/documents tests;
-- existing registration/integrity regressions;
-- full Django suite на final candidate;
-- стандартные exact-head workflows один раз перед merge.
-
-## DELIVERY PROFILE
+Code candidate `6ea0f26bfeadd8ab22d67284fd2971b0565fe25a` passed:
 
 ```text
-first slice: no runtime delivery required
-persistence/UI candidate: FULL_DEVELOPMENT
-preview: UNTOUCHED
+Ruff: SUCCESS
+Python compile: SUCCESS
+Django system check: SUCCESS
+migration consistency: SUCCESS
+PostgreSQL migration chain: SUCCESS
+architectural gate: SUCCESS
+full Django suite: SUCCESS
+repository-clean gate: SUCCESS
 ```
 
-## COMMIT / PR RULES
+Final exact-head workflow state after coordination changes is recorded in Draft PR #41. The execution package intentionally does not embed its own commit SHA.
 
-- одна branch и один Draft PR на весь repair cycle;
-- ordinary commits, без rebase/squash/force-push;
-- PR body или machine-owned comment хранит exact head и текущее состояние;
-- full suite не запускается после каждого малого repair;
-- automatic merge запрещён;
-- merge только после явной команды пользователя.
+## OPEN VERIFY
+
+The following remain intentionally unresolved and are not defects of this work item:
+
+- applicability of a specific consolidated official act to a concrete enterprise workflow;
+- existence/content/applicability of a concrete local act;
+- authority-at-action evaluation;
+- УКЭП/УНЭП, external certificates, timestamp authority;
+- production retention/security/HA;
+- subject-module lifecycle integration beyond existing `DocumentSignature` projection.
+
+These items cannot be inferred from SHA-256, immutable rows, password re-authentication or vendor claims.
+
+## RUNTIME / PREVIEW
+
+```text
+runtime deployment: NOT PERFORMED
+accepted preview: UNTOUCHED
+runtime impact before merge: NONE
+```
+
+## ACCEPTANCE STATE
+
+```text
+PREFLIGHT: COMPLETE
+DOMAIN CONTRACT: COMPLETE
+PERSISTENCE/SERVICES: COMPLETE
+READ-ONLY ACCEPTANCE SURFACE: COMPLETE
+MIGRATION: COMPLETE
+FOCUSED TESTS: COMPLETE
+FULL CODE GATE: SUCCESS
+FINAL EXACT-HEAD GATE: RECORDED IN PR #41
+TECHNICAL CANDIDATE: PREPARED
+USER ACCEPTANCE: REQUIRED
+READY FOR REVIEW: NO
+MERGE: FORBIDDEN WITHOUT EXPLICIT USER COMMAND
+```
+
+## USER ACCEPTANCE CHECK
+
+До Ready/Merge пользователь отдельно подтверждает:
+
+1. корректность границы `target mode ≠ proven legal mode`;
+2. корректность пяти самостоятельных evidence semantics;
+3. допустимость append-only/read-only foundation как основы downstream workflows;
+4. отсутствие ложного утверждения о юридической значимости или виде электронной подписи.
 
 ## REPORT FORMAT
 
@@ -291,36 +303,14 @@ BRANCH
 ISSUE
 PR
 EXACT HEAD
-FACTUAL GAP
-IMPLEMENTED SLICE
+IMPLEMENTED SLICES
 CHANGED FILE BOUNDARY
-MIGRATIONS
-FOCUSED CHECKS
+MIGRATION
+FOCUSED TESTS
 FULL GATE
 RUNTIME
 PREVIEW
 OPEN VERIFY
-BLOCKER
-NEXT ACTION
 ACCEPTANCE STATE
-```
-
-## STOP CONDITIONS
-
-- источник не позволяет повысить `VERIFY`;
-- local-act applicability отсутствует или не подтверждена;
-- implementation смешивает разные evidence semantics;
-- требуется authority-at-action behavior за пределами этого work item;
-- существующие signature/integrity primitives пришлось бы дублировать;
-- changed-file boundary пересекает защищённый предметный модуль без отдельного решения;
-- CI/runtime выявляет потерю append-only или secret leakage.
-
-## PREFLIGHT VERDICT
-
-```text
-READY TO IMPLEMENT
-FIRST SLICE: DOMAIN CONTRACT + FOCUSED TESTS
-RUNTIME IMPACT: NONE UNTIL PERSISTENCE
-PREVIEW: UNTOUCHED
-MERGE: FORBIDDEN WITHOUT EXPLICIT USER COMMAND
+NEXT ACTION
 ```
