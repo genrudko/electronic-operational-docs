@@ -1,3 +1,6 @@
+import importlib
+
+from django.apps import apps as django_apps
 from django.core.management import call_command
 from django.test import TestCase
 
@@ -11,11 +14,7 @@ from apps.organizations.models import Employee, Organization
 
 
 class DemoAuthoritySeedCommandTests(TestCase):
-    def test_seed_is_idempotent_and_covers_decision_states_and_external_personnel(self):
-        call_command("seed_demo_organization", reset_passwords=True, verbosity=0)
-        call_command("seed_demo_personnel_authority", verbosity=0)
-        call_command("seed_demo_personnel_authority", verbosity=0)
-
+    def assert_demo_authority_state(self) -> None:
         host = Organization.objects.get(code="DEMO")
         contractor = Organization.objects.get(code="DEMO-CONTRACTOR")
         external_employee = Employee.objects.get(
@@ -58,9 +57,27 @@ class DemoAuthoritySeedCommandTests(TestCase):
                 basis_reference__icontains="приказ предприятия"
             ).exists()
         )
-        self.assertTrue(
+        self.assertEqual(
             OperationalAuthorityGrant.objects.filter(
                 basis_reference__startswith="DEMO-ONLY"
-            ).count()
-            == 4
+            ).count(),
+            4,
         )
+
+    def test_seed_is_idempotent_and_covers_decision_states_and_external_personnel(self):
+        call_command("seed_demo_organization", reset_passwords=True, verbosity=0)
+        call_command("seed_demo_personnel_authority", verbosity=0)
+        call_command("seed_demo_personnel_authority", verbosity=0)
+
+        self.assert_demo_authority_state()
+
+    def test_forward_data_migration_populates_existing_demo_database(self):
+        call_command("seed_demo_organization", reset_passwords=True, verbosity=0)
+        migration = importlib.import_module(
+            "apps.organizations.migrations.0009_seed_demo_personnel_authority"
+        )
+
+        migration.seed_demo_authority(django_apps, None)
+        migration.seed_demo_authority(django_apps, None)
+
+        self.assert_demo_authority_state()
