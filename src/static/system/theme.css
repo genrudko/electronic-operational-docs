@@ -111,6 +111,18 @@
     --theme-overlay: rgba(2, 7, 12, 0.72);
     --theme-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
     --theme-shadow-overlay: 0 24px 60px rgba(0, 0, 0, 0.52);
+
+    /* Late DEFECT repair layers keep these aliases behind !important declarations. */
+    --da-status-registered: var(--theme-primary);
+    --da-status-registered-soft: var(--theme-primary-soft);
+    --da-status-progress: var(--theme-warning);
+    --da-status-progress-soft: var(--theme-warning-soft);
+    --da-status-resolved: var(--theme-success);
+    --da-status-resolved-soft: var(--theme-success-soft);
+    --da-status-closed: var(--theme-text-muted);
+    --da-status-closed-soft: var(--theme-control-disabled);
+    --da-lifecycle-complete: var(--theme-info);
+    --da-lifecycle-complete-soft: var(--theme-info-soft);
 }
 
 /* Patch 007.3 compatibility: its !important consumers resolve through the semantic owner. */
@@ -433,6 +445,91 @@ html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status
     border-color: var(--theme-border-strong);
     background: var(--theme-control-hover);
     color: var(--theme-text-muted);
+}
+
+/* Final dark acceptance repair: only states observed on the deployed candidate. */
+html[data-theme="dark"] .da-button.is-secondary:hover,
+html[data-theme="dark"] .da-button.secondary:hover,
+html[data-theme="dark"] .da-icon-button:hover {
+    border-color: var(--theme-border-strong);
+    background: var(--theme-control-hover);
+    color: var(--theme-primary-hover);
+}
+
+html[data-theme="dark"] .approved-journal-row-invalid td {
+    background: var(--theme-table-row);
+}
+
+html[data-theme="dark"] .approved-journal-row-invalid td:first-child {
+    box-shadow: inset 3px 0 0 var(--theme-danger);
+}
+
+html[data-theme="dark"] .draft-save-status.is-saved {
+    border-color: color-mix(in srgb, var(--theme-success) 55%, var(--theme-border));
+    background: var(--theme-success-soft);
+    color: var(--theme-success);
+}
+
+html[data-theme="dark"] .defect-da-registry .defect-summary-chip.active,
+html[data-theme="dark"] .defect-da-registry .defect-view-switch button[aria-pressed="true"] {
+    background: var(--theme-table-selected);
+    color: var(--theme-primary-hover);
+}
+
+html[data-theme="dark"] .defect-da-registry .defect-view-switch button[aria-pressed="true"] {
+    box-shadow: inset 0 -2px 0 var(--theme-primary);
+}
+
+html[data-theme="dark"] .defect-da-work-head {
+    border-color: var(--theme-border-strong);
+    background: var(--theme-table-header);
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .defect-da-work-head span,
+html[data-theme="dark"] .defect-da-work-row,
+html[data-theme="dark"] .defect-da-work-row > div {
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .defect-da-work-row:hover {
+    background: var(--theme-table-hover);
+    box-shadow: inset 3px 0 0 var(--theme-primary);
+}
+
+html[data-theme="dark"] .defect-da-record-context strong {
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .defect-da-definition-list > div,
+html[data-theme="dark"] .defect-da-definition-list.compact > div {
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .defect-da-definition-list.compact > div {
+    background: var(--theme-surface-soft);
+}
+
+html[data-theme="dark"] .defect-da-aside-card p,
+html[data-theme="dark"] .defect-da-action-card > p {
+    color: var(--theme-text-muted);
+}
+
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle li {
+    opacity: 0.58;
+}
+
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="REGISTERED"],
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="REGISTERED"],
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="IN_PROGRESS"],
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="REGISTERED"],
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="IN_PROGRESS"],
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="RESOLVED"],
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="REGISTERED"] [data-step="REGISTERED"],
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="IN_PROGRESS"],
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="RESOLVED"],
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="CLOSED"] {
+    opacity: 1;
 }
 
 @media print {
