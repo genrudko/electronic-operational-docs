@@ -580,7 +580,6 @@ def publish_row(
         str(item.pk),
         {
             "energy_site_id": item.pk,
-            "public_id": str(item.public_id),
             "code": item.code,
         },
     )
