@@ -5,17 +5,17 @@ from datetime import UTC, datetime
 from django.core.exceptions import ValidationError
 from django.test import SimpleTestCase
 
-from ..evidence import (
-    EvidenceConfirmationMethod,
-    EvidenceEventContract,
-    EvidenceEventType,
-    LegalModeDecisionContract,
-    LocalActStatus,
-    NormativeEvidenceStatus,
-    ProductTargetMode,
-    ProvenLegalMode,
-)
+from .. import evidence as evidence_contract
 
+
+EvidenceConfirmationMethod = evidence_contract.EvidenceConfirmationMethod
+EvidenceEventContract = evidence_contract.EvidenceEventContract
+EvidenceEventType = evidence_contract.EvidenceEventType
+LegalModeDecisionContract = evidence_contract.LegalModeDecisionContract
+LocalActStatus = evidence_contract.LocalActStatus
+NormativeEvidenceStatus = evidence_contract.NormativeEvidenceStatus
+ProductTargetMode = evidence_contract.ProductTargetMode
+ProvenLegalMode = evidence_contract.ProvenLegalMode
 
 OCCURRED_AT = datetime(2026, 8, 1, 19, 15, tzinfo=UTC)
 ACTOR_SNAPSHOT = {
