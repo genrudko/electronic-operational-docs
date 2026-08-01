@@ -18,6 +18,8 @@ accepted PR head: 93e30896f70ccc4bb4eaf9b4b71513e4ef188893
 
 Он добавляет executable preflight, `MICRO / STANDARD / SYSTEM`, пропорциональные checks, выбор delivery до публикации, optimistic-lock atomic publisher, stable handoff и retry/stall rules. Runtime, schema, data и preview не изменены.
 
+Release plan синхронизирован: `accepted_main` указывает на merge PR #30; `CAP-UX-THEME` принят. UX остаётся `IN_PROGRESS` только из-за незакрытого `CAP-UX-RESPONSIVE`.
+
 Активного product issue/branch/PR нет. Следующий work item по утверждённой очереди — `MASTER-DATA-ALIGNMENT-001`.
 
-Перед его открытием требуется узкая canonical sync `DEMO_RELEASE_PLAN.yaml`: заменить accepted application SHA на merge commit PR #30 и перевести модуль `UX` в accepted state. Новый широкий baseline audit не нужен.
+Следующее действие: factual preflight фактических organization/workplace/equipment/dispatch models, routes, import contracts и источников `REF-OD-013`, `REF-OD-020`, `REF-OD-021`; затем один issue / branch / Draft PR при verdict `READY TO IMPLEMENT`.
