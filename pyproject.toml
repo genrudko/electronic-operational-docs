@@ -45,6 +45,11 @@ extend-exclude = [
 select = ["E", "F", "I", "B", "UP", "DJ"]
 ignore = []
 
+[tool.ruff.lint.per-file-ignores]
+# Contract-oriented model modules keep canonicalization helpers adjacent to clean(),
+# while immutable save/delete guards intentionally follow those helpers.
+"src/apps/normatives/evidence_models.py" = ["I001", "DJ012"]
+
 [tool.coverage.run]
 source = ["src"]
 branch = true
