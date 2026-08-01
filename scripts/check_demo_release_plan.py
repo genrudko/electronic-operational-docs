@@ -2,18 +2,12 @@
 from demo_release_plan import load, validate
 
 
-# Stage 1 remains the audit origin, but accepted bounded work items advance the
-# canonical current-code expectation. Keep the explicit override narrow so an
-# unrelated module cannot silently rewrite its audited code status.
-CURRENT_ACCEPTED_CODE_OVERRIDES = {
-    "NORMATIVE-EVIDENCE": "IMPLEMENTED-ACCEPTED",
-}
-
-
 def main() -> int:
+    # Stage 1 remains the audit origin, but an accepted bounded work item advances
+    # the canonical current-code expectation for that module only.
     expected_code = validate.__globals__["EXPECTED_CODE"]
     original_expected_code = dict(expected_code)
-    expected_code.update(CURRENT_ACCEPTED_CODE_OVERRIDES)
+    expected_code["NORMATIVE-EVIDENCE"] = "IMPLEMENTED-ACCEPTED"
     try:
         errors = validate(load())
     finally:
