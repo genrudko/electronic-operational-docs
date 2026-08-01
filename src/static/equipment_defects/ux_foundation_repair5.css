@@ -258,6 +258,46 @@
     }
 }
 
+/* Legacy journal status text and deadline extensions must use dark semantic foregrounds. */
+html[data-theme="dark"] .defect-status {
+    border-color: color-mix(in srgb, var(--theme-primary) 62%, var(--theme-border));
+    background: var(--theme-primary-soft);
+    color: var(--theme-primary-hover);
+}
+
+html[data-theme="dark"] .defect-status[data-status="IN_PROGRESS"] {
+    border-color: color-mix(in srgb, var(--theme-warning) 62%, var(--theme-border));
+    background: var(--theme-warning-soft);
+    color: var(--theme-warning);
+}
+
+html[data-theme="dark"] .defect-status[data-status="RESOLVED"] {
+    border-color: color-mix(in srgb, var(--theme-success) 62%, var(--theme-border));
+    background: var(--theme-success-soft);
+    color: var(--theme-success);
+}
+
+html[data-theme="dark"] .defect-status[data-status="CLOSED"] {
+    border-color: var(--theme-border-strong);
+    background: var(--theme-control-disabled);
+    color: var(--theme-text-muted);
+}
+
+html[data-theme="dark"] .defect-status span,
+html[data-theme="dark"] .defect-status strong,
+html[data-theme="dark"] .defect-extension span,
+html[data-theme="dark"] .defect-extension strong,
+html[data-theme="dark"] .defect-extension p,
+html[data-theme="dark"] .defect-extension small {
+    color: inherit;
+}
+
+html[data-theme="dark"] .defect-extension {
+    border-left-color: var(--theme-warning);
+    background: var(--theme-warning-soft);
+    color: var(--theme-warning);
+}
+
 @media (max-width: 720px) {
     .defect-da-status {
         max-width: 100% !important;
