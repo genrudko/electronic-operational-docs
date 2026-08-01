@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import json
 from datetime import date
+from unittest.mock import patch
 
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db import connection, transaction
+from django.db import IntegrityError, connection, transaction
 from django.test import TestCase
 from django.urls import reverse
 
@@ -13,6 +14,7 @@ from apps.documents.tests.factories import document_context
 from apps.organizations.models import Organization
 from apps.organizations.tests.factories import employee_with_user
 
+from .. import evidence_services
 from ..evidence import (
     EvidenceConfirmationMethod,
     EvidenceEventType,
@@ -250,6 +252,39 @@ class EvidencePersistenceTests(NormativeDemoMixin, TestCase):
                     },
                 }
             )
+
+    def test_correlation_race_recovers_only_identical_event(self):
+        kwargs = {
+            "actor": self.employee,
+            "user": self.user,
+            "event_type": EvidenceEventType.ACKNOWLEDGEMENT,
+            "subject_type": "workplace_document_revision",
+            "subject_id": "race-42",
+            "payload": {
+                "content_digest": "7" * 64,
+                "acknowledgement_scope": "FULL_REVISION",
+            },
+            "source_ids": ("N-09",),
+            "correlation_id": "ack:race-42:operator-demo",
+        }
+        existing = record_evidence_event(**kwargs)
+
+        with (
+            patch.object(
+                evidence_services,
+                "_existing_for_correlation",
+                side_effect=[None, existing],
+            ),
+            patch.object(
+                EvidenceEvent,
+                "save",
+                side_effect=IntegrityError("simulated unique race"),
+            ),
+        ):
+            duplicate = record_evidence_event(**kwargs)
+
+        self.assertEqual(duplicate.pk, existing.pk)
+        self.assertEqual(EvidenceEvent.objects.filter(pk=existing.pk).count(), 1)
 
     def test_correction_is_new_linked_event(self):
         original = record_evidence_event(
