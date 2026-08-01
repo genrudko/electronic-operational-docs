@@ -1,106 +1,296 @@
-{% extends "base.html" %}
+{% extends "shared/direction_a/base.html" %}
+{% load static authority_presentation %}
 
-{% block title %}Оперативные полномочия · ЭОД{% endblock %}
+{% block title %}Оперативные права персонала · ЭОД{% endblock %}
+{% block main_class %}authority-main{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'organizations/personnel_authority.css' %}?v=pa001r1">
+<script src="{% static 'organizations/personnel_authority.js' %}?v=pa001r1" defer></script>
+{% endblock %}
 
 {% block content %}
-<section class="page-heading compact presentation-heading">
-    <div>
-        <div class="section-kicker">Персонал и полномочия</div>
-        <h1>Реестр оперативных полномочий</h1>
-        <p>
-            Структурированные предоставления прав, допуски внешнего персонала и результаты
-            server-side проверки на момент действия. Должность и роль приложения сами по себе
-            не являются оперативным полномочием.
-        </p>
-    </div>
-    <a class="button secondary" href="{% url 'organizations:directory' %}">Организация и персонал</a>
-</section>
+<section class="authority-page" data-authority-page>
+    <header class="da-page-header">
+        <div class="authority-page-header-copy">
+            <h1>Оперативные права персонала</h1>
+            <p>
+                Кто и какие действия вправе выполнять, где действует право, на какой срок оно
+                предоставлено и каким документом подтверждено.
+            </p>
+        </div>
+        <div class="da-actions">
+            <a class="da-button secondary" href="{% url 'organizations:directory' %}">Сотрудники и подразделения</a>
+        </div>
+    </header>
 
-<section class="dashboard-grid compact">
-    <article class="metric"><span>Структурированных прав</span><strong>{{ grants|length }}</strong></article>
-    <article class="metric"><span>Внешних допусков</span><strong>{{ external_engagements|length }}</strong></article>
-    <article class="metric"><span>Сохранённых проверок</span><strong>{{ recent_evaluations|length }}</strong></article>
-</section>
+    <nav class="authority-summary" aria-label="Сводка по оперативным правам">
+        <a class="authority-summary-card" href="#rights" data-summary-view="rights">
+            <span>Предоставлено прав</span>
+            <strong>{{ grants|length }}</strong>
+        </a>
+        <a class="authority-summary-card" href="#external" data-summary-view="external">
+            <span>Внешний персонал</span>
+            <strong>{{ external_engagements|length }}</strong>
+        </a>
+        <a class="authority-summary-card" href="#checks" data-summary-view="checks">
+            <span>Последние проверки</span>
+            <strong>{{ recent_evaluations|length }}</strong>
+        </a>
+        <a class="authority-summary-card" href="#checks" data-summary-view="checks">
+            <span>Действие разрешено</span>
+            <strong>{{ allow_count }}</strong>
+        </a>
+    </nav>
 
-<section class="profile-card">
-    <div class="section-heading">
-        <div><div class="eyebrow">STRUCTURED GRANTS</div><h2>Предоставленные оперативные права</h2></div>
-        <span class="count-badge">{{ grants|length }}</span>
-    </div>
-    <p class="muted">
-        Только отдельный grant связывает лицо, контролируемое действие, область, период и
-        документ-основание. Импортированная положительная отметка без такого grant не разрешает действие.
-    </p>
-    <div class="table-wrap">
-        <table>
-            <thead><tr><th>Сотрудник</th><th>Право и действие</th><th>Область</th><th>Период</th><th>Основание</th><th>Состояние</th></tr></thead>
-            <tbody>
-                {% for grant in grants %}
+    <section class="authority-toolbar" aria-label="Поиск и представление">
+        <div class="authority-tabs" role="group" aria-label="Раздел реестра">
+            <button type="button" data-authority-view="rights" aria-pressed="true">Права сотрудников</button>
+            <button type="button" data-authority-view="external" aria-pressed="false">Внешний персонал</button>
+            <button type="button" data-authority-view="checks" aria-pressed="false">История проверок</button>
+        </div>
+        <div class="authority-filter-field">
+            <label for="authority-search">Поиск</label>
+            <input
+                id="authority-search"
+                type="search"
+                placeholder="ФИО, право, объект или документ-основание"
+                autocomplete="off"
+                data-authority-search
+            >
+        </div>
+        <div class="authority-filter-field">
+            <label for="authority-state">Состояние</label>
+            <select id="authority-state" data-authority-state>
+                <option value="">Все состояния</option>
+                <option value="confirmed" data-views="rights external">Подтверждено</option>
+                <option value="verify" data-views="rights external checks">Требует внимания</option>
+                <option value="inactive" data-views="rights external">Не действует</option>
+                <option value="ALLOW" data-views="checks">Разрешено</option>
+                <option value="DENY" data-views="checks">Запрещено</option>
+            </select>
+        </div>
+    </section>
+
+    <section class="authority-panel" data-authority-panel="rights">
+        <div class="authority-panel-heading">
+            <div>
+                <h2>Права сотрудников</h2>
+                <p>
+                    В рабочем контуре учитывается отдельное предоставленное право с областью,
+                    сроком действия и документом-основанием. Должность сама по себе права не даёт.
+                </p>
+            </div>
+            <span class="authority-count">{{ grants|length }}</span>
+        </div>
+        {% if grants %}
+        <div class="authority-table-wrap">
+            <table class="authority-table">
+                <colgroup>
+                    <col style="width: 20%">
+                    <col style="width: 19%">
+                    <col style="width: 20%">
+                    <col style="width: 14%">
+                    <col style="width: 19%">
+                    <col style="width: 8%">
+                </colgroup>
+                <thead>
                     <tr>
-                        <td><strong><a href="{% url 'organizations:employee_detail' grant.employee.public_id %}">{{ grant.employee.full_name }}</a></strong><small>{{ grant.employee.position.name }} · {{ grant.organization.short_name|default:grant.organization.name }}</small></td>
-                        <td><strong>{{ grant.right_definition.name }}</strong><small class="technical-only"><code>{{ grant.action_code }}</code></small></td>
-                        <td>{{ grant.scope_label|default:grant.scope_reference }}<small>{{ grant.get_scope_kind_display }}</small></td>
-                        <td>с {{ grant.valid_from|date:"d.m.Y H:i" }}<small>{% if grant.valid_until %}по {{ grant.valid_until|date:"d.m.Y H:i" }}{% else %}без даты окончания{% endif %}</small></td>
-                        <td>{{ grant.basis_reference }}<small>Предоставил: {{ grant.granting_organization.short_name|default:grant.granting_organization.name }}</small></td>
+                        <th>Сотрудник</th>
+                        <th>Что разрешено</th>
+                        <th>Где действует</th>
+                        <th>Срок</th>
+                        <th>Основание</th>
+                        <th>Состояние</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for grant in grants %}
+                    <tr
+                        data-authority-row
+                        data-state="{% if not grant.is_active %}inactive{% elif grant.basis_status == 'CONFIRMED' %}confirmed{% elif grant.basis_status == 'VERIFY' %}verify{% else %}denied{% endif %}"
+                        data-search="{{ grant.employee.full_name }} {{ grant.employee.position.name }} {{ grant.right_definition.name }} {{ grant.action_code|authority_action_label }} {{ grant.scope_label }} {{ grant.basis_reference|authority_basis_label }}"
+                    >
                         <td>
-                            {% if not grant.is_active %}<span class="semantic-badge">Неактивно</span>
-                            {% elif grant.basis_status == "CONFIRMED" %}<span class="semantic-badge management">Подтверждено</span>
-                            {% elif grant.basis_status == "VERIFY" %}<span class="semantic-badge supervision">Требует проверки</span>
-                            {% else %}<span class="semantic-badge">Отклонено</span>{% endif %}
-                            {% if grant.allow_substitution %}<small>Явное замещение допускается</small>{% endif %}
+                            <a class="authority-primary-value" href="{% url 'organizations:employee_detail' grant.employee.public_id %}">{{ grant.employee.full_name }}</a>
+                            <span class="authority-secondary-value">{{ grant.employee.position.name }}</span>
+                        </td>
+                        <td>
+                            <span class="authority-primary-value">{{ grant.action_code|authority_action_label }}</span>
+                            <span class="authority-secondary-value">{{ grant.right_definition.name }}</span>
+                        </td>
+                        <td>
+                            <span class="authority-primary-value">{{ grant.scope_label|default:grant.scope_reference }}</span>
+                            <span class="authority-secondary-value">{{ grant.get_scope_kind_display }}</span>
+                        </td>
+                        <td>
+                            <span class="authority-primary-value">с {{ grant.valid_from|date:"d.m.Y" }}</span>
+                            <span class="authority-secondary-value">{% if grant.valid_until %}по {{ grant.valid_until|date:"d.m.Y" }}{% else %}без ограничения срока{% endif %}</span>
+                        </td>
+                        <td>
+                            <span class="authority-primary-value">{{ grant.basis_reference|authority_basis_label }}</span>
+                            <span class="authority-secondary-value">Предоставившая организация: {{ grant.granting_organization.short_name|default:grant.granting_organization.name }}</span>
+                        </td>
+                        <td>
+                            {% if not grant.is_active %}
+                                <span class="authority-status neutral">Не действует</span>
+                            {% elif grant.basis_status == "CONFIRMED" %}
+                                <span class="authority-status allowed">Подтверждено</span>
+                            {% elif grant.basis_status == "VERIFY" %}
+                                <span class="authority-status verify">Проверить</span>
+                            {% else %}
+                                <span class="authority-status denied">Отклонено</span>
+                            {% endif %}
+                            {% if grant.allow_substitution %}<span class="authority-secondary-value">Допускается явное замещение</span>{% endif %}
                         </td>
                     </tr>
-                {% empty %}<tr><td colspan="6" class="muted">Структурированные права ещё не опубликованы.</td></tr>{% endfor %}
-            </tbody>
-        </table>
-    </div>
-</section>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="authority-empty">
+            <strong>Права ещё не опубликованы</strong>
+            <span>После публикации здесь появятся сотрудники, действия, области и сроки.</span>
+        </div>
+        {% endif %}
+    </section>
 
-<section class="profile-card">
-    <div class="section-heading">
-        <div><div class="eyebrow">EXTERNAL PERSONNEL</div><h2>Подрядный и командированный персонал</h2></div>
-        <span class="count-badge">{{ external_engagements|length }}</span>
-    </div>
-    <p class="muted">Внешний сотрудник допускается только через явную связь направляющей и принимающей организаций, область, период и основание.</p>
-    <div class="table-wrap">
-        <table>
-            <thead><tr><th>Сотрудник</th><th>Организации</th><th>Вид</th><th>Область</th><th>Период и основание</th></tr></thead>
-            <tbody>
-                {% for item in external_engagements %}
+    <section class="authority-panel" data-authority-panel="external">
+        <div class="authority-panel-heading">
+            <div>
+                <h2>Подрядный и командированный персонал</h2>
+                <p>
+                    Для внешнего сотрудника отдельно фиксируются направляющая и принимающая
+                    организации, область допуска, срок и документ-основание.
+                </p>
+            </div>
+            <span class="authority-count">{{ external_engagements|length }}</span>
+        </div>
+        {% if external_engagements %}
+        <div class="authority-table-wrap">
+            <table class="authority-table">
+                <colgroup>
+                    <col style="width: 21%">
+                    <col style="width: 25%">
+                    <col style="width: 15%">
+                    <col style="width: 17%">
+                    <col style="width: 14%">
+                    <col style="width: 8%">
+                </colgroup>
+                <thead>
                     <tr>
-                        <td><strong><a href="{% url 'organizations:employee_detail' item.employee.public_id %}">{{ item.employee.full_name }}</a></strong><small>{{ item.employee.position.name }}</small></td>
-                        <td>{{ item.home_organization.short_name|default:item.home_organization.name }} → {{ item.host_organization.short_name|default:item.host_organization.name }}</td>
+                        <th>Сотрудник</th>
+                        <th>Организации</th>
+                        <th>Вид персонала</th>
+                        <th>Область допуска</th>
+                        <th>Срок и основание</th>
+                        <th>Состояние</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in external_engagements %}
+                    <tr
+                        data-authority-row
+                        data-state="{% if not item.is_active %}inactive{% elif item.basis_status == 'CONFIRMED' %}confirmed{% elif item.basis_status == 'VERIFY' %}verify{% else %}denied{% endif %}"
+                        data-search="{{ item.employee.full_name }} {{ item.home_organization.name }} {{ item.host_organization.name }} {{ item.get_relation_kind_display }} {{ item.scope_label }} {{ item.basis_reference|authority_basis_label }}"
+                    >
+                        <td>
+                            <a class="authority-primary-value" href="{% url 'organizations:employee_detail' item.employee.public_id %}">{{ item.employee.full_name }}</a>
+                            <span class="authority-secondary-value">{{ item.employee.position.name }}</span>
+                        </td>
+                        <td>
+                            <span class="authority-primary-value">{{ item.home_organization.short_name|default:item.home_organization.name }}</span>
+                            <span class="authority-secondary-value">Принимает: {{ item.host_organization.short_name|default:item.host_organization.name }}</span>
+                        </td>
                         <td>{{ item.get_relation_kind_display }}</td>
-                        <td>{{ item.scope_label|default:item.scope_reference }}<small>{{ item.get_scope_kind_display }}</small></td>
-                        <td>с {{ item.valid_from|date:"d.m.Y H:i" }}{% if item.valid_until %} по {{ item.valid_until|date:"d.m.Y H:i" }}{% endif %}<small>{{ item.basis_reference }} · {{ item.get_basis_status_display }}</small></td>
+                        <td>
+                            <span class="authority-primary-value">{{ item.scope_label|default:item.scope_reference }}</span>
+                            <span class="authority-secondary-value">{{ item.get_scope_kind_display }}</span>
+                        </td>
+                        <td>
+                            <span class="authority-primary-value">{{ item.basis_reference|authority_basis_label }}</span>
+                            <span class="authority-secondary-value">{{ item.valid_from|date:"d.m.Y" }} — {% if item.valid_until %}{{ item.valid_until|date:"d.m.Y" }}{% else %}без ограничения срока{% endif %}</span>
+                        </td>
+                        <td>
+                            {% if not item.is_active %}
+                                <span class="authority-status neutral">Не действует</span>
+                            {% elif item.basis_status == "CONFIRMED" %}
+                                <span class="authority-status allowed">Подтверждено</span>
+                            {% elif item.basis_status == "VERIFY" %}
+                                <span class="authority-status verify">Проверить</span>
+                            {% else %}
+                                <span class="authority-status denied">Отклонено</span>
+                            {% endif %}
+                        </td>
                     </tr>
-                {% empty %}<tr><td colspan="5" class="muted">Допуски внешнего персонала не зарегистрированы.</td></tr>{% endfor %}
-            </tbody>
-        </table>
-    </div>
-</section>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="authority-empty">
+            <strong>Внешний персонал не зарегистрирован</strong>
+            <span>Допуски подрядчиков и командированных сотрудников появятся в этом разделе.</span>
+        </div>
+        {% endif %}
+    </section>
 
-<section class="profile-card">
-    <div class="section-heading">
-        <div><div class="eyebrow">ACTION-TIME EVALUATION</div><h2>Последние проверки полномочий</h2></div>
-        <span class="count-badge">{{ recent_evaluations|length }}</span>
+    <section class="authority-panel" data-authority-panel="checks">
+        <div class="authority-panel-heading">
+            <div>
+                <h2>История проверок</h2>
+                <p>
+                    Для каждого значимого действия сохраняется ответ системы и сведения,
+                    которые действовали в момент проверки.
+                </p>
+            </div>
+            <span class="authority-count">{{ recent_evaluations|length }}</span>
+        </div>
+        {% if recent_evaluations %}
+        <div class="authority-evaluation-list">
+            {% for item in recent_evaluations %}
+            <a
+                class="authority-evaluation-row"
+                href="{% url 'organizations:authority_evaluation_detail' item.public_id %}"
+                data-authority-row
+                data-state="{{ item.decision }}"
+                data-search="{{ item.actor.full_name }} {{ item.action_code|authority_action_label }} {{ item.subject_id|authority_subject_label }} {% for reason in item.reasons %}{{ reason|authority_reason_label }} {% endfor %}"
+            >
+                <time datetime="{{ item.occurred_at|date:'c' }}">{{ item.occurred_at|date:"d.m.Y H:i" }}</time>
+                <span>
+                    <strong class="authority-primary-value">{{ item.actor.full_name }}</strong>
+                    <span class="authority-secondary-value">{{ item.actor.position.name }}</span>
+                </span>
+                <span>
+                    <strong class="authority-action">{{ item.action_code|authority_action_label }}</strong>
+                    <span class="authority-secondary-value authority-subject">{{ item.subject_id|authority_subject_label }}</span>
+                </span>
+                <span class="authority-status {{ item.decision|authority_decision_tone }}">{{ item.get_decision_display }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="authority-empty">
+            <strong>Проверки ещё не выполнялись</strong>
+            <span>История появится после первого контролируемого действия.</span>
+        </div>
+        {% endif %}
+    </section>
+
+    <div class="authority-no-results" data-authority-no-results>
+        По заданным условиям ничего не найдено. Измените текст поиска или состояние.
     </div>
-    <p class="muted">Результат отражает факты на конкретный момент: <strong>разрешено</strong>, <strong>запрещено</strong> или <strong>требует проверки</strong>. Это не юридическое заключение и не заменяет evidence предметного действия.</p>
-    <div class="table-wrap">
-        <table>
-            <thead><tr><th>Момент</th><th>Сотрудник</th><th>Действие и объект</th><th>Результат</th><th>Причины</th></tr></thead>
-            <tbody>
-                {% for item in recent_evaluations %}
-                    <tr>
-                        <td><a href="{% url 'organizations:authority_evaluation_detail' item.public_id %}">{{ item.occurred_at|date:"d.m.Y H:i:s" }}</a></td>
-                        <td><strong>{{ item.actor.full_name }}</strong><small>{{ item.actor.position.name }}</small></td>
-                        <td><code>{{ item.action_code }}</code><small>{{ item.subject_type }} · {{ item.subject_id }}</small></td>
-                        <td>{% if item.decision == "ALLOW" %}<span class="semantic-badge management">Разрешено</span>{% elif item.decision == "VERIFY" %}<span class="semantic-badge supervision">Требует проверки</span>{% else %}<span class="semantic-badge">Запрещено</span>{% endif %}</td>
-                        <td>{% for reason in item.reasons %}<code>{{ reason }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}</td>
-                    </tr>
-                {% empty %}<tr><td colspan="5" class="muted">Проверки ещё не выполнялись.</td></tr>{% endfor %}
-            </tbody>
-        </table>
-    </div>
+
+    <aside class="authority-guidance">
+        <span aria-hidden="true">ℹ</span>
+        <div>
+            <strong>Как читать реестр</strong>
+            <p>
+                Запись подтверждает право только в указанной области и в пределах срока.
+                Исходная отметка из матрицы персонала хранится для прослеживаемости, но не заменяет
+                отдельное предоставленное право.
+            </p>
+        </div>
+    </aside>
 </section>
 {% endblock %}
