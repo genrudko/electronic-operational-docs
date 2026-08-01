@@ -5,9 +5,9 @@ from typing import Any
 
 from . import services
 from .master_data_contract import (
+    PROFILE_CONTRACTS,
     IssueSeverity,
     MasterDataTarget,
-    PROFILE_CONTRACTS,
     validate_profile_row,
 )
 
