@@ -42,8 +42,18 @@ jobs:
             git diff --check HEAD~1..HEAD
           fi
 
-      - name: Compile documentation checker
-        run: python -m compileall -q scripts/check_documentation_contract.py
+      - name: Compile documentation checkers
+        run: >-
+          python -m compileall -q
+          scripts/check_documentation_contract.py
+          scripts/check_documentation_contract_core.py
+          scripts/check_demo_release_plan.py
+          scripts/demo_release_plan.py
+          scripts/project_state_contract.py
+          tests/process/test_project_state_contract.py
+
+      - name: Run project-state contract regressions
+        run: python -m unittest discover -s tests/process -p 'test_project_state_contract.py'
 
       - name: Validate documentation contract
         run: python scripts/check_documentation_contract.py

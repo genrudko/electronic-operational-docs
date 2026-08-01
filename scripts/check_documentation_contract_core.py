@@ -13,6 +13,8 @@ import sys
 from pathlib import Path
 from urllib.parse import unquote
 
+import project_state_contract
+
 ROOT = Path(__file__).resolve().parents[1]
 
 REQUIRED_FILES = (
@@ -61,13 +63,6 @@ REQUIRED_FILES = (
     "docs/releases/RELEASE_NOTES.md",
 )
 
-BASELINE_FILES = (
-    "docs/project/CURRENT_STATE.md",
-    "docs/project/CURRENT_HANDOFF.md",
-    "docs/project/BASELINE_HISTORY.md",
-    "docs/releases/RELEASE_NOTES.md",
-)
-
 CANONICAL_LEGACY_SCAN = (
     "README.md",
     "AGENTS.md",
@@ -95,7 +90,6 @@ PROHIBITED_TRACKED_SUFFIXES = (
 )
 
 MARKDOWN_LINK_RE = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
-BASELINE_RE = re.compile(r"main\s*/\s*([0-9a-f]{40})")
 
 
 def read_text(relative: str) -> str:
@@ -145,24 +139,6 @@ def validate_markdown_links(errors: list[str]) -> None:
                 errors.append(f"broken link: {path.relative_to(ROOT)} -> {target}")
 
 
-def extract_baseline(relative: str) -> str | None:
-    match = BASELINE_RE.search(read_text(relative))
-    return match.group(1) if match else None
-
-
-def validate_baseline_consistency(errors: list[str]) -> None:
-    values: dict[str, str] = {}
-    for relative in BASELINE_FILES:
-        baseline = extract_baseline(relative)
-        if baseline is None:
-            errors.append(f"accepted main baseline not found: {relative}")
-        else:
-            values[relative] = baseline
-    if values and len(set(values.values())) != 1:
-        detail = ", ".join(f"{path}={sha}" for path, sha in values.items())
-        errors.append(f"accepted baseline mismatch: {detail}")
-
-
 def validate_legacy_phrases(errors: list[str]) -> None:
     for relative in CANONICAL_LEGACY_SCAN:
         content = read_text(relative)
@@ -204,7 +180,7 @@ def main() -> int:
     validate_required_files(errors)
     if not errors:
         validate_markdown_links(errors)
-        validate_baseline_consistency(errors)
+        errors.extend(project_state_contract.validate_repository(ROOT, verify_context=True))
         validate_legacy_phrases(errors)
     validate_tracked_sensitive_paths(errors)
     validate_legacy_tree_removed(errors)
@@ -215,10 +191,13 @@ def main() -> int:
             print(f"- {error}", file=sys.stderr)
         return 1
 
-    baseline = extract_baseline("docs/project/CURRENT_STATE.md")
+    state = project_state_contract.parse_current_state(
+        read_text("docs/project/CURRENT_STATE.md")
+    )
     print("Documentation contract: OK")
     print(f"Required files: {len(REQUIRED_FILES)}")
-    print(f"Accepted baseline: {baseline}")
+    print(f"Accepted baseline: {state.accepted_main}")
+    print(f"Active work item: {state.active_work_item or 'NONE'}")
     return 0
 
 
