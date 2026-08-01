@@ -1,9 +1,13 @@
 # PERSONNEL-AUTHORITY-001 — execution package
 
-**Issue:** #42  
-**PR:** #43  
-**Branch:** `feature/personnel-authority-001`  
-**Starting main:** `711780222ad1656e54052da116c2dde8fba9e5e6`  
+**Issue:** #42
+
+**PR:** #43
+
+**Branch:** `feature/personnel-authority-001`
+
+**Starting main:** `711780222ad1656e54052da116c2dde8fba9e5e6`
+
 **Accepted application baseline:** `6e5171776cd6bc02fcbc45eb9532a6a0e58e15f0`
 
 ## WORK ITEM
