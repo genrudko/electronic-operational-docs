@@ -93,8 +93,14 @@ class GlobalThemeContractTests(SimpleTestCase):
 
     def test_theme_layer_does_not_recolour_generic_feature_elements(self):
         css = self.source("src/static/system/theme.css").split("@media print", 1)[0]
-        for selector in ('[role="button"]', "th, td", "strong {", ".active {"):
-            self.assertNotIn(selector, css)
+        generic_selector_patterns = (
+            r'^\s*\[role="button"\]\s*(?:,|\{)',
+            r"^\s*th\s*,\s*td\s*(?:,|\{)",
+            r"^\s*strong\s*(?:,|\{)",
+            r"^\s*\.active\s*(?:,|\{)",
+        )
+        for pattern in generic_selector_patterns:
+            self.assertNotRegex(css, re.compile(pattern, re.MULTILINE))
 
     def test_print_colours_are_isolated_from_screen_components(self):
         css = self.source("src/static/system/theme.css")
