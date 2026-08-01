@@ -1,7 +1,7 @@
 # NORMATIVE-EVIDENCE-001 — execution package
 
 **Issue:** #40
-**Draft PR:** #41
+**PR:** #41
 **Branch:** `feature/normative-evidence-001`
 **Starting main tip:** `c05ace785f054233aa878ddead491def47525140`
 **Accepted application baseline:** `b644048f1ec17e19e03c2e4fb538fc0cfc1f5feb`
@@ -246,7 +246,7 @@ full Django suite: SUCCESS
 repository-clean gate: SUCCESS
 ```
 
-Final exact-head workflow state after coordination changes is recorded in Draft PR #41. The execution package intentionally does not embed its own commit SHA.
+Final exact-head workflow state after acceptance coordination is recorded in PR #41. The execution package intentionally does not embed its own commit SHA.
 
 ## OPEN VERIFY
 
@@ -269,6 +269,15 @@ accepted preview: UNTOUCHED
 runtime impact before merge: NONE
 ```
 
+## USER ACCEPTANCE
+
+Пользователь принял `NORMATIVE-EVIDENCE-001` 01.08.2026 и подтвердил:
+
+1. границу `target mode ≠ proven legal mode`;
+2. самостоятельность пяти evidence semantics;
+3. append-only/read-only foundation как основу downstream workflows;
+4. отсутствие неподтверждённых заявлений о юридической значимости и виде электронной подписи.
+
 ## ACCEPTANCE STATE
 
 ```text
@@ -281,19 +290,10 @@ FOCUSED TESTS: COMPLETE
 FULL CODE GATE: SUCCESS
 FINAL EXACT-HEAD GATE: RECORDED IN PR #41
 TECHNICAL CANDIDATE: PREPARED
-USER ACCEPTANCE: REQUIRED
-READY FOR REVIEW: NO
+USER ACCEPTANCE: ACCEPTED 01.08.2026
+READY FOR REVIEW: YES
 MERGE: FORBIDDEN WITHOUT EXPLICIT USER COMMAND
 ```
-
-## USER ACCEPTANCE CHECK
-
-До Ready/Merge пользователь отдельно подтверждает:
-
-1. корректность границы `target mode ≠ proven legal mode`;
-2. корректность пяти самостоятельных evidence semantics;
-3. допустимость append-only/read-only foundation как основы downstream workflows;
-4. отсутствие ложного утверждения о юридической значимости или виде электронной подписи.
 
 ## REPORT FORMAT
 
