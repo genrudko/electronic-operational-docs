@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Проверка полномочия · {{ evaluation.actor.full_name }} · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">AUTHORITY EVALUATION</div>
+        <h1>Проверка полномочия на момент действия</h1>
+        <p>{{ evaluation.actor.full_name }} · {{ evaluation.occurred_at|date:"d.m.Y H:i:s" }}</p>
+    </div>
+    <div>
+        <a class="button secondary" href="{% url 'organizations:employee_detail' evaluation.actor.public_id %}">К сотруднику</a>
+        <a class="button secondary" href="{% url 'organizations:authority_registry' %}">К реестру</a>
+    </div>
+</section>
+
+<section class="profile-card">
+    <div class="section-heading">
+        <div><div class="eyebrow">РЕЗУЛЬТАТ</div><h2>{{ evaluation.get_decision_display }}</h2></div>
+        {% if evaluation.decision == "ALLOW" %}<span class="semantic-badge management">Разрешено</span>{% elif evaluation.decision == "VERIFY" %}<span class="semantic-badge supervision">Требует проверки</span>{% else %}<span class="semantic-badge">Запрещено</span>{% endif %}
+    </div>
+    <dl class="detail-list">
+        <dt>Организация</dt><dd>{{ evaluation.organization.name }}</dd>
+        <dt>Сотрудник</dt><dd>{{ evaluation.actor.full_name }} · {{ evaluation.actor.position.name }}</dd>
+        <dt>Контролируемое действие</dt><dd><code>{{ evaluation.action_code }}</code></dd>
+        <dt>Область</dt><dd>{{ evaluation.scope_label|default:evaluation.scope_reference }} · {{ evaluation.get_scope_kind_display }}</dd>
+        <dt>Предметный объект</dt><dd><code>{{ evaluation.subject_type }}</code> · {{ evaluation.subject_id }}</dd>
+        <dt>Причины</dt><dd>{% for reason in evaluation.reasons %}<code>{{ reason }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
+        <dt>Использованный grant</dt><dd>{% if evaluation.matched_grant %}{{ evaluation.matched_grant.right_definition.name }} · <code>{{ evaluation.matched_grant.public_id }}</code>{% else %}matching grant отсутствует{% endif %}</dd>
+        <dt>Digest</dt><dd><code>{{ evaluation.digest }}</code></dd>
+        <dt>Зафиксировано</dt><dd>{{ evaluation.created_at|date:"d.m.Y H:i:s" }}{% if evaluation.recorded_by %} · {{ evaluation.recorded_by.full_name }}{% endif %}</dd>
+        <dt>Предыдущий результат</dt><dd>{% if evaluation.previous_evaluation %}<a href="{% url 'organizations:authority_evaluation_detail' evaluation.previous_evaluation.public_id %}">{{ evaluation.previous_evaluation.occurred_at|date:"d.m.Y H:i:s" }} · {{ evaluation.previous_evaluation.get_decision_display }}</a>{% else %}нет{% endif %}</dd>
+    </dl>
+</section>
+
+<section class="profile-card">
+    <div class="section-heading"><div><div class="eyebrow">IMMUTABLE SNAPSHOT</div><h2>Факты, использованные при проверке</h2></div></div>
+    <p class="muted">Snapshot сохраняет сотрудника, область, grant, квалификации, внешний допуск и замещение в состоянии на момент проверки. Секреты и учётные данные в snapshot запрещены.</p>
+    <pre class="technical-only"><code>{{ snapshot_json }}</code></pre>
+    <details class="technical-disclosure">
+        <summary>Показать технический snapshot в пользовательском режиме</summary>
+        <div class="technical-disclosure-body"><pre><code>{{ snapshot_json }}</code></pre></div>
+    </details>
+</section>
+{% endblock %}

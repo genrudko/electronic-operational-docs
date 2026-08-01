@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import unicodedata
 from collections import defaultdict
 
@@ -14,6 +15,11 @@ from django.views.decorators.http import require_POST
 
 from apps.equipment.models import EnergySite
 
+from .authority_models import (
+    AuthorityEvaluationRecord,
+    ExternalPersonnelEngagement,
+    OperationalAuthorityGrant,
+)
 from .forms import InterfacePreferenceForm, PersonalAuthenticationForm
 from .models import (
     Division,
@@ -54,6 +60,11 @@ def _employee_search_haystack(employee: Employee) -> str:
     parts.extend(
         f"{grant.right_definition.name} {grant.qualifier} {grant.scope_text}"
         for grant in employee.operational_rights.all()
+    )
+    parts.extend(
+        f"{grant.right_definition.name} {grant.action_code} "
+        f"{grant.scope_label} {grant.basis_reference}"
+        for grant in employee.structured_authority_grants.all()
     )
     return _search_token(" ".join(parts))
 
@@ -119,6 +130,7 @@ def directory(request):
             .prefetch_related(
                 "qualifications",
                 "operational_rights__right_definition",
+                "structured_authority_grants__right_definition",
             )
             .order_by("division__name", "last_name", "first_name")
         )
@@ -195,6 +207,54 @@ def directory(request):
 
 
 @login_required
+def authority_registry(request):
+    grants = list(
+        OperationalAuthorityGrant.objects.select_related(
+            "organization",
+            "employee__position",
+            "right_definition",
+            "granting_organization",
+        ).order_by(
+            "organization__name",
+            "employee__last_name",
+            "action_code",
+            "scope_label",
+        )
+    )
+    external_engagements = list(
+        ExternalPersonnelEngagement.objects.select_related(
+            "employee__position",
+            "home_organization",
+            "host_organization",
+        ).order_by(
+            "host_organization__name",
+            "employee__last_name",
+            "valid_from",
+        )
+    )
+    recent_evaluations = list(
+        AuthorityEvaluationRecord.objects.select_related(
+            "organization",
+            "actor__position",
+            "matched_grant",
+        ).order_by("-occurred_at", "-id")[:50]
+    )
+    return render(
+        request,
+        "organizations/authority_registry.html",
+        {
+            "grants": grants,
+            "external_engagements": external_engagements,
+            "recent_evaluations": recent_evaluations,
+            "allow_count": sum(
+                item.decision == AuthorityEvaluationRecord._meta.get_field("decision").choices[0][0]
+                for item in recent_evaluations
+            ),
+        },
+    )
+
+
+@login_required
 def employee_detail(request, public_id):
     employee = get_object_or_404(
         Employee.objects.select_related(
@@ -233,6 +293,27 @@ def employee_detail(request, public_id):
             grouped_rights.append(current_group)
             current_category = category
         current_group["rights"].append(grant)
+
+    structured_grants = list(
+        OperationalAuthorityGrant.objects.filter(employee=employee)
+        .select_related(
+            "right_definition",
+            "organization",
+            "granting_organization",
+            "source_operational_right",
+        )
+        .order_by("action_code", "scope_kind", "scope_label", "-valid_from")
+    )
+    external_engagements = list(
+        ExternalPersonnelEngagement.objects.filter(employee=employee)
+        .select_related("home_organization", "host_organization")
+        .order_by("-valid_from")
+    )
+    authority_evaluations = list(
+        AuthorityEvaluationRecord.objects.filter(actor=employee)
+        .select_related("organization", "matched_grant")
+        .order_by("-occurred_at", "-id")[:20]
+    )
     return render(
         request,
         "organizations/employee_detail.html",
@@ -240,6 +321,37 @@ def employee_detail(request, public_id):
             "employee": employee,
             "qualifications": qualifications,
             "grouped_rights": grouped_rights,
+            "structured_grants": structured_grants,
+            "external_engagements": external_engagements,
+            "authority_evaluations": authority_evaluations,
+        },
+    )
+
+
+@login_required
+def authority_evaluation_detail(request, public_id):
+    evaluation = get_object_or_404(
+        AuthorityEvaluationRecord.objects.select_related(
+            "organization",
+            "actor__position",
+            "actor__division",
+            "matched_grant__right_definition",
+            "previous_evaluation",
+            "recorded_by",
+        ),
+        public_id=public_id,
+    )
+    return render(
+        request,
+        "organizations/authority_evaluation_detail.html",
+        {
+            "evaluation": evaluation,
+            "snapshot_json": json.dumps(
+                evaluation.snapshot,
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            ),
         },
     )
 
