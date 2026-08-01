@@ -1,9 +1,9 @@
 # MASTER-DATA-ALIGNMENT-001 — factual preflight
 
-**Issue:** #34  
-**PR:** #35  
-**Branch:** `feature/master-data-alignment-001`  
-**Starting main:** `49964f2dcaf7e4659a99a240dcd899d42a7dfe15`  
+**Issue:** #34
+**PR:** #35
+**Branch:** `feature/master-data-alignment-001`
+**Starting main:** `49964f2dcaf7e4659a99a240dcd899d42a7dfe15`
 **Accepted application baseline:** `0d9be8c360ca22fc504ce2b11a14b6bb82c77ea5`
 
 ## FACT
