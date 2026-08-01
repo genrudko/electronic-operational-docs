@@ -2,16 +2,24 @@
 
 Volatile state: [`CURRENT_STATE.md`](CURRENT_STATE.md). Release/module state: [`DEMO_RELEASE_PLAN.yaml`](DEMO_RELEASE_PLAN.yaml).
 
-Process and delivery contracts:
+Принятый application baseline:
 
-- [`../process/PROJECT_OPERATING_SYSTEM.md`](../process/PROJECT_OPERATING_SYSTEM.md);
-- [`../process/DEVELOPMENT_WORKFLOW.md`](../process/DEVELOPMENT_WORKFLOW.md);
-- [`../process/PROCESS_HARDENING.md`](../process/PROCESS_HARDENING.md).
+```text
+main / 0d9be8c360ca22fc504ce2b11a14b6bb82c77ea5
+UX-THEME-001 / issue #28 / PR #30 / ACCEPTED
+accepted PR head: 93e30896f70ccc4bb4eaf9b4b71513e4ef188893
+```
 
-Product execution views:
+Согласованный process hardening опубликован direct-to-main commit:
 
-- [`../product/MODULE_MAP.md`](../product/MODULE_MAP.md);
-- [`../product/IMPLEMENTATION_SEQUENCE.md`](../product/IMPLEMENTATION_SEQUENCE.md);
-- [`DEMO_RELEASE_MASTER_CHECKLIST.md`](DEMO_RELEASE_MASTER_CHECKLIST.md).
+```text
+324fe43d040d8c7dbeadfcd4337a8919ba18a63d
+```
 
-Accepted application SHA, active work item/issue/PR, runtime state and next product action intentionally belong only to `CURRENT_STATE.md` and are not duplicated here.
+Он добавляет executable preflight, `MICRO / STANDARD / SYSTEM`, пропорциональные checks, выбор delivery до публикации, optimistic-lock atomic publisher, stable handoff и retry/stall rules. Runtime, schema, data и preview не изменены.
+
+Release plan синхронизирован: `accepted_main` указывает на merge PR #30; `CAP-UX-THEME` принят. UX остаётся `IN_PROGRESS` только из-за незакрытого `CAP-UX-RESPONSIVE`.
+
+Активного product issue/branch/PR нет. Следующий work item по утверждённой очереди — `MASTER-DATA-ALIGNMENT-001`.
+
+Следующее действие: factual preflight фактических organization/workplace/equipment/dispatch models, routes, import contracts и источников `REF-OD-013`, `REF-OD-020`, `REF-OD-021`; затем один issue / branch / Draft PR при verdict `READY TO IMPLEMENT`.
