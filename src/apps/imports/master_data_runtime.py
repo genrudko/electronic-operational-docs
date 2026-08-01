@@ -14,6 +14,7 @@ from .master_data_contract import (
 _REVIEW_PREFIX = "[MASTER_DATA_REVIEW:"
 _BLOCKED_PREFIX = "[MASTER_DATA_BLOCKED:"
 _INSTALLED_ATTRIBUTE = "_master_data_contracts_installed"
+_PLATFORM_PROVENANCE_ISSUES = frozenset({"SOURCE_OCCURRENCE_MISSING"})
 
 _TARGET_MAP = {
     services.ImportBatch.TargetRegistry.ORGANIZATION: MasterDataTarget.PERSONNEL,
@@ -125,6 +126,11 @@ def _extend_validator(
             if key in valid_keys:
                 normalized[key] = value
         for issue in validation.issues:
+            if issue.code in _PLATFORM_PROVENANCE_ISSUES:
+                # Legacy ImportRow already preserves batch + row_number + publication-row
+                # identity, so the platform provenance is reproducible even without a
+                # source-owned occurrence identifier.
+                continue
             message = _issue_message(issue)
             if message not in issues:
                 issues.append(message)

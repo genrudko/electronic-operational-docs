@@ -48,7 +48,7 @@ class MasterDataRuntimeIntegrationTests(SimpleTestCase):
         self.assertEqual(normalized["aliases"], "ШОТ-1; DC cabinet")
         self.assertEqual(issues, [])
 
-    def test_missing_equipment_provenance_is_review_not_invalid(self):
+    def test_legacy_staging_provenance_keeps_existing_equipment_rows_valid(self):
         _normalized, issues = services.validate_mapped_values(
             ImportBatch.TargetRegistry.EQUIPMENT,
             {
@@ -60,11 +60,10 @@ class MasterDataRuntimeIntegrationTests(SimpleTestCase):
         )
         row = SimpleNamespace(status=ImportRow.Status.NEW, issues=[])
 
-        self.assertEqual(len(issues), 1)
-        self.assertTrue(issues[0].startswith("[MASTER_DATA_REVIEW:"))
+        self.assertEqual(issues, [])
         self.assertEqual(
             services._review_status(row, issues, []),
-            ImportRow.ReviewStatus.REVIEW,
+            ImportRow.ReviewStatus.VALID,
         )
 
     def test_conflicting_shot_family_is_invalid(self):
