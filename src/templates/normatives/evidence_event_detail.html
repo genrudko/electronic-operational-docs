@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.get_event_type_display }} · evidence · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">EVIDENCE-СОБЫТИЕ</div>
+        <h1>{{ event.get_event_type_display }}</h1>
+        <p>{{ event.subject_type }} · {{ event.subject_id }}</p>
+    </div>
+</section>
+
+<section class="profile-grid">
+    <article class="profile-card">
+        <h2>Кто и когда</h2>
+        <dl class="detail-list">
+            <dt>Участник</dt>
+            <dd>{{ event.actor_snapshot.full_name }}</dd>
+            <dt>Должность</dt>
+            <dd>{{ event.actor_snapshot.position|default:"Не указана" }}</dd>
+            <dt>Подразделение</dt>
+            <dd>{{ event.actor_snapshot.division|default:"Не указано" }}</dd>
+            <dt>Рабочее место</dt>
+            <dd>{{ event.actor_snapshot.workplace|default:"Не указано" }}</dd>
+            <dt>Серверное время</dt>
+            <dd>{{ event.occurred_at|date:"d.m.Y H:i:s" }}</dd>
+        </dl>
+    </article>
+
+    <article class="profile-card">
+        <h2>Что подтверждено</h2>
+        <dl class="detail-list">
+            <dt>Тип события</dt>
+            <dd>{{ event.get_event_type_display }}</dd>
+            <dt>Способ подтверждения</dt>
+            <dd>{{ event.get_confirmation_method_display }}</dd>
+            <dt>Повторная аутентификация</dt>
+            <dd>{% if event.requires_reauthentication %}Требовалась{% else %}Не требовалась{% endif %}</dd>
+            <dt>Нормативная редакция</dt>
+            <dd>
+                {% if event.normative_basis_revision %}
+                    {{ event.normative_basis_revision.document.short_title|default:event.normative_basis_revision.document.title }},
+                    редакция № {{ event.normative_basis_revision.revision_number }}
+                {% else %}
+                    Не связана
+                {% endif %}
+            </dd>
+            <dt>Source IDs</dt>
+            <dd>{{ event.source_ids|join:", " }}</dd>
+        </dl>
+    </article>
+</section>
+
+<section class="profile-card">
+    <h2>Evidence payload</h2>
+    <div class="table-wrap">
+        <table>
+            <tbody>
+            {% for key, value in event.payload.items %}
+                <tr><th>{{ key }}</th><td>{{ value }}</td></tr>
+            {% empty %}
+                <tr><td>Payload пуст.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="profile-card technical-only">
+    <h2>Проверка целостности</h2>
+    <p><strong>{{ integrity.status.label }}</strong> — {{ integrity.message }}</p>
+    <dl class="detail-list">
+        <dt>SHA-256</dt>
+        <dd><code>{{ event.digest }}</code></dd>
+        <dt>Версия схемы</dt>
+        <dd><code>{{ event.schema_version }}</code></dd>
+        <dt>Корреляционный идентификатор</dt>
+        <dd>{{ event.correlation_id|default:"Не задан" }}</dd>
+        <dt>Исправляет событие</dt>
+        <dd>
+            {% if event.corrects_event %}
+                <a href="{% url 'normatives:evidence_event_detail' event.corrects_event.public_id %}">
+                    {{ event.corrects_event.public_id }}
+                </a>
+            {% else %}
+                Нет
+            {% endif %}
+        </dd>
+    </dl>
+</section>
+{% endblock %}
