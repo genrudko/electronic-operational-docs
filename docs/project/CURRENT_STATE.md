@@ -9,7 +9,7 @@ repository: genrudko/electronic-operational-docs
 accepted main baseline: main / 6e5171776cd6bc02fcbc45eb9532a6a0e58e15f0
 active work item: PERSONNEL-AUTHORITY-001
 active issue: #42
-active PR: PENDING
+active PR: #43 / DRAFT
 active branch: feature/personnel-authority-001
 runtime impact: NONE
 preview: UNTOUCHED
@@ -31,9 +31,9 @@ EOD CI #698: SUCCESS
 
 Принятый normative/evidence контур разделяет product target и proven legal mode, хранит пять самостоятельных evidence semantics, использует append-only decisions/events, password re-authentication без сохранения секрета и существующий `DocumentSignature` без параллельного signature framework. Ни immutable model, ни SHA-256, ни re-auth сами по себе не доказывают юридическую значимость; неподтверждённые режимы остаются `VERIFY`.
 
-`PERSONNEL-AUTHORITY-001` начат по issue #42 после factual preflight. Установлено, что модуль не создаётся с нуля: уже существуют employee/qualification/imported operational-right foundations. Текущий work item ограничен структурированными grants, external/seconded personnel semantics, authority-at-action evaluation и immutable authority snapshot; application role или должность сами по себе не разрешают controlled action.
+`PERSONNEL-AUTHORITY-001` начат по issue #42 и Draft PR #43 после factual preflight. Установлено, что модуль не создаётся с нуля: уже существуют employee/qualification/imported operational-right foundations. Текущий work item ограничен структурированными grants, external/seconded personnel semantics, authority-at-action evaluation и immutable authority snapshot; application role или должность сами по себе не разрешают controlled action.
 
-До создания Draft PR runtime deployment не выполнялся; accepted preview остаётся `UNTOUCHED`. Merge, Ready for Review и preview write без отдельной команды пользователя запрещены.
+Первый pure-contract slice находится в `feature/personnel-authority-001`; runtime deployment ещё не выполнялся, accepted preview остаётся `UNTOUCHED`. Merge, Ready for Review и preview write без отдельной команды пользователя запрещены.
 
 С 01.08.2026 действует единый пользовательский контур: один активный чат ведёт work item от factual preflight до post-merge coordination. При технической смене чата новый исполнитель самостоятельно восстанавливает состояние из GitHub; пользователь не переносит между чатами handoff, SHA, CI-отчёты или команды.
 
