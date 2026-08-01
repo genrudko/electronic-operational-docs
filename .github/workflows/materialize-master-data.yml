@@ -29,6 +29,16 @@ jobs:
         run: |
           set -euo pipefail
           test -f .materialize-master-data/READY || exit 0
+          cat <<'CHECKSUMS' | sha256sum --check
+          bcc5faf538ce72f5c71af440de7f8680ede685aafb4151f1afe0c80f388bca3a  .materialize-master-data/models.00.b64
+          4cbb8b6056e3df9c03b2a3a9da1490bcd1d89ef0078dae80460ae608d255a9cd  .materialize-master-data/models.01.b64
+          18e9274322511461806ddafb731155823f7033c3785dd2c993c41117826ab81e  .materialize-master-data/models.02.b64
+          643264e53949299b4f4233f0df0c9354aa8904843e75b621e1e170bf71a558e3  .materialize-master-data/services.00.b64
+          eeb1fdae52168c4d33f09f7309258cdfb8cfbd64a4aefb53cb5931a2b615744a  .materialize-master-data/services.01.b64
+          fe9ecedc6e01db0f707f9b5cadd3c330a68c6ac2ed2903ef663c07771ee0042e  .materialize-master-data/services.02.b64
+          defebee4ffe162850f0da582c494b6e66c6b8cd7e1d59c05a97b375abcfd92b3  .materialize-master-data/services.03.b64
+          06659533d1bfe77e9803eb6ce3306e06302e723df0574a46bb51065d4cf33274  .materialize-master-data/organization_structure.00.b64
+          CHECKSUMS
           cat .materialize-master-data/models.*.b64 | base64 --decode | gzip --decompress > src/apps/imports/models.py
           cat .materialize-master-data/services.*.b64 | base64 --decode | gzip --decompress > src/apps/imports/services.py
           cat .materialize-master-data/organization_structure.*.b64 | base64 --decode | gzip --decompress > src/apps/imports/organization_structure.py
