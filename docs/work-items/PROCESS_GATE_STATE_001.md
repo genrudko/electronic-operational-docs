@@ -1,55 +1,37 @@
 # PROCESS-GATE-STATE-001 — canonical state and gate repair
 
-**Issue:** #38  
-**Branch:** `repair/process-gate-state-001`  
-**Starting main:** `49964f2dcaf7e4659a99a240dcd899d42a7dfe15`  
-**Change class:** `STANDARD`  
-**Risk profile:** `SECURITY_INFRA`  
-**Delivery:** `NONE`
+## Identity
 
-## FACT
+- Issue: #38
+- Branch: `repair/process-gate-state-001`
+- Starting main: `49964f2dcaf7e4659a99a240dcd899d42a7dfe15`
+- Change class: `STANDARD`
+- Risk profile: `SECURITY_INFRA`
+- Delivery: `NONE`
 
-Draft PR #35 at exact head `d59146638686e8c4602673e8e08041bd6fd1d916` passes Ruff, compile, Django check, migration consistency and PostgreSQL migrations, but three workflows stop before their intended checks.
+## Factual defect
 
-Exact failures:
+Three workflows on Draft PR #35 stop before their intended checks because current gates require an historical accepted-main SHA and the completed `PROJECT-BASELINE-001` marker. The documentation checker also masks duplicate volatile state instead of enforcing the canonical owner model.
 
-- `EOD CI` run `30707110803`, job `91388015388`, step `Run current architectural gate`;
-- `EOD Documentation Contract` run `30707110808`, job `91388015330`, step `Validate documentation contract`;
-- `AUTO-001B Controller CI` run `30707110799`, job `91388015193`, step `Run current architectural gate compatibility`.
+The accepted ownership model is:
 
-The obsolete contract requires:
-
-```text
-accepted main baseline: main / 2a9b92362b90861501cf11d073668478655fd191
-completed work item: PROJECT-BASELINE-001
-```
-
-The canonical ownership contract already states:
-
-- `docs/project/CURRENT_STATE.md` owns volatile accepted main, active work item/PR and runtime state;
-- `docs/project/DEMO_RELEASE_PLAN.yaml` owns release/module/capability/work-item planning state;
+- `docs/project/CURRENT_STATE.md` owns current accepted main, active work and runtime facts;
+- `docs/project/DEMO_RELEASE_PLAN.yaml` owns release/module/capability planning data;
 - `docs/project/CURRENT_HANDOFF.md` is navigation only.
 
-The implementation contradicts that model through historical SHA/work-item hard-coding, synthetic legacy text and duplicated volatile state.
+## Scope
 
-## SCOPE
-
-1. Introduce one reusable, focused current-state contract.
-2. Remove historical coordination markers from the Patch 011.7 architecture gate without removing its product invariants.
-3. Make documentation validation enforce ownership instead of masking duplicate values.
+1. Add one reusable current-state contract.
+2. Remove historical coordination markers from the Patch 011.7 gate while preserving its product invariants.
+3. Enforce ownership directly in documentation validation.
 4. Keep the handoff navigation-only.
-5. Add focused regression tests proving current main and active Draft work are not tied to a historical work item.
+5. Add focused regression tests.
 
-## PROTECTED BOUNDARY
+## Protected boundary
 
-- no `src/apps/**` changes;
-- no models, migrations, templates or static assets;
-- no runtime, schema, data or deployment changes;
-- no preview write;
-- no changes to PR #35 product diff;
-- no gate bypass and no automatic merge.
+No application code, models, migrations, templates, static assets, runtime, schema, data, deployment, preview or PR #35 product changes.
 
-## TEST PLAN
+## Test plan
 
 ```text
 python -m ruff check scripts tests/process
@@ -59,10 +41,6 @@ python scripts/check_documentation_contract.py
 python scripts/gate_patch_011_7.py
 ```
 
-Then require exact-head success from the affected process workflows.
+## Verdict
 
-## VERDICT
-
-```text
-READY TO IMPLEMENT
-```
+`READY TO IMPLEMENT`
