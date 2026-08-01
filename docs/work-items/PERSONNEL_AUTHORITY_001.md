@@ -40,18 +40,18 @@ ACCEPTANCE:
 
 ## FACTUAL START
 
-Существуют и переиспользуются:
+Существовали и переиспользованы:
 
 - `Organization`, `Division`, `Workplace`, `OperationalArea`, `Position`, `Employee`;
 - `EmployeeQualification`;
 - `OperationalRightDefinition` и импортируемый `EmployeeOperationalRight`;
-- `RoleAssignment`, `ResponsibilityScope`, `Substitution` как отдельный legacy/application foundation;
+- `RoleAssignment`, `ResponsibilityScope`, `Substitution` как отдельный application foundation;
 - `EmployeeEnergySiteAuthorization`;
 - controlled personnel importer и provenance;
 - `LegalModeDecision`, `EvidenceEvent`, canonical JSON, SHA-256 и actor snapshot;
 - read-only personnel directory и employee card.
 
-Не существовали как законченный contract:
+Доказанные initial gaps:
 
 - structured action/object scope grant;
 - explainable `ALLOW / DENY / VERIFY` evaluator;
@@ -67,8 +67,9 @@ ACCEPTANCE:
 4. Замещение разрешает только явно перечисленные actions/scope и только если исходный grant допускает замещение.
 5. Внешний персонал требует отдельную действующую связь home organization → host organization.
 6. Квалификации принадлежат фактическому actor и не наследуются при замещении.
-7. Snapshot содержит факты решения, но не password/token/secret.
-8. Authority result не является юридическим заключением и не заменяет evidence event предметного действия.
+7. Свободный русский текст квалификации не превращается автоматически в технический authority code.
+8. Snapshot содержит факты решения, но не password/token/secret.
+9. Authority result не является юридическим заключением и не заменяет evidence event предметного действия.
 
 ## IMPLEMENTED SLICE 1 — PURE CONTRACT
 
@@ -77,62 +78,90 @@ src/apps/organizations/authority.py
 src/apps/organizations/tests/test_authority_contract.py
 ```
 
-Реализованы:
+Реализованы pure facts, structured scopes, stable reason codes, deterministic `evaluate_authority()`, timezone validity, deep immutable snapshot, secret guard и digest через принятый normative-evidence primitive.
 
-- `AuthorityDecision`: `ALLOW`, `DENY`, `VERIFY`;
-- `AuthorityBasisStatus`: `CONFIRMED`, `VERIFY`, `REJECTED`;
-- structured `AuthorityScope` для organization/division/workplace/operational area/energy site/equipment;
-- actor/request/grant/qualification/substitution/external-engagement facts;
-- deterministic pure `evaluate_authority()`;
-- stable reason codes;
-- deep immutable snapshot;
-- digest через принятый `apps.normatives.evidence.sha256_digest`;
-- recursive secret-like key rejection;
-- timezone-aware action-time and validity windows.
+Exact-head gate:
 
-Focused tests проверяют:
+```text
+0200a2be6dfc5e948eb27dbed77d9e2aa39c0d4d
+5 / 5 workflows SUCCESS
+```
 
-- explicit confirmed grant → `ALLOW`;
-- должность и application role без grant → `DENY`;
-- unconfirmed basis → `VERIFY`;
-- expired grant и scope mismatch → `DENY`;
-- required qualification at action time;
-- explicit bounded substitution;
-- external personnel host engagement;
-- inactive/expired employment;
-- deterministic immutable snapshot;
-- secret rejection и timezone validation.
+## IMPLEMENTED SLICE 2 — PERSISTENCE AND ORM SERVICE
 
-## NEXT SLICE
+```text
+src/apps/organizations/authority_models.py
+src/apps/organizations/authority_services.py
+src/apps/organizations/apps.py
+src/apps/organizations/migrations/0008_personnel_authority_persistence.py
+src/apps/organizations/tests/test_authority_persistence.py
+src/apps/organizations/tests/test_authority_qualification_codes.py
+```
 
-1. Проверить slice 1 через exact-head CI.
-2. После зелёного contract gate добавить persistence:
-   - structured grant;
-   - external personnel engagement;
-   - append-only authority evaluation record;
-   - migration and PostgreSQL tests.
-3. Реализовать ORM-backed evaluator service без изменения consuming modules.
-4. Только после устойчивого persistence/service contract добавить read-only acceptance UI.
+Persistence:
+
+- `OperationalAuthorityGrant`;
+- `ExternalPersonnelEngagement`;
+- `OperationalAuthoritySubstitution` linked to existing `Substitution`;
+- append-only `AuthorityEvaluationRecord` with correction link;
+- DB constraints for validity, uniqueness and cross-organization boundaries;
+- update/delete protection for snapshots;
+- ORM-backed `evaluate_and_record_authority()` reusing the pure evaluator.
+
+Critical repair: only controlled ASCII catalog values become technical qualification codes. Russian prose remains descriptive data and cannot silently satisfy action requirements.
+
+Exact-head gate:
+
+```text
+4c65f3ab1d6631fa661c9ffba94443620a30e71a
+5 / 5 workflows SUCCESS
+full PostgreSQL suite SUCCESS
+```
+
+## IMPLEMENTED SLICE 3 — READ-ONLY ACCEPTANCE UI
+
+Routes:
+
+```text
+/organization/authorities/
+/organization/employees/<uuid>/
+/organization/authority-evaluations/<uuid>/
+```
+
+Views show:
+
+- structured grants separately from imported positive source markers;
+- scope, validity, granting organization, basis and status;
+- external personnel home/host relationship;
+- action-time history with `ALLOW / DENY / VERIFY` and reason codes;
+- exact immutable snapshot and SHA-256 digest;
+- empty states without fake lifecycle or write controls.
+
+Tests verify authentication, read-only boundary, source-fact/grant distinction and evaluation details.
+
+## PRESENTATION DATA
+
+```text
+src/apps/organizations/management/commands/seed_demo_personnel_authority.py
+src/apps/organizations/migrations/0009_seed_demo_personnel_authority.py
+src/apps/organizations/tests/test_authority_seed_command.py
+```
+
+- management command is idempotent;
+- reversible conditional data migration runs only when `Organization(code="DEMO")` already exists; otherwise no-op;
+- migration path itself is executed by tests against a populated synthetic Demo database;
+- four synthetic `DEMO-ONLY` grants/evaluations demonstrate `ALLOW`, `DENY`, `VERIFY` and external contractor `ALLOW`;
+- no real persons, local acts, production authority matrix or sensitive source file enters Git.
 
 ## ALLOWED BOUNDARY
 
-См. issue #42. Основная граница:
-
-```text
-docs/work-items/PERSONNEL_AUTHORITY_001.md
-applicable canonical plan/module/checklist views
-src/apps/organizations/authority*.py
-src/apps/organizations/models.py / services.py / migrations / tests
-src/apps/organizations/views.py / urls.py / forms.py / admin.py
-src/templates/organizations/**
-minimal imports/normatives bridge only when proven
-```
+See issue #42. Current changed-file boundary remains within organizations authority contract/persistence/routes/templates/tests, focused presentation seed and canonical coordination documentation.
 
 ## PROTECTED BOUNDARY
 
 - OPJ/SHIFT/DEFECT/work-permit/switching lifecycle;
 - master-data/import redesign;
-- historical migrations/import facts;
+- historical imported facts;
 - real personal data/local acts;
 - second signature/hash/authentication framework;
 - preview;
@@ -141,19 +170,28 @@ minimal imports/normatives bridge only when proven
 ## RISK / DELIVERY
 
 ```text
-slice 1: APP_LOGIC
-persistence: SCHEMA_DATA
-runtime delivery: FULL_DEVELOPMENT after persistence
+change class: STANDARD
+schema/data risk: SCHEMA_DATA
+delivery profile: FULL_DEVELOPMENT
 preview: UNTOUCHED
 merge: FORBIDDEN WITHOUT EXPLICIT USER COMMAND
 ```
+
+## REMAINING GATE
+
+1. Complete final exact-head five-workflow gate after documentation sync.
+2. Trigger trusted `vps-development-rebuild` only on that exact head.
+3. Verify transactional migration, populated read-only routes and controller exact SHA.
+4. Hand the development candidate to the user for acceptance.
+5. Keep PR Draft; do not merge or mark Ready without a separate command.
 
 ## CURRENT STATE
 
 ```text
 issue: #42 / OPEN
-PR: #43 / DRAFT
-review state: DRAFT IMPLEMENTATION
-runtime: NOT DEPLOYED
+PR: #43 / OPEN / DRAFT / NOT MERGED
+review state: IMPLEMENTATION CANDIDATE
+runtime: NOT YET DEPLOYED ON FINAL HEAD
 acceptance: NOT STARTED
+preview: UNTOUCHED
 ```
