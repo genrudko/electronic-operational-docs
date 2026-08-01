@@ -1,6 +1,6 @@
 # ЭОД — workflow разработки
 
-**Актуализировано:** 29.07.2026
+**Актуализировано:** 01.08.2026
 
 ## 1. Нормальный цикл
 
@@ -20,7 +20,7 @@
 → post-merge baseline/docs
 ```
 
-GitHub — источник кода. VPS — runtime/test contour. Пользователь не является техническим оркестратором.
+GitHub — источник кода и постоянной памяти. VPS — runtime/test contour. Пользователь не является техническим оркестратором или курьером между чатами.
 
 ## 2. Что пользователь не делает
 
@@ -30,9 +30,45 @@ GitHub — источник кода. VPS — runtime/test contour. Пользо
 - не выполняет commits, push, PR и normal deployment;
 - не переносит базы;
 - не собирает вручную evidence по нескольким workflow;
-- не запускает штатные VPS-команды для functional PR.
+- не запускает штатные VPS-команды для functional PR;
+- не переносит handoff, SHA, отчёты и технические команды между чатами или AI-исполнителями.
 
 Пользователь задаёт цель, предметные правила, UX-оценку и merge decision.
+
+## 2.1. Единый пользовательский контур и восстановление нового чата
+
+Один активный чат ведёт work item от preflight до post-merge coordination. Техническая декомпозиция, GitHub operations, CI diagnosis, delivery и repairs остаются внутри этого контура и не перекладываются на пользователя.
+
+Новый чат создаётся только когда текущий разговор технически переполнен или деградировал. Стартовая команда может быть одной строкой:
+
+```text
+Продолжай EOD по фактическому состоянию GitHub.
+```
+
+После такой команды исполнитель обязан самостоятельно:
+
+1. прочитать `AGENTS.md`, `CURRENT_STATE.md`, release plan и профильный work-item contract;
+2. определить current `main`, active issue/PR/branch и exact head;
+3. проверить PR body или machine-owned evidence comment;
+4. проверить changed-file boundary, CI, runtime state и blockers;
+5. продолжить ближайший безопасный action без запроса ручного handoff.
+
+При доступном GitHub запрещено требовать от пользователя starter-файл, отчёт старого чата или повторную передачу фактов, уже опубликованных в issue/PR/canonical docs. Чат является временным интерфейсом; GitHub хранит состояние между циклами.
+
+Для каждого активного PR его body либо один machine-owned comment должен содержать актуальные:
+
+```text
+OBJECTIVE
+BASE
+BRANCH
+EXACT HEAD
+ALLOWED / FORBIDDEN BOUNDARY
+CURRENT BLOCKER
+NEXT ACTION
+CI STATE
+RUNTIME STATE
+ACCEPTANCE STATE
+```
 
 ## 3. Factual preflight
 
@@ -265,7 +301,7 @@ video/log/feedback
 - отсутствие unresolved blocker;
 - явную команду пользователя.
 
-Merge strategy определяется решением Chat 0. Automatic merge запрещён.
+Merge strategy определяется явным решением пользователя в текущем work-item контексте. Automatic merge запрещён.
 
 ## 15. После merge
 
@@ -275,7 +311,8 @@ Merge strategy определяется решением Chat 0. Automatic merge
 4. выполнить post-merge deployment только по актуальному release contract;
 5. проверить preview health/data identity;
 6. обновить current state, handoff, roadmap, open items, baseline and acceptance history;
-7. определить следующий work item.
+7. определить следующий work item;
+8. сохранить в GitHub достаточно состояния, чтобы новый чат продолжил работу без ручного handoff.
 
 ## 16. Documentation-only coordination
 
