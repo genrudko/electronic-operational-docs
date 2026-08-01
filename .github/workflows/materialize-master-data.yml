@@ -4,15 +4,20 @@ on:
   push:
     branches:
       - feature/master-data-alignment-001
-    paths:
-      - .materialize-master-data/**
-      - .github/workflows/materialize-master-data.yml
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 permissions:
   contents: write
 
 jobs:
   materialize:
+    if: github.head_ref == 'feature/master-data-alignment-001' || github.ref_name == 'feature/master-data-alignment-001'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
