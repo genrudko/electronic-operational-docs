@@ -30,10 +30,19 @@ SCOPE_KIND = AuthorityScopeKind.OPERATIONAL_AREA
 SCOPE_REFERENCE = "KOCH"
 SCOPE_LABEL = "Кочубеевская ВЭС — демонстрационная область"
 SOURCE_IDS = ["DEMO-SYNTHETIC", "SRC-DEC-STAGE2"]
+DEMO_PERSONNEL_NUMBERS = (
+    "DEMO-001",
+    "DEMO-002",
+    "DEMO-003",
+    "DEMO-013",
+)
 
 
 class Command(BaseCommand):
-    help = "Создаёт только синтетические grants и authority-at-action примеры для Demo."
+    help = (
+        "Создаёт синтетические grants и authority-at-action примеры "
+        "для презентационной базы."
+    )
 
     @transaction.atomic
     def handle(self, *args, **options) -> None:
@@ -41,25 +50,30 @@ class Command(BaseCommand):
             host = Organization.objects.get(code="DEMO")
         except Organization.DoesNotExist as exc:
             raise CommandError(
-                "Сначала выполните seed_demo_organization: презентационная организация отсутствует."
+                "Сначала выполните seed_demo_organization: "
+                "презентационная организация отсутствует."
             ) from exc
 
         employees = {
             employee.personnel_number: employee
             for employee in Employee.objects.filter(
                 organization=host,
-                personnel_number__in=("DEMO-001", "DEMO-002", "DEMO-003", "DEMO-013"),
+                personnel_number__in=DEMO_PERSONNEL_NUMBERS,
             ).select_related("division", "position", "workplace")
         }
-        required_numbers = {"DEMO-001", "DEMO-002", "DEMO-003", "DEMO-013"}
+        required_numbers = set(DEMO_PERSONNEL_NUMBERS)
         if set(employees) != required_numbers:
             missing = ", ".join(sorted(required_numbers - set(employees)))
-            raise CommandError(f"В presentation seed отсутствуют сотрудники: {missing}.")
+            raise CommandError(
+                f"В presentation seed отсутствуют сотрудники: {missing}."
+            )
 
         switching_right = OperationalRightDefinition.objects.get(
             code="switching_operation"
         )
-        inspection_right = OperationalRightDefinition.objects.get(code="sole_inspection")
+        inspection_right = OperationalRightDefinition.objects.get(
+            code="sole_inspection"
+        )
         supervisor = employees["DEMO-002"]
 
         self._grant(
@@ -91,7 +105,10 @@ class Command(BaseCommand):
             created_by=supervisor,
         )
 
-        contractor = self._external_personnel(host=host, created_by=supervisor)
+        contractor = self._external_personnel(
+            host=host,
+            created_by=supervisor,
+        )
         self._grant(
             host=host,
             employee=contractor,
@@ -138,11 +155,13 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                "Синтетические оперативные полномочия и четыре результата проверки созданы."
+                "Синтетические оперативные полномочия и четыре "
+                "результата проверки созданы."
             )
         )
         self.stdout.write(
-            "Все основания помечены DEMO-ONLY; реальные персональные данные и локальные акты не используются."
+            "Все основания помечены DEMO-ONLY; реальные персональные "
+            "данные и локальные акты не используются."
         )
 
     def _grant(
@@ -196,7 +215,10 @@ class Command(BaseCommand):
         division, _ = Division.objects.update_or_create(
             organization=home,
             code="FIELD-SERVICE",
-            defaults={"name": "Выездная сервисная группа", "is_active": True},
+            defaults={
+                "name": "Выездная сервисная группа",
+                "is_active": True,
+            },
         )
         position, _ = Position.objects.update_or_create(
             organization=home,
@@ -243,7 +265,9 @@ class Command(BaseCommand):
                 "scope_label": SCOPE_LABEL,
                 "valid_until": VALID_UNTIL,
                 "basis_status": AuthorityBasisStatus.CONFIRMED,
-                "basis_reference": "DEMO-ONLY / CONTRACTOR-ADMISSION / R1",
+                "basis_reference": (
+                    "DEMO-ONLY / CONTRACTOR-ADMISSION / R1"
+                ),
                 "source_ids": ["DEMO-SYNTHETIC", "REF-OD-052"],
                 "is_active": True,
                 "created_by": created_by,
