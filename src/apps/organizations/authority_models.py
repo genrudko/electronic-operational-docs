@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Mapping
 from typing import Any
 
 from django.core.exceptions import ValidationError
@@ -57,6 +58,19 @@ class ExternalPersonnelRelationKind(models.TextChoices):
     SYSTEM_OPERATOR = "SYSTEM_OPERATOR", "Персонал системного оператора"
 
 
+_FORBIDDEN_NORMALIZED_KEY_TOKENS = frozenset(
+    {
+        "password",
+        "passwd",
+        "passphrase",
+        "secret",
+        "token",
+        "privatekey",
+        "credential",
+    }
+)
+
+
 def _normalize_code(value: str) -> str:
     return " ".join(value.split()).upper().replace(" ", "_")
 
@@ -74,6 +88,25 @@ def _normalize_codes(values: object, *, field_name: str) -> list[str]:
     if not normalized:
         raise ValidationError({field_name: "Требуется хотя бы один код."})
     return normalized
+
+
+def _normalized_key(value: object) -> str:
+    return "".join(character for character in str(value).casefold() if character.isalnum())
+
+
+def _assert_secret_free(value: Any, *, path: str = "snapshot") -> None:
+    if isinstance(value, Mapping):
+        for key, item in value.items():
+            normalized_key = _normalized_key(key)
+            if any(token in normalized_key for token in _FORBIDDEN_NORMALIZED_KEY_TOKENS):
+                raise ValidationError(
+                    {"snapshot": f"Секретное поле запрещено: {path}.{key}."}
+                )
+            _assert_secret_free(item, path=f"{path}.{key}")
+        return
+    if isinstance(value, (list, tuple)):
+        for index, item in enumerate(value):
+            _assert_secret_free(item, path=f"{path}[{index}]")
 
 
 def _validate_datetime_window(start, end, *, field_name: str = "valid_until") -> None:
@@ -198,6 +231,14 @@ class OperationalAuthorityGrant(models.Model):
     def __str__(self) -> str:
         return f"{self.employee}: {self.action_code} · {self.scope_label or self.scope_reference}"
 
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        self.action_code = _normalize_code(self.action_code)
+        self.scope_reference = self.scope_reference.strip()
+        self.scope_label = " ".join(self.scope_label.split())
+        self.basis_reference = self.basis_reference.strip()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     def clean(self) -> None:
         super().clean()
         _validate_datetime_window(self.valid_from, self.valid_until)
@@ -218,14 +259,6 @@ class OperationalAuthorityGrant(models.Model):
             errors["created_by"] = "Фиксирующий сотрудник относится к другой организации."
         if errors:
             raise ValidationError(errors)
-
-    def save(self, *args: Any, **kwargs: Any) -> None:
-        self.action_code = _normalize_code(self.action_code)
-        self.scope_reference = self.scope_reference.strip()
-        self.scope_label = " ".join(self.scope_label.split())
-        self.basis_reference = self.basis_reference.strip()
-        self.full_clean()
-        super().save(*args, **kwargs)
 
 
 class ExternalPersonnelEngagement(models.Model):
@@ -314,6 +347,13 @@ class ExternalPersonnelEngagement(models.Model):
     def __str__(self) -> str:
         return f"{self.employee} → {self.host_organization}"
 
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        self.scope_reference = self.scope_reference.strip()
+        self.scope_label = " ".join(self.scope_label.split())
+        self.basis_reference = self.basis_reference.strip()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     def clean(self) -> None:
         super().clean()
         _validate_datetime_window(self.valid_from, self.valid_until)
@@ -330,13 +370,6 @@ class ExternalPersonnelEngagement(models.Model):
             errors["created_by"] = "Фиксирующий сотрудник относится к другой организации."
         if errors:
             raise ValidationError(errors)
-
-    def save(self, *args: Any, **kwargs: Any) -> None:
-        self.scope_reference = self.scope_reference.strip()
-        self.scope_label = " ".join(self.scope_label.split())
-        self.basis_reference = self.basis_reference.strip()
-        self.full_clean()
-        super().save(*args, **kwargs)
 
 
 class OperationalAuthoritySubstitution(models.Model):
@@ -399,6 +432,13 @@ class OperationalAuthoritySubstitution(models.Model):
     def __str__(self) -> str:
         return f"{self.substitution}: {', '.join(self.action_codes)}"
 
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        self.scope_reference = self.scope_reference.strip()
+        self.scope_label = " ".join(self.scope_label.split())
+        self.basis_reference = self.basis_reference.strip()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     def clean(self) -> None:
         super().clean()
         _validate_scope(
@@ -418,13 +458,6 @@ class OperationalAuthoritySubstitution(models.Model):
             errors["created_by"] = "Фиксирующий сотрудник относится к другой организации."
         if errors:
             raise ValidationError(errors)
-
-    def save(self, *args: Any, **kwargs: Any) -> None:
-        self.scope_reference = self.scope_reference.strip()
-        self.scope_label = " ".join(self.scope_label.split())
-        self.basis_reference = self.basis_reference.strip()
-        self.full_clean()
-        super().save(*args, **kwargs)
 
 
 class AuthorityEvaluationRecord(models.Model):
@@ -510,16 +543,23 @@ class AuthorityEvaluationRecord(models.Model):
     def __str__(self) -> str:
         return f"{self.actor}: {self.action_code} → {self.decision}"
 
-    def canonical_payload(self) -> dict[str, Any]:
-        return {
-            "schema": self.SCHEMA_VERSION,
-            "decision": self.decision,
-            "reasons": self.reasons,
-            "matched_grant_id": (
-                str(self.matched_grant.public_id) if self.matched_grant_id else ""
-            ),
-            "snapshot": self.snapshot,
-        }
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.pk:
+            raise ValidationError(
+                "Authority evaluation неизменяема; создайте связанный новый результат."
+            )
+        self.action_code = _normalize_code(self.action_code)
+        self.scope_reference = self.scope_reference.strip()
+        self.scope_label = " ".join(self.scope_label.split())
+        self.subject_type = _normalize_code(self.subject_type)
+        self.subject_id = self.subject_id.strip()
+        self.reasons = _normalize_codes(self.reasons, field_name="reasons")
+        self.digest = sha256_digest(self.canonical_payload())
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
+        raise ValidationError("Физическое удаление authority evaluation запрещено.")
 
     def clean(self) -> None:
         super().clean()
@@ -533,6 +573,7 @@ class AuthorityEvaluationRecord(models.Model):
         self.reasons = _normalize_codes(self.reasons, field_name="reasons")
         if not isinstance(self.snapshot, dict):
             raise ValidationError({"snapshot": "Authority snapshot должен быть JSON-объектом."})
+        _assert_secret_free(self.snapshot)
         errors: dict[str, str] = {}
         if self.matched_grant_id and self.matched_grant.organization_id != self.organization_id:
             errors["matched_grant"] = "Предоставление права относится к другой организации."
@@ -542,10 +583,7 @@ class AuthorityEvaluationRecord(models.Model):
             previous = self.previous_evaluation
             if previous.organization_id != self.organization_id:
                 errors["previous_evaluation"] = "Предыдущий результат относится к другой организации."
-            elif (
-                previous.subject_type != self.subject_type
-                or previous.subject_id != self.subject_id
-            ):
+            elif previous.subject_type != self.subject_type or previous.subject_id != self.subject_id:
                 errors["previous_evaluation"] = "Предыдущий результат относится к другому объекту."
         expected_digest = sha256_digest(self.canonical_payload())
         if self.digest and self.digest != expected_digest:
@@ -553,17 +591,13 @@ class AuthorityEvaluationRecord(models.Model):
         if errors:
             raise ValidationError(errors)
 
-    def save(self, *args: Any, **kwargs: Any) -> None:
-        if self.pk:
-            raise ValidationError("Authority evaluation неизменяема; создайте связанный новый результат.")
-        self.action_code = _normalize_code(self.action_code)
-        self.scope_reference = self.scope_reference.strip()
-        self.scope_label = " ".join(self.scope_label.split())
-        self.subject_type = _normalize_code(self.subject_type)
-        self.subject_id = self.subject_id.strip()
-        self.digest = sha256_digest(self.canonical_payload())
-        self.full_clean()
-        super().save(*args, **kwargs)
-
-    def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
-        raise ValidationError("Физическое удаление authority evaluation запрещено.")
+    def canonical_payload(self) -> dict[str, Any]:
+        return {
+            "schema": self.SCHEMA_VERSION,
+            "decision": self.decision,
+            "reasons": self.reasons,
+            "matched_grant_id": (
+                str(self.matched_grant.public_id) if self.matched_grant_id else ""
+            ),
+            "snapshot": self.snapshot,
+        }
