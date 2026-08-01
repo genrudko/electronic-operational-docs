@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import uuid
 from datetime import UTC, date, datetime
 
 from django.db import migrations
@@ -32,7 +31,7 @@ def _digest(payload) -> str:
 
 
 def _grant(
-    OperationalAuthorityGrant,
+    Grant,
     *,
     host,
     employee,
@@ -43,7 +42,7 @@ def _grant(
     created_by,
     allow_substitution=False,
 ):
-    grant, _ = OperationalAuthorityGrant.objects.update_or_create(
+    grant, _ = Grant.objects.update_or_create(
         employee=employee,
         action_code=action_code,
         scope_kind=SCOPE_KIND,
@@ -66,6 +65,18 @@ def _grant(
     return grant
 
 
+def _employee_name(employee) -> str:
+    return " ".join(
+        part
+        for part in (
+            employee.last_name,
+            employee.first_name,
+            employee.middle_name,
+        )
+        if part
+    )
+
+
 def _snapshot(
     *,
     employee,
@@ -84,15 +95,7 @@ def _snapshot(
             "employee_id": employee.id,
             "organization_id": employee.organization_id,
             "relation_kind": relation_kind,
-            "full_name": " ".join(
-                part
-                for part in (
-                    employee.last_name,
-                    employee.first_name,
-                    employee.middle_name,
-                )
-                if part
-            ),
+            "full_name": _employee_name(employee),
             "position": employee.position.name,
             "division": employee.division.name,
             "workplace": employee.workplace.name if employee.workplace_id else "",
@@ -141,7 +144,7 @@ def _snapshot(
 
 
 def _evaluation(
-    AuthorityEvaluationRecord,
+    Record,
     *,
     host,
     employee,
@@ -174,14 +177,13 @@ def _evaluation(
         "matched_grant_id": str(grant.public_id) if grant is not None else "",
         "snapshot": snapshot,
     }
-    AuthorityEvaluationRecord.objects.update_or_create(
+    Record.objects.get_or_create(
         organization=host,
         actor=employee,
         subject_type=SUBJECT_TYPE,
         subject_id=subject_id,
         occurred_at=occurred_at,
         defaults={
-            "public_id": uuid.uuid4(),
             "action_code": action_code,
             "scope_kind": SCOPE_KIND,
             "scope_reference": SCOPE_REFERENCE,
@@ -202,30 +204,17 @@ def seed_demo_authority(apps, schema_editor):
     Position = apps.get_model("organizations", "Position")
     Workplace = apps.get_model("organizations", "Workplace")
     Employee = apps.get_model("organizations", "Employee")
-    OperationalRightDefinition = apps.get_model(
-        "organizations",
-        "OperationalRightDefinition",
-    )
-    OperationalAuthorityGrant = apps.get_model(
-        "organizations",
-        "OperationalAuthorityGrant",
-    )
-    ExternalPersonnelEngagement = apps.get_model(
-        "organizations",
-        "ExternalPersonnelEngagement",
-    )
-    AuthorityEvaluationRecord = apps.get_model(
-        "organizations",
-        "AuthorityEvaluationRecord",
-    )
+    Right = apps.get_model("organizations", "OperationalRightDefinition")
+    Grant = apps.get_model("organizations", "OperationalAuthorityGrant")
+    Engagement = apps.get_model("organizations", "ExternalPersonnelEngagement")
+    Record = apps.get_model("organizations", "AuthorityEvaluationRecord")
 
     host = Organization.objects.filter(code="DEMO").first()
     if host is None:
         return
-
     employees = {
-        employee.personnel_number: employee
-        for employee in Employee.objects.filter(
+        item.personnel_number: item
+        for item in Employee.objects.filter(
             organization=host,
             personnel_number__in=("DEMO-001", "DEMO-002", "DEMO-003", "DEMO-013"),
         ).select_related("division", "position", "workplace")
@@ -233,28 +222,27 @@ def seed_demo_authority(apps, schema_editor):
     if set(employees) != {"DEMO-001", "DEMO-002", "DEMO-003", "DEMO-013"}:
         return
 
-    right_definition = OperationalRightDefinition.objects.filter(
-        code="switching_operation"
-    ).first()
-    if right_definition is None:
+    switching_right = Right.objects.filter(code="switching_operation").first()
+    inspection_right = Right.objects.filter(code="sole_inspection").first()
+    if switching_right is None or inspection_right is None:
         return
-
     supervisor = employees["DEMO-002"]
+
     execution_grant = _grant(
-        OperationalAuthorityGrant,
+        Grant,
         host=host,
         employee=employees["DEMO-001"],
-        right_definition=right_definition,
+        right_definition=switching_right,
         action_code="SWITCHING.EXECUTE",
         basis_status="CONFIRMED",
         basis_reference="DEMO-ONLY / EXECUTION-AUTHORITY / R1",
         created_by=supervisor,
     )
     _grant(
-        OperationalAuthorityGrant,
+        Grant,
         host=host,
         employee=supervisor,
-        right_definition=right_definition,
+        right_definition=switching_right,
         action_code="SWITCHING.CONTROL",
         basis_status="CONFIRMED",
         basis_reference="DEMO-ONLY / CONTROL-AUTHORITY / R1",
@@ -262,10 +250,10 @@ def seed_demo_authority(apps, schema_editor):
         allow_substitution=True,
     )
     verify_grant = _grant(
-        OperationalAuthorityGrant,
+        Grant,
         host=host,
         employee=employees["DEMO-003"],
-        right_definition=right_definition,
+        right_definition=switching_right,
         action_code="SWITCHING.AUTHORIZE",
         basis_status="VERIFY",
         basis_reference="DEMO-ONLY / UNCONFIRMED-AUTHORITY / R1",
@@ -318,7 +306,7 @@ def seed_demo_authority(apps, schema_editor):
             "is_active": True,
         },
     )
-    engagement, _ = ExternalPersonnelEngagement.objects.update_or_create(
+    engagement, _ = Engagement.objects.update_or_create(
         employee=contractor,
         host_organization=host,
         scope_kind=SCOPE_KIND,
@@ -337,10 +325,10 @@ def seed_demo_authority(apps, schema_editor):
         },
     )
     external_grant = _grant(
-        OperationalAuthorityGrant,
+        Grant,
         host=host,
         employee=contractor,
-        right_definition=right_definition,
+        right_definition=inspection_right,
         action_code="EQUIPMENT.INSPECT",
         basis_status="CONFIRMED",
         basis_reference="DEMO-ONLY / CONTRACTOR-ADMISSION / R1",
@@ -348,7 +336,7 @@ def seed_demo_authority(apps, schema_editor):
     )
 
     _evaluation(
-        AuthorityEvaluationRecord,
+        Record,
         host=host,
         employee=employees["DEMO-001"],
         action_code="SWITCHING.EXECUTE",
@@ -360,7 +348,7 @@ def seed_demo_authority(apps, schema_editor):
         grant=execution_grant,
     )
     _evaluation(
-        AuthorityEvaluationRecord,
+        Record,
         host=host,
         employee=employees["DEMO-013"],
         action_code="SWITCHING.EXECUTE",
@@ -371,7 +359,7 @@ def seed_demo_authority(apps, schema_editor):
         recorded_by=supervisor,
     )
     _evaluation(
-        AuthorityEvaluationRecord,
+        Record,
         host=host,
         employee=employees["DEMO-003"],
         action_code="SWITCHING.AUTHORIZE",
@@ -383,7 +371,7 @@ def seed_demo_authority(apps, schema_editor):
         grant=verify_grant,
     )
     _evaluation(
-        AuthorityEvaluationRecord,
+        Record,
         host=host,
         employee=contractor,
         action_code="EQUIPMENT.INSPECT",
@@ -413,27 +401,16 @@ def seed_demo_authority(apps, schema_editor):
 def remove_demo_authority(apps, schema_editor):
     Organization = apps.get_model("organizations", "Organization")
     Employee = apps.get_model("organizations", "Employee")
-    AuthorityEvaluationRecord = apps.get_model(
-        "organizations",
-        "AuthorityEvaluationRecord",
-    )
-    OperationalAuthorityGrant = apps.get_model(
-        "organizations",
-        "OperationalAuthorityGrant",
-    )
-    ExternalPersonnelEngagement = apps.get_model(
-        "organizations",
-        "ExternalPersonnelEngagement",
-    )
+    Record = apps.get_model("organizations", "AuthorityEvaluationRecord")
+    Grant = apps.get_model("organizations", "OperationalAuthorityGrant")
+    Engagement = apps.get_model("organizations", "ExternalPersonnelEngagement")
 
-    AuthorityEvaluationRecord.objects.filter(
+    Record.objects.filter(
         subject_type=SUBJECT_TYPE,
         subject_id__in=DEMO_SUBJECT_IDS,
     ).delete()
-    OperationalAuthorityGrant.objects.filter(
-        basis_reference__startswith="DEMO-ONLY /"
-    ).delete()
-    ExternalPersonnelEngagement.objects.filter(
+    Grant.objects.filter(basis_reference__startswith="DEMO-ONLY /").delete()
+    Engagement.objects.filter(
         basis_reference="DEMO-ONLY / CONTRACTOR-ADMISSION / R1"
     ).delete()
     Employee.objects.filter(
