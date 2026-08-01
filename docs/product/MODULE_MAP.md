@@ -5,7 +5,7 @@
 | # | Модуль | Назначение | Depth | Release | Code | Work item |
 |---:|---|---|---|---|---|---|
 | 1 | `PLATFORM` | Платформенные механизмы | `DEMO-FUNCTIONAL` | `IN_PROGRESS` | `IMPLEMENTED-PARTIAL` | `PLATFORM-AUDIT-001` |
-| 2 | `UX` | Direction A UX | `DEMO-FUNCTIONAL` | `IN_PROGRESS` | `IMPLEMENTED-PARTIAL` | `UX-THEME-001` |
+| 2 | `UX` | Direction A UX | `DEMO-FUNCTIONAL` | `IN_PROGRESS` | `IMPLEMENTED-PARTIAL` | `UX-CONTRACT-001` |
 | 3 | `NORMATIVE-EVIDENCE` | Нормативные режимы и evidence-события | `DEMO-BOUNDED` | `IN_PROGRESS` | `IMPLEMENTED-PARTIAL` | `NORMATIVE-EVIDENCE-001` |
 | 4 | `MASTER-DATA` | Организации, объекты и оборудование | `DEMO-FUNCTIONAL` | `IN_PROGRESS` | `IMPLEMENTED-PARTIAL` | `MASTER-DATA-ALIGNMENT-001` |
 | 5 | `PERSONNEL-AUTHORITY` | Персонал и оперативные полномочия | `DEMO-BOUNDED` | `NOT_STARTED` | `ABSENT` | `PERSONNEL-AUTHORITY-001` |
