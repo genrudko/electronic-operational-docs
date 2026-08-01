@@ -6,6 +6,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from enum import StrEnum
+from types import MappingProxyType
 from typing import Any
 
 from django.core.exceptions import ValidationError
@@ -87,6 +88,10 @@ _EVENT_REQUIRED_PAYLOAD_FIELDS: dict[EvidenceEventType, frozenset[str]] = {
     ),
 }
 
+_ACTOR_SNAPSHOT_FIELDS = frozenset(
+    {"employee_id", "username", "full_name", "position", "division", "workplace"}
+)
+
 _FORBIDDEN_KEY_TOKENS = frozenset(
     {
         "password",
@@ -95,10 +100,17 @@ _FORBIDDEN_KEY_TOKENS = frozenset(
         "secret",
         "token",
         "privatekey",
-        "private_key",
         "credential",
-        "credentials",
     }
+)
+
+
+def _normalized_key(value: object) -> str:
+    return "".join(character for character in str(value).casefold() if character.isalnum())
+
+
+_FORBIDDEN_NORMALIZED_KEY_TOKENS = frozenset(
+    _normalized_key(token) for token in _FORBIDDEN_KEY_TOKENS
 )
 
 
@@ -111,10 +123,12 @@ def _required_text(value: object, *, field_name: str) -> str:
 
 def _normalized_source_ids(values: Sequence[str]) -> tuple[str, ...]:
     normalized = tuple(
-        dict.fromkeys(
-            token
-            for value in values
-            if (token := " ".join(str(value or "").split()).upper())
+        sorted(
+            {
+                token
+                for value in values
+                if (token := " ".join(str(value or "").split()).upper())
+            }
         )
     )
     if not normalized:
@@ -138,7 +152,23 @@ def _json_safe(value: Any) -> Any:
         return value.isoformat()
     if value is None or isinstance(value, (str, int, float, bool)):
         return value
-    return str(value)
+    raise ValidationError(
+        {"payload": f"Неподдерживаемый тип canonical JSON: {type(value).__name__}."}
+    )
+
+
+def _freeze_json(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return MappingProxyType({str(key): _freeze_json(item) for key, item in value.items()})
+    if isinstance(value, (list, tuple)):
+        return tuple(_freeze_json(item) for item in value)
+    if isinstance(value, (datetime, date)) or value is None or isinstance(
+        value, (str, int, float, bool)
+    ):
+        return value
+    raise ValidationError(
+        {"payload": f"Неподдерживаемый тип canonical JSON: {type(value).__name__}."}
+    )
 
 
 def canonical_json(value: Mapping[str, Any]) -> str:
@@ -155,15 +185,11 @@ def sha256_digest(value: Mapping[str, Any]) -> str:
     return hashlib.sha256(canonical_json(value).encode("utf-8")).hexdigest()
 
 
-def _normalized_key(value: object) -> str:
-    return "".join(character for character in str(value).casefold() if character.isalnum())
-
-
 def _assert_secret_free(value: Any, *, path: str = "payload") -> None:
     if isinstance(value, Mapping):
         for key, item in value.items():
             normalized_key = _normalized_key(key)
-            if normalized_key in {_normalized_key(token) for token in _FORBIDDEN_KEY_TOKENS}:
+            if any(token in normalized_key for token in _FORBIDDEN_NORMALIZED_KEY_TOKENS):
                 raise ValidationError(
                     {"payload": f"Секретное поле запрещено в evidence payload: {path}.{key}."}
                 )
@@ -172,6 +198,33 @@ def _assert_secret_free(value: Any, *, path: str = "payload") -> None:
     if isinstance(value, (list, tuple)):
         for index, item in enumerate(value):
             _assert_secret_free(item, path=f"{path}[{index}]")
+
+
+def _normalized_actor_snapshot(
+    value: Mapping[str, Any],
+    *,
+    actor_employee_id: int,
+) -> Mapping[str, Any]:
+    if not isinstance(value, Mapping):
+        raise ValidationError({"actor_snapshot": "Actor snapshot должен быть JSON-объектом."})
+    missing = sorted(field_name for field_name in _ACTOR_SNAPSHOT_FIELDS if field_name not in value)
+    if missing:
+        raise ValidationError(
+            {
+                "actor_snapshot": (
+                    "В actor snapshot отсутствуют обязательные поля: "
+                    + ", ".join(missing)
+                    + "."
+                )
+            }
+        )
+    if value.get("employee_id") != actor_employee_id:
+        raise ValidationError(
+            {"actor_snapshot": "Actor snapshot относится к другому сотруднику."}
+        )
+    _required_text(value.get("full_name"), field_name="actor_snapshot.full_name")
+    _assert_secret_free(value, path="actor_snapshot")
+    return _freeze_json(value)
 
 
 @dataclass(frozen=True, slots=True)
@@ -289,6 +342,7 @@ class EvidenceEventContract:
     subject_type: str
     subject_id: str
     actor_employee_id: int
+    actor_snapshot: Mapping[str, Any]
     occurred_at: datetime
     confirmation_method: EvidenceConfirmationMethod
     payload: Mapping[str, Any]
@@ -319,6 +373,14 @@ class EvidenceEventContract:
             raise ValidationError(
                 {"actor_employee_id": "Требуется положительный идентификатор сотрудника."}
             )
+        object.__setattr__(
+            self,
+            "actor_snapshot",
+            _normalized_actor_snapshot(
+                self.actor_snapshot,
+                actor_employee_id=self.actor_employee_id,
+            ),
+        )
         if self.occurred_at.tzinfo is None or self.occurred_at.utcoffset() is None:
             raise ValidationError({"occurred_at": "Время должно содержать часовой пояс."})
         if not isinstance(self.payload, Mapping):
@@ -326,7 +388,7 @@ class EvidenceEventContract:
 
         normalized_payload = dict(self.payload)
         _assert_secret_free(normalized_payload)
-        object.__setattr__(self, "payload", normalized_payload)
+        object.__setattr__(self, "payload", _freeze_json(normalized_payload))
         object.__setattr__(self, "source_ids", _normalized_source_ids(self.source_ids))
         object.__setattr__(
             self,
@@ -355,11 +417,15 @@ class EvidenceEventContract:
                 }
             )
 
-        if self.event_type == EvidenceEventType.SIGNATURE and not self.requires_reauthentication:
+        if (
+            self.event_type == EvidenceEventType.SIGNATURE
+            and self.confirmation_method == EvidenceConfirmationMethod.SESSION_AUTH
+        ):
             raise ValidationError(
                 {
-                    "requires_reauthentication": (
-                        "Событие SIGNATURE требует явной повторной аутентификации."
+                    "confirmation_method": (
+                        "SIGNATURE нельзя фиксировать только текущей сессией; "
+                        "нужен PASSWORD_REAUTH либо честный LEGACY_MIGRATION/DEMO_SEED."
                     )
                 }
             )
@@ -390,6 +456,7 @@ class EvidenceEventContract:
                 "id": self.subject_id,
             },
             "actor_employee_id": self.actor_employee_id,
+            "actor_snapshot": dict(self.actor_snapshot),
             "occurred_at": self.occurred_at,
             "confirmation_method": self.confirmation_method.value,
             "requires_reauthentication": self.requires_reauthentication,
