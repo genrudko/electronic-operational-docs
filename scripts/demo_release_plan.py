@@ -2,6 +2,7 @@
 from __future__ import annotations
 import csv,json,re
 from pathlib import Path
+import project_state_contract
 ROOT=Path(__file__).resolve().parents[1]
 PLAN=ROOT/'docs/project/DEMO_RELEASE_PLAN.yaml'
 EXPECTED={'PLATFORM','UX','NORMATIVE-EVIDENCE','MASTER-DATA','PERSONNEL-AUTHORITY','WORKPLACE-DOCS','SCHEMES-DOCUMENTS','OPJ','SHIFT','APPLICATION','OPERATIONAL-ORDERS','DEFECT','GROUNDING','SWITCHING-DOCUMENTS','WORK-PERMIT','PERMIT-WORK-JOURNAL','ORDER-WORK-JOURNAL','CURRENT-OPERATION-WORKS','EQUIPMENT-INSPECTIONS','EQUIPMENT-COMMISSIONING','RZA-TM','BREAKER-INTERRUPTIONS','BATTERY-INSPECTION','EMERGENCY-READINESS','CROSS-DOC','DASHBOARD-REPORTING','DEMO-DATA'}
@@ -17,12 +18,9 @@ def csv_rows(path):
 def validate(plan):
  errors=[]
  if plan.get('version')!='1.0' or plan.get('release')!='DEMO-RELEASE' or plan.get('baseline_status')!='ACCEPTED': errors.append('release identity/version/status invalid')
- if plan.get('accepted_main')!='2a9b92362b90861501cf11d073668478655fd191': errors.append('accepted main baseline invalid')
- if plan.get('active')!={'work_item':None,'issue':None,'pr':None}: errors.append('accepted baseline must not retain stale active work item')
  if set(plan.get('statuses',[]))!=RS or set(plan.get('depths',[]))!=DS or set(plan.get('code_statuses',[]))!=CS: errors.append('status vocabularies invalid')
+ errors.extend(project_state_contract.validate_plan_ownership(plan))
  owners=plan.get('owners',{})
- expected_owners={'state':'docs/project/CURRENT_STATE.md','plan':'docs/project/DEMO_RELEASE_PLAN.yaml','coverage_source':'docs/product/REFERENCE_OPERATIONAL_DOCUMENTATION_COVERAGE.csv','coverage_decisions':'docs/product/REFERENCE_OPERATIONAL_DOCUMENTATION_DECISIONS.csv'}
- if owners!=expected_owners: errors.append('canonical owners invalid')
  modules=plan.get('modules',[]); ids=[m.get('id') for m in modules]
  if len(modules)!=27 or set(ids)!=EXPECTED or len(ids)!=len(set(ids)): errors.append('module set/count/uniqueness invalid')
  by={m['id']:m for m in modules}; aggregate_caps=[]; aggregate_acc=[]; aggregate_work=[]; detailed_caps=set(); detailed_acc=set(); detailed_work=set()
@@ -117,7 +115,5 @@ def validate(plan):
   if f'`{mid}`' not in sequence: errors.append(f'sequence missing {mid}')
  for item in queue:
   if item['work_item'] not in sequence: errors.append(f"sequence missing {item['work_item']}")
- state=(ROOT/'docs/project/CURRENT_STATE.md').read_text(encoding='utf-8'); handoff=(ROOT/'docs/project/CURRENT_HANDOFF.md').read_text(encoding='utf-8')
- if 'main / 2a9b92362b90861501cf11d073668478655fd191' not in state or 'PROJECT-BASELINE-001' not in state or '1.0 / ACCEPTED' not in state: errors.append('CURRENT_STATE owner invalid')
- if re.search(r'\b[0-9a-f]{40}\b',handoff) or 'active work item:' in handoff.lower(): errors.append('CURRENT_HANDOFF duplicates volatile state')
+ errors.extend(project_state_contract.validate_repository(ROOT,verify_context=False))
  return errors

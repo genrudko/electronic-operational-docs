@@ -229,22 +229,14 @@ def main() -> None:
     print(f"OPDOC_REPAIR2_TEST_CONTRACT=PASSED COUNT={test_count}")
 
     adr = read("docs/adr/ADR-011-7-operational-documentation-core.md")
-    current_state = read("docs/project/CURRENT_STATE.md")
     decision_log = read("docs/project/DECISION_LOG.md")
     patch_history = read("docs/project/PATCH_HISTORY.md")
     domain_invariants = read("docs/project/DOMAIN_INVARIANTS.md")
-    handoff = read("docs/project/CURRENT_HANDOFF.md")
     require(
         adr,
         "Источник формы обязателен",
         "Пользовательский интерфейс не предоставляет конструктор",
         "source-bound",
-    )
-    require(
-        current_state,
-        "source-bound catalog",
-        "PLAN-001 accepted decision",
-        "equipment defect journal: implementation in Draft PR #16",
     )
     require(decision_log, "рабочие формы только из утверждённых источников")
     require(patch_history, "Patch 011.7 Repair 1 Revision 10", "Patch 011.7 Repair 2")
@@ -254,19 +246,11 @@ def main() -> None:
         "source-bound",
         "точная форма не восстанавливается по памяти",
     )
-    require(
-        handoff,
-        "DEFECT-001 — Source-bound Equipment Defect Journal Vertical Slice",
-        "five green exact-head workflows",
-        "separate explicit merge command",
-    )
     for relative in (
         "docs/adr/ADR-011-7-operational-documentation-core.md",
-        "docs/project/CURRENT_STATE.md",
         "docs/project/DECISION_LOG.md",
         "docs/project/PATCH_HISTORY.md",
         "docs/project/DOMAIN_INVARIANTS.md",
-        "docs/project/CURRENT_HANDOFF.md",
     ):
         bad_lines = [
             number
@@ -275,7 +259,7 @@ def main() -> None:
         ]
         if bad_lines:
             raise AssertionError(f"Trailing whitespace в {relative}: строки {bad_lines}")
-    print("PROJECT_STATE_SOURCE_BOUND_DECISION=PASSED")
+    print("PROJECT_SOURCE_BOUND_DECISION=PASSED")
 
     print("PATCH_011_7_REPAIR2_SOURCE_BOUND_JOURNAL_UX_GATE_PASSED")
 
