@@ -18,6 +18,14 @@ from apps.normatives.evidence import (
 
 
 OCCURRED_AT = datetime(2026, 8, 1, 19, 15, tzinfo=UTC)
+ACTOR_SNAPSHOT = {
+    "employee_id": 7,
+    "username": "operator.demo",
+    "full_name": "Иванов Иван Иванович",
+    "position": "Начальник смены",
+    "division": "Оперативная служба",
+    "workplace": "ЩУ КВЭС",
+}
 
 
 class LegalModeDecisionContractTests(SimpleTestCase):
@@ -106,6 +114,7 @@ class EvidenceEventContractTests(SimpleTestCase):
                 subject_type="workplace_document_revision",
                 subject_id="42",
                 actor_employee_id=7,
+                actor_snapshot=ACTOR_SNAPSHOT,
                 occurred_at=OCCURRED_AT,
                 confirmation_method=EvidenceConfirmationMethod.SESSION_AUTH,
                 payload={
@@ -125,6 +134,7 @@ class EvidenceEventContractTests(SimpleTestCase):
                 subject_type="document_version",
                 subject_id="12",
                 actor_employee_id=7,
+                actor_snapshot=ACTOR_SNAPSHOT,
                 occurred_at=OCCURRED_AT,
                 confirmation_method=EvidenceConfirmationMethod.SESSION_AUTH,
                 payload={"snapshot_digest": "b" * 64, "purpose": "REGISTRATION"},
@@ -136,6 +146,7 @@ class EvidenceEventContractTests(SimpleTestCase):
             subject_type="document_version",
             subject_id="12",
             actor_employee_id=7,
+            actor_snapshot=ACTOR_SNAPSHOT,
             occurred_at=OCCURRED_AT,
             confirmation_method=EvidenceConfirmationMethod.PASSWORD_REAUTH,
             requires_reauthentication=True,
@@ -146,6 +157,28 @@ class EvidenceEventContractTests(SimpleTestCase):
         self.assertTrue(event.requires_reauthentication)
         self.assertEqual(event.confirmation_method, EvidenceConfirmationMethod.PASSWORD_REAUTH)
 
+    def test_legacy_and_demo_signature_methods_remain_honest_non_reauth_states(self) -> None:
+        for method in (
+            EvidenceConfirmationMethod.LEGACY_MIGRATION,
+            EvidenceConfirmationMethod.DEMO_SEED,
+        ):
+            with self.subTest(method=method):
+                event = EvidenceEventContract(
+                    event_type=EvidenceEventType.SIGNATURE,
+                    subject_type="document_version",
+                    subject_id="12",
+                    actor_employee_id=7,
+                    actor_snapshot=ACTOR_SNAPSHOT,
+                    occurred_at=OCCURRED_AT,
+                    confirmation_method=method,
+                    payload={
+                        "snapshot_digest": "b" * 64,
+                        "purpose": "REGISTRATION",
+                    },
+                    source_ids=("SRC-AUDIT-STAGE1",),
+                )
+                self.assertFalse(event.requires_reauthentication)
+
     def test_action_confirmation_can_require_reauthentication(self) -> None:
         with self.assertRaises(ValidationError):
             EvidenceEventContract(
@@ -153,6 +186,7 @@ class EvidenceEventContractTests(SimpleTestCase):
                 subject_type="operational_action",
                 subject_id="open-shift-17",
                 actor_employee_id=7,
+                actor_snapshot=ACTOR_SNAPSHOT,
                 occurred_at=OCCURRED_AT,
                 confirmation_method=EvidenceConfirmationMethod.SESSION_AUTH,
                 requires_reauthentication=True,
@@ -163,30 +197,73 @@ class EvidenceEventContractTests(SimpleTestCase):
                 source_ids=("SRC-DEC-STAGE2",),
             )
 
-    def test_digest_is_stable_for_equivalent_payload_order(self) -> None:
+    def test_digest_is_stable_for_payload_and_source_order(self) -> None:
         first = EvidenceEventContract(
             event_type=EvidenceEventType.KNOWLEDGE_CHECK,
             subject_type="qualification_assessment",
             subject_id="91",
             actor_employee_id=7,
+            actor_snapshot=ACTOR_SNAPSHOT,
             occurred_at=OCCURRED_AT,
             confirmation_method=EvidenceConfirmationMethod.SESSION_AUTH,
             payload={"result": "PASSED", "assessment_reference": "TEST-2026-91"},
-            source_ids=("N-09",),
+            source_ids=("N-09", "SRC-DEC-STAGE2"),
         )
         second = EvidenceEventContract(
             event_type=EvidenceEventType.KNOWLEDGE_CHECK,
             subject_type="qualification_assessment",
             subject_id="91",
             actor_employee_id=7,
+            actor_snapshot=dict(reversed(tuple(ACTOR_SNAPSHOT.items()))),
             occurred_at=OCCURRED_AT,
             confirmation_method=EvidenceConfirmationMethod.SESSION_AUTH,
             payload={"assessment_reference": "TEST-2026-91", "result": "PASSED"},
-            source_ids=("N-09",),
+            source_ids=("SRC-DEC-STAGE2", "N-09"),
         )
 
         self.assertEqual(first.digest, second.digest)
         self.assertEqual(len(first.digest), 64)
+
+    def test_payload_and_actor_snapshot_are_deeply_immutable(self) -> None:
+        event = EvidenceEventContract(
+            event_type=EvidenceEventType.ACTION_CONFIRMATION,
+            subject_type="operational_action",
+            subject_id="close-defect-4",
+            actor_employee_id=7,
+            actor_snapshot={**ACTOR_SNAPSHOT, "roles": [{"code": "operator"}]},
+            occurred_at=OCCURRED_AT,
+            confirmation_method=EvidenceConfirmationMethod.SESSION_AUTH,
+            payload={
+                "action_code": "CLOSE_DEFECT",
+                "subject_state_digest": "d" * 64,
+                "details": {"reason": "Устранено"},
+            },
+            source_ids=("SRC-DEC-STAGE2",),
+        )
+
+        with self.assertRaises(TypeError):
+            event.payload["action_code"] = "REOPEN_DEFECT"  # type: ignore[index]
+        with self.assertRaises(TypeError):
+            event.payload["details"]["reason"] = "Изменено"  # type: ignore[index]
+        with self.assertRaises(TypeError):
+            event.actor_snapshot["full_name"] = "Другой сотрудник"  # type: ignore[index]
+
+    def test_actor_snapshot_must_match_actor(self) -> None:
+        with self.assertRaises(ValidationError):
+            EvidenceEventContract(
+                event_type=EvidenceEventType.ACKNOWLEDGEMENT,
+                subject_type="workplace_document_revision",
+                subject_id="42",
+                actor_employee_id=7,
+                actor_snapshot={**ACTOR_SNAPSHOT, "employee_id": 8},
+                occurred_at=OCCURRED_AT,
+                confirmation_method=EvidenceConfirmationMethod.SESSION_AUTH,
+                payload={
+                    "content_digest": "e" * 64,
+                    "acknowledgement_scope": "FULL_REVISION",
+                },
+                source_ids=("N-09",),
+            )
 
     def test_secret_like_fields_are_rejected_recursively(self) -> None:
         with self.assertRaises(ValidationError) as context:
@@ -195,12 +272,13 @@ class EvidenceEventContractTests(SimpleTestCase):
                 subject_type="operational_action",
                 subject_id="close-defect-4",
                 actor_employee_id=7,
+                actor_snapshot=ACTOR_SNAPSHOT,
                 occurred_at=OCCURRED_AT,
                 confirmation_method=EvidenceConfirmationMethod.SESSION_AUTH,
                 payload={
                     "action_code": "CLOSE_DEFECT",
                     "subject_state_digest": "d" * 64,
-                    "authentication": {"password": "must-not-be-persisted"},
+                    "authentication": {"api_token": "must-not-be-persisted"},
                 },
                 source_ids=("SRC-DEC-STAGE2",),
             )
@@ -214,6 +292,7 @@ class EvidenceEventContractTests(SimpleTestCase):
                 subject_type="workplace_document_revision",
                 subject_id="42",
                 actor_employee_id=7,
+                actor_snapshot=ACTOR_SNAPSHOT,
                 occurred_at=datetime(2026, 8, 1, 19, 15),
                 confirmation_method=EvidenceConfirmationMethod.SESSION_AUTH,
                 payload={
