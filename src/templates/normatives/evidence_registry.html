@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Правовые режимы и evidence · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">НОРМАТИВНОЕ EVIDENCE</div>
+        <h1>Правовые режимы и подтверждения</h1>
+        <p>
+            Read-only журнал решений и событий. Техническая неизменяемость не означает,
+            что юридический режим автоматически доказан.
+        </p>
+    </div>
+</section>
+
+<section class="help-overview">
+    <h2>Ключевая граница</h2>
+    <p>
+        <strong>Целевой режим продукта</strong> показывает, как система проектируется.
+        <strong>Доказанный правовой режим</strong> остаётся «Требует проверки», пока не связаны
+        проверенная опубликованная нормативная редакция и применимый локальный акт либо
+        доказано, что локальный акт не требуется.
+    </p>
+</section>
+
+<section class="profile-card">
+    <h2>Актуальные решения по режимам</h2>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Функция</th>
+                    <th>Целевой режим</th>
+                    <th>Доказанный режим</th>
+                    <th>Основания</th>
+                    <th>Зафиксировано</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in decisions %}
+                <tr>
+                    <td>
+                        <a href="{% url 'normatives:legal_mode_decision_detail' item.public_id %}">
+                            {{ item.subject_label }}
+                        </a>
+                        <div class="muted">{{ item.module_id }} · {{ item.code }}</div>
+                    </td>
+                    <td>{{ item.get_product_target_mode_display }}</td>
+                    <td>
+                        <strong>{{ item.get_proven_legal_mode_display }}</strong>
+                        {% if item.proven_legal_mode == "VERIFY" %}
+                            <div class="muted">Юридический вывод не заявлен</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ item.get_normative_evidence_status_display }}<br>
+                        {{ item.get_local_act_status_display }}
+                    </td>
+                    <td>{{ item.decided_at|date:"d.m.Y H:i" }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5">
+                        Решений пока нет. Отсутствие записи не означает автоматически разрешённый режим.
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="profile-card">
+    <h2>Последние evidence-события</h2>
+    <p class="muted">
+        Типы событий не взаимозаменяемы: ознакомление не доказывает инструктаж,
+        проверку знаний или подпись.
+    </p>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Время</th>
+                    <th>Событие</th>
+                    <th>Предмет</th>
+                    <th>Участник</th>
+                    <th>Подтверждение</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in events %}
+                <tr>
+                    <td>{{ item.occurred_at|date:"d.m.Y H:i:s" }}</td>
+                    <td>
+                        <a href="{% url 'normatives:evidence_event_detail' item.public_id %}">
+                            {{ item.get_event_type_display }}
+                        </a>
+                    </td>
+                    <td>{{ item.subject_type }} · {{ item.subject_id }}</td>
+                    <td>{{ item.actor_snapshot.full_name }}</td>
+                    <td>
+                        {{ item.get_confirmation_method_display }}
+                        {% if item.requires_reauthentication %}
+                            <div class="muted">Повторная аутентификация требовалась</div>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="5">Evidence-событий пока нет.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

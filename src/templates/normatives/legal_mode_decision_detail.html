@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}{{ decision.subject_label }} · правовой режим · ЭОД{% endblock %}
+
+{% block content %}
+<section class="page-heading compact">
+    <div>
+        <div class="eyebrow">РЕШЕНИЕ О ПРАВОВОМ РЕЖИМЕ</div>
+        <h1>{{ decision.subject_label }}</h1>
+        <p>{{ decision.module_id }} · {{ decision.code }}</p>
+    </div>
+</section>
+
+<section class="profile-grid">
+    <article class="profile-card">
+        <h2>Режимы</h2>
+        <dl class="detail-list">
+            <dt>Целевой режим продукта</dt>
+            <dd>{{ decision.get_product_target_mode_display }}</dd>
+            <dt>Доказанный правовой режим</dt>
+            <dd><strong>{{ decision.get_proven_legal_mode_display }}</strong></dd>
+            <dt>Нормативное evidence</dt>
+            <dd>{{ decision.get_normative_evidence_status_display }}</dd>
+            <dt>Локальный акт</dt>
+            <dd>{{ decision.get_local_act_status_display }}</dd>
+        </dl>
+        {% if decision.proven_legal_mode == "VERIFY" %}
+            <p class="muted">
+                Режим оставлен на проверке. Эта запись не подтверждает допустимость электронного оригинала
+                и не объявляет используемый механизм УКЭП или УНЭП.
+            </p>
+        {% endif %}
+    </article>
+
+    <article class="profile-card">
+        <h2>Основания</h2>
+        <dl class="detail-list">
+            <dt>Нормативная редакция</dt>
+            <dd>
+                {% if decision.normative_basis_revision %}
+                    {{ decision.normative_basis_revision.document.short_title|default:decision.normative_basis_revision.document.title }},
+                    редакция № {{ decision.normative_basis_revision.revision_number }}
+                {% else %}
+                    Не связана
+                {% endif %}
+            </dd>
+            <dt>Локальный акт</dt>
+            <dd>
+                {% if decision.local_act_revision %}
+                    {{ decision.local_act_revision.document.short_title|default:decision.local_act_revision.document.title }},
+                    редакция № {{ decision.local_act_revision.revision_number }}
+                {% else %}
+                    Не связан
+                {% endif %}
+            </dd>
+            <dt>Основание решения</dt>
+            <dd>{{ decision.decision_basis|default:"Не сформулировано" }}</dd>
+            <dt>Source IDs</dt>
+            <dd>{{ decision.source_ids|join:", " }}</dd>
+        </dl>
+    </article>
+</section>
+
+<section class="profile-card technical-only">
+    <h2>Проверка целостности</h2>
+    <p><strong>{{ integrity.status.label }}</strong> — {{ integrity.message }}</p>
+    <dl class="detail-list">
+        <dt>Зафиксировал</dt>
+        <dd>{{ decision.decision_maker_snapshot.full_name }}</dd>
+        <dt>Серверное время</dt>
+        <dd>{{ decision.decided_at|date:"d.m.Y H:i:s" }}</dd>
+        <dt>SHA-256</dt>
+        <dd><code>{{ decision.digest }}</code></dd>
+        <dt>Версия схемы</dt>
+        <dd><code>{{ decision.schema_version }}</code></dd>
+    </dl>
+</section>
+{% endblock %}
