@@ -56,15 +56,16 @@ class Command(BaseCommand):
             missing = ", ".join(sorted(required_numbers - set(employees)))
             raise CommandError(f"В presentation seed отсутствуют сотрудники: {missing}.")
 
-        right_definition = OperationalRightDefinition.objects.get(
+        switching_right = OperationalRightDefinition.objects.get(
             code="switching_operation"
         )
+        inspection_right = OperationalRightDefinition.objects.get(code="sole_inspection")
         supervisor = employees["DEMO-002"]
 
         self._grant(
             host=host,
             employee=employees["DEMO-001"],
-            right_definition=right_definition,
+            right_definition=switching_right,
             action_code="SWITCHING.EXECUTE",
             basis_status=AuthorityBasisStatus.CONFIRMED,
             basis_reference="DEMO-ONLY / EXECUTION-AUTHORITY / R1",
@@ -73,7 +74,7 @@ class Command(BaseCommand):
         self._grant(
             host=host,
             employee=supervisor,
-            right_definition=right_definition,
+            right_definition=switching_right,
             action_code="SWITCHING.CONTROL",
             basis_status=AuthorityBasisStatus.CONFIRMED,
             basis_reference="DEMO-ONLY / CONTROL-AUTHORITY / R1",
@@ -83,7 +84,7 @@ class Command(BaseCommand):
         self._grant(
             host=host,
             employee=employees["DEMO-003"],
-            right_definition=right_definition,
+            right_definition=switching_right,
             action_code="SWITCHING.AUTHORIZE",
             basis_status=AuthorityBasisStatus.VERIFY,
             basis_reference="DEMO-ONLY / UNCONFIRMED-AUTHORITY / R1",
@@ -94,7 +95,7 @@ class Command(BaseCommand):
         self._grant(
             host=host,
             employee=contractor,
-            right_definition=right_definition,
+            right_definition=inspection_right,
             action_code="EQUIPMENT.INSPECT",
             basis_status=AuthorityBasisStatus.CONFIRMED,
             basis_reference="DEMO-ONLY / CONTRACTOR-ADMISSION / R1",
