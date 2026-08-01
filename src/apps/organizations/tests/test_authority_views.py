@@ -117,16 +117,21 @@ class AuthorityReadOnlyViewTests(TestCase):
             recorded_by=self.employee,
         )
 
-    def test_authority_registry_is_authenticated_and_read_only(self) -> None:
+    def test_authority_registry_uses_direction_a_and_user_language(self) -> None:
         response = self.client.get(reverse("organizations:authority_registry"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Реестр оперативных полномочий")
+        self.assertContains(response, "data-direction-a-shell")
+        self.assertContains(response, "Оперативные права персонала")
+        self.assertContains(response, "Выполнение переключений")
         self.assertContains(response, "SYNTHETIC-ORDER-R1")
-        self.assertContains(response, "Подтверждено")
+        self.assertContains(response, "data-authority-search")
+        self.assertContains(response, "data-authority-view=\"rights\"")
+        self.assertNotContains(response, "server-side")
+        self.assertNotContains(response, "отдельный grant")
         self.assertNotContains(response, "Сохранить полномочие")
 
-    def test_employee_card_separates_source_fact_from_structured_grant(self) -> None:
+    def test_employee_card_separates_rights_from_source_facts(self) -> None:
         response = self.client.get(
             reverse(
                 "organizations:employee_detail",
@@ -135,15 +140,16 @@ class AuthorityReadOnlyViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Предоставленные оперативные полномочия")
-        self.assertContains(response, "Импортированные положительные отметки")
-        self.assertContains(
-            response,
-            "не разрешают контролируемое действие без отдельного структурированного grant",
-        )
+        self.assertContains(response, "data-direction-a-shell")
+        self.assertContains(response, "Предоставленные оперативные права")
+        self.assertContains(response, "Исходные сведения из матрицы персонала")
+        self.assertContains(response, "не разрешают действие")
+        self.assertContains(response, "Выполнение переключений")
         self.assertContains(response, "SYNTHETIC-ORDER-R1")
+        self.assertNotContains(response, "STRUCTURED AUTHORITY")
+        self.assertNotContains(response, "отдельного структурированного grant")
 
-    def test_evaluation_detail_exposes_result_digest_and_snapshot(self) -> None:
+    def test_evaluation_detail_prioritizes_explainable_result(self) -> None:
         evaluation = self.create_evaluation()
 
         response = self.client.get(
@@ -154,11 +160,16 @@ class AuthorityReadOnlyViewTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Проверка полномочия на момент действия")
-        self.assertContains(response, "Разрешено")
+        self.assertContains(response, "data-direction-a-shell")
+        self.assertContains(response, "Результат проверки полномочий")
+        self.assertContains(response, "Действие разрешено")
+        self.assertContains(response, "Найдено действующее подтверждённое право")
+        self.assertContains(response, "Выполнение переключений")
+        self.assertContains(response, "Технические сведения и неизменяемый снимок проверки")
         self.assertContains(response, evaluation.digest)
         self.assertContains(response, "SYNTHETIC-SW-001")
-        self.assertContains(response, "EXPLICIT_GRANT")
+        self.assertNotContains(response, '<pre class="technical-only">')
+        self.assertNotContains(response, "IMMUTABLE SNAPSHOT")
 
     def test_anonymous_access_redirects_to_login(self) -> None:
         self.client.logout()
