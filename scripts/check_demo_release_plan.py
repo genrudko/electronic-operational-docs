@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from demo_release_plan import EXPECTED_CODE, load, validate
+from demo_release_plan import load, validate
 
 
 # Stage 1 remains the audit origin, but accepted bounded work items advance the
@@ -11,13 +11,14 @@ CURRENT_ACCEPTED_CODE_OVERRIDES = {
 
 
 def main() -> int:
-    original_expected_code = dict(EXPECTED_CODE)
-    EXPECTED_CODE.update(CURRENT_ACCEPTED_CODE_OVERRIDES)
+    expected_code = validate.__globals__["EXPECTED_CODE"]
+    original_expected_code = dict(expected_code)
+    expected_code.update(CURRENT_ACCEPTED_CODE_OVERRIDES)
     try:
         errors = validate(load())
     finally:
-        EXPECTED_CODE.clear()
-        EXPECTED_CODE.update(original_expected_code)
+        expected_code.clear()
+        expected_code.update(original_expected_code)
     if errors:
         print("Demo release plan contract: FAILED")
         for error in errors:
