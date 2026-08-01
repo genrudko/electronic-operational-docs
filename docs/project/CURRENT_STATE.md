@@ -6,28 +6,34 @@
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted main baseline: main / b644048f1ec17e19e03c2e4fb538fc0cfc1f5feb
-active work item: NORMATIVE-EVIDENCE-001
-active issue: #40
-active PR: #41 / OPEN / READY / NOT MERGED
-active branch: feature/normative-evidence-001
+accepted main baseline: main / 6e5171776cd6bc02fcbc45eb9532a6a0e58e15f0
+active work item: NONE
+active issue: NONE
+active PR: NONE
+active branch: NONE
 runtime impact: NONE
 preview: UNTOUCHED
 ```
 
-Current main tip at work-item start: `c05ace785f054233aa878ddead491def47525140`.
-
 `MASTER-DATA-ALIGNMENT-001` принят пользователем и merged обычным merge commit `b644048f1ec17e19e03c2e4fb538fc0cfc1f5feb` из exact PR head `e507b63ab35a4767c25364d729accb9a741af874`. Issue #34 закрыт.
 
-`NORMATIVE-EVIDENCE-001` восстановлен и выполнен непосредственно по фактическому GitHub. Issue #40 и PR #41 остаются открыты. Реализованы pure domain contract, append-only persistence, transactional services, автоматическая проекция существующего `DocumentSignature` в отдельное `SIGNATURE` evidence-событие, tenant-bounded read-only registry/details и focused tests.
+`NORMATIVE-EVIDENCE-001` принят пользователем 01.08.2026 и merged обычным merge commit `6e5171776cd6bc02fcbc45eb9532a6a0e58e15f0` из exact PR head `24848d04984b61b0b183f3ed2b04117b3e05e5f9`. PR #41 закрыт как merged; issue #40 закрыт как completed.
 
-Пользователь принял `NORMATIVE-EVIDENCE-001` 01.08.2026. PR #41 переведён в Ready for Review, но не слит. Merge остаётся запрещённым без отдельной явной команды пользователя.
+Финальный exact-head gate PR #41 завершён успешно:
 
-Кодовый candidate `6ea0f26bfeadd8ab22d67284fd2971b0565fe25a` прошёл Ruff, compile, Django system check, migration consistency, PostgreSQL migration chain, architectural gate, полный Django suite и repository-clean gate. Финальный exact-head workflow state после acceptance coordination хранится в PR #41, чтобы этот документ не содержал самоссылочный SHA.
+```text
+AUTO-001A Foundation CI #500: SUCCESS
+AUTO-001B Controller CI #484: SUCCESS
+EOD Documentation Contract #586: SUCCESS
+EOD Development Stack #589: SUCCESS
+EOD CI #698: SUCCESS
+```
 
-Ни один non-`VERIFY` legal mode не считается доказанным только из-за immutable model, SHA-256, password re-authentication либо успешного CI. Non-`VERIFY` требует отдельной опубликованной нормативной редакции и закрытого local-act gate. Подпись, ознакомление, инструктаж, проверка знаний и подтверждение действия не взаимозаменяемы.
+Принятый контур разделяет product target и proven legal mode, хранит пять самостоятельных evidence semantics, использует append-only decisions/events, password re-authentication без сохранения секрета и существующий `DocumentSignature` без параллельного signature framework. Ни immutable model, ни SHA-256, ни re-auth сами по себе не доказывают юридическую значимость; неподтверждённые режимы остаются `VERIFY`.
 
 Runtime deployment не выполнялся; accepted preview остаётся `UNTOUCHED`.
+
+Следующий product work item по утверждённой очереди — `PERSONNEL-AUTHORITY-001`. Он не считается активным до фактического preflight и создания либо возобновления соответствующих GitHub entities.
 
 С 01.08.2026 действует единый пользовательский контур: один активный чат ведёт work item от factual preflight до post-merge coordination. При технической смене чата новый исполнитель самостоятельно восстанавливает состояние из GitHub; пользователь не переносит между чатами handoff, SHA, CI-отчёты или команды.
 
