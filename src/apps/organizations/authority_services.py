@@ -2,27 +2,27 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, time
-from typing import Any
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from apps.normatives.evidence import canonical_json
 
 from .authority import (
     AuthorityActorFact,
-    AuthorityBasisStatus as ContractBasisStatus,
     AuthorityGrantFact,
     AuthorityQualificationFact,
     AuthorityRequest,
     AuthorityScope,
-    AuthorityScopeKind as ContractScopeKind,
     AuthoritySubstitutionFact,
     ExternalPersonnelEngagementFact,
     PersonnelRelationKind,
     evaluate_authority,
 )
+from .authority import AuthorityBasisStatus as ContractBasisStatus
+from .authority import AuthorityScopeKind as ContractScopeKind
 from .authority_models import (
     AuthorityEvaluationRecord,
     ExternalPersonnelEngagement,
@@ -92,17 +92,13 @@ def _actor_fact(
         )
 
     local_day = timezone.localdate(occurred_at)
-    application_roles = tuple(
-        assignment.role.code
-        for assignment in RoleAssignment.objects.select_related("role")
+    role_assignments = (
+        RoleAssignment.objects.select_related("role")
         .filter(employee=employee, is_active=True, valid_from__lte=local_day)
-        .filter(valid_until__isnull=True)
-        | RoleAssignment.objects.select_related("role").filter(
-            employee=employee,
-            is_active=True,
-            valid_from__lte=local_day,
-            valid_until__gte=local_day,
-        )
+        .filter(Q(valid_until__isnull=True) | Q(valid_until__gte=local_day))
+    )
+    application_roles = tuple(
+        sorted({assignment.role.code for assignment in role_assignments})
     )
 
     return AuthorityActorFact(
@@ -120,7 +116,7 @@ def _actor_fact(
             else None
         ),
         is_active=employee.is_active,
-        application_roles=tuple(sorted(set(application_roles))),
+        application_roles=application_roles,
     )
 
 
@@ -256,9 +252,7 @@ def evaluate_and_record_authority(
             action_code=request.action_code,
         )
     )
-    qualifications = list(
-        EmployeeQualification.objects.filter(employee=employee)
-    )
+    qualifications = list(EmployeeQualification.objects.filter(employee=employee))
     substitutions = list(
         OperationalAuthoritySubstitution.objects.select_related(
             "substitution__replaced_employee",
