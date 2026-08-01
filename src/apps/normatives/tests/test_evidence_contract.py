@@ -7,7 +7,6 @@ from django.test import SimpleTestCase
 
 from apps.normatives import evidence as evidence_contract
 
-
 EvidenceConfirmationMethod = evidence_contract.EvidenceConfirmationMethod
 EvidenceEventContract = evidence_contract.EvidenceEventContract
 EvidenceEventType = evidence_contract.EvidenceEventType
