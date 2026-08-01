@@ -42,7 +42,7 @@ def _read_with_current_canonical_state(relative: str) -> str:
             text,
             "Volatile state: [`CURRENT_STATE.md`](CURRENT_STATE.md)",
             "Release/module state: [`DEMO_RELEASE_PLAN.yaml`](DEMO_RELEASE_PLAN.yaml)",
-            "Принятый application baseline:",
+            "Product execution views:",
         )
         return _legacy_view(text) + (
             "\nDEFECT-001:\nPR #16 / MERGED / ACCEPTED"
