@@ -10,6 +10,7 @@ from scripts.project_state_contract import (
 )
 
 SHA = "1234567890abcdef1234567890abcdef12345678"
+LATER_SHA = "abcdef1234567890abcdef1234567890abcdef12"
 
 
 def current_state(
@@ -115,6 +116,28 @@ class ExecutionContextTests(unittest.TestCase):
             },
         }
         self.assertEqual(validate_execution_context(state, event=event), [])
+
+    def test_post_merge_coordination_commit_may_follow_accepted_main(self) -> None:
+        state = parse_current_state(current_state())
+        event = {
+            "number": 39,
+            "pull_request": {
+                "state": "open",
+                "draft": True,
+                "base": {"sha": LATER_SHA},
+                "head": {"ref": "repair/process-gate-state-001"},
+            },
+        }
+
+        self.assertEqual(validate_execution_context(state, event=event), [])
+
+    def test_main_tip_may_follow_accepted_merge_baseline(self) -> None:
+        state = parse_current_state(current_state())
+
+        self.assertEqual(
+            validate_execution_context(state, origin_main=LATER_SHA),
+            [],
+        )
 
     def test_mismatched_pull_request_is_rejected(self) -> None:
         state = parse_current_state(current_state())

@@ -4,9 +4,13 @@
 The current state is intentionally kept separate from release planning and from
 historical records:
 
-* ``CURRENT_STATE.md`` owns volatile accepted-main, active work and runtime data;
+* ``CURRENT_STATE.md`` owns the accepted merge baseline, active work and runtime data;
 * ``DEMO_RELEASE_PLAN.yaml`` owns release/module planning data;
 * ``CURRENT_HANDOFF.md`` only points readers to those owners.
+
+The accepted merge baseline is not required to equal the repository tip. A bounded
+post-merge coordination commit necessarily follows the accepted merge and updates
+active work without creating a self-referential SHA requirement.
 
 The module uses only the Python standard library so every existing workflow can
 reuse it without installing additional dependencies.
@@ -17,7 +21,6 @@ from __future__ import annotations
 import json
 import os
 import re
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -115,8 +118,9 @@ def parse_current_state(text: str) -> CurrentState:
     issue_raw = values["active issue"]
     pr_raw = values["active PR"]
     branch_raw = values["active branch"]
-    inactive = all(value == "NONE" for value in (work_item_raw, issue_raw, pr_raw, branch_raw))
-    partially_inactive = any(value == "NONE" for value in (work_item_raw, issue_raw, pr_raw, branch_raw))
+    active_values = (work_item_raw, issue_raw, pr_raw, branch_raw)
+    inactive = all(value == "NONE" for value in active_values)
+    partially_inactive = any(value == "NONE" for value in active_values)
     if partially_inactive and not inactive:
         raise ValueError("CURRENT_STATE active work item/issue/PR/branch must be all set or all NONE")
 
@@ -210,19 +214,24 @@ def validate_execution_context(
     event: dict[str, Any] | None = None,
     origin_main: str | None = None,
 ) -> list[str]:
+    """Validate live PR identity without making accepted-main self-referential.
+
+    ``accepted_main`` records the accepted merge baseline. The base branch may
+    legitimately contain later bounded coordination commits, so equality with
+    the pull-request base SHA or ``origin/main`` is intentionally not required.
+    ``origin_main`` remains accepted for API compatibility with earlier callers.
+    """
+
+    del origin_main
     errors: list[str] = []
     pull_request = event.get("pull_request") if event else None
     if isinstance(pull_request, dict):
-        base = pull_request.get("base", {})
         head = pull_request.get("head", {})
-        base_sha = base.get("sha") if isinstance(base, dict) else None
         head_ref = head.get("ref") if isinstance(head, dict) else None
         number = event.get("number")
         draft = pull_request.get("draft")
         state_value = str(pull_request.get("state", "")).upper()
 
-        if base_sha != state.accepted_main:
-            errors.append("CURRENT_STATE accepted main does not match pull-request base SHA")
         if state.active_pr != number:
             errors.append("CURRENT_STATE active PR does not match workflow pull request")
         if state.active_branch != head_ref:
@@ -234,21 +243,7 @@ def validate_execution_context(
             errors.append("CURRENT_STATE active PR review state does not match workflow pull request")
         if state.active_pr_merge != "NOT MERGED":
             errors.append("CURRENT_STATE active pull request must be NOT MERGED")
-    elif origin_main is not None and state.accepted_main != origin_main:
-        errors.append("CURRENT_STATE accepted main does not match origin/main")
     return errors
-
-
-def _origin_main(root: Path) -> str | None:
-    result = subprocess.run(
-        ["git", "rev-parse", "--verify", "refs/remotes/origin/main"],
-        cwd=root,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    value = result.stdout.strip()
-    return value if result.returncode == 0 and SHA_RE.fullmatch(value) else None
 
 
 def validate_repository(root: Path, *, verify_context: bool = False) -> list[str]:
@@ -281,13 +276,7 @@ def validate_repository(root: Path, *, verify_context: bool = False) -> list[str
 
     if verify_context:
         event = _load_event(os.environ.get("GITHUB_EVENT_PATH"))
-        errors.extend(
-            validate_execution_context(
-                state,
-                event=event,
-                origin_main=None if event else _origin_main(root),
-            )
-        )
+        errors.extend(validate_execution_context(state, event=event))
     return errors
 
 
