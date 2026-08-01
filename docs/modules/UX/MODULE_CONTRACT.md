@@ -28,10 +28,12 @@ shared layer для всех маршрутов · specialized workspace сох�
 `DEMO-FUNCTIONAL`: shared shell/components; 1440x900,1024x768,390x844; all UI states; light/dark/system. Post-demo: accessibility certification; native mobile apps.
 
 ## CURRENT CODE STATUS / CAPABILITIES
-`IMPLEMENTED-PARTIAL`; release `IN_PROGRESS`. `CAP-UX-SHARED` (ACCEPTED/IMPLEMENTED-ACCEPTED; UX-FOUNDATION-001; AC-UX-SHARED-001), `CAP-UX-THEME` (READY/ABSENT; UX-THEME-001; AC-UX-THEME-001), `CAP-UX-RESPONSIVE` (IN_PROGRESS/IMPLEMENTED-PARTIAL; UX-CONTRACT-001; AC-UX-RESPONSIVE-001)
+`IMPLEMENTED-PARTIAL`; release `IN_PROGRESS`. `CAP-UX-SHARED` (ACCEPTED/IMPLEMENTED-ACCEPTED; UX-FOUNDATION-001; AC-UX-SHARED-001), `CAP-UX-THEME` (ACCEPTED/IMPLEMENTED-ACCEPTED; UX-THEME-001; AC-UX-THEME-001), `CAP-UX-RESPONSIVE` (IN_PROGRESS/IMPLEMENTED-PARTIAL; UX-CONTRACT-001; AC-UX-RESPONSIVE-001).
+
+Accepted UX theme source head: `93e30896f70ccc4bb4eaf9b4b71513e4ef188893`; merge commit: `0d9be8c360ca22fc504ce2b11a14b6bb82c77ea5`.
 
 ## DEPENDENCIES / UX CONTRACT
 Dependencies: `PLATFORM`. Direction A; 1440×900, 1024×768, 390×844; loading/empty/error/readonly/long-data.
 
 ## OPEN VERIFY ITEMS / FORBIDDEN ASSUMPTIONS
-VERIFY: route inventory; status contrast. Forbidden: не создавать design system на каждый журнал; не использовать hardcoded feature surfaces.
+VERIFY: full responsive contract outside accepted theme scope. Forbidden: не создавать design system на каждый журнал; не использовать hardcoded feature surfaces.
