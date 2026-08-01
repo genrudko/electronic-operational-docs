@@ -1,8 +1,8 @@
 # NORMATIVE-EVIDENCE-001 — execution package
 
-**Issue:** #40  
-**Branch:** `feature/normative-evidence-001`  
-**Starting main tip:** `c05ace785f054233aa878ddead491def47525140`  
+**Issue:** #40
+**Branch:** `feature/normative-evidence-001`
+**Starting main tip:** `c05ace785f054233aa878ddead491def47525140`
 **Accepted application baseline:** `b644048f1ec17e19e03c2e4fb538fc0cfc1f5feb`
 
 ## WORK ITEM ID
