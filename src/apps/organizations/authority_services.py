@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, time
 
 from django.core.exceptions import ValidationError
@@ -31,6 +32,8 @@ from .authority_models import (
 )
 from .models import Employee, EmployeeQualification, Organization, RoleAssignment
 
+_QUALIFICATION_TOKEN_PATTERN = re.compile(r"^[A-Z0-9][A-Z0-9_.:-]*$")
+
 
 def _day_start(value, *, tz) -> datetime:
     return datetime.combine(value, time.min, tzinfo=tz)
@@ -40,29 +43,34 @@ def _day_end(value, *, tz) -> datetime:
     return datetime.combine(value, time.max, tzinfo=tz)
 
 
-def _normalize_qualification_token(value: object) -> str:
-    return "_".join(str(value or "").strip().upper().split())
+def _controlled_qualification_code(namespace: str, value: object) -> str | None:
+    token = "_".join(str(value or "").strip().upper().split())
+    if not token or not _QUALIFICATION_TOKEN_PATTERN.fullmatch(token):
+        return None
+    return f"{namespace}:{token}"
 
 
 def qualification_codes_for_model(
     qualification: EmployeeQualification,
 ) -> tuple[str, ...]:
-    codes: set[str] = set()
-    if qualification.personnel_category.strip():
-        codes.add(
-            "PERSONNEL_CATEGORY:"
-            + _normalize_qualification_token(qualification.personnel_category)
+    codes = {
+        code
+        for code in (
+            _controlled_qualification_code(
+                "PERSONNEL_CATEGORY",
+                qualification.personnel_category,
+            ),
+            _controlled_qualification_code(
+                "ELECTRICAL_SAFETY_GROUP",
+                qualification.electrical_safety_group,
+            ),
+            _controlled_qualification_code(
+                "VOLTAGE_SCOPE",
+                qualification.voltage_scope,
+            ),
         )
-    if qualification.electrical_safety_group.strip():
-        codes.add(
-            "ELECTRICAL_SAFETY_GROUP:"
-            + _normalize_qualification_token(qualification.electrical_safety_group)
-        )
-    if qualification.voltage_scope.strip():
-        codes.add(
-            "VOLTAGE_SCOPE:"
-            + _normalize_qualification_token(qualification.voltage_scope)
-        )
+        if code is not None
+    }
     return tuple(sorted(codes))
 
 
