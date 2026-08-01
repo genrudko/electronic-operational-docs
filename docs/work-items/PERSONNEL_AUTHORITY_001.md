@@ -1,6 +1,7 @@
 # PERSONNEL-AUTHORITY-001 — execution package
 
 **Issue:** #42  
+**PR:** #43  
 **Branch:** `feature/personnel-authority-001`  
 **Starting main:** `711780222ad1656e54052da116c2dde8fba9e5e6`  
 **Accepted application baseline:** `6e5171776cd6bc02fcbc45eb9532a6a0e58e15f0`
@@ -147,7 +148,7 @@ merge: FORBIDDEN WITHOUT EXPLICIT USER COMMAND
 
 ```text
 issue: #42 / OPEN
-PR: PENDING
+PR: #43 / DRAFT
 review state: DRAFT IMPLEMENTATION
 runtime: NOT DEPLOYED
 acceptance: NOT STARTED
