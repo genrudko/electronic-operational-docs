@@ -369,15 +369,36 @@ def _persist_event(
     )
     record.canonical_json, record.digest = _event_canonical(record)
     try:
-        record.save()
+        with transaction.atomic():
+            record.save()
     except IntegrityError as error:
         if contract.correlation_id:
             existing = _existing_for_correlation(
                 organization=organization,
                 correlation_id=contract.correlation_id,
             )
-            if existing is not None:
+            if existing is not None and _same_idempotent_request(
+                existing,
+                event_type=contract.event_type,
+                subject_type=contract.subject_type,
+                subject_id=contract.subject_id,
+                actor=actor,
+                confirmation_method=contract.confirmation_method,
+                requires_reauthentication=contract.requires_reauthentication,
+                payload=_thaw_json(contract.payload),
+                source_ids=contract.source_ids,
+                normative_basis=normative_basis,
+                corrects_event=corrects_event,
+            ):
                 return existing
+            if existing is not None:
+                raise ValidationError(
+                    {
+                        "correlation_id": (
+                            "Корреляционный идентификатор уже использован другим событием."
+                        )
+                    }
+                ) from error
         raise ValidationError(
             "Evidence-событие с такими уникальными реквизитами уже существует."
         ) from error
