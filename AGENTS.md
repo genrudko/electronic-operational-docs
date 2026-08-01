@@ -17,9 +17,15 @@
 9. `docs/process/PROJECT_OPERATING_SYSTEM.md`;
 10. `docs/process/DEVELOPMENT_WORKFLOW.md`;
 11. `docs/process/DEVELOPMENT_ACCELERATION.md`;
-12. профильный module contract, ADR, starter и runbook.
+12. профильный module contract, ADR, work-item contract и runbook.
 
 Не восстанавливать состояние проекта по памяти, названию ветки или одному сообщению чата.
+
+Если текущий разговор не содержит истории work item, сначала самостоятельно восстановить факты из GitHub. Нормальная стартовая команда пользователя:
+
+```text
+Продолжай EOD по фактическому состоянию GitHub.
+```
 
 ## 2. Источники истины
 
@@ -30,7 +36,7 @@
 - `docs/project/ROADMAP.md`, `docs/project/OPEN_ITEMS.md` и `docs/project/MODULE_MAP.md` — compatibility pointers, а не владельцы статусов.
 - GitHub state сильнее любого описания в чате или документации.
 
-После утверждения baseline изменение release scope, module map, implementation sequence, shared UX contract или presentation scenarios требует решения Chat 0, decision/ADR, version bump плана и повторной проверки производных представлений.
+После утверждения baseline изменение release scope, module map, implementation sequence, shared UX contract или presentation scenarios требует явного решения пользователя, decision/ADR, version bump плана и повторной проверки производных представлений.
 
 ## 3. Роли
 
@@ -50,6 +56,34 @@ AI-разработчик:
 - анализирует CI, VPS-логи, видео и результаты приёмки;
 - не перекладывает программирование и штатные технические операции на пользователя;
 - критически оспаривает рискованные или недоказанные предположения.
+
+## 3.1. Единый пользовательский контур
+
+Один активный пользовательский чат ведёт один work item через весь цикл:
+
+```text
+factual preflight
+→ issue / branch / Draft PR
+→ implementation
+→ CI и diagnosis
+→ development candidate
+→ пользовательская приёмка
+→ repairs в том же PR
+→ final exact-head gate
+→ явное разрешение merge
+→ merge
+→ post-merge coordination
+```
+
+Разделение на отдельные coordination-, implementation-, review- и repair-чаты не является штатной моделью. Новый чат создаётся только при техническом переполнении или деградации текущего разговора и продолжает тот же work item по фактическому состоянию GitHub.
+
+При доступном GitHub запрещено просить пользователя:
+
+- переносить handoff-файлы, SHA, CI-отчёты или команды между чатами;
+- выступать посредником между AI-исполнителями, GitHub, Codex или VPS;
+- повторно пересказывать уже опубликованный в GitHub contract и фактическое состояние.
+
+Новый чат самостоятельно определяет current `main`, active issue/PR/branch, exact head, changed-file boundary, CI, runtime state, blocker и следующий action. Изменчивое состояние конкретного PR хранится в PR body или одном machine-owned PR comment; чат является временным интерфейсом, а не единственным хранилищем памяти.
 
 ## 4. Рабочая модель
 
@@ -213,6 +247,7 @@ Automatic merge запрещён.
 - факт, вывод и план разделяются;
 - один ручной этап за раз, когда он действительно нужен;
 - не просить пользователя собирать файлы или исправлять код;
+- не просить пользователя переносить технический контекст между чатами;
 - не объявлять успех без проверяемой опоры;
 - возвращать acceptance route и ожидаемый результат;
 - при ошибке извлекать точную первичную причину;
