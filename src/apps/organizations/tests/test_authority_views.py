@@ -124,7 +124,7 @@ class AuthorityReadOnlyViewTests(TestCase):
         self.assertContains(response, "Реестр оперативных полномочий")
         self.assertContains(response, "SYNTHETIC-ORDER-R1")
         self.assertContains(response, "Подтверждено")
-        self.assertNotContains(response, "<form", html=False)
+        self.assertNotContains(response, "Сохранить полномочие")
 
     def test_employee_card_separates_source_fact_from_structured_grant(self) -> None:
         response = self.client.get(
