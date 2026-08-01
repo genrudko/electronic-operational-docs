@@ -6,17 +6,21 @@
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted main baseline: main / c58eb422b5a87cd0a85a96c3d7b11354ec9fd26c
-active work item: MASTER-DATA-ALIGNMENT-001
-active issue: #34
-active PR: #35 / OPEN / DRAFT / NOT MERGED
-active branch: feature/master-data-alignment-001
+accepted main baseline: main / b644048f1ec17e19e03c2e4fb538fc0cfc1f5feb
+active work item: NONE
+active issue: NONE
+active PR: NONE
+active branch: NONE
 runtime impact: NONE
 preview: UNTOUCHED
 ```
 
-`PROCESS-GATE-STATE-001` принят и merged обычным merge commit `c58eb422b5a87cd0a85a96c3d7b11354ec9fd26c`. Его bounded process/CI repair восстановил canonical state ownership и убрал исторические coordination markers из архитектурных gates без изменения application code, models, migrations, templates, static assets, runtime, schema или data.
+`MASTER-DATA-ALIGNMENT-001` принят пользователем и merged обычным merge commit `b644048f1ec17e19e03c2e4fb538fc0cfc1f5feb` из exact PR head `e507b63ab35a4767c25364d729accb9a741af874`. Issue #34 закрыт. Принятый diff добавляет staged target `ORGANIZATION_STRUCTURE`, dependency-aware publication `Division → Workplace → EnergySite`, детерминированные проверки конфликтов и полный transactional rollback; legacy `ORGANIZATION` сохранён.
 
-Активная продуктовая работа возвращена к `MASTER-DATA-ALIGNMENT-001`: issue #34, Draft PR #35, branch `feature/master-data-alignment-001`. После синхронизации текущего `main` PR #35 должен пройти пять exact-head workflows и остаться Draft до отдельного решения о приёмке.
+Пять exact-head workflow PR #35 завершились `SUCCESS`. Runtime deployment не выполнялся; preview остаётся `UNTOUCHED`.
+
+Следующий product work item по утверждённой очереди — `NORMATIVE-EVIDENCE-001`. Он не считается активным до фактического preflight и создания/возобновления соответствующих GitHub entities.
+
+С 01.08.2026 действует единый пользовательский контур: один активный чат ведёт work item от factual preflight до post-merge coordination. При технической смене чата новый исполнитель самостоятельно восстанавливает состояние из GitHub; пользователь не переносит между чатами handoff, SHA, CI-отчёты или команды.
 
 Release/module/capability/work-item planning state остаётся в [`DEMO_RELEASE_PLAN.yaml`](DEMO_RELEASE_PLAN.yaml). Navigation без дублирования volatile values остаётся в [`CURRENT_HANDOFF.md`](CURRENT_HANDOFF.md).
