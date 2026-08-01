@@ -1,6 +1,7 @@
 # ЭОД — текущее состояние
 
-**Дата factual check:** 01.08.2026  
+**Дата factual check:** 01.08.2026
+
 **Единственный владелец:** accepted main SHA, active work item/issue/PR/branch и runtime state.
 
 ```text
