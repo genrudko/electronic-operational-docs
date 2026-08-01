@@ -2,20 +2,20 @@
 
 **Дата factual check:** 01.08.2026
 
-**Единственный владелец:** accepted application baseline, active work item/issue/PR/branch и runtime state.
+**Единственный владелец:** accepted main baseline, active work item/issue/PR/branch и runtime state.
 
 ```text
 repository: genrudko/electronic-operational-docs
-current main tip at work-item start: c05ace785f054233aa878ddead491def47525140
-accepted application baseline: b644048f1ec17e19e03c2e4fb538fc0cfc1f5feb
+accepted main baseline: main / b644048f1ec17e19e03c2e4fb538fc0cfc1f5feb
 active work item: NORMATIVE-EVIDENCE-001
 active issue: #40
 active PR: #41 / OPEN / DRAFT / NOT MERGED
 active branch: feature/normative-evidence-001
-technical state: CANDIDATE PREPARED / USER ACCEPTANCE REQUIRED
 runtime impact: NONE
 preview: UNTOUCHED
 ```
+
+Current main tip at work-item start: `c05ace785f054233aa878ddead491def47525140`.
 
 `MASTER-DATA-ALIGNMENT-001` принят пользователем и merged обычным merge commit `b644048f1ec17e19e03c2e4fb538fc0cfc1f5feb` из exact PR head `e507b63ab35a4767c25364d729accb9a741af874`. Issue #34 закрыт.
 
