@@ -1,25 +1,23 @@
 # Chat 0 — current handoff navigator
 
-Volatile state: [`CURRENT_STATE.md`](CURRENT_STATE.md). Release/module state: [`DEMO_RELEASE_PLAN.yaml`](DEMO_RELEASE_PLAN.yaml).
+This file is a stable navigation page. It does not own or repeat current SHA, issue, branch, pull-request, runtime or preview values.
 
-Принятый application baseline:
+## Authoritative entry points
 
-```text
-main / 0d9be8c360ca22fc504ce2b11a14b6bb82c77ea5
-UX-THEME-001 / issue #28 / PR #30 / ACCEPTED
-accepted PR head: 93e30896f70ccc4bb4eaf9b4b71513e4ef188893
-```
+1. Volatile project state: [`CURRENT_STATE.md`](CURRENT_STATE.md).
+2. Release/module/capability planning state: [`DEMO_RELEASE_PLAN.yaml`](DEMO_RELEASE_PLAN.yaml).
+3. Dependency order and work-item queue: [`../product/IMPLEMENTATION_SEQUENCE.md`](../product/IMPLEMENTATION_SEQUENCE.md).
+4. Global derived checklist: [`DEMO_RELEASE_MASTER_CHECKLIST.md`](DEMO_RELEASE_MASTER_CHECKLIST.md).
+5. Canonical documentation index: [`../INDEX.md`](../INDEX.md).
+6. Development process: [`../process/DEVELOPMENT_WORKFLOW.md`](../process/DEVELOPMENT_WORKFLOW.md).
+7. Process hardening contract: [`../process/PROCESS_HARDENING.md`](../process/PROCESS_HARDENING.md).
 
-Согласованный process hardening опубликован direct-to-main commit:
+## Reading rule
 
-```text
-324fe43d040d8c7dbeadfcd4337a8919ba18a63d
-```
+Always read `CURRENT_STATE.md` immediately before acting. GitHub state remains stronger than documentation, and a new commit invalidates earlier exact-head workflow evidence.
 
-Он добавляет executable preflight, `MICRO / STANDARD / SYSTEM`, пропорциональные checks, выбор delivery до публикации, optimistic-lock atomic publisher, stable handoff и retry/stall rules. Runtime, schema, data и preview не изменены.
+Use the release plan and its derived views for module scope, dependencies, capabilities and acceptance. Do not infer current coordination state from historical records, release notes, branch names or this navigator.
 
-Release plan синхронизирован: `accepted_main` указывает на merge PR #30; `CAP-UX-THEME` принят. UX остаётся `IN_PROGRESS` только из-за незакрытого `CAP-UX-RESPONSIVE`.
+## Change rule
 
-Активного product issue/branch/PR нет. Следующий work item по утверждённой очереди — `MASTER-DATA-ALIGNMENT-001`.
-
-Следующее действие: factual preflight фактических organization/workplace/equipment/dispatch models, routes, import contracts и источников `REF-OD-013`, `REF-OD-020`, `REF-OD-021`; затем один issue / branch / Draft PR при verdict `READY TO IMPLEMENT`.
+Update volatile facts only in `CURRENT_STATE.md`. Update release/module planning facts in `DEMO_RELEASE_PLAN.yaml` and regenerate or verify its human-readable views. Keep this page limited to navigation.
