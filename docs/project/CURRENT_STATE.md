@@ -6,19 +6,17 @@
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted main baseline: main / 49964f2dcaf7e4659a99a240dcd899d42a7dfe15
-active work item: PROCESS-GATE-STATE-001
-active issue: #38
-active PR: #39 / OPEN / DRAFT / NOT MERGED
-active branch: repair/process-gate-state-001
+accepted main baseline: main / c58eb422b5a87cd0a85a96c3d7b11354ec9fd26c
+active work item: MASTER-DATA-ALIGNMENT-001
+active issue: #34
+active PR: #35 / OPEN / DRAFT / NOT MERGED
+active branch: feature/master-data-alignment-001
 runtime impact: NONE
 preview: UNTOUCHED
 ```
 
-`PROCESS-GATE-STATE-001` is a bounded process/CI repair. It corrects canonical state ownership and removes historical coordination markers from architectural gates. It does not change application code, models, migrations, templates, static assets, runtime, schema or data.
+`PROCESS-GATE-STATE-001` принят и merged обычным merge commit `c58eb422b5a87cd0a85a96c3d7b11354ec9fd26c`. Его bounded process/CI repair восстановил canonical state ownership и убрал исторические coordination markers из архитектурных gates без изменения application code, models, migrations, templates, static assets, runtime, schema или data.
 
-Product PR #35 (`MASTER-DATA-ALIGNMENT-001`) remains open and Draft at its existing product head. It is a blocked dependent PR, not a source of truth for this repair and is not modified here.
+Активная продуктовая работа возвращена к `MASTER-DATA-ALIGNMENT-001`: issue #34, Draft PR #35, branch `feature/master-data-alignment-001`. После синхронизации текущего `main` PR #35 должен пройти пять exact-head workflows и остаться Draft до отдельного решения о приёмке.
 
-Release/module/capability/work-item planning state remains owned by [`DEMO_RELEASE_PLAN.yaml`](DEMO_RELEASE_PLAN.yaml). Navigation without duplicated volatile values remains in [`CURRENT_HANDOFF.md`](CURRENT_HANDOFF.md).
-
-After this repair is accepted and merged, the post-merge coordination update must record the new accepted main and return the active work item to PR #35 before its exact-head workflows are rerun.
+Release/module/capability/work-item planning state остаётся в [`DEMO_RELEASE_PLAN.yaml`](DEMO_RELEASE_PLAN.yaml). Navigation без дублирования volatile values остаётся в [`CURRENT_HANDOFF.md`](CURRENT_HANDOFF.md).
