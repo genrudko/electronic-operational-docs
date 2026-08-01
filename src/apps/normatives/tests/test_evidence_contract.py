@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from django.core.exceptions import ValidationError
 from django.test import SimpleTestCase
 
-from apps.normatives.evidence import (
+from ..evidence import (
     EvidenceConfirmationMethod,
     EvidenceEventContract,
     EvidenceEventType,
