@@ -66,7 +66,7 @@ def _thaw_json(value: Any) -> Any:
 
 def _locked_actor(actor: Employee) -> Employee:
     locked = (
-        Employee.objects.select_for_update()
+        Employee.objects.select_for_update(of=("self",))
         .select_related("user", "organization", "division", "position", "workplace")
         .get(pk=actor.pk)
     )
