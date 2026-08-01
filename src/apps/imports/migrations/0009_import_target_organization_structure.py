@@ -1,6 +1,7 @@
 from django.db import migrations, models
 
 
+# This migration expands serialized choices only; stored registry values are unchanged.
 TARGET_CHOICES = (
     ("ORGANIZATION", "Организация и персонал"),
     (
