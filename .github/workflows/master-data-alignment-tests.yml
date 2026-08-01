@@ -6,7 +6,7 @@ on:
       - feature/master-data-alignment-001
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   django-tests:
@@ -44,6 +44,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          ref: feature/master-data-alignment-001
+          fetch-depth: 0
       - name: Set up Python 3.13
         uses: actions/setup-python@v6
         with:
@@ -57,7 +60,35 @@ jobs:
           python -m pip check
       - name: Apply migrations
         run: python manage.py migrate --noinput
-      - name: Run focused master-data tests
-        run: python manage.py test apps.imports.tests.test_organization_structure --verbosity 2
-      - name: Run full Django test suite
-        run: python manage.py test --verbosity 1
+      - name: Run tests and publish exact result
+        shell: bash
+        run: |
+          set +e
+          python manage.py test apps.imports.tests.test_organization_structure --verbosity 2 > /tmp/focused.log 2>&1
+          focused_status=$?
+          python manage.py test --verbosity 1 > /tmp/full.log 2>&1
+          full_status=$?
+          set -e
+
+          mkdir -p .master-data-test-result
+          {
+            echo "tested_head=$(git rev-parse HEAD)"
+            echo "focused_status=${focused_status}"
+            echo "full_status=${full_status}"
+            echo
+            echo "===== FOCUSED TESTS ====="
+            cat /tmp/focused.log
+            echo
+            echo "===== FULL SUITE ====="
+            cat /tmp/full.log
+          } > .master-data-test-result/result.txt
+
+          rm -f .github/workflows/master-data-alignment-tests.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "TEMP: record MASTER-DATA-ALIGNMENT-001 test result"
+          git push origin HEAD:feature/master-data-alignment-001
+
+          test "${focused_status}" -eq 0
+          test "${full_status}" -eq 0
