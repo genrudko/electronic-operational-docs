@@ -357,7 +357,7 @@
 
 .opj-workspace-page .opj-ribbon-toggle {
     border: 1px solid var(--da-border);
-    background: #fff;
+    background: var(--theme-surface);
     color: #3d526b;
     cursor: pointer;
 }
@@ -368,7 +368,7 @@
     overflow: hidden;
     border: 1px solid var(--da-border-strong);
     border-radius: 6px;
-    background: #fff;
+    background: var(--theme-surface);
 }
 
 .opj-view-switch > button {
@@ -666,7 +666,7 @@
     padding: 1px 5px;
     border: 1px solid #dde5ed;
     border-radius: 999px;
-    background: #f7f9fc;
+    background: var(--theme-surface-soft);
 }
 
 .opj-workspace .draft-save-status {
@@ -726,7 +726,7 @@
     z-index: 2;
     align-items: flex-start;
     padding: 10px 11px;
-    background: rgba(255, 255, 255, 0.98);
+    background: var(--theme-surface);
     backdrop-filter: blur(12px);
 }
 
@@ -756,7 +756,7 @@
     padding: 8px;
     border: 1px solid var(--da-border);
     border-radius: 8px;
-    background: #fff;
+    background: var(--theme-surface);
 }
 
 .opj-drawer-summary-icon {
@@ -802,7 +802,7 @@
     overflow: hidden;
     border: 1px solid var(--da-border);
     border-radius: 8px;
-    background: #fff;
+    background: var(--theme-surface);
 }
 
 .opj-workspace-page .opj-workspace-drawer .draft-drawer-section {
@@ -998,110 +998,7 @@
     font-size: 0.58rem;
 }
 
-/* Complete dark screen treatment for the active OPJ workspace and drawer. */
-html[data-theme="dark"] body.opj-workspace-page {
-    --opj-grid: #3d4c60;
-    --opj-grid-strong: #536276;
-    --opj-editor-surface: #0e1723;
-    --opj-header-surface: #1a2635;
-}
-
-html[data-theme="dark"] body.opj-workspace-page .da-stage,
-html[data-theme="dark"] body.opj-workspace-page .da-page {
-    background: #0b1420;
-    color: #e6edf5;
-}
-
-html[data-theme="dark"] body.opj-workspace-page .opj-workspace-header,
-html[data-theme="dark"] body.opj-workspace-page .opj-registered-context,
-html[data-theme="dark"] body.opj-workspace-page .opj-toolbar,
-html[data-theme="dark"] body.opj-workspace-page .opj-ledger-surface,
-html[data-theme="dark"] body.opj-workspace-page .draft-ledger-row,
-html[data-theme="dark"] body.opj-workspace-page .draft-empty-record,
-html[data-theme="dark"] body.opj-workspace-page .draft-page-body,
-html[data-theme="dark"] body.opj-workspace-page .draft-ledger-visas {
-    background: #0e1723 !important;
-    color: #e6edf5;
-}
-
-html[data-theme="dark"] body.opj-workspace-page .opj-toolbar-primary,
-html[data-theme="dark"] body.opj-workspace-page .opj-editor-toolbar,
-html[data-theme="dark"] body.opj-workspace-page .opj-ledger-header,
-html[data-theme="dark"] body.opj-workspace-page .draft-table-header,
-html[data-theme="dark"] body.opj-workspace-page .draft-inline-date,
-html[data-theme="dark"] body.opj-workspace-page .draft-page-footer {
-    background: #1a2635 !important;
-    color: #e3ebf5;
-}
-
-html[data-theme="dark"] body.opj-workspace-page .opj-ledger-header > div,
-html[data-theme="dark"] body.opj-workspace-page .draft-table-header > div,
-html[data-theme="dark"] body.opj-workspace-page .draft-ledger-time,
-html[data-theme="dark"] body.opj-workspace-page .draft-ledger-content,
-html[data-theme="dark"] body.opj-workspace-page .draft-empty-record > span {
-    border-color: #435267;
-}
-
-html[data-theme="dark"] body.opj-workspace-page .draft-ledger-content textarea,
-html[data-theme="dark"] body.opj-workspace-page .draft-rich-editor-host,
-html[data-theme="dark"] body.opj-workspace-page .draft-rich-editor-host [contenteditable="true"],
-html[data-theme="dark"] body.opj-workspace-page .draft-ledger-time input {
-    background: transparent !important;
-    color: #e8eef6 !important;
-    -webkit-text-fill-color: #e8eef6;
-    caret-color: #7db4ff;
-}
-
-html[data-theme="dark"] body.opj-workspace-page .draft-save-status,
-html[data-theme="dark"] body.opj-workspace-page .draft-meta-chip {
-    border-color: #405166;
-    background: #172333;
-    color: #9fb0c4;
-}
-
-html[data-theme="dark"] body.opj-workspace-page .draft-save-status {
-    border-color: #27684a;
-    background: #102b22;
-    color: #64d69b;
-}
-
-html[data-theme="dark"] body.opj-workspace-page .opj-ribbon-toggle,
-html[data-theme="dark"] body.opj-workspace-page .opj-view-switch,
-html[data-theme="dark"] body.opj-workspace-page .opj-view-switch > button {
-    border-color: #435267;
-    background: #111d2a;
-    color: #b7c4d4;
-}
-
-html[data-theme="dark"] body.opj-workspace-page .opj-workspace-drawer {
-    background: #0b1420;
-    color: #e6edf5;
-}
-
-html[data-theme="dark"] body.opj-workspace-page .opj-workspace-drawer .draft-view-drawer-header,
-html[data-theme="dark"] body.opj-workspace-page .opj-drawer-shift-summary,
-html[data-theme="dark"] body.opj-workspace-page .opj-workspace-drawer .draft-drawer-section,
-html[data-theme="dark"] body.opj-workspace-page .opj-drawer-card,
-html[data-theme="dark"] body.opj-workspace-page .opj-drawer-card[open] > summary,
-html[data-theme="dark"] body.opj-workspace-page .opj-drawer-card-body {
-    border-color: #435267;
-    background: #111d2a;
-    color: #e6edf5;
-}
-
-html[data-theme="dark"] body.opj-workspace-page .opj-workspace-drawer button,
-html[data-theme="dark"] body.opj-workspace-page .opj-workspace-drawer input {
-    border-color: #435267;
-    background: #0d1825;
-    color: #e6edf5;
-}
-
-html[data-theme="dark"] body.opj-workspace-page .opj-workspace-drawer button.is-active,
-html[data-theme="dark"] body.opj-workspace-page .opj-workspace-drawer button[aria-pressed="true"] {
-    border-color: #4f91dc;
-    background: #18304a;
-    color: #b8d7ff;
-}
+/* html[data-theme="dark"] is resolved exclusively by system/theme.css; this file owns geometry only. */
 
 @media (max-width: 1420px) {
     .opj-workspace-page .opj-workspace-header {

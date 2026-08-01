@@ -1,0 +1,552 @@
+/* UX-THEME-001: the sole semantic colour owner for screen UI. Feature CSS owns geometry only. */
+:root {
+    --theme-canvas: #f4f7fb;
+    --theme-surface: #ffffff;
+    --theme-surface-soft: #f8fafc;
+    --theme-surface-raised: #ffffff;
+    --theme-surface-document: #ffffff;
+    --theme-table-header: #eef3f7;
+    --theme-table-row: #ffffff;
+    --theme-table-hover: #f2f7fc;
+    --theme-table-selected: #e6f1fb;
+    --theme-border: #d9e2ec;
+    --theme-border-strong: #b8c6d6;
+    --theme-text: #182338;
+    --theme-text-muted: #68788e;
+    --theme-control: #ffffff;
+    --theme-control-hover: #edf4fb;
+    --theme-control-readonly: #f2f5f8;
+    --theme-control-disabled: #e6ebf0;
+    --theme-placeholder: #7b899b;
+    --theme-primary: #1267a5;
+    --theme-primary-hover: #0d5489;
+    --theme-primary-soft: #e6f1fb;
+    --theme-on-primary: #ffffff;
+    --theme-info: #1267a5;
+    --theme-info-soft: #e6f1fb;
+    --theme-success: #247849;
+    --theme-success-soft: #e4f4ea;
+    --theme-warning: #9a5418;
+    --theme-warning-soft: #fff0df;
+    --theme-danger: #a33b35;
+    --theme-danger-soft: #fbe9e7;
+    --theme-lifecycle-inactive: #b8c6d6;
+    --theme-lifecycle-current: #1267a5;
+    --theme-lifecycle-completed: #247849;
+    --theme-focus: #1683c5;
+    --theme-overlay: rgba(24, 35, 56, 0.48);
+    --theme-shadow: 0 8px 24px rgba(32, 54, 82, 0.10);
+    --theme-shadow-overlay: 0 22px 56px rgba(24, 42, 52, 0.22);
+
+    /* Compatibility aliases: old layers consume the same semantic owner. */
+    --bg: var(--theme-canvas);
+    --panel: var(--theme-surface);
+    --panel-2: var(--theme-surface-soft);
+    --panel-3: var(--theme-control-hover);
+    --border: var(--theme-border);
+    --text: var(--theme-text);
+    --muted: var(--theme-text-muted);
+    --accent: var(--theme-success);
+    --accent-2: var(--theme-primary);
+    --warning: var(--theme-warning);
+    --danger: var(--theme-danger);
+    --shadow: var(--theme-shadow);
+    --da-canvas: var(--theme-canvas);
+    --da-surface: var(--theme-surface);
+    --da-surface-soft: var(--theme-surface-soft);
+    --da-border: var(--theme-border);
+    --da-border-strong: var(--theme-border-strong);
+    --da-text: var(--theme-text);
+    --da-muted: var(--theme-text-muted);
+    --da-blue: var(--theme-primary);
+    --da-blue-dark: var(--theme-primary-hover);
+    --da-blue-soft: var(--theme-primary-soft);
+    --da-orange: var(--theme-warning);
+    --da-orange-soft: var(--theme-warning-soft);
+    --da-green: var(--theme-success);
+    --da-green-soft: var(--theme-success-soft);
+    --da-red: var(--theme-danger);
+    --da-red-soft: var(--theme-danger-soft);
+    --da-slate: var(--theme-text-muted);
+    --da-slate-soft: var(--theme-control-hover);
+    --da-shadow: var(--theme-shadow);
+    --da-shadow-overlay: var(--theme-shadow-overlay);
+}
+
+:root[data-theme="dark"] {
+    --theme-canvas: #0d141d;
+    --theme-surface: #151f2b;
+    --theme-surface-soft: #1a2634;
+    --theme-surface-raised: #202e3e;
+    --theme-surface-document: #182433;
+    --theme-table-header: #202e3e;
+    --theme-table-row: #151f2b;
+    --theme-table-hover: #243446;
+    --theme-table-selected: #173951;
+    --theme-border: #34465a;
+    --theme-border-strong: #536980;
+    --theme-text: #edf3f9;
+    --theme-text-muted: #a9b8c8;
+    --theme-control: #111b26;
+    --theme-control-hover: #243446;
+    --theme-control-readonly: #1a2634;
+    --theme-control-disabled: #283545;
+    --theme-placeholder: #8fa0b2;
+    --theme-primary: #67b7ee;
+    --theme-primary-hover: #91cdf4;
+    --theme-primary-soft: #173951;
+    --theme-on-primary: #0d141d;
+    --theme-info: #67b7ee;
+    --theme-info-soft: #173951;
+    --theme-success: #67d09a;
+    --theme-success-soft: #173d2b;
+    --theme-warning: #f0b56f;
+    --theme-warning-soft: #49331d;
+    --theme-danger: #f0948e;
+    --theme-danger-soft: #4a2929;
+    --theme-lifecycle-inactive: #536980;
+    --theme-lifecycle-current: #67b7ee;
+    --theme-lifecycle-completed: #67d09a;
+    --theme-focus: #72c7ff;
+    --theme-overlay: rgba(2, 7, 12, 0.72);
+    --theme-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+    --theme-shadow-overlay: 0 24px 60px rgba(0, 0, 0, 0.52);
+
+    /* Late DEFECT repair layers keep these aliases behind !important declarations. */
+    --da-status-registered: var(--theme-primary);
+    --da-status-registered-soft: var(--theme-primary-soft);
+    --da-status-progress: var(--theme-warning);
+    --da-status-progress-soft: var(--theme-warning-soft);
+    --da-status-resolved: var(--theme-success);
+    --da-status-resolved-soft: var(--theme-success-soft);
+    --da-status-closed: var(--theme-text-muted);
+    --da-status-closed-soft: var(--theme-control-disabled);
+    --da-lifecycle-complete: var(--theme-info);
+    --da-lifecycle-complete-soft: var(--theme-info-soft);
+}
+
+/* Patch 007.3 compatibility: its !important consumers resolve through the semantic owner. */
+:root[data-theme="light"],
+:root[data-theme="dark"] {
+    --surface: var(--theme-surface);
+    --surface-soft: var(--theme-surface-soft);
+    --surface-muted: var(--theme-control-hover);
+    --surface-text: var(--theme-text);
+    --surface-secondary-text: var(--theme-text-muted);
+    --field-bg: var(--theme-control);
+    --link: var(--theme-primary);
+    --topbar-bg: var(--theme-surface);
+    --topbar-border: var(--theme-border);
+    --topbar-text: var(--theme-text);
+    --topbar-muted: var(--theme-text-muted);
+    --da-complete: var(--theme-info);
+    --da-complete-soft: var(--theme-info-soft);
+}
+
+html, body {
+    background-color: var(--theme-canvas);
+    color: var(--theme-text);
+}
+
+body {
+    background-image: none;
+}
+
+a {
+    color: var(--theme-primary);
+}
+
+a:hover {
+    color: var(--theme-primary-hover);
+}
+
+/* Shared shell and explicitly named screen primitives. */
+html[data-theme] body > .topbar,
+html[data-theme] body > .presentation-topbar,
+html[data-theme] body > footer,
+html[data-theme] .da-sidebar,
+html[data-theme] .da-topbar,
+html[data-theme] .da-mobile-navigation,
+html[data-theme] .nav-menu-panel,
+html[data-theme] .da-footer {
+    border-color: var(--theme-border);
+    background: var(--theme-surface);
+    color: var(--theme-text);
+}
+
+.da-shell,
+.da-stage,
+.da-page,
+body.da-active {
+    background: var(--theme-canvas);
+    color: var(--theme-text);
+}
+
+.da-navigation > a,
+.da-nav-group-title,
+.da-nav-child,
+.da-brand,
+.da-user-trigger,
+.brand {
+    color: var(--theme-text);
+}
+
+.da-navigation > a:hover,
+.da-nav-child:hover,
+.da-user-trigger:hover,
+.topnav a:hover,
+.nav-menu-panel a:hover {
+    background: var(--theme-control-hover);
+    color: var(--theme-primary-hover);
+}
+
+.da-nav-child.is-active,
+.da-nav-child[aria-current="page"] {
+    background: var(--theme-primary-soft);
+    color: var(--theme-primary-hover);
+}
+
+/* Legacy home/dashboard components are theme consumers, never palette owners. */
+html[data-theme] .hero,
+html[data-theme] .login-callout,
+html[data-theme] .directory-card,
+html[data-theme] .profile-card,
+html[data-theme] .principles,
+html[data-theme] .empty-state,
+html[data-theme] .metric.da-card,
+html[data-theme] .card {
+    border-color: var(--theme-border);
+    background: var(--theme-surface);
+    color: var(--theme-text);
+    box-shadow: var(--theme-shadow);
+}
+
+html[data-theme] .directory-columns > div,
+html[data-theme] .role-list li {
+    border-color: var(--theme-border);
+    background: var(--theme-surface-soft);
+    color: var(--theme-text);
+}
+
+/* Browser-gated route roots have deterministic semantic surfaces. */
+html[data-theme] .defect-da-work-table,
+html[data-theme] .defect-record-section,
+html[data-theme] .journal-registry-card,
+html[data-theme] .opj-workspace,
+html[data-theme] .account-setting-card {
+    border-color: var(--theme-border);
+    background: var(--theme-surface);
+    color: var(--theme-text);
+}
+
+html[data-theme] .approved-journal-shell {
+    border-color: var(--theme-border);
+    background: var(--theme-surface-document);
+    color: var(--theme-text);
+}
+
+.account-setting-card,
+.profile-card,
+.auth-card {
+    border-color: var(--theme-border);
+    background: var(--theme-surface);
+    color: var(--theme-text);
+    box-shadow: var(--theme-shadow);
+}
+
+.account-setting-card input,
+.account-setting-card select,
+.account-setting-card textarea,
+.auth-card input,
+.auth-card select {
+    border-color: var(--theme-border-strong);
+    background: var(--theme-control);
+    color: var(--theme-text);
+}
+
+.dialog-card,
+.drawer,
+.opj-settings-drawer,
+.opj-overlay-panel,
+.equipment-dialog-card,
+.equipment-picker-dialog,
+.draft-reference-dialog {
+    border-color: var(--theme-border);
+    background: var(--theme-surface-raised);
+    color: var(--theme-text);
+    box-shadow: var(--theme-shadow-overlay);
+}
+
+.dialog-backdrop,
+.drawer-backdrop,
+.opj-overlay {
+    background: var(--theme-overlay);
+}
+
+/* Transient controls use the same semantic palette as their parent routes. */
+html[data-theme] .defect-picker-panel {
+    border-color: var(--theme-border-strong);
+    background: var(--theme-surface-raised);
+    color: var(--theme-text);
+    box-shadow: var(--theme-shadow-overlay);
+}
+
+html[data-theme] .defect-picker-header,
+html[data-theme] .defect-picker-footer,
+html[data-theme] .defect-time-wheel {
+    border-color: var(--theme-border);
+    background: var(--theme-surface-soft);
+    color: var(--theme-text);
+}
+
+html[data-theme] .defect-picker-heading h2,
+html[data-theme] .defect-calendar-month,
+html[data-theme] .defect-calendar-day,
+html[data-theme] .defect-time-option,
+html[data-theme] .defect-picker-button.secondary {
+    color: var(--theme-text);
+}
+
+html[data-theme] .defect-picker-heading p,
+html[data-theme] .defect-calendar-weekdays span,
+html[data-theme] .defect-calendar-day.is-adjacent,
+html[data-theme] .defect-time-column h3 {
+    color: var(--theme-text-muted);
+}
+
+html[data-theme] .defect-picker-current-value,
+html[data-theme] .defect-time-picker-display,
+html[data-theme] .defect-picker-trigger,
+html[data-theme] .defect-picker-close,
+html[data-theme] .defect-calendar-nav,
+html[data-theme] .defect-picker-link-button {
+    color: var(--theme-primary);
+}
+
+html[data-theme] .defect-picker-trigger,
+html[data-theme] .defect-picker-close,
+html[data-theme] .defect-calendar-nav,
+html[data-theme] .defect-calendar-day,
+html[data-theme] .defect-time-option,
+html[data-theme] .defect-picker-button.secondary {
+    border-color: var(--theme-border);
+    background: var(--theme-control);
+}
+
+html[data-theme] .defect-picker-trigger:hover,
+html[data-theme] .defect-picker-trigger:focus-visible,
+html[data-theme] .defect-picker-close:hover,
+html[data-theme] .defect-picker-close:focus-visible,
+html[data-theme] .defect-calendar-nav:hover,
+html[data-theme] .defect-calendar-nav:focus-visible,
+html[data-theme] .defect-calendar-day:hover,
+html[data-theme] .defect-calendar-day:focus-visible,
+html[data-theme] .defect-time-option:hover,
+html[data-theme] .defect-time-option:focus-visible {
+    border-color: var(--theme-primary);
+    background: var(--theme-control-hover);
+    color: var(--theme-primary-hover);
+}
+
+html[data-theme] .defect-picker-link-button {
+    border-color: var(--theme-border-strong);
+    background: var(--theme-primary-soft);
+}
+
+html[data-theme] .defect-calendar-day.is-today::after {
+    background: var(--theme-primary);
+}
+
+html[data-theme] .defect-calendar-day.is-selected,
+html[data-theme] .defect-time-option.is-selected,
+html[data-theme] .defect-picker-button.primary {
+    border-color: var(--theme-primary);
+    background: var(--theme-primary);
+    color: var(--theme-on-primary);
+}
+
+html[data-theme] .defect-calendar-day.is-selected::after {
+    background: var(--theme-on-primary);
+}
+
+html[data-theme] .opj-workspace-page .opj-workspace-drawer {
+    background: var(--theme-surface-soft);
+    color: var(--theme-text);
+}
+
+html[data-theme] .opj-workspace-page .opj-drawer-card[open] > summary {
+    background: var(--theme-control-hover);
+    color: var(--theme-text);
+}
+
+/* Shared alerts and lifecycle indicators must not retain light-only owners. */
+html[data-theme] .da-alert {
+    border-color: var(--theme-border);
+    border-left-color: var(--theme-primary);
+    background: var(--theme-surface-soft);
+    color: var(--theme-text);
+}
+
+html[data-theme] .da-alert p {
+    color: var(--theme-text-muted);
+}
+
+html[data-theme] .da-alert.is-success {
+    border-left-color: var(--theme-success);
+    background: var(--theme-success-soft);
+}
+
+html[data-theme] .da-alert.is-warning {
+    border-left-color: var(--theme-warning);
+    background: var(--theme-warning-soft);
+}
+
+html[data-theme] .da-alert.is-danger {
+    border-left-color: var(--theme-danger);
+    background: var(--theme-danger-soft);
+}
+
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle li {
+    border-color: var(--theme-border);
+    background: var(--theme-surface-soft);
+    color: var(--theme-text-muted);
+}
+
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="REGISTERED"],
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="REGISTERED"],
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="IN_PROGRESS"],
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="REGISTERED"],
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="IN_PROGRESS"],
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="RESOLVED"] {
+    border-color: var(--theme-info);
+    background: var(--theme-info-soft);
+    color: var(--theme-info);
+}
+
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="REGISTERED"] [data-step="REGISTERED"] {
+    border-color: var(--theme-primary);
+    background: var(--theme-primary-soft);
+    color: var(--theme-primary);
+}
+
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="IN_PROGRESS"] {
+    border-color: var(--theme-warning);
+    background: var(--theme-warning-soft);
+    color: var(--theme-warning);
+}
+
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="RESOLVED"] {
+    border-color: var(--theme-success);
+    background: var(--theme-success-soft);
+    color: var(--theme-success);
+}
+
+html[data-theme] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="CLOSED"] {
+    border-color: var(--theme-border-strong);
+    background: var(--theme-control-hover);
+    color: var(--theme-text-muted);
+}
+
+/* Final dark acceptance repair: only states observed on the deployed candidate. */
+html[data-theme="dark"] .da-button.is-secondary:hover,
+html[data-theme="dark"] .da-button.secondary:hover,
+html[data-theme="dark"] .da-icon-button:hover {
+    border-color: var(--theme-border-strong);
+    background: var(--theme-control-hover);
+    color: var(--theme-primary-hover);
+}
+
+html[data-theme="dark"] .approved-journal-row-invalid td {
+    background: var(--theme-table-row);
+}
+
+html[data-theme="dark"] .approved-journal-row-invalid td:first-child {
+    box-shadow: inset 3px 0 0 var(--theme-danger);
+}
+
+html[data-theme="dark"] .draft-save-status.is-saved {
+    border-color: color-mix(in srgb, var(--theme-success) 55%, var(--theme-border));
+    background: var(--theme-success-soft);
+    color: var(--theme-success);
+}
+
+html[data-theme="dark"] .defect-da-registry .defect-summary-chip.active,
+html[data-theme="dark"] .defect-da-registry .defect-view-switch button[aria-pressed="true"] {
+    background: var(--theme-table-selected);
+    color: var(--theme-primary-hover);
+}
+
+html[data-theme="dark"] .defect-da-registry .defect-view-switch button[aria-pressed="true"] {
+    box-shadow: inset 0 -2px 0 var(--theme-primary);
+}
+
+html[data-theme="dark"] .defect-da-work-head {
+    border-color: var(--theme-border-strong);
+    background: var(--theme-table-header);
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .defect-da-work-head span,
+html[data-theme="dark"] .defect-da-work-row,
+html[data-theme="dark"] .defect-da-work-row > div {
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .defect-da-work-row:hover {
+    background: var(--theme-table-hover);
+    box-shadow: inset 3px 0 0 var(--theme-primary);
+}
+
+html[data-theme="dark"] .defect-da-record-context strong {
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .defect-da-definition-list > div,
+html[data-theme="dark"] .defect-da-definition-list.compact > div {
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .defect-da-definition-list.compact > div {
+    background: var(--theme-surface-soft);
+}
+
+html[data-theme="dark"] .defect-da-aside-card p,
+html[data-theme="dark"] .defect-da-action-card > p {
+    color: var(--theme-text-muted);
+}
+
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle li {
+    opacity: 0.58;
+}
+
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="REGISTERED"],
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="REGISTERED"],
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="IN_PROGRESS"],
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="REGISTERED"],
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="IN_PROGRESS"],
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="RESOLVED"],
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="REGISTERED"] [data-step="REGISTERED"],
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="IN_PROGRESS"],
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="RESOLVED"],
+html[data-theme="dark"] .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="CLOSED"] {
+    opacity: 1;
+}
+
+@media print {
+    :root,
+    :root[data-theme="dark"] {
+        color-scheme: light !important;
+    }
+
+    html,
+    body,
+    main,
+    .print-sheet {
+        background: #fff !important;
+        color: #000 !important;
+    }
+
+    * {
+        box-shadow: none !important;
+    }
+}

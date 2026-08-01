@@ -140,7 +140,7 @@
     overflow: hidden;
     border: 1px solid #dfe6ed;
     border-radius: 7px;
-    background: #fff;
+    background: var(--theme-surface);
 }
 
 .defect-tree-workplace-division + .defect-tree-workplace-division {

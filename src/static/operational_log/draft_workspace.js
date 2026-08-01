@@ -260,15 +260,6 @@
             : "normal";
     }
 
-    function resolvedTheme(value) {
-        if (value !== "system") {
-            return value;
-        }
-        return window.matchMedia("(prefers-color-scheme: dark)").matches
-            ? "dark"
-            : "light";
-    }
-
     function updateQuickSettingButtons() {
         themeChoiceButtons.forEach((button) => {
             const active = button.dataset.themeChoice === themePreference;
@@ -320,10 +311,7 @@
     }
 
     function applyQuickDisplayPreferences() {
-        document.documentElement.dataset.themePreference = themePreference;
-        document.documentElement.dataset.theme = resolvedTheme(
-            themePreference,
-        );
+        window.EODTheme?.apply(themePreference, "opj-workspace");
         workspace.dataset.pageWidth = pageWidthPreference;
         workspace.dataset.journalEntrySize = typographyPreferences.entry;
         workspace.dataset.journalTimeSize = typographyPreferences.time;
@@ -3009,13 +2997,9 @@
         applySimplifiedTimeToInput(input, true);
     });
 
-    const systemThemeQuery = window.matchMedia(
-        "(prefers-color-scheme: dark)",
-    );
-    systemThemeQuery.addEventListener?.("change", () => {
-        if (themePreference === "system") {
-            applyQuickDisplayPreferences();
-        }
+    window.addEventListener("eod:themechange", (event) => {
+        themePreference = normalizeThemeChoice(event.detail.preference);
+        updateQuickSettingButtons();
     });
 
     typographySizeButtons.forEach((button) => {

@@ -2,7 +2,8 @@
 <!doctype html>
 <html
     lang="ru"
-    data-theme="{{ ui_preferences.theme|lower }}"
+    data-theme-preference="{{ ui_preferences.theme|lower }}"
+    data-theme="light"
     data-density="{{ ui_preferences.density|lower }}"
     data-font-scale="{{ ui_preferences.font_scale|lower }}"
     data-content-width="{{ ui_preferences.content_width|lower }}"
@@ -20,7 +21,21 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="dark light">
+    <meta name="color-scheme" content="light dark">
+    <script>
+        (() => {
+            const root = document.documentElement;
+            const value = (root.dataset.themePreference || "system").toLowerCase();
+            const preference = ["light", "dark", "system"].includes(value) ? value : "system";
+            const dark = preference === "dark" || (
+                preference === "system"
+                && window.matchMedia("(prefers-color-scheme: dark)").matches
+            );
+            root.dataset.themePreference = preference;
+            root.dataset.theme = dark ? "dark" : "light";
+            root.style.colorScheme = dark ? "dark" : "light";
+        })();
+    </script>
     <title>{% block title %}Электронная оперативная документация{% endblock %}</title>
     <link rel="icon" href="{% static 'system/favicon.svg' %}" type="image/svg+xml">
     <link rel="stylesheet" href="{% static 'system/app.css' %}?v=011702">
@@ -31,6 +46,8 @@
     <script src="{% static 'operational_log/opj_ux_001.js' %}?v=opjux00103" defer></script>
     {% block extra_head %}{% endblock %}
     <link rel="stylesheet" href="{% static 'system/direction_a_shell_final.css' %}?v=opjux00110">
+    <link rel="stylesheet" href="{% static 'system/theme.css' %}?v=uxtheme00102">
+    <script src="{% static 'system/theme.js' %}?v=uxtheme00101" defer></script>
 </head>
 <body class="{% block body_class %}{% endblock %}">
 {% block body %}

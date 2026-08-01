@@ -98,7 +98,7 @@
 
 .defect-da-lifecycle-card .defect-lifecycle li .defect-lifecycle-marker {
     border-color: #d2d9e0;
-    background: #fff;
+    background: var(--theme-surface);
     color: #9aa5b0;
 }
 
@@ -202,6 +202,100 @@
     border-color: var(--da-status-closed);
     background: var(--da-status-closed);
     color: #fff;
+}
+
+/*
+ * The approved journal screen is a normal themed screen surface.
+ * Its separate print contract remains untouched because these rules are screen-only.
+ */
+@media screen {
+    html[data-theme] .defect-journal-view .defect-register-wrap {
+        border-color: var(--theme-border);
+        background: var(--theme-surface-document);
+        color: var(--theme-text);
+    }
+
+    html[data-theme] .defect-journal-view .defect-register {
+        color: var(--theme-text);
+    }
+
+    html[data-theme] .defect-journal-view .defect-register thead th {
+        border-right-color: var(--theme-border);
+        border-bottom-color: var(--theme-border-strong);
+        background: var(--theme-table-header);
+        color: var(--theme-text);
+    }
+
+    html[data-theme] .defect-journal-view .defect-register tbody td {
+        border-right-color: var(--theme-border);
+        border-bottom-color: var(--theme-border);
+        background: var(--theme-table-row);
+        color: var(--theme-text);
+    }
+
+    html[data-theme] .defect-journal-view .defect-register tbody tr:hover td {
+        background: var(--theme-table-hover);
+    }
+
+    html[data-theme] .defect-journal-view .defect-register tbody tr:focus-within td {
+        background: var(--theme-table-selected);
+    }
+
+    html[data-theme] .defect-journal-view .defect-sequence-number {
+        border-color: var(--theme-border-strong);
+        background: var(--theme-primary-soft);
+        color: var(--theme-primary-hover);
+    }
+
+    html[data-theme] .defect-journal-view .defect-cell-equipment {
+        color: var(--theme-text);
+    }
+
+    html[data-theme] .defect-journal-view .defect-record-time,
+    html[data-theme] .defect-journal-view .defect-record-number,
+    html[data-theme] .defect-journal-view .defect-cell-person {
+        color: var(--theme-text-muted);
+    }
+}
+
+/* Legacy journal status text and deadline extensions must use dark semantic foregrounds. */
+html[data-theme="dark"] .defect-status {
+    border-color: color-mix(in srgb, var(--theme-primary) 62%, var(--theme-border));
+    background: var(--theme-primary-soft);
+    color: var(--theme-primary-hover);
+}
+
+html[data-theme="dark"] .defect-status[data-status="IN_PROGRESS"] {
+    border-color: color-mix(in srgb, var(--theme-warning) 62%, var(--theme-border));
+    background: var(--theme-warning-soft);
+    color: var(--theme-warning);
+}
+
+html[data-theme="dark"] .defect-status[data-status="RESOLVED"] {
+    border-color: color-mix(in srgb, var(--theme-success) 62%, var(--theme-border));
+    background: var(--theme-success-soft);
+    color: var(--theme-success);
+}
+
+html[data-theme="dark"] .defect-status[data-status="CLOSED"] {
+    border-color: var(--theme-border-strong);
+    background: var(--theme-control-disabled);
+    color: var(--theme-text-muted);
+}
+
+html[data-theme="dark"] .defect-status span,
+html[data-theme="dark"] .defect-status strong,
+html[data-theme="dark"] .defect-extension span,
+html[data-theme="dark"] .defect-extension strong,
+html[data-theme="dark"] .defect-extension p,
+html[data-theme="dark"] .defect-extension small {
+    color: inherit;
+}
+
+html[data-theme="dark"] .defect-extension {
+    border-left-color: var(--theme-warning);
+    background: var(--theme-warning-soft);
+    color: var(--theme-warning);
 }
 
 @media (max-width: 720px) {

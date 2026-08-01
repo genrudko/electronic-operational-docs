@@ -1,36 +1,35 @@
 :root {
-    color-scheme: light;
-    --ux-canvas: #f3f6fa;
-    --ux-surface: #ffffff;
-    --ux-surface-subtle: #f7f9fc;
-    --ux-surface-selected: #edf4ff;
-    --ux-border: #d8e0ea;
-    --ux-border-strong: #bac7d6;
-    --ux-text: #172235;
-    --ux-text-secondary: #516176;
-    --ux-text-muted: #718096;
-    --ux-blue: #2f67b2;
-    --ux-blue-strong: #24538f;
-    --ux-blue-soft: #e7f0fc;
-    --ux-focus: rgba(47, 103, 178, .22);
-    --ux-amber: #986815;
-    --ux-amber-soft: #fff3d8;
-    --ux-green: #27734c;
-    --ux-green-soft: #e3f4ea;
-    --ux-slate: #59697d;
-    --ux-slate-soft: #edf1f5;
-    --ux-red: #a63e48;
-    --ux-red-soft: #fdebec;
+    --ux-canvas: var(--theme-canvas);
+    --ux-surface: var(--theme-surface);
+    --ux-surface-subtle: var(--theme-surface-soft);
+    --ux-surface-selected: var(--theme-table-selected);
+    --ux-border: var(--theme-border);
+    --ux-border-strong: var(--theme-border-strong);
+    --ux-text: var(--theme-text);
+    --ux-text-secondary: var(--theme-text-muted);
+    --ux-text-muted: var(--theme-text-muted);
+    --ux-blue: var(--theme-primary);
+    --ux-blue-strong: var(--theme-primary-hover);
+    --ux-blue-soft: var(--theme-primary-soft);
+    --ux-focus: var(--theme-focus);
+    --ux-amber: var(--theme-warning);
+    --ux-amber-soft: var(--theme-warning-soft);
+    --ux-green: var(--theme-success);
+    --ux-green-soft: var(--theme-success-soft);
+    --ux-slate: var(--theme-text-muted);
+    --ux-slate-soft: var(--theme-control-hover);
+    --ux-red: var(--theme-danger);
+    --ux-red-soft: var(--theme-danger-soft);
     --ux-radius-sm: 6px;
     --ux-radius-md: 9px;
     --ux-radius-lg: 12px;
-    --ux-shadow-sm: 0 1px 2px rgba(23, 34, 53, .06);
-    --ux-shadow-md: 0 8px 24px rgba(23, 34, 53, .08);
+    --ux-shadow-sm: var(--theme-shadow);
+    --ux-shadow-md: var(--theme-shadow);
 
     --bg: var(--ux-canvas);
     --panel: var(--ux-surface);
     --panel-2: var(--ux-surface-subtle);
-    --panel-3: #eef3f8;
+    --panel-3: var(--theme-control-hover);
     --border: var(--ux-border);
     --text: var(--ux-text);
     --muted: var(--ux-text-secondary);
@@ -68,7 +67,7 @@ a {
 }
 
 a:hover {
-    color: #173e70;
+    color: var(--theme-primary-hover);
 }
 
 button,
@@ -94,7 +93,7 @@ summary:focus-visible {
     padding: 7px clamp(12px, 2vw, 28px);
     gap: 14px;
     border-bottom: 1px solid var(--ux-border);
-    background: rgba(255, 255, 255, .97);
+    background: var(--theme-surface);
     box-shadow: 0 1px 0 rgba(23, 34, 53, .03);
     backdrop-filter: blur(12px);
 }
@@ -705,6 +704,5 @@ body > footer a {
 
 @media print {
     :root {
-        color-scheme: light;
-    }
+        }
 }

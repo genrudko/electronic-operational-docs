@@ -163,7 +163,10 @@ class EquipmentDefectBoundaryTests(DefectFixtureMixin, TestCase):
         self.assertFalse(original_volume.accepts_new_records)
         self.assertEqual(
             original_volume.closed_on,
-            timezone.localdate(resolved_at, timezone=MOSCOW_TIME_ZONE),
+            max(
+                original_volume.started_on,
+                timezone.localdate(resolved_at, timezone=MOSCOW_TIME_ZONE),
+            ),
         )
         self.assertEqual(record.equipment_defect_context.pk, original_context_id)
         self.assertEqual(record.equipment_defect_context.volume_id, original_volume.pk)

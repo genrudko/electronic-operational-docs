@@ -5,29 +5,29 @@
 :root {
     --da-sidebar-width: 272px;
     --da-topbar-height: 64px;
-    --da-canvas: #f4f7fb;
-    --da-surface: #ffffff;
-    --da-surface-soft: #fbfcfe;
-    --da-border: #d9e2ec;
-    --da-border-strong: #bdcad8;
-    --da-text: #182338;
-    --da-muted: #68788e;
-    --da-blue: #1267a5;
-    --da-blue-dark: #0d5489;
-    --da-blue-soft: #e6f1fb;
-    --da-orange: #c76512;
-    --da-orange-soft: #fff0df;
-    --da-green: #247849;
-    --da-green-soft: #e4f4ea;
-    --da-red: #a33b35;
-    --da-red-soft: #fbe9e7;
-    --da-slate: #4d5e73;
-    --da-slate-soft: #e9eef3;
+    --da-canvas: var(--theme-canvas);
+    --da-surface: var(--theme-surface);
+    --da-surface-soft: var(--theme-surface-soft);
+    --da-border: var(--theme-border);
+    --da-border-strong: var(--theme-border-strong);
+    --da-text: var(--theme-text);
+    --da-muted: var(--theme-text-muted);
+    --da-blue: var(--theme-primary);
+    --da-blue-dark: var(--theme-primary-hover);
+    --da-blue-soft: var(--theme-primary-soft);
+    --da-orange: var(--theme-warning);
+    --da-orange-soft: var(--theme-warning-soft);
+    --da-green: var(--theme-success);
+    --da-green-soft: var(--theme-success-soft);
+    --da-red: var(--theme-danger);
+    --da-red-soft: var(--theme-danger-soft);
+    --da-slate: var(--theme-text-muted);
+    --da-slate-soft: var(--theme-control-hover);
     --da-radius-sm: 8px;
     --da-radius: 9px;
     --da-radius-lg: 12px;
-    --da-shadow: 0 8px 24px rgba(32, 54, 82, 0.08);
-    --da-shadow-overlay: 0 22px 56px rgba(24, 42, 52, 0.22);
+    --da-shadow: var(--theme-shadow);
+    --da-shadow-overlay: var(--theme-shadow-overlay);
     --da-page-inline: clamp(18px, 2.6vw, 42px);
     --da-page-max: 1680px;
 }
@@ -60,7 +60,6 @@ body.da-active > .messages {
     min-height: 100vh;
     background: var(--da-canvas);
     color: var(--da-text);
-    color-scheme: light;
 }
 
 .da-stage {
@@ -77,7 +76,7 @@ body.da-active > .messages {
     flex-direction: column;
     overflow-y: auto;
     border-right: 1px solid var(--da-border);
-    background: rgba(255, 255, 255, 0.98);
+    background: var(--theme-surface);
     box-shadow: 2px 0 12px rgba(35, 55, 78, 0.035);
 }
 
@@ -171,7 +170,7 @@ body.da-active > .messages {
     gap: 10px;
     padding: 8px 10px;
     border-radius: var(--da-radius-sm);
-    color: #34445a;
+    color: var(--theme-text);
     font-size: 0.79rem;
     font-weight: 700;
     text-decoration: none;
@@ -203,7 +202,7 @@ body.da-active > .messages {
     position: relative;
     min-height: 35px;
     padding-left: 42px;
-    color: #53647a;
+    color: var(--theme-text-muted);
     font-weight: 650;
 }
 
@@ -284,7 +283,7 @@ body.da-active > .messages {
     gap: 18px;
     padding: 8px 24px;
     border-bottom: 1px solid var(--da-border);
-    background: rgba(255, 255, 255, 0.96);
+    background: var(--theme-surface);
     box-shadow: 0 1px 0 rgba(20, 45, 72, 0.03);
     backdrop-filter: blur(12px);
 }
@@ -351,7 +350,7 @@ body.da-active > .messages {
     border: 1px solid transparent;
     border-radius: var(--da-radius-sm);
     background: transparent;
-    color: #3b5068;
+    color: var(--theme-text-muted);
     font: inherit;
     font-size: 0.76rem;
     font-weight: 700;
@@ -370,7 +369,7 @@ body.da-active > .messages {
 .da-topbar-actions > a.is-primary {
     border-color: var(--da-blue);
     background: var(--da-blue);
-    color: #fff;
+    color: var(--theme-surface);
 }
 
 .da-topbar-tools .ui-icon,
@@ -461,7 +460,7 @@ a.da-button {
     border: 1px solid var(--da-blue);
     border-radius: var(--da-radius-sm);
     background: var(--da-blue);
-    color: #fff;
+    color: var(--theme-surface);
     font: inherit;
     font-size: 0.78rem;
     font-weight: 750;
@@ -472,13 +471,13 @@ a.da-button {
 
 .da-button:hover {
     background: var(--da-blue-dark);
-    color: #fff;
+    color: var(--theme-surface);
 }
 
 .da-button.is-secondary,
 .da-button.secondary {
     border-color: var(--da-border-strong);
-    background: #fff;
+    background: var(--theme-surface);
     color: var(--da-blue-dark);
 }
 
@@ -509,7 +508,7 @@ a.da-button {
     border: 1px solid transparent;
     border-radius: var(--da-radius-sm);
     background: transparent;
-    color: #3b5068;
+    color: var(--theme-text-muted);
     cursor: pointer;
 }
 
@@ -582,12 +581,12 @@ a.da-button {
 
 .da-alert.is-warning {
     border-left-color: var(--da-orange);
-    background: #fffaf3;
+    background: var(--theme-warning-soft);
 }
 
 .da-alert.is-danger {
     border-left-color: var(--da-red);
-    background: #fff7f6;
+    background: var(--theme-danger-soft);
 }
 
 .da-status,
@@ -659,7 +658,7 @@ a.da-button {
     border: 0;
     border-radius: 6px;
     background: transparent;
-    color: #53647a;
+    color: var(--theme-text-muted);
     font: inherit;
     font-size: 0.73rem;
     font-weight: 700;
@@ -670,7 +669,7 @@ a.da-button {
 .da-segmented button[aria-pressed="true"],
 .da-segmented .is-active,
 .da-segmented a[aria-current="page"] {
-    background: #fff;
+    background: var(--theme-surface);
     color: var(--da-blue-dark);
     box-shadow: 0 1px 4px rgba(32, 54, 82, 0.12);
 }
@@ -682,7 +681,7 @@ a.da-button {
 }
 
 .da-field label {
-    color: #405269;
+    color: var(--theme-text);
     font-size: 0.7rem;
     font-weight: 750;
 }
@@ -698,7 +697,7 @@ textarea.da-field {
     padding: 8px 10px;
     border: 1px solid var(--da-border-strong);
     border-radius: var(--da-radius-sm);
-    background: #fff;
+    background: var(--theme-surface);
     color: var(--da-text);
     font: inherit;
     font-size: 0.78rem;
@@ -731,7 +730,7 @@ textarea.da-field:focus {
 .da-table {
     width: 100%;
     border-collapse: collapse;
-    background: #fff;
+    background: var(--theme-surface);
 }
 
 .da-table th,
@@ -743,8 +742,8 @@ textarea.da-field:focus {
 }
 
 .da-table thead th {
-    background: #eef3f7;
-    color: #34445a;
+    background: var(--theme-table-header);
+    color: var(--theme-text);
     font-size: 0.71rem;
     line-height: 1.3;
     text-align: center;
@@ -759,7 +758,7 @@ textarea.da-field:focus {
 dialog.da-overlay {
     border: 1px solid var(--da-border-strong);
     border-radius: var(--da-radius-lg);
-    background: #fff;
+    background: var(--theme-surface);
     color: var(--da-text);
     box-shadow: var(--da-shadow-overlay);
 }
@@ -779,7 +778,7 @@ dialog.da-overlay::backdrop {
     overflow: hidden;
     border: 1px solid var(--da-border);
     border-radius: var(--da-radius);
-    background: #fff;
+    background: var(--theme-surface);
 }
 
 .da-hierarchy-group > summary {
@@ -825,7 +824,7 @@ dialog.da-overlay::backdrop {
         place-items: center;
         border: 1px solid var(--da-border);
         border-radius: var(--da-radius-sm);
-        background: #fff;
+        background: var(--theme-surface);
         color: var(--da-text);
     }
 
