@@ -64,14 +64,14 @@ class DemoAuthoritySeedCommandTests(TestCase):
             4,
         )
 
-    def test_seed_is_idempotent_and_covers_decision_states_and_external_personnel(self):
+    def test_seed_is_idempotent_and_covers_decisions(self) -> None:
         call_command("seed_demo_organization", reset_passwords=True, verbosity=0)
         call_command("seed_demo_personnel_authority", verbosity=0)
         call_command("seed_demo_personnel_authority", verbosity=0)
 
         self.assert_demo_authority_state()
 
-    def test_forward_data_migration_populates_existing_demo_database(self):
+    def test_forward_migration_populates_demo_database(self) -> None:
         call_command("seed_demo_organization", reset_passwords=True, verbosity=0)
         migration = importlib.import_module(
             "apps.organizations.migrations.0009_seed_demo_personnel_authority"
