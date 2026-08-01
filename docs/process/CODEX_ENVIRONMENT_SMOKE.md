@@ -11,3 +11,7 @@ The test branch and pull request must not be merged into `main`.
 ## First write-back
 
 Codex Cloud successfully edited the existing smoke-test branch.
+
+## Second write-back
+
+Codex Cloud successfully updated its existing pull request from a follow-up task.
