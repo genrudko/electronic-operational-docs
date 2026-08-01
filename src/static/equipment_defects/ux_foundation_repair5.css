@@ -204,6 +204,60 @@
     color: #fff;
 }
 
+/*
+ * The approved journal screen is a normal themed screen surface.
+ * Its separate print contract remains untouched because these rules are screen-only.
+ */
+@media screen {
+    html[data-theme] .defect-journal-view .defect-register-wrap {
+        border-color: var(--theme-border);
+        background: var(--theme-surface-document);
+        color: var(--theme-text);
+    }
+
+    html[data-theme] .defect-journal-view .defect-register {
+        color: var(--theme-text);
+    }
+
+    html[data-theme] .defect-journal-view .defect-register thead th {
+        border-right-color: var(--theme-border);
+        border-bottom-color: var(--theme-border-strong);
+        background: var(--theme-table-header);
+        color: var(--theme-text);
+    }
+
+    html[data-theme] .defect-journal-view .defect-register tbody td {
+        border-right-color: var(--theme-border);
+        border-bottom-color: var(--theme-border);
+        background: var(--theme-table-row);
+        color: var(--theme-text);
+    }
+
+    html[data-theme] .defect-journal-view .defect-register tbody tr:hover td {
+        background: var(--theme-table-hover);
+    }
+
+    html[data-theme] .defect-journal-view .defect-register tbody tr:focus-within td {
+        background: var(--theme-table-selected);
+    }
+
+    html[data-theme] .defect-journal-view .defect-sequence-number {
+        border-color: var(--theme-border-strong);
+        background: var(--theme-primary-soft);
+        color: var(--theme-primary-hover);
+    }
+
+    html[data-theme] .defect-journal-view .defect-cell-equipment {
+        color: var(--theme-text);
+    }
+
+    html[data-theme] .defect-journal-view .defect-record-time,
+    html[data-theme] .defect-journal-view .defect-record-number,
+    html[data-theme] .defect-journal-view .defect-cell-person {
+        color: var(--theme-text-muted);
+    }
+}
+
 @media (max-width: 720px) {
     .defect-da-status {
         max-width: 100% !important;
