@@ -184,6 +184,10 @@ class ImportMappingTemplate(models.Model):
         max_length=24,
         choices=(
             ("ORGANIZATION", "Организация и персонал"),
+            (
+                "ORGANIZATION_STRUCTURE",
+                "Организационная структура и энергообъекты",
+            ),
             ("EQUIPMENT", "Оборудование"),
             ("DISPATCHING", "Управление и ведение"),
             ("OTHER", "Другой справочник"),
@@ -258,6 +262,10 @@ class ImportMappingTemplate(models.Model):
 class ImportBatch(models.Model):
     class TargetRegistry(models.TextChoices):
         ORGANIZATION = "ORGANIZATION", "Организация и персонал"
+        ORGANIZATION_STRUCTURE = (
+            "ORGANIZATION_STRUCTURE",
+            "Организационная структура и энергообъекты",
+        )
         EQUIPMENT = "EQUIPMENT", "Оборудование"
         DISPATCHING = "DISPATCHING", "Управление и ведение"
         OTHER = "OTHER", "Другой справочник"

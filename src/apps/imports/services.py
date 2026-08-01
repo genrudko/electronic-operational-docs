@@ -79,6 +79,34 @@ HEADER_ALIASES = {
     "информационное ведение": "information_only",
     "ключ": "key",
     "примечание": "note",
+    "вид структуры": "structure_kind",
+    "тип структуры": "structure_kind",
+    "structure kind": "structure_kind",
+    "structure_kind": "structure_kind",
+    "родительский код": "parent_code",
+    "код родителя": "parent_code",
+    "код вышестоящего подразделения": "parent_code",
+    "parent code": "parent_code",
+    "parent_code": "parent_code",
+    "код подразделения": "division_code",
+    "division code": "division_code",
+    "division_code": "division_code",
+    "краткое наименование": "short_name",
+    "short name": "short_name",
+    "short_name": "short_name",
+    "тип энергообъекта": "site_type",
+    "вид энергообъекта": "site_type",
+    "site type": "site_type",
+    "site_type": "site_type",
+    "внешний объект": "is_external",
+    "внешний или смежный объект": "is_external",
+    "is external": "is_external",
+    "is_external": "is_external",
+    "активен": "is_active",
+    "действующий": "is_active",
+    "действующая запись": "is_active",
+    "is active": "is_active",
+    "is_active": "is_active",
 }
 
 
@@ -920,7 +948,106 @@ def parse_tabular_file(data: bytes, filename: str) -> ParsedTable:
     return parsed
 
 
+def _organization_structure_field_specs() -> tuple[ImportFieldSpec, ...]:
+    from apps.equipment.models import EnergySite
+
+    from .organization_structure import STRUCTURE_KIND_CHOICES
+
+    return (
+        ImportFieldSpec(
+            "structure_kind",
+            "Вид структуры",
+            required=True,
+            kind="choice",
+            max_length=20,
+            choices=STRUCTURE_KIND_CHOICES,
+            aliases=("вид структуры", "тип структуры", "structure kind", "structure_kind"),
+        ),
+        ImportFieldSpec(
+            "code",
+            "Код",
+            required=True,
+            kind="code",
+            max_length=64,
+            aliases=("код", "стабильный код", "code"),
+        ),
+        ImportFieldSpec(
+            "name",
+            "Наименование",
+            required=True,
+            max_length=500,
+            aliases=("наименование", "название", "name"),
+        ),
+        ImportFieldSpec(
+            "parent_code",
+            "Родительский код",
+            kind="code",
+            max_length=32,
+            aliases=(
+                "родительский код",
+                "код родителя",
+                "код вышестоящего подразделения",
+                "parent code",
+                "parent_code",
+            ),
+        ),
+        ImportFieldSpec(
+            "division_code",
+            "Код подразделения",
+            kind="code",
+            max_length=32,
+            aliases=("код подразделения", "division code", "division_code"),
+        ),
+        ImportFieldSpec(
+            "short_name",
+            "Краткое наименование",
+            max_length=255,
+            aliases=("краткое наименование", "short name", "short_name"),
+        ),
+        ImportFieldSpec(
+            "site_type",
+            "Тип энергообъекта",
+            kind="choice",
+            max_length=32,
+            choices=tuple(EnergySite.SiteType.choices),
+            aliases=(
+                "тип энергообъекта",
+                "вид энергообъекта",
+                "site type",
+                "site_type",
+            ),
+        ),
+        ImportFieldSpec(
+            "is_external",
+            "Внешний объект",
+            kind="boolean",
+            max_length=3,
+            aliases=(
+                "внешний объект",
+                "внешний или смежный объект",
+                "is external",
+                "is_external",
+            ),
+        ),
+        ImportFieldSpec(
+            "is_active",
+            "Действующая запись",
+            kind="boolean",
+            max_length=3,
+            aliases=(
+                "действующий",
+                "активен",
+                "действующая запись",
+                "is active",
+                "is_active",
+            ),
+        ),
+    )
+
+
 def registry_field_specs(target_registry: str) -> tuple[ImportFieldSpec, ...]:
+    if target_registry == ImportBatch.TargetRegistry.ORGANIZATION_STRUCTURE:
+        return _organization_structure_field_specs()
     try:
         return REGISTRY_FIELD_SPECS[target_registry]
     except KeyError as exc:
@@ -950,6 +1077,17 @@ def suggest_column_mapping(target_registry: str, normalized_name: str) -> str:
             "first_name": "first_name",
             "middle_name": "middle_name",
             "employment_start": "employment_start",
+        },
+        ImportBatch.TargetRegistry.ORGANIZATION_STRUCTURE: {
+            "structure_kind": "structure_kind",
+            "code": "code",
+            "name": "name",
+            "parent_code": "parent_code",
+            "division_code": "division_code",
+            "short_name": "short_name",
+            "site_type": "site_type",
+            "is_external": "is_external",
+            "is_active": "is_active",
         },
         ImportBatch.TargetRegistry.EQUIPMENT: {
             "code": "code",
@@ -1420,6 +1558,10 @@ def validate_mapped_values(
         end = result.get("effective_until", "")
         if start and end and end < start:
             issues.append("Дата окончания не может быть раньше даты начала.")
+    if target_registry == ImportBatch.TargetRegistry.ORGANIZATION_STRUCTURE:
+        from .organization_structure import validate_structure_values
+
+        issues.extend(validate_structure_values(result))
     return result, issues
 
 
@@ -1427,8 +1569,12 @@ def _lookup_token(value: str) -> str:
     return normalize_header(value)
 
 
-def _validation_context(batch: ImportBatch) -> dict[str, object]:
+def _validation_context(batch: ImportBatch) -> object:
     organization = batch.organization
+    if batch.target_registry == ImportBatch.TargetRegistry.ORGANIZATION_STRUCTURE:
+        from .organization_structure import build_registry_context
+
+        return build_registry_context(batch)
     if batch.target_registry == ImportBatch.TargetRegistry.ORGANIZATION:
         from apps.organizations.models import Division, Employee, Position
 
@@ -1588,6 +1734,13 @@ def _active_registry_conflicts(
 def _record_key(target_registry: str, values: dict[str, str]) -> str:
     if target_registry == ImportBatch.TargetRegistry.ORGANIZATION:
         return _lookup_token(values.get("personnel_number", ""))
+    if target_registry == ImportBatch.TargetRegistry.ORGANIZATION_STRUCTURE:
+        return "|".join(
+            (
+                values.get("structure_kind", ""),
+                _lookup_token(values.get("code", "")),
+            )
+        )
     if target_registry == ImportBatch.TargetRegistry.EQUIPMENT:
         return _lookup_token(values.get("code", ""))
     if target_registry == ImportBatch.TargetRegistry.DISPATCHING:
@@ -1620,20 +1773,23 @@ def _review_counts(batch: ImportBatch) -> dict[str, int | bool]:
     pending = rows.filter(decision=ImportRow.Decision.PENDING).count()
     accepted = rows.filter(decision=ImportRow.Decision.ACCEPTED).count()
     rejected = rows.filter(decision=ImportRow.Decision.REJECTED).count()
-    blocked = rows.filter(
-        decision=ImportRow.Decision.PENDING,
+    blocked_rows = rows.filter(
         review_status__in=(
             ImportRow.ReviewStatus.CONFLICT,
             ImportRow.ReviewStatus.INVALID,
         ),
-    ).count()
+    )
+    if batch.target_registry == ImportBatch.TargetRegistry.ORGANIZATION_STRUCTURE:
+        blocked = blocked_rows.exclude(decision=ImportRow.Decision.REJECTED).count()
+    else:
+        blocked = blocked_rows.filter(decision=ImportRow.Decision.PENDING).count()
     return {
         "total": rows.count(),
         "pending": pending,
         "accepted": accepted,
         "rejected": rejected,
         "blocked": blocked,
-        "ready": pending == 0 and accepted > 0,
+        "ready": pending == 0 and accepted > 0 and blocked == 0,
     }
 
 
@@ -1674,12 +1830,29 @@ def recalculate_batch_review(
             )
             for column in mapped_columns
         }
-        values, validation_issues = validate_mapped_values(batch.target_registry, raw_values)
-        validation_issues.extend(_reference_issues(batch, values, context))
+        mapped_values, validation_issues = validate_mapped_values(
+            batch.target_registry,
+            raw_values,
+        )
+        row.mapped_values = {key: mapped_values.get(key, "") for key in specs}
+        review_values = mapped_values
+        if (
+            batch.target_registry
+            == ImportBatch.TargetRegistry.ORGANIZATION_STRUCTURE
+            and not reset_decisions
+            and row.decision == ImportRow.Decision.ACCEPTED
+            and row.decision_values
+        ):
+            review_values, validation_issues = validate_mapped_values(
+                batch.target_registry,
+                row.decision_values,
+            )
+        validation_issues.extend(
+            _reference_issues(batch, review_values, context)
+        )
         if row.status == ImportRow.Status.REJECTED:
             validation_issues.append("Исходная строка была отклонена при разборе файла.")
-        conflicts = _active_registry_conflicts(batch, values, context)
-        row.mapped_values = {key: values.get(key, "") for key in specs}
+        conflicts = _active_registry_conflicts(batch, review_values, context)
         row.validation_issues = validation_issues
         row.registry_conflicts = conflicts
         row.review_status = _review_status(row, validation_issues, conflicts)
@@ -1689,19 +1862,30 @@ def recalculate_batch_review(
             row.decision_note = ""
             row.decided_by = None
             row.decided_at = None
-        key = _record_key(batch.target_registry, values)
+        key = _record_key(batch.target_registry, review_values)
         if key and not validation_issues:
             record_keys.setdefault(key, []).append(row)
 
-    for duplicate_rows in record_keys.values():
-        if len(duplicate_rows) < 2:
-            continue
-        numbers = ", ".join(str(row.row_number) for row in duplicate_rows)
-        for row in duplicate_rows:
-            message = f"Дублирующая запись внутри файла: строки {numbers}."
-            if message not in row.registry_conflicts:
-                row.registry_conflicts.append(message)
-            row.review_status = ImportRow.ReviewStatus.CONFLICT
+    if batch.target_registry == ImportBatch.TargetRegistry.ORGANIZATION_STRUCTURE:
+        from .organization_structure import apply_batch_review
+
+        apply_batch_review(batch=batch, rows=rows, context=context)
+        for row in rows:
+            row.review_status = _review_status(
+                row,
+                row.validation_issues,
+                row.registry_conflicts,
+            )
+    else:
+        for duplicate_rows in record_keys.values():
+            if len(duplicate_rows) < 2:
+                continue
+            numbers = ", ".join(str(row.row_number) for row in duplicate_rows)
+            for row in duplicate_rows:
+                message = f"Дублирующая запись внутри файла: строки {numbers}."
+                if message not in row.registry_conflicts:
+                    row.registry_conflicts.append(message)
+                row.review_status = ImportRow.ReviewStatus.CONFLICT
 
     ImportRow.objects.bulk_update(
         rows,
@@ -1881,6 +2065,7 @@ def decide_import_row(
     employee: Employee,
     action: str,
     note: str = "",
+    recalculate: bool = True,
 ) -> ImportRow:
     row = (
         ImportRow.objects.select_for_update()
@@ -1917,6 +2102,17 @@ def decide_import_row(
             )
         )
         _decision_event(row=row, employee=employee, action=action)
+        if (
+            recalculate
+            and row.batch.target_registry
+            == ImportBatch.TargetRegistry.ORGANIZATION_STRUCTURE
+        ):
+            recalculate_batch_review(
+                batch=row.batch,
+                employee=employee,
+                reset_decisions=False,
+            )
+            return ImportRow.objects.get(pk=row.pk)
         _save_review_counts(row.batch)
         return row
     else:
@@ -1935,6 +2131,17 @@ def decide_import_row(
         )
     )
     _decision_event(row=row, employee=employee, action=action)
+    if (
+        recalculate
+        and row.batch.target_registry
+        == ImportBatch.TargetRegistry.ORGANIZATION_STRUCTURE
+    ):
+        recalculate_batch_review(
+            batch=row.batch,
+            employee=employee,
+            reset_decisions=False,
+        )
+        return ImportRow.objects.get(pk=row.pk)
     _save_review_counts(row.batch)
     return row
 
@@ -1942,8 +2149,10 @@ def decide_import_row(
 def _edited_row_conflicts(
     row: ImportRow,
     values: dict[str, str],
-    context: dict[str, object],
+    context: object,
 ) -> list[str]:
+    if row.batch.target_registry == ImportBatch.TargetRegistry.ORGANIZATION_STRUCTURE:
+        return []
     conflicts = _active_registry_conflicts(row.batch, values, context)
     key = _record_key(row.batch.target_registry, values)
     if not key:
@@ -1956,6 +2165,39 @@ def _edited_row_conflicts(
             )
             break
     return conflicts
+
+
+def _validate_structure_correction(
+    *,
+    row: ImportRow,
+    canonical: dict[str, str],
+) -> None:
+    from .organization_structure import apply_batch_review, build_registry_context
+
+    review_rows = list(row.batch.rows.order_by("row_number"))
+    target: ImportRow | None = None
+    for item in review_rows:
+        if item.pk == row.pk:
+            item.decision = ImportRow.Decision.ACCEPTED
+            item.decision_values = canonical
+            target = item
+        _values, issues = validate_mapped_values(
+            item.batch.target_registry,
+            item.effective_values,
+        )
+        item.validation_issues = list(issues)
+        if item.status == ImportRow.Status.REJECTED:
+            item.validation_issues.append(
+                "Исходная строка была отклонена при разборе файла."
+            )
+        item.registry_conflicts = []
+    if target is None:
+        raise ValidationError("Строка не относится к текущей загрузке.")
+
+    context = build_registry_context(row.batch)
+    apply_batch_review(batch=row.batch, rows=review_rows, context=context)
+    if target.validation_issues or target.registry_conflicts:
+        raise ValidationError(target.validation_issues + target.registry_conflicts)
 
 
 @transaction.atomic
@@ -1982,6 +2224,8 @@ def save_row_correction(
     conflicts = _edited_row_conflicts(row, canonical, context)
     if issues or conflicts:
         raise ValidationError(issues + conflicts)
+    if row.batch.target_registry == ImportBatch.TargetRegistry.ORGANIZATION_STRUCTURE:
+        _validate_structure_correction(row=row, canonical=canonical)
 
     changed_fields = [
         key for key, value in canonical.items() if value != row.mapped_values.get(key, "")
@@ -2006,6 +2250,13 @@ def save_row_correction(
         action="EDIT_AND_ACCEPT",
         changed_fields=changed_fields,
     )
+    if row.batch.target_registry == ImportBatch.TargetRegistry.ORGANIZATION_STRUCTURE:
+        recalculate_batch_review(
+            batch=row.batch,
+            employee=employee,
+            reset_decisions=False,
+        )
+        return ImportRow.objects.get(pk=row.pk)
     _save_review_counts(row.batch)
     return row
 
@@ -2034,7 +2285,12 @@ def bulk_decide_import_rows(
     result = {"processed": 0, "skipped": 0}
     for row in rows:
         try:
-            decide_import_row(row=row, employee=employee, action=action)
+            decide_import_row(
+                row=row,
+                employee=employee,
+                action=action,
+                recalculate=False,
+            )
         except ValidationError:
             result["skipped"] += 1
         else:
@@ -2050,7 +2306,14 @@ def bulk_decide_import_rows(
             "publication_performed": False,
         },
     )
-    _save_review_counts(batch)
+    if batch.target_registry == ImportBatch.TargetRegistry.ORGANIZATION_STRUCTURE:
+        recalculate_batch_review(
+            batch=batch,
+            employee=employee,
+            reset_decisions=False,
+        )
+    else:
+        _save_review_counts(batch)
     return result
 
 
@@ -2247,7 +2510,6 @@ def _resolve_dispatch_subject(batch: ImportBatch, value: str):
 
 def _resolve_dispatch_level(batch: ImportBatch, value: str):
     from apps.dispatching.models import DispatchLevel
-
     token = normalize_cell(value)
     queryset = DispatchLevel.objects.filter(
         organization=batch.organization,
@@ -2279,6 +2541,10 @@ def _publication_effect(
     row: ImportRow,
     values: dict[str, str],
 ) -> dict[str, object]:
+    if batch.target_registry == ImportBatch.TargetRegistry.ORGANIZATION_STRUCTURE:
+        from .organization_structure import publication_effect
+
+        return publication_effect(row)
     if batch.target_registry == ImportBatch.TargetRegistry.ORGANIZATION:
         division = _resolve_division(batch, values["division"])
         position = _resolve_position(batch, values["position"])
@@ -2360,6 +2626,24 @@ def _accepted_rows_and_effects(
     accepted = tuple(row for row in rows if row.decision == ImportRow.Decision.ACCEPTED)
     if not accepted:
         raise ValidationError("Нет ни одной предварительно принятой строки.")
+
+    if batch.target_registry == ImportBatch.TargetRegistry.ORGANIZATION_STRUCTURE:
+        from .organization_structure import publication_rows_and_effects
+
+        for row in accepted:
+            _values, issues = validate_mapped_values(
+                batch.target_registry,
+                row.effective_values,
+            )
+            if issues:
+                raise ValidationError(
+                    f"Строка {row.row_number} больше не готова к публикации: "
+                    + "; ".join(issues)
+                )
+        return publication_rows_and_effects(
+            batch=batch,
+            accepted_rows=accepted,
+        )
 
     context = _validation_context(batch)
     effects: list[dict[str, object]] = []
@@ -2620,6 +2904,10 @@ def _publish_row(
     actor: Employee,
 ) -> tuple[str, str, dict[str, object]]:
     values = row.effective_values
+    if batch.target_registry == ImportBatch.TargetRegistry.ORGANIZATION_STRUCTURE:
+        from .organization_structure import publish_row
+
+        return publish_row(batch=batch, values=values)
     if batch.target_registry == ImportBatch.TargetRegistry.ORGANIZATION:
         return _create_employee_from_import(batch=batch, values=values)
     if batch.target_registry == ImportBatch.TargetRegistry.EQUIPMENT:

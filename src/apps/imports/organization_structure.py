@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
 from django.db.models import Model
@@ -131,7 +132,7 @@ def validate_structure_values(values: dict[str, str]) -> list[str]:
             issues.append("Краткое наименование применяется только к энергообъекту.")
         if site_type:
             issues.append("Тип энергообъекта применяется только к энергообъекту.")
-        if is_external and _yes(is_external, default=False):
+        if _token(is_external) == "да":
             issues.append("Признак внешнего объекта применяется только к энергообъекту.")
     elif kind == WORKPLACE:
         if parent_code:
@@ -140,7 +141,7 @@ def validate_structure_values(values: dict[str, str]) -> list[str]:
             issues.append("Краткое наименование применяется только к энергообъекту.")
         if site_type:
             issues.append("Тип энергообъекта применяется только к энергообъекту.")
-        if is_external and _yes(is_external, default=False):
+        if _token(is_external) == "да":
             issues.append("Признак внешнего объекта применяется только к энергообъекту.")
     else:
         if parent_code:
