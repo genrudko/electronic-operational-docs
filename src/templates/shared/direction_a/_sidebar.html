@@ -61,12 +61,21 @@
             <span>Управление и ведение</span>
         </a>
 
-        <section class="da-nav-group">
+        <section class="da-nav-group is-open">
             <div class="da-nav-group-title">
                 <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-directory"></use></svg>
                 <span>Справочники и данные</span>
             </div>
-            <a class="da-nav-child" href="{% url 'organizations:directory' %}">Организация и персонал</a>
+            <a
+                class="da-nav-child{% if request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'directory' %} is-active{% endif %}"
+                href="{% url 'organizations:directory' %}"
+                {% if request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'directory' %}aria-current="page"{% endif %}
+            >Организация и персонал</a>
+            <a
+                class="da-nav-child{% if request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'authority_registry' or request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'employee_detail' or request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'authority_evaluation_detail' %} is-active{% endif %}"
+                href="{% url 'organizations:authority_registry' %}"
+                {% if request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'authority_registry' or request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'employee_detail' or request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'authority_evaluation_detail' %}aria-current="page"{% endif %}
+            >Оперативные права персонала</a>
             <a class="da-nav-child" href="{% url 'workplace_docs:registry' %}">Перечни документации</a>
             <a class="da-nav-child" href="{% url 'imports:list' %}">Импорт данных</a>
         </section>
