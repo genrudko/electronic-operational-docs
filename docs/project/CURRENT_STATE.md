@@ -11,7 +11,7 @@ accepted main baseline: main / 2db8947062434861d2336eb474cd762e11aabb44
 coordination tip at work-item start: 17663cf67d12c02d24177e554d6eb7d364e405e4
 active work item: OPJ-LIFECYCLE-001
 active issue: #46
-active PR: PENDING
+active PR: #47
 active branch: feature/opj-lifecycle-001
 runtime impact: DEVELOPMENT / LIVE e8b053f5fda51f23e2506a1a45a405f5c2ee3b6c
 preview: UNTOUCHED
