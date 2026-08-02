@@ -3,10 +3,13 @@
 
 {% block title %}{{ batch.uploaded_name }} · Импорт персонала · ЭОД{% endblock %}
 {% block main_class %}authority-main{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'organizations/personnel_management.css' %}?v=pa001m1">{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'organizations/personnel_management.css' %}?v=pa001m1">
+<script src="{% static 'organizations/personnel_import_selection.js' %}?v=pa001m2" defer></script>
+{% endblock %}
 
 {% block content %}
-<section class="personnel-management-page">
+<section class="personnel-management-page" data-personnel-import-preview>
     <header class="da-page-header da-page-header-compact">
         <div><p class="da-source-line"><a href="{% url 'organizations:personnel_import_upload' %}">Импорт персонала</a> / Пакет</p><h1>{{ batch.uploaded_name }}</h1><p>{{ batch.get_import_kind_display }} · {{ batch.source_reference }}</p></div>
         <div class="da-actions"><a class="da-button secondary" href="{% url 'organizations:personnel_import_upload' %}">К пакетам</a><a class="da-button secondary" href="{% url 'organizations:directory' %}">К справочнику</a></div>
@@ -24,13 +27,25 @@
 
         <form method="post" action="{% url 'organizations:personnel_import_publish' batch.public_id %}">
             {% csrf_token %}
+            {% if batch.status == 'PREVIEW' %}
+            <div class="personnel-import-selection-tools">
+                <label><input type="checkbox" data-import-select-all> Выбрать все корректные строки</label>
+                {% if batch.import_kind == 'EXTERNAL_DIRECTORY' %}<button class="da-button secondary" type="button" data-import-recommended>Выбрать оперативный, диспетчерский персонал и руководство</button>{% endif %}
+            </div>
+            {% regroup preview.rows by employee.division as division_groups %}
+            <div class="personnel-import-groups" aria-label="Выбор подразделений и объектов">
+                {% for group in division_groups %}
+                <label><input type="checkbox" data-import-group="{{ group.grouper }}"> <strong>{{ group.grouper|default:'Без подразделения' }}</strong><span>{{ group.list|length }}</span></label>
+                {% endfor %}
+            </div>
+            {% endif %}
             <div class="personnel-import-table-wrap">
                 <table class="personnel-import-table">
                     <thead><tr><th>Включить</th><th>Строка</th><th>Действие</th><th>Сотрудник</th><th>Подразделение / объект</th><th>Должность</th><th>Контакты</th><th>Квалификация / роль</th><th>Права / полномочия</th><th>Проверка</th></tr></thead>
                     <tbody>
                         {% for row in preview.rows %}
                         <tr{% if row.errors %} class="has-error"{% endif %}>
-                            <td>{% if batch.status == 'PREVIEW' and not row.errors %}<input type="checkbox" name="selected_rows" value="{{ row.row_number }}"{% if row.selected %} checked{% endif %}>{% else %}—{% endif %}</td>
+                            <td>{% if batch.status == 'PREVIEW' and not row.errors %}<input type="checkbox" name="selected_rows" value="{{ row.row_number }}" data-import-row="{{ row.employee.division }}" data-import-search="{{ row.employee.division }} {{ row.employee.position }} {{ row.external.relation_kind }} {{ row.external.operational_scope }}"{% if row.selected %} checked{% endif %}>{% else %}—{% endif %}</td>
                             <td>{{ row.row_number }}</td>
                             <td><span class="row-action{% if row.action == 'UPDATE' %} update{% endif %}">{% if row.action == 'UPDATE' %}Обновление{% else %}Создание{% endif %}</span></td>
                             <td><strong>{{ row.employee.last_name }} {{ row.employee.first_name }} {{ row.employee.middle_name }}</strong><small>{{ row.employee.personnel_number }}</small></td>
