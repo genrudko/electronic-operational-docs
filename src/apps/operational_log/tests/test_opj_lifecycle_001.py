@@ -10,7 +10,6 @@ from django.urls import reverse
 from apps.organizations.authority_models import OperationalAuthorityGrant
 from apps.organizations.models import Employee
 
-from ..models import OperationalLogEntry
 from ..opj_lifecycle import (
     ACTION_CANCEL,
     ACTION_COMMUNICATION,
