@@ -76,6 +76,10 @@
                 href="{% url 'organizations:authority_registry' %}"
                 {% if request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'authority_registry' or request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'employee_detail' or request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'authority_evaluation_detail' %}aria-current="page"{% endif %}
             >Оперативные права персонала</a>
+            <a
+                class="da-nav-child{% if request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'personnel_import_upload' or request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'personnel_import_detail' or request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'employee_create' or request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'employee_edit' %} is-active{% endif %}"
+                href="{% url 'organizations:personnel_import_upload' %}"
+            >Ведение и импорт персонала</a>
             <a class="da-nav-child" href="{% url 'workplace_docs:registry' %}">Перечни документации</a>
             <a class="da-nav-child" href="{% url 'imports:list' %}">Импорт данных</a>
         </section>
