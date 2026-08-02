@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-from datetime import timedelta
 from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.test import Client, SimpleTestCase
 from django.urls import reverse
-from django.utils import timezone
 
 from apps.organizations.authority_models import OperationalAuthorityGrant
-from apps.organizations.models import Employee, OperationalRightDefinition
+from apps.organizations.models import Employee
 
 from ..models import OperationalLogEntry
 from ..opj_lifecycle import (
@@ -39,28 +37,16 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
     def setUp(self) -> None:
         self.client = Client()
         self.user = get_user_model().objects.get(username="operator.demo")
-        right = OperationalRightDefinition.objects.get(
-            code="operational_journal_actions"
-        )
-        valid_from = timezone.now() - timedelta(days=1)
-        for action_code in ACTION_CODES:
-            OperationalAuthorityGrant.objects.create(
-                organization=self.organization,
+        self.assertEqual(
+            OperationalAuthorityGrant.objects.filter(
                 employee=self.actor,
-                right_definition=right,
-                action_code=action_code,
+                action_code__in=ACTION_CODES,
                 scope_kind="WORKPLACE",
                 scope_reference=str(self.journal.workplace_id),
-                scope_label=self.journal.workplace.name,
-                granting_organization=self.organization,
-                basis_status="CONFIRMED",
-                basis_reference=f"TEST / OPJ-LIFECYCLE-001 / {action_code}",
-                source_ids=["TEST", "OPJ-LIFECYCLE-001"],
-                valid_from=valid_from,
                 is_active=True,
-                allow_substitution=False,
-                created_by=self.actor,
-            )
+            ).count(),
+            len(ACTION_CODES),
+        )
 
     def test_registration_correction_cancellation_and_communication_are_append_only(
         self,
