@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import authority_views, views
 
 app_name = "organizations"
 
@@ -11,17 +11,17 @@ urlpatterns = [
     path("organization/", views.directory, name="directory"),
     path(
         "organization/authorities/",
-        views.authority_registry,
+        authority_views.authority_registry,
         name="authority_registry",
     ),
     path(
         "organization/authority-evaluations/<uuid:public_id>/",
-        views.authority_evaluation_detail,
+        authority_views.authority_evaluation_detail,
         name="authority_evaluation_detail",
     ),
     path(
         "organization/employees/<uuid:public_id>/",
-        views.employee_detail,
+        authority_views.employee_detail,
         name="employee_detail",
     ),
 ]
