@@ -12,9 +12,13 @@ class OrganizationsConfig(AppConfig):
             personnel_management_models,
             signals,
         )
-        from .personnel_management_models import PersonnelChangeRecord
+        from .personnel_management_models import (
+            PersonnelChangeRecord,
+            PersonnelImportBatch,
+        )
 
-        # Empty before/after snapshots are valid at the creation and batch
-        # boundaries. The migration records the same validation state.
+        # Empty boundary snapshots and an empty list of validation errors are
+        # meaningful values. Migrations record the same validation state.
         PersonnelChangeRecord._meta.get_field("before_snapshot").blank = True
         PersonnelChangeRecord._meta.get_field("after_snapshot").blank = True
+        PersonnelImportBatch._meta.get_field("validation_errors").blank = True
