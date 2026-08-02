@@ -5,7 +5,7 @@
 {% block body_class %}direction-a-body da-active opj-direction-a{% endblock %}
 {% block main_class %}opj-main journal-main journal-main-width-{{ ui_preferences.journal_width|lower }}{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'operational_log/opj_registered_actions.css' %}?v=opjlifecycle00201">
+<link rel="stylesheet" href="{% static 'operational_log/opj_registered_actions.css' %}?v=opjlifecycle00202">
 {% endblock %}
 
 {% block content %}
@@ -168,16 +168,17 @@
                         <small>№ {{ row.entry.sequence_number }}</small>
                     </td>
                     <td class="approved-journal-message">
-                        {% if lifecycle.is_child %}
-                            <div class="opj-row-state-line screen-only">
+                        <div class="opj-row-state-line screen-only">
+                            {% if lifecycle.is_child %}
                                 <span class="opj-entry-kind-chip">{{ lifecycle.child_label }}</span>
-                            </div>
-                        {% else %}
-                            <div class="opj-row-state-line screen-only">
+                            {% elif row.entry.type_code == "opj-communication" %}
+                                <span class="opj-entry-kind-chip">{{ row.entry.type_title }}</span>
+                                <span class="opj-entry-state-chip is-{{ lifecycle.state.status|lower }}">{{ lifecycle.state.status_label }}</span>
+                            {% else %}
                                 <span class="opj-entry-state-chip is-{{ lifecycle.state.status|lower }}">{{ lifecycle.state.status_label }}</span>
                                 {% if lifecycle.state.correction_count %}<span>{{ lifecycle.state.correction_count }} исправл.</span>{% endif %}
-                            </div>
-                        {% endif %}
+                            {% endif %}
+                        </div>
 
                         <p>{{ row.entry.content }}</p>
 
@@ -214,15 +215,6 @@
                         </details>
                         {% endif %}
 
-                        {% if not lifecycle.is_child and lifecycle.communications %}
-                        <div class="opj-communication-line screen-only">
-                            <span>Связанные результаты переговоров:</span>
-                            {% for communication in lifecycle.communications %}
-                                <a href="#entry-{{ communication.sequence_number }}">№ {{ communication.sequence_number }}</a>{% if not forloop.last %}<span>·</span>{% endif %}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-
                         {% if row.entry.equipment_links.all or row.entry.document_links.all %}
                         <div class="approved-journal-links">
                             {% for link in row.entry.equipment_links.all %}<span>Оборудование: {{ link.dispatcher_name_snapshot }}</span>{% endfor %}
@@ -235,10 +227,10 @@
 
                         {% if not lifecycle.is_child %}
                         <details class="opj-row-actions screen-only">
-                            <summary>Действия с записью</summary>
+                            <summary>Исправить или отменить</summary>
                             <div class="opj-row-actions-body">
+                                {% if lifecycle.state.status != "CANCELLED" %}
                                 <div class="opj-row-actions-grid">
-                                    {% if lifecycle.state.status != "CANCELLED" %}
                                     <form method="post" action="{% url 'operational_log:entry_correct' journal.pk row.entry.sequence_number %}" class="opj-row-action-card" onsubmit="return window.confirm('Добавить исправление новой записью? Первоначальный текст останется неизменным.')">
                                         {% csrf_token %}
                                         <h4>Исправить запись</h4>
@@ -262,44 +254,10 @@
                                         </label>
                                         <button class="da-button is-secondary is-compact" type="submit">Добавить отмену</button>
                                     </form>
-                                    {% endif %}
-
-                                    <form method="post" action="{% url 'operational_log:entry_communication' journal.pk row.entry.sequence_number %}" class="opj-row-action-card">
-                                        {% csrf_token %}
-                                        <h4>Результат переговоров</h4>
-                                        <label>
-                                            <span>Что зафиксировать</span>
-                                            <select name="outcome_kind" required>
-                                                <option value="RECEIVED_COMMAND">Получена команда</option>
-                                                <option value="ISSUED_COMMAND">Выдана команда</option>
-                                                <option value="RECEIVED_PERMISSION">Получено разрешение</option>
-                                                <option value="SENT_MESSAGE">Передано сообщение</option>
-                                                <option value="RECEIVED_CONFIRMATION">Получено подтверждение</option>
-                                                <option value="REPORTED_EXECUTION">Сообщено об исполнении</option>
-                                                <option value="RECEIVED_REFUSAL">Получен отказ</option>
-                                            </select>
-                                        </label>
-                                        <label>
-                                            <span>Участник / адресат</span>
-                                            <input type="text" name="counterpart" maxlength="500" required>
-                                        </label>
-                                        <label>
-                                            <span>Канал, если требуется</span>
-                                            <select name="channel">
-                                                <option value="">Не указывать</option>
-                                                <option value="PHONE">Телефон</option>
-                                                <option value="RADIO">Радиосвязь</option>
-                                                <option value="DISPATCH">Диспетчерский канал</option>
-                                                <option value="OTHER">Другой канал</option>
-                                            </select>
-                                        </label>
-                                        <label>
-                                            <span>Оперативно значимое содержание</span>
-                                            <textarea name="content" maxlength="20000" required></textarea>
-                                        </label>
-                                        <button class="da-button is-secondary is-compact" type="submit">Добавить в журнал</button>
-                                    </form>
                                 </div>
+                                {% else %}
+                                    <p class="opj-row-source-line">Запись отменена. Новое исправление или повторная отмена недоступны.</p>
+                                {% endif %}
                             </div>
                         </details>
                         {% endif %}
