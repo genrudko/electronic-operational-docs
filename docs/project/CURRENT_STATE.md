@@ -7,16 +7,23 @@
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted application baseline: main / 2db8947062434861d2336eb474cd762e11aabb44
-canonical documentation tip: main / b77b7911f41ec6c3d1e7e5019558362a058ce237
-coordination tip at work-item start: 17663cf67d12c02d24177e554d6eb7d364e405e4
-active work item: OPJ-LIFECYCLE-001 / REWORK IN PROGRESS
+accepted main baseline: main / 2db8947062434861d2336eb474cd762e11aabb44
+active work item: OPJ-LIFECYCLE-001
 active issue: #46
 active PR: #47 / OPEN / DRAFT / NOT MERGED
 active branch: feature/opj-lifecycle-001
-user acceptance: ABSENT / FIRST CANDIDATE REJECTED
-runtime impact: DEVELOPMENT CANDIDATE STALE
+runtime impact: DEVELOPMENT
 preview: UNTOUCHED
+```
+
+Дополнительные factual markers:
+
+```text
+canonical documentation tip: main / b77b7911f41ec6c3d1e7e5019558362a058ce237
+coordination tip at work-item start: 17663cf67d12c02d24177e554d6eb7d364e405e4
+active implementation state: REWORK IN PROGRESS
+user acceptance: ABSENT / FIRST CANDIDATE REJECTED
+current development candidate: STALE UNTIL NEW TRUSTED DELIVERY
 ```
 
 ## Active OPJ-LIFECYCLE-001
