@@ -8,10 +8,7 @@
     white-space: nowrap;
 }
 
-.opj-draft-is-registered {
-    background: var(--theme-success-soft);
-}
-
+.opj-draft-is-registered,
 .opj-registered-draft-row {
     background: var(--theme-success-soft);
 }
@@ -74,8 +71,7 @@
 }
 
 .opj-row-state-line,
-.opj-row-source-line,
-.opj-communication-line {
+.opj-row-source-line {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -83,14 +79,12 @@
     margin-top: 0.55rem;
 }
 
-.opj-row-source-line,
-.opj-communication-line {
+.opj-row-source-line {
     color: var(--theme-text-muted);
     font-size: 0.82rem;
 }
 
-.opj-row-source-line a,
-.opj-communication-line a {
+.opj-row-source-line a {
     font-weight: 650;
 }
 
@@ -159,7 +153,7 @@
 
 .opj-row-actions-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.7rem;
 }
 
@@ -186,27 +180,16 @@
     font-size: 0.78rem;
 }
 
-.opj-row-action-card input,
-.opj-row-action-card select,
 .opj-row-action-card textarea {
     width: 100%;
+    min-height: 76px;
     box-sizing: border-box;
+    padding: 0.5rem;
     border: 1px solid var(--theme-border-strong);
     border-radius: 6px;
     background: var(--theme-control);
     color: var(--theme-text);
     font: inherit;
-}
-
-.opj-row-action-card input,
-.opj-row-action-card select {
-    min-height: 36px;
-    padding: 0.4rem 0.5rem;
-}
-
-.opj-row-action-card textarea {
-    min-height: 76px;
-    padding: 0.5rem;
     resize: vertical;
 }
 
@@ -261,7 +244,6 @@
     .opj-row-actions,
     .opj-row-state-line,
     .opj-row-source-line,
-    .opj-communication-line,
     .opj-effective-version,
     .opj-original-history,
     .opj-row-integrity-warning {
