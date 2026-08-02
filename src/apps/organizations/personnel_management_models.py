@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import json
 import uuid
 from typing import Any
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db.models import F, Q
 from django.utils import timezone
@@ -17,7 +19,10 @@ class OrganizationRelationKind(models.TextChoices):
     DISPATCH_CENTER = "DISPATCH_CENTER", "Диспетчерский центр"
     RELATED_GRID = "RELATED_GRID", "Смежная сетевая организация"
     RELATED_SITE = "RELATED_SITE", "Смежный энергообъект"
-    COMMERCIAL_DISPATCH = "COMMERCIAL_DISPATCH", "Коммерческий диспетчерский центр"
+    COMMERCIAL_DISPATCH = (
+        "COMMERCIAL_DISPATCH",
+        "Коммерческий диспетчерский центр",
+    )
     CONTRACTOR = "CONTRACTOR", "Подрядная организация"
     OTHER = "OTHER", "Иная внешняя организация"
 
@@ -35,7 +40,10 @@ class OrganizationOperationalProfile(models.Model):
         choices=OrganizationRelationKind.choices,
         default=OrganizationRelationKind.OWN,
     )
-    directory_scope = models.TextField("Область включения в справочник", blank=True)
+    directory_scope = models.TextField(
+        "Область включения в справочник",
+        blank=True,
+    )
     is_active = models.BooleanField("Действующий профиль", default=True)
     created_at = models.DateTimeField("Создан", auto_now_add=True)
     updated_at = models.DateTimeField("Изменён", auto_now=True)
@@ -60,11 +68,26 @@ class EmployeeContactProfile(models.Model):
         related_name="contact_profile",
         verbose_name="Сотрудник",
     )
-    primary_phone = models.CharField("Основной телефон", max_length=100, blank=True)
-    operational_phone = models.CharField("Оперативный телефон", max_length=100, blank=True)
+    primary_phone = models.CharField(
+        "Основной телефон",
+        max_length=100,
+        blank=True,
+    )
+    operational_phone = models.CharField(
+        "Оперативный телефон",
+        max_length=100,
+        blank=True,
+    )
     email = models.EmailField("Электронная почта", blank=True)
-    availability_schedule = models.CharField("Часы работы", max_length=255, blank=True)
-    is_round_the_clock = models.BooleanField("Круглосуточный контакт", default=False)
+    availability_schedule = models.CharField(
+        "Часы работы",
+        max_length=255,
+        blank=True,
+    )
+    is_round_the_clock = models.BooleanField(
+        "Круглосуточный контакт",
+        default=False,
+    )
     note = models.TextField("Примечание", blank=True)
     created_at = models.DateTimeField("Создан", auto_now_add=True)
     updated_at = models.DateTimeField("Изменён", auto_now=True)
@@ -80,7 +103,9 @@ class EmployeeContactProfile(models.Model):
         self.primary_phone = " ".join(self.primary_phone.split())
         self.operational_phone = " ".join(self.operational_phone.split())
         self.email = self.email.strip().lower()
-        self.availability_schedule = " ".join(self.availability_schedule.split())
+        self.availability_schedule = " ".join(
+            self.availability_schedule.split()
+        )
         self.note = self.note.strip()
         self.full_clean()
         super().save(*args, **kwargs)
@@ -114,22 +139,49 @@ class EmployeeSpecialQualification(models.Model):
     level = models.CharField("Уровень или категория", max_length=64)
     scope_text = models.TextField("Область действия", blank=True)
     valid_from = models.DateField("Действует с")
-    valid_until = models.DateField("Действует по", null=True, blank=True)
-    basis_reference = models.CharField("Документ-основание", max_length=1000)
-    source_file_sha256 = models.CharField("SHA-256 исходного файла", max_length=64, blank=True)
-    source_row_number = models.PositiveIntegerField("Строка исходного файла", null=True, blank=True)
-    is_active = models.BooleanField("Действующая квалификация", default=True)
+    valid_until = models.DateField(
+        "Действует по",
+        null=True,
+        blank=True,
+    )
+    basis_reference = models.CharField(
+        "Документ-основание",
+        max_length=1000,
+    )
+    source_file_sha256 = models.CharField(
+        "SHA-256 исходного файла",
+        max_length=64,
+        blank=True,
+    )
+    source_row_number = models.PositiveIntegerField(
+        "Строка исходного файла",
+        null=True,
+        blank=True,
+    )
+    is_active = models.BooleanField(
+        "Действующая квалификация",
+        default=True,
+    )
     created_at = models.DateTimeField("Создана", auto_now_add=True)
 
     class Meta:
         ordering = ("employee__last_name", "kind", "-valid_from", "-id")
         constraints = [
             models.CheckConstraint(
-                condition=Q(valid_until__isnull=True) | Q(valid_until__gte=F("valid_from")),
+                condition=(
+                    Q(valid_until__isnull=True)
+                    | Q(valid_until__gte=F("valid_from"))
+                ),
                 name="employee_special_qualification_valid_window",
             ),
             models.UniqueConstraint(
-                fields=("employee", "kind", "level", "valid_from", "basis_reference"),
+                fields=(
+                    "employee",
+                    "kind",
+                    "level",
+                    "valid_from",
+                    "basis_reference",
+                ),
                 name="uniq_employee_special_qualification_start_basis",
             ),
         ]
@@ -137,14 +189,9 @@ class EmployeeSpecialQualification(models.Model):
         verbose_name_plural = "специальные квалификации сотрудников"
 
     def __str__(self) -> str:
-        return f"{self.employee}: {self.get_kind_display()} — {self.level}"
-
-    def clean(self) -> None:
-        super().clean()
-        if self.valid_until and self.valid_until < self.valid_from:
-            raise ValidationError({"valid_until": "Окончание периода раньше начала."})
-        if self.source_file_sha256 and len(self.source_file_sha256.strip()) != 64:
-            raise ValidationError({"source_file_sha256": "Требуется SHA-256 или пустое значение."})
+        return (
+            f"{self.employee}: {self.get_kind_display()} — {self.level}"
+        )
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         self.level = " ".join(self.level.split())
@@ -154,13 +201,37 @@ class EmployeeSpecialQualification(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
+    def clean(self) -> None:
+        super().clean()
+        if self.valid_until and self.valid_until < self.valid_from:
+            raise ValidationError(
+                {"valid_until": "Окончание периода раньше начала."}
+            )
+        if (
+            self.source_file_sha256
+            and len(self.source_file_sha256.strip()) != 64
+        ):
+            raise ValidationError(
+                {
+                    "source_file_sha256": (
+                        "Требуется SHA-256 или пустое значение."
+                    )
+                }
+            )
+
 
 class ExternalOperationalRelationKind(models.TextChoices):
     DISPATCH = "DISPATCH", "Диспетчерский персонал"
     OPERATIONAL = "OPERATIONAL", "Оперативный персонал"
     MANAGEMENT = "MANAGEMENT", "Руководство"
-    CONTROL_CENTER = "CONTROL_CENTER", "Персонал центра управления сетями"
-    COMMERCIAL_DISPATCH = "COMMERCIAL_DISPATCH", "Коммерческий диспетчер"
+    CONTROL_CENTER = (
+        "CONTROL_CENTER",
+        "Персонал центра управления сетями",
+    )
+    COMMERCIAL_DISPATCH = (
+        "COMMERCIAL_DISPATCH",
+        "Коммерческий диспетчер",
+    )
     RELATED_SITE = "RELATED_SITE", "Персонал смежного энергообъекта"
 
 
@@ -188,11 +259,24 @@ class ExternalOperationalContact(models.Model):
         max_length=32,
         choices=ExternalOperationalRelationKind.choices,
     )
-    operational_scope = models.TextField("Область взаимодействия", blank=True)
-    authority_summary = models.TextField("Полномочия во взаимодействии", blank=True)
+    operational_scope = models.TextField(
+        "Область взаимодействия",
+        blank=True,
+    )
+    authority_summary = models.TextField(
+        "Полномочия во взаимодействии",
+        blank=True,
+    )
     valid_from = models.DateField("Действует с")
-    valid_until = models.DateField("Действует по", null=True, blank=True)
-    basis_reference = models.CharField("Документ-основание", max_length=1000)
+    valid_until = models.DateField(
+        "Действует по",
+        null=True,
+        blank=True,
+    )
+    basis_reference = models.CharField(
+        "Документ-основание",
+        max_length=1000,
+    )
     is_active = models.BooleanField("Действующая запись", default=True)
     created_at = models.DateTimeField("Создана", auto_now_add=True)
     updated_at = models.DateTimeField("Изменена", auto_now=True)
@@ -205,11 +289,19 @@ class ExternalOperationalContact(models.Model):
         )
         constraints = [
             models.CheckConstraint(
-                condition=Q(valid_until__isnull=True) | Q(valid_until__gte=F("valid_from")),
+                condition=(
+                    Q(valid_until__isnull=True)
+                    | Q(valid_until__gte=F("valid_from"))
+                ),
                 name="external_operational_contact_valid_window",
             ),
             models.UniqueConstraint(
-                fields=("employee", "host_organization", "relation_kind", "valid_from"),
+                fields=(
+                    "employee",
+                    "host_organization",
+                    "relation_kind",
+                    "valid_from",
+                ),
                 name="uniq_external_operational_contact_start",
             ),
         ]
@@ -217,14 +309,10 @@ class ExternalOperationalContact(models.Model):
         verbose_name_plural = "внешние оперативные контакты"
 
     def __str__(self) -> str:
-        return f"{self.employee} → {self.host_organization}: {self.get_relation_kind_display()}"
-
-    def clean(self) -> None:
-        super().clean()
-        if self.valid_until and self.valid_until < self.valid_from:
-            raise ValidationError({"valid_until": "Окончание периода раньше начала."})
-        if self.employee_id and self.employee.organization_id == self.host_organization_id:
-            raise ValidationError({"host_organization": "Для штатного сотрудника используется матрица прав."})
+        return (
+            f"{self.employee} → {self.host_organization}: "
+            f"{self.get_relation_kind_display()}"
+        )
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         self.operational_scope = " ".join(self.operational_scope.split())
@@ -233,10 +321,34 @@ class ExternalOperationalContact(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
+    def clean(self) -> None:
+        super().clean()
+        if self.valid_until and self.valid_until < self.valid_from:
+            raise ValidationError(
+                {"valid_until": "Окончание периода раньше начала."}
+            )
+        if (
+            self.employee_id
+            and self.employee.organization_id == self.host_organization_id
+        ):
+            raise ValidationError(
+                {
+                    "host_organization": (
+                        "Для штатного сотрудника используется матрица прав."
+                    )
+                }
+            )
+
 
 class PersonnelImportKind(models.TextChoices):
-    INTERNAL_MATRIX = "INTERNAL_MATRIX", "Матрица штатного персонала"
-    EXTERNAL_DIRECTORY = "EXTERNAL_DIRECTORY", "Внешний оперативный справочник"
+    INTERNAL_MATRIX = (
+        "INTERNAL_MATRIX",
+        "Матрица штатного персонала",
+    )
+    EXTERNAL_DIRECTORY = (
+        "EXTERNAL_DIRECTORY",
+        "Внешний оперативный справочник",
+    )
 
 
 class PersonnelImportStatus(models.TextChoices):
@@ -278,12 +390,25 @@ class PersonnelImportBatch(models.Model):
         default=PersonnelImportStatus.PREVIEW,
     )
     uploaded_name = models.CharField("Имя файла", max_length=255)
-    file_sha256 = models.CharField("SHA-256 файла", max_length=64, unique=True)
+    file_sha256 = models.CharField(
+        "SHA-256 файла",
+        max_length=64,
+        unique=True,
+    )
     sheet_name = models.CharField("Лист", max_length=255, blank=True)
-    source_reference = models.CharField("Документ-основание", max_length=1000)
+    source_reference = models.CharField(
+        "Документ-основание",
+        max_length=1000,
+    )
     effective_from = models.DateField("Действует с")
-    preview = models.JSONField("Результат предварительного просмотра", default=dict)
-    validation_errors = models.JSONField("Ошибки проверки", default=list)
+    preview = models.JSONField(
+        "Результат предварительного просмотра",
+        default=dict,
+    )
+    validation_errors = models.JSONField(
+        "Ошибки проверки",
+        default=list,
+    )
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
@@ -299,7 +424,11 @@ class PersonnelImportBatch(models.Model):
         verbose_name="Опубликовал",
     )
     created_at = models.DateTimeField("Загружен", auto_now_add=True)
-    published_at = models.DateTimeField("Опубликован", null=True, blank=True)
+    published_at = models.DateTimeField(
+        "Опубликован",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         ordering = ("-created_at",)
@@ -319,15 +448,28 @@ class PersonnelImportBatch(models.Model):
     def clean(self) -> None:
         super().clean()
         if len(self.file_sha256) != 64:
-            raise ValidationError({"file_sha256": "Требуется SHA-256 загруженного файла."})
-        if self.status == PersonnelImportStatus.PUBLISHED and not self.published_at:
-            raise ValidationError({"published_at": "Для опубликованного пакета требуется дата публикации."})
+            raise ValidationError(
+                {"file_sha256": "Требуется SHA-256 загруженного файла."}
+            )
+        if (
+            self.status == PersonnelImportStatus.PUBLISHED
+            and not self.published_at
+        ):
+            raise ValidationError(
+                {
+                    "published_at": (
+                        "Для опубликованного пакета требуется дата публикации."
+                    )
+                }
+            )
 
     def mark_published(self, user) -> None:
         self.status = PersonnelImportStatus.PUBLISHED
         self.published_by = user
         self.published_at = timezone.now()
-        self.save(update_fields=("status", "published_by", "published_at"))
+        self.save(
+            update_fields=("status", "published_by", "published_at")
+        )
 
 
 class PersonnelChangeAction(models.TextChoices):
@@ -336,7 +478,10 @@ class PersonnelChangeAction(models.TextChoices):
     DEACTIVATE = "DEACTIVATE", "Деактивация карточки"
     QUALIFICATION = "QUALIFICATION", "Изменение квалификации"
     RIGHT = "RIGHT", "Изменение права"
-    IMPORT_PREVIEW = "IMPORT_PREVIEW", "Предварительный просмотр импорта"
+    IMPORT_PREVIEW = (
+        "IMPORT_PREVIEW",
+        "Предварительный просмотр импорта",
+    )
     IMPORT_PUBLISH = "IMPORT_PUBLISH", "Публикация импорта"
 
 
@@ -363,17 +508,30 @@ class PersonnelChangeRecord(models.Model):
         related_name="change_records",
         verbose_name="Пакет импорта",
     )
-    action = models.CharField("Действие", max_length=24, choices=PersonnelChangeAction.choices)
+    action = models.CharField(
+        "Действие",
+        max_length=24,
+        choices=PersonnelChangeAction.choices,
+    )
     reason = models.CharField("Основание изменения", max_length=1000)
-    before_snapshot = models.JSONField("Состояние до изменения", default=dict)
-    after_snapshot = models.JSONField("Состояние после изменения", default=dict)
+    before_snapshot = models.JSONField(
+        "Состояние до изменения",
+        default=dict,
+    )
+    after_snapshot = models.JSONField(
+        "Состояние после изменения",
+        default=dict,
+    )
     changed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
         related_name="personnel_change_records",
         verbose_name="Изменил",
     )
-    created_at = models.DateTimeField("Зафиксировано", auto_now_add=True)
+    created_at = models.DateTimeField(
+        "Зафиксировано",
+        auto_now_add=True,
+    )
 
     class Meta:
         ordering = ("-created_at", "-id")
@@ -386,10 +544,20 @@ class PersonnelChangeRecord(models.Model):
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         if self.pk:
-            raise ValidationError("Записи истории изменений неизменяемы.")
+            raise ValidationError(
+                "Записи истории изменений неизменяемы."
+            )
         self.reason = self.reason.strip()
+        self.before_snapshot = json.loads(
+            json.dumps(self.before_snapshot, cls=DjangoJSONEncoder)
+        )
+        self.after_snapshot = json.loads(
+            json.dumps(self.after_snapshot, cls=DjangoJSONEncoder)
+        )
         self.full_clean()
         super().save(*args, **kwargs)
 
     def delete(self, *args: Any, **kwargs: Any):
-        raise ValidationError("Физическое удаление истории изменений запрещено.")
+        raise ValidationError(
+            "Физическое удаление истории изменений запрещено."
+        )
