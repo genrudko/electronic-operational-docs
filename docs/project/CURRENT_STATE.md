@@ -32,46 +32,53 @@ MATRIX HEAD: 60460f1d213e5a5afb080402a8efff16feec0af7 / 5 workflows SUCCESS
 MANAGEMENT HEAD: d141313ac6e56fc442f08683a510e52df484564c / 5 workflows SUCCESS
 REPAIR IMPLEMENTATION HEAD: 41bb2c1ba99decedf19fbc22dd2f25eed187dd2d / 5 workflows SUCCESS / 664 TESTS OK
 DEPLOYED REPAIR HEAD: 9b7ede3a78997ebdbe7d68b750f024857369d4ea / DEVELOPMENT DEPLOYED / USER REJECTED VISUALLY
+IDENTITY FOUNDATION HEAD: 645c0dc7b520a6f091f5d266a0bc3390f26dbfbd / 5 workflows SUCCESS
+BRAND AND DOMAIN ICON HEAD: ed2b5ef8cd9cd9f248da9b4d16fc6bf1ad7aa395 / 5 workflows SUCCESS
 ```
 
 Trusted controller run `30733195542` deployed exact head
 `9b7ede3a78997ebdbe7d68b750f024857369d4ea` to development with 664 VPS tests,
 health-check and exact live SHA match. Preview remained `UNTOUCHED`.
 
-После пользовательской проверки repair candidate принят не был. Фактические
-причины следующего acceptance repair:
+После пользовательской проверки прежний repair candidate принят не был. Для
+нового identity candidate зафиксированы следующие решения:
 
-- current `Inter` declaration did not load a font asset and therefore normally
-  fell back to the platform font;
-- department pictograms mixed visual metaphors and decorative colored tiles;
-- Direction A had no canonical icon grammar, symbol catalogue or typography
-  scale, so feature CSS could improvise while formally remaining inside the
-  high-level contract;
-- personnel categories, entity icons, action icons and state markers were not
-  separated into distinct semantic channels.
-
-В текущий identity candidate включены:
-
-- canonical Onest Variable interface font with a real pinned font face;
-- EOD Outline 24 local SVG sprite based on one 24 px / 2 px round-stroke
-  geometry;
-- shared icon placement layer for shell, controls, module cards and dense trees;
-- bare neutral department glyphs in the organization tree instead of colored
-  decorative tiles;
-- canonical mapping for navigation, journals, personnel, departments,
-  equipment, ODU/RDU/CUS/DC and future modules;
-- explicit rule that АТП/ОП/ОРП/РП, qualification, voltage and lifecycle remain
-  text-first chips/markers rather than pictograms;
-- canonical docs `ICONOGRAPHY_TYPOGRAPHY_CONTRACT_V1.md` and source tests;
-- preserved source-bound document typography for registered OPJ/print forms.
+- Onest Variable является фирменным шрифтом всего пользовательского интерфейса,
+  включая экранную форму оперативного журнала;
+- используются контролируемые веса `400 / 500 / 600 / 700 / 800`;
+- там, где семантически нужен курсив, применяется контролируемый oblique Onest,
+  а не другая гарнитура;
+- технические идентификаторы и машинные значения используют Consolas с
+  платформенными monospace fallback;
+- создан детерминированный SVG-знак ЭОД: документ, последовательность
+  зарегистрированных событий и строки записей; генеративный растр и
+  сгенерированный текст отсутствуют;
+- на светлой теме основной текст логотипа остаётся тёмным, синий используется
+  для знака и акцентов;
+- EOD Outline 24 остаётся единым 24 px / 2 px round-stroke языком иконок;
+- оперативная служба и внешний диспетчерский центр имеют разные символы;
+- дерево персонала получает отдельные уровни организации, центра эксплуатации,
+  подразделения, должности и сотрудника;
+- canonical sprite дополнен процессами передачи смены, заземлений,
+  распоряжений, текущих работ, осмотров, ввода оборудования, отключений
+  выключателей, аварийной готовности, междокументных связей и отчётности;
+- добавлены типы оборудования: линия, кабель, трансформатор, шины, выключатель,
+  разъединитель, заземляющий нож, переносное заземление, РЗА, телемеханика,
+  ЩПТ/ШОТ и аккумуляторная батарея;
+- выравнивание иконок с текстом закреплено через flex/grid alignment slots,
+  integer sizing и центрирование icon-only controls;
+- категории АТП/ОП/ОРП/РП, квалификация, напряжение, lifecycle и матричные
+  значения остаются text-first markers, а не пиктограммами;
+- canonical refinement хранится в
+  `docs/ux/BRAND_IDENTITY_CONTRACT_V1.md`.
 
 Новые migrations отсутствуют. Product/domain models and lifecycle remain
 untouched.
 
-Новый exact head обязан пройти пять mandatory workflows, затем trusted
-full-development rebuild and user visual acceptance. Until that proof the
-previous deployed repair remains the live development state and the new runtime
-impact is pending.
+Следующий обязательный шаг — пять mandatory workflows на текущем exact head,
+затем trusted full-development rebuild и пользовательская визуальная приёмка.
+До прямого exact-live-SHA evidence прежний deployed repair остаётся фактическим
+состоянием development.
 
 Merge, Ready for Review и preview write без отдельной команды пользователя
 запрещены.
