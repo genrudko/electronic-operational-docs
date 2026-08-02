@@ -9,8 +9,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import models, transaction
-from django.http import HttpRequest, HttpResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -26,7 +26,6 @@ from .models import (
 from .services import (
     active_shift_for_journal,
     register_entry,
-    remove_draft_entry,
     require_operational_employee,
     timeline_queryset,
     verify_entry_integrity,
@@ -40,58 +39,48 @@ LIFECYCLE_TYPES = frozenset({TYPE_CORRECTION, TYPE_CANCELLATION})
 CHILD_EVENT_TYPES = frozenset(
     {TYPE_CORRECTION, TYPE_CANCELLATION, TYPE_COMMUNICATION}
 )
-SYSTEM_TYPES = frozenset(
-    {TYPE_ENTRY, TYPE_CORRECTION, TYPE_CANCELLATION, TYPE_COMMUNICATION}
-)
 
 ACTION_REGISTER = "OPJ.REGISTER"
 ACTION_CORRECT = "OPJ.CORRECT"
 ACTION_CANCEL = "OPJ.CANCEL"
 ACTION_COMMUNICATION = "OPJ.COMMUNICATION"
 
-SCHEMA_VERSION = "eod.opj.lifecycle.v1"
+SCHEMA_VERSION = "eod.opj.lifecycle.v2"
 
 
 class CorrectionForm(forms.Form):
     replacement_content = forms.CharField(
         label="Исправленное содержание",
         max_length=20000,
-        widget=forms.Textarea(
-            attrs={
-                "rows": 5,
-                "placeholder": "Полный текст, который должен использоваться вместо исходного…",
-            }
-        ),
+        widget=forms.Textarea(attrs={"rows": 5}),
     )
     reason = forms.CharField(
-        label="Основание исправления",
+        label="Причина исправления",
         max_length=1000,
-        widget=forms.Textarea(
-            attrs={
-                "rows": 2,
-                "placeholder": "Почему требуется исправление и что было уточнено",
-            }
-        ),
+        widget=forms.Textarea(attrs={"rows": 2}),
     )
 
 
 class CancellationForm(forms.Form):
     reason = forms.CharField(
-        label="Основание отмены",
+        label="Причина отмены",
         max_length=1000,
-        widget=forms.Textarea(
-            attrs={
-                "rows": 3,
-                "placeholder": "Причина отмены записи без удаления оригинала",
-            }
-        ),
+        widget=forms.Textarea(attrs={"rows": 3}),
     )
 
 
 class CommunicationForm(forms.Form):
-    class Direction(models.TextChoices):
-        INCOMING = "INCOMING", "Входящий разговор"
-        OUTGOING = "OUTGOING", "Исходящий разговор"
+    class OutcomeKind(models.TextChoices):
+        RECEIVED_COMMAND = "RECEIVED_COMMAND", "Получена команда"
+        ISSUED_COMMAND = "ISSUED_COMMAND", "Выдана команда"
+        RECEIVED_PERMISSION = "RECEIVED_PERMISSION", "Получено разрешение"
+        SENT_MESSAGE = "SENT_MESSAGE", "Передано сообщение"
+        RECEIVED_CONFIRMATION = (
+            "RECEIVED_CONFIRMATION",
+            "Получено подтверждение",
+        )
+        REPORTED_EXECUTION = "REPORTED_EXECUTION", "Сообщено об исполнении"
+        RECEIVED_REFUSAL = "RECEIVED_REFUSAL", "Получен отказ"
 
     class Channel(models.TextChoices):
         PHONE = "PHONE", "Телефон"
@@ -99,30 +88,23 @@ class CommunicationForm(forms.Form):
         DISPATCH = "DISPATCH", "Диспетчерский канал"
         OTHER = "OTHER", "Другой канал"
 
-    direction = forms.ChoiceField(label="Направление", choices=Direction.choices)
-    channel = forms.ChoiceField(label="Канал", choices=Channel.choices)
-    counterpart = forms.CharField(
-        label="С кем состоялся разговор",
-        max_length=500,
-        widget=forms.TextInput(
-            attrs={"placeholder": "Ф.И.О., должность или диспетчерское наименование"}
-        ),
+    outcome_kind = forms.ChoiceField(
+        label="Результат переговоров",
+        choices=OutcomeKind.choices,
     )
-    counterpart_organization = forms.CharField(
-        label="Организация / диспетчерский центр",
+    counterpart = forms.CharField(
+        label="Участник / адресат",
         max_length=500,
+    )
+    channel = forms.ChoiceField(
+        label="Канал, если требуется",
+        choices=(("", "Не указывать"), *Channel.choices),
         required=False,
-        widget=forms.TextInput(attrs={"placeholder": "При необходимости"}),
     )
     content = forms.CharField(
-        label="Содержание разговора",
+        label="Оперативно значимое содержание",
         max_length=20000,
-        widget=forms.Textarea(
-            attrs={
-                "rows": 5,
-                "placeholder": "Переданная или полученная оперативная информация…",
-            }
-        ),
+        widget=forms.Textarea(attrs={"rows": 4}),
     )
 
 
@@ -133,6 +115,17 @@ class EffectiveEntryState:
     effective_content: str
     correction_count: int
     cancellation_entry: OperationalLogEntry | None
+
+
+@dataclass(frozen=True, slots=True)
+class EntryLifecycleContext:
+    is_child: bool
+    child_label: str
+    linked_original: OperationalLogEntry | None
+    lifecycle_entries: tuple[OperationalLogEntry, ...]
+    communications: tuple[OperationalLogEntry, ...]
+    state: EffectiveEntryState
+    integrity_ok: bool
 
 
 def _accessible_journal(employee, journal_id: int) -> OperationalJournal:
@@ -177,12 +170,11 @@ def _evaluate_authority(
     subject_type: str,
     subject_id: str,
 ):
-    action_at = timezone.now()
     evaluation = evaluate_and_record_authority(
         employee=actor,
         organization=journal.organization,
         action_code=action_code,
-        occurred_at=action_at,
+        occurred_at=timezone.now(),
         scope_kind="WORKPLACE",
         scope_reference=str(journal.workplace_id),
         scope_label=journal.workplace.name,
@@ -192,8 +184,7 @@ def _evaluate_authority(
     )
     if evaluation.decision == AuthorityDecision.DENY:
         raise PermissionDenied(
-            "Действие не выполнено: на момент операции не подтверждено требуемое "
-            "предметное полномочие."
+            "Действие не выполнено: требуемое полномочие не подтверждено."
         )
     return evaluation
 
@@ -204,6 +195,28 @@ def _target_payload(entry: OperationalLogEntry) -> dict[str, Any]:
         "sequence_number": entry.sequence_number,
         "digest": entry.digest,
         "event_at": entry.event_at.isoformat(),
+    }
+
+
+def registered_entry_for_draft(
+    draft: OperationalDraftEntry,
+) -> OperationalLogEntry | None:
+    return (
+        draft.shift.journal.entries.filter(
+            type_code=TYPE_ENTRY,
+            typed_payload__draft__public_id=str(draft.public_id),
+        )
+        .select_related("author")
+        .order_by("-sequence_number")
+        .first()
+    )
+
+
+def draft_registration_context(draft: OperationalDraftEntry) -> dict[str, Any]:
+    entry = registered_entry_for_draft(draft)
+    return {
+        "is_registered": entry is not None,
+        "entry": entry,
     }
 
 
@@ -276,72 +289,108 @@ def effective_state(
     )
 
 
+def _linked_original(entry: OperationalLogEntry) -> OperationalLogEntry | None:
+    if entry.type_code not in CHILD_EVENT_TYPES:
+        return None
+    target_sequence = entry.typed_payload.get("target", {}).get("sequence_number")
+    if not target_sequence:
+        return None
+    return entry.journal.entries.filter(sequence_number=target_sequence).first()
+
+
+def entry_lifecycle_context(entry: OperationalLogEntry) -> EntryLifecycleContext:
+    linked_original = _linked_original(entry)
+    is_child = entry.type_code in CHILD_EVENT_TYPES
+    lifecycle = [] if is_child else _lifecycle_entries(entry)
+    communications = [] if is_child else _communication_entries(entry)
+    state = effective_state(entry, lifecycle)
+    integrity_ok = True
+    try:
+        verify_entry_integrity(entry)
+        for event in (*lifecycle, *communications):
+            verify_entry_integrity(event)
+    except ValidationError:
+        integrity_ok = False
+    labels = {
+        TYPE_CORRECTION: "Исправление",
+        TYPE_CANCELLATION: "Отмена",
+        TYPE_COMMUNICATION: "Результат переговоров",
+    }
+    return EntryLifecycleContext(
+        is_child=is_child,
+        child_label=labels.get(entry.type_code, ""),
+        linked_original=linked_original,
+        lifecycle_entries=tuple(lifecycle),
+        communications=tuple(communications),
+        state=state,
+        integrity_ok=integrity_ok,
+    )
+
+
 def _ensure_original_target(entry: OperationalLogEntry) -> None:
     if entry.type_code in CHILD_EVENT_TYPES:
         raise ValidationError(
-            "Действие нужно создавать для исходной зарегистрированной записи, "
-            "а не для дочернего события её истории."
+            "Действие выполняется для исходной зарегистрированной записи."
         )
 
 
+@transaction.atomic
 def register_draft(
     *,
     draft: OperationalDraftEntry,
     actor,
 ) -> OperationalLogEntry:
-    draft_context = OperationalDraftEntry.objects.select_related(
-        "shift",
-        "shift__journal",
-        "shift__journal__organization",
-        "shift__journal__workplace",
-    ).get(pk=draft.pk)
+    locked_draft = (
+        OperationalDraftEntry.objects.select_for_update()
+        .select_related(
+            "shift",
+            "shift__journal",
+            "shift__journal__organization",
+            "shift__journal__workplace",
+        )
+        .get(pk=draft.pk)
+    )
+    existing = registered_entry_for_draft(locked_draft)
+    if existing is not None:
+        raise ValidationError(
+            f"Эта строка уже зарегистрирована в чистовике под № {existing.sequence_number}."
+        )
+    if locked_draft.is_removed:
+        raise ValidationError("Убранную черновую строку нельзя зарегистрировать.")
+    if not locked_draft.content.strip():
+        raise ValidationError("Перед регистрацией заполните содержание строки.")
+
     evaluation = _evaluate_authority(
         actor=actor,
-        journal=draft_context.shift.journal,
+        journal=locked_draft.shift.journal,
         action_code=ACTION_REGISTER,
         subject_type="OPJ_DRAFT",
-        subject_id=str(draft_context.public_id),
+        subject_id=str(locked_draft.public_id),
     )
-    with transaction.atomic():
-        locked_draft = (
-            OperationalDraftEntry.objects.select_for_update()
-            .select_related(
-                "shift",
-                "shift__journal",
-                "shift__journal__organization",
-                "shift__journal__workplace",
-            )
-            .get(pk=draft.pk)
-        )
-        if locked_draft.is_removed:
-            raise ValidationError("Убранную черновую запись нельзя зарегистрировать.")
-        if not locked_draft.content.strip():
-            raise ValidationError("Перед регистрацией заполните содержание записи.")
-        payload = {
-            "schema_version": SCHEMA_VERSION,
-            "kind": "ORIGINAL",
-            "draft": {
-                "public_id": str(locked_draft.public_id),
-                "version": locked_draft.version,
-                "editor_schema_version": locked_draft.editor_schema_version,
-                "editor_payload": locked_draft.editor_payload,
-            },
-            "authority": _authority_payload(evaluation),
-        }
-        entry = register_entry(
-            journal=locked_draft.shift.journal,
-            actor=actor,
-            event_at=locked_draft.event_at,
-            content=locked_draft.content,
-            entry_form=EntryForm.TYPED,
-            type_code=TYPE_ENTRY,
-            type_title="Оперативная запись",
-            typed_payload=payload,
-        )
-        remove_draft_entry(entry=locked_draft, actor=actor)
-        return entry
+    payload = {
+        "schema_version": SCHEMA_VERSION,
+        "kind": "ORIGINAL",
+        "draft": {
+            "public_id": str(locked_draft.public_id),
+            "version": locked_draft.version,
+            "editor_schema_version": locked_draft.editor_schema_version,
+            "editor_payload": locked_draft.editor_payload,
+        },
+        "authority": _authority_payload(evaluation),
+    }
+    return register_entry(
+        journal=locked_draft.shift.journal,
+        actor=actor,
+        event_at=locked_draft.event_at,
+        content=locked_draft.content,
+        entry_form=EntryForm.TYPED,
+        type_code=TYPE_ENTRY,
+        type_title="Оперативная запись",
+        typed_payload=payload,
+    )
 
 
+@transaction.atomic
 def correct_entry(
     *,
     entry: OperationalLogEntry,
@@ -355,49 +404,49 @@ def correct_entry(
     if not normalized_content:
         raise ValidationError({"replacement_content": "Исправленное содержание обязательно."})
     if not normalized_reason:
-        raise ValidationError({"reason": "Основание исправления обязательно."})
+        raise ValidationError({"reason": "Причина исправления обязательна."})
+
+    locked = (
+        OperationalLogEntry.objects.select_for_update()
+        .select_related("journal", "journal__organization", "journal__workplace")
+        .get(pk=entry.pk)
+    )
+    _ensure_original_target(locked)
+    state = effective_state(locked)
+    if state.status == "CANCELLED":
+        raise ValidationError("Отменённую запись нельзя исправлять.")
     evaluation = _evaluate_authority(
         actor=actor,
-        journal=entry.journal,
+        journal=locked.journal,
         action_code=ACTION_CORRECT,
         subject_type="OPJ_ENTRY",
-        subject_id=f"{entry.journal_id}:{entry.sequence_number}:CORRECTION:{uuid.uuid4()}",
+        subject_id=f"{locked.journal_id}:{locked.sequence_number}:CORRECTION:{uuid.uuid4()}",
     )
-    with transaction.atomic():
-        locked = (
-            OperationalLogEntry.objects.select_for_update()
-            .select_related("journal", "journal__organization", "journal__workplace")
-            .get(pk=entry.pk)
-        )
-        _ensure_original_target(locked)
-        lifecycle = _lifecycle_entries(locked)
-        state = effective_state(locked, lifecycle)
-        if state.status == "CANCELLED":
-            raise ValidationError("Отменённую запись нельзя исправлять.")
-        payload = {
-            "schema_version": SCHEMA_VERSION,
-            "kind": "CORRECTION",
-            "target": _target_payload(locked),
-            "previous_effective_content": state.effective_content,
-            "replacement_content": normalized_content,
-            "reason": normalized_reason,
-            "authority": _authority_payload(evaluation),
-        }
-        return register_entry(
-            journal=locked.journal,
-            actor=actor,
-            event_at=timezone.now(),
-            content=(
-                f"Исправление записи № {locked.sequence_number}. "
-                f"{normalized_content} Основание: {normalized_reason}"
-            ),
-            entry_form=EntryForm.TYPED,
-            type_code=TYPE_CORRECTION,
-            type_title="Исправление зарегистрированной записи",
-            typed_payload=payload,
-        )
+    payload = {
+        "schema_version": SCHEMA_VERSION,
+        "kind": "CORRECTION",
+        "target": _target_payload(locked),
+        "previous_effective_content": state.effective_content,
+        "replacement_content": normalized_content,
+        "reason": normalized_reason,
+        "authority": _authority_payload(evaluation),
+    }
+    return register_entry(
+        journal=locked.journal,
+        actor=actor,
+        event_at=timezone.now(),
+        content=(
+            f"Исправление к записи № {locked.sequence_number}. "
+            f"Следует читать: {normalized_content} Причина: {normalized_reason}"
+        ),
+        entry_form=EntryForm.TYPED,
+        type_code=TYPE_CORRECTION,
+        type_title="Исправление зарегистрированной записи",
+        typed_payload=payload,
+    )
 
 
+@transaction.atomic
 def cancel_entry(
     *,
     entry: OperationalLogEntry,
@@ -407,115 +456,124 @@ def cancel_entry(
     _ensure_original_target(entry)
     normalized_reason = reason.strip()
     if not normalized_reason:
-        raise ValidationError({"reason": "Основание отмены обязательно."})
+        raise ValidationError({"reason": "Причина отмены обязательна."})
+
+    locked = (
+        OperationalLogEntry.objects.select_for_update()
+        .select_related("journal", "journal__organization", "journal__workplace")
+        .get(pk=entry.pk)
+    )
+    _ensure_original_target(locked)
+    state = effective_state(locked)
+    if state.status == "CANCELLED":
+        raise ValidationError("Запись уже отменена.")
     evaluation = _evaluate_authority(
         actor=actor,
-        journal=entry.journal,
+        journal=locked.journal,
         action_code=ACTION_CANCEL,
         subject_type="OPJ_ENTRY",
-        subject_id=f"{entry.journal_id}:{entry.sequence_number}:CANCELLATION:{uuid.uuid4()}",
+        subject_id=f"{locked.journal_id}:{locked.sequence_number}:CANCELLATION:{uuid.uuid4()}",
     )
-    with transaction.atomic():
-        locked = (
-            OperationalLogEntry.objects.select_for_update()
-            .select_related("journal", "journal__organization", "journal__workplace")
-            .get(pk=entry.pk)
-        )
-        _ensure_original_target(locked)
-        lifecycle = _lifecycle_entries(locked)
-        state = effective_state(locked, lifecycle)
-        if state.status == "CANCELLED":
-            raise ValidationError("Запись уже отменена.")
-        payload = {
-            "schema_version": SCHEMA_VERSION,
-            "kind": "CANCELLATION",
-            "target": _target_payload(locked),
-            "effective_content_at_cancellation": state.effective_content,
-            "reason": normalized_reason,
-            "authority": _authority_payload(evaluation),
-        }
-        return register_entry(
-            journal=locked.journal,
-            actor=actor,
-            event_at=timezone.now(),
-            content=(
-                f"Отмена записи № {locked.sequence_number}. "
-                f"Основание: {normalized_reason}"
-            ),
-            entry_form=EntryForm.TYPED,
-            type_code=TYPE_CANCELLATION,
-            type_title="Отмена зарегистрированной записи",
-            typed_payload=payload,
-        )
+    payload = {
+        "schema_version": SCHEMA_VERSION,
+        "kind": "CANCELLATION",
+        "target": _target_payload(locked),
+        "effective_content_at_cancellation": state.effective_content,
+        "reason": normalized_reason,
+        "authority": _authority_payload(evaluation),
+    }
+    return register_entry(
+        journal=locked.journal,
+        actor=actor,
+        event_at=timezone.now(),
+        content=(
+            f"Запись № {locked.sequence_number} отменена. "
+            f"Причина: {normalized_reason}"
+        ),
+        entry_form=EntryForm.TYPED,
+        type_code=TYPE_CANCELLATION,
+        type_title="Отмена зарегистрированной записи",
+        typed_payload=payload,
+    )
 
 
+@transaction.atomic
 def record_communication(
     *,
     entry: OperationalLogEntry,
     actor,
-    direction: str,
-    channel: str,
+    outcome_kind: str,
     counterpart: str,
-    counterpart_organization: str,
+    channel: str,
     content: str,
 ) -> OperationalLogEntry:
     _ensure_original_target(entry)
+    outcome_labels = dict(CommunicationForm.OutcomeKind.choices)
+    channel_labels = dict(CommunicationForm.Channel.choices)
     normalized_counterpart = " ".join(counterpart.split())
-    normalized_organization = " ".join(counterpart_organization.split())
     normalized_content = content.strip()
-    if direction not in dict(CommunicationForm.Direction.choices):
-        raise ValidationError({"direction": "Неизвестное направление разговора."})
-    if channel not in dict(CommunicationForm.Channel.choices):
-        raise ValidationError({"channel": "Неизвестный канал разговора."})
+    if outcome_kind not in outcome_labels:
+        raise ValidationError({"outcome_kind": "Неизвестный результат переговоров."})
+    if channel and channel not in channel_labels:
+        raise ValidationError({"channel": "Неизвестный канал переговоров."})
     if not normalized_counterpart:
-        raise ValidationError({"counterpart": "Укажите участника разговора."})
+        raise ValidationError({"counterpart": "Укажите участника или адресата."})
     if not normalized_content:
-        raise ValidationError({"content": "Содержание разговора обязательно."})
+        raise ValidationError({"content": "Оперативно значимое содержание обязательно."})
+
+    locked = (
+        OperationalLogEntry.objects.select_for_update()
+        .select_related("journal", "journal__organization", "journal__workplace")
+        .get(pk=entry.pk)
+    )
+    _ensure_original_target(locked)
     evaluation = _evaluate_authority(
         actor=actor,
-        journal=entry.journal,
+        journal=locked.journal,
         action_code=ACTION_COMMUNICATION,
         subject_type="OPJ_COMMUNICATION",
-        subject_id=f"{entry.journal_id}:{entry.sequence_number}:{uuid.uuid4()}",
+        subject_id=f"{locked.journal_id}:{locked.sequence_number}:{uuid.uuid4()}",
     )
-    with transaction.atomic():
-        locked = (
-            OperationalLogEntry.objects.select_for_update()
-            .select_related("journal", "journal__organization", "journal__workplace")
-            .get(pk=entry.pk)
-        )
-        _ensure_original_target(locked)
-        direction_label = dict(CommunicationForm.Direction.choices)[direction]
-        channel_label = dict(CommunicationForm.Channel.choices)[channel]
-        payload = {
-            "schema_version": SCHEMA_VERSION,
-            "kind": "COMMUNICATION",
-            "target": _target_payload(locked),
-            "direction": direction,
-            "direction_label": direction_label,
-            "channel": channel,
-            "channel_label": channel_label,
-            "counterpart": normalized_counterpart,
-            "counterpart_organization": normalized_organization,
-            "content": normalized_content,
-            "authority": _authority_payload(evaluation),
-        }
-        organization_part = (
-            f", {normalized_organization}" if normalized_organization else ""
-        )
-        return register_entry(
-            journal=locked.journal,
-            actor=actor,
-            event_at=timezone.now(),
-            content=(
-                f"{direction_label}, {channel_label}: {normalized_counterpart}"
-                f"{organization_part}. {normalized_content}"
-            ),
-            entry_form=EntryForm.TYPED,
-            type_code=TYPE_COMMUNICATION,
-            type_title="Оперативный разговор",
-            typed_payload=payload,
-        )
+    outcome_label = outcome_labels[outcome_kind]
+    channel_label = channel_labels.get(channel, "")
+    payload = {
+        "schema_version": SCHEMA_VERSION,
+        "kind": "COMMUNICATION_OUTCOME",
+        "target": _target_payload(locked),
+        "outcome_kind": outcome_kind,
+        "outcome_label": outcome_label,
+        "counterpart": normalized_counterpart,
+        "channel": channel,
+        "channel_label": channel_label,
+        "content": normalized_content,
+        "authority": _authority_payload(evaluation),
+    }
+    channel_part = f" ({channel_label})" if channel_label else ""
+    return register_entry(
+        journal=locked.journal,
+        actor=actor,
+        event_at=timezone.now(),
+        content=(
+            f"{outcome_label}: {normalized_counterpart}{channel_part}. "
+            f"{normalized_content}"
+        ),
+        entry_form=EntryForm.TYPED,
+        type_code=TYPE_COMMUNICATION,
+        type_title="Результат оперативных переговоров",
+        typed_payload=payload,
+    )
+
+
+def _detail_anchor(journal: OperationalJournal, sequence_number: int) -> HttpResponse:
+    response = redirect("operational_log:detail", journal_id=journal.pk)
+    response["Location"] = f"{response['Location']}#entry-{sequence_number}"
+    return response
+
+
+def _shift_anchor(journal: OperationalJournal, public_id) -> HttpResponse:
+    response = redirect("operational_log:shift_workspace", journal_id=journal.pk)
+    response["Location"] = f"{response['Location']}#draft-{public_id}"
+    return response
 
 
 @login_required
@@ -526,48 +584,8 @@ def entry_lifecycle_view(
 ) -> HttpResponse:
     employee = require_operational_employee(request.user)
     journal = _accessible_journal(employee, journal_id)
-    entry = _entry_or_404(journal=journal, sequence_number=sequence_number)
-
-    linked_original = None
-    if entry.type_code in SYSTEM_TYPES - {TYPE_ENTRY}:
-        target_sequence = entry.typed_payload.get("target", {}).get("sequence_number")
-        if target_sequence:
-            linked_original = journal.entries.filter(
-                sequence_number=target_sequence
-            ).first()
-
-    lifecycle = _lifecycle_entries(entry) if entry.type_code not in CHILD_EVENT_TYPES else []
-    communications = (
-        _communication_entries(entry) if entry.type_code not in CHILD_EVENT_TYPES else []
-    )
-    state = effective_state(entry, lifecycle)
-    integrity_ok = True
-    try:
-        verify_entry_integrity(entry)
-        for event in (*lifecycle, *communications):
-            verify_entry_integrity(event)
-    except ValidationError:
-        integrity_ok = False
-
-    return render(
-        request,
-        "operational_log/entry_lifecycle.html",
-        {
-            "journal": journal,
-            "entry": entry,
-            "linked_original": linked_original,
-            "lifecycle_entries": lifecycle,
-            "communications": communications,
-            "state": state,
-            "integrity_ok": integrity_ok,
-            "correction_form": CorrectionForm(
-                initial={"replacement_content": state.effective_content}
-            ),
-            "cancellation_form": CancellationForm(),
-            "communication_form": CommunicationForm(),
-            "can_act": entry.type_code not in CHILD_EVENT_TYPES,
-        },
-    )
+    _entry_or_404(journal=journal, sequence_number=sequence_number)
+    return _detail_anchor(journal, sequence_number)
 
 
 @require_POST
@@ -588,18 +606,118 @@ def register_draft_view(
     try:
         entry = register_draft(draft=draft, actor=employee)
     except (ValidationError, PermissionDenied) as error:
-        text = "; ".join(getattr(error, "messages", [str(error)]))
-        messages.error(request, text)
-        return redirect("operational_log:shift_workspace", journal_id=journal.pk)
-    messages.success(
+        messages.error(
+            request,
+            "; ".join(getattr(error, "messages", [str(error)])),
+        )
+    else:
+        messages.success(
+            request,
+            f"Строка перенесена в чистовик как запись № {entry.sequence_number}.",
+        )
+    return _shift_anchor(journal, draft.public_id)
+
+
+def _registered_draft_guard(
+    request: HttpRequest,
+    *,
+    journal: OperationalJournal,
+    draft: OperationalDraftEntry,
+) -> HttpResponse | None:
+    entry = registered_entry_for_draft(draft)
+    if entry is None:
+        return None
+    message = (
+        f"Строка уже находится в чистовике под № {entry.sequence_number} "
+        "и больше не редактируется как черновик."
+    )
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse(
+            {"ok": False, "registered": True, "message": message},
+            status=409,
+        )
+    messages.error(request, message)
+    return _shift_anchor(journal, draft.public_id)
+
+
+def _guarded_draft(
+    request: HttpRequest,
+    journal_id: int,
+    public_id,
+) -> tuple[OperationalJournal, OperationalDraftEntry, HttpResponse | None]:
+    employee = require_operational_employee(request.user)
+    journal = _accessible_journal(employee, journal_id)
+    shift = active_shift_for_journal(journal)
+    draft = get_object_or_404(
+        OperationalDraftEntry.objects.select_related("shift", "shift__journal"),
+        public_id=public_id,
+        shift=shift,
+    )
+    return journal, draft, _registered_draft_guard(
         request,
-        f"Запись № {entry.sequence_number} зарегистрирована и стала неизменяемой.",
+        journal=journal,
+        draft=draft,
     )
-    return redirect(
-        "operational_log:entry_lifecycle",
-        journal_id=journal.pk,
-        sequence_number=entry.sequence_number,
-    )
+
+
+@require_POST
+@login_required
+def autosave_draft_guard_view(
+    request: HttpRequest,
+    journal_id: int,
+    public_id,
+) -> HttpResponse:
+    _, _, blocked = _guarded_draft(request, journal_id, public_id)
+    if blocked is not None:
+        return blocked
+    from . import views as standard_views
+
+    return standard_views.autosave_draft_entry(request, journal_id, public_id)
+
+
+@require_POST
+@login_required
+def move_draft_guard_view(
+    request: HttpRequest,
+    journal_id: int,
+    public_id,
+) -> HttpResponse:
+    _, _, blocked = _guarded_draft(request, journal_id, public_id)
+    if blocked is not None:
+        return blocked
+    from . import views as standard_views
+
+    return standard_views.move_draft_entry_view(request, journal_id, public_id)
+
+
+@require_POST
+@login_required
+def remove_draft_guard_view(
+    request: HttpRequest,
+    journal_id: int,
+    public_id,
+) -> HttpResponse:
+    _, _, blocked = _guarded_draft(request, journal_id, public_id)
+    if blocked is not None:
+        return blocked
+    from . import views as standard_views
+
+    return standard_views.remove_draft_entry_view(request, journal_id, public_id)
+
+
+@require_POST
+@login_required
+def restore_draft_guard_view(
+    request: HttpRequest,
+    journal_id: int,
+    public_id,
+) -> HttpResponse:
+    _, _, blocked = _guarded_draft(request, journal_id, public_id)
+    if blocked is not None:
+        return blocked
+    from . import views as standard_views
+
+    return standard_views.restore_draft_entry_view(request, journal_id, public_id)
 
 
 @require_POST
@@ -614,7 +732,7 @@ def correct_entry_view(
     entry = _entry_or_404(journal=journal, sequence_number=sequence_number)
     form = CorrectionForm(request.POST)
     if not form.is_valid():
-        messages.error(request, "Исправление не зарегистрировано: проверьте поля формы.")
+        messages.error(request, "Исправление не зарегистрировано: проверьте поля.")
     else:
         try:
             event = correct_entry(
@@ -629,17 +747,11 @@ def correct_entry_view(
                 "; ".join(getattr(error, "messages", [str(error)])),
             )
         else:
-            decision = event.typed_payload["authority"]["decision"]
             messages.success(
                 request,
-                f"Исправление зарегистрировано отдельной записью № "
-                f"{event.sequence_number}. Решение полномочия: {decision}.",
+                f"Исправление добавлено в чистовик записью № {event.sequence_number}.",
             )
-    return redirect(
-        "operational_log:entry_lifecycle",
-        journal_id=journal.pk,
-        sequence_number=entry.sequence_number,
-    )
+    return _detail_anchor(journal, entry.sequence_number)
 
 
 @require_POST
@@ -654,7 +766,7 @@ def cancel_entry_view(
     entry = _entry_or_404(journal=journal, sequence_number=sequence_number)
     form = CancellationForm(request.POST)
     if not form.is_valid():
-        messages.error(request, "Отмена не зарегистрирована: укажите основание.")
+        messages.error(request, "Отмена не зарегистрирована: укажите причину.")
     else:
         try:
             event = cancel_entry(
@@ -668,17 +780,11 @@ def cancel_entry_view(
                 "; ".join(getattr(error, "messages", [str(error)])),
             )
         else:
-            decision = event.typed_payload["authority"]["decision"]
             messages.success(
                 request,
-                f"Отмена зарегистрирована отдельной записью № "
-                f"{event.sequence_number}. Решение полномочия: {decision}.",
+                f"Отмена добавлена в чистовик записью № {event.sequence_number}.",
             )
-    return redirect(
-        "operational_log:entry_lifecycle",
-        journal_id=journal.pk,
-        sequence_number=entry.sequence_number,
-    )
+    return _detail_anchor(journal, entry.sequence_number)
 
 
 @require_POST
@@ -693,18 +799,18 @@ def communication_view(
     entry = _entry_or_404(journal=journal, sequence_number=sequence_number)
     form = CommunicationForm(request.POST)
     if not form.is_valid():
-        messages.error(request, "Разговор не зарегистрирован: проверьте поля формы.")
+        messages.error(
+            request,
+            "Результат переговоров не зарегистрирован: проверьте поля.",
+        )
     else:
         try:
             event = record_communication(
                 entry=entry,
                 actor=employee,
-                direction=form.cleaned_data["direction"],
-                channel=form.cleaned_data["channel"],
+                outcome_kind=form.cleaned_data["outcome_kind"],
                 counterpart=form.cleaned_data["counterpart"],
-                counterpart_organization=form.cleaned_data[
-                    "counterpart_organization"
-                ],
+                channel=form.cleaned_data["channel"],
                 content=form.cleaned_data["content"],
             )
         except (ValidationError, PermissionDenied) as error:
@@ -713,14 +819,8 @@ def communication_view(
                 "; ".join(getattr(error, "messages", [str(error)])),
             )
         else:
-            decision = event.typed_payload["authority"]["decision"]
             messages.success(
                 request,
-                f"Оперативный разговор зарегистрирован записью № "
-                f"{event.sequence_number}. Решение полномочия: {decision}.",
+                f"Результат переговоров добавлен записью № {event.sequence_number}.",
             )
-    return redirect(
-        "operational_log:entry_lifecycle",
-        journal_id=journal.pk,
-        sequence_number=entry.sequence_number,
-    )
+    return _detail_anchor(journal, entry.sequence_number)
