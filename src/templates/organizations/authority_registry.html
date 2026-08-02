@@ -6,7 +6,8 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'organizations/personnel_authority.css' %}?v=pa001r2">
 <link rel="stylesheet" href="{% static 'organizations/personnel_authority_matrix.css' %}?v=pa001r3">
-<script src="{% static 'organizations/personnel_authority_matrix.js' %}?v=pa001r3" defer></script>
+<link rel="stylesheet" href="{% static 'organizations/personnel_authority_repair.css' %}?v=pa001r5">
+<script src="{% static 'organizations/personnel_authority_matrix.js' %}?v=pa001r5" defer></script>
 {% endblock %}
 
 {% block content %}
@@ -14,9 +15,10 @@
     <header class="da-page-header">
         <div class="authority-page-header-copy">
             <h1>Оперативные права персонала</h1>
-            <p>Опубликованная матрица штатного персонала: подчинённость, квалификация, предоставленные права, условия и область действия.</p>
+            <p>Штатная матрица, квалификации, точные условия предоставления прав и отдельные оперативные справочники смежных организаций.</p>
         </div>
         <div class="da-actions">
+            <a class="da-button" href="{% url 'organizations:employee_create' %}">Добавить сотрудника</a>
             <a class="da-button secondary" href="{% url 'organizations:directory' %}">Сотрудники и подразделения</a>
         </div>
     </header>
@@ -52,24 +54,34 @@
         <div class="authority-tabs" role="group" aria-label="Раздел реестра">
             <button type="button" data-authority-view="matrix" aria-pressed="true">Матрица прав</button>
             <button type="button" data-authority-view="holders" aria-pressed="false">Кто имеет право</button>
-            <button type="button" data-authority-view="external" aria-pressed="false">Внешний персонал</button>
+            <button type="button" data-authority-view="dispatch" aria-pressed="false">ОДУ и РДУ</button>
+            <button type="button" data-authority-view="related" aria-pressed="false">ЦУС и смежные объекты</button>
+            <button type="button" data-authority-view="contractors" aria-pressed="false">Подрядный персонал</button>
             <button type="button" data-authority-view="checks" aria-pressed="false">История проверок</button>
         </div>
         <div class="authority-filter-field authority-search-field">
             <label for="authority-search">Поиск</label>
-            <input id="authority-search" type="search" placeholder="ФИО, должность, подразделение, право или основание" autocomplete="off" data-authority-search>
+            <input id="authority-search" type="search" placeholder="ФИО, должность, подразделение, право, условие или основание" autocomplete="off" data-authority-search>
         </div>
         <div class="authority-filter-field" data-filter-for="matrix holders">
             <label for="authority-category">Категория</label>
             <select id="authority-category" data-authority-category>
                 <option value="">Все категории</option>
-                <option value="АТП">АТП</option><option value="ОП">ОП</option><option value="АТП/ОП">АТП/ОП</option><option value="ОРП">ОРП</option><option value="РП">РП</option>
+                <option value="АТП">АТП</option>
+                <option value="ОП">ОП</option>
+                <option value="АТП/ОП">АТП/ОП</option>
+                <option value="ОРП">ОРП</option>
+                <option value="РП">РП</option>
             </select>
         </div>
         <div class="authority-filter-field" data-filter-for="matrix holders">
             <label for="authority-group">Группа по ЭБ</label>
             <select id="authority-group" data-authority-group>
-                <option value="">Все группы</option><option value="V">V</option><option value="IV">IV</option><option value="III">III</option><option value="II">II</option>
+                <option value="">Все группы</option>
+                <option value="V">V</option>
+                <option value="IV">IV</option>
+                <option value="III">III</option>
+                <option value="II">II</option>
             </select>
         </div>
         <div class="authority-filter-field authority-right-filter" data-filter-for="holders">
@@ -86,23 +98,44 @@
     <div class="authority-workspace" data-authority-workspace>
         <aside class="authority-org-tree" aria-label="Структура организации">
             <div class="authority-tree-heading">
-                <div><strong>Структура организации</strong><span>Выберите подразделение</span></div>
+                <div><strong>Структура организации</strong><span>Подразделения и подчинённость</span></div>
                 <button type="button" title="Развернуть всё" data-expand-all>＋</button>
             </div>
-            <button class="authority-tree-item is-active" type="button" data-division-filter=""><span>⌂</span><em>Вся организация</em><b>{{ employee_rows|length }}</b></button>
+            <button class="authority-tree-item is-active" type="button" data-division-filter="">
+                <span class="authority-tree-icon tone-blue"><svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-organization"></use></svg></span>
+                <em>Вся организация</em><b>{{ employee_rows|length }}</b>
+            </button>
             <div class="authority-tree-list">
                 {% for item in division_rows %}
                 <button class="authority-tree-item" type="button" style="--tree-depth: {{ item.depth }}" data-division-filter="{{ item.division.id }}" data-division-path="{{ item.division_path }}" data-parent-id="{{ item.division.parent_id|default:'' }}">
-                    <span>▦</span><em>{{ item.division.name }}</em><b>{{ item.employee_count }}</b>
+                    <span class="authority-tree-icon tone-{{ item.tone }}"><svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-org-{{ item.icon_kind }}"></use></svg></span>
+                    <em>{{ item.division.name }}</em><b>{{ item.employee_count }}</b>
                 </button>
                 {% endfor %}
             </div>
-            <div class="authority-tree-legend"><span><i class="granted">+</i> предоставлено</span><span><i class="conditional">+1</i> с условием</span><span><i>—</i> не предоставлено</span></div>
+
+            <section class="authority-tree-reference" aria-label="Обозначения матрицы">
+                <div class="authority-reference-heading"><strong>Обозначения</strong><span>Категории и условия</span></div>
+                <div class="authority-category-legend">
+                    <span class="personnel-category category-atp"><b>АТП</b><small>Административно-технический</small></span>
+                    <span class="personnel-category category-op"><b>ОП</b><small>Оперативный</small></span>
+                    <span class="personnel-category category-orp"><b>ОРП</b><small>Оперативно-ремонтный</small></span>
+                    <span class="personnel-category category-rp"><b>РП</b><small>Ремонтный</small></span>
+                    <span class="personnel-category category-mixed"><b>АТП/ОП</b><small>Совмещённая категория</small></span>
+                </div>
+                <div class="authority-marker-legend">
+                    <div><i class="granted">+</i><span><strong>Право предоставлено</strong><small>Без дополнительного условия</small></span></div>
+                    <div><i class="conditional">+1</i><span><strong>Условие по п. 5.4</strong><small>Приказ Минтруда № 903н</small></span></div>
+                    <div><i class="conditional">+2</i><span><strong>Условие по п. 5.13</strong><small>Приказ Минтруда № 903н</small></span></div>
+                    <div><i class="conditional">+3</i><span><strong>Иное условие источника</strong><small>Текст обязан быть указан в карточке</small></span></div>
+                    <div><i>—</i><span><strong>Не предоставлено</strong><small>Положительная ячейка отсутствует</small></span></div>
+                </div>
+            </section>
         </aside>
 
         <section class="authority-panel authority-matrix-panel" data-authority-panel="matrix">
             <div class="authority-panel-heading">
-                <div><h2>Матрица прав штатного персонала</h2><p>Положительная ячейка опубликованной редакции является предоставленным правом. Индекс обозначает дополнительное условие.</p></div>
+                <div><h2>Матрица прав штатного персонала</h2><p>Индекс в ячейке раскрывается в точное условие, пункт документа и источник.</p></div>
                 <span class="authority-count">{{ published_right_count }}</span>
             </div>
             {% if rights and division_rows %}
@@ -111,21 +144,31 @@
                     <thead>
                         <tr class="authority-category-header"><th class="matrix-sticky-summary" colspan="3">Сотрудник и квалификация</th>{% for group in category_groups %}<th colspan="{{ group.rights|length }}">{{ group.name }}</th>{% endfor %}</tr>
                         <tr class="authority-right-header">
-                            <th class="matrix-sticky-name">ФИО</th><th class="matrix-sticky-position">Должность</th><th class="matrix-sticky-qualification">Категория / группа</th>
-                            {% for right in rights %}<th data-right-column="{{ right.code }}"><button type="button" title="{{ right.name }}" data-focus-right="{{ right.code }}">{{ right.name }}</button></th>{% endfor %}
+                            <th class="matrix-sticky-name">ФИО</th>
+                            <th class="matrix-sticky-position">Должность</th>
+                            <th class="matrix-sticky-qualification">Категория и квалификация</th>
+                            {% for right in rights %}<th data-right-column="{{ right.code }}"><button type="button" title="{{ right.name }}" data-focus-right="{{ right.code }}"><span>{{ right.name }}</span></button></th>{% endfor %}
                         </tr>
                     </thead>
                     {% for branch in division_rows %}
                     <tbody data-division-section="{{ branch.division.id }}" data-division-path="{{ branch.division_path }}">
-                        <tr class="authority-division-row"><th colspan="{{ rights|length|add:3 }}"><button type="button" data-collapse-division="{{ branch.division.id }}" aria-expanded="true">▾</button><span style="--division-depth: {{ branch.depth }}">{{ branch.division.name }}</span><b>{{ branch.employee_count }}</b></th></tr>
+                        <tr class="authority-division-row"><th colspan="{{ rights|length|add:3 }}"><button type="button" data-collapse-division="{{ branch.division.id }}" aria-expanded="true">▾</button><span style="--division-depth: {{ branch.depth }}"><svg class="authority-inline-icon tone-{{ branch.tone }}" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-org-{{ branch.icon_kind }}"></use></svg>{{ branch.division.name }}</span><b>{{ branch.employee_count }}</b></th></tr>
                         {% for row in branch.direct_rows %}
                         <tr class="authority-matrix-person" data-authority-row data-matrix-row data-division-path="{{ row.division_path }}" data-search="{{ row.search_text }}" data-category="{% if row.qualification %}{{ row.qualification.personnel_category }}{% endif %}" data-group="{% if row.qualification %}{{ row.qualification.electrical_safety_group }}{% endif %}">
                             <td class="matrix-sticky-name"><a href="{% url 'organizations:employee_detail' row.employee.public_id %}">{{ row.employee.full_name }}</a>{% if row.employee.workplace %}<small>{{ row.employee.workplace.name }}</small>{% endif %}</td>
                             <td class="matrix-sticky-position">{{ row.employee.position.name }}</td>
-                            <td class="matrix-sticky-qualification">{% if row.qualification %}<strong>{{ row.qualification.personnel_category }}</strong><span>Группа {{ row.qualification.electrical_safety_group }}</span><small>{{ row.qualification.voltage_scope }}</small>{% else %}<em>Не опубликовано</em>{% endif %}</td>
+                            <td class="matrix-sticky-qualification">
+                                {% if row.qualification %}<strong class="personnel-category-chip">{{ row.qualification.personnel_category }}</strong><span>Группа {{ row.qualification.electrical_safety_group }} по электробезопасности</span><small>{{ row.qualification.voltage_scope }}</small>{% else %}<em>Не опубликовано</em>{% endif %}
+                                {% for special in row.special_qualifications %}<small class="special-qualification-chip">{{ special.get_kind_display }}: {{ special.level }}</small>{% endfor %}
+                            </td>
                             {% for cell in row.cells %}
                             <td class="authority-right-cell{% if cell and cell.source_marker != '+' %} is-conditional{% elif cell %} is-granted{% endif %}" data-right-cell="{% if cell %}{{ cell.right_definition.code }}{% endif %}">
-                                {% if cell %}<a href="{% url 'organizations:employee_detail' row.employee.public_id %}#right-{{ cell.right_definition.code }}" title="{{ cell.right_definition.name }}{% if cell.qualifier %}: {{ cell.qualifier }}{% endif %}">{{ cell.source_marker }}</a>{% else %}<span>—</span>{% endif %}
+                                {% if cell %}
+                                <a href="{% url 'organizations:employee_detail' row.employee.public_id %}#right-{{ cell.right_definition.code }}" aria-label="{{ cell.right_definition.name }}: {{ cell.source_marker }}">
+                                    <span class="authority-cell-marker">{{ cell.source_marker }}</span>
+                                    {% if cell.source_marker != '+' %}<span class="authority-condition-popover" role="tooltip"><strong>{% if cell.condition_detail %}{{ cell.condition_detail.title }}{% else %}Условие {{ cell.source_marker }}{% endif %}</strong><em>{% if cell.condition_detail %}{{ cell.condition_detail.description }}{% elif cell.qualifier %}{{ cell.qualifier }}{% else %}Условие не расшифровано — требуется проверка.{% endif %}</em>{% if cell.condition_detail.source_clause %}<small>{{ cell.condition_detail.source_clause }} · {{ cell.condition_detail.source_reference }}</small>{% else %}<small>{{ cell.source_reference|authority_basis_label }}</small>{% endif %}</span>{% endif %}
+                                </a>
+                                {% else %}<span>—</span>{% endif %}
                             </td>
                             {% endfor %}
                         </tr>
@@ -138,16 +181,16 @@
         </section>
 
         <section class="authority-panel" data-authority-panel="holders" hidden>
-            <div class="authority-panel-heading"><div><h2>Кто имеет право</h2><p>Выберите право и получите список работников в организационной структуре с квалификацией, областью, сроком и условием.</p></div><span class="authority-count">{{ holder_assignments|length }}</span></div>
+            <div class="authority-panel-heading"><div><h2>Кто имеет право</h2><p>Список работников с квалификацией, областью, точным условием, сроком и основанием.</p></div><span class="authority-count">{{ holder_assignments|length }}</span></div>
             {% if holder_assignments %}
             <div class="authority-table-wrap"><table class="authority-table authority-holders-table"><thead><tr><th>Сотрудник</th><th>Подразделение</th><th>Квалификация</th><th>Предоставленное право</th><th>Область и условие</th><th>Срок и основание</th></tr></thead><tbody>
                 {% for item in holder_assignments %}
                 <tr data-authority-row data-holder-row data-right-code="{{ item.assignment.right_definition.code }}" data-division-path="{{ item.row.division_path }}" data-search="{{ item.row.search_text }}" data-category="{% if item.row.qualification %}{{ item.row.qualification.personnel_category }}{% endif %}" data-group="{% if item.row.qualification %}{{ item.row.qualification.electrical_safety_group }}{% endif %}" data-condition="{% if item.assignment.source_marker != '+' %}conditional{% else %}granted{% endif %}">
                     <td><a class="authority-primary-value" href="{% url 'organizations:employee_detail' item.row.employee.public_id %}">{{ item.row.employee.full_name }}</a><span class="authority-secondary-value">{{ item.row.employee.position.name }}</span></td>
                     <td><span class="authority-primary-value">{{ item.row.employee.division.name }}</span>{% if item.row.employee.workplace %}<span class="authority-secondary-value">{{ item.row.employee.workplace.name }}</span>{% endif %}</td>
-                    <td>{% if item.row.qualification %}<span class="authority-primary-value">{{ item.row.qualification.personnel_category }} · группа {{ item.row.qualification.electrical_safety_group }}</span><span class="authority-secondary-value">{{ item.row.qualification.voltage_scope }}</span>{% else %}<em>Не опубликовано</em>{% endif %}</td>
-                    <td><span class="authority-primary-value">{{ item.assignment.right_definition.name }}</span>{% if item.assignment.source_marker != '+' %}<span class="authority-status verify">С условием {{ item.assignment.source_marker }}</span>{% else %}<span class="authority-status allowed">Предоставлено</span>{% endif %}</td>
-                    <td><span class="authority-primary-value">{{ item.assignment.scope_text|default:'Область организации' }}</span>{% if item.assignment.qualifier %}<span class="authority-secondary-value">{{ item.assignment.qualifier }}</span>{% endif %}</td>
+                    <td>{% if item.row.qualification %}<span class="authority-primary-value">{{ item.row.qualification.personnel_category }} · группа {{ item.row.qualification.electrical_safety_group }} по электробезопасности</span><span class="authority-secondary-value">{{ item.row.qualification.voltage_scope }}</span>{% else %}<em>Не опубликовано</em>{% endif %}{% for special in item.row.special_qualifications %}<span class="authority-secondary-value">{{ special.get_kind_display }}: {{ special.level }}</span>{% endfor %}</td>
+                    <td><span class="authority-primary-value">{{ item.assignment.right_definition.name }}</span>{% if item.assignment.source_marker != '+' %}<span class="authority-status verify">Условие {{ item.assignment.source_marker }}</span>{% else %}<span class="authority-status allowed">Предоставлено</span>{% endif %}</td>
+                    <td><span class="authority-primary-value">{{ item.assignment.scope_text|default:'Область организации' }}</span>{% if item.assignment.source_marker != '+' %}<div class="authority-condition-inline"><strong>{% if item.assignment.condition_detail %}{{ item.assignment.condition_detail.title }}{% else %}Условие не расшифровано{% endif %}</strong><span>{% if item.assignment.condition_detail %}{{ item.assignment.condition_detail.description }}{% elif item.assignment.qualifier %}{{ item.assignment.qualifier }}{% else %}Требуется проверка исходного документа.{% endif %}</span>{% if item.assignment.condition_detail.source_clause %}<small>{{ item.assignment.condition_detail.source_clause }} · {{ item.assignment.condition_detail.source_reference }}</small>{% endif %}</div>{% endif %}</td>
                     <td><span class="authority-primary-value">с {{ item.assignment.valid_from|date:'d.m.Y' }}{% if item.assignment.valid_until %} по {{ item.assignment.valid_until|date:'d.m.Y' }}{% endif %}</span><span class="authority-secondary-value">{{ item.assignment.source_reference|authority_basis_label }}</span></td>
                 </tr>
                 {% endfor %}
@@ -156,19 +199,31 @@
         </section>
     </div>
 
-    <section class="authority-panel" data-authority-panel="external" hidden>
-        <div class="authority-panel-heading"><div><h2>Подрядный и командированный персонал</h2><p>Отдельный контур: направляющая и принимающая организации, область, срок допуска и основание.</p></div><span class="authority-count">{{ external_engagements|length }}</span></div>
+    <section class="authority-panel" data-authority-panel="dispatch" hidden>
+        <div class="authority-panel-heading"><div><h2>Диспетчерские центры — ОДУ и РДУ</h2><p>Руководство и оперативно-диспетчерский персонал, с которым ведётся рабочее взаимодействие.</p></div><span class="authority-count">{{ dispatch_contacts|length }}</span></div>
+        {% include "organizations/_external_operational_contacts.html" with contacts=dispatch_contacts empty_title="Диспетчерские контакты не опубликованы" %}
+    </section>
+
+    <section class="authority-panel" data-authority-panel="related" hidden>
+        <div class="authority-panel-heading"><div><h2>ЦУС, смежные организации и энергообъекты</h2><p>Оперативный персонал СК ПМЭС, ЦУС, ПС 500 кВ Невинномысск и коммерческого диспетчерского центра.</p></div><span class="authority-count">{{ external_operational_contacts|length }}</span></div>
+        {% include "organizations/_external_operational_contacts.html" with contacts=related_contacts empty_title="Смежные оперативные контакты не опубликованы" %}
+        {% if commercial_contacts %}<div class="authority-subsection-heading"><strong>Коммерческий диспетчерский центр</strong><span>{{ commercial_contacts|length }}</span></div>{% include "organizations/_external_operational_contacts.html" with contacts=commercial_contacts empty_title="" %}{% endif %}
+    </section>
+
+    <section class="authority-panel" data-authority-panel="contractors" hidden>
+        <div class="authority-panel-heading"><div><h2>Подрядный и командированный персонал</h2><p>Отдельный контур допуска: направляющая и принимающая организации, область, срок и основание.</p></div><span class="authority-count">{{ external_engagements|length }}</span></div>
         {% if external_engagements %}<div class="authority-table-wrap"><table class="authority-table"><thead><tr><th>Сотрудник</th><th>Организация</th><th>Вид</th><th>Область допуска</th><th>Срок и основание</th><th>Состояние</th></tr></thead><tbody>
-        {% for item in external_engagements %}<tr data-authority-row data-search="{{ item.employee.full_name }} {{ item.employee.division.name }} {{ item.home_organization.name }} {{ item.scope_label }} {{ item.basis_reference }}"><td><a class="authority-primary-value" href="{% url 'organizations:employee_detail' item.employee.public_id %}">{{ item.employee.full_name }}</a><span class="authority-secondary-value">{{ item.employee.position.name }}</span></td><td>{{ item.home_organization.short_name|default:item.home_organization.name }}</td><td>{{ item.get_relation_kind_display }}</td><td>{{ item.scope_label|default:item.scope_reference }}</td><td><span class="authority-primary-value">{{ item.valid_from|date:'d.m.Y' }} — {% if item.valid_until %}{{ item.valid_until|date:'d.m.Y' }}{% else %}без ограничения срока{% endif %}</span><span class="authority-secondary-value">{{ item.basis_reference|authority_basis_label }}</span></td><td>{% if item.basis_status == 'CONFIRMED' %}<span class="authority-status allowed">Подтверждено</span>{% else %}<span class="authority-status verify">Проверить</span>{% endif %}</td></tr>{% endfor %}
-        </tbody></table></div>{% else %}<div class="authority-empty"><strong>Внешний персонал не зарегистрирован</strong></div>{% endif %}
+        {% for item in external_engagements %}<tr data-authority-row data-search="{{ item.employee.full_name }} {{ item.employee.division.name }} {{ item.home_organization.name }} {{ item.scope_label }} {{ item.basis_reference }}"><td><a class="authority-primary-value" href="{% url 'organizations:employee_detail' item.employee.public_id %}">{{ item.employee.full_name }}</a><span class="authority-secondary-value">{{ item.employee.position.name }}</span></td><td>{{ item.home_organization.short_name|default:item.home_organization.name }}</td><td>{{ item.get_relation_kind_display }}</td><td>{{ item.scope_label|default:item.scope_reference }}</td><td><span class="authority-primary-value">{{ item.valid_from|date:'d.m.Y' }} — {% if item.valid_until %}{{ item.valid_until|date:'d.m.Y' }}{% else %}без ограничения срока{% endif %}</span><span class="authority-secondary-value">{{ item.basis_reference|authority_basis_label }}</span></td><td>{% if item.is_active %}<span class="authority-status allowed">Действует</span>{% else %}<span class="authority-status denied">Не действует</span>{% endif %}</td></tr>{% endfor %}
+        </tbody></table></div>{% else %}<div class="authority-empty"><strong>Подрядный персонал не опубликован</strong></div>{% endif %}
     </section>
 
     <section class="authority-panel" data-authority-panel="checks" hidden>
         <div class="authority-panel-heading"><div><h2>История проверок полномочий</h2><p>Аудит результата проверки конкретного действия на конкретный момент.</p></div><span class="authority-count">{{ recent_evaluations|length }}</span></div>
-        {% if recent_evaluations %}<div class="authority-evaluation-list">{% for item in recent_evaluations %}<a class="authority-evaluation-row" href="{% url 'organizations:authority_evaluation_detail' item.public_id %}" data-authority-row data-search="{{ item.actor.full_name }} {{ item.actor.division.name }} {{ item.action_code|authority_action_label }} {{ item.subject_id|authority_subject_label }}"><time>{{ item.occurred_at|date:'d.m.Y H:i' }}</time><span><strong>{{ item.actor.full_name }}</strong><small>{{ item.actor.division.name }}</small></span><span><strong>{{ item.action_code|authority_action_label }}</strong><small>{{ item.subject_id|authority_subject_label }}</small></span><span class="authority-status {{ item.decision|authority_decision_tone }}">{{ item.get_decision_display }}</span></a>{% endfor %}</div>{% else %}<div class="authority-empty"><strong>Проверки ещё не выполнялись</strong></div>{% endif %}
+        {% if recent_evaluations %}<div class="authority-evaluation-list">{% for item in recent_evaluations %}<a class="authority-evaluation-row" href="{% url 'organizations:authority_evaluation_detail' item.public_id %}" data-authority-row data-search="{{ item.actor.full_name }} {{ item.action_code }} {{ item.subject_id }} {{ item.reason_codes|join:' ' }}"><time>{{ item.occurred_at|date:'d.m.Y H:i' }}</time><span><strong>{{ item.actor.full_name }}</strong><small>{{ item.actor.division.name }}</small></span><span><strong>{{ item.action_code|authority_action_label }}</strong><small>{{ item.subject_id|authority_subject_label }}</small></span><span class="authority-status {{ item.decision|authority_decision_tone }}">{{ item.get_decision_display }}</span></a>{% endfor %}</div>{% else %}<div class="authority-empty"><strong>Проверки ещё не выполнялись</strong></div>{% endif %}
     </section>
 
-    <div class="authority-no-results" data-authority-no-results>По заданным условиям ничего не найдено. Измените поиск или фильтры.</div>
-    <aside class="authority-guidance"><span aria-hidden="true">ℹ</span><div><strong>Как формируется право</strong><p>Утверждённая редакция матрицы публикует положительные ячейки как действующие структурированные права. Отметки +1, +2 и +3 означают предоставленное право с обязательным дополнительным условием. Пустая ячейка права не предоставляет.</p></div></aside>
+    <div class="authority-no-results" data-authority-no-results>По выбранным условиям записи не найдены.</div>
+
+    <aside class="authority-guidance"><span>i</span><div><strong>Как формируется право</strong><p>Положительная ячейка публикует право. Индексы +1 и +2 связаны с пунктами 5.4 и 5.13 Правил по охране труда при эксплуатации электроустановок; для любого другого индекса система обязана показать точный текст условия или состояние «требуется проверка».</p></div></aside>
 </section>
 {% endblock %}
