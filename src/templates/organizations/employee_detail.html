@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="{% static 'organizations/personnel_authority.css' %}?v=pa001r2">
 <link rel="stylesheet" href="{% static 'organizations/personnel_authority_matrix.css' %}?v=pa001r3">
 <link rel="stylesheet" href="{% static 'organizations/personnel_authority_profile.css' %}?v=pa001r3">
+<link rel="stylesheet" href="{% static 'organizations/personnel_management.css' %}?v=pa001m1">
 {% endblock %}
 
 {% block content %}
@@ -17,6 +18,7 @@
             <h1>{{ employee.full_name }}</h1>
         </div>
         <div class="da-actions">
+            <a class="da-button" href="{% url 'organizations:employee_edit' employee.public_id %}">Редактировать карточку</a>
             <a class="da-button secondary" href="{% url 'organizations:authority_registry' %}">К матрице прав</a>
             <a class="da-button secondary" href="{% url 'organizations:directory' %}">К структуре организации</a>
         </div>
@@ -35,12 +37,16 @@
 
     <div class="authority-detail-grid">
         <section class="authority-panel">
-            <div class="authority-panel-heading"><div><h2>Сведения о сотруднике</h2><p>Организационная принадлежность и основное рабочее место.</p></div></div>
+            <div class="authority-panel-heading"><div><h2>Сведения о сотруднике</h2><p>Организационная принадлежность, рабочее место и контакты.</p></div></div>
             <dl class="authority-info-list">
                 <dt>Организация</dt><dd>{{ employee.organization.name }}</dd>
                 <dt>Подразделение</dt><dd>{{ employee.division.name }}</dd>
                 <dt>Должность</dt><dd>{{ employee.position.name }}</dd>
                 <dt>Основное рабочее место</dt><dd>{% if employee.workplace %}{{ employee.workplace.name }}{% else %}Не назначено{% endif %}</dd>
+                <dt>Основной телефон</dt><dd>{{ employee.contact_profile.primary_phone|default:'Не указан' }}</dd>
+                <dt>Оперативный телефон</dt><dd>{{ employee.contact_profile.operational_phone|default:'Не указан' }}</dd>
+                <dt>Электронная почта</dt><dd>{{ employee.contact_profile.email|default:'Не указана' }}</dd>
+                <dt>Режим доступности</dt><dd>{% if employee.contact_profile.is_round_the_clock %}Круглосуточно{% else %}{{ employee.contact_profile.availability_schedule|default:'Не указан' }}{% endif %}</dd>
             </dl>
         </section>
         <section class="authority-panel">
@@ -48,19 +54,19 @@
             <div class="authority-compact-stats">
                 <div class="authority-compact-stat"><span>Предоставленные права</span><strong>{{ published_rights|length }}</strong></div>
                 <div class="authority-compact-stat"><span>Права с условием</span><strong>{{ conditional_count }}</strong></div>
-                <div class="authority-compact-stat"><span>Квалификации</span><strong>{{ qualifications|length }}</strong></div>
+                <div class="authority-compact-stat"><span>Электробезопасность</span><strong>{{ qualifications|length }}</strong></div>
                 <div class="authority-compact-stat"><span>Проверки</span><strong>{{ authority_evaluations|length }}</strong></div>
             </div>
         </section>
     </div>
 
     <section class="authority-panel">
-        <div class="authority-panel-heading"><div><h2>Квалификация и область допуска</h2><p>Категория персонала, группа по электробезопасности и класс напряжения.</p></div><span class="authority-count">{{ qualifications|length }}</span></div>
+        <div class="authority-panel-heading"><div><h2>Квалификация и область допуска</h2><p>Категория персонала, группа именно по электробезопасности и класс напряжения.</p></div><span class="authority-count">{{ qualifications|length }}</span></div>
         {% if qualifications %}
         <div class="authority-source-items" style="padding: 12px;">
             {% for item in qualifications %}
             <article class="authority-source-item">
-                <strong>{{ item.personnel_category }} · Группа {{ item.electrical_safety_group|default:'не указана' }}</strong>
+                <strong>{{ item.personnel_category }} · Группа {{ item.electrical_safety_group|default:'не указана' }} по электробезопасности</strong>
                 <span>Класс напряжения: {{ item.voltage_scope|default:'не указан' }}</span>
                 {% if item.electrical_installation_scope %}<span>{{ item.electrical_installation_scope }}</span>{% endif %}
                 <small>с {{ item.valid_from|date:'d.m.Y' }}{% if item.valid_until %} по {{ item.valid_until|date:'d.m.Y' }}{% endif %} · {{ item.source_reference|authority_basis_label }}</small>
@@ -68,6 +74,15 @@
             {% endfor %}
         </div>
         {% else %}<div class="authority-empty"><strong>Квалификационные сведения не опубликованы</strong></div>{% endif %}
+    </section>
+
+    <section class="authority-panel">
+        <div class="authority-panel-heading"><div><h2>Специальные квалификации</h2><p>Категория допуска по РЗА, группа работ на высоте и другие самостоятельные шкалы.</p></div></div>
+        <div class="authority-source-items" style="padding: 12px;">
+            {% for item in employee.special_qualifications.all %}{% if item.is_active %}
+            <article class="authority-source-item"><strong>{{ item.get_kind_display }} — {{ item.level }}</strong><span>{{ item.scope_text|default:'Область не указана' }}</span><small>с {{ item.valid_from|date:'d.m.Y' }}{% if item.valid_until %} по {{ item.valid_until|date:'d.m.Y' }}{% endif %} · {{ item.basis_reference }}</small></article>
+            {% endif %}{% empty %}<div class="authority-empty"><strong>Специальные квалификации не опубликованы</strong></div>{% endfor %}
+        </div>
     </section>
 
     <section class="authority-panel authority-profile-rights">
