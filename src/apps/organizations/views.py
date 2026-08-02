@@ -11,7 +11,15 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
 from .forms import InterfacePreferenceForm, PersonalAuthenticationForm
-from .models import Division, Employee, InterfacePreference, Organization, RoleAssignment
+from .models import (
+    Division,
+    DivisionEnergySiteService,
+    Employee,
+    InterfacePreference,
+    OperationalReportingLine,
+    Organization,
+    RoleAssignment,
+)
 from .personnel_management_models import (
     ExternalOperationalContact,
     OrganizationOperationalProfile,
@@ -55,11 +63,41 @@ def _division_tree(divisions: list[Division]) -> list[dict[str, object]]:
 
     def add(parent_id: int | None, depth: int) -> None:
         for division in children.get(parent_id, ()):
-            result.append({"division": division, "depth": depth})
+            result.append(
+                {
+                    "division": division,
+                    "depth": depth,
+                    "is_separate": division.code == "BLADE_SERVICE",
+                    "is_center": division.code == "CENTER",
+                }
+            )
             add(division.id, depth + 1)
 
     add(None, 0)
     return result
+
+
+def _site_service_rows(
+    organization: Organization | None,
+) -> list[dict[str, object]]:
+    if organization is None:
+        return []
+    services = list(
+        DivisionEnergySiteService.objects.filter(
+            division__organization=organization,
+            is_active=True,
+        )
+        .select_related("division", "energy_site")
+        .order_by("energy_site__name", "division__name", "service_kind")
+    )
+    grouped: dict[int, dict[str, object]] = {}
+    for service in services:
+        row = grouped.setdefault(
+            service.energy_site_id,
+            {"site": service.energy_site, "services": []},
+        )
+        row["services"].append(service)
+    return list(grouped.values())
 
 
 @login_required
@@ -101,7 +139,7 @@ def directory(request):
                 organization=selected,
                 is_active=True,
             )
-            .select_related("parent")
+            .select_related("parent", "service_profile")
             .annotate(
                 active_employee_count=Count(
                     "employees",
@@ -151,6 +189,24 @@ def directory(request):
         if selected
         else []
     )
+    reporting_lines = (
+        list(
+            OperationalReportingLine.objects.filter(
+                subordinate_division__organization=selected,
+                is_active=True,
+            )
+            .select_related(
+                "supervisor__position",
+                "subordinate_division",
+            )
+            .order_by("subordinate_division__name")
+        )
+        if selected
+        else []
+    )
+    center_leadership = [
+        employee for employee in employees if employee.division.code == "CENTER"
+    ]
 
     return render(
         request,
@@ -161,6 +217,9 @@ def directory(request):
             "division_tree": _division_tree(divisions),
             "employees": employees,
             "external_contacts": external_contacts,
+            "reporting_lines": reporting_lines,
+            "site_service_rows": _site_service_rows(selected),
+            "center_leadership": center_leadership,
             "own_organizations": groups.get(OrganizationRelationKind.OWN, []),
             "dispatch_organizations": groups.get(
                 OrganizationRelationKind.DISPATCH_CENTER,
