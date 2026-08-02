@@ -7,4 +7,8 @@ class OrganizationsConfig(AppConfig):
     verbose_name = "Организация и персонал"
 
     def ready(self) -> None:
-        from . import authority_models, signals  # noqa: F401
+        from . import (  # noqa: F401
+            authority_models,
+            personnel_management_models,
+            signals,
+        )
