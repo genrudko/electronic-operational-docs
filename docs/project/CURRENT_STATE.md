@@ -2,7 +2,8 @@
 
 **Дата factual check:** 02.08.2026
 
-**Единственный владелец:** accepted main baseline, active work item/issue/PR/branch и runtime state.
+**Единственный владелец:** accepted main baseline, active work item/issue/PR/branch
+и runtime state.
 
 ```text
 repository: genrudko/electronic-operational-docs
@@ -15,32 +16,45 @@ runtime impact: NONE
 preview: UNTOUCHED
 ```
 
-`MASTER-DATA-ALIGNMENT-001` принят пользователем и merged обычным merge commit `b644048f1ec17e19e03c2e4fb538fc0cfc1f5feb` из exact PR head `e507b63ab35a4767c25364d729accb9a741af874`. Issue #34 закрыт.
+`MASTER-DATA-ALIGNMENT-001` принят и merged commit
+`b644048f1ec17e19e03c2e4fb538fc0cfc1f5feb`.
 
-`NORMATIVE-EVIDENCE-001` принят пользователем 01.08.2026 и merged обычным merge commit `6e5171776cd6bc02fcbc45eb9532a6a0e58e15f0` из exact PR head `24848d04984b61b0b183f3ed2b04117b3e05e5f9`. PR #41 закрыт как merged; issue #40 закрыт как completed.
+`NORMATIVE-EVIDENCE-001` принят и merged commit
+`6e5171776cd6bc02fcbc45eb9532a6a0e58e15f0`.
 
-`PERSONNEL-AUTHORITY-001` начат по issue #42 и Draft PR #43 после factual preflight. Модуль не создаётся с нуля: переиспользованы employee/qualification/imported operational-right foundations. Application role, должность, квалификация, site authorization, imported marker и operational grant разделены.
-
-Реализованы:
-
-- pure authority contract с `ALLOW / DENY / VERIFY`, stable reasons, structured scope, validity и basis;
-- persistent `OperationalAuthorityGrant`, external engagement и bounded substitution поверх существующей модели персонала;
-- server-side action-time evaluator и append-only `AuthorityEvaluationRecord` с correction link, immutable snapshot и SHA-256;
-- controlled qualification codes без превращения русского free text в authorization token;
-- read-only реестр полномочий, карточка сотрудника и detail сохранённой проверки;
-- reversible conditional `DEMO` data migration и idempotent management command с четырьмя полностью синтетическими `DEMO-ONLY` сценариями.
-
-Доказанные промежуточные gates:
+`PERSONNEL-AUTHORITY-001` выполняется в issue #42 и Draft PR #43. Pure authority
+contract, persistence, external engagement, bounded substitution and immutable
+action-time evaluation implemented. Intermediate proven gates:
 
 ```text
 PURE CONTRACT HEAD: 0200a2be6dfc5e948eb27dbed77d9e2aa39c0d4d / 5 workflows SUCCESS
 PERSISTENCE HEAD: 4c65f3ab1d6631fa661c9ffba94443620a30e71a / 5 workflows SUCCESS
 ```
 
-Финальный implementation candidate проходит exact-head five-workflow gate перед trusted `vps-development-rebuild`. До успешного deployment runtime не изменён; accepted preview остаётся `UNTOUCHED`.
+Первый presentation candidate был отклонён: он показывал technical grant list и
+не воспроизводил рабочую информационную модель утверждённого списка лиц с
+предоставлением прав. Direction A оформление принято, информационная архитектура
+не принята.
 
-Merge, Ready for Review и preview write без отдельной команды пользователя запрещены.
+Принята и реализуется domain correction:
 
-С 01.08.2026 действует единый пользовательский контур: один активный чат ведёт work item от factual preflight до post-merge coordination. При технической смене чата новый исполнитель самостоятельно восстанавливает состояние из GitHub; пользователь не переносит между чатами handoff, SHA, CI-отчёты или команды.
+- утверждённая положительная ячейка матрицы является предоставленным правом;
+- `+1`, `+2`, `+3` являются правом с дополнительным условием;
+- source right материализуется в linked evaluator projection, а не требует
+  повторного ручного назначения;
+- основной UX — дерево подразделений + матрица прав;
+- отдельный view отвечает на вопрос «кто имеет выбранное право»;
+- employee card показывает полный профиль квалификации, прав, условий, scope и
+  basis;
+- внешний персонал остаётся отдельным контуром.
 
-Release/module/capability/work-item planning state остаётся в [`DEMO_RELEASE_PLAN.yaml`](DEMO_RELEASE_PLAN.yaml). Navigation без дублирования volatile values остаётся в [`CURRENT_HANDOFF.md`](CURRENT_HANDOFF.md).
+Новый matrix candidate проходит implementation и exact-head validation. До его
+успешного trusted rebuild runtime state для нового head не подтверждён. Preview
+остаётся `UNTOUCHED`.
+
+Merge, Ready for Review и preview write без отдельной команды пользователя
+запрещены.
+
+Release/module/capability/work-item planning state остаётся в
+[`DEMO_RELEASE_PLAN.yaml`](DEMO_RELEASE_PLAN.yaml). Navigation без дублирования
+volatile values остаётся в [`CURRENT_HANDOFF.md`](CURRENT_HANDOFF.md).
