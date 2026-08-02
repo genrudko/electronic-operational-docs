@@ -26,7 +26,7 @@ urlpatterns = [
             "operations/journal/<int:journal_id>/shift/drafts/"
             "<uuid:public_id>/autosave/"
         ),
-        views.autosave_draft_entry,
+        opj_lifecycle.autosave_draft_guard_view,
         name="autosave_draft",
     ),
     path(
@@ -42,7 +42,7 @@ urlpatterns = [
             "operations/journal/<int:journal_id>/shift/drafts/"
             "<uuid:public_id>/move/"
         ),
-        views.move_draft_entry_view,
+        opj_lifecycle.move_draft_guard_view,
         name="move_draft",
     ),
     path(
@@ -50,7 +50,7 @@ urlpatterns = [
             "operations/journal/<int:journal_id>/shift/drafts/"
             "<uuid:public_id>/remove/"
         ),
-        views.remove_draft_entry_view,
+        opj_lifecycle.remove_draft_guard_view,
         name="remove_draft",
     ),
     path(
@@ -58,7 +58,7 @@ urlpatterns = [
             "operations/journal/<int:journal_id>/shift/drafts/"
             "<uuid:public_id>/restore/"
         ),
-        views.restore_draft_entry_view,
+        opj_lifecycle.restore_draft_guard_view,
         name="restore_draft",
     ),
     path(
