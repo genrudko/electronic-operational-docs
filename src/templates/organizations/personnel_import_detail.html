@@ -1,0 +1,54 @@
+{% extends "shared/direction_a/base.html" %}
+{% load static %}
+
+{% block title %}{{ batch.uploaded_name }} · Импорт персонала · ЭОД{% endblock %}
+{% block main_class %}authority-main{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'organizations/personnel_management.css' %}?v=pa001m1">{% endblock %}
+
+{% block content %}
+<section class="personnel-management-page">
+    <header class="da-page-header da-page-header-compact">
+        <div><p class="da-source-line"><a href="{% url 'organizations:personnel_import_upload' %}">Импорт персонала</a> / Пакет</p><h1>{{ batch.uploaded_name }}</h1><p>{{ batch.get_import_kind_display }} · {{ batch.source_reference }}</p></div>
+        <div class="da-actions"><a class="da-button secondary" href="{% url 'organizations:personnel_import_upload' %}">К пакетам</a><a class="da-button secondary" href="{% url 'organizations:directory' %}">К справочнику</a></div>
+    </header>
+
+    <section class="personnel-import-panel">
+        <header><div><h2>{{ batch.get_status_display }}</h2><p>SHA-256: <code>{{ batch.file_sha256 }}</code> · лист «{{ batch.sheet_name }}» · действует с {{ batch.effective_from|date:'d.m.Y' }}</p></div></header>
+        <div class="personnel-import-summary">
+            <div><span>Строк</span><strong>{{ preview.summary.total|default:0 }}</strong></div>
+            <div><span>Новые карточки</span><strong>{{ preview.summary.create|default:0 }}</strong></div>
+            <div><span>Обновления</span><strong>{{ preview.summary.update|default:0 }}</strong></div>
+            <div><span>Ошибки</span><strong>{{ preview.summary.errors|default:0 }}</strong></div>
+        </div>
+        {% if preview.file_errors %}<div class="personnel-form-errors"><strong>Ошибки файла:</strong><ul>{% for error in preview.file_errors %}<li>{{ error }}</li>{% endfor %}</ul></div>{% endif %}
+
+        <form method="post" action="{% url 'organizations:personnel_import_publish' batch.public_id %}">
+            {% csrf_token %}
+            <div class="personnel-import-table-wrap">
+                <table class="personnel-import-table">
+                    <thead><tr><th>Включить</th><th>Строка</th><th>Действие</th><th>Сотрудник</th><th>Подразделение / объект</th><th>Должность</th><th>Контакты</th><th>Квалификация / роль</th><th>Права / полномочия</th><th>Проверка</th></tr></thead>
+                    <tbody>
+                        {% for row in preview.rows %}
+                        <tr{% if row.errors %} class="has-error"{% endif %}>
+                            <td>{% if batch.status == 'PREVIEW' and not row.errors %}<input type="checkbox" name="selected_rows" value="{{ row.row_number }}"{% if row.selected %} checked{% endif %}>{% else %}—{% endif %}</td>
+                            <td>{{ row.row_number }}</td>
+                            <td><span class="row-action{% if row.action == 'UPDATE' %} update{% endif %}">{% if row.action == 'UPDATE' %}Обновление{% else %}Создание{% endif %}</span></td>
+                            <td><strong>{{ row.employee.last_name }} {{ row.employee.first_name }} {{ row.employee.middle_name }}</strong><small>{{ row.employee.personnel_number }}</small></td>
+                            <td>{{ row.employee.division }}{% if row.employee.workplace %}<small>{{ row.employee.workplace }}</small>{% endif %}</td>
+                            <td>{{ row.employee.position }}</td>
+                            <td>{% if row.contact.operational_phone %}<strong>{{ row.contact.operational_phone }}</strong>{% endif %}<small>{{ row.contact.primary_phone }} {{ row.contact.email }} {{ row.contact.availability_schedule }}</small></td>
+                            <td>{% if row.qualification %}<strong>{{ row.qualification.personnel_category }}{% if row.qualification.electrical_safety_group %} · группа {{ row.qualification.electrical_safety_group }} по электробезопасности{% endif %}</strong><small>{{ row.qualification.voltage_scope }}</small>{% elif row.external %}<strong>{{ row.external.relation_kind }}</strong><small>{{ row.external.operational_scope }}</small>{% endif %}</td>
+                            <td>{% if row.rights %}{{ row.rights|length }} назначений{% elif row.external %}{{ row.external.authority_summary|default:'Не указано' }}{% else %}—{% endif %}</td>
+                            <td>{% if row.errors %}<ul class="personnel-import-errors">{% for error in row.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% else %}<span class="authority-status allowed">Готово</span>{% endif %}</td>
+                        </tr>
+                        {% empty %}<tr><td colspan="10">Строки не найдены.</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if batch.status == 'PREVIEW' %}<footer class="personnel-form-footer"><span>Отсутствие сотрудника в файле не деактивирует существующую карточку автоматически.</span><button class="da-button" type="submit">Опубликовать выбранные строки</button></footer>{% endif %}
+        </form>
+    </section>
+
+    {% if batch.status == 'PUBLISHED' %}<aside class="authority-guidance"><span>✓</span><div><strong>Пакет опубликован</strong><p>{{ batch.published_at|date:'d.m.Y H:i' }} · {{ batch.published_by }}. История изменений сохранена для каждой созданной или обновлённой карточки.</p></div></aside>{% endif %}
+</section>
+{% endblock %}
