@@ -77,11 +77,6 @@ urlpatterns = [
         name="entry_cancel",
     ),
     path(
-        "operations/journal/<int:journal_id>/entries/<int:sequence_number>/communication/",
-        opj_lifecycle.communication_view,
-        name="entry_communication",
-    ),
-    path(
         "operations/journal/<int:journal_id>/display/",
         views.update_display,
         name="update_display",
