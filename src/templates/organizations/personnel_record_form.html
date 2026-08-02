@@ -1,0 +1,31 @@
+{% extends "shared/direction_a/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} · {{ employee.full_name }} · ЭОД{% endblock %}
+{% block main_class %}authority-main{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'organizations/personnel_management.css' %}?v=pa001m1">{% endblock %}
+
+{% block content %}
+<section class="personnel-management-page">
+    <header class="da-page-header da-page-header-compact">
+        <div>
+            <p class="da-source-line"><a href="{% url 'organizations:employee_edit' employee.public_id %}">{{ employee.full_name }}</a> / Изменение записи</p>
+            <h1>{{ title }}</h1>
+            <p>{{ subtitle }}</p>
+        </div>
+        <div class="da-actions"><a class="da-button secondary" href="{% url 'organizations:employee_edit' employee.public_id %}">К редактированию карточки</a></div>
+    </header>
+    <form method="post" class="personnel-form-panel" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="personnel-form-errors">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="personnel-form-grid">
+            {% for field in form %}
+            <div class="personnel-field{% if field.name == 'change_reason' or field.name == 'scope_text' or field.name == 'operational_scope' or field.name == 'authority_summary' or field.name == 'basis_reference' or field.name == 'source_reference' or field.name == 'electrical_installation_scope' or field.name == 'qualifier' %} full-width{% endif %}">
+                {{ field.label_tag }}{{ field }}{{ field.errors }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <footer class="personnel-form-footer"><a class="da-button secondary" href="{% url 'organizations:employee_edit' employee.public_id %}">Отмена</a><button class="da-button" type="submit">Опубликовать новую редакцию</button></footer>
+    </form>
+</section>
+{% endblock %}
