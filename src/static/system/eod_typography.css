@@ -1,0 +1,59 @@
+/* Canonical EOD interface typography for every Direction A screen. */
+body.da-active {
+    --eod-font-ui: Inter, "Segoe UI Variable Text", "Segoe UI", Arial, sans-serif;
+    font-family: var(--eod-font-ui);
+    font-kerning: normal;
+    font-optical-sizing: auto;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body.da-active .da-shell,
+body.da-active .da-shell button,
+body.da-active .da-shell input,
+body.da-active .da-shell select,
+body.da-active .da-shell textarea,
+body.da-active .da-shell table,
+body.da-active .da-shell th,
+body.da-active .da-shell td,
+body.da-active .da-shell summary,
+body.da-active .da-shell label {
+    font-family: var(--eod-font-ui);
+}
+
+body.da-active .da-shell h1,
+body.da-active .da-shell h2,
+body.da-active .da-shell h3,
+body.da-active .da-shell h4,
+body.da-active .da-brand-copy strong,
+body.da-active .da-navigation,
+body.da-active .da-button {
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+    letter-spacing: -0.012em;
+}
+
+body.da-active .da-shell p,
+body.da-active .da-shell td,
+body.da-active .da-shell dd,
+body.da-active .da-shell small {
+    letter-spacing: 0;
+}
+
+body.da-active code,
+body.da-active pre,
+body.da-active kbd,
+body.da-active samp,
+body.da-active .technical-only,
+body.da-active .authority-technical-body {
+    font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+    font-synthesis: none;
+}
+
+/* Journal document typography remains controlled by journal preferences. */
+body.da-active [data-journal-font],
+body.da-active .opj-journal-table,
+body.da-active .opj-journal-table * {
+    font-family: var(--journal-font-family, inherit);
+}
