@@ -1,72 +1,135 @@
 # PERSONNEL-AUTHORITY — module contract
 
 ## MODULE ID
-`PERSONNEL-AUTHORITY` — Персонал и оперативные полномочия.
+
+`PERSONNEL-AUTHORITY` — персонал и оперативные полномочия.
 
 ## НАЗНАЧЕНИЕ
-Лица, должности, квалификации, подрядчики и operational rights с structured scope, validity, basis и immutable authority-at-action snapshot.
 
-## КРИТИЧЕСКИЕ СЦЕНАРИИ
-выдать право на действие/объект/срок · проверить право в момент действия · учесть явное замещение · проверить подрядный/командированный персонал · сохранить authority snapshot и объяснимый результат.
+Модуль хранит организационную структуру, штатный персонал, квалификацию,
+опубликованные права, условия, область и срок их действия, а также отдельный
+контур внешнего персонала и объяснимую проверку полномочия на момент действия.
 
 ## PRIMARY FACTS / DERIVED VIEWS
-Facts: person/history; position/category; qualification/group; imported positive source marker; structured operational grant; external engagement; substitution; authority evaluation. Views: lists of rights; person card; `ALLOW / DENY / VERIFY` result; reasons; history.
+
+Primary facts:
+
+- организация, иерархия подразделений, рабочее место и сотрудник;
+- квалификация: категория персонала, группа по электробезопасности, класс
+  напряжения и область электроустановок;
+- опубликованная редакция списка лиц с предоставлением прав;
+- положительная ячейка матрицы `EmployeeOperationalRight` с marker, condition,
+  scope, validity, source reference, source hash и source row;
+- машинная проекция опубликованной ячейки `OperationalAuthorityGrant` для
+  action-time evaluator;
+- внешний допуск, ограниченное замещение и результат проверки.
+
+Derived views:
+
+- дерево подразделений и матрица прав штатного персонала;
+- представление «кто имеет право»;
+- полный профиль сотрудника;
+- отдельный реестр внешнего персонала;
+- `ALLOW / DENY / VERIFY`, причины и неизменяемый снимок проверки.
+
+## PUBLICATION CONTRACT
+
+Утверждённая редакция матрицы является документом предоставления прав штатному
+персоналу. Для действующей редакции:
+
+- `+` означает предоставленное право;
+- `+1`, `+2`, `+3` означают предоставленное право с дополнительным условием;
+- пустая ячейка или `-` не предоставляет право;
+- строка сотрудника, колонка права, marker, qualifier, scope и документ-основание
+  образуют структурированный факт предоставления;
+- `OperationalAuthorityGrant` не является вторым независимым назначением: он
+  материализуется из опубликованной ячейки и ссылается на неё через
+  `source_operational_right`;
+- условное право участвует в проверке и возвращает `VERIFY`, пока условие нельзя
+  подтвердить автоматически.
 
 ## РОЛИ И ПОЛНОМОЧИЯ
-Application role, должность, квалификация, допуск к объекту и operational right разделены. Controlled action разрешается только server-side action-time evaluation; position/application role без structured grant не дают `ALLOW`.
 
-## ДОКУМЕНТЫ И LEGAL MODE
-Knowledge check, instruction, PEP/action confirmation и authority evaluation являются разными evidence objects. Authority evaluation не объявляет юридическую значимость и не заменяет `EvidenceEvent`.
+Application role, должность, категория персонала, квалификация, объектовый
+допуск и опубликованное operational right разделены. Должность или роль
+приложения сами по себе не дают `ALLOW`. Проверка выполняется server-side по
+фактам, действовавшим в момент действия.
 
-## СВЯЗИ
-Потребляется controlled actions последующих модулей · использует `MASTER-DATA` и `NORMATIVE-EVIDENCE` · переиспользует существующие employee/qualification/personnel-import facts.
+## EXTERNAL PERSONNEL
 
-## SOURCE IDS / BENCHMARK
-`REF-OD-051`, `REF-OD-052`, `REF-OD-053`, `SRC-DEC-STAGE2`. Decisions: targeted benchmark по work item.
-
-## DEMO / POST-DEMO
-`DEMO-BOUNDED`: personnel/qualifications; structured rights with scope/validity/basis; contractors/seconded/system-operator personnel; bounded substitution; action-time evaluation and immutable snapshot. Post-demo: HR/AD/СКУД integration; automatic external grants; production authority federation.
-
-## CURRENT CODE STATUS / CAPABILITIES
-`IMPLEMENTED-CANDIDATE`; release `IN_PROGRESS`; active work item `PERSONNEL-AUTHORITY-001`, issue #42, Draft PR #43.
-
-- `CAP-PERSONNEL-REGISTRY`: существующие employee/directory/qualification facts переиспользованы; карточка сотрудника разделяет source markers и structured grants; `AC-PERSONNEL-REGISTRY-001` — candidate.
-- `CAP-AUTHORITY-GRANTS`: pure contract, persistent structured grant, scope/validity/basis/source trace и read-only registry реализованы; `AC-AUTHORITY-GRANTS-001` — candidate.
-- `CAP-AUTHORITY-ACTION-TIME`: explainable server-side evaluator, `ALLOW / DENY / VERIFY`, append-only persistent snapshot, digest и correction link реализованы; `AC-AUTHORITY-ACTION-TIME-001` — candidate.
-- `CAP-AUTHORITY-EXTERNAL`: explicit external engagement и bounded substitution contract/persistence реализованы; синтетический contractor scenario включён в presentation data; `AC-AUTHORITY-EXTERNAL-001` — candidate.
-
-Implemented boundary:
-
-```text
-src/apps/organizations/authority.py
-src/apps/organizations/authority_models.py
-src/apps/organizations/authority_services.py
-src/apps/organizations/migrations/0008_personnel_authority_persistence.py
-src/apps/organizations/migrations/0009_seed_demo_personnel_authority.py
-src/apps/organizations/management/commands/seed_demo_personnel_authority.py
-src/apps/organizations/views.py
-src/apps/organizations/urls.py
-src/templates/organizations/authority_registry.html
-src/templates/organizations/authority_evaluation_detail.html
-src/templates/organizations/employee_detail.html
-src/apps/organizations/tests/test_authority_*.py
-```
+Подрядный, командированный и иной внешний персонал не включается в штатную
+матрицу принимающей организации. Для него отдельно фиксируются home/host
+organization, relation kind, scope, validity, basis и собственная
+квалификация. Внешний допуск не создаёт право без подходящего operational grant.
 
 ## PERSISTENCE / EVIDENCE CONTRACT
 
-- `OperationalAuthorityGrant`: person + right/action + scope + validity + granting organization + basis status/reference + source IDs.
-- `ExternalPersonnelEngagement`: home organization → host organization + relation kind + scope + validity + basis.
-- `OperationalAuthoritySubstitution`: существующий `Substitution` расширяется только явно перечисленными actions/scope; права автоматически не копируются.
-- `AuthorityEvaluationRecord`: append-only; update/delete запрещены; correction создаётся новым связанным record.
-- snapshot и SHA-256 переиспользуют принятый normative-evidence canonicalization contract; secret-like keys запрещены.
-- импортированный `EmployeeOperationalRight` остаётся source fact и никогда сам по себе не даёт `ALLOW`.
+- `EmployeeOperationalRight` — опубликованное право штатного сотрудника и
+  traceable source fact одновременно.
+- `OperationalAuthorityGrant` — нормализованная action/scope-проекция для
+  evaluator; для штатной матрицы обязательна ссылка на source right.
+- `ExternalPersonnelEngagement` — связь направляющей и принимающей организаций.
+- `OperationalAuthoritySubstitution` — только явно перечисленные actions/scope;
+  автоматическое копирование всех прав запрещено.
+- `AuthorityEvaluationRecord` append-only; исправление создаёт новый связанный
+  record.
+- Snapshot и SHA-256 используют принятый normative-evidence canonicalization
+  contract; secret-like keys запрещены.
 
-## PRESENTATION DATA
+## USER EXPERIENCE CONTRACT
 
-Conditional reversible data migration выполняется только при наличии организации `DEMO`; на иных БД — no-op. Создаются исключительно синтетические `DEMO-ONLY` grants и четыре сценария: confirmed `ALLOW`, explicit `DENY`, unconfirmed `VERIFY`, external contractor `ALLOW`. Реальные ФИО, локальные акты и production authority matrix не используются.
+Основное представление — не плоский список grants, а иерархическая матрица:
 
-## DEPENDENCIES / UX CONTRACT
-Dependencies: `MASTER-DATA`, `NORMATIVE-EVIDENCE`. Direction A; read-only реестр, карточка сотрудника и evaluation detail. Проверяемые состояния: populated/empty, confirmed/verify/rejected, internal/external, long basis/scope, technical snapshot disclosure.
+```text
+организация
+  └─ подразделение
+      └─ подчинённое подразделение
+          └─ сотрудник × колонки опубликованных прав
+```
 
-## OPEN VERIFY ITEMS / FORBIDDEN ASSUMPTIONS
-VERIFY: exact local right catalog; employment/substitution semantics per applicable local acts; basis applicability; qualification code catalogs; downstream action requirements. Forbidden: смешивать app role и operational right; разрешать по должности; считать импортированную положительную отметку достаточным action-authorizing grant; автоматически переносить все права при замещении; превращать русский free text в технический qualification code; объявлять `VERIFY` разрешением.
+Обязательны sticky identity columns, grouped rights header, сворачивание дерева,
+поиск, фильтры по категории/группе/праву, marker states и переход в карточку
+сотрудника. Представление «кто имеет право» использует то же дерево и показывает
+область, условие, срок и основание. Технические IDs и snapshot скрыты в audit
+section.
+
+## DEMO / PRESENTATION DATA
+
+Conditional reversible migration выполняется только при наличии
+`Organization(code="DEMO")`; на иных БД — no-op. Создаются исключительно
+синтетические данные:
+
+- 17 штатных сотрудников в иерархии подразделений;
+- 22 вида прав по структуре утверждённой матрицы;
+- квалификация каждого сотрудника;
+- более 100 положительных ячеек, включая `+1`, `+2`, `+3`;
+- linked evaluator projections;
+- отдельный contractor scenario;
+- `ALLOW`, `DENY`, `VERIFY` и external `ALLOW`.
+
+Реальные ФИО, локальные акты и production workbook в Git не помещаются.
+
+## DEPENDENCIES / BOUNDARY
+
+Dependencies: `MASTER-DATA`, `NORMATIVE-EVIDENCE`.
+
+Forbidden in this work item:
+
+- подключать OPJ/SHIFT/DEFECT/work-permit/switching lifecycles;
+- считать application role или должность operational right;
+- создавать второе ручное назначение поверх опубликованной матрицы;
+- автоматически переносить все права при замещении;
+- смешивать штатную матрицу и внешний персонал;
+- объявлять `VERIFY` разрешением;
+- писать в preview или выполнять merge без команды пользователя.
+
+## CURRENT CODE STATUS / CAPABILITIES
+
+`IMPLEMENTED-CANDIDATE`; release `IN_PROGRESS`; active work item
+`PERSONNEL-AUTHORITY-001`, issue #42, Draft PR #43.
+
+- `CAP-PERSONNEL-REGISTRY`: hierarchy, qualification, matrix and employee profile.
+- `CAP-AUTHORITY-GRANTS`: published cell → linked structured evaluator projection.
+- `CAP-AUTHORITY-ACTION-TIME`: explainable `ALLOW / DENY / VERIFY`, append-only
+  snapshot, digest and correction link.
+- `CAP-AUTHORITY-EXTERNAL`: separate external engagement and bounded substitution.
