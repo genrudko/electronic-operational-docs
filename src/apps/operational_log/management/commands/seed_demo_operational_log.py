@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
@@ -61,15 +61,8 @@ def ensure_demo_opj_authority(
             "is_active": True,
         },
     )
-    local_timezone = timezone.get_current_timezone()
-    valid_from = timezone.make_aware(
-        datetime(2026, 1, 1, 0, 0, 0),
-        local_timezone,
-    )
-    valid_until = timezone.make_aware(
-        datetime(2027, 12, 31, 23, 59, 0),
-        local_timezone,
-    )
+    valid_from = datetime(2026, 1, 1, 0, 0, 0, tzinfo=UTC)
+    valid_until = datetime(2027, 12, 31, 23, 59, 0, tzinfo=UTC)
     for action_code in OPJ_ACTION_CODES:
         OperationalAuthorityGrant.objects.update_or_create(
             employee=actor,
