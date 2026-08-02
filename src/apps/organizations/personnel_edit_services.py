@@ -21,6 +21,34 @@ from .personnel_management_services import (
     manual_source_hash,
     record_personnel_change,
 )
+from .personnel_reference_models import OperationalRightConditionDetail
+
+
+SOURCE_903N = (
+    "Правила по охране труда при эксплуатации электроустановок, "
+    "утверждённые приказом Минтруда России от 15.12.2020 № 903н"
+)
+
+CONDITION_DEFAULTS = {
+    "+1": {
+        "title": "Условие по пункту 5.4 Правил по охране труда",
+        "description": (
+            "Право применяется в соответствии с пунктом 5.4 Правил по охране "
+            "труда при эксплуатации электроустановок."
+        ),
+        "source_clause": "пункт 5.4",
+        "source_reference": SOURCE_903N,
+    },
+    "+2": {
+        "title": "Условие по пункту 5.13 Правил по охране труда",
+        "description": (
+            "Право применяется в соответствии с пунктом 5.13 Правил по охране "
+            "труда при эксплуатации электроустановок."
+        ),
+        "source_clause": "пункт 5.13",
+        "source_reference": SOURCE_903N,
+    },
+}
 
 
 def _actor_employee(user, organization_id: int) -> Employee | None:
@@ -58,7 +86,9 @@ def replace_electrical_qualification(
         personnel_category=cleaned_data["personnel_category"],
         electrical_safety_group=cleaned_data["electrical_safety_group"],
         voltage_scope=cleaned_data["voltage_scope"],
-        electrical_installation_scope=cleaned_data["electrical_installation_scope"],
+        electrical_installation_scope=cleaned_data[
+            "electrical_installation_scope"
+        ],
         valid_from=cleaned_data["valid_from"],
         valid_until=cleaned_data.get("valid_until"),
         is_active=cleaned_data.get("is_active", True),
@@ -116,6 +146,31 @@ def replace_special_qualification(
     return qualification
 
 
+def _condition_payload(cleaned_data: dict, marker: str) -> dict:
+    defaults = CONDITION_DEFAULTS.get(marker, {})
+    title = cleaned_data.get("condition_title", "").strip()
+    description = cleaned_data.get("condition_description", "").strip()
+    source_clause = cleaned_data.get("condition_source_clause", "").strip()
+    source_reference = cleaned_data.get(
+        "condition_source_reference",
+        "",
+    ).strip()
+    return {
+        "marker": marker,
+        "title": title or defaults.get("title", f"Дополнительное условие {marker}"),
+        "description": description or defaults.get(
+            "description",
+            "Текст условия не расшифрован — требуется проверка источника.",
+        ),
+        "source_clause": source_clause or defaults.get("source_clause", ""),
+        "source_reference": source_reference or defaults.get(
+            "source_reference",
+            cleaned_data["source_reference"],
+        ),
+        "is_resolved": bool(description or defaults),
+    }
+
+
 @transaction.atomic
 def replace_operational_right(
     *,
@@ -154,6 +209,14 @@ def replace_operational_right(
         f"PERSONNEL.RIGHT.{definition.code.upper()}",
     )
     marker = source_right.source_marker.strip()
+    if marker != "+":
+        OperationalRightConditionDetail.objects.update_or_create(
+            right=source_right,
+            defaults=_condition_payload(cleaned_data, marker),
+        )
+    else:
+        OperationalRightConditionDetail.objects.filter(right=source_right).delete()
+
     start = datetime.combine(source_right.valid_from, time.min, tzinfo=UTC)
     end = (
         datetime.combine(source_right.valid_until, time.max, tzinfo=UTC)
@@ -237,8 +300,12 @@ def deactivate_employee(*, employee: Employee, user, reason: str) -> None:
     employee.qualifications.filter(is_active=True).update(is_active=False)
     employee.special_qualifications.filter(is_active=True).update(is_active=False)
     employee.operational_rights.filter(is_active=True).update(is_active=False)
-    employee.structured_authority_grants.filter(is_active=True).update(is_active=False)
-    employee.external_operational_contacts.filter(is_active=True).update(is_active=False)
+    employee.structured_authority_grants.filter(is_active=True).update(
+        is_active=False
+    )
+    employee.external_operational_contacts.filter(is_active=True).update(
+        is_active=False
+    )
     record_personnel_change(
         user=user,
         employee=employee,
