@@ -1,4 +1,4 @@
-/* EOD Outline 24 — shared icon geometry and placement contract. */
+/* EOD Outline 24 — shared icon geometry, optical alignment and brand lockup. */
 :root {
     --eod-icon-stroke: 2;
     --eod-icon-inline: 16px;
@@ -9,6 +9,7 @@
 
 .ui-icon,
 .eod-icon {
+    display: inline-block;
     width: var(--eod-icon-dense);
     height: var(--eod-icon-dense);
     flex: 0 0 auto;
@@ -20,12 +21,25 @@
     stroke-linejoin: round;
     shape-rendering: geometricPrecision;
     vector-effect: non-scaling-stroke;
+    vertical-align: middle;
+}
+
+.da-navigation > a,
+.da-nav-group-title,
+.da-button,
+.da-topbar-tools > a,
+.da-topbar-tools > button,
+.da-topbar-actions > a,
+.da-topbar-actions > button,
+.eod-icon-label {
+    align-items: center;
 }
 
 .da-navigation .ui-icon {
     width: var(--eod-icon-dense);
     height: var(--eod-icon-dense);
     flex-basis: var(--eod-icon-dense);
+    align-self: center;
 }
 
 .da-button .ui-icon,
@@ -43,12 +57,46 @@
     height: var(--eod-icon-module);
 }
 
-/* Dense organization trees use a bare semantic glyph, not a decorative tile. */
+/* Main EOD mark: fixed palette, theme-aware wordmark. */
+body.da-active .da-brand {
+    min-height: 82px;
+    align-items: center;
+}
+
+body.da-active .da-brand-logo {
+    display: block;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    object-fit: contain;
+}
+
+body.da-active .da-brand-copy {
+    align-content: center;
+    gap: 2px;
+}
+
+body.da-active .da-brand-copy strong {
+    color: var(--da-text);
+    line-height: 1;
+}
+
+body.da-active .da-brand-copy small {
+    max-width: 170px;
+    overflow: visible;
+    color: var(--da-muted);
+    line-height: 1.18;
+    text-overflow: clip;
+    white-space: normal;
+}
+
+/* Dense organization trees use bare semantic glyphs, not decorative tiles. */
 body.da-active .authority-tree-icon {
     display: grid;
     width: 22px;
     height: 22px;
     place-items: center;
+    align-self: center;
     border: 0;
     border-radius: 0;
     background: transparent !important;
@@ -56,6 +104,7 @@ body.da-active .authority-tree-icon {
 }
 
 body.da-active .authority-tree-icon svg {
+    display: block;
     width: var(--eod-icon-dense);
     height: var(--eod-icon-dense);
     stroke-width: var(--eod-icon-stroke);
@@ -68,6 +117,7 @@ body.da-active .authority-tree-item.is-active .authority-tree-icon {
 }
 
 body.da-active .authority-inline-icon {
+    display: inline-block;
     width: var(--eod-icon-dense);
     height: var(--eod-icon-dense);
     margin-right: 7px;
@@ -75,7 +125,15 @@ body.da-active .authority-inline-icon {
     border-radius: 0;
     background: transparent !important;
     color: currentColor !important;
-    vertical-align: -4px;
+    vertical-align: middle;
+}
+
+body.da-active .personnel-division-row > svg,
+body.da-active .personnel-directory-relation-heading > svg,
+body.da-active .personnel-contour-icon > svg {
+    display: block;
+    align-self: center;
+    justify-self: center;
 }
 
 /* Category/status chips remain text-first. Icons must not be injected by CSS. */
@@ -88,8 +146,16 @@ body.da-active .da-chip {
 /* Icon-only actions require a stable accessible target. */
 body.da-active .da-icon-button,
 body.da-active [data-icon-only="true"] {
+    display: inline-grid;
     min-width: 36px;
     min-height: 36px;
+    place-items: center;
+    padding: 0;
+}
+
+body.da-active .da-icon-button .ui-icon,
+body.da-active [data-icon-only="true"] .ui-icon {
+    margin: 0;
 }
 
 @media (max-width: 620px) {

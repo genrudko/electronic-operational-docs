@@ -4,11 +4,18 @@
     id="direction-a-sidebar"
     data-direction-a-sidebar
 >
-    <a class="da-brand" href="{% url 'system:home' %}">
-        <span class="da-brand-mark" aria-hidden="true">ЭОД</span>
+    <a class="da-brand" href="{% url 'system:home' %}" aria-label="ЭОД — Электронная оперативная документация">
+        <img
+            class="da-brand-logo"
+            src="{% static 'system/favicon.svg' %}?v=eodbrand001"
+            width="44"
+            height="44"
+            alt=""
+            aria-hidden="true"
+        >
         <span class="da-brand-copy">
             <strong>ЭОД</strong>
-            <small>Оперативная документация</small>
+            <small>Электронная оперативная документация</small>
         </span>
     </a>
 

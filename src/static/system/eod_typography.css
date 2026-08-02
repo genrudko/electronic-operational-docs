@@ -1,9 +1,10 @@
 /*
- * EOD canonical interface typography.
+ * EOD canonical typography.
  *
- * Onest is pinned to an immutable upstream revision for the acceptance
- * candidate. The exact licensed WOFF2 asset must be self-hosted before an
- * offline/production package is declared ready.
+ * Onest is the corporate family for every user-facing screen, including the
+ * operational journal. The acceptance candidate loads the exact variable WOFF2
+ * from an immutable upstream revision; production/offline packaging must host
+ * the same licensed asset locally.
  */
 @font-face {
     font-family: "Onest";
@@ -15,12 +16,14 @@
 
 :root {
     --eod-font-ui: "Onest", "Segoe UI Variable Text", "Segoe UI", Arial, sans-serif;
-    --eod-font-mono: "Cascadia Mono", "Cascadia Code", Consolas, "Liberation Mono", monospace;
+    --eod-font-mono: Consolas, "Cascadia Mono", "Cascadia Code", "Liberation Mono", monospace;
+    --journal-font-family: var(--eod-font-ui);
     --eod-weight-regular: 400;
     --eod-weight-medium: 500;
     --eod-weight-semibold: 600;
     --eod-weight-bold: 700;
     --eod-weight-brand: 800;
+    --eod-oblique-angle: 10deg;
 }
 
 body.da-active,
@@ -30,7 +33,7 @@ body.da-active select,
 body.da-active textarea,
 body.da-active dialog {
     font-family: var(--eod-font-ui);
-    font-synthesis: none;
+    font-synthesis: style;
     font-optical-sizing: auto;
     text-rendering: optimizeLegibility;
 }
@@ -38,6 +41,17 @@ body.da-active dialog {
 body.da-active {
     font-size: 14px;
     line-height: 1.42;
+}
+
+body.da-active strong,
+body.da-active b {
+    font-weight: var(--eod-weight-bold);
+}
+
+body.da-active em,
+body.da-active i,
+body.da-active .eod-italic {
+    font-style: oblique var(--eod-oblique-angle);
 }
 
 body.da-active code,
@@ -170,10 +184,13 @@ body.da-active .authority-cell-marker {
     font-weight: var(--eod-weight-bold);
 }
 
-/* The registered operational document keeps its separately approved document font. */
+/* The operational journal is part of the same corporate interface family. */
 body.da-active .opj-ledger,
 body.da-active .opj-ledger input,
 body.da-active .opj-ledger textarea,
+body.da-active .approved-journal-shell,
+body.da-active .approved-journal-shell input,
+body.da-active .approved-journal-shell textarea,
 body.da-active [data-opj-document-font="true"] {
-    font-family: var(--journal-font-family, inherit);
+    font-family: var(--eod-font-ui);
 }

@@ -14,12 +14,18 @@ class VisualIdentityContractTests(SimpleTestCase):
         template = (
             self.source_root / "templates/shared/direction_a/base.html"
         ).read_text(encoding="utf-8")
+        sidebar = (
+            self.source_root / "templates/shared/direction_a/_sidebar.html"
+        ).read_text(encoding="utf-8")
 
         self.assertIn("system/eod_typography.css", template)
         self.assertIn("system/eod_iconography.css", template)
-        self.assertIn("eodidentity001", template)
+        self.assertIn("eodidentity002", template)
+        self.assertIn("system/favicon.svg", sidebar)
+        self.assertIn("Электронная оперативная документация", sidebar)
+        self.assertNotIn('class="da-brand-mark"', sidebar)
 
-    def test_typography_uses_real_onest_face_and_controlled_fallback(self) -> None:
+    def test_typography_uses_onest_everywhere_and_consolas_for_technical_text(self) -> None:
         stylesheet = (
             self.source_root / "static/system/eod_typography.css"
         ).read_text(encoding="utf-8")
@@ -31,10 +37,26 @@ class VisualIdentityContractTests(SimpleTestCase):
             stylesheet,
         )
         self.assertIn("--eod-font-ui", stylesheet)
+        self.assertIn("--eod-font-mono: Consolas", stylesheet)
+        self.assertIn("font-synthesis: style", stylesheet)
+        self.assertIn("font-style: oblique", stylesheet)
+        self.assertIn(".opj-ledger", stylesheet)
+        self.assertIn("font-family: var(--eod-font-ui)", stylesheet)
         self.assertIn("font-variant-numeric: lining-nums tabular-nums", stylesheet)
-        self.assertIn("--journal-font-family", stylesheet)
 
-    def test_icon_sprite_contains_shared_and_domain_catalogue(self) -> None:
+    def test_brand_mark_is_deterministic_svg_without_generated_text(self) -> None:
+        mark = (self.source_root / "static/system/favicon.svg").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn('viewBox="0 0 64 64"', mark)
+        self.assertIn('fill="#1267A5"', mark)
+        self.assertIn('stroke="#FFFFFF"', mark)
+        self.assertIn("<circle", mark)
+        self.assertNotIn("<image", mark)
+        self.assertNotIn("<text", mark)
+
+    def test_icon_sprite_contains_shared_and_full_domain_catalogue(self) -> None:
         sprite = (self.source_root / "static/system/icons.svg").read_text(
             encoding="utf-8"
         )
@@ -46,6 +68,8 @@ class VisualIdentityContractTests(SimpleTestCase):
             "icon-organization",
             "icon-role",
             "icon-dispatch-center",
+            "icon-org-center",
+            "icon-position",
             "icon-org-leadership",
             "icon-org-operations",
             "icon-org-maintenance",
@@ -57,6 +81,29 @@ class VisualIdentityContractTests(SimpleTestCase):
             "icon-module-work-permits",
             "icon-module-switching",
             "icon-module-schemes",
+            "icon-shift-handover",
+            "icon-grounding",
+            "icon-operational-order",
+            "icon-current-works",
+            "icon-inspection",
+            "icon-commissioning",
+            "icon-breaker-interruptions",
+            "icon-battery-inspection",
+            "icon-emergency-readiness",
+            "icon-cross-document",
+            "icon-reporting",
+            "icon-equipment-line",
+            "icon-equipment-cable",
+            "icon-equipment-transformer",
+            "icon-equipment-busbar",
+            "icon-equipment-breaker",
+            "icon-equipment-disconnector",
+            "icon-equipment-ground-switch",
+            "icon-equipment-portable-ground",
+            "icon-equipment-rza",
+            "icon-equipment-telemechanics",
+            "icon-equipment-dc-supply",
+            "icon-equipment-battery",
             "icon-import",
             "icon-filter",
             "icon-print",
@@ -66,7 +113,15 @@ class VisualIdentityContractTests(SimpleTestCase):
             with self.subTest(symbol_id=symbol_id):
                 self.assertIn(f'id="{symbol_id}"', sprite)
 
-    def test_dense_tree_icon_is_not_a_colored_decorative_tile(self) -> None:
+        operations = sprite.split(
+            '<symbol id="icon-org-operations"', maxsplit=1
+        )[1].split("</symbol>", maxsplit=1)[0]
+        dispatch = sprite.split(
+            '<symbol id="icon-dispatch-center"', maxsplit=1
+        )[1].split("</symbol>", maxsplit=1)[0]
+        self.assertNotEqual(operations, dispatch)
+
+    def test_icon_and_text_alignment_is_explicit(self) -> None:
         stylesheet = (
             self.source_root / "static/system/eod_iconography.css"
         ).read_text(encoding="utf-8")
@@ -74,3 +129,7 @@ class VisualIdentityContractTests(SimpleTestCase):
         self.assertIn(".authority-tree-icon", stylesheet)
         self.assertIn("background: transparent !important", stylesheet)
         self.assertIn("--eod-icon-stroke: 2", stylesheet)
+        self.assertIn("vertical-align: middle", stylesheet)
+        self.assertIn("place-items: center", stylesheet)
+        self.assertIn(".da-brand-logo", stylesheet)
+        self.assertIn("object-fit: contain", stylesheet)

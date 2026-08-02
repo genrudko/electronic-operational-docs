@@ -25,20 +25,49 @@
 
   <!-- Stable department/entity types. Named organizations keep text labels. -->
   <symbol id="icon-org-leadership" viewBox="0 0 24 24"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></symbol>
-  <symbol id="icon-org-operations" viewBox="0 0 24 24"><path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9M7.8 4.7a6.14 6.14 0 0 0-.8 7.5"/><circle cx="12" cy="9" r="2"/><path d="M16.2 4.8c2 2 2.26 5.11.8 7.47M19.1 1.9a9.96 9.96 0 0 1 0 14.1M9.5 18h5m-6.5 4 4-11 4 11"/></symbol>
+  <symbol id="icon-org-operations" viewBox="0 0 24 24"><path d="M4 21V6l8-3 8 3v15"/><path d="M8 21v-4h8v4"/><path d="M7 11h2l1.4-2.5 2.2 5 1.4-2.5h3"/></symbol>
   <symbol id="icon-org-maintenance" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/></symbol>
   <symbol id="icon-org-rza" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></symbol>
   <symbol id="icon-org-technical" viewBox="0 0 24 24"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2m-5-1 2-2m-5-1 2-2m7 11 2-2"/></symbol>
-  <symbol id="icon-org-wind" viewBox="0 0 24 24"><path d="M12.8 19.6A2 2 0 1 0 14 16H2M17.5 8a2.5 2.5 0 1 1 2 4H2M9.8 4.4A2 2 0 1 1 11 8H2"/></symbol>
+  <symbol id="icon-org-wind" viewBox="0 0 24 24"><circle cx="12" cy="8" r="2"/><path d="M12 10v11M9 21h6M12 6 9 2M14 8l5-1M11 9l-4 4"/></symbol>
   <symbol id="icon-org-substation" viewBox="0 0 24 24"><path d="M12 2v20M2 5h20M3 3v2M7 3v2M17 3v2M21 3v2m-2 0-7 7-7-7"/></symbol>
   <symbol id="icon-org-division" viewBox="0 0 24 24"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3M12 12V8"/></symbol>
-  <symbol id="icon-dispatch-center" viewBox="0 0 24 24"><path d="M4.9 16.1C1 12.2 1 5.8 4.9 1.9M7.8 4.7a6.14 6.14 0 0 0-.8 7.5"/><circle cx="12" cy="9" r="2"/><path d="M16.2 4.8c2 2 2.26 5.11.8 7.47M19.1 1.9a9.96 9.96 0 0 1 0 14.1M9.5 18h5m-6.5 4 4-11 4 11"/></symbol>
+  <symbol id="icon-org-center" viewBox="0 0 24 24"><path d="M4 21V7l8-4 8 4v14"/><path d="M8 11h8M8 15h8M9 21v-3h6v3"/></symbol>
+  <symbol id="icon-position" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V4h6v3M3 12h18M10 12v2h4v-2"/></symbol>
+  <symbol id="icon-dispatch-center" viewBox="0 0 24 24"><circle cx="12" cy="8" r="2"/><path d="M9 22h6M10 22l2-12 2 12"/><path d="M7 4a6 6 0 0 0 0 8M17 4a6 6 0 0 1 0 8M4 1a10 10 0 0 0 0 14M20 1a10 10 0 0 1 0 14"/></symbol>
 
-  <!-- Future module/action catalogue. -->
+  <!-- Module and operational-process catalogue. -->
   <symbol id="icon-module-defects" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/></symbol>
   <symbol id="icon-module-work-permits" viewBox="0 0 24 24"><path d="M2 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2M10 10V5a2 2 0 0 1 4 0v5M4 18v-6a8 8 0 0 1 16 0v6"/></symbol>
   <symbol id="icon-module-switching" viewBox="0 0 24 24"><path d="M3 5h6M3 12h6M3 19h6M13 5l2 2 4-4M13 12l2 2 4-4M13 19l2 2 4-4"/></symbol>
   <symbol id="icon-module-schemes" viewBox="0 0 24 24"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/><path d="M9 6h3a3 3 0 0 1 3 3v6M15 18h-3a3 3 0 0 1-3-3V9"/></symbol>
+  <symbol id="icon-shift-handover" viewBox="0 0 24 24"><circle cx="7" cy="7" r="3"/><circle cx="17" cy="17" r="3"/><path d="M2 17a5 5 0 0 1 7-4.58M22 7a5 5 0 0 0-7 4.58M8 11h8m-3-3 3 3-3 3"/></symbol>
+  <symbol id="icon-grounding" viewBox="0 0 24 24"><path d="M12 3v10M6 13h12M8 17h8M10 21h4"/><path d="m4 5 3 3m0-3L4 8"/></symbol>
+  <symbol id="icon-operational-order" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h5M8 12h5M8 16h8"/><path d="m15 10 3 2-3 2"/></symbol>
+  <symbol id="icon-current-works" viewBox="0 0 24 24"><path d="M14.7 6.3a6 6 0 0 1-7.2 7.2L3 18l3 3 4.5-4.5a6 6 0 0 0 7.2-7.2Z"/><path d="m15 3 6 6"/></symbol>
+  <symbol id="icon-inspection" viewBox="0 0 24 24"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/><path d="m17 18 2 2 3-4"/></symbol>
+  <symbol id="icon-commissioning" viewBox="0 0 24 24"><rect x="3" y="5" width="12" height="14" rx="2"/><path d="M7 9h4M7 13h4"/><path d="m17 9 4 3-4 3M15 12h6"/></symbol>
+  <symbol id="icon-breaker-interruptions" viewBox="0 0 24 24"><path d="M3 12h6M15 12h6M9 12l6-4"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M5 5h14M7 19h10"/></symbol>
+  <symbol id="icon-battery-inspection" viewBox="0 0 24 24"><rect x="3" y="6" width="16" height="12" rx="2"/><path d="M19 10h2v4h-2M7 10v4M5 12h4M14 10v4"/><path d="m13 21 2 2 4-4"/></symbol>
+  <symbol id="icon-emergency-readiness" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4M12 3V1M4 4 2.5 2.5M20 4l1.5-1.5"/></symbol>
+  <symbol id="icon-cross-document" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3M16 5h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M9 8h6M9 16h6M8 12h8"/></symbol>
+  <symbol id="icon-reporting" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+
+  <!-- Equipment type catalogue. -->
+  <symbol id="icon-equipment-line" viewBox="0 0 24 24"><path d="M3 6h18M5 6v12M19 6v12M5 13h14"/><circle cx="5" cy="18" r="1"/><circle cx="19" cy="18" r="1"/></symbol>
+  <symbol id="icon-equipment-cable" viewBox="0 0 24 24"><path d="M4 5h16M4 19h16M6 5c0 7 12 7 12 14M18 5C18 12 6 12 6 19"/></symbol>
+  <symbol id="icon-equipment-transformer" viewBox="0 0 24 24"><path d="M5 4v16M19 4v16"/><path d="M8 7c4-4 4 4 8 0M8 12c4-4 4 4 8 0M8 17c4-4 4 4 8 0"/></symbol>
+  <symbol id="icon-equipment-busbar" viewBox="0 0 24 24"><path d="M3 7h18M3 17h18M7 7v10M12 7v10M17 7v10"/></symbol>
+  <symbol id="icon-equipment-breaker" viewBox="0 0 24 24"><path d="M3 12h6M15 12h6M9 12l6-4"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/></symbol>
+  <symbol id="icon-equipment-disconnector" viewBox="0 0 24 24"><path d="M3 12h6M15 12h6M9 12l5-7"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/></symbol>
+  <symbol id="icon-equipment-ground-switch" viewBox="0 0 24 24"><path d="M3 8h7M10 8l5 5M15 13v5M11 18h8M13 21h4"/><circle cx="10" cy="8" r="1"/></symbol>
+  <symbol id="icon-equipment-portable-ground" viewBox="0 0 24 24"><path d="M4 5h6M10 5c0 6 4 6 4 10M14 15v3M10 18h8M12 21h4"/><path d="m3 3 2 2-2 2"/></symbol>
+  <symbol id="icon-equipment-rza" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></symbol>
+  <symbol id="icon-equipment-telemechanics" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 16h.01M11 16h.01M15 16h.01M7 8h10M7 12h6"/></symbol>
+  <symbol id="icon-equipment-dc-supply" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h4M9 7v4M14 9h3M7 15h10"/></symbol>
+  <symbol id="icon-equipment-battery" viewBox="0 0 24 24"><rect x="3" y="6" width="16" height="12" rx="2"/><path d="M19 10h2v4h-2M7 10v4M5 12h4M14 10v4"/></symbol>
+
+  <!-- Stable action catalogue. -->
   <symbol id="icon-import" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M5 21h14"/></symbol>
   <symbol id="icon-print" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></symbol>
   <symbol id="icon-filter" viewBox="0 0 24 24"><path d="M3 5h18M6 12h12M10 19h4"/></symbol>
