@@ -2,50 +2,6 @@
     const root = document.querySelector("[data-authority-page]");
     if (!root) return;
 
-    const currentScript = document.currentScript;
-    if (currentScript?.src && !document.querySelector("[data-authority-readability-css]")) {
-        const stylesheet = document.createElement("link");
-        stylesheet.rel = "stylesheet";
-        stylesheet.dataset.authorityReadabilityCss = "true";
-        stylesheet.href = currentScript.src.replace(
-            /personnel_authority_matrix\.js(?:\?.*)?$/,
-            "personnel_authority_readability.css?v=pa001r4",
-        );
-        document.head.append(stylesheet);
-    }
-
-    const toolbar = root.querySelector(".authority-toolbar");
-    if (toolbar && !root.querySelector(".authority-abbreviation-legend")) {
-        const legend = document.createElement("details");
-        legend.className = "authority-abbreviation-legend";
-        legend.innerHTML = `
-            <summary>Обозначения и сокращения</summary>
-            <dl class="authority-abbreviation-grid">
-                <div><dt>АТП</dt><dd>Административно-технический персонал</dd></div>
-                <div><dt>ОП</dt><dd>Оперативный персонал</dd></div>
-                <div><dt>ОРП</dt><dd>Оперативно-ремонтный персонал</dd></div>
-                <div><dt>РП</dt><dd>Ремонтный персонал</dd></div>
-                <div><dt>АТП/ОП</dt><dd>Совмещённая категория административно-технического и оперативного персонала</dd></div>
-            </dl>
-        `;
-        toolbar.insertAdjacentElement("afterend", legend);
-    }
-
-    root.querySelectorAll(".matrix-sticky-qualification span").forEach((node) => {
-        if (node.textContent.trim().startsWith("Группа ")
-            && !node.textContent.includes("электробезопасности")) {
-            node.textContent = `${node.textContent.trim()} по электробезопасности`;
-        }
-    });
-    root.querySelectorAll(
-        ".authority-holders-table tbody td:nth-child(3) .authority-primary-value",
-    ).forEach((node) => {
-        if (node.textContent.includes("группа ")
-            && !node.textContent.includes("электробезопасности")) {
-            node.textContent = `${node.textContent.trim()} по электробезопасности`;
-        }
-    });
-
     const tabs = [...root.querySelectorAll("[data-authority-view]")];
     const panels = [...root.querySelectorAll("[data-authority-panel]")];
     const workspace = root.querySelector("[data-authority-workspace]");
@@ -59,10 +15,13 @@
     const holderRows = [...root.querySelectorAll("[data-holder-row]")];
     const matrixSections = [...root.querySelectorAll("[data-division-section]")];
     const collapsers = [...root.querySelectorAll("[data-collapse-division]")];
+    const supportedViews = tabs.map((item) => item.dataset.authorityView);
     let activeView = "matrix";
     let selectedDivision = "";
     let conditionalOnly = false;
     const collapsed = new Set();
+
+    root.querySelectorAll(".authority-abbreviation-legend").forEach((item) => item.remove());
 
     const normalize = (value) => (value || "")
         .toLocaleLowerCase("ru-RU")
@@ -71,44 +30,34 @@
         .trim();
 
     const pathIncludes = (path, id) => !id || (path || "").split(" ").includes(id);
-
-    const matrixMatch = (row) => {
-        const query = normalize(search?.value);
-        return (!query || normalize(row.dataset.search).includes(query))
-            && (!category?.value || row.dataset.category === category.value)
-            && (!group?.value || row.dataset.group === group.value)
-            && pathIncludes(row.dataset.divisionPath, selectedDivision);
-    };
-
-    const holderMatch = (row) => {
-        const query = normalize(search?.value);
-        return (!query || normalize(row.dataset.search).includes(query))
-            && (!category?.value || row.dataset.category === category.value)
-            && (!group?.value || row.dataset.group === group.value)
-            && (!right?.value || row.dataset.rightCode === right.value)
-            && (!conditionalOnly || row.dataset.condition === "conditional")
-            && pathIncludes(row.dataset.divisionPath, selectedDivision);
-    };
-
-    const genericMatch = (row) => {
+    const queryMatches = (row) => {
         const query = normalize(search?.value);
         return !query || normalize(row.dataset.search).includes(query);
     };
+
+    const matrixMatch = (row) => queryMatches(row)
+        && (!category?.value || row.dataset.category === category.value)
+        && (!group?.value || row.dataset.group === group.value)
+        && pathIncludes(row.dataset.divisionPath, selectedDivision);
+
+    const holderMatch = (row) => matrixMatch(row)
+        && (!right?.value || row.dataset.rightCode === right.value)
+        && (!conditionalOnly || row.dataset.condition === "conditional");
 
     const applyFilters = () => {
         let visible = 0;
         if (activeView === "matrix") {
             matrixRows.forEach((row) => {
                 const section = row.closest("[data-division-section]");
-                const isCollapsed = section && collapsed.has(section.dataset.divisionSection);
-                const show = matrixMatch(row) && !isCollapsed;
+                const hiddenByCollapse = section
+                    && collapsed.has(section.dataset.divisionSection);
+                const show = matrixMatch(row) && !hiddenByCollapse;
                 row.hidden = !show;
                 if (show) visible += 1;
             });
             matrixSections.forEach((section) => {
                 const rows = [...section.querySelectorAll("[data-matrix-row]")];
-                const hasFilteredRow = rows.some((row) => matrixMatch(row));
-                section.hidden = !hasFilteredRow
+                section.hidden = !rows.some(matrixMatch)
                     || !pathIncludes(section.dataset.divisionPath, selectedDivision);
             });
         } else if (activeView === "holders") {
@@ -121,7 +70,7 @@
             const panel = panels.find((item) => item.dataset.authorityPanel === activeView);
             const rows = panel ? [...panel.querySelectorAll("[data-authority-row]")] : [];
             rows.forEach((row) => {
-                const show = genericMatch(row);
+                const show = queryMatches(row);
                 row.hidden = !show;
                 if (show) visible += 1;
             });
@@ -130,19 +79,19 @@
     };
 
     const activateView = (view) => {
-        activeView = view;
+        activeView = supportedViews.includes(view) ? view : "matrix";
         tabs.forEach((tab) => tab.setAttribute(
             "aria-pressed",
-            String(tab.dataset.authorityView === view),
+            String(tab.dataset.authorityView === activeView),
         ));
         panels.forEach((panel) => {
-            panel.hidden = panel.dataset.authorityPanel !== view;
+            panel.hidden = panel.dataset.authorityPanel !== activeView;
         });
-        if (workspace) workspace.hidden = !["matrix", "holders"].includes(view);
+        if (workspace) workspace.hidden = !["matrix", "holders"].includes(activeView);
         root.querySelectorAll("[data-filter-for]").forEach((field) => {
-            field.hidden = !field.dataset.filterFor.split(" ").includes(view);
+            field.hidden = !field.dataset.filterFor.split(" ").includes(activeView);
         });
-        history.replaceState(null, "", `#${view}`);
+        history.replaceState(null, "", `#${activeView}`);
         applyFilters();
     };
 
@@ -203,5 +152,5 @@
     });
 
     const initial = window.location.hash.slice(1);
-    activateView(["matrix", "holders", "external", "checks"].includes(initial) ? initial : "matrix");
+    activateView(supportedViews.includes(initial) ? initial : "matrix");
 })();
