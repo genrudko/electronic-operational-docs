@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+from datetime import timedelta
 from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.test import Client, SimpleTestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.organizations.authority_models import OperationalAuthorityGrant
-from apps.organizations.models import Employee
+from apps.organizations.models import Employee, OperationalRightDefinition
 
 from ..models import OperationalLogEntry
 from ..opj_lifecycle import (
@@ -25,20 +27,57 @@ from ..opj_lifecycle import (
 from .base import OperationalLogTestCase
 
 ROOT = Path(__file__).resolve().parents[3]
+ACTION_CODES = (
+    "OPJ.REGISTER",
+    "OPJ.CORRECT",
+    "OPJ.CANCEL",
+    "OPJ.COMMUNICATION",
+)
 
 
 class OperationalJournalLifecycleTests(OperationalLogTestCase):
     def setUp(self) -> None:
         self.client = Client()
         self.user = get_user_model().objects.get(username="operator.demo")
+        right = OperationalRightDefinition.objects.get(
+            code="operational_journal_actions"
+        )
+        valid_from = timezone.now() - timedelta(days=1)
+        for action_code in ACTION_CODES:
+            OperationalAuthorityGrant.objects.create(
+                organization=self.organization,
+                employee=self.actor,
+                right_definition=right,
+                action_code=action_code,
+                scope_kind="WORKPLACE",
+                scope_reference=str(self.journal.workplace_id),
+                scope_label=self.journal.workplace.name,
+                granting_organization=self.organization,
+                basis_status="CONFIRMED",
+                basis_reference=f"TEST / OPJ-LIFECYCLE-001 / {action_code}",
+                source_ids=["TEST", "OPJ-LIFECYCLE-001"],
+                valid_from=valid_from,
+                is_active=True,
+                allow_substitution=False,
+                created_by=self.actor,
+            )
 
-    def test_registration_correction_cancellation_and_communication_are_append_only(self) -> None:
-        draft = self.shift.draft_entries.filter(is_removed=False).exclude(content="").first()
+    def test_registration_correction_cancellation_and_communication_are_append_only(
+        self,
+    ) -> None:
+        draft = (
+            self.shift.draft_entries.filter(is_removed=False)
+            .exclude(content="")
+            .first()
+        )
         self.assertIsNotNone(draft)
 
         original = register_draft(draft=draft, actor=self.actor)
         self.assertEqual(original.type_code, TYPE_ENTRY)
-        self.assertIn(original.typed_payload["authority"]["decision"], {"ALLOW", "VERIFY"})
+        self.assertIn(
+            original.typed_payload["authority"]["decision"],
+            {"ALLOW", "VERIFY"},
+        )
         original_content = original.content
         original_digest = original.digest
 
@@ -158,7 +197,11 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
         ):
             self.assertContains(page, marker)
 
-        draft = self.shift.draft_entries.filter(is_removed=False).exclude(content="").first()
+        draft = (
+            self.shift.draft_entries.filter(is_removed=False)
+            .exclude(content="")
+            .first()
+        )
         response = self.client.post(
             reverse(
                 "operational_log:register_draft_lifecycle",
