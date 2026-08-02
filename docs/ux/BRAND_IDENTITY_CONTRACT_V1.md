@@ -2,7 +2,7 @@
 
 **Status:** `CANONICAL / DIRECTION A`
 
-**Accepted basis:** Onest Variable + EOD Outline 24 + deterministic SVG brand mark.
+**Accepted basis:** Onest Variable + EOD Outline 24 + deterministic SVG brand assets.
 
 This contract records the accepted refinement of the project identity. It supplements
 `ICONOGRAPHY_TYPOGRAPHY_CONTRACT_V1.md` and supersedes its earlier exceptions for the
@@ -12,7 +12,7 @@ operational-journal typeface.
 
 The EOD logo is not a generated illustration. It is a deterministic SVG construction.
 
-The mark combines:
+The full brand mark combines:
 
 - a document contour;
 - a folded document corner;
@@ -20,15 +20,21 @@ The mark combines:
 - aligned record lines.
 
 The mark deliberately avoids lightning bolts, globes, random network orbits and decorative
-industrial clichés. It must remain understandable at favicon and sidebar sizes.
+industrial clichés. The full mark and the favicon are separate size-specific SVG assets rather
+than one overloaded drawing forced into every context.
 
-Canonical asset:
+Canonical assets:
 
 ```text
-src/static/system/favicon.svg
+src/static/system/brand-mark.svg   # sidebar and other 32 px+ lockups
+src/static/system/favicon.svg      # simplified 16–32 px browser icon
 ```
 
-The application lockup is assembled from the SVG mark and live Onest text:
+The favicon preserves the document and registered-record meaning but removes the vertical
+event axis and point markers that merged together at 16–24 px. It uses two clear record lines
+and heavier integer-aligned geometry. The full mark remains the canonical sidebar sign.
+
+The application lockup is assembled from the full SVG mark and live Onest text:
 
 ```text
 ЭОД
@@ -189,7 +195,8 @@ groups remain text. A type icon does not replace domain wording.
 
 A brand/identity change is accepted only after checking:
 
-- favicon at 16, 24, 32 and 64 px;
+- simplified favicon at 16, 20, 24 and 32 px;
+- full brand mark at 32, 44 and 64 px;
 - sidebar lockup in light and dark themes;
 - exact Cyrillic wordmark and descriptor;
 - Onest in the operational journal;

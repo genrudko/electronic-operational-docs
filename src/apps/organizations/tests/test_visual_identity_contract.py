@@ -14,6 +14,9 @@ class VisualIdentityContractTests(SimpleTestCase):
         template = (
             self.source_root / "templates/shared/direction_a/base.html"
         ).read_text(encoding="utf-8")
+        base_template = (self.source_root / "templates/base.html").read_text(
+            encoding="utf-8"
+        )
         sidebar = (
             self.source_root / "templates/shared/direction_a/_sidebar.html"
         ).read_text(encoding="utf-8")
@@ -21,7 +24,10 @@ class VisualIdentityContractTests(SimpleTestCase):
         self.assertIn("system/eod_typography.css", template)
         self.assertIn("system/eod_iconography.css", template)
         self.assertIn("eodidentity002", template)
-        self.assertIn("system/favicon.svg", sidebar)
+        self.assertIn("system/brand-mark.svg", sidebar)
+        self.assertIn("eodbrand002", sidebar)
+        self.assertNotIn("system/favicon.svg", sidebar)
+        self.assertIn("system/favicon.svg", base_template)
         self.assertIn("Электронная оперативная документация", sidebar)
         self.assertNotIn('class="da-brand-mark"', sidebar)
 
@@ -44,17 +50,26 @@ class VisualIdentityContractTests(SimpleTestCase):
         self.assertIn("font-family: var(--eod-font-ui)", stylesheet)
         self.assertIn("font-variant-numeric: lining-nums tabular-nums", stylesheet)
 
-    def test_brand_mark_is_deterministic_svg_without_generated_text(self) -> None:
-        mark = (self.source_root / "static/system/favicon.svg").read_text(
+    def test_brand_assets_are_deterministic_and_size_specific(self) -> None:
+        mark = (self.source_root / "static/system/brand-mark.svg").read_text(
+            encoding="utf-8"
+        )
+        favicon = (self.source_root / "static/system/favicon.svg").read_text(
             encoding="utf-8"
         )
 
-        self.assertIn('viewBox="0 0 64 64"', mark)
-        self.assertIn('fill="#1267A5"', mark)
-        self.assertIn('stroke="#FFFFFF"', mark)
+        for asset in (mark, favicon):
+            self.assertIn('viewBox="0 0 64 64"', asset)
+            self.assertIn('fill="#1267A5"', asset)
+            self.assertIn('stroke="#FFFFFF"', asset)
+            self.assertNotIn("<image", asset)
+            self.assertNotIn("<text", asset)
+
         self.assertIn("<circle", mark)
-        self.assertNotIn("<image", mark)
-        self.assertNotIn("<text", mark)
+        self.assertIn("M23 28v16", mark)
+        self.assertNotIn("<circle", favicon)
+        self.assertIn("M22 31h18M22 42h14", favicon)
+        self.assertNotEqual(mark, favicon)
 
     def test_icon_sprite_contains_shared_and_full_domain_catalogue(self) -> None:
         sprite = (self.source_root / "static/system/icons.svg").read_text(
