@@ -1,0 +1,270 @@
+/* OPJ-LIFECYCLE-001: geometry for actions embedded in accepted OPJ screens.
+ * Colour and typography resolve only through shared Direction A/theme owners.
+ */
+
+.opj-register-draft-button {
+    min-height: 30px;
+    padding: 0.35rem 0.7rem;
+    white-space: nowrap;
+}
+
+.opj-draft-is-registered {
+    background: var(--theme-success-soft);
+}
+
+.opj-registered-draft-row {
+    background: var(--theme-success-soft);
+}
+
+.opj-registered-draft-row .draft-ledger-time {
+    color: var(--theme-success);
+    font-weight: 700;
+}
+
+.opj-registered-draft-content {
+    margin: 0;
+    color: var(--theme-text);
+    white-space: pre-wrap;
+}
+
+.opj-clean-copy-chip,
+.opj-entry-state-chip,
+.opj-entry-kind-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0.15rem 0.5rem;
+    border: 1px solid var(--theme-border);
+    border-radius: 999px;
+    background: var(--theme-surface-soft);
+    color: var(--theme-text-muted);
+    font-family: var(--font-interface);
+    font-size: 0.76rem;
+    font-weight: 650;
+    line-height: 1.2;
+}
+
+.opj-clean-copy-chip,
+.opj-entry-state-chip.is-registered {
+    border-color: var(--theme-success);
+    background: var(--theme-success-soft);
+    color: var(--theme-success);
+}
+
+.opj-entry-state-chip.is-corrected {
+    border-color: var(--theme-warning);
+    background: var(--theme-warning-soft);
+    color: var(--theme-warning);
+}
+
+.opj-entry-state-chip.is-cancelled {
+    border-color: var(--theme-danger);
+    background: var(--theme-danger-soft);
+    color: var(--theme-danger);
+}
+
+.opj-entry-kind-chip {
+    border-color: var(--theme-primary);
+    background: var(--theme-primary-soft);
+    color: var(--theme-primary);
+}
+
+.opj-open-clean-entry {
+    flex: 0 0 auto;
+}
+
+.opj-row-state-line,
+.opj-row-source-line,
+.opj-communication-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.55rem;
+}
+
+.opj-row-source-line,
+.opj-communication-line {
+    color: var(--theme-text-muted);
+    font-size: 0.82rem;
+}
+
+.opj-row-source-line a,
+.opj-communication-line a {
+    font-weight: 650;
+}
+
+.opj-effective-version,
+.opj-original-history,
+.opj-row-actions {
+    margin-top: 0.65rem;
+    border: 1px solid var(--theme-border);
+    border-radius: 8px;
+    background: var(--theme-surface-soft);
+}
+
+.opj-effective-version > summary,
+.opj-original-history > summary,
+.opj-row-actions > summary {
+    cursor: pointer;
+    padding: 0.55rem 0.7rem;
+    color: var(--theme-primary);
+    font-family: var(--font-interface);
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+
+.opj-effective-version[open] > summary,
+.opj-original-history[open] > summary,
+.opj-row-actions[open] > summary {
+    border-bottom: 1px solid var(--theme-border);
+}
+
+.opj-effective-version-body,
+.opj-original-history-body,
+.opj-row-actions-body {
+    padding: 0.7rem;
+}
+
+.opj-effective-version-body > p,
+.opj-original-history-body > p {
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+.opj-related-event-list {
+    display: grid;
+    gap: 0.45rem;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.opj-related-event-list li {
+    padding: 0.5rem 0.6rem;
+    border-left: 3px solid var(--theme-border-strong);
+    background: var(--theme-surface);
+}
+
+.opj-related-event-list strong,
+.opj-related-event-list span {
+    display: block;
+}
+
+.opj-related-event-list span {
+    margin-top: 0.2rem;
+    color: var(--theme-text-muted);
+    font-size: 0.8rem;
+}
+
+.opj-row-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.7rem;
+}
+
+.opj-row-action-card {
+    min-width: 0;
+    padding: 0.7rem;
+    border: 1px solid var(--theme-border);
+    border-radius: 8px;
+    background: var(--theme-surface);
+}
+
+.opj-row-action-card h4 {
+    margin: 0 0 0.55rem;
+    color: var(--theme-text);
+    font-family: var(--font-interface);
+    font-size: 0.9rem;
+}
+
+.opj-row-action-card label {
+    display: grid;
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+    color: var(--theme-text-muted);
+    font-size: 0.78rem;
+}
+
+.opj-row-action-card input,
+.opj-row-action-card select,
+.opj-row-action-card textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--theme-border-strong);
+    border-radius: 6px;
+    background: var(--theme-control);
+    color: var(--theme-text);
+    font: inherit;
+}
+
+.opj-row-action-card input,
+.opj-row-action-card select {
+    min-height: 36px;
+    padding: 0.4rem 0.5rem;
+}
+
+.opj-row-action-card textarea {
+    min-height: 76px;
+    padding: 0.5rem;
+    resize: vertical;
+}
+
+.opj-row-action-card button {
+    margin-top: 0.6rem;
+}
+
+.opj-row-action-card.is-danger {
+    border-color: var(--theme-danger);
+}
+
+.opj-row-action-card.is-danger h4 {
+    color: var(--theme-danger);
+}
+
+.opj-row-integrity-warning {
+    display: inline-block;
+    margin-top: 0.55rem;
+    color: var(--theme-danger);
+    font-size: 0.8rem;
+}
+
+@media (max-width: 1024px) {
+    .opj-row-actions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .opj-register-draft-button {
+        width: 100%;
+    }
+
+    .opj-registered-draft-row .draft-ledger-lower {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .opj-open-clean-entry {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .opj-row-actions-body,
+    .opj-effective-version-body,
+    .opj-original-history-body {
+        padding: 0.55rem;
+    }
+}
+
+@media print {
+    .opj-row-actions,
+    .opj-row-state-line,
+    .opj-row-source-line,
+    .opj-communication-line,
+    .opj-effective-version,
+    .opj-original-history,
+    .opj-row-integrity-warning {
+        display: none !important;
+    }
+}
