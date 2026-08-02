@@ -2,6 +2,18 @@
     const root = document.querySelector("[data-personnel-import-preview]");
     if (!root) return;
 
+    const currentScript = document.currentScript;
+    if (currentScript?.src && !document.querySelector("[data-import-selection-css]")) {
+        const stylesheet = document.createElement("link");
+        stylesheet.rel = "stylesheet";
+        stylesheet.dataset.importSelectionCss = "true";
+        stylesheet.href = currentScript.src.replace(
+            /personnel_import_selection\.js(?:\?.*)?$/,
+            "personnel_import_selection.css?v=pa001m2",
+        );
+        document.head.append(stylesheet);
+    }
+
     const rowCheckboxes = [...root.querySelectorAll("[data-import-row]")];
     const groupCheckboxes = [...root.querySelectorAll("[data-import-group]")];
     const selectAll = root.querySelector("[data-import-select-all]");
@@ -67,7 +79,9 @@
             ];
             rowCheckboxes.forEach((checkbox) => {
                 const haystack = normalize(checkbox.dataset.importSearch);
-                checkbox.checked = recommendedMarkers.some((marker) => haystack.includes(marker));
+                checkbox.checked = recommendedMarkers.some(
+                    (marker) => haystack.includes(marker),
+                );
             });
             syncAll();
         });
