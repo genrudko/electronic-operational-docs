@@ -36,7 +36,18 @@ IDENTITY FOUNDATION HEAD: 645c0dc7b520a6f091f5d266a0bc3390f26dbfbd / 5 workflows
 BRAND AND DOMAIN ICON HEAD: ed2b5ef8cd9cd9f248da9b4d16fc6bf1ad7aa395 / 5 workflows SUCCESS
 SMALL-ASSET REPAIR HEAD: b307bab6145f31dd08fde36b8869417eba059012 / 5 workflows SUCCESS
 ICONOGRAPHY REFINEMENT HEAD: 3eb93429405dcbcd88836e3647e9a307b29bcc42 / 5 workflows SUCCESS / USER PARTIALLY ACCEPTED
-NARROW ICON REPAIR IMPLEMENTATION HEAD: d051f4aca14a26c42c004f04a66959afa87adc6e / VALIDATION PENDING
+NARROW ICON REPAIR IMPLEMENTATION HEAD: d051f4aca14a26c42c004f04a66959afa87adc6e
+NARROW ICON REPAIR VALIDATED HEAD: b0803e09f8526c8ffad3d6f69d4b9e435f6eb388 / 5 workflows SUCCESS
+```
+
+Validated workflow runs for `b0803e09f8526c8ffad3d6f69d4b9e435f6eb388`:
+
+```text
+AUTO-001A Foundation CI: 30758076857 / SUCCESS
+AUTO-001B Controller CI: 30758076854 / SUCCESS
+EOD Development Stack: 30758076863 / SUCCESS
+EOD Documentation Contract: 30758076865 / SUCCESS
+EOD CI: 30758076874 / SUCCESS
 ```
 
 Trusted controller run `30733195542` deployed exact head
@@ -63,8 +74,7 @@ health-check and exact live SHA match. Preview remained `UNTOUCHED`.
   значения остаются text-first markers, а не пиктограммами.
 
 После просмотра полного каталога пользователь принял основной набор и запросил
-узкий финальный repair четырёх символов. В implementation head
-`d051f4aca14a26c42c004f04a66959afa87adc6e` изменены только:
+узкий финальный repair четырёх символов. Изменены только:
 
 - `icon-shift-handover`: две отдельные фигуры сотрудников и одна явная
   двусторонняя стрелка между ними;
@@ -85,8 +95,8 @@ health-check and exact live SHA match. Preview remained `UNTOUCHED`.
 Новые migrations отсутствуют. Product/domain models and lifecycle remain
 untouched.
 
-Следующий обязательный шаг — пять mandatory workflows на итоговом exact head,
-затем trusted full-development rebuild и пользовательская визуальная приёмка.
+Следующий обязательный шаг — exact-head validation coordination commit,
+trusted full-development rebuild и пользовательская визуальная приёмка.
 До прямого exact-live-SHA evidence прежний deployed repair остаётся фактическим
 состоянием development.
 
