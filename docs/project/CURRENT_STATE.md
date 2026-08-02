@@ -7,101 +7,86 @@
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted main baseline: main / 6e5171776cd6bc02fcbc45eb9532a6a0e58e15f0
-active work item: PERSONNEL-AUTHORITY-001
-active issue: #42
-active PR: #43 / OPEN / DRAFT / NOT MERGED
-active branch: feature/personnel-authority-001
+accepted main baseline: main / 2a2013a51bfdc9de602b095adcb28a51b8d4487e
+active work item: POST-MERGE-DEPLOY-VERIFY-001
+active issue: #44
+active PR: #45 / OPEN / DRAFT / NOT MERGED
+active branch: ops/post-merge-deploy-verify-001
 runtime impact: DEVELOPMENT
 preview: UNTOUCHED
 ```
 
-`MASTER-DATA-ALIGNMENT-001` принят и merged commit
-`b644048f1ec17e19e03c2e4fb538fc0cfc1f5feb`.
-
-`NORMATIVE-EVIDENCE-001` принят и merged commit
-`6e5171776cd6bc02fcbc45eb9532a6a0e58e15f0`.
-
-`PERSONNEL-AUTHORITY-001` выполняется в issue #42 и Draft PR #43. Проверенные
-этапы:
+`PERSONNEL-AUTHORITY-001` принят и merged обычным merge commit:
 
 ```text
-PURE CONTRACT HEAD: 0200a2be6dfc5e948eb27dbed77d9e2aa39c0d4d / 5 workflows SUCCESS
-PERSISTENCE HEAD: 4c65f3ab1d6631fa661c9ffba94443620a30e71a / 5 workflows SUCCESS
-MATRIX HEAD: 60460f1d213e5a5afb080402a8efff16feec0af7 / 5 workflows SUCCESS
-MANAGEMENT HEAD: d141313ac6e56fc442f08683a510e52df484564c / 5 workflows SUCCESS
-REPAIR IMPLEMENTATION HEAD: 41bb2c1ba99decedf19fbc22dd2f25eed187dd2d / 5 workflows SUCCESS / 664 TESTS OK
-DEPLOYED REPAIR HEAD: 9b7ede3a78997ebdbe7d68b750f024857369d4ea / DEVELOPMENT DEPLOYED / USER REJECTED VISUALLY
-IDENTITY FOUNDATION HEAD: 645c0dc7b520a6f091f5d266a0bc3390f26dbfbd / 5 workflows SUCCESS
-BRAND AND DOMAIN ICON HEAD: ed2b5ef8cd9cd9f248da9b4d16fc6bf1ad7aa395 / 5 workflows SUCCESS
-SMALL-ASSET REPAIR HEAD: b307bab6145f31dd08fde36b8869417eba059012 / 5 workflows SUCCESS
-ICONOGRAPHY REFINEMENT HEAD: 3eb93429405dcbcd88836e3647e9a307b29bcc42 / 5 workflows SUCCESS / USER PARTIALLY ACCEPTED
-NARROW ICON REPAIR IMPLEMENTATION HEAD: d051f4aca14a26c42c004f04a66959afa87adc6e
-NARROW ICON REPAIR VALIDATED HEAD: b0803e09f8526c8ffad3d6f69d4b9e435f6eb388 / 5 workflows SUCCESS
+accepted PR: #43 / CLOSED / MERGED
+accepted exact head: d659ab949db2942c064eec3c298d031a9684c67d
+merge commit: 2a2013a51bfdc9de602b095adcb28a51b8d4487e
+issue: #42 / CLOSED / COMPLETED
 ```
 
-Validated workflow runs for `b0803e09f8526c8ffad3d6f69d4b9e435f6eb388`:
+Принятый baseline включает:
+
+- structured personnel authority grants и action-time `ALLOW / DENY / VERIFY`;
+- организационную структуру, матрицу прав и карточки сотрудников;
+- ручное создание, редактирование, versioned rights/qualifications и деактивацию;
+- controlled XLSX preview/publish;
+- внешние оперативные справочники и contractor semantics;
+- Onest Variable как фирменную интерфейсную гарнитуру;
+- принятый логотип ЭОД и canonical EOD Outline 24 iconography;
+- узкий принятый repair выключателя, заземляющего разъединителя, переносного
+  заземления и приёма/передачи смены.
+
+До merge все пять обязательных workflows на accepted head были успешны. Preview
+не затрагивался.
+
+## Active post-merge verification
+
+Пользователь потребовал развернуть и проверить принятый результат на VPS.
+Trusted controller не допускает запрос из merged PR: run `30761934328` был
+заблокирован точной причиной:
 
 ```text
-AUTO-001A Foundation CI: 30758076857 / SUCCESS
-AUTO-001B Controller CI: 30758076854 / SUCCESS
-EOD Development Stack: 30758076863 / SUCCESS
-EOD Documentation Contract: 30758076865 / SUCCESS
-EOD CI: 30758076874 / SUCCESS
+AUTO-001B BLOCKED: Pull request must still be open.
 ```
 
-Trusted controller run `30733195542` deployed exact head
-`9b7ede3a78997ebdbe7d68b750f024857369d4ea` to development with 664 VPS tests,
-health-check and exact live SHA match. Preview remained `UNTOUCHED`.
+Поэтому Draft PR #45 создан от точного merge commit `main` как same-repository
+deployment carrier.
 
-Для identity candidate зафиксированы следующие решения:
+Первый carrier head `0a48cfc484a2917fd0f76c32bb9750a7c5e96a2c` прошёл пять
+mandatory workflows. Trusted run `30762341525` затем подтвердил validation,
+image build, Django checks и отсутствие migration drift, но isolated VPS suite
+остановился на одном repository-only test:
 
-- Onest Variable является фирменным шрифтом всего пользовательского интерфейса,
-  включая экранную форму оперативного журнала;
-- используются контролируемые веса `400 / 500 / 600 / 700 / 800`;
-- там, где семантически нужен курсив, применяется контролируемый oblique Onest,
-  а не другая гарнитура;
-- технические идентификаторы и машинные значения используют Consolas с
-  платформенными monospace fallback;
-- создан детерминированный SVG-знак ЭОД и отдельный упрощённый favicon;
-- на светлой теме основной текст логотипа остаётся тёмным, синий используется
-  для знака и акцентов;
-- EOD Outline 24 остаётся единым 24 px / 2 px round-stroke языком иконок;
-- оперативная служба и внешний диспетчерский центр имеют разные символы;
-- дерево персонала получает отдельные уровни организации, центра эксплуатации,
-  подразделения, должности и сотрудника;
-- категории АТП/ОП/ОРП/РП, квалификация, напряжение, lifecycle и матричные
-  значения остаются text-first markers, а не пиктограммами.
+```text
+tests discovered: 675
+failed: 1
+skipped: 1
+primary cause: /app/docs/ux/EQUIPMENT_PICTOGRAM_GOST_BASIS_V1.md absent
+live deployment: NOT APPLIED
+pending development transaction: NONE
+previous development runtime: PRESERVED
+```
 
-После просмотра полного каталога пользователь принял основной набор и запросил
-узкий финальный repair четырёх символов. Изменены только:
+Development image намеренно содержит executable source, но не repository docs.
+Исправление ограничено тестовым контрактом: Markdown boundary остаётся
+обязательным в repository CI, а в runtime image пропускается как repository-only.
+Product behavior, SVG catalog, schema, migrations, workflow и controller не
+меняются.
 
-- `icon-shift-handover`: две отдельные фигуры сотрудников и одна явная
-  двусторонняя стрелка между ними;
-- `icon-equipment-breaker`: простая вертикальная схемная форма выключателя без
-  декоративных внутренних полос;
-- `icon-equipment-ground-switch`: отдельный подвижный контакт, неподвижный
-  контакт и непосредственный вывод на знак заземления;
-- `icon-equipment-portable-ground`: три фазных зажима, гибкие проводники, общая
-  точка и спуск на заземление.
+Следующий обязательный порядок:
 
-Остальные 62 canonical symbols не менялись. Все symbol IDs сохранены.
+```text
+5 exact-head workflows after test-boundary repair
+→ trusted full-development rebuild
+→ VPS tests and migrations summary
+→ Django system check and health-check
+→ LIVE_SHA = exact PR #45 head
+→ preview UNTOUCHED
+→ user acceptance
+```
 
-Интерфейсные пиктограммы оборудования основаны на узнаваемой семантике
-ГОСТ Р 56303-2014 в редакции с Изменением № 1, но не объявляются нормативными
-УГО и не заменяют обозначения приложения Б на инженерной схеме. Граница
-закреплена в `docs/ux/EQUIPMENT_PICTOGRAM_GOST_BASIS_V1.md` и contract-тесте.
-
-Новые migrations отсутствуют. Product/domain models and lifecycle remain
-untouched.
-
-Следующий обязательный шаг — exact-head validation coordination commit,
-trusted full-development rebuild и пользовательская визуальная приёмка.
-До прямого exact-live-SHA evidence прежний deployed repair остаётся фактическим
-состоянием development.
-
-Merge, Ready for Review и preview write без отдельной команды пользователя
-запрещены.
+Merge PR #45 без отдельной прямой команды пользователя запрещён.
 
 Release/module/capability/work-item planning state остаётся в
 [`DEMO_RELEASE_PLAN.yaml`](DEMO_RELEASE_PLAN.yaml). Navigation без дублирования
