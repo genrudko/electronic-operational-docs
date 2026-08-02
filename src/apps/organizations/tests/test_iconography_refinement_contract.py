@@ -59,8 +59,12 @@ class IconographyRefinementContractTests(SimpleTestCase):
         battery_inspection = self.symbol("icon-battery-inspection")
 
         self.assertIn('<rect x="10" y="9" width="4" height="4"', schemes)
-        self.assertIn('<circle cx="5" cy="7" r="3"', shift)
-        self.assertIn("M8 11h8", shift)
+        self.assertIn('<circle cx="5" cy="6" r="2.5"', shift)
+        self.assertIn('<circle cx="19" cy="6" r="2.5"', shift)
+        self.assertIn("M8 12h8", shift)
+        self.assertIn("M10 9.5 7.5 12 10 14.5", shift)
+        self.assertIn("M14 9.5l2.5 2.5-2.5 2.5", shift)
+        self.assertNotIn("M8 11h8", shift)
         self.assertIn('<circle cx="18" cy="18" r="4"', current_works)
         self.assertIn("M6 15v-4a6 6", emergency)
         self.assertIn('<circle cx="18" cy="18" r="3"', battery_inspection)
@@ -71,14 +75,30 @@ class IconographyRefinementContractTests(SimpleTestCase):
         breaker = self.symbol("icon-equipment-breaker")
         disconnector = self.symbol("icon-equipment-disconnector")
         ground_switch = self.symbol("icon-equipment-ground-switch")
+        portable_ground = self.symbol("icon-equipment-portable-ground")
         battery = self.symbol("icon-equipment-battery")
 
         self.assertIn('<circle cx="9" cy="12" r="5"', transformer)
         self.assertIn('<circle cx="15" cy="12" r="5"', transformer)
         self.assertIn('stroke-width="4"', busbar)
-        self.assertIn('<rect x="8" y="6" width="8" height="12"', breaker)
+
+        self.assertIn("M12 2v20", breaker)
+        self.assertIn('<rect x="9" y="7" width="6" height="10"', breaker)
+        self.assertNotIn("M9.5 10h5", breaker)
+
         self.assertIn("M8 12l7-6", disconnector)
-        self.assertIn("M10 14h10M12 17h6M14 20h2", ground_switch)
+
+        self.assertIn('<circle cx="12" cy="7" r="1"', ground_switch)
+        self.assertIn('<circle cx="18" cy="12" r="1"', ground_switch)
+        self.assertIn("M12 7l5 4", ground_switch)
+        self.assertIn("M13 16h10M15 19h6M17 22h2", ground_switch)
+
+        self.assertEqual(portable_ground.count("<rect "), 3)
+        self.assertIn("M5 6c0 5 4 5 7 8", portable_ground)
+        self.assertIn("M19 6c0 5-4 5-7 8", portable_ground)
+        self.assertIn("M7 16h10M9 19h6M11 22h2", portable_ground)
+        self.assertNotIn("m3 2 3 3", portable_ground)
+
         self.assertIn("M7 9v6M4 12h6M14 10v4", battery)
 
     def test_gost_boundary_is_documented_without_false_compliance_claim(self) -> None:
@@ -91,3 +111,5 @@ class IconographyRefinementContractTests(SimpleTestCase):
         self.assertIn("Изменением № 1", contract)
         self.assertIn("не заменяют инженерное УГО", contract)
         self.assertIn("не объявляется самостоятельным УГО", contract)
+        self.assertIn("две фигуры сотрудников", contract)
+        self.assertIn("три фазных зажима", contract)
