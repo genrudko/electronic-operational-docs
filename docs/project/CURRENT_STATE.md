@@ -12,7 +12,7 @@ active work item: PERSONNEL-AUTHORITY-001
 active issue: #42
 active PR: #43 / OPEN / DRAFT / NOT MERGED
 active branch: feature/personnel-authority-001
-runtime impact: FULL_DEVELOPMENT REBUILD PENDING FINAL EXACT-HEAD GATE
+runtime impact: NONE
 preview: UNTOUCHED
 ```
 
