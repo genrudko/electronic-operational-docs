@@ -2,6 +2,50 @@
     const root = document.querySelector("[data-authority-page]");
     if (!root) return;
 
+    const currentScript = document.currentScript;
+    if (currentScript?.src && !document.querySelector("[data-authority-readability-css]")) {
+        const stylesheet = document.createElement("link");
+        stylesheet.rel = "stylesheet";
+        stylesheet.dataset.authorityReadabilityCss = "true";
+        stylesheet.href = currentScript.src.replace(
+            /personnel_authority_matrix\.js(?:\?.*)?$/,
+            "personnel_authority_readability.css?v=pa001r4",
+        );
+        document.head.append(stylesheet);
+    }
+
+    const toolbar = root.querySelector(".authority-toolbar");
+    if (toolbar && !root.querySelector(".authority-abbreviation-legend")) {
+        const legend = document.createElement("details");
+        legend.className = "authority-abbreviation-legend";
+        legend.innerHTML = `
+            <summary>Обозначения и сокращения</summary>
+            <dl class="authority-abbreviation-grid">
+                <div><dt>АТП</dt><dd>Административно-технический персонал</dd></div>
+                <div><dt>ОП</dt><dd>Оперативный персонал</dd></div>
+                <div><dt>ОРП</dt><dd>Оперативно-ремонтный персонал</dd></div>
+                <div><dt>РП</dt><dd>Ремонтный персонал</dd></div>
+                <div><dt>АТП/ОП</dt><dd>Совмещённая категория административно-технического и оперативного персонала</dd></div>
+            </dl>
+        `;
+        toolbar.insertAdjacentElement("afterend", legend);
+    }
+
+    root.querySelectorAll(".matrix-sticky-qualification span").forEach((node) => {
+        if (node.textContent.trim().startsWith("Группа ")
+            && !node.textContent.includes("электробезопасности")) {
+            node.textContent = `${node.textContent.trim()} по электробезопасности`;
+        }
+    });
+    root.querySelectorAll(
+        ".authority-holders-table tbody td:nth-child(3) .authority-primary-value",
+    ).forEach((node) => {
+        if (node.textContent.includes("группа ")
+            && !node.textContent.includes("электробезопасности")) {
+            node.textContent = `${node.textContent.trim()} по электробезопасности`;
+        }
+    });
+
     const tabs = [...root.querySelectorAll("[data-authority-view]")];
     const panels = [...root.querySelectorAll("[data-authority-panel]")];
     const workspace = root.querySelector("[data-authority-workspace]");
