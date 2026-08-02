@@ -48,8 +48,10 @@ select = ["E", "F", "I", "B", "UP", "DJ"]
 ignore = []
 
 [tool.ruff.lint.per-file-ignores]
+"src/apps/organizations/personnel_edit_services.py" = ["I001"]
 "src/apps/organizations/personnel_management_services.py" = ["E501", "F541", "I001"]
 "src/apps/organizations/personnel_management_views.py" = ["E501", "I001"]
+"src/apps/organizations/personnel_reference_signals.py" = ["I001"]
 
 [tool.coverage.run]
 source = ["src"]
