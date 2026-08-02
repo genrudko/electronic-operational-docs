@@ -1,0 +1,193 @@
+{% extends "shared/direction_a/base.html" %}
+{% load static %}
+
+{% block title %}Запись № {{ entry.sequence_number }} · {{ journal.title }} · ЭОД{% endblock %}
+{% block body_class %}direction-a-body da-active opj-direction-a{% endblock %}
+{% block main_class %}opj-main opj-lifecycle-main{% endblock %}
+
+{% block content %}
+<div class="opj-lifecycle-page" data-opj-lifecycle-page>
+    <header class="opj-lifecycle-header">
+        <div>
+            <div class="eyebrow">ОПЕРАТИВНЫЙ ЖУРНАЛ · ЖИЗНЕННЫЙ ЦИКЛ</div>
+            <h1>Запись № {{ entry.sequence_number }}</h1>
+            <p>{{ journal.title }} · {{ journal.workplace.name }}</p>
+            <div class="opj-lifecycle-status-line">
+                <span class="opj-lifecycle-chip is-{{ state.status|lower }}">{{ state.status_label }}</span>
+                <span class="opj-lifecycle-chip">{{ entry.event_at|date:"d.m.Y H:i" }}</span>
+                {% if integrity_ok %}
+                    <span class="opj-lifecycle-chip is-allow">Целостность подтверждена</span>
+                {% else %}
+                    <span class="opj-lifecycle-chip is-deny">Требуется проверка целостности</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="da-actions">
+            <a class="da-button is-quiet" href="{% url 'operational_log:detail' journal.pk %}">К зарегистрированному журналу</a>
+            <a class="da-button is-secondary" href="{% url 'operational_log:shift_workspace' journal.pk %}">Рабочая смена</a>
+            <button class="da-button is-secondary" type="button" onclick="window.print()">Печать истории</button>
+        </div>
+    </header>
+
+    {% if linked_original %}
+    <section class="opj-lifecycle-warning">
+        Это самостоятельное зарегистрированное событие. Исходная запись:
+        <a href="{% url 'operational_log:entry_lifecycle' journal.pk linked_original.sequence_number %}">№ {{ linked_original.sequence_number }}</a>.
+    </section>
+    {% endif %}
+
+    <div class="opj-lifecycle-grid">
+        <div>
+            <section class="opj-lifecycle-card opj-lifecycle-original">
+                <div class="eyebrow">НЕИЗМЕНЯЕМЫЙ ОРИГИНАЛ</div>
+                <h2>Зарегистрированное содержание</h2>
+                <p class="opj-lifecycle-text">{{ entry.content }}</p>
+
+                {% if state.effective_content != entry.content or state.status == "CANCELLED" %}
+                <div class="opj-lifecycle-effective">
+                    <strong>Актуальное представление</strong>
+                    {% if state.status == "CANCELLED" %}<span class="opj-lifecycle-chip is-cancelled">Запись отменена</span>{% endif %}
+                    <p class="opj-lifecycle-text">{{ state.effective_content }}</p>
+                </div>
+                {% endif %}
+
+                <dl class="opj-lifecycle-facts">
+                    <div><dt>Автор</dt><dd>{{ entry.author_full_name_snapshot }}</dd></div>
+                    <div><dt>Должность</dt><dd>{{ entry.author_position_snapshot }}</dd></div>
+                    <div><dt>Время регистрации</dt><dd>{{ entry.registered_at|date:"d.m.Y H:i:s" }}</dd></div>
+                    <div><dt>Форма</dt><dd>{{ entry.get_entry_form_display }}</dd></div>
+                    <div><dt>Digest</dt><dd><code>{{ entry.digest }}</code></dd></div>
+                    <div><dt>Исправлений</dt><dd>{{ state.correction_count }}</dd></div>
+                </dl>
+
+                {% if entry.typed_payload.authority %}
+                <div class="opj-authority-summary">
+                    <strong>Полномочие при регистрации:</strong>
+                    <span class="opj-lifecycle-chip is-{{ entry.typed_payload.authority.decision|lower }}">{{ entry.typed_payload.authority.decision }}</span>
+                </div>
+                {% endif %}
+            </section>
+
+            <section class="opj-lifecycle-card">
+                <div class="eyebrow">APPEND-ONLY ИСТОРИЯ</div>
+                <h2>Исправления и отмена</h2>
+                <div class="opj-lifecycle-timeline">
+                    <article class="opj-lifecycle-event">
+                        <svg class="opj-lifecycle-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-check"></use></svg>
+                        <header><strong>Оригинал зарегистрирован</strong><small>№ {{ entry.sequence_number }} · {{ entry.registered_at|date:"d.m.Y H:i:s" }}</small></header>
+                        <p>{{ entry.author_full_name_snapshot }}, {{ entry.author_position_snapshot }}</p>
+                    </article>
+
+                    {% for event in lifecycle_entries %}
+                    <article class="opj-lifecycle-event">
+                        <svg class="opj-lifecycle-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-history"></use></svg>
+                        <header><strong>{{ event.type_title }}</strong><small>№ {{ event.sequence_number }} · {{ event.registered_at|date:"d.m.Y H:i:s" }}</small></header>
+                        <p class="opj-lifecycle-text">{{ event.content }}</p>
+                        <div class="opj-authority-summary">
+                            <span>{{ event.author_full_name_snapshot }}</span>
+                            <span class="opj-lifecycle-chip is-{{ event.typed_payload.authority.decision|lower }}">Полномочие: {{ event.typed_payload.authority.decision }}</span>
+                        </div>
+                    </article>
+                    {% empty %}
+                    <p class="opj-lifecycle-empty">Исправления и отмена не зарегистрированы.</p>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="opj-lifecycle-card">
+                <div class="eyebrow">ОПЕРАТИВНЫЕ ПЕРЕГОВОРЫ</div>
+                <h2>Связанные разговоры</h2>
+                <div class="opj-lifecycle-timeline">
+                    {% for communication in communications %}
+                    <article class="opj-lifecycle-event">
+                        <svg class="opj-lifecycle-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-management"></use></svg>
+                        <header>
+                            <strong>{{ communication.typed_payload.direction_label }} · {{ communication.typed_payload.channel_label }}</strong>
+                            <small>№ {{ communication.sequence_number }} · {{ communication.registered_at|date:"d.m.Y H:i:s" }}</small>
+                        </header>
+                        <p><strong>{{ communication.typed_payload.counterpart }}</strong>{% if communication.typed_payload.counterpart_organization %} · {{ communication.typed_payload.counterpart_organization }}{% endif %}</p>
+                        <p class="opj-lifecycle-text">{{ communication.typed_payload.content }}</p>
+                        <div class="opj-authority-summary">
+                            <span>{{ communication.author_full_name_snapshot }}</span>
+                            <span class="opj-lifecycle-chip is-{{ communication.typed_payload.authority.decision|lower }}">Полномочие: {{ communication.typed_payload.authority.decision }}</span>
+                        </div>
+                    </article>
+                    {% empty %}
+                    <p class="opj-lifecycle-empty">Связанные оперативные разговоры не зарегистрированы.</p>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+
+        <aside>
+            {% if can_act %}
+            <section class="opj-lifecycle-actions screen-only" aria-labelledby="opj-actions-title">
+                <div class="opj-lifecycle-tabs" role="tablist" aria-label="Действия с записью">
+                    <button class="opj-lifecycle-tab" type="button" role="tab" data-opj-action-tab="communication">Разговор</button>
+                    <button class="opj-lifecycle-tab" type="button" role="tab" data-opj-action-tab="correction" {% if state.status == "CANCELLED" %}disabled{% endif %}>Исправить</button>
+                    <button class="opj-lifecycle-tab" type="button" role="tab" data-opj-action-tab="cancellation" {% if state.status == "CANCELLED" %}disabled{% endif %}>Отменить</button>
+                </div>
+
+                <div class="opj-lifecycle-action-panel" data-opj-action-panel="communication">
+                    <div class="eyebrow">НОВЫЙ НЕИЗМЕНЯЕМЫЙ ФАКТ</div>
+                    <h2 id="opj-actions-title">Оперативный разговор</h2>
+                    <p>Разговор получит собственный номер в журнале и сохранит снимок полномочия на момент регистрации.</p>
+                    <form class="opj-lifecycle-form" method="post" action="{% url 'operational_log:entry_communication' journal.pk entry.sequence_number %}" data-opj-confirm="Зарегистрировать оперативный разговор как неизменяемую запись?">
+                        {% csrf_token %}
+                        <div class="opj-lifecycle-field"><label for="{{ communication_form.direction.id_for_label }}">{{ communication_form.direction.label }}</label>{{ communication_form.direction }}</div>
+                        <div class="opj-lifecycle-field"><label for="{{ communication_form.channel.id_for_label }}">{{ communication_form.channel.label }}</label>{{ communication_form.channel }}</div>
+                        <div class="opj-lifecycle-field"><label for="{{ communication_form.counterpart.id_for_label }}">{{ communication_form.counterpart.label }}</label>{{ communication_form.counterpart }}</div>
+                        <div class="opj-lifecycle-field"><label for="{{ communication_form.counterpart_organization.id_for_label }}">{{ communication_form.counterpart_organization.label }}</label>{{ communication_form.counterpart_organization }}</div>
+                        <div class="opj-lifecycle-field"><label for="{{ communication_form.content.id_for_label }}">{{ communication_form.content.label }}</label>{{ communication_form.content }}</div>
+                        <div class="opj-lifecycle-form-actions"><button class="da-button" type="submit">Зарегистрировать разговор</button></div>
+                    </form>
+                </div>
+
+                <div class="opj-lifecycle-action-panel" data-opj-action-panel="correction" hidden>
+                    <div class="eyebrow">ОРИГИНАЛ НЕ ИЗМЕНЯЕТСЯ</div>
+                    <h2>Исправление записи</h2>
+                    <p>Будет создана новая запись-событие. Исходный текст и digest останутся доступными в истории.</p>
+                    {% if state.status == "CANCELLED" %}
+                        <div class="opj-lifecycle-warning">Отменённую запись исправлять нельзя.</div>
+                    {% else %}
+                    <form class="opj-lifecycle-form" method="post" action="{% url 'operational_log:entry_correct' journal.pk entry.sequence_number %}" data-opj-confirm="Зарегистрировать исправление отдельной неизменяемой записью?">
+                        {% csrf_token %}
+                        <div class="opj-lifecycle-field"><label for="{{ correction_form.replacement_content.id_for_label }}">{{ correction_form.replacement_content.label }}</label>{{ correction_form.replacement_content }}</div>
+                        <div class="opj-lifecycle-field"><label for="{{ correction_form.reason.id_for_label }}">{{ correction_form.reason.label }}</label>{{ correction_form.reason }}</div>
+                        <div class="opj-lifecycle-form-actions"><button class="da-button" type="submit">Зарегистрировать исправление</button></div>
+                    </form>
+                    {% endif %}
+                </div>
+
+                <div class="opj-lifecycle-action-panel" data-opj-action-panel="cancellation" hidden>
+                    <div class="eyebrow">БЕЗ ФИЗИЧЕСКОГО УДАЛЕНИЯ</div>
+                    <h2>Отмена записи</h2>
+                    <p>Отмена не скроет оригинал: в журнале появится отдельная запись с основанием и снимком полномочия.</p>
+                    {% if state.status == "CANCELLED" %}
+                        <div class="opj-lifecycle-warning">Запись уже отменена.</div>
+                    {% else %}
+                    <form class="opj-lifecycle-form" method="post" action="{% url 'operational_log:entry_cancel' journal.pk entry.sequence_number %}" data-opj-confirm="Отменить запись отдельным неизменяемым событием?">
+                        {% csrf_token %}
+                        <div class="opj-lifecycle-field"><label for="{{ cancellation_form.reason.id_for_label }}">{{ cancellation_form.reason.label }}</label>{{ cancellation_form.reason }}</div>
+                        <div class="opj-lifecycle-form-actions"><button class="da-button is-danger" type="submit">Зарегистрировать отмену</button></div>
+                    </form>
+                    {% endif %}
+                </div>
+            </section>
+            {% else %}
+            <section class="opj-lifecycle-card screen-only">
+                <div class="eyebrow">СВЯЗАННОЕ СОБЫТИЕ</div>
+                <h2>Действия выполняются из оригинала</h2>
+                <p>Исправления, отмена и переговоры создаются только относительно исходной зарегистрированной записи.</p>
+            </section>
+            {% endif %}
+
+            <section class="opj-lifecycle-card">
+                <div class="eyebrow">ПРАВИЛО ДОКАЗАТЕЛЬНОСТИ</div>
+                <h3>Что фиксируется</h3>
+                <p>Каждое действие сохраняет автора, момент, предметную область, результат <strong>ALLOW / VERIFY / DENY</strong> и неизменяемый authority snapshot. Статус VERIFY не выдаётся за доказанное юридически значимое право.</p>
+            </section>
+        </aside>
+    </div>
+</div>
+{% endblock %}
