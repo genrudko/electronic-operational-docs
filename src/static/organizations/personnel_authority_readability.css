@@ -1,0 +1,103 @@
+/* PERSONNEL-AUTHORITY-001 matrix readability and terminology repair. */
+.authority-category-header th {
+    height: 38px;
+    padding: 8px 7px;
+    vertical-align: middle;
+    font-size: 0.64rem;
+    line-height: 1.2;
+}
+
+.authority-right-header th {
+    top: 38px;
+    height: 138px;
+    vertical-align: middle;
+}
+
+.authority-right-header th > button {
+    align-items: center;
+    justify-content: flex-start;
+    padding: 9px 7px;
+    font-family: inherit;
+    font-size: 0.67rem;
+    font-weight: 800;
+    line-height: 1.35;
+    letter-spacing: 0.01em;
+    text-align: center;
+    text-wrap: balance;
+}
+
+.authority-right-header .matrix-sticky-name,
+.authority-right-header .matrix-sticky-position,
+.authority-right-header .matrix-sticky-qualification {
+    height: 138px;
+    padding: 10px 9px;
+    vertical-align: middle;
+    font-size: 0.68rem;
+    line-height: 1.3;
+    text-align: left;
+}
+
+.authority-abbreviation-legend {
+    overflow: hidden;
+    border: 1px solid var(--da-border);
+    border-radius: var(--da-radius-sm);
+    background: var(--da-surface);
+}
+
+.authority-abbreviation-legend summary {
+    padding: 9px 12px;
+    color: var(--da-blue-dark);
+    font-size: 0.7rem;
+    font-weight: 850;
+    cursor: pointer;
+}
+
+.authority-abbreviation-legend[open] summary {
+    border-bottom: 1px solid var(--da-border);
+    background: var(--da-surface-soft);
+}
+
+.authority-abbreviation-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    padding: 10px 12px;
+}
+
+.authority-abbreviation-grid div {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+    padding: 8px 9px;
+    border-radius: 7px;
+    background: var(--da-surface-soft);
+}
+
+.authority-abbreviation-grid dt,
+.authority-abbreviation-grid dd {
+    margin: 0;
+}
+
+.authority-abbreviation-grid dt {
+    color: var(--da-text);
+    font-size: 0.7rem;
+    font-weight: 900;
+}
+
+.authority-abbreviation-grid dd {
+    color: var(--da-muted);
+    font-size: 0.64rem;
+    line-height: 1.35;
+}
+
+@media (max-width: 1100px) {
+    .authority-abbreviation-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+    .authority-abbreviation-grid {
+        grid-template-columns: 1fr;
+    }
+}
