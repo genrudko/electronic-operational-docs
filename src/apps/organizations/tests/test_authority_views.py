@@ -16,6 +16,7 @@ from apps.organizations.models import (
     Division,
     Employee,
     EmployeeOperationalRight,
+    EmployeeQualification,
     OperationalRightDefinition,
     Organization,
     Position,
@@ -40,8 +41,14 @@ class AuthorityReadOnlyViewTests(TestCase):
             name="Синтетическая организация",
             short_name="AUTH-VIEW",
         )
+        cls.parent_division = Division.objects.create(
+            organization=cls.organization,
+            code="CENTER",
+            name="Центр эксплуатации",
+        )
         cls.division = Division.objects.create(
             organization=cls.organization,
+            parent=cls.parent_division,
             code="OPS",
             name="Оперативная служба",
         )
@@ -69,18 +76,35 @@ class AuthorityReadOnlyViewTests(TestCase):
             middle_name="Тестович",
             employment_start=date(2025, 1, 1),
         )
+        cls.qualification = EmployeeQualification.objects.create(
+            employee=cls.employee,
+            personnel_category="ОП",
+            electrical_safety_group="V",
+            voltage_scope="до и выше 1000 В",
+            electrical_installation_scope="Синтетический энергообъект",
+            valid_from=date(2026, 1, 1),
+            valid_until=date(2026, 12, 31),
+            source_reference="SYNTHETIC-MATRIX-R1",
+            source_file_sha256="a" * 64,
+            source_row_number=9,
+        )
         cls.right_definition = OperationalRightDefinition.objects.get(
             code="switching_operation"
         )
         cls.source_right = EmployeeOperationalRight.objects.create(
             employee=cls.employee,
             right_definition=cls.right_definition,
+            qualifier=(
+                "После подтверждения оперативным "
+                "руководителем."
+            ),
             scope_text="Синтетический энергообъект",
-            source_marker="+",
-            source_reference="SYNTHETIC-SOURCE",
+            source_marker="+1",
+            source_reference="SYNTHETIC-MATRIX-R1",
             source_file_sha256="b" * 64,
-            source_row_number=1,
+            source_row_number=9,
             valid_from=date(2026, 1, 1),
+            valid_until=date(2026, 12, 31),
         )
         cls.grant = OperationalAuthorityGrant.objects.create(
             organization=cls.organization,
@@ -92,7 +116,7 @@ class AuthorityReadOnlyViewTests(TestCase):
             scope_label="Синтетический энергообъект",
             granting_organization=cls.organization,
             basis_status=AuthorityBasisStatus.CONFIRMED,
-            basis_reference="SYNTHETIC-ORDER-R1",
+            basis_reference="SYNTHETIC-MATRIX-R1",
             source_ids=["REF-OD-051"],
             source_operational_right=cls.source_right,
             valid_from=START,
@@ -117,21 +141,31 @@ class AuthorityReadOnlyViewTests(TestCase):
             recorded_by=self.employee,
         )
 
-    def test_authority_registry_uses_direction_a_and_user_language(self) -> None:
+    def test_registry_is_hierarchical_published_matrix(self) -> None:
         response = self.client.get(reverse("organizations:authority_registry"))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "data-direction-a-shell")
-        self.assertContains(response, "Оперативные права персонала")
-        self.assertContains(response, "Выполнение переключений")
-        self.assertContains(response, "SYNTHETIC-ORDER-R1")
-        self.assertContains(response, "data-authority-search")
-        self.assertContains(response, "data-authority-view=\"rights\"")
+        self.assertContains(
+            response,
+            "Матрица прав штатного персонала",
+        )
+        self.assertContains(response, "Структура организации")
+        self.assertContains(response, "Центр эксплуатации")
+        self.assertContains(response, "Оперативная служба")
+        self.assertContains(response, "data-division-filter")
+        self.assertContains(response, "data-authority-panel=\"matrix\"")
+        self.assertContains(response, "Производство переключений")
+        self.assertContains(response, "+1")
+        self.assertContains(response, "Кто имеет право")
+        self.assertContains(response, "SYNTHETIC-MATRIX-R1")
+        self.assertNotContains(
+            response,
+            "не заменяет отдельное предоставленное право",
+        )
         self.assertNotContains(response, "server-side")
-        self.assertNotContains(response, "отдельный grant")
-        self.assertNotContains(response, "Сохранить полномочие")
 
-    def test_employee_card_separates_rights_from_source_facts(self) -> None:
+    def test_employee_card_treats_matrix_cell_as_granted_right(self) -> None:
         response = self.client.get(
             reverse(
                 "organizations:employee_detail",
@@ -141,13 +175,25 @@ class AuthorityReadOnlyViewTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "data-direction-a-shell")
-        self.assertContains(response, "Предоставленные оперативные права")
-        self.assertContains(response, "Исходные сведения из матрицы персонала")
-        self.assertContains(response, "не разрешают действие")
-        self.assertContains(response, "Выполнение переключений")
-        self.assertContains(response, "SYNTHETIC-ORDER-R1")
+        self.assertContains(response, "Профиль предоставленных прав")
+        self.assertContains(
+            response,
+            "Включён в опубликованную матрицу",
+        )
+        self.assertContains(response, "ОП")
+        self.assertContains(response, "Группа V")
+        self.assertContains(response, "Производство переключений")
+        self.assertContains(response, "Предоставлено с условием")
+        self.assertContains(response, "SYNTHETIC-MATRIX-R1")
+        self.assertContains(
+            response,
+            (
+                "Положительные действующие ячейки "
+                "опубликованной матрицы являются"
+            ),
+        )
+        self.assertNotContains(response, "не разрешают действие")
         self.assertNotContains(response, "STRUCTURED AUTHORITY")
-        self.assertNotContains(response, "отдельного структурированного grant")
 
     def test_evaluation_detail_prioritizes_explainable_result(self) -> None:
         evaluation = self.create_evaluation()
@@ -163,9 +209,18 @@ class AuthorityReadOnlyViewTests(TestCase):
         self.assertContains(response, "data-direction-a-shell")
         self.assertContains(response, "Результат проверки полномочий")
         self.assertContains(response, "Действие разрешено")
-        self.assertContains(response, "Найдено действующее подтверждённое право")
-        self.assertContains(response, "Выполнение переключений")
-        self.assertContains(response, "Технические сведения и неизменяемый снимок проверки")
+        self.assertContains(
+            response,
+            "Найдено действующее подтверждённое право",
+        )
+        self.assertContains(response, "Производство переключений")
+        self.assertContains(
+            response,
+            (
+                "Технические сведения и неизменяемый "
+                "снимок проверки"
+            ),
+        )
         self.assertContains(response, evaluation.digest)
         self.assertContains(response, "SYNTHETIC-SW-001")
         self.assertNotContains(response, '<pre class="technical-only">')
