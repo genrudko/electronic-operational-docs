@@ -72,8 +72,18 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
         self.assertEqual(original.content, original_content)
         self.assertEqual(original.digest, original_digest)
         self.assertEqual(
-            [correction.sequence_number, communication.sequence_number, cancellation.sequence_number],
-            sorted([correction.sequence_number, communication.sequence_number, cancellation.sequence_number]),
+            [
+                correction.sequence_number,
+                communication.sequence_number,
+                cancellation.sequence_number,
+            ],
+            sorted(
+                [
+                    correction.sequence_number,
+                    communication.sequence_number,
+                    cancellation.sequence_number,
+                ]
+            ),
         )
         state = effective_state(original)
         self.assertEqual(state.status, "CANCELLED")
@@ -96,7 +106,11 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
             employee=denied_actor,
             action_code="OPJ.COMMUNICATION",
         ).delete()
-        original = OperationalLogEntry.objects.filter(journal=self.journal).order_by("sequence_number").first()
+        original = (
+            OperationalLogEntry.objects.filter(journal=self.journal)
+            .order_by("sequence_number")
+            .first()
+        )
         before = self.journal.entries.count()
 
         with self.assertRaises(PermissionDenied):
@@ -120,10 +134,17 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
 
     def test_lifecycle_page_and_draft_registration_route(self) -> None:
         self.client.force_login(self.user)
-        original = OperationalLogEntry.objects.filter(journal=self.journal).order_by("sequence_number").first()
+        original = (
+            OperationalLogEntry.objects.filter(journal=self.journal)
+            .order_by("sequence_number")
+            .first()
+        )
 
         page = self.client.get(
-            reverse("operational_log:entry_lifecycle", args=(self.journal.pk, original.sequence_number))
+            reverse(
+                "operational_log:entry_lifecycle",
+                args=(self.journal.pk, original.sequence_number),
+            )
         )
         self.assertEqual(page.status_code, 200)
         for marker in (
@@ -139,7 +160,10 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
 
         draft = self.shift.draft_entries.filter(is_removed=False).exclude(content="").first()
         response = self.client.post(
-            reverse("operational_log:register_draft_lifecycle", args=(self.journal.pk, draft.public_id))
+            reverse(
+                "operational_log:register_draft_lifecycle",
+                args=(self.journal.pk, draft.public_id),
+            )
         )
         self.assertEqual(response.status_code, 302)
         draft.refresh_from_db()
@@ -147,7 +171,10 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
         registered = self.journal.entries.order_by("-sequence_number").first()
         self.assertEqual(registered.type_code, TYPE_ENTRY)
         self.assertIn(
-            reverse("operational_log:entry_lifecycle", args=(self.journal.pk, registered.sequence_number)),
+            reverse(
+                "operational_log:entry_lifecycle",
+                args=(self.journal.pk, registered.sequence_number),
+            ),
             response.url,
         )
 
