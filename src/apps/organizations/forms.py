@@ -24,6 +24,26 @@ from .personnel_management_models import (
 )
 
 
+SOURCE_903N = (
+    "Правила по охране труда при эксплуатации электроустановок, "
+    "утверждённые приказом Минтруда России от 15.12.2020 № 903н"
+)
+CONDITION_FORM_DEFAULTS = {
+    "+1": (
+        "Условие по пункту 5.4 Правил по охране труда",
+        "Право применяется в соответствии с пунктом 5.4 Правил по охране "
+        "труда при эксплуатации электроустановок.",
+        "пункт 5.4",
+    ),
+    "+2": (
+        "Условие по пункту 5.13 Правил по охране труда",
+        "Право применяется в соответствии с пунктом 5.13 Правил по охране "
+        "труда при эксплуатации электроустановок.",
+        "пункт 5.13",
+    ),
+}
+
+
 def _catalog_code(prefix: str, organization: Organization, value: str) -> str:
     payload = f"{organization.code}|{value.strip().casefold()}"
     digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:10].upper()
@@ -133,9 +153,15 @@ class EmployeeCardForm(forms.ModelForm):
             "employment_end": forms.DateInput(attrs={"type": "date"}),
         }
         help_texts = {
-            "division": "Выберите существующее подразделение или введите новое ниже.",
-            "position": "Выберите существующую должность или введите новую ниже.",
-            "workplace": "Выберите существующее рабочее место или введите новое ниже.",
+            "division": (
+                "Выберите существующее подразделение или введите новое ниже."
+            ),
+            "position": (
+                "Выберите существующую должность или введите новую ниже."
+            ),
+            "workplace": (
+                "Выберите существующее рабочее место или введите новое ниже."
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -385,7 +411,7 @@ class EmployeeOperationalRightForm(forms.ModelForm):
         label="Пункт документа",
         max_length=255,
         required=False,
-        placeholder="например, пункт 5.4",
+        widget=forms.TextInput(attrs={"placeholder": "например, пункт 5.4"}),
     )
     condition_source_reference = forms.CharField(
         label="Источник условия",
@@ -423,7 +449,9 @@ class EmployeeOperationalRightForm(forms.ModelForm):
             "qualifier": "Краткое уточнение права",
         }
         help_texts = {
-            "source_marker": "+ — без условия; +1, +2 или иной индекс — с условием.",
+            "source_marker": (
+                "+ — без условия; +1, +2 или иной индекс — с условием."
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -432,17 +460,39 @@ class EmployeeOperationalRightForm(forms.ModelForm):
             self.instance.source_file_sha256 = "0" * 64
         if self.instance.source_row_number is None:
             self.instance.source_row_number = 0
-        if self.instance.pk:
-            detail = getattr(self.instance, "condition_detail", None)
-            if detail:
-                self.initial.update(
-                    {
-                        "condition_title": detail.title,
-                        "condition_description": detail.description,
-                        "condition_source_clause": detail.source_clause,
-                        "condition_source_reference": detail.source_reference,
-                    }
-                )
+
+        detail = getattr(self.instance, "condition_detail", None)
+        if detail:
+            self.initial.update(
+                {
+                    "condition_title": detail.title,
+                    "condition_description": detail.description,
+                    "condition_source_clause": detail.source_clause,
+                    "condition_source_reference": detail.source_reference,
+                }
+            )
+            return
+        marker = self.initial.get("source_marker", "")
+        defaults = CONDITION_FORM_DEFAULTS.get(marker)
+        if defaults:
+            title, description, clause = defaults
+            self.initial.setdefault("condition_title", title)
+            self.initial.setdefault("condition_description", description)
+            self.initial.setdefault("condition_source_clause", clause)
+            self.initial.setdefault("condition_source_reference", SOURCE_903N)
+        elif marker and marker != "+" and self.initial.get("qualifier"):
+            self.initial.setdefault(
+                "condition_title",
+                f"Дополнительное условие {marker}",
+            )
+            self.initial.setdefault(
+                "condition_description",
+                self.initial["qualifier"],
+            )
+            self.initial.setdefault(
+                "condition_source_reference",
+                self.initial.get("source_reference", ""),
+            )
 
     def clean(self):
         cleaned = super().clean()
