@@ -6,6 +6,8 @@
 {% block body %}
 <link rel="stylesheet" href="{% static 'system/eod_typography.css' %}?v=eodidentity002">
 <link rel="stylesheet" href="{% static 'system/eod_iconography.css' %}?v=eodidentity002">
+<link rel="stylesheet" href="{% static 'operational_log/opj_lifecycle_001.css' %}?v=opjlifecycle00101">
+<script src="{% static 'operational_log/opj_lifecycle_001.js' %}?v=opjlifecycle00101" defer></script>
 {% if request.resolver_match.namespace == 'organizations' %}
 <script src="{% static 'organizations/personnel_authority_followup.js' %}?v=pa001r6" defer></script>
 {% endif %}
@@ -36,7 +38,7 @@
                                 </p>
                             </div>
                         </div>
-                        <div class="table-wrap">
+                        <div class="table-wrap da-table-wrap">
                             <table>
                                 <thead>
                                     <tr>
