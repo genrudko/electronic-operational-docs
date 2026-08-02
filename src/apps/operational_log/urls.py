@@ -1,5 +1,6 @@
 from django.urls import path
 
+from . import opj_lifecycle
 from . import views
 
 app_name = "operational_log"
@@ -32,6 +33,14 @@ urlpatterns = [
     path(
         (
             "operations/journal/<int:journal_id>/shift/drafts/"
+            "<uuid:public_id>/register/"
+        ),
+        opj_lifecycle.register_draft_view,
+        name="register_draft_lifecycle",
+    ),
+    path(
+        (
+            "operations/journal/<int:journal_id>/shift/drafts/"
             "<uuid:public_id>/move/"
         ),
         views.move_draft_entry_view,
@@ -52,6 +61,26 @@ urlpatterns = [
         ),
         views.restore_draft_entry_view,
         name="restore_draft",
+    ),
+    path(
+        "operations/journal/<int:journal_id>/entries/<int:sequence_number>/lifecycle/",
+        opj_lifecycle.entry_lifecycle_view,
+        name="entry_lifecycle",
+    ),
+    path(
+        "operations/journal/<int:journal_id>/entries/<int:sequence_number>/correct/",
+        opj_lifecycle.correct_entry_view,
+        name="entry_correct",
+    ),
+    path(
+        "operations/journal/<int:journal_id>/entries/<int:sequence_number>/cancel/",
+        opj_lifecycle.cancel_entry_view,
+        name="entry_cancel",
+    ),
+    path(
+        "operations/journal/<int:journal_id>/entries/<int:sequence_number>/communication/",
+        opj_lifecycle.communication_view,
+        name="entry_communication",
     ),
     path(
         "operations/journal/<int:journal_id>/display/",
