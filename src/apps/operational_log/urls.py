@@ -1,7 +1,6 @@
 from django.urls import path
 
-from . import opj_lifecycle
-from . import views
+from . import opj_lifecycle, views
 
 app_name = "operational_log"
 
