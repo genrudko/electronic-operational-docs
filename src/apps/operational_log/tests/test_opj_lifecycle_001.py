@@ -24,7 +24,6 @@ from ..opj_lifecycle import (
     correct_entry,
     effective_state,
     entry_lifecycle_context,
-    record_communication,
     register_draft,
     registered_entry_for_draft,
 )
@@ -54,17 +53,22 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
             len(ACTION_CODES),
         )
 
-    def nonempty_draft(self):
-        draft = (
-            self.shift.draft_entries.filter(is_removed=False)
-            .exclude(content="")
-            .first()
-        )
-        self.assertIsNotNone(draft)
-        return draft
+    def available_draft(self):
+        for draft in self.shift.draft_entries.filter(is_removed=False).exclude(content=""):
+            if registered_entry_for_draft(draft) is None:
+                return draft
+        self.fail("В тестовой смене нет доступной непустой черновой строки.")
+
+    def set_entry_kind(self, draft, entry_kind: str) -> None:
+        payload = dict(draft.editor_payload)
+        payload["entry_kind"] = entry_kind
+        draft.editor_payload = payload
+        draft.save()
+        draft.refresh_from_db()
+        self.assertEqual(draft.editor_payload["entry_kind"], entry_kind)
 
     def test_registration_keeps_traceable_row_and_prevents_duplicate(self) -> None:
-        draft = self.nonempty_draft()
+        draft = self.available_draft()
         original_content = draft.content
 
         registered = register_draft(draft=draft, actor=self.actor)
@@ -87,11 +91,30 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
         ):
             register_draft(draft=draft, actor=self.actor)
 
-    def test_correction_cancellation_and_communication_are_clean_journal_entries(
-        self,
-    ) -> None:
+    def test_command_permission_and_message_register_as_communication_facts(self) -> None:
+        for entry_kind in ("command", "permission", "message"):
+            draft = self.available_draft()
+            self.set_entry_kind(draft, entry_kind)
+
+            registered = register_draft(draft=draft, actor=self.actor)
+
+            self.assertEqual(registered.type_code, TYPE_COMMUNICATION)
+            self.assertEqual(
+                registered.typed_payload["kind"],
+                "COMMUNICATION_OUTCOME",
+            )
+            self.assertEqual(
+                registered.typed_payload["communication"]["entry_kind"],
+                entry_kind,
+            )
+            self.assertNotIn("target", registered.typed_payload)
+            context = entry_lifecycle_context(registered)
+            self.assertFalse(context.is_child)
+            self.assertEqual(context.state.status, "REGISTERED")
+
+    def test_correction_and_cancellation_are_clean_journal_entries(self) -> None:
         original = register_draft(
-            draft=self.nonempty_draft(),
+            draft=self.available_draft(),
             actor=self.actor,
         )
         original_content = original.content
@@ -106,21 +129,6 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
         self.assertEqual(correction.type_code, TYPE_CORRECTION)
         self.assertIn("Следует читать", correction.content)
 
-        communication = record_communication(
-            entry=original,
-            actor=self.actor,
-            outcome_kind="RECEIVED_CONFIRMATION",
-            counterpart="Диспетчер СКДУ",
-            channel="PHONE",
-            content="Подтверждено уточнение зарегистрированной записи.",
-        )
-        self.assertEqual(communication.type_code, TYPE_COMMUNICATION)
-        self.assertEqual(
-            communication.typed_payload["kind"],
-            "COMMUNICATION_OUTCOME",
-        )
-        self.assertNotIn("counterpart_organization", communication.typed_payload)
-
         cancellation = cancel_entry(
             entry=original,
             actor=self.actor,
@@ -131,20 +139,6 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
         original.refresh_from_db()
         self.assertEqual(original.content, original_content)
         self.assertEqual(original.digest, original_digest)
-        self.assertEqual(
-            [
-                correction.sequence_number,
-                communication.sequence_number,
-                cancellation.sequence_number,
-            ],
-            sorted(
-                [
-                    correction.sequence_number,
-                    communication.sequence_number,
-                    cancellation.sequence_number,
-                ]
-            ),
-        )
         state = effective_state(original)
         self.assertEqual(state.status, "CANCELLED")
         self.assertEqual(state.correction_count, 1)
@@ -153,7 +147,6 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
         context = entry_lifecycle_context(original)
         self.assertFalse(context.is_child)
         self.assertEqual(len(context.lifecycle_entries), 2)
-        self.assertEqual(len(context.communications), 1)
         child_context = entry_lifecycle_context(correction)
         self.assertTrue(child_context.is_child)
         self.assertEqual(child_context.linked_original.pk, original.pk)
@@ -166,16 +159,14 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
                 reason="Не должно создаваться.",
             )
         with self.assertRaises(ValidationError):
-            record_communication(
-                entry=communication,
+            correct_entry(
+                entry=correction,
                 actor=self.actor,
-                outcome_kind="SENT_MESSAGE",
-                counterpart="Вложенный участник",
-                channel="",
-                content="Дочерняя запись не может стать корнем истории.",
+                replacement_content="Дочерняя запись не может стать корнем.",
+                reason="Проверка границы.",
             )
 
-    def test_deny_records_evaluation_but_does_not_create_subject_fact(self) -> None:
+    def test_communication_authority_deny_blocks_registration(self) -> None:
         denied_actor = Employee.objects.select_related(
             "organization", "position", "division", "workplace"
         ).get(organization=self.organization, personnel_number="DEMO-013")
@@ -183,22 +174,12 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
             employee=denied_actor,
             action_code=ACTION_COMMUNICATION,
         ).delete()
-        original = (
-            OperationalLogEntry.objects.filter(journal=self.journal)
-            .order_by("sequence_number")
-            .first()
-        )
+        draft = self.available_draft()
+        self.set_entry_kind(draft, "command")
         before = self.journal.entries.count()
 
         with self.assertRaises(PermissionDenied):
-            record_communication(
-                entry=original,
-                actor=denied_actor,
-                outcome_kind="RECEIVED_COMMAND",
-                counterpart="Проверочный участник",
-                channel="RADIO",
-                content="Эта запись не должна быть создана.",
-            )
+            register_draft(draft=draft, actor=denied_actor)
 
         self.assertEqual(self.journal.entries.count(), before)
         self.assertTrue(
@@ -207,10 +188,11 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
                 decision="DENY",
             ).exists()
         )
+        self.assertIsNone(registered_entry_for_draft(draft))
 
     def test_real_routes_keep_actions_inside_draft_and_clean_journal(self) -> None:
         self.client.force_login(self.user)
-        draft = self.nonempty_draft()
+        draft = self.available_draft()
 
         registration = self.client.post(
             reverse(
@@ -269,10 +251,10 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
                 args=(self.journal.pk,),
             )
         )
-        self.assertContains(clean_journal, "Действия с записью")
+        self.assertContains(clean_journal, "Исправить или отменить")
         self.assertContains(clean_journal, "Исправить запись")
-        self.assertContains(clean_journal, "Результат переговоров")
         self.assertContains(clean_journal, "opj_registered_actions.css")
+        self.assertNotContains(clean_journal, 'name="outcome_kind"')
         self.assertNotContains(clean_journal, "ALLOW / VERIFY / DENY")
         self.assertNotContains(clean_journal, "APPEND-ONLY ИСТОРИЯ")
 
@@ -291,7 +273,7 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
     def test_clean_journal_forms_append_entries_and_return_to_source_row(self) -> None:
         self.client.force_login(self.user)
         original = register_draft(
-            draft=self.nonempty_draft(),
+            draft=self.available_draft(),
             actor=self.actor,
         )
 
@@ -309,22 +291,6 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
         self.assertIn(f"#entry-{original.sequence_number}", correction.url)
         correction_entry = self.journal.entries.order_by("-sequence_number").first()
         self.assertEqual(correction_entry.type_code, TYPE_CORRECTION)
-
-        communication = self.client.post(
-            reverse(
-                "operational_log:entry_communication",
-                args=(self.journal.pk, original.sequence_number),
-            ),
-            {
-                "outcome_kind": "REPORTED_EXECUTION",
-                "counterpart": "Диспетчер СКДУ",
-                "channel": "DISPATCH",
-                "content": "Сообщено об исполнении команды.",
-            },
-        )
-        self.assertEqual(communication.status_code, 302)
-        communication_entry = self.journal.entries.order_by("-sequence_number").first()
-        self.assertEqual(communication_entry.type_code, TYPE_COMMUNICATION)
 
         page = self.client.get(
             reverse(
@@ -365,14 +331,16 @@ class OperationalJournalLifecycleSourceContractTests(SimpleTestCase):
             "static/operational_log/opj_registered_actions.js"
         )
         service = self.source("apps/operational_log/opj_lifecycle.py")
+        urls = self.source("apps/operational_log/urls.py")
 
         for marker in (
             "Исправить запись",
             "Отменить запись",
-            "Результат переговоров",
             "Первоначальный текст сохранён",
         ):
             self.assertIn(marker, detail)
+        self.assertNotIn('name="outcome_kind"', detail)
+        self.assertNotIn("entry_communication", urls)
         self.assertIn("В чистовик", rows)
         self.assertIn("data-register-draft", rows)
         self.assertIn("Чистовик · №", registered_row)
@@ -383,5 +351,7 @@ class OperationalJournalLifecycleSourceContractTests(SimpleTestCase):
         self.assertIn("persistDraft(form)", javascript)
         self.assertIn("window.confirm", javascript)
         self.assertNotIn("remove_draft_entry", service)
+        self.assertIn("COMMUNICATION_ENTRY_KINDS", service)
         self.assertIn("COMMUNICATION_OUTCOME", service)
-        self.assertNotIn("counterpart_organization", service)
+        self.assertNotIn("class CommunicationForm", service)
+        self.assertNotIn("def record_communication", service)
