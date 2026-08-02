@@ -61,6 +61,12 @@
             button.setAttribute("aria-label", "Зарегистрировать неизменяемую запись");
             button.dataset.registerDraft = "";
             button.append(icon("icon-check"));
+            button.addEventListener("click", (event) => {
+                const confirmed = window.confirm(
+                    "Зарегистрировать черновик как неизменяемую запись?"
+                );
+                if (!confirmed) event.preventDefault();
+            });
 
             toolbar.prepend(separator);
             toolbar.prepend(button);
