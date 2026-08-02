@@ -82,7 +82,9 @@ class EmployeeCardForm(forms.ModelForm):
         label="Основание изменения",
         max_length=1000,
         widget=forms.Textarea(attrs={"rows": 2}),
-        help_text="Укажите документ, заявку или рабочую причину изменения карточки.",
+        help_text=(
+            "Укажите документ, заявку или рабочую причину изменения карточки."
+        ),
     )
 
     class Meta:
@@ -138,8 +140,15 @@ class EmployeeCardForm(forms.ModelForm):
         organization = cleaned.get("organization")
         for field_name in ("division", "position", "workplace"):
             value = cleaned.get(field_name)
-            if value and organization and value.organization_id != organization.id:
-                self.add_error(field_name, "Значение относится к другой организации.")
+            if (
+                value
+                and organization
+                and value.organization_id != organization.id
+            ):
+                self.add_error(
+                    field_name,
+                    "Значение относится к другой организации.",
+                )
         return cleaned
 
 
@@ -179,13 +188,24 @@ class EmployeeQualificationForm(forms.ModelForm):
         widgets = {
             "valid_from": forms.DateInput(attrs={"type": "date"}),
             "valid_until": forms.DateInput(attrs={"type": "date"}),
-            "electrical_installation_scope": forms.Textarea(attrs={"rows": 3}),
+            "electrical_installation_scope": forms.Textarea(
+                attrs={"rows": 3}
+            ),
             "source_reference": forms.Textarea(attrs={"rows": 2}),
         }
         labels = {
             "electrical_safety_group": "Группа по электробезопасности",
-            "voltage_scope": "Класс напряжения для группы по электробезопасности",
+            "voltage_scope": (
+                "Класс напряжения для группы по электробезопасности"
+            ),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.source_file_sha256:
+            self.instance.source_file_sha256 = "0" * 64
+        if self.instance.source_row_number is None:
+            self.instance.source_row_number = 0
 
 
 class EmployeeSpecialQualificationForm(forms.ModelForm):
@@ -244,6 +264,13 @@ class EmployeeOperationalRightForm(forms.ModelForm):
             "source_marker": "+ — без условия; +1, +2, +3 — с условием.",
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.source_file_sha256:
+            self.instance.source_file_sha256 = "0" * 64
+        if self.instance.source_row_number is None:
+            self.instance.source_row_number = 0
+
 
 class ExternalOperationalContactForm(forms.ModelForm):
     change_reason = forms.CharField(
@@ -283,7 +310,9 @@ class OrganizationOperationalProfileForm(forms.ModelForm):
 class PersonnelImportUploadForm(forms.ModelForm):
     workbook = forms.FileField(
         label="Файл Excel",
-        help_text="Поддерживается XLSX. Сначала формируется предварительный просмотр.",
+        help_text=(
+            "Поддерживается XLSX. Сначала формируется предварительный просмотр."
+        ),
         widget=forms.FileInput(attrs={"accept": ".xlsx"}),
     )
 
@@ -301,12 +330,21 @@ class PersonnelImportUploadForm(forms.ModelForm):
             "effective_from": forms.DateInput(attrs={"type": "date"}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.file_sha256:
+            self.instance.file_sha256 = "0" * 64
+        if not self.instance.uploaded_name:
+            self.instance.uploaded_name = "pending.xlsx"
+
     def clean_workbook(self):
         workbook = self.cleaned_data["workbook"]
         if not workbook.name.lower().endswith(".xlsx"):
             raise forms.ValidationError("Требуется файл XLSX.")
         if workbook.size > 10 * 1024 * 1024:
-            raise forms.ValidationError("Размер файла не должен превышать 10 МБ.")
+            raise forms.ValidationError(
+                "Размер файла не должен превышать 10 МБ."
+            )
         return workbook
 
     def clean(self):
