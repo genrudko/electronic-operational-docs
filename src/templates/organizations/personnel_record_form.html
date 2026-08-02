@@ -3,7 +3,10 @@
 
 {% block title %}{{ title }} · {{ employee.full_name }} · ЭОД{% endblock %}
 {% block main_class %}authority-main{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{% static 'organizations/personnel_management.css' %}?v=pa001m1">{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'organizations/personnel_management.css' %}?v=pa001m2">
+<link rel="stylesheet" href="{% static 'organizations/personnel_authority_repair.css' %}?v=pa001r5">
+{% endblock %}
 
 {% block content %}
 <section class="personnel-management-page">
@@ -20,7 +23,7 @@
         {% if form.non_field_errors %}<div class="personnel-form-errors">{{ form.non_field_errors }}</div>{% endif %}
         <div class="personnel-form-grid">
             {% for field in form %}
-            <div class="personnel-field{% if field.name == 'change_reason' or field.name == 'scope_text' or field.name == 'operational_scope' or field.name == 'authority_summary' or field.name == 'basis_reference' or field.name == 'source_reference' or field.name == 'electrical_installation_scope' or field.name == 'qualifier' %} full-width{% endif %}">
+            <div class="personnel-field{% if field.name == 'change_reason' or field.name == 'scope_text' or field.name == 'operational_scope' or field.name == 'authority_summary' or field.name == 'basis_reference' or field.name == 'source_reference' or field.name == 'electrical_installation_scope' or field.name == 'qualifier' or field.name == 'condition_description' or field.name == 'condition_source_reference' %} full-width{% endif %}">
                 {{ field.label_tag }}{{ field }}{{ field.errors }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
             </div>
             {% endfor %}
