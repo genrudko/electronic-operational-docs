@@ -1,8 +1,12 @@
 {% extends "shared/direction_a/base.html" %}
+{% load static opj_lifecycle_tags %}
 
 {% block title %}{{ journal.title }} · ЭОД{% endblock %}
 {% block body_class %}direction-a-body da-active opj-direction-a{% endblock %}
 {% block main_class %}opj-main journal-main journal-main-width-{{ ui_preferences.journal_width|lower }}{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'operational_log/opj_registered_actions.css' %}?v=opjlifecycle00201">
+{% endblock %}
 
 {% block content %}
 <section class="journal-workspace-bar da-page-header screen-only">
@@ -156,14 +160,69 @@
             </thead>
             <tbody>
             {% for row in rows %}
-                <tr class="approved-journal-row{% if not row.integrity_ok %} approved-journal-row-invalid{% endif %}">
+                {% opj_entry_lifecycle row.entry as lifecycle %}
+                <tr id="entry-{{ row.entry.sequence_number }}" class="approved-journal-row{% if not row.integrity_ok or not lifecycle.integrity_ok %} approved-journal-row-invalid{% endif %}">
                     <td class="approved-journal-date-time">
                         <span>{{ row.entry.event_at|date:"d.m.Y" }}</span>
                         <strong>{{ row.entry.event_at|date:"H:i" }}</strong>
                         <small>№ {{ row.entry.sequence_number }}</small>
                     </td>
                     <td class="approved-journal-message">
+                        {% if lifecycle.is_child %}
+                            <div class="opj-row-state-line screen-only">
+                                <span class="opj-entry-kind-chip">{{ lifecycle.child_label }}</span>
+                            </div>
+                        {% else %}
+                            <div class="opj-row-state-line screen-only">
+                                <span class="opj-entry-state-chip is-{{ lifecycle.state.status|lower }}">{{ lifecycle.state.status_label }}</span>
+                                {% if lifecycle.state.correction_count %}<span>{{ lifecycle.state.correction_count }} исправл.</span>{% endif %}
+                            </div>
+                        {% endif %}
+
                         <p>{{ row.entry.content }}</p>
+
+                        {% if lifecycle.is_child and lifecycle.linked_original %}
+                            <div class="opj-row-source-line screen-only">
+                                <span>Относится к исходной записи</span>
+                                <a href="#entry-{{ lifecycle.linked_original.sequence_number }}">№ {{ lifecycle.linked_original.sequence_number }}</a>
+                            </div>
+                        {% endif %}
+
+                        {% if not lifecycle.is_child and lifecycle.state.status == "CORRECTED" %}
+                        <details class="opj-effective-version screen-only">
+                            <summary>Показать действующую редакцию</summary>
+                            <div class="opj-effective-version-body">
+                                <p>{{ lifecycle.state.effective_content }}</p>
+                            </div>
+                        </details>
+                        {% endif %}
+
+                        {% if not lifecycle.is_child and lifecycle.lifecycle_entries %}
+                        <details class="opj-original-history screen-only">
+                            <summary>Исправления и отмена · {{ lifecycle.lifecycle_entries|length }}</summary>
+                            <div class="opj-original-history-body">
+                                <p><strong>Первоначальный текст сохранён:</strong> {{ row.entry.content }}</p>
+                                <ul class="opj-related-event-list">
+                                {% for event in lifecycle.lifecycle_entries %}
+                                    <li>
+                                        <strong><a href="#entry-{{ event.sequence_number }}">№ {{ event.sequence_number }}</a> · {{ event.type_title }}</strong>
+                                        <span>{{ event.event_at|date:"d.m.Y H:i" }} · {{ event.author_full_name_snapshot }}</span>
+                                    </li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        </details>
+                        {% endif %}
+
+                        {% if not lifecycle.is_child and lifecycle.communications %}
+                        <div class="opj-communication-line screen-only">
+                            <span>Связанные результаты переговоров:</span>
+                            {% for communication in lifecycle.communications %}
+                                <a href="#entry-{{ communication.sequence_number }}">№ {{ communication.sequence_number }}</a>{% if not forloop.last %}<span>·</span>{% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
                         {% if row.entry.equipment_links.all or row.entry.document_links.all %}
                         <div class="approved-journal-links">
                             {% for link in row.entry.equipment_links.all %}<span>Оборудование: {{ link.dispatcher_name_snapshot }}</span>{% endfor %}
@@ -173,7 +232,79 @@
                         </div>
                         {% endif %}
                         <div class="approved-journal-author">Автор записи: {{ row.entry.author_full_name_snapshot }}, {{ row.entry.author_position_snapshot }}</div>
-                        {% if not row.integrity_ok %}<strong class="approved-journal-integrity-warning screen-only">Нарушена целостность зарегистрированной записи</strong>{% endif %}
+
+                        {% if not lifecycle.is_child %}
+                        <details class="opj-row-actions screen-only">
+                            <summary>Действия с записью</summary>
+                            <div class="opj-row-actions-body">
+                                <div class="opj-row-actions-grid">
+                                    {% if lifecycle.state.status != "CANCELLED" %}
+                                    <form method="post" action="{% url 'operational_log:entry_correct' journal.pk row.entry.sequence_number %}" class="opj-row-action-card" onsubmit="return window.confirm('Добавить исправление новой записью? Первоначальный текст останется неизменным.')">
+                                        {% csrf_token %}
+                                        <h4>Исправить запись</h4>
+                                        <label>
+                                            <span>Как должно быть</span>
+                                            <textarea name="replacement_content" maxlength="20000" required>{{ lifecycle.state.effective_content }}</textarea>
+                                        </label>
+                                        <label>
+                                            <span>Причина исправления</span>
+                                            <textarea name="reason" maxlength="1000" required></textarea>
+                                        </label>
+                                        <button class="da-button is-secondary is-compact" type="submit">Добавить исправление</button>
+                                    </form>
+
+                                    <form method="post" action="{% url 'operational_log:entry_cancel' journal.pk row.entry.sequence_number %}" class="opj-row-action-card is-danger" onsubmit="return window.confirm('Отменить запись новой записью в чистовике? Исходная запись не будет удалена.')">
+                                        {% csrf_token %}
+                                        <h4>Отменить запись</h4>
+                                        <label>
+                                            <span>Причина отмены</span>
+                                            <textarea name="reason" maxlength="1000" required></textarea>
+                                        </label>
+                                        <button class="da-button is-secondary is-compact" type="submit">Добавить отмену</button>
+                                    </form>
+                                    {% endif %}
+
+                                    <form method="post" action="{% url 'operational_log:entry_communication' journal.pk row.entry.sequence_number %}" class="opj-row-action-card">
+                                        {% csrf_token %}
+                                        <h4>Результат переговоров</h4>
+                                        <label>
+                                            <span>Что зафиксировать</span>
+                                            <select name="outcome_kind" required>
+                                                <option value="RECEIVED_COMMAND">Получена команда</option>
+                                                <option value="ISSUED_COMMAND">Выдана команда</option>
+                                                <option value="RECEIVED_PERMISSION">Получено разрешение</option>
+                                                <option value="SENT_MESSAGE">Передано сообщение</option>
+                                                <option value="RECEIVED_CONFIRMATION">Получено подтверждение</option>
+                                                <option value="REPORTED_EXECUTION">Сообщено об исполнении</option>
+                                                <option value="RECEIVED_REFUSAL">Получен отказ</option>
+                                            </select>
+                                        </label>
+                                        <label>
+                                            <span>Участник / адресат</span>
+                                            <input type="text" name="counterpart" maxlength="500" required>
+                                        </label>
+                                        <label>
+                                            <span>Канал, если требуется</span>
+                                            <select name="channel">
+                                                <option value="">Не указывать</option>
+                                                <option value="PHONE">Телефон</option>
+                                                <option value="RADIO">Радиосвязь</option>
+                                                <option value="DISPATCH">Диспетчерский канал</option>
+                                                <option value="OTHER">Другой канал</option>
+                                            </select>
+                                        </label>
+                                        <label>
+                                            <span>Оперативно значимое содержание</span>
+                                            <textarea name="content" maxlength="20000" required></textarea>
+                                        </label>
+                                        <button class="da-button is-secondary is-compact" type="submit">Добавить в журнал</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </details>
+                        {% endif %}
+
+                        {% if not row.integrity_ok or not lifecycle.integrity_ok %}<strong class="opj-row-integrity-warning screen-only">Зарегистрированная запись требует проверки целостности</strong>{% endif %}
                     </td>
                     <td class="approved-journal-visas"><span aria-hidden="true">&nbsp;</span></td>
                 </tr>
