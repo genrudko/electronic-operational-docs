@@ -37,6 +37,9 @@ TYPE_CORRECTION = "opj-correction"
 TYPE_CANCELLATION = "opj-cancellation"
 TYPE_COMMUNICATION = "opj-communication"
 LIFECYCLE_TYPES = frozenset({TYPE_CORRECTION, TYPE_CANCELLATION})
+CHILD_EVENT_TYPES = frozenset(
+    {TYPE_CORRECTION, TYPE_CANCELLATION, TYPE_COMMUNICATION}
+)
 SYSTEM_TYPES = frozenset(
     {TYPE_ENTRY, TYPE_CORRECTION, TYPE_CANCELLATION, TYPE_COMMUNICATION}
 )
@@ -274,10 +277,10 @@ def effective_state(
 
 
 def _ensure_original_target(entry: OperationalLogEntry) -> None:
-    if entry.type_code in LIFECYCLE_TYPES:
+    if entry.type_code in CHILD_EVENT_TYPES:
         raise ValidationError(
-            "Исправление или отмену нужно создавать для исходной записи, "
-            "а не для уже зарегистрированного события жизненного цикла."
+            "Действие нужно создавать для исходной зарегистрированной записи, "
+            "а не для дочернего события её истории."
         )
 
 
@@ -533,9 +536,9 @@ def entry_lifecycle_view(
                 sequence_number=target_sequence
             ).first()
 
-    lifecycle = _lifecycle_entries(entry) if entry.type_code not in LIFECYCLE_TYPES else []
+    lifecycle = _lifecycle_entries(entry) if entry.type_code not in CHILD_EVENT_TYPES else []
     communications = (
-        _communication_entries(entry) if entry.type_code not in LIFECYCLE_TYPES else []
+        _communication_entries(entry) if entry.type_code not in CHILD_EVENT_TYPES else []
     )
     state = effective_state(entry, lifecycle)
     integrity_ok = True
@@ -562,7 +565,7 @@ def entry_lifecycle_view(
             ),
             "cancellation_form": CancellationForm(),
             "communication_form": CommunicationForm(),
-            "can_act": entry.type_code not in LIFECYCLE_TYPES,
+            "can_act": entry.type_code not in CHILD_EVENT_TYPES,
         },
     )
 
