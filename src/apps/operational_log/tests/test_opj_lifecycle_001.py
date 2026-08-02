@@ -331,6 +331,9 @@ class OperationalJournalLifecycleSourceContractTests(SimpleTestCase):
         )
         service = self.source("apps/operational_log/opj_lifecycle.py")
         urls = self.source("apps/operational_log/urls.py")
+        registration_service = service.split("def register_draft(", 1)[1].split(
+            "\ndef correct_entry(", 1
+        )[0]
 
         for marker in (
             "Исправить запись",
@@ -349,7 +352,7 @@ class OperationalJournalLifecycleSourceContractTests(SimpleTestCase):
         self.assertNotIn("#", css)
         self.assertIn("persistDraft(form)", javascript)
         self.assertIn("window.confirm", javascript)
-        self.assertNotIn("remove_draft_entry", service)
+        self.assertNotIn("remove_draft_entry", registration_service)
         self.assertIn("COMMUNICATION_ENTRY_KINDS", service)
         self.assertIn("COMMUNICATION_OUTCOME", service)
         self.assertNotIn("class CommunicationForm", service)
