@@ -8,7 +8,7 @@ from django import forms
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.db import models, transaction
+from django.db import transaction
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
@@ -17,6 +17,7 @@ from django.views.decorators.http import require_POST
 from apps.organizations.authority_models import AuthorityDecision
 from apps.organizations.authority_services import evaluate_and_record_authority
 
+from .editor import ENTRY_KIND_LABELS
 from .models import (
     EntryForm,
     OperationalDraftEntry,
@@ -36,9 +37,8 @@ TYPE_CORRECTION = "opj-correction"
 TYPE_CANCELLATION = "opj-cancellation"
 TYPE_COMMUNICATION = "opj-communication"
 LIFECYCLE_TYPES = frozenset({TYPE_CORRECTION, TYPE_CANCELLATION})
-CHILD_EVENT_TYPES = frozenset(
-    {TYPE_CORRECTION, TYPE_CANCELLATION, TYPE_COMMUNICATION}
-)
+CHILD_EVENT_TYPES = LIFECYCLE_TYPES
+COMMUNICATION_ENTRY_KINDS = frozenset({"command", "permission", "message"})
 
 ACTION_REGISTER = "OPJ.REGISTER"
 ACTION_CORRECT = "OPJ.CORRECT"
@@ -69,45 +69,6 @@ class CancellationForm(forms.Form):
     )
 
 
-class CommunicationForm(forms.Form):
-    class OutcomeKind(models.TextChoices):
-        RECEIVED_COMMAND = "RECEIVED_COMMAND", "Получена команда"
-        ISSUED_COMMAND = "ISSUED_COMMAND", "Выдана команда"
-        RECEIVED_PERMISSION = "RECEIVED_PERMISSION", "Получено разрешение"
-        SENT_MESSAGE = "SENT_MESSAGE", "Передано сообщение"
-        RECEIVED_CONFIRMATION = (
-            "RECEIVED_CONFIRMATION",
-            "Получено подтверждение",
-        )
-        REPORTED_EXECUTION = "REPORTED_EXECUTION", "Сообщено об исполнении"
-        RECEIVED_REFUSAL = "RECEIVED_REFUSAL", "Получен отказ"
-
-    class Channel(models.TextChoices):
-        PHONE = "PHONE", "Телефон"
-        RADIO = "RADIO", "Радиосвязь"
-        DISPATCH = "DISPATCH", "Диспетчерский канал"
-        OTHER = "OTHER", "Другой канал"
-
-    outcome_kind = forms.ChoiceField(
-        label="Результат переговоров",
-        choices=OutcomeKind.choices,
-    )
-    counterpart = forms.CharField(
-        label="Участник / адресат",
-        max_length=500,
-    )
-    channel = forms.ChoiceField(
-        label="Канал, если требуется",
-        choices=(("", "Не указывать"), *Channel.choices),
-        required=False,
-    )
-    content = forms.CharField(
-        label="Оперативно значимое содержание",
-        max_length=20000,
-        widget=forms.Textarea(attrs={"rows": 4}),
-    )
-
-
 @dataclass(frozen=True, slots=True)
 class EffectiveEntryState:
     status: str
@@ -123,7 +84,6 @@ class EntryLifecycleContext:
     child_label: str
     linked_original: OperationalLogEntry | None
     lifecycle_entries: tuple[OperationalLogEntry, ...]
-    communications: tuple[OperationalLogEntry, ...]
     state: EffectiveEntryState
     integrity_ok: bool
 
@@ -198,12 +158,18 @@ def _target_payload(entry: OperationalLogEntry) -> dict[str, Any]:
     }
 
 
+def _draft_entry_kind(draft: OperationalDraftEntry) -> str:
+    payload = draft.editor_payload if isinstance(draft.editor_payload, dict) else {}
+    entry_kind = str(payload.get("entry_kind", "normal"))
+    return entry_kind if entry_kind in ENTRY_KIND_LABELS else "normal"
+
+
 def registered_entry_for_draft(
     draft: OperationalDraftEntry,
 ) -> OperationalLogEntry | None:
     return (
         draft.shift.journal.entries.filter(
-            type_code=TYPE_ENTRY,
+            type_code__in=(TYPE_ENTRY, TYPE_COMMUNICATION),
             typed_payload__draft__public_id=str(draft.public_id),
         )
         .select_related("author")
@@ -223,20 +189,6 @@ def draft_registration_context(draft: OperationalDraftEntry) -> dict[str, Any]:
 def _lifecycle_entries(entry: OperationalLogEntry) -> list[OperationalLogEntry]:
     candidates = (
         entry.journal.entries.filter(type_code__in=LIFECYCLE_TYPES)
-        .select_related("author")
-        .order_by("sequence_number")
-    )
-    return [
-        candidate
-        for candidate in candidates
-        if candidate.typed_payload.get("target", {}).get("sequence_number")
-        == entry.sequence_number
-    ]
-
-
-def _communication_entries(entry: OperationalLogEntry) -> list[OperationalLogEntry]:
-    candidates = (
-        entry.journal.entries.filter(type_code=TYPE_COMMUNICATION)
         .select_related("author")
         .order_by("sequence_number")
     )
@@ -300,28 +252,25 @@ def _linked_original(entry: OperationalLogEntry) -> OperationalLogEntry | None:
 
 def entry_lifecycle_context(entry: OperationalLogEntry) -> EntryLifecycleContext:
     linked_original = _linked_original(entry)
-    is_child = entry.type_code in CHILD_EVENT_TYPES
+    is_child = linked_original is not None
     lifecycle = [] if is_child else _lifecycle_entries(entry)
-    communications = [] if is_child else _communication_entries(entry)
     state = effective_state(entry, lifecycle)
     integrity_ok = True
     try:
         verify_entry_integrity(entry)
-        for event in (*lifecycle, *communications):
+        for event in lifecycle:
             verify_entry_integrity(event)
     except ValidationError:
         integrity_ok = False
     labels = {
         TYPE_CORRECTION: "Исправление",
         TYPE_CANCELLATION: "Отмена",
-        TYPE_COMMUNICATION: "Результат переговоров",
     }
     return EntryLifecycleContext(
         is_child=is_child,
         child_label=labels.get(entry.type_code, ""),
         linked_original=linked_original,
         lifecycle_entries=tuple(lifecycle),
-        communications=tuple(communications),
         state=state,
         integrity_ok=integrity_ok,
     )
@@ -360,16 +309,21 @@ def register_draft(
     if not locked_draft.content.strip():
         raise ValidationError("Перед регистрацией заполните содержание строки.")
 
+    entry_kind = _draft_entry_kind(locked_draft)
+    is_communication = entry_kind in COMMUNICATION_ENTRY_KINDS
+    action_code = ACTION_COMMUNICATION if is_communication else ACTION_REGISTER
+    subject_type = "OPJ_COMMUNICATION_DRAFT" if is_communication else "OPJ_DRAFT"
     evaluation = _evaluate_authority(
         actor=actor,
         journal=locked_draft.shift.journal,
-        action_code=ACTION_REGISTER,
-        subject_type="OPJ_DRAFT",
+        action_code=action_code,
+        subject_type=subject_type,
         subject_id=str(locked_draft.public_id),
     )
+    entry_kind_label = ENTRY_KIND_LABELS[entry_kind]
     payload = {
         "schema_version": SCHEMA_VERSION,
-        "kind": "ORIGINAL",
+        "kind": "COMMUNICATION_OUTCOME" if is_communication else "ORIGINAL",
         "draft": {
             "public_id": str(locked_draft.public_id),
             "version": locked_draft.version,
@@ -378,14 +332,23 @@ def register_draft(
         },
         "authority": _authority_payload(evaluation),
     }
+    if is_communication:
+        payload["communication"] = {
+            "entry_kind": entry_kind,
+            "entry_kind_label": entry_kind_label,
+        }
     return register_entry(
         journal=locked_draft.shift.journal,
         actor=actor,
         event_at=locked_draft.event_at,
         content=locked_draft.content,
         entry_form=EntryForm.TYPED,
-        type_code=TYPE_ENTRY,
-        type_title="Оперативная запись",
+        type_code=TYPE_COMMUNICATION if is_communication else TYPE_ENTRY,
+        type_title=(
+            f"Оперативные переговоры · {entry_kind_label}"
+            if is_communication
+            else "Оперативная запись"
+        ),
         typed_payload=payload,
     )
 
@@ -497,73 +460,6 @@ def cancel_entry(
     )
 
 
-@transaction.atomic
-def record_communication(
-    *,
-    entry: OperationalLogEntry,
-    actor,
-    outcome_kind: str,
-    counterpart: str,
-    channel: str,
-    content: str,
-) -> OperationalLogEntry:
-    _ensure_original_target(entry)
-    outcome_labels = dict(CommunicationForm.OutcomeKind.choices)
-    channel_labels = dict(CommunicationForm.Channel.choices)
-    normalized_counterpart = " ".join(counterpart.split())
-    normalized_content = content.strip()
-    if outcome_kind not in outcome_labels:
-        raise ValidationError({"outcome_kind": "Неизвестный результат переговоров."})
-    if channel and channel not in channel_labels:
-        raise ValidationError({"channel": "Неизвестный канал переговоров."})
-    if not normalized_counterpart:
-        raise ValidationError({"counterpart": "Укажите участника или адресата."})
-    if not normalized_content:
-        raise ValidationError({"content": "Оперативно значимое содержание обязательно."})
-
-    locked = (
-        OperationalLogEntry.objects.select_for_update()
-        .select_related("journal", "journal__organization", "journal__workplace")
-        .get(pk=entry.pk)
-    )
-    _ensure_original_target(locked)
-    evaluation = _evaluate_authority(
-        actor=actor,
-        journal=locked.journal,
-        action_code=ACTION_COMMUNICATION,
-        subject_type="OPJ_COMMUNICATION",
-        subject_id=f"{locked.journal_id}:{locked.sequence_number}:{uuid.uuid4()}",
-    )
-    outcome_label = outcome_labels[outcome_kind]
-    channel_label = channel_labels.get(channel, "")
-    payload = {
-        "schema_version": SCHEMA_VERSION,
-        "kind": "COMMUNICATION_OUTCOME",
-        "target": _target_payload(locked),
-        "outcome_kind": outcome_kind,
-        "outcome_label": outcome_label,
-        "counterpart": normalized_counterpart,
-        "channel": channel,
-        "channel_label": channel_label,
-        "content": normalized_content,
-        "authority": _authority_payload(evaluation),
-    }
-    channel_part = f" ({channel_label})" if channel_label else ""
-    return register_entry(
-        journal=locked.journal,
-        actor=actor,
-        event_at=timezone.now(),
-        content=(
-            f"{outcome_label}: {normalized_counterpart}{channel_part}. "
-            f"{normalized_content}"
-        ),
-        entry_form=EntryForm.TYPED,
-        type_code=TYPE_COMMUNICATION,
-        type_title="Результат оперативных переговоров",
-        typed_payload=payload,
-    )
-
-
 def _detail_anchor(journal: OperationalJournal, sequence_number: int) -> HttpResponse:
     response = redirect("operational_log:detail", journal_id=journal.pk)
     response["Location"] = f"{response['Location']}#entry-{sequence_number}"
@@ -633,7 +529,12 @@ def _registered_draft_guard(
     )
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         return JsonResponse(
-            {"ok": False, "registered": True, "message": message},
+            {
+                "ok": False,
+                "registered": True,
+                "message": message,
+                "errors": [message],
+            },
             status=409,
         )
     messages.error(request, message)
@@ -783,44 +684,5 @@ def cancel_entry_view(
             messages.success(
                 request,
                 f"Отмена добавлена в чистовик записью № {event.sequence_number}.",
-            )
-    return _detail_anchor(journal, entry.sequence_number)
-
-
-@require_POST
-@login_required
-def communication_view(
-    request: HttpRequest,
-    journal_id: int,
-    sequence_number: int,
-) -> HttpResponse:
-    employee = require_operational_employee(request.user)
-    journal = _accessible_journal(employee, journal_id)
-    entry = _entry_or_404(journal=journal, sequence_number=sequence_number)
-    form = CommunicationForm(request.POST)
-    if not form.is_valid():
-        messages.error(
-            request,
-            "Результат переговоров не зарегистрирован: проверьте поля.",
-        )
-    else:
-        try:
-            event = record_communication(
-                entry=entry,
-                actor=employee,
-                outcome_kind=form.cleaned_data["outcome_kind"],
-                counterpart=form.cleaned_data["counterpart"],
-                channel=form.cleaned_data["channel"],
-                content=form.cleaned_data["content"],
-            )
-        except (ValidationError, PermissionDenied) as error:
-            messages.error(
-                request,
-                "; ".join(getattr(error, "messages", [str(error)])),
-            )
-        else:
-            messages.success(
-                request,
-                f"Результат переговоров добавлен записью № {event.sequence_number}.",
             )
     return _detail_anchor(journal, entry.sequence_number)
