@@ -47,9 +47,6 @@
     async function registerDraft(button) {
         const form = button.closest("form[data-draft-form]");
         if (!form || button.dataset.busy === "true") return;
-        if (!window.confirm(
-            "Перенести строку в чистовик? После регистрации исходный текст останется виден, но исправлять его можно будет только новой записью в чистовике."
-        )) return;
 
         button.dataset.busy = "true";
         button.disabled = true;
