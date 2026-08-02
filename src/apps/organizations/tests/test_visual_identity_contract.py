@@ -8,11 +8,11 @@ from django.test import SimpleTestCase
 
 class VisualIdentityContractTests(SimpleTestCase):
     def setUp(self) -> None:
-        self.project_root = Path(settings.BASE_DIR)
+        self.source_root = Path(settings.BASE_DIR) / "src"
 
     def test_direction_a_shell_loads_shared_identity_layers(self) -> None:
         template = (
-            self.project_root / "templates/shared/direction_a/base.html"
+            self.source_root / "templates/shared/direction_a/base.html"
         ).read_text(encoding="utf-8")
 
         self.assertIn("system/eod_typography.css", template)
@@ -21,10 +21,10 @@ class VisualIdentityContractTests(SimpleTestCase):
 
     def test_typography_uses_real_onest_face_and_controlled_fallback(self) -> None:
         stylesheet = (
-            self.project_root / "static/system/eod_typography.css"
+            self.source_root / "static/system/eod_typography.css"
         ).read_text(encoding="utf-8")
 
-        self.assertIn('@font-face {', stylesheet)
+        self.assertIn("@font-face {", stylesheet)
         self.assertIn('font-family: "Onest"', stylesheet)
         self.assertIn(
             "f18c06a14512e43a6191849278d6f07fdaf347d6",
@@ -35,7 +35,7 @@ class VisualIdentityContractTests(SimpleTestCase):
         self.assertIn("--journal-font-family", stylesheet)
 
     def test_icon_sprite_contains_shared_and_domain_catalogue(self) -> None:
-        sprite = (self.project_root / "static/system/icons.svg").read_text(
+        sprite = (self.source_root / "static/system/icons.svg").read_text(
             encoding="utf-8"
         )
         required_symbol_ids = {
@@ -68,7 +68,7 @@ class VisualIdentityContractTests(SimpleTestCase):
 
     def test_dense_tree_icon_is_not_a_colored_decorative_tile(self) -> None:
         stylesheet = (
-            self.project_root / "static/system/eod_iconography.css"
+            self.source_root / "static/system/eod_iconography.css"
         ).read_text(encoding="utf-8")
 
         self.assertIn(".authority-tree-icon", stylesheet)
