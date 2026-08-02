@@ -7,14 +7,16 @@
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted main baseline: main / 2a2013a51bfdc9de602b095adcb28a51b8d4487e
-active work item: POST-MERGE-DEPLOY-VERIFY-001
-active issue: #44
-active PR: #45 / OPEN / DRAFT / NOT MERGED
-active branch: ops/post-merge-deploy-verify-001
-runtime impact: DEVELOPMENT
+accepted main baseline: main / 2db8947062434861d2336eb474cd762e11aabb44
+active work item: NONE
+active issue: NONE
+active PR: NONE
+active branch: NONE
+runtime impact: DEVELOPMENT / LIVE e8b053f5fda51f23e2506a1a45a405f5c2ee3b6c
 preview: UNTOUCHED
 ```
+
+## Accepted PERSONNEL-AUTHORITY-001 baseline
 
 `PERSONNEL-AUTHORITY-001` принят и merged обычным merge commit:
 
@@ -37,56 +39,43 @@ issue: #42 / CLOSED / COMPLETED
 - узкий принятый repair выключателя, заземляющего разъединителя, переносного
   заземления и приёма/передачи смены.
 
-До merge все пять обязательных workflows на accepted head были успешны. Preview
-не затрагивался.
+## Accepted POST-MERGE-DEPLOY-VERIFY-001 result
 
-## Active post-merge verification
-
-Пользователь потребовал развернуть и проверить принятый результат на VPS.
-Trusted controller не допускает запрос из merged PR: run `30761934328` был
-заблокирован точной причиной:
+Post-merge deployment carrier завершён и принят пользователем после визуальной
+проверки:
 
 ```text
-AUTO-001B BLOCKED: Pull request must still be open.
+issue: #44 / CLOSED / COMPLETED
+PR: #45 / CLOSED / MERGED
+accepted carrier head: e8b053f5fda51f23e2506a1a45a405f5c2ee3b6c
+merge commit / accepted main: 2db8947062434861d2336eb474cd762e11aabb44
+merge method: merge commit
+squash / rebase: NOT USED
 ```
 
-Поэтому Draft PR #45 создан от точного merge commit `main` как same-repository
-deployment carrier.
-
-Первый carrier head `0a48cfc484a2917fd0f76c32bb9750a7c5e96a2c` прошёл пять
-mandatory workflows. Trusted run `30762341525` затем подтвердил validation,
-image build, Django checks и отсутствие migration drift, но isolated VPS suite
-остановился на одном repository-only test:
+Exact-head validation и trusted development delivery:
 
 ```text
-tests discovered: 675
-failed: 1
-skipped: 1
-primary cause: /app/docs/ux/EQUIPMENT_PICTOGRAM_GOST_BASIS_V1.md absent
-live deployment: NOT APPLIED
-pending development transaction: NONE
-previous development runtime: PRESERVED
+AUTO-001A Foundation CI:     run 30763218721 / SUCCESS
+AUTO-001B Controller CI:     run 30763218758 / SUCCESS
+EOD Development Stack:      run 30763218767 / SUCCESS
+EOD Documentation Contract: run 30763218748 / SUCCESS
+EOD CI:                      run 30763218732 / SUCCESS
+repository suite:            675 tests / OK
+trusted run:                 30763517233 / SUCCESS
+validation job:              91538153706 / SUCCESS
+VPS job:                     91538172254 / SUCCESS
+VPS suite:                   675 tests / OK / 2 expected repository-only skips
+live migrations:             no migrations to apply
+Django system check:         no issues
+live SHA:                    e8b053f5fda51f23e2506a1a45a405f5c2ee3b6c
+rollback:                    NOT EXECUTED
+preview:                     UNTOUCHED
 ```
 
-Development image намеренно содержит executable source, но не repository docs.
-Исправление ограничено тестовым контрактом: Markdown boundary остаётся
-обязательным в repository CI, а в runtime image пропускается как repository-only.
-Product behavior, SVG catalog, schema, migrations, workflow и controller не
-меняются.
-
-Следующий обязательный порядок:
-
-```text
-5 exact-head workflows after test-boundary repair
-→ trusted full-development rebuild
-→ VPS tests and migrations summary
-→ Django system check and health-check
-→ LIVE_SHA = exact PR #45 head
-→ preview UNTOUCHED
-→ user acceptance
-```
-
-Merge PR #45 без отдельной прямой команды пользователя запрещён.
+Development продолжает работать на точном carrier head `e8b053f5...`; его дерево
+включено в accepted main merge commit `2db8947...`. Product behavior, schema,
+migrations, workflow и controller в carrier repair не изменялись.
 
 Release/module/capability/work-item planning state остаётся в
 [`DEMO_RELEASE_PLAN.yaml`](DEMO_RELEASE_PLAN.yaml). Navigation без дублирования
