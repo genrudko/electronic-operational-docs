@@ -10,6 +10,8 @@ class OrganizationsConfig(AppConfig):
         from . import (  # noqa: F401
             authority_models,
             personnel_management_models,
+            personnel_reference_models,
+            personnel_reference_signals,
             signals,
         )
         from .personnel_management_models import (
