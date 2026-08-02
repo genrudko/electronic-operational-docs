@@ -81,7 +81,7 @@ class OperationalLogViewTests(OperationalLogTestCase):
         self.assertNotContains(response, "Технические реквизиты зарегистрированных записей")
         self.assertNotContains(response, "SHA-256")
 
-    def test_ui_remains_read_only(self) -> None:
+    def test_registered_original_remains_read_only_with_append_only_actions(self) -> None:
         self.client.force_login(self.user)
         registry = self.client.get(reverse("operational_log:registry")).content.decode("utf-8")
         detail = self.client.get(
@@ -91,9 +91,12 @@ class OperationalLogViewTests(OperationalLogTestCase):
             "Создать запись",
             "Редактировать запись",
             "Аннулировать запись",
-            "Исправить запись",
         ):
             self.assertNotIn(forbidden, registry + detail)
+        self.assertIn("Исправить запись", detail)
+        self.assertIn("Отменить запись", detail)
+        self.assertNotIn('name="content"', detail)
+        self.assertNotIn('name="event_at"', detail)
 
     def test_detail_defaults_to_compact_workspace(self) -> None:
         self.client.force_login(self.user)
