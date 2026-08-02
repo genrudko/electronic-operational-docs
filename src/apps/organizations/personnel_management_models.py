@@ -208,10 +208,6 @@ class ExternalOperationalContact(models.Model):
                 condition=Q(valid_until__isnull=True) | Q(valid_until__gte=F("valid_from")),
                 name="external_operational_contact_valid_window",
             ),
-            models.CheckConstraint(
-                condition=~Q(employee__organization=F("host_organization")),
-                name="external_operational_contact_distinct_orgs",
-            ),
             models.UniqueConstraint(
                 fields=("employee", "host_organization", "relation_kind", "valid_from"),
                 name="uniq_external_operational_contact_start",
