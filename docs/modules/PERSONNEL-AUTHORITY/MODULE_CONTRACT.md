@@ -10,6 +10,16 @@
 опубликованные права, условия, область и срок их действия, а также отдельный
 контур внешнего персонала и объяснимую проверку полномочия на момент действия.
 
+## КРИТИЧЕСКИЕ СЦЕНАРИИ
+
+- опубликовать утверждённую редакцию списка лиц с предоставлением прав;
+- увидеть полный профиль прав сотрудника в структуре подразделений;
+- определить всех лиц, которым предоставлено выбранное право;
+- учесть квалификацию, область, срок и дополнительное условие;
+- проверить полномочие в момент действия и сохранить объяснимый результат;
+- отдельно проверить подрядный или командированный персонал;
+- учесть только явно ограниченное замещение.
+
 ## PRIMARY FACTS / DERIVED VIEWS
 
 Primary facts:
@@ -55,6 +65,14 @@ Application role, должность, категория персонала, к�
 приложения сами по себе не дают `ALLOW`. Проверка выполняется server-side по
 фактам, действовавшим в момент действия.
 
+## ДОКУМЕНТЫ И LEGAL MODE
+
+Утверждённая редакция списка лиц и документ, которым она введена, являются
+основанием публикации прав штатного персонала. Knowledge check, инструктаж,
+подтверждение предметного действия и authority evaluation остаются разными
+evidence objects. Результат проверки полномочия не заменяет `EvidenceEvent`
+предметного действия и не объявляет сам по себе юридическую значимость.
+
 ## EXTERNAL PERSONNEL
 
 Подрядный, командированный и иной внешний персонал не включается в штатную
@@ -76,6 +94,21 @@ organization, relation kind, scope, validity, basis и собственная
 - Snapshot и SHA-256 используют принятый normative-evidence canonicalization
   contract; secret-like keys запрещены.
 
+## СВЯЗИ
+
+Модуль использует `MASTER-DATA` для организации, сотрудников и объектов и
+`NORMATIVE-EVIDENCE` для прослеживаемости оснований и неизменяемых снимков.
+Результат будет потребляться controlled actions последующих OPJ, SHIFT,
+DEFECT, work-permit и switching модулей, но такие связи в этом work item не
+подключаются.
+
+## SOURCE IDS / BENCHMARK
+
+`REF-OD-051`, `REF-OD-052`, `REF-OD-053`, `SRC-DEC-STAGE2`.
+Утверждённая пользовательская матрица использована только для восстановления
+структуры данных и рабочих сценариев; реальные ФИО, локальный акт и workbook в
+Git не помещаются.
+
 ## USER EXPERIENCE CONTRACT
 
 Основное представление — не плоский список grants, а иерархическая матрица:
@@ -93,43 +126,52 @@ organization, relation kind, scope, validity, basis и собственная
 область, условие, срок и основание. Технические IDs и snapshot скрыты в audit
 section.
 
-## DEMO / PRESENTATION DATA
+## DEMO / POST-DEMO
 
-Conditional reversible migration выполняется только при наличии
-`Organization(code="DEMO")`; на иных БД — no-op. Создаются исключительно
-синтетические данные:
+`DEMO-BOUNDED`: 17 синтетических штатных сотрудников в иерархии, 22 вида прав,
+квалификация, более 100 положительных ячеек, linked evaluator projections,
+отдельный contractor scenario и результаты `ALLOW / DENY / VERIFY`.
 
-- 17 штатных сотрудников в иерархии подразделений;
-- 22 вида прав по структуре утверждённой матрицы;
-- квалификация каждого сотрудника;
-- более 100 положительных ячеек, включая `+1`, `+2`, `+3`;
-- linked evaluator projections;
-- отдельный contractor scenario;
-- `ALLOW`, `DENY`, `VERIFY` и external `ALLOW`.
+Post-demo: controlled publication реальных редакций, история редакций, diff и
+отзыв прав, интеграция HR/AD/СКУД, production catalogs условий и downstream
+action requirements.
 
-Реальные ФИО, локальные акты и production workbook в Git не помещаются.
+## DEPENDENCIES / UX CONTRACT
 
-## DEPENDENCIES / BOUNDARY
-
-Dependencies: `MASTER-DATA`, `NORMATIVE-EVIDENCE`.
-
-Forbidden in this work item:
-
-- подключать OPJ/SHIFT/DEFECT/work-permit/switching lifecycles;
-- считать application role или должность operational right;
-- создавать второе ручное назначение поверх опубликованной матрицы;
-- автоматически переносить все права при замещении;
-- смешивать штатную матрицу и внешний персонал;
-- объявлять `VERIFY` разрешением;
-- писать в preview или выполнять merge без команды пользователя.
+Dependencies: `MASTER-DATA`, `NORMATIVE-EVIDENCE`. Direction A; основной UX —
+организационное дерево и матрица, отдельные режимы «Кто имеет право», внешний
+персонал, карточка сотрудника и история проверок. Проверяются populated/empty,
+plain/conditional markers, hierarchy, long scope/basis, internal/external,
+light/dark и responsive states.
 
 ## CURRENT CODE STATUS / CAPABILITIES
 
 `IMPLEMENTED-CANDIDATE`; release `IN_PROGRESS`; active work item
 `PERSONNEL-AUTHORITY-001`, issue #42, Draft PR #43.
 
-- `CAP-PERSONNEL-REGISTRY`: hierarchy, qualification, matrix and employee profile.
-- `CAP-AUTHORITY-GRANTS`: published cell → linked structured evaluator projection.
+- `CAP-PERSONNEL-REGISTRY`: hierarchy, qualification, matrix and employee
+  profile; `AC-PERSONNEL-REGISTRY-001` — candidate.
+- `CAP-AUTHORITY-GRANTS`: published cell → linked structured evaluator
+  projection; `AC-AUTHORITY-GRANTS-001` — candidate.
 - `CAP-AUTHORITY-ACTION-TIME`: explainable `ALLOW / DENY / VERIFY`, append-only
-  snapshot, digest and correction link.
-- `CAP-AUTHORITY-EXTERNAL`: separate external engagement and bounded substitution.
+  snapshot, digest and correction link; `AC-AUTHORITY-ACTION-TIME-001` —
+  candidate.
+- `CAP-AUTHORITY-EXTERNAL`: separate external engagement and bounded
+  substitution; `AC-AUTHORITY-EXTERNAL-001` — candidate.
+
+## OPEN VERIFY ITEMS / FORBIDDEN ASSUMPTIONS
+
+VERIFY: production catalog of right columns; exact local meaning of every
+conditional marker; history and withdrawal semantics for published revisions;
+qualification requirements per controlled action; external-personnel local
+acts; downstream action requirements.
+
+Forbidden:
+
+- считать application role или должность operational right;
+- создавать второе ручное назначение поверх опубликованной матрицы;
+- автоматически переносить все права при замещении;
+- смешивать штатную матрицу и внешний персонал;
+- объявлять `VERIFY` разрешением;
+- подключать OPJ/SHIFT/DEFECT/work-permit/switching lifecycles в этом PR;
+- писать в preview или выполнять merge без команды пользователя.
