@@ -8,13 +8,32 @@
 ```text
 repository: genrudko/electronic-operational-docs
 accepted main baseline: main / 2db8947062434861d2336eb474cd762e11aabb44
-active work item: NONE
-active issue: NONE
-active PR: NONE
-active branch: NONE
+coordination tip at work-item start: 17663cf67d12c02d24177e554d6eb7d364e405e4
+active work item: OPJ-LIFECYCLE-001
+active issue: #46
+active PR: PENDING
+active branch: feature/opj-lifecycle-001
 runtime impact: DEVELOPMENT / LIVE e8b053f5fda51f23e2506a1a45a405f5c2ee3b6c
 preview: UNTOUCHED
 ```
+
+## Active OPJ-LIFECYCLE-001
+
+Следующий work item открыт по канонической очереди после принятых
+`UX-THEME-001`, `MASTER-DATA-ALIGNMENT-001`, `NORMATIVE-EVIDENCE-001` и
+`PERSONNEL-AUTHORITY-001`.
+
+Граница active work item:
+
+- специализированный ОЖ и принятый Direction A workspace сохраняются;
+- зарегистрированный `OperationalLogEntry` остаётся неизменяемым оригиналом;
+- исправление/отмена создаются append-only событиями;
+- оперативные переговоры фиксируются отдельными структурированными фактами;
+- action-time authority evaluation/snapshot используется для предметных действий;
+- `DENY` блокирует создание факта, `VERIFY` показывается без ложной юридической семантики;
+- shift handover, generic cross-document engine, SCADA и offline merge не входят;
+- preview защищён;
+- Ready for Review и merge запрещены без отдельной команды пользователя.
 
 ## Accepted PERSONNEL-AUTHORITY-001 baseline
 
