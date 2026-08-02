@@ -30,142 +30,114 @@ ACCEPTANCE:
 
 ## GOAL
 
-Довести существующий personnel foundation до bounded-контура оперативных полномочий:
+Довести существующий personnel foundation до bounded-контура оперативных
+полномочий:
 
-1. structured grant: лицо + действие + область + период + основание;
-2. server-side authority-at-action evaluation;
-3. explicit external/seconded/contractor and substitution semantics;
-4. immutable snapshot фактов, использованных при решении;
-5. отсутствие authorization по одной должности, application role или импортной отметке.
+1. опубликованная матрица штатного персонала с иерархией подразделений;
+2. structured right: лицо + право/action + scope + validity + basis + condition;
+3. server-side authority-at-action evaluation;
+4. отдельные external/seconded/contractor и substitution semantics;
+5. immutable snapshot фактов, использованных при решении.
 
 ## FACTUAL START
 
-Существовали и переиспользованы:
+Переиспользованы `Organization`, hierarchical `Division`, `Workplace`,
+`Employee`, `EmployeeQualification`, `OperationalRightDefinition`,
+`EmployeeOperationalRight`, personnel importer provenance, role/substitution
+foundation и normative-evidence canonical JSON/SHA-256.
 
-- `Organization`, `Division`, `Workplace`, `OperationalArea`, `Position`, `Employee`;
-- `EmployeeQualification`;
-- `OperationalRightDefinition` и импортируемый `EmployeeOperationalRight`;
-- `RoleAssignment`, `ResponsibilityScope`, `Substitution` как отдельный application foundation;
-- `EmployeeEnergySiteAuthorization`;
-- controlled personnel importer и provenance;
-- `LegalModeDecision`, `EvidenceEvent`, canonical JSON, SHA-256 и actor snapshot;
-- read-only personnel directory и employee card.
+Исходный implementation candidate ошибочно показывал плоский список evaluator
+grants и трактовал импортную отметку только как вспомогательный source fact.
+Пользовательская приёмка выявила, что утверждённый список лиц с предоставлением
+прав является матрицей, которой в эксплуатации пользуются одновременно для
+просмотра полного профиля сотрудника, поиска всех лиц с конкретным правом и
+сравнения подразделений.
 
-Доказанные initial gaps:
+## ACCEPTED DOMAIN CORRECTION
 
-- structured action/object scope grant;
-- explainable `ALLOW / DENY / VERIFY` evaluator;
-- immutable authority evaluation snapshot;
-- bounded external personnel engagement;
-- explicit non-automatic substitution of operational rights.
+Для утверждённой действующей редакции:
 
-## DOMAIN BOUNDARY
+- положительная ячейка сама является предоставленным правом;
+- `+1`, `+2`, `+3` сохраняют право, но добавляют обязательное условие;
+- `EmployeeOperationalRight` является published authority fact;
+- `OperationalAuthorityGrant` создаётся как связанная машинная проекция для
+  evaluator, а не как второе ручное назначение;
+- внешний персонал остаётся отдельным контуром.
 
-1. Application role, position, qualification, site authorization и operational right не взаимозаменяемы.
-2. `ALLOW` требует явный matching grant с действующим периодом, scope и подтверждённым basis.
-3. `VERIFY` не превращается в `ALLOW` автоматически.
-4. Замещение разрешает только явно перечисленные actions/scope и только если исходный grant допускает замещение.
-5. Внешний персонал требует отдельную действующую связь home organization → host organization.
-6. Квалификации принадлежат фактическому actor и не наследуются при замещении.
-7. Свободный русский текст квалификации не превращается автоматически в технический authority code.
-8. Snapshot содержит факты решения, но не password/token/secret.
-9. Authority result не является юридическим заключением и не заменяет evidence event предметного действия.
+## IMPLEMENTED DOMAIN FOUNDATION
 
-## IMPLEMENTED SLICE 1 — PURE CONTRACT
+Pure contract and persistence remain in:
 
 ```text
 src/apps/organizations/authority.py
-src/apps/organizations/tests/test_authority_contract.py
-```
-
-Реализованы pure facts, structured scopes, stable reason codes, deterministic `evaluate_authority()`, timezone validity, deep immutable snapshot, secret guard и digest через принятый normative-evidence primitive.
-
-Exact-head gate:
-
-```text
-0200a2be6dfc5e948eb27dbed77d9e2aa39c0d4d
-5 / 5 workflows SUCCESS
-```
-
-## IMPLEMENTED SLICE 2 — PERSISTENCE AND ORM SERVICE
-
-```text
 src/apps/organizations/authority_models.py
 src/apps/organizations/authority_services.py
-src/apps/organizations/apps.py
 src/apps/organizations/migrations/0008_personnel_authority_persistence.py
-src/apps/organizations/tests/test_authority_persistence.py
-src/apps/organizations/tests/test_authority_qualification_codes.py
 ```
 
-Persistence:
+Guarantees:
 
-- `OperationalAuthorityGrant`;
-- `ExternalPersonnelEngagement`;
-- `OperationalAuthoritySubstitution` linked to existing `Substitution`;
-- append-only `AuthorityEvaluationRecord` with correction link;
-- DB constraints for validity, uniqueness and cross-organization boundaries;
-- update/delete protection for snapshots;
-- ORM-backed `evaluate_and_record_authority()` reusing the pure evaluator.
+- explainable `ALLOW / DENY / VERIFY`;
+- exact action-time validity and scope;
+- qualification check against actual actor;
+- non-automatic bounded substitution;
+- explicit external engagement;
+- append-only snapshot and SHA-256 digest;
+- no authorization by position or application role alone.
 
-Critical repair: only controlled ASCII catalog values become technical qualification codes. Russian prose remains descriptive data and cannot silently satisfy action requirements.
-
-Exact-head gate:
-
-```text
-4c65f3ab1d6631fa661c9ffba94443620a30e71a
-5 / 5 workflows SUCCESS
-full PostgreSQL suite SUCCESS
-```
-
-## IMPLEMENTED SLICE 3 — READ-ONLY ACCEPTANCE UI
-
-Routes:
-
-```text
-/organization/authorities/
-/organization/employees/<uuid>/
-/organization/authority-evaluations/<uuid>/
-```
-
-Views show:
-
-- structured grants separately from imported positive source markers;
-- scope, validity, granting organization, basis and status;
-- external personnel home/host relationship;
-- action-time history with `ALLOW / DENY / VERIFY` and reason codes;
-- exact immutable snapshot and SHA-256 digest;
-- empty states without fake lifecycle or write controls.
-
-Tests verify authentication, read-only boundary, source-fact/grant distinction and evaluation details.
-
-## PRESENTATION DATA
+## MATRIX PUBLICATION SLICE
 
 ```text
 src/apps/organizations/management/commands/seed_demo_personnel_authority.py
-src/apps/organizations/migrations/0009_seed_demo_personnel_authority.py
-src/apps/organizations/tests/test_authority_seed_command.py
+src/apps/organizations/migrations/0010_publish_demo_personnel_authority_matrix.py
+src/apps/organizations/authority_views.py
+src/templates/organizations/authority_registry.html
+src/templates/organizations/employee_detail.html
+src/static/organizations/personnel_authority_matrix.css
+src/static/organizations/personnel_authority_matrix.js
+src/static/organizations/personnel_authority_profile.css
 ```
 
-- management command is idempotent;
-- reversible conditional data migration runs only when `Organization(code="DEMO")` already exists; otherwise no-op;
-- migration path itself is executed by tests against a populated synthetic Demo database;
-- four synthetic `DEMO-ONLY` grants/evaluations demonstrate `ALLOW`, `DENY`, `VERIFY` and external contractor `ALLOW`;
-- no real persons, local acts, production authority matrix or sensitive source file enters Git.
+The slice implements:
 
-## ALLOWED BOUNDARY
+- 22 grouped right definitions corresponding to the approved matrix structure;
+- 17 synthetic employees distributed through the existing organization tree;
+- qualification for every employee;
+- more than 100 positive cells with plain and conditional markers;
+- one linked evaluator projection for every published source right;
+- reversible conditional Demo migration;
+- primary matrix view with sticky identity columns and grouped rights header;
+- organization tree, collapse, subtree filter, search, personnel category and
+  electrical-safety group filters;
+- «Кто имеет право» view using the same tree and a right selector;
+- complete employee profile grouped by right category;
+- separate external personnel and action-time history views.
 
-See issue #42. Current changed-file boundary remains within organizations authority contract/persistence/routes/templates/tests, focused presentation seed and canonical coordination documentation.
+No real person, source workbook or local act is committed.
+
+## TEST CONTRACT
+
+Tests must prove:
+
+- hierarchy and matrix render in Direction A shell;
+- positive source cell is described as a granted right, not as a non-authorizing
+  trace marker;
+- conditional marker is visible and materialized as `VERIFY` basis;
+- employee card contains qualification and full grouped rights profile;
+- every synthetic source right has a linked evaluator projection;
+- seed command and migration are idempotent;
+- `ALLOW`, `DENY`, `VERIFY` and external `ALLOW` remain covered;
+- anonymous access is rejected;
+- no write controls or real data enter the acceptance UI.
 
 ## PROTECTED BOUNDARY
 
-- OPJ/SHIFT/DEFECT/work-permit/switching lifecycle;
-- master-data/import redesign;
-- historical imported facts;
-- real personal data/local acts;
-- second signature/hash/authentication framework;
-- preview;
-- Ready for Review and merge without explicit user command.
+- no OPJ/SHIFT/DEFECT/work-permit/switching lifecycle integration;
+- no production personnel import;
+- no real personal data or local acts;
+- no second signature/hash/authentication framework;
+- preview remains `UNTOUCHED`;
+- Ready for Review and merge require explicit user command.
 
 ## RISK / DELIVERY
 
@@ -177,21 +149,13 @@ preview: UNTOUCHED
 merge: FORBIDDEN WITHOUT EXPLICIT USER COMMAND
 ```
 
-## REMAINING GATE
-
-1. Complete final exact-head five-workflow gate after documentation sync.
-2. Trigger trusted `vps-development-rebuild` only on that exact head.
-3. Verify transactional migration, populated read-only routes and controller exact SHA.
-4. Hand the development candidate to the user for acceptance.
-5. Keep PR Draft; do not merge or mark Ready without a separate command.
-
 ## CURRENT STATE
 
 ```text
 issue: #42 / OPEN
 PR: #43 / OPEN / DRAFT / NOT MERGED
-review state: IMPLEMENTATION CANDIDATE
-runtime: NOT YET DEPLOYED ON FINAL HEAD
-acceptance: NOT STARTED
+review state: MATRIX IMPLEMENTATION IN PROGRESS
+runtime: PREVIOUS REJECTED CANDIDATE ON DEVELOPMENT
+acceptance: PENDING NEW MATRIX CANDIDATE
 preview: UNTOUCHED
 ```
