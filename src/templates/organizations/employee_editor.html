@@ -1,0 +1,143 @@
+{% extends "shared/direction_a/base.html" %}
+{% load static authority_presentation %}
+
+{% block title %}{% if is_create %}Новый сотрудник{% else %}Редактирование {{ employee.full_name }}{% endif %} · ЭОД{% endblock %}
+{% block main_class %}authority-main{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'organizations/personnel_authority.css' %}?v=pa001r2">
+<link rel="stylesheet" href="{% static 'organizations/personnel_management.css' %}?v=pa001m1">
+{% endblock %}
+
+{% block content %}
+<section class="personnel-management-page">
+    <header class="da-page-header da-page-header-compact">
+        <div>
+            <p class="da-source-line"><a href="{% url 'organizations:directory' %}">Сотрудники и подразделения</a> / {% if is_create %}Новая карточка{% else %}Редактирование{% endif %}</p>
+            <h1>{% if is_create %}Добавление сотрудника{% else %}{{ employee.full_name }}{% endif %}</h1>
+            <p>{% if is_create %}Сначала создайте карточку и контакты. Права и квалификации добавляются после сохранения.{% else %}Изменения карточки фиксируются в журнале. Права и квалификации публикуются новыми редакциями.{% endif %}</p>
+        </div>
+        <div class="da-actions">
+            {% if employee %}<a class="da-button secondary" href="{% url 'organizations:employee_detail' employee.public_id %}">Открыть карточку</a>{% endif %}
+            <a class="da-button secondary" href="{% url 'organizations:directory' %}">К справочнику</a>
+        </div>
+    </header>
+
+    <div class="personnel-editor-layout">
+        <div class="personnel-management-page">
+            <form method="post" class="personnel-form-panel" novalidate>
+                {% csrf_token %}
+                <header><div><h2>Основные сведения</h2><p>Организационная принадлежность, должность и период работы.</p></div></header>
+                {% if employee_form.non_field_errors or contact_form.non_field_errors %}<div class="personnel-form-errors">{{ employee_form.non_field_errors }}{{ contact_form.non_field_errors }}</div>{% endif %}
+                <div class="personnel-form-grid three-columns">
+                    {% for field in employee_form %}
+                    <div class="personnel-field{% if field.name == 'change_reason' %} full-width{% endif %}">
+                        {{ field.label_tag }}{{ field }}{{ field.errors }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <header><div><h2>Контакты и доступность</h2><p>Рабочие и оперативные каналы связи, общая почта и режим работы.</p></div></header>
+                <div class="personnel-form-grid three-columns">
+                    {% for field in contact_form %}
+                    <div class="personnel-field{% if field.name == 'note' %} full-width{% endif %}">
+                        {{ field.label_tag }}{{ field }}{{ field.errors }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <footer class="personnel-form-footer">
+                    <a class="da-button secondary" href="{% url 'organizations:directory' %}">Отмена</a>
+                    <button class="da-button" type="submit">{% if is_create %}Создать карточку{% else %}Сохранить изменения{% endif %}</button>
+                </footer>
+            </form>
+
+            {% if employee %}
+            <section class="personnel-record-panel">
+                <header><div><h2>Группа по электробезопасности и категория персонала</h2><p>Явно указывается, что группа относится к электробезопасности.</p></div><a class="da-button" href="{% url 'organizations:electrical_qualification_create' employee.public_id %}">Добавить</a></header>
+                <div class="personnel-record-list">
+                    {% for item in qualifications %}
+                    <div class="personnel-record-row{% if not item.is_active %} is-inactive{% endif %}">
+                        <div><strong>{{ item.personnel_category|default:'Категория не указана' }}</strong><small>Группа {{ item.electrical_safety_group|default:'—' }} по электробезопасности</small></div>
+                        <div><span>{{ item.voltage_scope|default:'Класс напряжения не указан' }}</span><small>{{ item.electrical_installation_scope|default:'Область не указана' }}</small></div>
+                        <div><span>{{ item.valid_from|date:'d.m.Y' }} — {% if item.valid_until %}{{ item.valid_until|date:'d.m.Y' }}{% else %}без ограничения срока{% endif %}</span><small>{{ item.source_reference }}</small></div>
+                        <a class="da-button secondary" href="{% url 'organizations:electrical_qualification_edit' employee.public_id item.public_id %}">Изменить</a>
+                    </div>
+                    {% empty %}<div class="personnel-record-empty">Квалификация по электробезопасности не опубликована.</div>{% endfor %}
+                </div>
+            </section>
+
+            <section class="personnel-record-panel">
+                <header><div><h2>Специальные квалификации</h2><p>Категория РЗА, группа работ на высоте и другие специальные допуски.</p></div><a class="da-button" href="{% url 'organizations:special_qualification_create' employee.public_id %}">Добавить</a></header>
+                <div class="personnel-record-list">
+                    {% for item in special_qualifications %}
+                    <div class="personnel-record-row{% if not item.is_active %} is-inactive{% endif %}">
+                        <div><strong>{{ item.get_kind_display }}</strong><small>{{ item.level }}</small></div>
+                        <div><span>{{ item.scope_text|default:'Область не указана' }}</span></div>
+                        <div><span>{{ item.valid_from|date:'d.m.Y' }} — {% if item.valid_until %}{{ item.valid_until|date:'d.m.Y' }}{% else %}без ограничения срока{% endif %}</span><small>{{ item.basis_reference }}</small></div>
+                        <a class="da-button secondary" href="{% url 'organizations:special_qualification_edit' employee.public_id item.public_id %}">Изменить</a>
+                    </div>
+                    {% empty %}<div class="personnel-record-empty">Специальные квалификации не опубликованы.</div>{% endfor %}
+                </div>
+            </section>
+
+            <section class="personnel-record-panel">
+                <header><div><h2>Предоставленные права</h2><p>Редактирование создаёт новую редакцию права и сохраняет прежнюю в истории.</p></div><a class="da-button" href="{% url 'organizations:operational_right_create' employee.public_id %}">Добавить право</a></header>
+                <div class="personnel-record-list">
+                    {% for item in rights %}
+                    <div class="personnel-record-row{% if not item.is_active %} is-inactive{% endif %}">
+                        <div><strong>{{ item.right_definition.name }}</strong><small>Отметка {{ item.source_marker }}</small></div>
+                        <div><span>{{ item.scope_text|default:'Область организации' }}</span><small>{{ item.qualifier|default:'Без дополнительного условия' }}</small></div>
+                        <div><span>{{ item.valid_from|date:'d.m.Y' }} — {% if item.valid_until %}{{ item.valid_until|date:'d.m.Y' }}{% else %}без ограничения срока{% endif %}</span><small>{{ item.source_reference|authority_basis_label }}</small></div>
+                        <a class="da-button secondary" href="{% url 'organizations:operational_right_edit' employee.public_id item.public_id %}">Изменить</a>
+                    </div>
+                    {% empty %}<div class="personnel-record-empty">Права не опубликованы.</div>{% endfor %}
+                </div>
+            </section>
+
+            <section class="personnel-record-panel">
+                <header><div><h2>Внешнее оперативное взаимодействие</h2><p>Для персонала ОДУ/РДУ, ЦУС, смежных предприятий и энергообъектов.</p></div><a class="da-button" href="{% url 'organizations:external_contact_create' employee.public_id %}">Добавить связь</a></header>
+                <div class="personnel-record-list">
+                    {% for item in external_contacts %}
+                    <div class="personnel-record-row{% if not item.is_active %} is-inactive{% endif %}">
+                        <div><strong>{{ item.get_relation_kind_display }}</strong><small>{{ item.host_organization }}</small></div>
+                        <div><span>{{ item.operational_scope|default:'Область не указана' }}</span><small>{{ item.authority_summary|default:'Полномочия не указаны' }}</small></div>
+                        <div><span>{{ item.valid_from|date:'d.m.Y' }} — {% if item.valid_until %}{{ item.valid_until|date:'d.m.Y' }}{% else %}без ограничения срока{% endif %}</span><small>{{ item.basis_reference }}</small></div>
+                        <a class="da-button secondary" href="{% url 'organizations:external_contact_edit' employee.public_id item.public_id %}">Изменить</a>
+                    </div>
+                    {% empty %}<div class="personnel-record-empty">Связи с внешними оперативными справочниками не заданы.</div>{% endfor %}
+                </div>
+            </section>
+            {% endif %}
+        </div>
+
+        {% if employee %}
+        <aside class="personnel-editor-sidebar">
+            <section class="personnel-record-panel">
+                <header><div><h2>Сводка карточки</h2></div></header>
+                <div class="personnel-editor-summary">
+                    <div><span>Электробезопасность</span><strong>{{ qualifications|length }}</strong></div>
+                    <div><span>Спецквалификации</span><strong>{{ special_qualifications|length }}</strong></div>
+                    <div><span>Права</span><strong>{{ rights|length }}</strong></div>
+                    <div><span>Внешние связи</span><strong>{{ external_contacts|length }}</strong></div>
+                </div>
+            </section>
+            <section class="personnel-record-panel">
+                <header><div><h2>История изменений</h2><p>Неизменяемые записи действий пользователей и импорта.</p></div></header>
+                <div class="personnel-history-list">
+                    {% for item in change_records %}
+                    <div class="personnel-history-row"><strong>{{ item.get_action_display }}</strong><span>{{ item.reason }}</span><time>{{ item.created_at|date:'d.m.Y H:i' }} · {{ item.changed_by }}</time></div>
+                    {% empty %}<div class="personnel-record-empty">Изменения ещё не фиксировались.</div>{% endfor %}
+                </div>
+            </section>
+            {% if employee.is_active %}
+            <section class="personnel-record-panel personnel-danger-panel">
+                <header><div><h2>Деактивация</h2><p>Карточка и связанные записи не удаляются физически.</p></div></header>
+                <form method="post" action="{% url 'organizations:employee_deactivate' employee.public_id %}">
+                    {% csrf_token %}<div class="personnel-form-grid"><div class="personnel-field full-width">{{ deactivation_form.reason.label_tag }}{{ deactivation_form.reason }}</div></div>
+                    <footer class="personnel-form-footer"><button class="da-button danger" type="submit">Деактивировать</button></footer>
+                </form>
+            </section>
+            {% endif %}
+        </aside>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
