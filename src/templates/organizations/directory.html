@@ -5,10 +5,11 @@
 {% block main_class %}authority-main{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'organizations/personnel_management.css' %}?v=pa001m2">
-<link rel="stylesheet" href="{% static 'organizations/personnel_directory.css' %}?v=pa001d1">
+<link rel="stylesheet" href="{% static 'organizations/personnel_directory.css' %}?v=pa001d2">
 {% endblock %}
 
 {% block content %}
+<span class="nav-menu active" hidden aria-hidden="true"></span>
 <section class="personnel-directory-page">
     <header class="da-page-header">
         <div>
@@ -71,8 +72,8 @@
             <div class="personnel-division-tree">
                 {% for item in division_tree %}
                 <div class="personnel-division-row" style="--depth: {{ item.depth }}">
-                    <svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-org-division"></use></svg>
-                    <strong>{{ item.division.name }}</strong>
+                    <svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#{% if item.is_center %}icon-org-leadership{% elif item.is_separate %}icon-org-maintenance{% else %}icon-org-division{% endif %}"></use></svg>
+                    <strong>{{ item.division.name }}{% if item.is_separate %}<small>Отдельное подразделение</small>{% elif item.is_center %}<small>Центр эксплуатации</small>{% endif %}</strong>
                     <span>{{ item.division.active_employee_count }}</span>
                 </div>
                 {% empty %}<div class="personnel-directory-empty">Подразделения не созданы.</div>{% endfor %}
@@ -85,6 +86,7 @@
                     <div><h2>{{ selected_organization.short_name|default:selected_organization.name|default:'Сотрудники' }}</h2><p>Оперативная подчинённость, закреплённые энергообъекты, квалификации и контакты.</p></div>
                     <a class="da-button" href="{% url 'organizations:employee_create' %}">Добавить</a>
                 </header>
+                {% if center_leadership %}<div class="personnel-directory-relation-heading"><strong>Руководство центра</strong><span>{{ center_leadership|length }}</span></div>{% endif %}
                 {% if employees %}
                 <div class="personnel-employee-table-wrap"><table class="personnel-employee-table">
                     <thead><tr><th>Сотрудник</th><th>Подразделение и должность</th><th>Контакты</th><th>Квалификация</th><th>Права</th><th>Действия</th></tr></thead>
@@ -94,12 +96,7 @@
                             <td><strong>{{ employee.full_name }}</strong><small>{{ employee.personnel_number }}</small></td>
                             <td><strong>{{ employee.division.name }}</strong><span>{{ employee.position.name }}</span>{% if employee.workplace %}<small>{{ employee.workplace.name }}</small>{% endif %}</td>
                             <td><strong>{{ employee.contact_profile.operational_phone|default:employee.contact_profile.primary_phone|default:'Не указан' }}</strong><span>{{ employee.contact_profile.email|default:'' }}</span><small>{% if employee.contact_profile.is_round_the_clock %}Круглосуточно{% else %}{{ employee.contact_profile.availability_schedule|default:'График не указан' }}{% endif %}</small></td>
-                            <td>
-                                <div class="personnel-qualification-inline">
-                                    {% for qualification in employee.qualifications.all %}{% if qualification.is_active %}<i>{{ qualification.personnel_category }} · группа {{ qualification.electrical_safety_group }} по электробезопасности</i>{% endif %}{% endfor %}
-                                    {% for qualification in employee.special_qualifications.all %}{% if qualification.is_active %}<i>{{ qualification.get_kind_display }}: {{ qualification.level }}</i>{% endif %}{% endfor %}
-                                </div>
-                            </td>
+                            <td><div class="personnel-qualification-inline">{% for qualification in employee.qualifications.all %}{% if qualification.is_active %}<i>{{ qualification.personnel_category }} · группа {{ qualification.electrical_safety_group }} по электробезопасности</i>{% endif %}{% endfor %}{% for qualification in employee.special_qualifications.all %}{% if qualification.is_active %}<i>{{ qualification.get_kind_display }}: {{ qualification.level }}</i>{% endif %}{% endfor %}</div></td>
                             <td><strong>{{ employee.operational_rights.all|length }}</strong><span>опубликованных записей</span></td>
                             <td><div class="personnel-management-actions"><a class="da-button secondary" href="{% url 'organizations:employee_detail' employee.public_id %}">Карточка</a><a class="da-button secondary" href="{% url 'organizations:employee_edit' employee.public_id %}">Изменить</a></div></td>
                         </tr>
@@ -109,20 +106,25 @@
                 {% else %}<div class="personnel-directory-empty">В выбранной организации нет действующих сотрудников.</div>{% endif %}
             </section>
 
+            <div class="personnel-recent-grid">
+                <section class="personnel-directory-panel">
+                    <header><div><h2>Непосредственное оперативное руководство</h2><p>Хранится отдельно от административной иерархии.</p></div></header>
+                    <div class="personnel-recent-list">{% for line in reporting_lines %}<div class="personnel-recent-row"><span><strong>{{ line.supervisor.full_name }}</strong><span>{{ line.supervisor.position.name }} → {{ line.subordinate_division.name }}</span></span><time>{{ line.get_relation_type_display }}</time></div>{% empty %}<div class="personnel-directory-empty">Оперативная подчинённость не задана.</div>{% endfor %}</div>
+                </section>
+                <section class="personnel-directory-panel">
+                    <header><div><h2>Энергообъекты и обслуживающие подразделения</h2><p>Объект не становится подразделением: связь обслуживания хранится отдельно.</p></div></header>
+                    <div class="personnel-recent-list">{% for row in site_service_rows %}<div class="personnel-recent-row"><span><strong>{{ row.site.short_name|default:row.site.name }}</strong><span>{% for service in row.services %}{{ service.division.name }} — {{ service.get_service_kind_display }}{% if not forloop.last %}; {% endif %}{% endfor %}</span></span><time>{{ row.services|length }}</time></div>{% empty %}<div class="personnel-directory-empty">Связи обслуживания не заданы.</div>{% endfor %}</div>
+                </section>
+            </div>
+
             <section class="personnel-directory-panel">
                 <header><div><h2>Внешние оперативные контакты</h2><p>ОДУ, РДУ, ЦУС, смежные предприятия, энергообъекты и коммерческий ДЦ.</p></div><a class="da-button secondary" href="{% url 'organizations:authority_registry' %}#dispatch">Открыть справочники</a></header>
                 {% if external_contacts %}<div class="personnel-employee-table-wrap"><table class="personnel-employee-table"><thead><tr><th>Организация</th><th>Сотрудник</th><th>Роль</th><th>Область взаимодействия</th><th>Контакт</th></tr></thead><tbody>{% for contact in external_contacts %}<tr><td><strong>{{ contact.employee.organization.short_name|default:contact.employee.organization.name }}</strong></td><td><strong>{{ contact.employee.full_name }}</strong><span>{{ contact.employee.position.name }}</span></td><td>{{ contact.get_relation_kind_display }}</td><td>{{ contact.operational_scope }}</td><td><strong>{{ contact.employee.contact_profile.operational_phone|default:contact.employee.contact_profile.primary_phone|default:'Не указан' }}</strong><small>{% if contact.employee.contact_profile.is_round_the_clock %}Круглосуточно{% else %}{{ contact.employee.contact_profile.availability_schedule }}{% endif %}</small></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="personnel-directory-empty">Внешние оперативные контакты не опубликованы.</div>{% endif %}
             </section>
 
             <div class="personnel-recent-grid">
-                <section class="personnel-directory-panel">
-                    <header><div><h2>Последние пакеты импорта</h2><p>XLSX preview и публикация</p></div><a class="da-button secondary" href="{% url 'organizations:personnel_import_upload' %}">Импорт</a></header>
-                    <div class="personnel-recent-list">{% for batch in recent_imports %}<a class="personnel-recent-row" href="{% url 'organizations:personnel_import_detail' batch.public_id %}"><span><strong>{{ batch.uploaded_name }}</strong><span>{{ batch.get_import_kind_display }} · {{ batch.get_status_display }}</span></span><time>{{ batch.created_at|date:'d.m.Y H:i' }}</time></a>{% empty %}<div class="personnel-directory-empty">Пакетов ещё нет.</div>{% endfor %}</div>
-                </section>
-                <section class="personnel-directory-panel">
-                    <header><div><h2>Последние изменения</h2><p>Неизменяемый журнал ведения справочника</p></div></header>
-                    <div class="personnel-recent-list">{% for change in recent_changes %}<div class="personnel-recent-row"><span><strong>{{ change.get_action_display }}</strong><span>{% if change.employee %}{{ change.employee.full_name }} · {% endif %}{{ change.reason }}</span></span><time>{{ change.created_at|date:'d.m.Y H:i' }}</time></div>{% empty %}<div class="personnel-directory-empty">Изменений ещё нет.</div>{% endfor %}</div>
-                </section>
+                <section class="personnel-directory-panel"><header><div><h2>Последние пакеты импорта</h2><p>XLSX preview и публикация</p></div><a class="da-button secondary" href="{% url 'organizations:personnel_import_upload' %}">Импорт</a></header><div class="personnel-recent-list">{% for batch in recent_imports %}<a class="personnel-recent-row" href="{% url 'organizations:personnel_import_detail' batch.public_id %}"><span><strong>{{ batch.uploaded_name }}</strong><span>{{ batch.get_import_kind_display }} · {{ batch.get_status_display }}</span></span><time>{{ batch.created_at|date:'d.m.Y H:i' }}</time></a>{% empty %}<div class="personnel-directory-empty">Пакетов ещё нет.</div>{% endfor %}</div></section>
+                <section class="personnel-directory-panel"><header><div><h2>Последние изменения</h2><p>Неизменяемый журнал ведения справочника</p></div></header><div class="personnel-recent-list">{% for change in recent_changes %}<div class="personnel-recent-row"><span><strong>{{ change.get_action_display }}</strong><span>{% if change.employee %}{{ change.employee.full_name }} · {% endif %}{{ change.reason }}</span></span><time>{{ change.created_at|date:'d.m.Y H:i' }}</time></div>{% empty %}<div class="personnel-directory-empty">Изменений ещё нет.</div>{% endfor %}</div></section>
             </div>
         </main>
     </div>
