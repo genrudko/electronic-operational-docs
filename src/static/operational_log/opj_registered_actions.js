@@ -73,7 +73,7 @@
 
     document.addEventListener("click", (event) => {
         const button = event.target.closest?.("[data-register-draft]");
-        if (!button) return;
+        if (!button || event.defaultPrevented) return;
         event.preventDefault();
         void registerDraft(button);
     });
