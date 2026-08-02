@@ -6,6 +6,7 @@
 {% block main_class %}opj-main opj-shift-main{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'operational_log/opj_workspace_controls.css' %}?v=opjux00105">
+<link rel="stylesheet" href="{% static 'operational_log/opj_registered_actions.css' %}?v=opjlifecycle00201">
 {% endblock %}
 
 {% block content %}
@@ -127,5 +128,6 @@
 <script src="{% static 'operational_log/draft_workspace.js' %}?v=011364" defer></script>
 <script src="{% static 'operational_log/draft_reference_navigation.js' %}?v=011364" defer></script>
 <script src="{% static 'operational_log/opj_workspace_controls.js' %}?v=opjux00105" defer></script>
+<script src="{% static 'operational_log/opj_registered_actions.js' %}?v=opjlifecycle00201" defer></script>
 {% endif %}
 {% endblock %}
