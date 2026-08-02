@@ -24,12 +24,18 @@ from .models import (
     OperationalRightDefinition,
     Organization,
 )
+from .personnel_management_models import (
+    EmployeeSpecialQualification,
+    ExternalOperationalContact,
+    OrganizationRelationKind,
+)
 
 
 @dataclass(frozen=True, slots=True)
 class AuthorityEmployeeRow:
     employee: Employee
     qualification: EmployeeQualification | None
+    special_qualifications: tuple[EmployeeSpecialQualification, ...]
     cells: tuple[EmployeeOperationalRight | None, ...]
     published_rights: tuple[EmployeeOperationalRight, ...]
     right_codes: str
@@ -55,7 +61,7 @@ def _effective_rights_prefetch() -> Prefetch:
             valid_from__lte=today,
         )
         .filter(Q(valid_until__isnull=True) | Q(valid_until__gte=today))
-        .select_related("right_definition")
+        .select_related("right_definition", "condition_detail")
         .order_by("right_definition__display_order", "right_definition__name")
     )
     return Prefetch(
@@ -82,6 +88,23 @@ def _effective_qualifications_prefetch() -> Prefetch:
     )
 
 
+def _effective_special_qualifications_prefetch() -> Prefetch:
+    today = timezone.localdate()
+    queryset = (
+        EmployeeSpecialQualification.objects.filter(
+            is_active=True,
+            valid_from__lte=today,
+        )
+        .filter(Q(valid_until__isnull=True) | Q(valid_until__gte=today))
+        .order_by("kind", "-valid_from", "-id")
+    )
+    return Prefetch(
+        "special_qualifications",
+        queryset=queryset,
+        to_attr="published_special_qualifications",
+    )
+
+
 def _division_ancestry(divisions: list[Division]) -> dict[int, tuple[int, ...]]:
     by_id = {item.id: item for item in divisions}
     ancestry: dict[int, tuple[int, ...]] = {}
@@ -102,6 +125,25 @@ def _division_ancestry(divisions: list[Division]) -> dict[int, tuple[int, ...]]:
     return ancestry
 
 
+def _division_visual(name: str) -> tuple[str, str]:
+    token = _search_token(name)
+    if any(item in token for item in ("руковод", "главного инженера", "дирекц")):
+        return "leadership", "violet"
+    if any(item in token for item in ("оператив", "диспетчер", "цус", "смен")):
+        return "operations", "blue"
+    if any(item in token for item in ("рза", "релей", "автоматик")):
+        return "rza", "amber"
+    if any(item in token for item in ("тоир", "ремонт", "сервис")):
+        return "maintenance", "green"
+    if any(item in token for item in ("лопаст", "ветро", "вэу")):
+        return "wind", "cyan"
+    if any(item in token for item in ("подстанц", "пс 500", "пс 330")):
+        return "substation", "orange"
+    if any(item in token for item in ("техничес", "производствен")):
+        return "technical", "slate"
+    return "division", "slate"
+
+
 def _employee_row(
     employee: Employee,
     rights: list[OperationalRightDefinition],
@@ -114,6 +156,7 @@ def _employee_row(
         if employee.published_qualifications
         else None
     )
+    special = tuple(employee.published_special_qualifications)
     search_parts = [
         employee.full_name,
         employee.position.name,
@@ -124,6 +167,10 @@ def _employee_row(
         qualification.voltage_scope if qualification else "",
     ]
     search_parts.extend(
+        f"{item.get_kind_display()} {item.level} {item.scope_text}"
+        for item in special
+    )
+    search_parts.extend(
         f"{item.right_definition.name} {item.qualifier} "
         f"{item.scope_text} {item.source_reference}"
         for item in published
@@ -131,6 +178,7 @@ def _employee_row(
     return AuthorityEmployeeRow(
         employee=employee,
         qualification=qualification,
+        special_qualifications=special,
         cells=tuple(by_definition.get(item.id) for item in rights),
         published_rights=published,
         right_codes=" ".join(item.right_definition.code for item in published),
@@ -188,6 +236,7 @@ def _division_rows(
     ) -> None:
         for division in children.get(parent_id, ()):
             path = (*ancestors, division.id)
+            icon_kind, tone = _division_visual(division.name)
             result.append(
                 {
                     "division": division,
@@ -196,6 +245,8 @@ def _division_rows(
                     "division_path": " ".join(map(str, path)),
                     "employee_count": descendant_count.get(division.id, 0),
                     "direct_rows": direct_rows.get(division.id, []),
+                    "icon_kind": icon_kind,
+                    "tone": tone,
                 }
             )
             add_branch(division.id, depth + 1, path)
@@ -218,6 +269,45 @@ def _category_groups(rights: list[OperationalRightDefinition]):
             groups.append(current)
         current["rights"].append(right)
     return groups
+
+
+def _external_operational_groups(selected: Organization | None):
+    if selected is None:
+        return {
+            "dispatch": [],
+            "related": [],
+            "commercial": [],
+            "all": [],
+        }
+    contacts = list(
+        ExternalOperationalContact.objects.filter(
+            host_organization=selected,
+            is_active=True,
+        )
+        .select_related(
+            "employee__organization__operational_profile",
+            "employee__division",
+            "employee__position",
+            "employee__contact_profile",
+            "host_organization",
+        )
+        .order_by(
+            "employee__organization__name",
+            "relation_kind",
+            "employee__last_name",
+        )
+    )
+    result = {"dispatch": [], "related": [], "commercial": [], "all": contacts}
+    for item in contacts:
+        profile = getattr(item.employee.organization, "operational_profile", None)
+        relation_kind = profile.relation_kind if profile else "OTHER"
+        if relation_kind == OrganizationRelationKind.DISPATCH_CENTER:
+            result["dispatch"].append(item)
+        elif relation_kind == OrganizationRelationKind.COMMERCIAL_DISPATCH:
+            result["commercial"].append(item)
+        else:
+            result["related"].append(item)
+    return result
 
 
 @login_required
@@ -281,6 +371,7 @@ def authority_registry(request):
             .prefetch_related(
                 _effective_rights_prefetch(),
                 _effective_qualifications_prefetch(),
+                _effective_special_qualifications_prefetch(),
             )
             .order_by("division__name", "position__name", "last_name")
         )
@@ -335,6 +426,7 @@ def authority_registry(request):
             if item.source_reference
         }
     )
+    external_groups = _external_operational_groups(selected)
     context = {
         "organizations": organizations,
         "selected_organization": selected,
@@ -344,6 +436,10 @@ def authority_registry(request):
         "division_rows": division_rows,
         "holder_assignments": holder_assignments,
         "external_engagements": external_engagements,
+        "external_operational_contacts": external_groups["all"],
+        "dispatch_contacts": external_groups["dispatch"],
+        "related_contacts": external_groups["related"],
+        "commercial_contacts": external_groups["commercial"],
         "recent_evaluations": recent_evaluations,
         "published_right_count": published_count,
         "conditional_count": sum(
@@ -370,14 +466,17 @@ def employee_detail(request, public_id):
             "position",
             "workplace",
             "user",
+            "contact_profile",
         ).prefetch_related(
             _effective_rights_prefetch(),
             _effective_qualifications_prefetch(),
+            _effective_special_qualifications_prefetch(),
         ),
         public_id=public_id,
         is_active=True,
     )
     qualifications = list(employee.published_qualifications)
+    special_qualifications = list(employee.published_special_qualifications)
     published_rights = list(employee.published_rights)
     structured_grants = list(
         OperationalAuthorityGrant.objects.filter(employee=employee)
@@ -416,12 +515,18 @@ def employee_detail(request, public_id):
     context = {
         "employee": employee,
         "qualifications": qualifications,
+        "special_qualifications": special_qualifications,
         "published_rights": published_rights,
         "grouped_rights": grouped_rights,
         "structured_grants": structured_grants,
         "external_engagements": list(
             ExternalPersonnelEngagement.objects.filter(employee=employee)
             .select_related("home_organization", "host_organization")
+            .order_by("-valid_from")
+        ),
+        "external_operational_contacts": list(
+            ExternalOperationalContact.objects.filter(employee=employee)
+            .select_related("host_organization")
             .order_by("-valid_from")
         ),
         "authority_evaluations": list(
