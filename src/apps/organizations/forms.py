@@ -109,7 +109,7 @@ class EmployeeCardForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         organization_id = None
         if self.is_bound:
-            organization_id = self.data.get("organization")
+            organization_id = self.data.get(self.add_prefix("organization"))
         elif self.instance and self.instance.pk:
             organization_id = self.instance.organization_id
         if organization_id:
