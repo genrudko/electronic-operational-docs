@@ -25,4 +25,13 @@ class Migration(migrations.Migration):
                 verbose_name="Состояние после изменения",
             ),
         ),
+        migrations.AlterField(
+            model_name="personnelimportbatch",
+            name="validation_errors",
+            field=models.JSONField(
+                blank=True,
+                default=list,
+                verbose_name="Ошибки проверки",
+            ),
+        ),
     ]
