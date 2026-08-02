@@ -35,15 +35,15 @@ DEPLOYED REPAIR HEAD: 9b7ede3a78997ebdbe7d68b750f024857369d4ea / DEVELOPMENT DEP
 IDENTITY FOUNDATION HEAD: 645c0dc7b520a6f091f5d266a0bc3390f26dbfbd / 5 workflows SUCCESS
 BRAND AND DOMAIN ICON HEAD: ed2b5ef8cd9cd9f248da9b4d16fc6bf1ad7aa395 / 5 workflows SUCCESS
 SMALL-ASSET REPAIR HEAD: b307bab6145f31dd08fde36b8869417eba059012 / 5 workflows SUCCESS
-ICONOGRAPHY REFINEMENT IMPLEMENTATION HEAD: 9106b0585a0ac78acdffedd2392160c97bb81a49 / VALIDATION PENDING
+ICONOGRAPHY REFINEMENT HEAD: 3eb93429405dcbcd88836e3647e9a307b29bcc42 / 5 workflows SUCCESS / USER PARTIALLY ACCEPTED
+NARROW ICON REPAIR IMPLEMENTATION HEAD: d051f4aca14a26c42c004f04a66959afa87adc6e / VALIDATION PENDING
 ```
 
 Trusted controller run `30733195542` deployed exact head
 `9b7ede3a78997ebdbe7d68b750f024857369d4ea` to development with 664 VPS tests,
 health-check and exact live SHA match. Preview remained `UNTOUCHED`.
 
-После пользовательской проверки прежний repair candidate принят не был. Для
-нового identity candidate зафиксированы следующие решения:
+Для identity candidate зафиксированы следующие решения:
 
 - Onest Variable является фирменным шрифтом всего пользовательского интерфейса,
   включая экранную форму оперативного журнала;
@@ -62,27 +62,25 @@ health-check and exact live SHA match. Preview remained `UNTOUCHED`.
 - категории АТП/ОП/ОРП/РП, квалификация, напряжение, lifecycle и матричные
   значения остаются text-first markers, а не пиктограммами.
 
-После просмотра полного каталога пользователь отклонил часть первоначальной
-геометрии. В implementation head `9106b0585a0ac78acdffedd2392160c97bb81a49`
-перерисованы:
+После просмотра полного каталога пользователь принял основной набор и запросил
+узкий финальный repair четырёх символов. В implementation head
+`d051f4aca14a26c42c004f04a66959afa87adc6e` изменены только:
 
-- наряды-допуски как разрешающий документ, без каски;
-- приём и передача смены как двусторонняя передача между двумя операторами;
-- текущие работы как процесс с инструментом и отметкой выполнения;
-- аварийная готовность, аккумуляторная батарея и осмотр АКБ;
-- схемы как однолинейная электрическая структура;
-- заземление как чистый узнаваемый знак защитного заземления;
-- общий раздел оборудования как ячейка/шкаф электрооборудования;
-- руководство без короны;
-- организация и подразделение разными силуэтами;
-- подстанция как портальная конструкция распределительного устройства;
-- РЗА/телемеханика как устройство с индикацией и клеммами, без ЭКГ-метафоры;
-- каталог типов оборудования на основе узнаваемых форм ГОСТ Р 56303-2014 с
-  ограниченной UI-стилизацией для сетки `24 × 24`.
+- `icon-shift-handover`: две отдельные фигуры сотрудников и одна явная
+  двусторонняя стрелка между ними;
+- `icon-equipment-breaker`: простая вертикальная схемная форма выключателя без
+  декоративных внутренних полос;
+- `icon-equipment-ground-switch`: отдельный подвижный контакт, неподвижный
+  контакт и непосредственный вывод на знак заземления;
+- `icon-equipment-portable-ground`: три фазных зажима, гибкие проводники, общая
+  точка и спуск на заземление.
 
-Интерфейсные пиктограммы оборудования не объявляются нормативными УГО и не
-заменяют обозначения приложения Б на инженерной схеме. Граница закреплена в
-`docs/ux/EQUIPMENT_PICTOGRAM_GOST_BASIS_V1.md` и отдельном contract-тесте.
+Остальные 62 canonical symbols не менялись. Все symbol IDs сохранены.
+
+Интерфейсные пиктограммы оборудования основаны на узнаваемой семантике
+ГОСТ Р 56303-2014 в редакции с Изменением № 1, но не объявляются нормативными
+УГО и не заменяют обозначения приложения Б на инженерной схеме. Граница
+закреплена в `docs/ux/EQUIPMENT_PICTOGRAM_GOST_BASIS_V1.md` и contract-тесте.
 
 Новые migrations отсутствуют. Product/domain models and lifecycle remain
 untouched.
