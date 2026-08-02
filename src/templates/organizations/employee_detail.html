@@ -7,7 +7,8 @@
 <link rel="stylesheet" href="{% static 'organizations/personnel_authority.css' %}?v=pa001r2">
 <link rel="stylesheet" href="{% static 'organizations/personnel_authority_matrix.css' %}?v=pa001r3">
 <link rel="stylesheet" href="{% static 'organizations/personnel_authority_profile.css' %}?v=pa001r3">
-<link rel="stylesheet" href="{% static 'organizations/personnel_management.css' %}?v=pa001m1">
+<link rel="stylesheet" href="{% static 'organizations/personnel_authority_repair.css' %}?v=pa001r5">
+<link rel="stylesheet" href="{% static 'organizations/personnel_management.css' %}?v=pa001m2">
 {% endblock %}
 
 {% block content %}
@@ -55,7 +56,7 @@
                 <div class="authority-compact-stat"><span>Предоставленные права</span><strong>{{ published_rights|length }}</strong></div>
                 <div class="authority-compact-stat"><span>Права с условием</span><strong>{{ conditional_count }}</strong></div>
                 <div class="authority-compact-stat"><span>Электробезопасность</span><strong>{{ qualifications|length }}</strong></div>
-                <div class="authority-compact-stat"><span>Проверки</span><strong>{{ authority_evaluations|length }}</strong></div>
+                <div class="authority-compact-stat"><span>Спецквалификации</span><strong>{{ special_qualifications|length }}</strong></div>
             </div>
         </section>
     </div>
@@ -77,17 +78,15 @@
     </section>
 
     <section class="authority-panel">
-        <div class="authority-panel-heading"><div><h2>Специальные квалификации</h2><p>Категория допуска по РЗА, группа работ на высоте и другие самостоятельные шкалы.</p></div></div>
-        <div class="authority-source-items" style="padding: 12px;">
-            {% for item in employee.special_qualifications.all %}{% if item.is_active %}
-            <article class="authority-source-item"><strong>{{ item.get_kind_display }} — {{ item.level }}</strong><span>{{ item.scope_text|default:'Область не указана' }}</span><small>с {{ item.valid_from|date:'d.m.Y' }}{% if item.valid_until %} по {{ item.valid_until|date:'d.m.Y' }}{% endif %} · {{ item.basis_reference }}</small></article>
-            {% endif %}{% empty %}<div class="authority-empty"><strong>Специальные квалификации не опубликованы</strong></div>{% endfor %}
-        </div>
+        <div class="authority-panel-heading"><div><h2>Специальные квалификации</h2><p>Категория допуска по РЗА, группа работ на высоте и другие самостоятельные шкалы.</p></div><span class="authority-count">{{ special_qualifications|length }}</span></div>
+        {% if special_qualifications %}<div class="authority-source-items" style="padding: 12px;">
+            {% for item in special_qualifications %}<article class="authority-source-item"><strong>{{ item.get_kind_display }} — {{ item.level }}</strong><span>{{ item.scope_text|default:'Область не указана' }}</span><small>с {{ item.valid_from|date:'d.m.Y' }}{% if item.valid_until %} по {{ item.valid_until|date:'d.m.Y' }}{% endif %} · {{ item.basis_reference }}</small></article>{% endfor %}
+        </div>{% else %}<div class="authority-empty"><strong>Специальные квалификации не опубликованы</strong></div>{% endif %}
     </section>
 
     <section class="authority-panel authority-profile-rights">
         <div class="authority-panel-heading">
-            <div><h2>Профиль предоставленных прав</h2><p>Положительные ячейки действующей матрицы. Каждая запись хранит область, срок, условие и документ-основание.</p></div>
+            <div><h2>Профиль предоставленных прав</h2><p>Каждая запись показывает область, срок, точное условие и документ-основание.</p></div>
             <span class="authority-count">{{ published_rights|length }}</span>
         </div>
         {% if grouped_rights %}
@@ -103,14 +102,21 @@
                             <strong>{{ item.assignment.right_definition.name }}</strong>
                             <span>{{ item.assignment.scope_text|default:'Область организации' }}</span>
                             {% if item.assignment.qualifier %}<p>{{ item.assignment.qualifier }}</p>{% endif %}
+                            {% if item.assignment.source_marker != '+' %}
+                            <div class="authority-condition-inline">
+                                <strong>{% if item.assignment.condition_detail %}{{ item.assignment.condition_detail.title }}{% else %}Условие {{ item.assignment.source_marker }} не расшифровано{% endif %}</strong>
+                                <span>{% if item.assignment.condition_detail %}{{ item.assignment.condition_detail.description }}{% elif item.assignment.qualifier %}{{ item.assignment.qualifier }}{% else %}Требуется проверить исходный документ до применения права.{% endif %}</span>
+                                {% if item.assignment.condition_detail.source_clause %}<small>{{ item.assignment.condition_detail.source_clause }} · {{ item.assignment.condition_detail.source_reference }}</small>{% else %}<small>{{ item.assignment.source_reference|authority_basis_label }}</small>{% endif %}
+                            </div>
+                            {% endif %}
                         </div>
                         <div class="authority-profile-right-meta">
-                            {% if item.assignment.source_marker != '+' %}<span class="authority-status verify">Предоставлено с условием</span>{% else %}<span class="authority-status allowed">Предоставлено</span>{% endif %}
+                            {% if item.assignment.source_marker != '+' %}<span class="authority-status verify">Предоставлено с условием {{ item.assignment.source_marker }}</span>{% else %}<span class="authority-status allowed">Предоставлено</span>{% endif %}
                             <time>с {{ item.assignment.valid_from|date:'d.m.Y' }}{% if item.assignment.valid_until %} по {{ item.assignment.valid_until|date:'d.m.Y' }}{% endif %}</time>
                         </div>
                         <div class="authority-profile-right-basis">
                             <span>Документ-основание</span><strong>{{ item.assignment.source_reference|authority_basis_label }}</strong>
-                            {% if item.structured_grant %}<small>Автоматическая проверка: {% if item.structured_grant.basis_status == 'CONFIRMED' %}готова к применению{% elif item.structured_grant.basis_status == 'VERIFY' %}требует подтверждения условия{% else %}не действует{% endif %}</small>{% endif %}
+                            {% if item.structured_grant %}<small>Автоматическая проверка: {% if item.structured_grant.basis_status == 'CONFIRMED' %}готова к применению{% elif item.structured_grant.basis_status == 'VERIFY' %}требует подтверждения указанного условия{% else %}не действует{% endif %}</small>{% endif %}
                         </div>
                     </article>
                     {% endfor %}
@@ -121,9 +127,16 @@
         {% else %}<div class="authority-empty"><strong>Права не опубликованы</strong><span>В действующей редакции матрицы нет положительных ячеек для сотрудника.</span></div>{% endif %}
     </section>
 
+    {% if external_operational_contacts %}
+    <section class="authority-panel">
+        <div class="authority-panel-heading"><div><h2>Внешнее оперативное взаимодействие</h2><p>Роль сотрудника в справочнике принимающей организации.</p></div><span class="authority-count">{{ external_operational_contacts|length }}</span></div>
+        <div class="authority-table-wrap"><table class="authority-table"><thead><tr><th>Принимающая организация</th><th>Роль</th><th>Область</th><th>Полномочия</th><th>Срок и основание</th></tr></thead><tbody>{% for item in external_operational_contacts %}<tr><td>{{ item.host_organization.short_name|default:item.host_organization.name }}</td><td>{{ item.get_relation_kind_display }}</td><td>{{ item.operational_scope|default:'Не указана' }}</td><td>{{ item.authority_summary|default:'Не указаны' }}</td><td><span class="authority-primary-value">{{ item.valid_from|date:'d.m.Y' }} — {% if item.valid_until %}{{ item.valid_until|date:'d.m.Y' }}{% else %}без ограничения срока{% endif %}</span><span class="authority-secondary-value">{{ item.basis_reference }}</span></td></tr>{% endfor %}</tbody></table></div>
+    </section>
+    {% endif %}
+
     {% if external_engagements %}
     <section class="authority-panel">
-        <div class="authority-panel-heading"><div><h2>Допуск внешнего персонала</h2><p>Отдельная связь направляющей и принимающей организаций.</p></div><span class="authority-count">{{ external_engagements|length }}</span></div>
+        <div class="authority-panel-heading"><div><h2>Допуск подрядного персонала</h2><p>Отдельная связь направляющей и принимающей организаций.</p></div><span class="authority-count">{{ external_engagements|length }}</span></div>
         <div class="authority-table-wrap"><table class="authority-table"><thead><tr><th>Вид</th><th>Организации</th><th>Область</th><th>Срок</th><th>Основание</th></tr></thead><tbody>{% for item in external_engagements %}<tr><td>{{ item.get_relation_kind_display }}</td><td><span class="authority-primary-value">{{ item.home_organization.short_name|default:item.home_organization.name }}</span><span class="authority-secondary-value">Принимает: {{ item.host_organization.short_name|default:item.host_organization.name }}</span></td><td>{{ item.scope_label|default:item.scope_reference }}</td><td>{{ item.valid_from|date:'d.m.Y' }} — {% if item.valid_until %}{{ item.valid_until|date:'d.m.Y' }}{% else %}без ограничения срока{% endif %}</td><td>{{ item.basis_reference|authority_basis_label }}</td></tr>{% endfor %}</tbody></table></div>
     </section>
     {% endif %}
