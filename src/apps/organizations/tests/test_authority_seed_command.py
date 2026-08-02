@@ -4,14 +4,14 @@ from django.apps import apps as django_apps
 from django.core.management import call_command
 from django.test import TestCase
 
-from apps.organizations.management.commands.seed_demo_personnel_authority import (
-    RIGHT_DEFINITIONS,
-)
 from apps.organizations.authority_models import (
     AuthorityDecision,
     AuthorityEvaluationRecord,
     ExternalPersonnelEngagement,
     OperationalAuthorityGrant,
+)
+from apps.organizations.management.commands.seed_demo_personnel_authority import (
+    RIGHT_DEFINITIONS,
 )
 from apps.organizations.models import (
     Employee,
