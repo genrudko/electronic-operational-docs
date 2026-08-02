@@ -29,28 +29,39 @@ action-time evaluation implemented. Intermediate proven gates:
 ```text
 PURE CONTRACT HEAD: 0200a2be6dfc5e948eb27dbed77d9e2aa39c0d4d / 5 workflows SUCCESS
 PERSISTENCE HEAD: 4c65f3ab1d6631fa661c9ffba94443620a30e71a / 5 workflows SUCCESS
+MATRIX HEAD: 60460f1d213e5a5afb080402a8efff16feec0af7 / 5 workflows SUCCESS / DEVELOPMENT DEPLOYED
 ```
 
-Первый presentation candidate был отклонён: он показывал technical grant list и
-не воспроизводил рабочую информационную модель утверждённого списка лиц с
-предоставлением прав. Direction A оформление принято, информационная архитектура
-не принята.
+Первый presentation candidate был отклонён как technical grant list. Матричный
+candidate на `60460f1d213e5a5afb080402a8efff16feec0af7` восстановил принятую
+информационную архитектуру: hierarchy tree, employee × rights matrix, «Кто имеет
+право», полный профиль сотрудника, отдельные external and evaluation views.
+Оформление, общая концепция и тёмная тема приняты пользователем; оставлены
+точечные замечания по типографике заголовков и терминологии квалификаций.
 
-Принята и реализуется domain correction:
+Текущий personnel management candidate расширяет этот контур:
 
-- утверждённая положительная ячейка матрицы является предоставленным правом;
-- `+1`, `+2`, `+3` являются правом с дополнительным условием;
-- source right материализуется в linked evaluator projection, а не требует
-  повторного ручного назначения;
-- основной UX — дерево подразделений + матрица прав;
-- отдельный view отвечает на вопрос «кто имеет выбранное право»;
-- employee card показывает полный профиль квалификации, прав, условий, scope и
-  basis;
-- внешний персонал остаётся отдельным контуром.
+- ручное создание и редактирование существующей карточки сотрудника;
+- перенос между подразделениями без дублирования;
+- контакты и режим доступности;
+- деактивация вместо физического удаления;
+- versioned edit групп по электробезопасности, специальных квалификаций и прав;
+- отдельные qualification types для РЗА, работ на высоте и иных допусков;
+- operational profiles организаций: собственная, ДЦ, ЦУС/сетевая, смежный
+  энергообъект, коммерческий ДЦ и подрядчик;
+- внешний оперативный справочник отдельно от contractor engagement;
+- два XLSX-шаблона: штатная матрица и внешний оперативный справочник;
+- upload → validate → duplicate match → CREATE/UPDATE/ERROR preview → выбор
+  строк/подразделений/объектов → explicit publish;
+- SHA-256 файла и append-only change history;
+- отсутствие лица в новом файле не деактивирует карточку автоматически;
+- улучшенная типографика matrix headers, легенда АТП/ОП/ОРП/РП/АТП-ОП и явная
+  подпись «группа по электробезопасности».
 
-Новый matrix candidate проходит implementation и exact-head validation. До его
-успешного trusted rebuild runtime state для нового head не подтверждён. Preview
-остаётся `UNTOUCHED`.
+Новый create/edit/import head проходит exact-head validation. До успешного
+trusted full-development rebuild development runtime остаётся на matrix head
+`60460f1d213e5a5afb080402a8efff16feec0af7`; новый runtime не подтверждён.
+Preview остаётся `UNTOUCHED`.
 
 Merge, Ready for Review и preview write без отдельной команды пользователя
 запрещены.
