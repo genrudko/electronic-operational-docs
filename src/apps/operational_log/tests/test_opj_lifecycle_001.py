@@ -86,6 +86,24 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
         )
         self.assertEqual(communication.type_code, TYPE_COMMUNICATION)
 
+        with self.assertRaises(ValidationError):
+            record_communication(
+                entry=communication,
+                actor=self.actor,
+                direction="INCOMING",
+                channel="PHONE",
+                counterpart="Вложенный участник",
+                counterpart_organization="",
+                content="Дочерний факт не может стать новым корнем истории.",
+            )
+        with self.assertRaises(ValidationError):
+            correct_entry(
+                entry=communication,
+                actor=self.actor,
+                replacement_content="Недопустимое вложенное исправление.",
+                reason="Проверка единственного корня истории.",
+            )
+
         cancellation = cancel_entry(
             entry=original,
             actor=self.actor,
@@ -183,6 +201,26 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
         ):
             self.assertContains(page, marker)
 
+        communication = record_communication(
+            entry=original,
+            actor=self.actor,
+            direction="INCOMING",
+            channel="DISPATCH",
+            counterpart="Диспетчер проверки",
+            counterpart_organization="Диспетчерский центр",
+            content="Проверка представления дочернего события.",
+        )
+        child_page = self.client.get(
+            reverse(
+                "operational_log:entry_lifecycle",
+                args=(self.journal.pk, communication.sequence_number),
+            )
+        )
+        self.assertEqual(child_page.status_code, 200)
+        self.assertContains(child_page, "Действия выполняются из оригинала")
+        self.assertContains(child_page, f"№ {original.sequence_number}")
+        self.assertNotContains(child_page, "data-opj-action-tab")
+
         draft = (
             self.shift.draft_entries.filter(is_removed=False)
             .exclude(content="")
@@ -225,6 +263,7 @@ class OperationalJournalLifecycleSourceContractTests(SimpleTestCase):
         self.assertNotIn("font-family: Arial", css)
         self.assertIn("TYPE_CORRECTION", service)
         self.assertIn("TYPE_CANCELLATION", service)
+        self.assertIn("CHILD_EVENT_TYPES", service)
         self.assertIn("evaluate_and_record_authority", service)
         self.assertIn("window.confirm", javascript)
         self.assertNotIn("<svg viewBox=", template)
