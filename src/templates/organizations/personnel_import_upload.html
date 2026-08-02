@@ -1,0 +1,37 @@
+{% extends "shared/direction_a/base.html" %}
+{% load static %}
+
+{% block title %}Импорт персонала · ЭОД{% endblock %}
+{% block main_class %}authority-main{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'organizations/personnel_management.css' %}?v=pa001m1">{% endblock %}
+
+{% block content %}
+<section class="personnel-management-page">
+    <header class="da-page-header da-page-header-compact">
+        <div><p class="da-source-line"><a href="{% url 'organizations:directory' %}">Сотрудники и подразделения</a> / Импорт</p><h1>Пакетная загрузка персонала</h1><p>Файл сначала разбирается в предварительный просмотр. Записи создаются или обновляются только после отдельной публикации выбранных строк.</p></div>
+        <div class="da-actions"><a class="da-button" href="{% url 'organizations:employee_create' %}">Добавить вручную</a><a class="da-button secondary" href="{% url 'organizations:directory' %}">К справочнику</a></div>
+    </header>
+
+    <div class="personnel-import-intro">
+        <article class="personnel-template-card"><h3>Матрица штатного персонала</h3><p>Одна строка на сотрудника, квалификация по электробезопасности и колонки прав с отметками +, -, +1, +2 и +3.</p><a class="da-button secondary" href="{% url 'organizations:personnel_import_template' 'INTERNAL_MATRIX' %}">Скачать XLSX-шаблон</a></article>
+        <article class="personnel-template-card"><h3>Внешний оперативный справочник</h3><p>Персонал ОДУ/РДУ, ЦУС, смежных предприятий, смежных энергообъектов и коммерческого ДЦ.</p><a class="da-button secondary" href="{% url 'organizations:personnel_import_template' 'EXTERNAL_DIRECTORY' %}">Скачать XLSX-шаблон</a></article>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="personnel-form-panel" novalidate>
+        {% csrf_token %}
+        <header><div><h2>Новый пакет</h2><p>Повторная загрузка того же файла определяется по SHA-256.</p></div></header>
+        {% if form.non_field_errors %}<div class="personnel-form-errors">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="personnel-form-grid">
+            {% for field in form %}<div class="personnel-field{% if field.name == 'source_reference' or field.name == 'workbook' %} full-width{% endif %}">{{ field.label_tag }}{{ field }}{{ field.errors }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}</div>{% endfor %}
+        </div>
+        <footer class="personnel-form-footer"><button class="da-button" type="submit">Сформировать предварительный просмотр</button></footer>
+    </form>
+
+    <section class="personnel-import-panel">
+        <header><div><h2>Последние пакеты</h2><p>Черновые и опубликованные загрузки.</p></div></header>
+        <div class="personnel-batch-list">
+            {% for batch in batches %}<a class="personnel-batch-row" href="{% url 'organizations:personnel_import_detail' batch.public_id %}"><strong>{{ batch.uploaded_name }}</strong><span>{{ batch.get_import_kind_display }}</span><span>{{ batch.target_organization }}</span><span>{{ batch.get_status_display }}</span><time>{{ batch.created_at|date:'d.m.Y H:i' }}</time></a>{% empty %}<div class="personnel-record-empty">Пакеты импорта ещё не создавались.</div>{% endfor %}
+        </div>
+    </section>
+</section>
+{% endblock %}

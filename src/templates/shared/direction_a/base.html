@@ -1,9 +1,14 @@
 {% extends "base.html" %}
-{% load equipment_defect_tags %}
+{% load static equipment_defect_tags %}
 
 {% block body_class %}direction-a-body da-active{% endblock %}
 
 {% block body %}
+<link rel="stylesheet" href="{% static 'system/eod_typography.css' %}?v=eodidentity002">
+<link rel="stylesheet" href="{% static 'system/eod_iconography.css' %}?v=eodidentity002">
+{% if request.resolver_match.namespace == 'organizations' %}
+<script src="{% static 'organizations/personnel_authority_followup.js' %}?v=pa001r6" defer></script>
+{% endif %}
 <div class="da-shell" data-direction-a-shell>
     {% include "shared/direction_a/_sidebar.html" %}
     <div class="da-stage">

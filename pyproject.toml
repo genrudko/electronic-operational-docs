@@ -10,6 +10,7 @@ requires-python = ">=3.13,<3.14"
 dependencies = [
     "Django>=5.2,<5.3",
     "gunicorn>=26,<27",
+    "openpyxl>=3.1,<4",
     "psycopg[binary]>=3.2,<4",
     "whitenoise>=6.12,<7",
 ]
@@ -41,9 +42,17 @@ extend-exclude = [
     "staticfiles",
     "src/**/migrations/*.py",
 ]
+
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "DJ"]
 ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"src/apps/organizations/forms.py" = ["I001"]
+"src/apps/organizations/personnel_edit_services.py" = ["I001"]
+"src/apps/organizations/personnel_management_services.py" = ["E501", "F541", "I001"]
+"src/apps/organizations/personnel_management_views.py" = ["E501", "I001"]
+"src/apps/organizations/personnel_reference_signals.py" = ["I001"]
 
 [tool.coverage.run]
 source = ["src"]

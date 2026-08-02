@@ -1,0 +1,196 @@
+/*
+ * EOD canonical typography.
+ *
+ * Onest is the corporate family for every user-facing screen, including the
+ * operational journal. The acceptance candidate loads the exact variable WOFF2
+ * from an immutable upstream revision; production/offline packaging must host
+ * the same licensed asset locally.
+ */
+@font-face {
+    font-family: "Onest";
+    src: url("https://cdn.jsdelivr.net/gh/simpals/onest@f18c06a14512e43a6191849278d6f07fdaf347d6/fonts/webfonts/Onest%5Bwght%5D.woff2") format("woff2-variations");
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+}
+
+:root {
+    --eod-font-ui: "Onest", "Segoe UI Variable Text", "Segoe UI", Arial, sans-serif;
+    --eod-font-mono: Consolas, "Cascadia Mono", "Cascadia Code", "Liberation Mono", monospace;
+    --journal-font-family: var(--eod-font-ui);
+    --eod-weight-regular: 400;
+    --eod-weight-medium: 500;
+    --eod-weight-semibold: 600;
+    --eod-weight-bold: 700;
+    --eod-weight-brand: 800;
+    --eod-oblique-angle: 10deg;
+}
+
+body.da-active,
+body.da-active button,
+body.da-active input,
+body.da-active select,
+body.da-active textarea,
+body.da-active dialog {
+    font-family: var(--eod-font-ui);
+    font-synthesis: style;
+    font-optical-sizing: auto;
+    text-rendering: optimizeLegibility;
+}
+
+body.da-active {
+    font-size: 14px;
+    line-height: 1.42;
+}
+
+body.da-active strong,
+body.da-active b {
+    font-weight: var(--eod-weight-bold);
+}
+
+body.da-active em,
+body.da-active i,
+body.da-active .eod-italic {
+    font-style: oblique var(--eod-oblique-angle);
+}
+
+body.da-active code,
+body.da-active pre,
+body.da-active kbd,
+body.da-active samp,
+body.da-active .technical-value,
+body.da-active [data-technical-value="true"] {
+    font-family: var(--eod-font-mono);
+    font-variant-ligatures: none;
+}
+
+body.da-active time,
+body.da-active .da-table,
+body.da-active .authority-matrix,
+body.da-active .registration-number,
+body.da-active .sequence-number,
+body.da-active .authority-count,
+body.da-active [data-numeric="true"] {
+    font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* Shared shell hierarchy. */
+body.da-active .da-brand-copy strong {
+    font-weight: var(--eod-weight-brand);
+    letter-spacing: -0.025em;
+}
+
+body.da-active .da-brand-copy small,
+body.da-active .da-context span,
+body.da-active .da-user small,
+body.da-active .da-workplace span,
+body.da-active .da-topbar-copy span {
+    font-weight: var(--eod-weight-regular);
+}
+
+body.da-active .da-context strong,
+body.da-active .da-user strong,
+body.da-active .da-workplace strong,
+body.da-active .da-topbar-copy strong {
+    font-weight: var(--eod-weight-semibold);
+}
+
+body.da-active .da-navigation > a {
+    font-weight: var(--eod-weight-semibold);
+}
+
+body.da-active .da-nav-group-title {
+    font-weight: var(--eod-weight-bold);
+}
+
+body.da-active .da-nav-child {
+    font-weight: var(--eod-weight-medium);
+}
+
+body.da-active .da-page-header h1 {
+    font-weight: var(--eod-weight-bold);
+    letter-spacing: -0.028em;
+}
+
+body.da-active .da-page-header h2,
+body.da-active .da-panel-heading h2,
+body.da-active .da-panel-heading h3 {
+    font-weight: var(--eod-weight-semibold);
+    letter-spacing: -0.012em;
+}
+
+body.da-active .da-button,
+body.da-active button.da-button,
+body.da-active a.da-button,
+body.da-active .da-topbar-tools > a,
+body.da-active .da-topbar-tools button,
+body.da-active .da-topbar-actions > a,
+body.da-active .da-topbar-actions button {
+    font-weight: var(--eod-weight-semibold);
+}
+
+body.da-active .da-field label,
+body.da-active .authority-filter-field label {
+    font-weight: var(--eod-weight-semibold);
+}
+
+body.da-active .da-table thead th,
+body.da-active .authority-table thead th,
+body.da-active .authority-matrix thead th {
+    font-weight: var(--eod-weight-semibold);
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+body.da-active .da-table tbody td,
+body.da-active .authority-table tbody td,
+body.da-active .authority-matrix tbody td {
+    font-weight: var(--eod-weight-regular);
+}
+
+body.da-active .da-status,
+body.da-active .da-chip,
+body.da-active .personnel-category-chip,
+body.da-active .authority-directory-role {
+    font-weight: var(--eod-weight-semibold);
+    letter-spacing: 0;
+}
+
+/* Personnel routes must not fork the shared font stack or create ultra-bold UI. */
+body.da-active .authority-page,
+body.da-active .personnel-management-page,
+body.da-active .authority-page button,
+body.da-active .authority-page input,
+body.da-active .authority-page select,
+body.da-active .authority-page textarea,
+body.da-active .personnel-management-page button,
+body.da-active .personnel-management-page input,
+body.da-active .personnel-management-page select,
+body.da-active .personnel-management-page textarea {
+    font-family: var(--eod-font-ui);
+}
+
+body.da-active .authority-tree-item em,
+body.da-active .authority-right-header th > button,
+body.da-active .authority-right-header .matrix-sticky-name,
+body.da-active .authority-right-header .matrix-sticky-position,
+body.da-active .authority-right-header .matrix-sticky-qualification {
+    font-weight: var(--eod-weight-semibold);
+}
+
+body.da-active .personnel-category b,
+body.da-active .personnel-category-chip,
+body.da-active .authority-cell-marker {
+    font-weight: var(--eod-weight-bold);
+}
+
+/* The operational journal is part of the same corporate interface family. */
+body.da-active .opj-ledger,
+body.da-active .opj-ledger input,
+body.da-active .opj-ledger textarea,
+body.da-active .approved-journal-shell,
+body.da-active .approved-journal-shell input,
+body.da-active .approved-journal-shell textarea,
+body.da-active [data-opj-document-font="true"] {
+    font-family: var(--eod-font-ui);
+}

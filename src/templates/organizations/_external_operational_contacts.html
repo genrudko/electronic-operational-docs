@@ -1,0 +1,20 @@
+{% if contacts %}
+<div class="authority-table-wrap">
+    <table class="authority-table authority-external-directory-table">
+        <thead><tr><th>Организация и сотрудник</th><th>Подразделение / объект</th><th>Роль</th><th>Оперативная область</th><th>Полномочия</th><th>Контакты и доступность</th><th>Срок и основание</th></tr></thead>
+        <tbody>
+            {% for item in contacts %}
+            <tr data-authority-row data-search="{{ item.employee.organization.name }} {{ item.employee.full_name }} {{ item.employee.position.name }} {{ item.employee.division.name }} {{ item.operational_scope }} {{ item.authority_summary }} {{ item.basis_reference }}">
+                <td><span class="authority-primary-value">{{ item.employee.organization.short_name|default:item.employee.organization.name }}</span><a class="authority-secondary-link" href="{% url 'organizations:employee_detail' item.employee.public_id %}">{{ item.employee.full_name }}</a></td>
+                <td><span class="authority-primary-value">{{ item.employee.division.name }}</span><span class="authority-secondary-value">{{ item.employee.position.name }}</span></td>
+                <td><span class="authority-directory-role role-{{ item.relation_kind|lower }}">{{ item.get_relation_kind_display }}</span></td>
+                <td>{{ item.operational_scope|default:'Не указана' }}</td>
+                <td>{{ item.authority_summary|default:'Не указаны' }}</td>
+                <td><span class="authority-primary-value">{{ item.employee.contact_profile.operational_phone|default:item.employee.contact_profile.primary_phone|default:'Телефон не указан' }}</span><span class="authority-secondary-value">{% if item.employee.contact_profile.is_round_the_clock %}Круглосуточно{% else %}{{ item.employee.contact_profile.availability_schedule|default:'График не указан' }}{% endif %}</span></td>
+                <td><span class="authority-primary-value">{{ item.valid_from|date:'d.m.Y' }} — {% if item.valid_until %}{{ item.valid_until|date:'d.m.Y' }}{% else %}без ограничения срока{% endif %}</span><span class="authority-secondary-value">{{ item.basis_reference }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% elif empty_title %}<div class="authority-empty"><strong>{{ empty_title }}</strong></div>{% endif %}

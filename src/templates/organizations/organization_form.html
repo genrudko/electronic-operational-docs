@@ -1,0 +1,27 @@
+{% extends "shared/direction_a/base.html" %}
+{% load static %}
+
+{% block title %}{% if organization %}Редактирование организации{% else %}Новая организация{% endif %} · ЭОД{% endblock %}
+{% block main_class %}authority-main{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'organizations/personnel_management.css' %}?v=pa001m1">{% endblock %}
+
+{% block content %}
+<section class="personnel-management-page">
+    <header class="da-page-header da-page-header-compact">
+        <div><p class="da-source-line"><a href="{% url 'organizations:directory' %}">Сотрудники и подразделения</a> / Организация</p><h1>{% if organization %}{{ organization }}{% else %}Добавление организации{% endif %}</h1><p>Тип организации определяет, в каком контуре отображаются её сотрудники: собственная структура, ДЦ, ЦУС, смежная организация, энергообъект или подрядчик.</p></div>
+        <div class="da-actions"><a class="da-button secondary" href="{% url 'organizations:directory' %}">К справочнику</a></div>
+    </header>
+    <form method="post" class="personnel-form-panel" novalidate>
+        {% csrf_token %}
+        <header><div><h2>Реквизиты организации</h2></div></header>
+        <div class="personnel-form-grid">
+            {% for field in organization_form %}<div class="personnel-field">{{ field.label_tag }}{{ field }}{{ field.errors }}</div>{% endfor %}
+        </div>
+        <header><div><h2>Роль в оперативном справочнике</h2></div></header>
+        <div class="personnel-form-grid">
+            {% for field in profile_form %}<div class="personnel-field{% if field.name == 'directory_scope' %} full-width{% endif %}">{{ field.label_tag }}{{ field }}{{ field.errors }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}</div>{% endfor %}
+        </div>
+        <footer class="personnel-form-footer"><a class="da-button secondary" href="{% url 'organizations:directory' %}">Отмена</a><button class="da-button" type="submit">Сохранить организацию</button></footer>
+    </form>
+</section>
+{% endblock %}

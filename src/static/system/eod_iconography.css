@@ -1,0 +1,167 @@
+/* EOD Outline 24 — shared icon geometry, optical alignment and brand lockup. */
+:root {
+    --eod-icon-stroke: 2;
+    --eod-icon-inline: 16px;
+    --eod-icon-dense: 18px;
+    --eod-icon-control: 20px;
+    --eod-icon-module: 24px;
+}
+
+.ui-icon,
+.eod-icon {
+    display: inline-block;
+    width: var(--eod-icon-dense);
+    height: var(--eod-icon-dense);
+    flex: 0 0 auto;
+    overflow: visible;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: var(--eod-icon-stroke);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    shape-rendering: geometricPrecision;
+    vector-effect: non-scaling-stroke;
+    vertical-align: middle;
+}
+
+.da-navigation > a,
+.da-nav-group-title,
+.da-button,
+.da-topbar-tools > a,
+.da-topbar-tools > button,
+.da-topbar-actions > a,
+.da-topbar-actions > button,
+.eod-icon-label {
+    align-items: center;
+}
+
+.da-navigation .ui-icon {
+    width: var(--eod-icon-dense);
+    height: var(--eod-icon-dense);
+    flex-basis: var(--eod-icon-dense);
+    align-self: center;
+}
+
+.da-button .ui-icon,
+.da-icon-button .ui-icon,
+.da-topbar-tools .ui-icon,
+.da-topbar-actions .ui-icon {
+    width: var(--eod-icon-control);
+    height: var(--eod-icon-control);
+}
+
+.module-icon .ui-icon,
+.hero-icon .ui-icon,
+.eod-module-icon .ui-icon {
+    width: var(--eod-icon-module);
+    height: var(--eod-icon-module);
+}
+
+/* Main EOD mark: fixed palette, theme-aware wordmark. */
+body.da-active .da-brand {
+    min-height: 82px;
+    align-items: center;
+}
+
+body.da-active .da-brand-logo {
+    display: block;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    object-fit: contain;
+}
+
+body.da-active .da-brand-copy {
+    align-content: center;
+    gap: 2px;
+}
+
+body.da-active .da-brand-copy strong {
+    color: var(--da-text);
+    line-height: 1;
+}
+
+body.da-active .da-brand-copy small {
+    max-width: 170px;
+    overflow: visible;
+    color: var(--da-muted);
+    line-height: 1.18;
+    text-overflow: clip;
+    white-space: normal;
+}
+
+/* Dense organization trees use bare semantic glyphs, not decorative tiles. */
+body.da-active .authority-tree-icon {
+    display: grid;
+    width: 22px;
+    height: 22px;
+    place-items: center;
+    align-self: center;
+    border: 0;
+    border-radius: 0;
+    background: transparent !important;
+    color: var(--da-muted) !important;
+}
+
+body.da-active .authority-tree-icon svg {
+    display: block;
+    width: var(--eod-icon-dense);
+    height: var(--eod-icon-dense);
+    stroke-width: var(--eod-icon-stroke);
+}
+
+body.da-active .authority-tree-item:hover .authority-tree-icon,
+body.da-active .authority-tree-item:focus-visible .authority-tree-icon,
+body.da-active .authority-tree-item.is-active .authority-tree-icon {
+    color: var(--da-blue-dark) !important;
+}
+
+body.da-active .authority-inline-icon {
+    display: inline-block;
+    width: var(--eod-icon-dense);
+    height: var(--eod-icon-dense);
+    margin-right: 7px;
+    padding: 0;
+    border-radius: 0;
+    background: transparent !important;
+    color: currentColor !important;
+    vertical-align: middle;
+}
+
+body.da-active .personnel-division-row > svg,
+body.da-active .personnel-directory-relation-heading > svg,
+body.da-active .personnel-contour-icon > svg {
+    display: block;
+    align-self: center;
+    justify-self: center;
+}
+
+/* Category/status chips remain text-first. Icons must not be injected by CSS. */
+body.da-active .personnel-category-chip,
+body.da-active .da-status,
+body.da-active .da-chip {
+    isolation: isolate;
+}
+
+/* Icon-only actions require a stable accessible target. */
+body.da-active .da-icon-button,
+body.da-active [data-icon-only="true"] {
+    display: inline-grid;
+    min-width: 36px;
+    min-height: 36px;
+    place-items: center;
+    padding: 0;
+}
+
+body.da-active .da-icon-button .ui-icon,
+body.da-active [data-icon-only="true"] .ui-icon {
+    margin: 0;
+}
+
+@media (max-width: 620px) {
+    .da-navigation .ui-icon {
+        width: var(--eod-icon-control);
+        height: var(--eod-icon-control);
+        flex-basis: var(--eod-icon-control);
+    }
+}

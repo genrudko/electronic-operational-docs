@@ -1,231 +1,132 @@
-{% extends "base.html" %}
+{% extends "shared/direction_a/base.html" %}
+{% load static %}
 
 {% block title %}Организация и персонал · ЭОД{% endblock %}
+{% block main_class %}authority-main{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'organizations/personnel_management.css' %}?v=pa001m2">
+<link rel="stylesheet" href="{% static 'organizations/personnel_directory.css' %}?v=pa001d2">
+{% endblock %}
 
 {% block content %}
-<section class="page-heading compact presentation-heading">
-    <div>
-        <div class="section-kicker">Организационный справочник</div>
-        <h1>Организация, подразделения и персонал</h1>
-        <p>
-            Презентационная модель организационной принадлежности, обслуживания энергообъектов,
-            оперативной подчинённости и допусков персонала.
-        </p>
-    </div>
-</section>
-
-<section class="profile-card personnel-search-card">
-    <form method="get" class="personnel-search-form">
-        <label for="personnel-search">Поиск сотрудника, должности, подразделения, квалификации или права</label>
-        <div><input id="personnel-search" type="search" name="q" value="{{ query }}" placeholder="Например: IV, переключения, инженер, КВЭС"><button class="button" type="submit">Найти</button>{% if query %}<a class="button secondary" href="{% url 'organizations:directory' %}">Сбросить</a>{% endif %}</div>
-    </form>
-    {% if query %}
-        <div class="personnel-search-results">
-            <div class="section-heading"><div><div class="eyebrow">РЕЗУЛЬТАТЫ ПОИСКА</div><h2>{{ search_results|length }} совпадений</h2></div></div>
-            {% for employee in search_results %}
-                <a class="personnel-search-result" href="{% url 'organizations:employee_detail' employee.public_id %}"><strong>{{ employee.full_name }}</strong><span>{{ employee.position.name }} · {{ employee.division.name }}</span></a>
-            {% empty %}<p class="muted">По запросу «{{ query }}» ничего не найдено.</p>{% endfor %}
-        </div>
-    {% endif %}
-</section>
-
-{% for card in organization_cards %}
-<section class="directory-card organization-overview">
-    <div class="directory-header">
+<span class="nav-menu active" hidden aria-hidden="true"></span>
+<section class="personnel-directory-page">
+    <header class="da-page-header">
         <div>
-            <span class="code-chip technical-only">{{ card.organization.code }}</span>
-            <h2>{{ card.organization.short_name|default:card.organization.name }}</h2>
-            <p>Состав персонала зависит от активного профиля базы данных.</p>
+            <h1>Организация и персонал</h1>
+            <p>Рабочий центр ведения структуры, сотрудников, контактов, квалификаций, оперативных прав и внешних организаций.</p>
         </div>
-        <div class="metric inline">
-            <span>Сотрудников</span>
-            <strong>{{ card.employee_count }}</strong>
+        <div class="da-actions">
+            <a class="da-button" href="{% url 'organizations:employee_create' %}">Добавить сотрудника</a>
+            <a class="da-button secondary" href="{% url 'organizations:organization_create' %}">Добавить организацию</a>
+            <a class="da-button secondary" href="{% url 'organizations:personnel_import_upload' %}">Импорт из XLSX</a>
+            <a class="da-button secondary" href="{% url 'organizations:authority_registry' %}">Матрица прав</a>
         </div>
-    </div>
-</section>
+    </header>
 
-<div class="organization-layout">
-    <section class="profile-card organization-tree-card">
-        <div class="eyebrow">СТРУКТУРНЫЕ ПОДРАЗДЕЛЕНИЯ</div>
-        <h2>Организационная иерархия</h2>
-        <p class="muted">
-            Иерархия показывает административную принадлежность. Обслуживание энергообъектов
-            учитывается отдельными связями и не меняет место подразделения в структуре.
-        </p>
-        <div class="organization-tree">
-            {% for row in card.division_tree %}
-                <article
-                    class="organization-node{% if row.is_center %} center-node{% endif %}{% if row.is_blade_service %} external-service-node{% endif %}"
-                    style="--tree-depth: {{ row.depth }}"
-                >
-                    <div class="organization-node-main">
-                        <span class="technical-only"><code>{{ row.division.code }}</code></span>
-                        <strong>{{ row.division.name }}</strong>
-                        {% if row.is_blade_service %}
-                            <span class="semantic-badge supervision">Отдельное подразделение</span>
-                        {% elif row.is_center %}
-                            <span class="semantic-badge management">Центр эксплуатации</span>
-                        {% endif %}
-                    </div>
-                    {% if row.service_profile %}
-                        <div class="organization-node-note">
-                            {% if row.service_profile.territorial_base %}
-                                Территориальная база: {{ row.service_profile.territorial_base }}.
-                            {% endif %}
-                            {{ row.service_profile.service_scope }}
-                        </div>
-                    {% endif %}
-                    {% if row.is_center and row.direct_employees %}
-                        <div class="organization-node-leadership">
-                            <span>Руководство центра</span>
-                            {% for employee in row.direct_employees %}
-                                <div>
-                                    <strong><a href="{% url 'organizations:employee_detail' employee.public_id %}">{{ employee.full_name }}</a></strong>
-                                    <small>{{ employee.position.name }}</small>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </article>
-            {% empty %}
-                <p class="muted">Подразделения не заведены.</p>
-            {% endfor %}
-        </div>
+    <section class="personnel-directory-summary" aria-label="Сводка справочника">
+        <article><span>Организаций в справочнике</span><strong>{{ organizations|length }}</strong></article>
+        <article><span>Действующих сотрудников</span><strong>{{ total_active_employees }}</strong></article>
+        <article><span>Сотрудников выбранной организации</span><strong>{{ employees|length }}</strong></article>
+        <article><span>Внешних оперативных контактов</span><strong>{{ external_contact_count }}</strong></article>
     </section>
 
-    <section class="profile-card operational-reporting-card">
-        <div class="eyebrow">ОПЕРАТИВНАЯ ПОДЧИНЁННОСТЬ</div>
-        <h2>Непосредственное оперативное руководство</h2>
-        <p class="muted">
-            Эта связь хранится отдельно от административного дерева и от управления оборудованием.
-        </p>
-        {% for line in card.reporting_lines %}
-            <article class="reporting-line-card">
-                <div>
-                    <span>Оперативный руководитель</span>
-                    <strong>{{ line.supervisor.full_name }}</strong>
-                    <small>{{ line.supervisor.position.name }}</small>
-                </div>
-                <div class="reporting-arrow" aria-hidden="true">↓</div>
-                <div>
-                    <span>Подчинённое подразделение</span>
-                    <strong>{{ line.subordinate_division.name }}</strong>
-                    <small>{{ line.get_relation_type_display }}</small>
-                </div>
-            </article>
-        {% empty %}
-            <p class="muted">Оперативная подчинённость не задана.</p>
-        {% endfor %}
+    <section class="personnel-contours" aria-label="Контуры персонала">
+        <a class="personnel-contour-card" href="{% url 'organizations:authority_registry' %}#matrix">
+            <header><span class="personnel-contour-icon"><svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-organization"></use></svg></span><h3>Штатный персонал</h3></header>
+            <p>Структура подразделений, квалификации и опубликованная матрица прав.</p>
+            <div class="personnel-contour-organizations">{% for item in own_organizations %}<span>{{ item.short_name|default:item.name }}</span>{% empty %}<span>Не настроено</span>{% endfor %}</div>
+        </a>
+        <a class="personnel-contour-card" href="{% url 'organizations:authority_registry' %}#dispatch">
+            <header><span class="personnel-contour-icon"><svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-org-operations"></use></svg></span><h3>ОДУ и РДУ</h3></header>
+            <p>Руководство и оперативно-диспетчерский персонал диспетчерских центров.</p>
+            <div class="personnel-contour-organizations">{% for item in dispatch_organizations %}<span>{{ item.short_name|default:item.name }}</span>{% empty %}<span>Не настроено</span>{% endfor %}</div>
+        </a>
+        <a class="personnel-contour-card" href="{% url 'organizations:authority_registry' %}#related">
+            <header><span class="personnel-contour-icon"><svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-org-technical"></use></svg></span><h3>ЦУС и смежные сети</h3></header>
+            <p>Оперативный персонал ЦУС и смежных сетевых организаций.</p>
+            <div class="personnel-contour-organizations">{% for item in related_grid_organizations %}<span>{{ item.short_name|default:item.name }}</span>{% empty %}<span>Не настроено</span>{% endfor %}</div>
+        </a>
+        <a class="personnel-contour-card" href="{% url 'organizations:authority_registry' %}#related">
+            <header><span class="personnel-contour-icon"><svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-org-substation"></use></svg></span><h3>Смежные энергообъекты</h3></header>
+            <p>Оперативные контакты ПС и других объектов, непосредственно связанных с нашей работой.</p>
+            <div class="personnel-contour-organizations">{% for item in related_site_organizations %}<span>{{ item.short_name|default:item.name }}</span>{% empty %}<span>Не настроено</span>{% endfor %}</div>
+        </a>
+        <a class="personnel-contour-card" href="{% url 'organizations:authority_registry' %}#related">
+            <header><span class="personnel-contour-icon"><svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-request"></use></svg></span><h3>Коммерческий ДЦ</h3></header>
+            <p>Руководство и коммерческие диспетчеры с контактами и режимом доступности.</p>
+            <div class="personnel-contour-organizations">{% for item in commercial_organizations %}<span>{{ item.short_name|default:item.name }}</span>{% empty %}<span>Не настроено</span>{% endfor %}</div>
+        </a>
     </section>
-</div>
 
-<section class="profile-card serviced-sites-card">
-    <div class="eyebrow">ЗОНА ОБСЛУЖИВАНИЯ</div>
-    <h2>Энергообъекты и обслуживающие подразделения</h2>
-    <p class="muted">
-        Кочубеевская ВЭС, Кузьминская ВЭС и ПС 330 кВ Барсуки являются энергообъектами,
-        а не подразделениями. Одно подразделение может обслуживать несколько объектов.
-    </p>
-    <div class="site-service-grid">
-        {% for site in card.sites %}
-            <article class="site-service-card">
+    <div class="personnel-directory-workspace">
+        <aside class="personnel-directory-sidebar">
+            <header><div><h2>Иерархия подразделений</h2><p>Эксплуатационный профиль организации</p></div></header>
+            <form class="personnel-organization-select" method="get">
+                <label for="personnel-organization">Организация</label>
+                <select id="personnel-organization" name="organization" onchange="this.form.submit()">
+                    {% for organization in organizations %}<option value="{{ organization.code }}"{% if selected_organization.id == organization.id %} selected{% endif %}>{{ organization.short_name|default:organization.name }}</option>{% endfor %}
+                </select>
+                {% if selected_organization %}<a class="da-button secondary" href="{% url 'organizations:organization_edit' selected_organization.id %}">Редактировать организацию</a>{% endif %}
+            </form>
+            <div class="personnel-division-tree">
+                {% for item in division_tree %}
+                <div class="personnel-division-row" style="--depth: {{ item.depth }}">
+                    <svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#{% if item.is_center %}icon-org-leadership{% elif item.is_separate %}icon-org-maintenance{% else %}icon-org-division{% endif %}"></use></svg>
+                    <strong>{{ item.division.name }}{% if item.is_separate %}<small>Отдельное подразделение</small>{% elif item.is_center %}<small>Центр эксплуатации</small>{% endif %}</strong>
+                    <span>{{ item.division.active_employee_count }}</span>
+                </div>
+                {% empty %}<div class="personnel-directory-empty">Подразделения не созданы.</div>{% endfor %}
+            </div>
+        </aside>
+
+        <main class="personnel-directory-main">
+            <section class="personnel-directory-panel">
                 <header>
-                    <div>
-                        <strong>{{ site.short_name|default:site.name }}</strong>
-                        <small>{{ site.get_site_type_display }}</small>
-                    </div>
-                    <span class="technical-only"><code>{{ site.code }}</code></span>
+                    <div><h2>{{ selected_organization.short_name|default:selected_organization.name|default:'Сотрудники' }}</h2><p>Оперативная подчинённость, закреплённые энергообъекты, квалификации и контакты.</p></div>
+                    <a class="da-button" href="{% url 'organizations:employee_create' %}">Добавить</a>
                 </header>
-                <ul class="service-unit-list">
-                    {% for service in site.servicing_divisions.all %}
-                        <li>
-                            <strong>{{ service.division.name }}</strong>
-                            <span>{{ service.get_service_kind_display }}</span>
-                        </li>
-                    {% empty %}
-                        <li class="muted">Обслуживающие подразделения не назначены.</li>
-                    {% endfor %}
-                </ul>
-            </article>
-        {% empty %}
-            <p class="muted">Энергообъекты не заведены.</p>
-        {% endfor %}
-    </div>
-</section>
+                {% if center_leadership %}<div class="personnel-directory-relation-heading"><strong>Руководство центра</strong><span>{{ center_leadership|length }}</span></div>{% endif %}
+                {% if employees %}
+                <div class="personnel-employee-table-wrap"><table class="personnel-employee-table">
+                    <thead><tr><th>Сотрудник</th><th>Подразделение и должность</th><th>Контакты</th><th>Квалификация</th><th>Права</th><th>Действия</th></tr></thead>
+                    <tbody>
+                        {% for employee in employees %}
+                        <tr>
+                            <td><strong>{{ employee.full_name }}</strong><small>{{ employee.personnel_number }}</small></td>
+                            <td><strong>{{ employee.division.name }}</strong><span>{{ employee.position.name }}</span>{% if employee.workplace %}<small>{{ employee.workplace.name }}</small>{% endif %}</td>
+                            <td><strong>{{ employee.contact_profile.operational_phone|default:employee.contact_profile.primary_phone|default:'Не указан' }}</strong><span>{{ employee.contact_profile.email|default:'' }}</span><small>{% if employee.contact_profile.is_round_the_clock %}Круглосуточно{% else %}{{ employee.contact_profile.availability_schedule|default:'График не указан' }}{% endif %}</small></td>
+                            <td><div class="personnel-qualification-inline">{% for qualification in employee.qualifications.all %}{% if qualification.is_active %}<i>{{ qualification.personnel_category }} · группа {{ qualification.electrical_safety_group }} по электробезопасности</i>{% endif %}{% endfor %}{% for qualification in employee.special_qualifications.all %}{% if qualification.is_active %}<i>{{ qualification.get_kind_display }}: {{ qualification.level }}</i>{% endif %}{% endfor %}</div></td>
+                            <td><strong>{{ employee.operational_rights.all|length }}</strong><span>опубликованных записей</span></td>
+                            <td><div class="personnel-management-actions"><a class="da-button secondary" href="{% url 'organizations:employee_detail' employee.public_id %}">Карточка</a><a class="da-button secondary" href="{% url 'organizations:employee_edit' employee.public_id %}">Изменить</a></div></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table></div>
+                {% else %}<div class="personnel-directory-empty">В выбранной организации нет действующих сотрудников.</div>{% endif %}
+            </section>
 
-<section class="profile-card authorization-card">
-    <div class="eyebrow">ОПЕРАТИВНЫЙ ПЕРСОНАЛ</div>
-    <h2>Допуски к работе на энергообъектах</h2>
-    <p class="muted">
-        Сотрудник хранится один раз. Допуски показывают, на каких объектах он может выполнять
-        соответствующую роль; фактический выход в смену будет учитываться отдельным модулем.
-    </p>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Сотрудник</th>
-                    <th>Роль на объекте</th>
-                    <th>Энергообъекты</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in card.authorization_rows %}
-                    <tr>
-                        <td>
-                            <strong><a href="{% url 'organizations:employee_detail' row.employee.public_id %}">{{ row.employee.full_name }}</a></strong>
-                            <small>{{ row.employee.position.name }}</small>
-                        </td>
-                        <td>{{ row.role }}</td>
-                        <td>
-                            <div class="authorization-sites">
-                                {% for site_name in row.sites %}<span>{{ site_name }}</span>{% endfor %}
-                            </div>
-                        </td>
-                    </tr>
-                {% empty %}
-                    <tr><td colspan="3" class="muted">Допуски не заведены.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</section>
+            <div class="personnel-recent-grid">
+                <section class="personnel-directory-panel">
+                    <header><div><h2>Непосредственное оперативное руководство</h2><p>Хранится отдельно от административной иерархии.</p></div></header>
+                    <div class="personnel-recent-list">{% for line in reporting_lines %}<div class="personnel-recent-row"><span><strong>{{ line.supervisor.full_name }}</strong><span>{{ line.supervisor.position.name }} → {{ line.subordinate_division.name }}</span></span><time>{{ line.get_relation_type_display }}</time></div>{% empty %}<div class="personnel-directory-empty">Оперативная подчинённость не задана.</div>{% endfor %}</div>
+                </section>
+                <section class="personnel-directory-panel">
+                    <header><div><h2>Энергообъекты и обслуживающие подразделения</h2><p>Объект не становится подразделением: связь обслуживания хранится отдельно.</p></div></header>
+                    <div class="personnel-recent-list">{% for row in site_service_rows %}<div class="personnel-recent-row"><span><strong>{{ row.site.short_name|default:row.site.name }}</strong><span>{% for service in row.services %}{{ service.division.name }} — {{ service.get_service_kind_display }}{% if not forloop.last %}; {% endif %}{% endfor %}</span></span><time>{{ row.services|length }}</time></div>{% empty %}<div class="personnel-directory-empty">Связи обслуживания не заданы.</div>{% endfor %}</div>
+                </section>
+            </div>
 
-<details class="technical-disclosure personnel-directory">
-    <summary>Справочник сотрудников · {{ card.employee_count }} записей</summary>
-    <div class="technical-disclosure-body table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Сотрудник</th>
-                    <th>Подразделение</th>
-                    <th>Должность</th>
-                    <th class="technical-only">Табельный номер</th>
-                    <th class="technical-only">Учётная запись</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for employee in card.employees %}
-                    <tr>
-                        <td><a href="{% url 'organizations:employee_detail' employee.public_id %}">{{ employee.full_name }}</a></td>
-                        <td>{{ employee.division.name }}</td>
-                        <td>{{ employee.position.name }}</td>
-                        <td class="technical-only"><code>{{ employee.personnel_number }}</code></td>
-                        <td class="technical-only">
-                            {% if employee.user %}<code>{{ employee.user.username }}</code>{% else %}<span class="muted">не назначена</span>{% endif %}
-                        </td>
-                    </tr>
-                {% empty %}
-                    <tr><td colspan="5" class="muted">Сотрудники не заведены.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+            <section class="personnel-directory-panel">
+                <header><div><h2>Внешние оперативные контакты</h2><p>ОДУ, РДУ, ЦУС, смежные предприятия, энергообъекты и коммерческий ДЦ.</p></div><a class="da-button secondary" href="{% url 'organizations:authority_registry' %}#dispatch">Открыть справочники</a></header>
+                {% if external_contacts %}<div class="personnel-employee-table-wrap"><table class="personnel-employee-table"><thead><tr><th>Организация</th><th>Сотрудник</th><th>Роль</th><th>Область взаимодействия</th><th>Контакт</th></tr></thead><tbody>{% for contact in external_contacts %}<tr><td><strong>{{ contact.employee.organization.short_name|default:contact.employee.organization.name }}</strong></td><td><strong>{{ contact.employee.full_name }}</strong><span>{{ contact.employee.position.name }}</span></td><td>{{ contact.get_relation_kind_display }}</td><td>{{ contact.operational_scope }}</td><td><strong>{{ contact.employee.contact_profile.operational_phone|default:contact.employee.contact_profile.primary_phone|default:'Не указан' }}</strong><small>{% if contact.employee.contact_profile.is_round_the_clock %}Круглосуточно{% else %}{{ contact.employee.contact_profile.availability_schedule }}{% endif %}</small></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="personnel-directory-empty">Внешние оперативные контакты не опубликованы.</div>{% endif %}
+            </section>
+
+            <div class="personnel-recent-grid">
+                <section class="personnel-directory-panel"><header><div><h2>Последние пакеты импорта</h2><p>XLSX preview и публикация</p></div><a class="da-button secondary" href="{% url 'organizations:personnel_import_upload' %}">Импорт</a></header><div class="personnel-recent-list">{% for batch in recent_imports %}<a class="personnel-recent-row" href="{% url 'organizations:personnel_import_detail' batch.public_id %}"><span><strong>{{ batch.uploaded_name }}</strong><span>{{ batch.get_import_kind_display }} · {{ batch.get_status_display }}</span></span><time>{{ batch.created_at|date:'d.m.Y H:i' }}</time></a>{% empty %}<div class="personnel-directory-empty">Пакетов ещё нет.</div>{% endfor %}</div></section>
+                <section class="personnel-directory-panel"><header><div><h2>Последние изменения</h2><p>Неизменяемый журнал ведения справочника</p></div></header><div class="personnel-recent-list">{% for change in recent_changes %}<div class="personnel-recent-row"><span><strong>{{ change.get_action_display }}</strong><span>{% if change.employee %}{{ change.employee.full_name }} · {% endif %}{{ change.reason }}</span></span><time>{{ change.created_at|date:'d.m.Y H:i' }}</time></div>{% empty %}<div class="personnel-directory-empty">Изменений ещё нет.</div>{% endfor %}</div></section>
+            </div>
+        </main>
     </div>
-</details>
-{% empty %}
-<section class="empty-state">
-    <h2>Организации ещё не созданы</h2>
-    <p>В презентационном профиле пока нет организационных данных.</p>
 </section>
-{% endfor %}
 {% endblock %}

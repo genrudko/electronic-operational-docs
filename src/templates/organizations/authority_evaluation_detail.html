@@ -1,0 +1,151 @@
+{% extends "shared/direction_a/base.html" %}
+{% load static authority_presentation %}
+
+{% block title %}Результат проверки полномочий · {{ evaluation.actor.full_name }} · ЭОД{% endblock %}
+{% block main_class %}authority-main{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'organizations/personnel_authority.css' %}?v=pa001r1">
+{% endblock %}
+
+{% block content %}
+<section class="authority-page">
+    <header class="da-page-header da-page-header-compact">
+        <div class="authority-page-header-copy">
+            <p class="da-source-line"><a href="{% url 'organizations:authority_registry' %}#checks">История проверок</a> / Результат</p>
+            <h1>Результат проверки полномочий</h1>
+        </div>
+        <div class="da-actions">
+            <a class="da-button secondary" href="{% url 'organizations:employee_detail' evaluation.actor.public_id %}">Карточка сотрудника</a>
+            <a class="da-button secondary" href="{% url 'organizations:authority_registry' %}#checks">К истории проверок</a>
+        </div>
+    </header>
+
+    <section class="authority-decision-hero {{ evaluation.decision|authority_decision_tone }}">
+        <span class="authority-decision-marker" aria-hidden="true"></span>
+        <div>
+            <span class="authority-status {{ evaluation.decision|authority_decision_tone }}">{{ evaluation.get_decision_display }}</span>
+            <h2>{{ evaluation.decision|authority_decision_heading }}</h2>
+            <p>{{ evaluation.decision|authority_decision_explanation }}</p>
+        </div>
+        <div class="authority-decision-time">
+            Проверено<br><strong>{{ evaluation.occurred_at|date:"d.m.Y H:i:s" }}</strong>
+        </div>
+    </section>
+
+    <div class="authority-detail-grid">
+        <section class="authority-panel">
+            <div class="authority-panel-heading">
+                <div>
+                    <h2>Что проверялось</h2>
+                    <p>Сотрудник, действие, объект и область на указанный момент времени.</p>
+                </div>
+            </div>
+            <dl class="authority-info-list">
+                <dt>Сотрудник</dt>
+                <dd><a href="{% url 'organizations:employee_detail' evaluation.actor.public_id %}">{{ evaluation.actor.full_name }}</a> · {{ evaluation.actor.position.name }}</dd>
+                <dt>Действие</dt><dd>{{ evaluation.action_code|authority_action_label }}</dd>
+                <dt>Объект проверки</dt><dd>{{ evaluation.subject_id|authority_subject_label }}</dd>
+                <dt>Область действия</dt><dd>{{ evaluation.scope_label|default:evaluation.scope_reference }} · {{ evaluation.get_scope_kind_display }}</dd>
+                <dt>Организация</dt><dd>{{ evaluation.organization.name }}</dd>
+                <dt>Момент действия</dt><dd>{{ evaluation.occurred_at|date:"d.m.Y H:i:s" }}</dd>
+            </dl>
+        </section>
+
+        <section class="authority-panel">
+            <div class="authority-panel-heading">
+                <div>
+                    <h2>Почему получен такой результат</h2>
+                    <p>Проверенные условия в понятной для пользователя форме.</p>
+                </div>
+            </div>
+            <ul class="authority-reason-list">
+                {% for reason in evaluation.reasons %}
+                    <li>{{ reason|authority_reason_label }}</li>
+                {% empty %}
+                    <li>Дополнительные причины не зафиксированы.</li>
+                {% endfor %}
+            </ul>
+        </section>
+    </div>
+
+    <section class="authority-panel">
+        <div class="authority-panel-heading">
+            <div>
+                <h2>Право и документ-основание</h2>
+                <p>Сведения, по которым система сопоставляла действие сотрудника.</p>
+            </div>
+        </div>
+        {% if evaluation.matched_grant %}
+        <dl class="authority-info-list">
+            <dt>Предоставленное право</dt><dd>{{ evaluation.matched_grant.right_definition.name }}</dd>
+            <dt>Разрешённое действие</dt><dd>{{ evaluation.matched_grant.action_code|authority_action_label }}</dd>
+            <dt>Документ-основание</dt><dd>{{ evaluation.matched_grant.basis_reference|authority_basis_label }}</dd>
+            <dt>Состояние основания</dt><dd><span class="authority-status {{ evaluation.matched_grant.basis_status|authority_basis_tone }}">{{ evaluation.matched_grant.get_basis_status_display }}</span></dd>
+            <dt>Срок действия права</dt><dd>{{ evaluation.matched_grant.valid_from|date:"d.m.Y H:i" }} — {% if evaluation.matched_grant.valid_until %}{{ evaluation.matched_grant.valid_until|date:"d.m.Y H:i" }}{% else %}без ограничения срока{% endif %}</dd>
+            <dt>Область права</dt><dd>{{ evaluation.matched_grant.scope_label|default:evaluation.matched_grant.scope_reference }}</dd>
+        </dl>
+        {% else %}
+        <div class="authority-empty">
+            <strong>Подходящее предоставленное право не найдено</strong>
+            <span>Система сохранила проверенные сведения и причину отказа для последующего разбора.</span>
+        </div>
+        {% endif %}
+    </section>
+
+    {% if evaluation.snapshot.external_engagement %}
+    <section class="authority-panel">
+        <div class="authority-panel-heading">
+            <div>
+                <h2>Допуск внешнего персонала</h2>
+                <p>Связь направляющей и принимающей организаций на момент действия.</p>
+            </div>
+        </div>
+        <dl class="authority-info-list">
+            <dt>Вид персонала</dt><dd>Подрядный или командированный персонал</dd>
+            <dt>Организация сотрудника</dt><dd>{{ evaluation.actor.organization.name|default:evaluation.snapshot.external_engagement.home_organization_id }}</dd>
+            <dt>Документ-основание</dt><dd>{{ evaluation.snapshot.external_engagement.basis_reference|authority_basis_label }}</dd>
+            <dt>Состояние основания</dt><dd>{% if evaluation.snapshot.external_engagement.basis_status == "CONFIRMED" %}Подтверждено{% else %}Требует проверки{% endif %}</dd>
+        </dl>
+    </section>
+    {% endif %}
+
+    <section class="authority-panel">
+        <div class="authority-panel-heading">
+            <div>
+                <h2>Фиксация результата</h2>
+                <p>Кто и когда сохранил результат проверки.</p>
+            </div>
+        </div>
+        <dl class="authority-info-list">
+            <dt>Зафиксировано</dt><dd>{{ evaluation.created_at|date:"d.m.Y H:i:s" }}</dd>
+            <dt>Ответственный</dt><dd>{% if evaluation.recorded_by %}{{ evaluation.recorded_by.full_name }}{% else %}Автоматическая фиксация{% endif %}</dd>
+            <dt>Предыдущий результат</dt>
+            <dd>
+                {% if evaluation.previous_evaluation %}
+                    <a href="{% url 'organizations:authority_evaluation_detail' evaluation.previous_evaluation.public_id %}">{{ evaluation.previous_evaluation.occurred_at|date:"d.m.Y H:i:s" }} · {{ evaluation.previous_evaluation.get_decision_display }}</a>
+                {% else %}
+                    Нет
+                {% endif %}
+            </dd>
+        </dl>
+    </section>
+
+    <details class="authority-technical-disclosure">
+        <summary>Технические сведения и неизменяемый снимок проверки</summary>
+        <div class="authority-technical-body">
+            <p>
+                Раздел предназначен для аудита и диагностики. Он содержит внутренние коды,
+                идентификаторы, контрольную сумму и полный набор фактов на момент проверки.
+            </p>
+            <dl class="authority-info-list">
+                <dt>Внутренний код действия</dt><dd><code>{{ evaluation.action_code }}</code></dd>
+                <dt>Тип объекта</dt><dd><code>{{ evaluation.subject_type }}</code></dd>
+                <dt>Идентификатор объекта</dt><dd><code>{{ evaluation.subject_id }}</code></dd>
+                <dt>Контрольная сумма</dt><dd><code>{{ evaluation.digest }}</code></dd>
+                <dt>Идентификатор права</dt><dd>{% if evaluation.matched_grant %}<code>{{ evaluation.matched_grant.public_id }}</code>{% else %}Нет{% endif %}</dd>
+            </dl>
+            <pre><code>{{ snapshot_json }}</code></pre>
+        </div>
+    </details>
+</section>
+{% endblock %}

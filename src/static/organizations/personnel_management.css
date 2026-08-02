@@ -1,0 +1,392 @@
+/* PERSONNEL-AUTHORITY-001 create, edit and import workflows. */
+.personnel-management-page {
+    display: grid;
+    gap: 14px;
+}
+
+.personnel-management-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.personnel-form-panel,
+.personnel-record-panel,
+.personnel-import-panel {
+    overflow: hidden;
+    border: 1px solid var(--da-border);
+    border-radius: var(--da-radius);
+    background: var(--da-surface);
+}
+
+.personnel-form-panel > header,
+.personnel-record-panel > header,
+.personnel-import-panel > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 13px 15px;
+    border-bottom: 1px solid var(--da-border);
+    background: var(--da-surface-soft);
+}
+
+.personnel-form-panel h2,
+.personnel-record-panel h2,
+.personnel-import-panel h2 {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.personnel-form-panel header p,
+.personnel-record-panel header p,
+.personnel-import-panel header p {
+    margin: 3px 0 0;
+    color: var(--da-muted);
+    font-size: 0.69rem;
+}
+
+.personnel-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    padding: 15px;
+}
+
+.personnel-form-grid.three-columns {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.personnel-field {
+    display: grid;
+    align-content: start;
+    gap: 5px;
+    min-width: 0;
+}
+
+.personnel-field.full-width {
+    grid-column: 1 / -1;
+}
+
+.personnel-field label {
+    color: var(--da-text);
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+.personnel-field input,
+.personnel-field select,
+.personnel-field textarea {
+    width: 100%;
+    min-height: 38px;
+    padding: 8px 10px;
+    border: 1px solid var(--da-border-strong);
+    border-radius: var(--da-radius-sm);
+    background: var(--da-surface);
+    color: var(--da-text);
+    font: inherit;
+    font-size: 0.74rem;
+}
+
+.personnel-field textarea {
+    min-height: 70px;
+    resize: vertical;
+}
+
+.personnel-field input[type="checkbox"] {
+    width: 18px;
+    min-height: 18px;
+}
+
+.personnel-field .helptext,
+.personnel-field small {
+    color: var(--da-muted);
+    font-size: 0.63rem;
+    line-height: 1.35;
+}
+
+.personnel-field .errorlist,
+.personnel-form-errors {
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 7px;
+    background: var(--da-red-soft);
+    color: var(--da-red);
+    font-size: 0.67rem;
+    list-style: none;
+}
+
+.personnel-form-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 15px;
+    border-top: 1px solid var(--da-border);
+}
+
+.personnel-editor-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 310px;
+    align-items: start;
+    gap: 14px;
+}
+
+.personnel-editor-sidebar {
+    display: grid;
+    gap: 12px;
+    position: sticky;
+    top: 12px;
+}
+
+.personnel-editor-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 12px;
+}
+
+.personnel-editor-summary div {
+    display: grid;
+    gap: 3px;
+    padding: 10px;
+    border-radius: 8px;
+    background: var(--da-surface-soft);
+}
+
+.personnel-editor-summary span {
+    color: var(--da-muted);
+    font-size: 0.62rem;
+}
+
+.personnel-editor-summary strong {
+    color: var(--da-text);
+    font-size: 1rem;
+}
+
+.personnel-record-list {
+    display: grid;
+}
+
+.personnel-record-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) minmax(180px, 0.8fr) minmax(170px, 0.7fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 13px;
+    border-bottom: 1px solid var(--da-border);
+    font-size: 0.69rem;
+}
+
+.personnel-record-row:last-child {
+    border-bottom: 0;
+}
+
+.personnel-record-row strong,
+.personnel-record-row span,
+.personnel-record-row small {
+    display: block;
+}
+
+.personnel-record-row small {
+    margin-top: 3px;
+    color: var(--da-muted);
+}
+
+.personnel-record-row.is-inactive {
+    opacity: 0.58;
+}
+
+.personnel-record-empty {
+    padding: 24px 14px;
+    color: var(--da-muted);
+    font-size: 0.72rem;
+    text-align: center;
+}
+
+.personnel-history-list {
+    display: grid;
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.personnel-history-row {
+    display: grid;
+    gap: 4px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--da-border);
+}
+
+.personnel-history-row strong {
+    font-size: 0.68rem;
+}
+
+.personnel-history-row span,
+.personnel-history-row time {
+    color: var(--da-muted);
+    font-size: 0.62rem;
+}
+
+.personnel-danger-panel {
+    border-color: color-mix(in srgb, var(--da-red) 45%, var(--da-border));
+}
+
+.personnel-import-intro {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.personnel-template-card {
+    display: grid;
+    gap: 8px;
+    padding: 14px;
+    border: 1px solid var(--da-border);
+    border-radius: var(--da-radius);
+    background: var(--da-surface);
+}
+
+.personnel-template-card h3,
+.personnel-template-card p {
+    margin: 0;
+}
+
+.personnel-template-card h3 {
+    font-size: 0.82rem;
+}
+
+.personnel-template-card p {
+    color: var(--da-muted);
+    font-size: 0.68rem;
+    line-height: 1.45;
+}
+
+.personnel-import-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--da-border);
+}
+
+.personnel-import-summary div {
+    display: grid;
+    gap: 3px;
+    padding: 10px;
+    border-radius: 8px;
+    background: var(--da-surface-soft);
+}
+
+.personnel-import-summary span {
+    color: var(--da-muted);
+    font-size: 0.62rem;
+}
+
+.personnel-import-summary strong {
+    font-size: 1rem;
+}
+
+.personnel-import-table-wrap {
+    overflow: auto;
+}
+
+.personnel-import-table {
+    width: 100%;
+    min-width: 1200px;
+    border-collapse: collapse;
+}
+
+.personnel-import-table th,
+.personnel-import-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--da-border);
+    vertical-align: top;
+    font-size: 0.67rem;
+    text-align: left;
+}
+
+.personnel-import-table th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--da-surface-soft);
+    color: var(--da-muted);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+}
+
+.personnel-import-table tr.has-error td {
+    background: var(--da-red-soft);
+}
+
+.personnel-import-table .row-action {
+    display: inline-flex;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: var(--da-blue-soft);
+    color: var(--da-blue-dark);
+    font-size: 0.6rem;
+    font-weight: 850;
+}
+
+.personnel-import-table .row-action.update {
+    background: var(--da-orange-soft);
+    color: var(--da-orange);
+}
+
+.personnel-import-errors {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    padding-left: 16px;
+    color: var(--da-red);
+}
+
+.personnel-batch-list {
+    display: grid;
+}
+
+.personnel-batch-row {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) 180px 150px 150px auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 13px;
+    border-bottom: 1px solid var(--da-border);
+    color: var(--da-text);
+    font-size: 0.68rem;
+    text-decoration: none;
+}
+
+.personnel-batch-row:hover {
+    background: var(--da-surface-soft);
+}
+
+@media (max-width: 1050px) {
+    .personnel-editor-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .personnel-editor-sidebar {
+        position: static;
+    }
+
+    .personnel-form-grid.three-columns,
+    .personnel-form-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+    .personnel-form-grid,
+    .personnel-form-grid.three-columns,
+    .personnel-import-intro,
+    .personnel-import-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .personnel-record-row,
+    .personnel-batch-row {
+        grid-template-columns: 1fr;
+    }
+}

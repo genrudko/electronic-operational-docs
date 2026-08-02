@@ -1,0 +1,60 @@
+.personnel-import-selection-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--da-border);
+    background: var(--da-surface-soft);
+}
+
+.personnel-import-selection-tools label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--da-text);
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+.personnel-import-groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--da-border);
+}
+
+.personnel-import-groups label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 9px;
+    border: 1px solid var(--da-border);
+    border-radius: 999px;
+    background: var(--da-surface);
+    color: var(--da-text);
+    font-size: 0.66rem;
+    cursor: pointer;
+}
+
+.personnel-import-groups label:hover {
+    border-color: var(--da-blue);
+    background: var(--da-blue-soft);
+}
+
+.personnel-import-groups span {
+    min-width: 20px;
+    padding: 2px 5px;
+    border-radius: 999px;
+    background: var(--da-surface-soft);
+    color: var(--da-muted);
+    text-align: center;
+}
+
+@media (max-width: 760px) {
+    .personnel-import-selection-tools {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}

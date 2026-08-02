@@ -1,37 +1,297 @@
 # PERSONNEL-AUTHORITY — module contract
 
 ## MODULE ID
-`PERSONNEL-AUTHORITY` — Персонал и оперативные полномочия.
+
+`PERSONNEL-AUTHORITY` — персонал и оперативные полномочия.
 
 ## НАЗНАЧЕНИЕ
-Лица, должности, квалификации, подрядчики и operational rights с scope, validity, basis и immutable snapshot.
+
+Модуль хранит организационную структуру, штатный персонал, квалификацию,
+опубликованные права и точные условия их применения, отдельные контуры внешнего
+оперативного взаимодействия и подрядного персонала, а также объяснимую проверку
+полномочия на момент действия.
 
 ## КРИТИЧЕСКИЕ СЦЕНАРИИ
-выдать право на объект/срок · проверить право в момент действия · учесть замещение/подрядчика · сохранить authority snapshot.
+
+- вручную создать или изменить карточку сотрудника без потери истории;
+- создать недостающее подразделение, должность или рабочее место прямо из
+  карточки, не переходя в техническую admin-панель;
+- пакетно загрузить XLSX, проверить дубликаты и опубликовать выбранные строки;
+- опубликовать утверждённую редакцию списка лиц с предоставлением прав;
+- увидеть полный профиль прав сотрудника в структуре подразделений;
+- определить всех лиц, которым предоставлено выбранное право;
+- увидеть точный текст условия, пункт документа и источник для `+1`, `+2` или
+  иного условного marker;
+- учесть квалификацию по электробезопасности, категорию РЗА, область и срок;
+- вести руководство и оперативный/диспетчерский персонал ОДУ, РДУ, ЦУС,
+  смежной организации, смежного энергообъекта и коммерческого ДЦ отдельно от
+  штатной матрицы и подрядного допуска;
+- проверить полномочие в момент действия и сохранить объяснимый результат;
+- учесть только явно ограниченное замещение.
 
 ## PRIMARY FACTS / DERIVED VIEWS
-Facts: person/history; position/category; qualification/group; granted right; scope/validity/basis; substitution. Views: lists of rights; person card; allow/deny result; history.
+
+Primary facts:
+
+- организация, вид её отношения к держателю справочника, иерархия
+  подразделений, рабочее место и сотрудник;
+- административная иерархия, отдельная оперативная подчинённость и связь
+  подразделения с обслуживаемым энергообъектом;
+- рабочие контакты и режим доступности сотрудника;
+- квалификация по электробезопасности: категория персонала, группа, класс
+  напряжения и область электроустановок;
+- самостоятельные специальные квалификации: категория РЗА, группа допуска к
+  работам на высоте, допуск к работам под напряжением и иные виды;
+- опубликованная редакция списка лиц с предоставлением прав;
+- положительная ячейка матрицы `EmployeeOperationalRight` с marker, scope,
+  validity, source reference, source hash и source row;
+- `OperationalRightConditionDetail`: точное условие, пункт документа, источник
+  и признак достаточности расшифровки;
+- машинная проекция опубликованной ячейки `OperationalAuthorityGrant` для
+  action-time evaluator;
+- внешний оперативный контакт, подрядный допуск, ограниченное замещение и
+  результат проверки;
+- пакет импорта и append-only история ручных/пакетных изменений.
+
+Derived views:
+
+- дерево подразделений и матрица прав штатного персонала;
+- представление «кто имеет право»;
+- полный профиль и экран редактирования сотрудника;
+- рабочий центр `/organization/` для структуры, персонала, оперативной
+  подчинённости, энергообъектов, внешних контактов, импортов и истории;
+- реестры ОДУ/РДУ, ЦУС, смежных организаций/объектов, коммерческого ДЦ и
+  подрядного персонала;
+- предварительный просмотр XLSX с CREATE/UPDATE/error и выбором строк/блоков;
+- `ALLOW / DENY / VERIFY`, причины и неизменяемый снимок проверки.
+
+## PUBLICATION CONTRACT
+
+Утверждённая редакция матрицы является документом предоставления прав штатному
+персоналу. Для действующей редакции:
+
+- `+` означает предоставленное право без дополнительного условия;
+- `+1`, `+2` и иной положительный индекс означают предоставленное право с
+  обязательным дополнительным условием;
+- в принятой форме `+1` относится к пункту 5.4, а `+2` — к пункту 5.13 Правил
+  по охране труда при эксплуатации электроустановок, утверждённых приказом
+  Минтруда России от 15.12.2020 № 903н;
+- для иного индекса пользователь обязан указать точный текст и источник;
+  неизвестное условие отображается как «не расшифровано — требуется проверка»,
+  а не заменяется убедительно звучащей выдуманной формулировкой;
+- пустая ячейка или `-` не предоставляет право;
+- строка сотрудника, колонка права, marker, condition, scope, validity и
+  документ-основание образуют структурированный факт предоставления;
+- `OperationalAuthorityGrant` не является вторым независимым назначением: он
+  материализуется из опубликованной ячейки и ссылается на неё через
+  `source_operational_right`;
+- условное право участвует в проверке и возвращает `VERIFY`, пока указанное
+  условие нельзя подтвердить автоматически.
+
+Изменение опубликованного права или квалификации не переписывает запись на
+месте: прежняя редакция закрывается, а новая создаётся с новым периодом и
+основанием. Старые проверки продолжают ссылаться на прежний snapshot.
+
+## PERSONNEL MANAGEMENT CONTRACT
+
+Ручной контур поддерживает create/edit/deactivate для существующих и новых
+карточек. Редактируются организация, подразделение, должность, рабочее место,
+контакты, режим доступности, квалификации, специальные допуски, права, scope,
+validity, condition и basis. Физическое удаление карточки и audit trail
+запрещено; прекращение работы выполняется деактивацией.
+
+Поля подразделения, должности и рабочего места не могут быть тупиковыми пустыми
+select. Пользователь выбирает существующее значение либо вводит новое в той же
+форме; новое значение получает детерминированный внутренний code и принадлежит
+выбранной организации.
+
+Пакетный импорт выполняется только как:
+
+```text
+XLSX upload
+  → parse and validate
+  → duplicate matching
+  → preview CREATE / UPDATE / ERROR
+  → selection of rows or organizational blocks
+  → explicit publication
+  → immutable change records
+```
+
+Поддерживаются два нормализованных шаблона: матрица штатного персонала и внешний
+оперативный справочник. Повторный файл определяется по SHA-256. Отсутствие лица
+в новой загрузке не деактивирует существующую карточку автоматически. Реальные
+XLSX и персональные данные не сохраняются в Git.
 
 ## РОЛИ И ПОЛНОМОЧИЯ
-application role отделена от operational right · server-side action-time evaluation.
+
+Application role, должность, категория персонала, квалификация, объектовый
+допуск и опубликованное operational right разделены. Должность или роль
+приложения сами по себе не дают `ALLOW`. Проверка выполняется server-side по
+фактам, действовавшим в момент действия.
 
 ## ДОКУМЕНТЫ И LEGAL MODE
-Knowledge check, instruction and PEP are separate evidence objects.
+
+Утверждённая редакция списка лиц и документ, которым она введена, являются
+основанием публикации прав штатного персонала. Текст дополнительного условия и
+его normative source являются частью опубликованного факта. Knowledge check,
+инструктаж, подтверждение предметного действия и authority evaluation остаются
+разными evidence objects. Результат проверки полномочия не заменяет
+`EvidenceEvent` предметного действия и не объявляет сам по себе юридическую
+значимость.
+
+## EXTERNAL PERSONNEL
+
+Не смешиваются три разных контура:
+
+1. штатная матрица организации;
+2. внешний оперативный справочник: руководство, диспетчерский/оперативный
+   персонал ОДУ/РДУ, ЦУС, смежных организаций и энергообъектов, коммерческий ДЦ;
+3. подрядный или командированный персонал с временным home→host допуском.
+
+Для внешнего оперативного контакта фиксируются home organization, host
+organization, relation kind, подразделение или объект, контакты, schedule,
+operational scope, authority summary, validity и basis. При импорте широкого
+списка пользователь выбирает нужные блоки и строки; все лица источника
+автоматически не публикуются.
+
+## PERSISTENCE / EVIDENCE CONTRACT
+
+- `EmployeeContactProfile` — рабочие контакты и доступность.
+- `OrganizationOperationalProfile` — роль организации в справочнике.
+- `EmployeeQualification` — категория и группа по электробезопасности.
+- `EmployeeSpecialQualification` — отдельная шкала РЗА/высоты/спецдопуска.
+- `EmployeeOperationalRight` — опубликованное право штатного сотрудника и
+  traceable source fact одновременно.
+- `OperationalRightConditionDetail` — точное условие, пункт и источник;
+  one-to-one к опубликованному right.
+- `OperationalAuthorityGrant` — нормализованная action/scope-проекция для
+  evaluator; для штатной матрицы обязательна ссылка на source right.
+- `ExternalOperationalContact` — диспетчерское/оперативное взаимодействие со
+  смежной организацией или объектом.
+- `ExternalPersonnelEngagement` — допуск подрядного или командированного лица.
+- `OperationalAuthoritySubstitution` — только явно перечисленные actions/scope;
+  автоматическое копирование всех прав запрещено.
+- `PersonnelImportBatch` — SHA-256, preview, errors, author and publication.
+- `PersonnelChangeRecord` append-only; physical delete and in-place update are
+  prohibited.
+- `AuthorityEvaluationRecord` append-only; исправление создаёт новый связанный
+  record.
+- Snapshot и SHA-256 используют принятый normative-evidence canonicalization
+  contract; secret-like keys запрещены.
 
 ## СВЯЗИ
-потребляется всеми controlled actions · использует MASTER-DATA/NORMATIVE-EVIDENCE.
+
+Модуль использует `MASTER-DATA` для организации, сотрудников, подразделений,
+оперативной подчинённости и энергообъектов и `NORMATIVE-EVIDENCE` для
+прослеживаемости оснований и неизменяемых снимков. Результат будет потребляться
+controlled actions последующих OPJ, SHIFT, DEFECT, work-permit и switching
+модулей, но такие связи в этом work item не подключаются.
 
 ## SOURCE IDS / BENCHMARK
-`REF-OD-051`, `REF-OD-052`, `REF-OD-053`, `SRC-DEC-STAGE2`. Decisions: targeted benchmark по work item.
+
+`REF-OD-051`, `REF-OD-052`, `REF-OD-053`, `SRC-DEC-STAGE2`.
+Утверждённые пользовательские таблицы и списки использованы для восстановления
+структуры данных, видов внешних контуров, сокращений и условий `+1/+2`.
+Реальные ФИО, телефоны, локальные акты и workbook в Git не помещаются.
+
+## USER EXPERIENCE CONTRACT
+
+Основное представление — не плоский список grants, а иерархическая матрица:
+
+```text
+организация
+  └─ подразделение
+      └─ подчинённое подразделение
+          └─ сотрудник × колонки опубликованных прав
+```
+
+Обязательны sticky identity columns, выровненный grouped rights header,
+читаемая единая типографика, сворачивание дерева, поиск, фильтры по
+категории/группе/праву, marker states и переход в карточку сотрудника. Группа
+всегда подписывается как «группа по электробезопасности».
+
+Легенда не является отдельным дешёвым раскрывающимся блоком: она встроена под
+дерево и содержит цветовые метки АТП, ОП, ОРП, РП, АТП/ОП и расшифровку
+`+ / +1 / +2 / иной индекс / —`. Подразделения используют семантические иконки
+руководства, оперативного персонала, ТОиР, РЗА, ВЭУ, подстанции и технических
+служб. Точное условие доступно из ячейки, в «Кто имеет право» и в карточке.
+
+`/organization/` является Direction A management workspace, а не техническим
+списком моделей. Он сохраняет административную структуру, отдельные
+подразделения, руководство центра, непосредственное оперативное руководство и
+связи подразделений с Кочубеевской/Кузьминской ВЭС и ПС 330 кВ Барсуки.
+
+Редактор карточки доступен из пользовательского интерфейса, а не через
+параллельную technical admin-panel. XLSX preview показывает совпадения, ошибки,
+новые и изменяемые карточки и позволяет выбирать подразделения/объекты или
+отдельные строки до публикации. Технические IDs и snapshot скрыты в audit
+section.
+
+Все экраны Direction A используют единый canonical interface font stack;
+моноширинный шрифт сохраняется только для code/audit, а печатная форма журнала
+продолжает использовать собственную настраиваемую document typography.
 
 ## DEMO / POST-DEMO
-`DEMO-BOUNDED`: personnel/qualifications; rights/scope/validity; contractors/seconded; action-time snapshot. Post-demo: HR/AD integration; automatic external grants.
 
-## CURRENT CODE STATUS / CAPABILITIES
-`ABSENT`; release `NOT_STARTED`. `CAP-PERSONNEL-REGISTRY` (NOT_STARTED/ABSENT; PERSONNEL-AUTHORITY-001; AC-PERSONNEL-REGISTRY-001), `CAP-AUTHORITY-GRANTS` (NOT_STARTED/ABSENT; PERSONNEL-AUTHORITY-001; AC-AUTHORITY-GRANTS-001), `CAP-AUTHORITY-ACTION-TIME` (NOT_STARTED/ABSENT; PERSONNEL-AUTHORITY-001; AC-AUTHORITY-ACTION-TIME-001), `CAP-AUTHORITY-EXTERNAL` (NOT_STARTED/ABSENT; PERSONNEL-AUTHORITY-001; AC-AUTHORITY-EXTERNAL-001)
+`DEMO-BOUNDED`: 17 синтетических штатных сотрудников в иерархии, 22 вида прав,
+более 100 положительных ячеек, linked evaluator projections, категории РЗА,
+синтетические справочники ОДУ Юга, Северокавказского РДУ, СК ПМЭС, ПС 500 кВ
+Невинномысск и КДЦ ВЭС, отдельный contractor scenario и результаты
+`ALLOW / DENY / VERIFY`.
+
+Management candidate предоставляет ручной create/edit/deactivate, XLSX
+templates, preview/publish, exact condition details, special qualifications и
+external operational contacts без загрузки реальных персональных данных.
+
+Post-demo: controlled publication реальных редакций, history diff, granular
+withdrawal, production import profiles для конкретных форм ОДУ/РДУ/ПМЭС/КДЦ,
+HR/AD/СКУД integration и downstream action requirements.
 
 ## DEPENDENCIES / UX CONTRACT
-Dependencies: `MASTER-DATA`, `NORMATIVE-EVIDENCE`. Direction A; 1440×900, 1024×768, 390×844; loading/empty/error/readonly/long-data.
+
+Dependencies: `MASTER-DATA`, `NORMATIVE-EVIDENCE`. Direction A; основной UX —
+организационное дерево и матрица, отдельные режимы «Кто имеет право», ОДУ/РДУ,
+ЦУС/смежные объекты, подрядный персонал, карточка/редактор, management workspace,
+import preview и история проверок. Проверяются populated/empty/error,
+create/update/deactivate, manual catalog creation, duplicate match,
+plain/conditional markers, exact condition source, hierarchy, operational
+reporting, site service, RZA, internal/external, light/dark и responsive states.
+
+## CURRENT CODE STATUS / CAPABILITIES
+
+`IMPLEMENTED-CANDIDATE`; release `IN_PROGRESS`; active work item
+`PERSONNEL-AUTHORITY-001`, issue #42, Draft PR #43.
+
+- `CAP-PERSONNEL-REGISTRY`: hierarchy, reporting lines, site service, contacts,
+  qualification, management workspace, profile and create/edit/deactivate;
+  `AC-PERSONNEL-REGISTRY-001` — candidate.
+- `CAP-AUTHORITY-GRANTS`: published cell → exact condition detail → linked
+  evaluator projection and versioned edit; `AC-AUTHORITY-GRANTS-001` — candidate.
+- `CAP-AUTHORITY-ACTION-TIME`: explainable `ALLOW / DENY / VERIFY`, append-only
+  snapshot, digest and correction link; `AC-AUTHORITY-ACTION-TIME-001` —
+  candidate.
+- `CAP-AUTHORITY-EXTERNAL`: separate external operational directory,
+  contractor engagement and bounded substitution; `AC-AUTHORITY-EXTERNAL-001`
+  — candidate.
+- controlled personnel XLSX preview/publish is implemented inside the bounded
+  registry capability and does not replace the general imports module.
 
 ## OPEN VERIFY ITEMS / FORBIDDEN ASSUMPTIONS
-VERIFY: right catalog; employment/substitution semantics; local grant acts. Forbidden: не смешивать app role и operational right; не разрешать только по должности.
+
+VERIFY: production catalog of right columns; authoritative text for every
+future conditional marker beyond confirmed `+1/+2`; authoritative current
+height groups; current production RZA assignments; source-specific header
+mapping for each production list; downstream action requirements.
+
+Forbidden:
+
+- считать application role или должность operational right;
+- создавать второе ручное назначение поверх опубликованной матрицы;
+- автоматически переносить все права при замещении;
+- автоматически публиковать все лица широкого внешнего списка;
+- смешивать штатную матрицу, внешний operational directory и подрядный допуск;
+- скрывать или выдумывать неизвестное дополнительное условие;
+- удалять карточку или историю физически;
+- объявлять `VERIFY` разрешением;
+- подключать OPJ/SHIFT/DEFECT/work-permit/switching lifecycles в этом PR;
+- писать в preview или выполнять merge без команды пользователя.

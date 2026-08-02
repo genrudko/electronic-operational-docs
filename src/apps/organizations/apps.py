@@ -7,4 +7,20 @@ class OrganizationsConfig(AppConfig):
     verbose_name = "Организация и персонал"
 
     def ready(self) -> None:
-        from . import signals  # noqa: F401
+        from . import (  # noqa: F401
+            authority_models,
+            personnel_management_models,
+            personnel_reference_models,
+            personnel_reference_signals,
+            signals,
+        )
+        from .personnel_management_models import (
+            PersonnelChangeRecord,
+            PersonnelImportBatch,
+        )
+
+        # Empty boundary snapshots and an empty list of validation errors are
+        # meaningful values. Migrations record the same validation state.
+        PersonnelChangeRecord._meta.get_field("before_snapshot").blank = True
+        PersonnelChangeRecord._meta.get_field("after_snapshot").blank = True
+        PersonnelImportBatch._meta.get_field("validation_errors").blank = True
