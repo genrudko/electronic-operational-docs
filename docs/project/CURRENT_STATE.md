@@ -50,14 +50,34 @@ Trusted controller не допускает запрос из merged PR: run `307
 AUTO-001B BLOCKED: Pull request must still be open.
 ```
 
-Поэтому Draft PR #45 создан от точного merge commit `main` как минимальный
-same-repository deployment carrier. Его diff ограничен coordination docs;
-product code, schema, migrations, workflow и controller не меняются.
+Поэтому Draft PR #45 создан от точного merge commit `main` как same-repository
+deployment carrier.
 
-Обязательный порядок:
+Первый carrier head `0a48cfc484a2917fd0f76c32bb9750a7c5e96a2c` прошёл пять
+mandatory workflows. Trusted run `30762341525` затем подтвердил validation,
+image build, Django checks и отсутствие migration drift, но isolated VPS suite
+остановился на одном repository-only test:
 
 ```text
-5 exact-head workflows on PR #45
+tests discovered: 675
+failed: 1
+skipped: 1
+primary cause: /app/docs/ux/EQUIPMENT_PICTOGRAM_GOST_BASIS_V1.md absent
+live deployment: NOT APPLIED
+pending development transaction: NONE
+previous development runtime: PRESERVED
+```
+
+Development image намеренно содержит executable source, но не repository docs.
+Исправление ограничено тестовым контрактом: Markdown boundary остаётся
+обязательным в repository CI, а в runtime image пропускается как repository-only.
+Product behavior, SVG catalog, schema, migrations, workflow и controller не
+меняются.
+
+Следующий обязательный порядок:
+
+```text
+5 exact-head workflows after test-boundary repair
 → trusted full-development rebuild
 → VPS tests and migrations summary
 → Django system check and health-check
