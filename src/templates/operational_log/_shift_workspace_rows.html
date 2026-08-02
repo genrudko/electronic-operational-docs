@@ -1,5 +1,11 @@
+{% load opj_lifecycle_tags %}
+{% opj_registered_removed_drafts removed_drafts as legacy_registered_drafts %}
 <div class="draft-row-store" data-row-store hidden>
 {% for draft in drafts %}
+    {% opj_draft_registration draft as registration %}
+    {% if registration.is_registered %}
+        {% include "operational_log/_shift_workspace_registered_row.html" with draft=draft registration=registration %}
+    {% else %}
     <article
         id="draft-{{ draft.public_id }}"
         class="draft-ledger-row opj-entry-row"
@@ -76,6 +82,14 @@
 
                     <div class="draft-mini-toolbar draft-row-action-toolbar" data-mini-toolbar aria-label="Действия с записью">
                         <button
+                            type="submit"
+                            class="da-button is-compact opj-register-draft-button"
+                            formaction="{% url 'operational_log:register_draft_lifecycle' journal.pk draft.public_id %}"
+                            data-register-draft
+                            onclick="return window.confirm('Перенести сохранённую строку в чистовик? После регистрации её можно будет исправить только новой записью в чистовике.')"
+                        >В чистовик</button>
+                        <span class="draft-row-action-separator" aria-hidden="true"></span>
+                        <button
                             type="button"
                             class="draft-row-action"
                             data-date-button
@@ -131,10 +145,17 @@
             <button type="button" class="draft-inline-undo-close" data-inline-undo-close aria-label="Закрыть без восстановления">×</button>
         </div>
     </article>
+    {% endif %}
+{% endfor %}
+
+{% for item in legacy_registered_drafts %}
+    {% include "operational_log/_shift_workspace_registered_row.html" with draft=item.draft registration=item %}
 {% empty %}
+    {% if not drafts %}
     <div class="empty-state" data-empty-draft>
         <h3>Черновых записей пока нет</h3>
         <p>Добавьте первую запись.</p>
     </div>
+    {% endif %}
 {% endfor %}
 </div>
