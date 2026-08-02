@@ -48,6 +48,7 @@
         const form = button.closest("form[data-draft-form]");
         if (!form || button.dataset.busy === "true") return;
 
+        // The button's inline window.confirm runs before this delegated handler.
         button.dataset.busy = "true";
         button.disabled = true;
         const originalText = button.textContent;
