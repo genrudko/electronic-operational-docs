@@ -34,8 +34,11 @@ def opj_editor_presentation(editor_payload):
 
 
 @register.simple_tag
-def opj_editor_payload_script(presentation, element_id: str):
-    return json_script(presentation.editor_payload, element_id)
+def opj_editor_payload_script(presentation, sequence_number):
+    return json_script(
+        presentation.editor_payload,
+        f"opj-editor-payload-{sequence_number}",
+    )
 
 
 @register.simple_tag
