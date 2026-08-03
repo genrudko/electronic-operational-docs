@@ -81,7 +81,7 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
                     "label": "Аварийное событие",
                 },
                 {
-                    "id": "ann-pz",
+                    "id": "ann-pz-01",
                     "kind": "pz_install",
                     "label": text,
                     "pz_number": pz_number,
@@ -94,7 +94,7 @@ class OperationalJournalLifecycleTests(OperationalLogTestCase):
                         {
                             "text": text,
                             "marks": ["bold"],
-                            "annotations": ["ann-pz"],
+                            "annotations": ["ann-pz-01"],
                         }
                     ],
                 }
