@@ -7,7 +7,7 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'operational_log/opj_workspace_controls.css' %}?v=opjux00105">
 <link rel="stylesheet" href="{% static 'operational_log/opj_registered_actions.css' %}?v=opjlifecycle00301">
-<link rel="stylesheet" href="{% static 'operational_log/opj_lifecycle_acceptance_repair.css' %}?v=opjlifecycle00401">
+<link rel="stylesheet" href="{% static 'operational_log/opj_lifecycle_acceptance_repair.css' %}?v=opjlifecycle00402">
 {% endblock %}
 
 {% block content %}
@@ -25,7 +25,7 @@
         <span class="opj-meta-item">{{ drafts|length }} записей</span>
         <span class="opj-meta-item is-success shift-autosave-indicator">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
-            Автосохранение
+            Автосохранение включено
         </span>
     </div>
     {% endif %}
@@ -190,10 +190,10 @@
 </dialog>
 
 <script src="{% static 'operational_log/draft_editor.js' %}?v=011364" defer></script>
-<script src="{% static 'operational_log/opj_draft_guard.js' %}?v=opjlifecycle00401" defer></script>
+<script src="{% static 'operational_log/opj_draft_guard.js' %}?v=opjlifecycle00402" defer></script>
 <script src="{% static 'operational_log/draft_workspace.js' %}?v=011364" defer></script>
 <script src="{% static 'operational_log/draft_reference_navigation.js' %}?v=011364" defer></script>
 <script src="{% static 'operational_log/opj_workspace_controls.js' %}?v=opjux00105" defer></script>
-<script src="{% static 'operational_log/opj_registered_actions_v2.js' %}?v=opjlifecycle00401" defer></script>
+<script src="{% static 'operational_log/opj_registered_actions_v2.js' %}?v=opjlifecycle00402" defer></script>
 {% endif %}
 {% endblock %}
