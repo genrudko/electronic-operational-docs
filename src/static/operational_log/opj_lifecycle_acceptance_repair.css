@@ -1,9 +1,13 @@
 /* OPJ-LIFECYCLE-001 acceptance repair.
- * This file only aligns the lifecycle UI with the accepted Direction A and
- * specialised OPJ ledger. It does not define an independent design system.
+ * Aligns lifecycle UI with the accepted Direction A and specialised OPJ form.
  */
 
-/* Compact, live clean-journal summary in the shift workspace. */
+.opj-registered-context,
+[data-opj-registered-context] {
+    display: none !important;
+}
+
+/* Compact clean-journal summary, not an embedded second journal. */
 .opj-clean-summary {
     display: flex;
     min-height: 38px;
@@ -52,9 +56,17 @@
     content: "·";
 }
 
-/* Batch selection is a temporary mode, not a permanent fourth column. */
+/* Temporary row-selection mode; no permanent fourth column. */
 .opj-row-selection-control {
     display: none;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+}
+
+.opj-row-selection-control span {
+    width: 17px;
+    height: 17px;
 }
 
 .opj-workspace.is-selection-mode .opj-row-selection-control {
@@ -75,24 +87,7 @@
     display: none !important;
 }
 
-.opj-row-selection-control {
-    width: 24px;
-    height: 24px;
-    flex: 0 0 24px;
-}
-
-.opj-row-selection-control span {
-    width: 17px;
-    height: 17px;
-}
-
-.opj-selection-action {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-/* Registered and editable rows use the same document typography. */
+/* Same document typography for editable and registered rows. */
 .opj-registered-draft-content,
 .opj-entry-document {
     color: var(--theme-text);
@@ -110,30 +105,43 @@
 }
 
 .opj-registered-draft-footer {
-    display: grid;
-    min-height: 34px;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 8px;
-    margin-top: 7px;
-    padding-top: 6px;
+    min-height: 28px;
+    margin-top: 5px;
+    padding-top: 5px;
 }
 
-.opj-registered-draft-footer .draft-ledger-meta {
+.opj-registered-draft-meta {
+    display: flex;
     min-width: 0;
     flex-wrap: nowrap;
+    align-items: center;
+    gap: 5px;
     overflow: hidden;
 }
 
-.opj-registered-draft-footer .draft-meta-chip,
-.opj-clean-copy-chip {
+.opj-registered-author {
+    min-width: 0;
     overflow: hidden;
-    max-width: 100%;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-/* One shared graphical language for emergency, PZ and ZN marks. */
+.opj-open-clean-entry {
+    display: inline-flex;
+    min-height: 22px;
+    align-items: center;
+    padding: 2px 7px;
+    color: var(--theme-success);
+    text-decoration: none;
+}
+
+.opj-open-clean-entry:hover,
+.opj-open-clean-entry:focus-visible {
+    border-color: var(--theme-success);
+    background: var(--theme-success-soft);
+}
+
+/* Accepted graphical language for emergency, PZ and ZN marks. */
 .opj-clean-time {
     position: relative;
     display: inline-grid;
@@ -150,23 +158,31 @@
     border-radius: 50%;
     content: "";
     pointer-events: none;
-    transform: none;
 }
 
 .opj-clean-markers,
 .approved-journal-visas {
-    align-content: flex-start;
-    align-items: flex-start;
+    display: grid;
+    min-width: 0;
+    grid-template-columns: repeat(auto-fit, minmax(38px, 38px));
+    align-content: start;
+    justify-content: center;
+    gap: 5px;
+    padding: 7px 5px !important;
+    overflow: hidden;
 }
 
+.opj-normative-marker,
 .draft-normative-marker {
     position: relative;
     display: inline-grid;
-    min-width: 42px;
-    min-height: 48px;
+    width: 38px;
+    min-width: 38px;
+    height: 46px;
+    min-height: 46px;
     place-items: center;
     align-content: center;
-    padding: 3px 4px;
+    padding: 3px;
     border: 1px solid currentColor;
     border-radius: 7px;
     background: var(--theme-surface);
@@ -174,32 +190,63 @@
     line-height: 1;
 }
 
+.opj-normative-marker.is-zn_off,
+.opj-normative-marker.is-pz_remove,
 .draft-normative-marker.is-zn_off,
-.draft-normative-marker.is-pz_remove {
+.draft-normative-marker.is-pz_remove,
+.draft-normative-marker.is-cleared {
     color: var(--theme-primary);
 }
 
 .draft-normative-marker-top,
 .draft-normative-marker-bottom {
-    font-size: 0.62rem;
+    font-size: 0.59rem;
     font-weight: 750;
     font-variant-numeric: tabular-nums;
 }
 
 .draft-normative-marker-bolt {
     margin: 2px 0;
-    font-size: 1rem;
+    font-size: 0.96rem;
     font-weight: 750;
 }
 
 .draft-normative-marker-cross {
     position: absolute;
+    z-index: 2;
     inset: 50% auto auto 50%;
-    font-size: 2.35rem;
+    display: block;
+    font-size: 2.25rem;
+    font-style: normal;
     font-weight: 400;
     line-height: 1;
-    opacity: 0.74;
-    transform: translate(-50%, -50%);
+    opacity: 0.78;
+    transform: translate(-50%, -50%) rotate(-8deg);
+    pointer-events: none;
+}
+
+.draft-normative-marker:not(.is-cleared):not(.is-pz_remove):not(.is-zn_off)
+    > .draft-normative-marker-cross {
+    display: none;
+}
+
+.opj-marker-count {
+    position: absolute;
+    z-index: 3;
+    right: -5px;
+    top: -6px;
+    display: inline-grid;
+    min-width: 18px;
+    height: 18px;
+    place-items: center;
+    padding: 0 3px;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    background: var(--theme-surface);
+    color: inherit;
+    font-size: 0.56rem;
+    font-weight: 800;
+    line-height: 1;
 }
 
 .opj-empty-marker {
@@ -207,9 +254,17 @@
     min-height: 1px;
 }
 
-/* The journal remains a three-column form with one collapsed border grid. */
+/* One true three-column border grid. */
+.approved-journal-table-wrap {
+    overflow: visible;
+    border: 0 !important;
+    border-radius: 0;
+    box-shadow: none;
+}
+
 .approved-journal-table {
     width: 100%;
+    border: 1px solid var(--theme-border-strong);
     border-collapse: collapse;
     border-spacing: 0;
     table-layout: fixed;
@@ -217,11 +272,12 @@
 
 .approved-journal-table th,
 .approved-journal-table td {
-    border: 1px solid var(--theme-border-strong);
+    border: 1px solid var(--theme-border-strong) !important;
+    box-shadow: none !important;
 }
 
-.approved-journal-table-wrap {
-    border: 0;
+.approved-journal-table tr > :last-child {
+    border-right: 1px solid var(--theme-border-strong) !important;
 }
 
 .approved-journal-date-time {
@@ -233,18 +289,24 @@
     min-height: 1.2em;
 }
 
-/* Main record first; one level status rail below it. */
+.approved-journal-message,
+.approved-journal-visas {
+    vertical-align: top;
+}
+
+/* Main text first; one aligned status rail below it. */
 .opj-entry-footer {
     display: grid;
     min-height: 36px;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, auto) minmax(150px, 1fr) auto;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     margin-top: 8px;
     padding-top: 6px;
+    border-top: 1px solid var(--theme-border);
 }
 
-.opj-entry-footer-main {
+.opj-entry-statuses {
     display: flex;
     min-width: 0;
     flex-wrap: nowrap;
@@ -254,11 +316,17 @@
 
 .opj-entry-footer .approved-journal-author {
     min-width: 0;
-    margin-left: auto;
     overflow: hidden;
+    color: var(--theme-text-muted);
+    font-size: 0.67rem;
     text-align: right;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.opj-entry-actions {
+    position: static;
+    justify-self: end;
 }
 
 .opj-entry-state-chip,
@@ -267,36 +335,46 @@
     flex: 0 0 auto;
 }
 
-.opj-entry-actions {
-    position: static;
-}
-
-/* A portal-mounted menu never contributes to table/page overflow. */
+/* Viewport portal: never widens the journal or creates table scroll. */
+.opj-action-portal,
 .opj-entry-actions-menu.is-floating {
     position: fixed !important;
-    z-index: 240;
+    z-index: 300;
     inset: auto !important;
+    display: grid;
     width: min(310px, calc(100vw - 24px));
     max-height: min(420px, calc(100vh - 24px));
     overflow: auto;
     overscroll-behavior: contain;
 }
 
+.opj-action-portal[hidden],
 .opj-entry-actions-menu.is-floating[hidden] {
     display: none;
 }
 
+/* One underline only; click opens preview, not the target page. */
+button.opj-reference-token,
 .opj-reference-token {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-bottom: 1px dotted currentColor;
+    border-radius: 0;
+    background: transparent;
     color: var(--theme-primary);
-    text-decoration: underline;
-    text-decoration-style: dotted;
-    text-underline-offset: 0.17em;
+    font: inherit;
+    line-height: inherit;
+    text-align: inherit;
+    text-decoration: none !important;
     cursor: pointer;
 }
 
-.opj-reference-token:hover,
-.opj-reference-token:focus-visible {
-    text-decoration-style: solid;
+button.opj-reference-token:hover,
+button.opj-reference-token:focus-visible {
+    border-bottom-style: solid;
+    outline: none;
 }
 
 .opj-reference-token.is-unresolved {
@@ -304,7 +382,53 @@
     cursor: default;
 }
 
-/* History is clearly subordinate but remains traceable to the source row. */
+.opj-reference-preview {
+    position: fixed;
+    z-index: 320;
+    max-height: min(540px, calc(100vh - 24px));
+    overflow: auto;
+}
+
+.opj-reference-preview[hidden] {
+    display: none;
+}
+
+.opj-reference-preview header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.opj-reference-preview header > div {
+    display: grid;
+    gap: 2px;
+}
+
+.opj-reference-preview-kind {
+    color: var(--theme-primary);
+    font-size: 0.62rem;
+    font-weight: 750;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.opj-reference-preview .draft-reference-preview-facts {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 5px 10px;
+}
+
+.opj-reference-preview .draft-reference-preview-facts dt {
+    color: var(--theme-text-muted);
+    font-size: 0.66rem;
+}
+
+.opj-reference-preview .draft-reference-preview-facts dd {
+    margin: 0;
+    font-size: 0.7rem;
+}
+
 .opj-entry-history {
     margin-top: 8px;
     border-left-width: 3px;
@@ -314,30 +438,58 @@
     grid-template-columns: minmax(0, 1fr);
 }
 
-@media (max-width: 980px) {
-    .opj-clean-summary,
-    .opj-entry-footer,
-    .opj-registered-draft-footer {
-        align-items: stretch;
-        grid-template-columns: 1fr;
-    }
+/* Spread mode stays dense even with long records and many marks. */
+.opj-workspace[data-view-mode="spread"] .opj-registered-draft-footer {
+    min-height: 24px;
+    margin-top: 3px;
+    padding-top: 3px;
+}
 
+.opj-workspace[data-view-mode="spread"] .opj-registered-author {
+    display: none;
+}
+
+.opj-workspace[data-view-mode="spread"] .opj-clean-markers {
+    grid-template-columns: repeat(auto-fit, minmax(30px, 30px));
+    gap: 3px;
+    max-height: 96px;
+    padding: 4px 3px !important;
+    overflow: auto;
+}
+
+.opj-workspace[data-view-mode="spread"] .draft-normative-marker {
+    width: 30px;
+    min-width: 30px;
+    height: 38px;
+    min-height: 38px;
+    border-radius: 6px;
+}
+
+.opj-workspace[data-view-mode="spread"] .draft-normative-marker-top,
+.opj-workspace[data-view-mode="spread"] .draft-normative-marker-bottom {
+    font-size: 0.5rem;
+}
+
+.opj-workspace[data-view-mode="spread"] .draft-normative-marker-bolt {
+    font-size: 0.78rem;
+}
+
+@media (max-width: 980px) {
     .opj-clean-summary {
         display: grid;
     }
 
-    .opj-clean-summary-actions,
-    .opj-entry-actions {
+    .opj-clean-summary-actions {
         justify-self: end;
     }
 
-    .opj-entry-footer-main {
-        flex-wrap: wrap;
+    .opj-entry-footer {
+        grid-template-columns: 1fr auto;
     }
 
     .opj-entry-footer .approved-journal-author {
-        flex-basis: 100%;
-        margin-left: 0;
+        grid-column: 1 / -1;
+        grid-row: 2;
         text-align: left;
     }
 }
@@ -352,5 +504,13 @@
 
     .opj-entry-actions-trigger {
         justify-content: center;
+    }
+
+    .opj-entry-footer {
+        grid-template-columns: 1fr;
+    }
+
+    .opj-entry-actions {
+        justify-self: stretch;
     }
 }
