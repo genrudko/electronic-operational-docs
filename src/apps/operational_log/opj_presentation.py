@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from collections import OrderedDict
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime, time
-from typing import Any, Iterable
+from typing import Any
 
 from django.utils import timezone
 from django.utils.html import conditional_escape, format_html
@@ -16,10 +17,7 @@ from .editor import (
     serialize_editor_document,
 )
 from .models import OperationalDraftEntry, OperationalLogEntry
-from .opj_lifecycle import (
-    TYPE_CORRECTION,
-    entry_lifecycle_context,
-)
+from .opj_lifecycle import TYPE_CORRECTION, entry_lifecycle_context
 
 
 @dataclass(frozen=True, slots=True)
