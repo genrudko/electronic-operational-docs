@@ -1,6 +1,9 @@
+{% load opj_lifecycle_tags %}
+{% opj_entry_lifecycle registration.entry as lifecycle %}
+{% opj_entry_presentation registration.entry lifecycle.lifecycle_entries as presentation %}
 <article
     id="draft-{{ draft.public_id }}"
-    class="draft-ledger-row opj-entry-row opj-draft-is-registered"
+    class="draft-ledger-row opj-entry-row opj-draft-is-registered{% if presentation.emergency %} is-emergency-event{% endif %}"
     data-draft-card
     data-draft-id="{{ draft.public_id }}"
     data-entry-date="{{ draft.event_at|date:'Y-m-d' }}"
@@ -13,7 +16,7 @@
     data-entry-kind-label="Чистовик"
     data-entry-author="{{ registration.entry.author_full_name_snapshot }}"
     data-entry-version="{{ draft.version }}"
-    data-entry-status="Зарегистрирована"
+    data-entry-status="{{ lifecycle.state.status_label }}"
     data-registered-draft
 >
     <form
@@ -39,24 +42,34 @@
 
     <div class="draft-ledger-form opj-registered-draft-row" aria-label="Зарегистрированная строка чистовика">
         <div class="draft-ledger-time">
-            <span>{{ draft.event_at|date:"H:i" }}</span>
+            <span class="opj-clean-time{% if presentation.emergency %} is-emergency{% endif %}">{{ draft.event_at|date:"H:i" }}</span>
         </div>
 
         <div class="draft-ledger-content">
-            <p class="opj-registered-draft-content">{{ draft.content }}</p>
-            <div class="draft-ledger-lower">
+            <div class="opj-registered-draft-content opj-rich-content">{{ presentation.html }}</div>
+            <div class="draft-ledger-lower opj-registered-draft-footer">
                 <div class="draft-ledger-meta">
                     <span class="opj-clean-copy-chip">Чистовик · № {{ registration.entry.sequence_number }}</span>
+                    <span class="draft-meta-chip">{{ lifecycle.state.status_label }}</span>
                     <span class="draft-meta-chip">Зарегистрировано {{ registration.entry.registered_at|date:"d.m.Y H:i" }}</span>
-                    <span class="draft-meta-chip">Автор: {{ registration.entry.author_full_name_snapshot }}</span>
+                    <span class="draft-meta-chip">{{ registration.entry.author_full_name_snapshot }}</span>
                 </div>
                 <a
                     class="da-button is-secondary is-compact opj-open-clean-entry"
-                    href="{% url 'operational_log:detail' journal.pk %}#entry-{{ registration.entry.sequence_number }}"
+                    href="{% url 'operational_log:detail' journal.pk %}?shift={{ draft.shift.public_id }}#entry-{{ registration.entry.sequence_number }}"
                 >Открыть в чистовике</a>
             </div>
         </div>
 
-        <div class="draft-ledger-visas" aria-label="Визы и замечания"></div>
+        <div class="draft-ledger-visas opj-clean-markers" aria-label="Нормативные отметки">
+            {% for marker in presentation.markers %}
+            <span class="opj-normative-marker is-{{ marker.kind }}" title="{{ marker.label }}">
+                <span>{% if marker.kind == 'pz_install' or marker.kind == 'pz_remove' %}ПЗ{% else %}ЗН{% endif %}</span>
+                <b aria-hidden="true">ϟ</b>
+                {% if marker.pz_number %}<small>№{{ marker.pz_number }}</small>{% endif %}
+                {% if marker.kind == 'pz_remove' or marker.kind == 'zn_off' %}<i aria-hidden="true">×</i>{% endif %}
+            </span>
+            {% endfor %}
+        </div>
     </div>
 </article>
