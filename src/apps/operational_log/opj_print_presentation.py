@@ -19,6 +19,10 @@ def build_print_journal_groups(
         print_rows = []
         for row in group.rows:
             original = dict(row)
+            original["presentation"] = entry_presentation(
+                row["entry"],
+                lifecycle_entries=(),
+            )
             original["is_lifecycle_event"] = False
             original["target_entry"] = None
             original["reason"] = ""
