@@ -1,4 +1,7 @@
 <style>
+.approved-journal-table:not(.is-opj-chronology-ready) tbody {
+    visibility: hidden;
+}
 .opj-marker-popover {
     display: none;
 }
@@ -62,10 +65,25 @@
 <script>
 (() => {
     "use strict";
-    if (window.__EOD_OPJ_MARKER_RUNTIME_00601__) return;
-    window.__EOD_OPJ_MARKER_RUNTIME_00601__ = true;
+    if (window.__EOD_OPJ_MARKER_RUNTIME_00602__) return;
+    window.__EOD_OPJ_MARKER_RUNTIME_00602__ = true;
 
     let floatingPopover = null;
+
+    function ensureRepairStylesheet() {
+        const link = document.querySelector(
+            'link[href*="opj_lifecycle_acceptance_repair.css"]'
+        );
+        if (!link) return Promise.resolve();
+        const target = `${link.href.split("?")[0]}?v=opjlifecycle00602`;
+        if (link.href === target && link.sheet) return Promise.resolve();
+        return new Promise((resolve) => {
+            const finish = () => resolve();
+            link.addEventListener("load", finish, {once: true});
+            link.addEventListener("error", finish, {once: true});
+            link.href = target;
+        });
+    }
 
     function rowsInChronology() {
         return Array.from(document.querySelectorAll(
@@ -180,7 +198,8 @@
         placePopover(trigger, floatingPopover);
     }
 
-    function initialize() {
+    async function initialize() {
+        await ensureRepairStylesheet();
         applyChronology();
         document.querySelectorAll(
             ".approved-journal-table, .approved-journal-print-table"
@@ -218,7 +237,7 @@
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", initialize, {once: true});
     } else {
-        initialize();
+        void initialize();
     }
 })();
 </script>
