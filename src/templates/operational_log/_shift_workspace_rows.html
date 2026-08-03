@@ -42,15 +42,6 @@
 
             <div class="draft-ledger-time">
                 <div class="opj-draft-time-line">
-                    <label class="opj-row-selector" title="Выбрать строку для переноса в чистовик">
-                        <input
-                            type="checkbox"
-                            value="{{ draft.public_id }}"
-                            data-draft-selection
-                            aria-label="Выбрать запись {{ draft.event_at|date:'H:i' }}"
-                        >
-                        <span aria-hidden="true"></span>
-                    </label>
                     <input
                         type="text"
                         inputmode="numeric"
@@ -93,6 +84,15 @@
                     </div>
 
                     <div class="draft-mini-toolbar draft-row-action-toolbar" data-mini-toolbar aria-label="Действия с записью">
+                        <label class="opj-row-selector opj-row-selection-control" title="Выбрать строку для переноса в чистовик">
+                            <input
+                                type="checkbox"
+                                value="{{ draft.public_id }}"
+                                data-draft-selection
+                                aria-label="Выбрать запись {{ draft.event_at|date:'H:i' }}"
+                            >
+                            <span aria-hidden="true"></span>
+                        </label>
                         <button
                             type="button"
                             class="da-button is-compact opj-register-draft-button"
