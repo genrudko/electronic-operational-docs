@@ -13,6 +13,7 @@ from apps.equipment.models import EquipmentAsset
 from ..editor import EDITOR_SCHEMA_VERSION
 from ..opj_integrity import verify_registered_snapshot
 from ..opj_lifecycle import register_draft, registered_entry_for_draft
+from ..opj_presentation import build_clean_journal_groups
 from ..opj_print_presentation import build_print_journal_groups
 from .base import OperationalLogTestCase
 
@@ -27,9 +28,7 @@ class OperationalJournalAcceptanceRepairTests(OperationalLogTestCase):
 
     def available_drafts(self):
         return list(
-            self.shift.draft_entries.filter(
-                is_removed=False,
-            )
+            self.shift.draft_entries.filter(is_removed=False)
             .exclude(content="")
             .order_by("event_at", "position", "pk")
         )
@@ -38,10 +37,7 @@ class OperationalJournalAcceptanceRepairTests(OperationalLogTestCase):
         first, second = self.available_drafts()[:2]
 
         response = self.client.post(
-            reverse(
-                "operational_log:register_drafts_batch",
-                args=(self.journal.pk,),
-            ),
+            reverse("operational_log:register_drafts_batch", args=(self.journal.pk,)),
             {"draft_ids": [str(second.public_id), str(first.public_id)]},
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
@@ -52,34 +48,44 @@ class OperationalJournalAcceptanceRepairTests(OperationalLogTestCase):
             registered_entry_for_draft(second).sequence_number,
         )
 
-    def test_registration_rejects_chronological_gap(self) -> None:
+    def test_late_registration_receives_chronological_display_number(self) -> None:
         first, second = self.available_drafts()[:2]
 
-        response = self.client.post(
-            reverse(
-                "operational_log:register_drafts_batch",
-                args=(self.journal.pk,),
-            ),
+        late_response = self.client.post(
+            reverse("operational_log:register_drafts_batch", args=(self.journal.pk,)),
             {"draft_ids": [str(second.public_id)]},
             HTTP_X_REQUESTED_WITH="XMLHttpRequest",
         )
+        early_response = self.client.post(
+            reverse("operational_log:register_drafts_batch", args=(self.journal.pk,)),
+            {"draft_ids": [str(first.public_id)]},
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
 
-        self.assertEqual(response.status_code, 409)
-        self.assertIn("хронологический разрыв", response.json()["message"])
-        self.assertIsNone(registered_entry_for_draft(first))
-        self.assertIsNone(registered_entry_for_draft(second))
+        self.assertEqual(late_response.status_code, 200)
+        self.assertEqual(early_response.status_code, 200)
+        early_entry = registered_entry_for_draft(first)
+        late_entry = registered_entry_for_draft(second)
+        self.assertGreater(early_entry.sequence_number, late_entry.sequence_number)
+
+        groups = build_clean_journal_groups(
+            entries=list(self.journal.entries.order_by("sequence_number")),
+            selected_shift=str(self.shift.public_id),
+        )
+        displayed = {
+            row["entry"].pk: row["journal_number"]
+            for row in groups[0].rows
+        }
+        self.assertLess(displayed[early_entry.pk], displayed[late_entry.pk])
+        self.assertEqual(sorted(displayed.values()), [1, 2])
 
     def test_integrity_uses_frozen_snapshot_not_current_directory_labels(self) -> None:
-        entry = register_draft(
-            draft=self.available_drafts()[0],
-            actor=self.actor,
-        )
+        entry = register_draft(draft=self.available_drafts()[0], actor=self.actor)
         self.assertTrue(verify_registered_snapshot(entry))
 
         self.journal.workplace.name = "Новое отображаемое наименование рабочего места"
         self.journal.workplace.save(update_fields=("name",))
         entry.refresh_from_db()
-
         self.assertTrue(verify_registered_snapshot(entry))
 
         table = entry._meta.db_table
@@ -92,7 +98,7 @@ class OperationalJournalAcceptanceRepairTests(OperationalLogTestCase):
         with self.assertRaises(ValidationError):
             verify_registered_snapshot(entry)
 
-    def test_registered_reference_is_a_real_link(self) -> None:
+    def test_registered_reference_opens_preview_before_target(self) -> None:
         equipment = EquipmentAsset.objects.filter(
             organization=self.organization,
         ).first()
@@ -129,17 +135,23 @@ class OperationalJournalAcceptanceRepairTests(OperationalLogTestCase):
             {"shift": str(self.shift.public_id)},
         )
 
+        self.assertContains(response, "data-opj-reference-token")
         self.assertContains(
             response,
-            f'href="/equipment/items/{equipment.public_id}/"',
+            f'data-reference-value="equipment:{equipment.public_id}"',
         )
-        self.assertContains(response, 'class="opj-reference-token"')
+        self.assertContains(
+            response,
+            f'data-reference-url="/equipment/items/{equipment.public_id}/"',
+        )
+        self.assertContains(response, 'id="opj-semantic-reference-catalog"')
+        self.assertNotContains(
+            response,
+            f'<a class="opj-reference-token" href="/equipment/items/{equipment.public_id}/"',
+        )
 
-    def test_print_route_is_standalone_approved_journal_form(self) -> None:
-        register_draft(
-            draft=self.available_drafts()[0],
-            actor=self.actor,
-        )
+    def test_print_route_is_standalone_coloured_approved_journal_form(self) -> None:
+        register_draft(draft=self.available_drafts()[0], actor=self.actor)
 
         response = self.client.get(
             reverse("operational_log:print", args=(self.journal.pk,)),
@@ -159,6 +171,10 @@ class OperationalJournalAcceptanceRepairTests(OperationalLogTestCase):
         )
         self.assertContains(response, "border-collapse: collapse")
         self.assertContains(response, "size: A4 landscape")
+        self.assertContains(response, "print-color-adjust: exact")
+        self.assertContains(response, "border: 0.55mm solid #c7352b")
+        self.assertContains(response, ".is-text-red { color: #c7352b; }")
+        self.assertContains(response, ".is-text-blue { color: #1269aa; }")
         self.assertNotContains(response, "direction-a-body")
         self.assertNotContains(response, "da-sidebar")
         self.assertNotContains(response, "opj-entry-footer")
@@ -177,6 +193,10 @@ class OperationalJournalAcceptanceRepairTests(OperationalLogTestCase):
         self.assertEqual(len(groups), 1)
         self.assertTrue(groups[0].rows[0]["show_date"])
         self.assertFalse(groups[0].rows[1]["show_date"])
+        self.assertEqual(
+            [row["journal_number"] for row in groups[0].rows],
+            [1, 2],
+        )
 
 
 class OperationalJournalAcceptanceSourceTests(SimpleTestCase):
@@ -209,28 +229,53 @@ class OperationalJournalAcceptanceSourceTests(SimpleTestCase):
             self.source("templates/operational_log/shift_workspace.html"),
         )
 
-    def test_clean_actions_use_viewport_floating_menu(self) -> None:
-        javascript = self.source(
-            "static/operational_log/opj_registered_actions_v2.js"
-        )
+    def test_clean_actions_use_dedicated_viewport_controller(self) -> None:
+        javascript = self.source("static/operational_log/opj_clean_journal.js")
         css = self.source(
             "static/operational_log/opj_lifecycle_acceptance_repair.css"
         )
+        detail = self.source("templates/operational_log/detail.html")
 
-        self.assertIn("document.body.append(menu)", javascript)
+        self.assertIn("source.cloneNode(true)", javascript)
+        self.assertIn("document.body.append(actionPortal)", javascript)
         self.assertIn("position: fixed !important", css)
-        self.assertIn(
-            'window.addEventListener("resize", closeActionMenus)',
-            javascript,
-        )
-        self.assertIn("window.EODOPJNavigation?.allowOnce()", javascript)
+        self.assertIn('window.addEventListener("resize", closeTransientOverlays)', javascript)
+        self.assertIn("data-opj-reference-token", javascript)
+        self.assertIn("opj_clean_journal.js", detail)
+        self.assertNotIn("opj_registered_actions_v2.js", detail)
         self.assertNotIn("window.confirm", javascript)
         self.assertNotIn("window.alert", javascript)
 
     def test_stale_registered_fragment_is_removed(self) -> None:
         shift = self.source("templates/operational_log/shift_workspace.html")
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
+        )
+        javascript = self.source("static/operational_log/opj_clean_journal.js")
 
         self.assertIn("opj_shift_clean_summary", shift)
         self.assertIn("Чистовик текущей смены", shift)
         self.assertNotIn("Загрузка зарегистрированного журнала", shift)
         self.assertNotIn("data-opj-registered-context", shift)
+        self.assertIn("[data-opj-registered-context]", css)
+        self.assertIn("node.remove()", javascript)
+
+    def test_marker_contract_keeps_cross_and_compact_count(self) -> None:
+        marker = self.source("templates/operational_log/_normative_markers.html")
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
+        )
+
+        self.assertIn("opj-normative-marker", marker)
+        self.assertIn("draft-normative-marker-cross", marker)
+        self.assertIn("opj-marker-count", marker)
+        self.assertIn("is-pz_remove", css)
+        self.assertIn("is-zn_off", css)
+        self.assertIn("max-height: 96px", css)
+
+    def test_clean_table_does_not_reuse_generic_da_table_borders(self) -> None:
+        detail = self.source("templates/operational_log/detail.html")
+
+        self.assertIn('class="approved-journal-table"', detail)
+        self.assertNotIn('class="approved-journal-table da-table"', detail)
+        self.assertNotIn('class="approved-journal-table-wrap da-table-wrap"', detail)
