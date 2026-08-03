@@ -54,7 +54,8 @@
                     <a
                         class="opj-clean-copy-chip opj-open-clean-entry"
                         href="{% url 'operational_log:detail' journal.pk %}?shift={{ draft.shift.public_id }}#entry-{{ registration.entry.sequence_number }}"
-                        title="Открыть запись № {{ journal_number }} в чистовике"
+                        aria-label="Открыть в чистовике запись № {{ journal_number }}"
+                        title="Открыть в чистовике"
                     >Чистовик · № {{ journal_number }}</a>
                     <span class="draft-meta-chip">{{ lifecycle.state.status_label }}</span>
                     <span class="draft-meta-chip opj-registered-author">{{ registration.entry.author_full_name_snapshot }} · {{ registration.entry.registered_at|date:"d.m.Y H:i" }}</span>
