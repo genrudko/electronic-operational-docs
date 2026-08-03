@@ -16,6 +16,7 @@
             activeMenu.style.removeProperty("top");
             activeMenu.style.removeProperty("width");
             activeMenu.style.removeProperty("z-index");
+            activeMenu.style.removeProperty("visibility");
         }
         if (activeTrigger) activeTrigger.setAttribute("aria-expanded", "false");
         activeMenu = null;
@@ -60,6 +61,50 @@
         return true;
     }
 
+    function replaceReferencedNumber(node, numberMap) {
+        if (!node) return;
+        const value = node.textContent || "";
+        node.textContent = value.replace(/(запис(?:и|ь)\s*№\s*)(\d+)/gi, (match, prefix, oldNumber) => {
+            return `${prefix}${numberMap.get(oldNumber) || oldNumber}`;
+        });
+    }
+
+    function renumberVisibleJournal() {
+        const numberMap = new Map();
+        const screenRows = Array.from(document.querySelectorAll(".approved-journal-row"));
+        screenRows.forEach((row, index) => {
+            const numberNode = row.querySelector(".approved-journal-date-time small");
+            const oldNumber = String(row.dataset.journalNumber || "").trim();
+            const newNumber = String(index + 1);
+            if (oldNumber) numberMap.set(oldNumber, newNumber);
+            row.dataset.journalNumber = newNumber;
+            if (numberNode) numberNode.textContent = `№ ${newNumber}`;
+            row.querySelectorAll("[data-entry-label]").forEach((node) => {
+                node.dataset.entryLabel = (node.dataset.entryLabel || "").replace(
+                    /Запись №\s*\d+/,
+                    `Запись № ${newNumber}`,
+                );
+            });
+        });
+
+        const printRows = Array.from(document.querySelectorAll(
+            ".approved-journal-print-table tbody tr:not(:has(.journal-print-empty))",
+        ));
+        printRows.forEach((row, index) => {
+            const numberNode = row.querySelector(".journal-print-number");
+            if (!numberNode) return;
+            const match = (numberNode.textContent || "").match(/\d+/);
+            const oldNumber = match ? match[0] : "";
+            const newNumber = String(index + 1);
+            if (oldNumber) numberMap.set(oldNumber, newNumber);
+            numberNode.textContent = `№ ${newNumber}`;
+        });
+
+        document.querySelectorAll(
+            ".journal-print-lifecycle-label, .opj-entry-history-heading strong",
+        ).forEach((node) => replaceReferencedNumber(node, numberMap));
+    }
+
     document.addEventListener("click", (event) => {
         const trigger = event.target.closest?.("[data-entry-actions-toggle]");
         if (trigger) {
@@ -71,11 +116,7 @@
 
         if (activeMenu && activeMenu.contains(event.target)) {
             const actionable = event.target.closest("button, a[href]");
-            if (actionable) {
-                // Let the existing lifecycle handler process correction,
-                // cancellation and history commands. Links remain native.
-                window.setTimeout(closeMenu, 0);
-            }
+            if (actionable) window.setTimeout(closeMenu, 0);
             return;
         }
 
@@ -93,4 +134,10 @@
 
     window.addEventListener("resize", closeMenu);
     document.addEventListener("scroll", closeMenu, true);
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", renumberVisibleJournal, {once: true});
+    } else {
+        renumberVisibleJournal();
+    }
 })();
