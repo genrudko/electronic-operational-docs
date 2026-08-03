@@ -1,14 +1,21 @@
 {% for marker in markers %}
-<span class="opj-normative-marker is-{{ marker.kind }} draft-normative-marker{% if marker.kind == 'pz_remove' or marker.kind == 'zn_off' %} is-cleared{% endif %}" title="{{ marker.label }}{% if marker.count > 1 %} · {{ marker.count }} отметки{% endif %}">
+<span class="opj-normative-marker is-{{ marker.kind }} draft-normative-marker{% if marker.kind == 'pz_remove' or marker.kind == 'zn_off' %} is-cleared{% endif %}" tabindex="0" aria-label="{{ marker.label }}{% if marker.count > 1 %}; всего отметок: {{ marker.count }}{% endif %}">
     <span class="draft-normative-marker-top">
         {% if marker.kind == 'pz_install' or marker.kind == 'pz_remove' %}ПЗ{% else %}ЗН{% endif %}
     </span>
     <span class="draft-normative-marker-bolt" aria-hidden="true">ϟ</span>
     {% if marker.pz_number %}<span class="draft-normative-marker-bottom">№{{ marker.pz_number }}</span>{% endif %}
     {% if marker.kind == 'pz_remove' or marker.kind == 'zn_off' %}
-    <i class="draft-normative-marker-cross" aria-hidden="true">×</i>
+    <i class="draft-normative-marker-cross" aria-hidden="true"></i>
     {% endif %}
-    {% if marker.count > 1 %}<small class="opj-marker-count" aria-label="Количество одинаковых отметок">×{{ marker.count }}</small>{% endif %}
+    {% if marker.count > 1 %}
+    <small class="opj-marker-count" aria-hidden="true">×{{ marker.count }}</small>
+    <span class="opj-marker-popover" role="tooltip">
+        <strong>{{ marker.label }}</strong>
+        <span>Отметок: {{ marker.count }}</span>
+        {% if marker.pz_number %}<span>Переносное заземление №{{ marker.pz_number }}</span>{% endif %}
+    </span>
+    {% endif %}
 </span>
 {% empty %}
 <span class="opj-empty-marker" aria-hidden="true">&nbsp;</span>
