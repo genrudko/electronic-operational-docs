@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, time
 from typing import Any
+from urllib.parse import quote
 
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.utils.html import conditional_escape, format_html
 from django.utils.safestring import SafeString, mark_safe
@@ -17,6 +19,7 @@ from .editor import (
     serialize_editor_document,
 )
 from .models import OperationalDraftEntry, OperationalLogEntry
+from .opj_integrity import verify_registered_snapshot
 from .opj_lifecycle import TYPE_CORRECTION, entry_lifecycle_context
 
 
@@ -81,6 +84,25 @@ def _escaped_text(value: str) -> SafeString:
     return mark_safe("".join(rendered))
 
 
+def _reference_url(reference: dict[str, Any]) -> str:
+    identity = str(reference.get("reference") or "").strip()
+    kind = str(reference.get("kind") or "").strip()
+    if ":" not in identity:
+        return ""
+    prefix, raw_id = identity.split(":", 1)
+    if not raw_id:
+        return ""
+    kind = kind or prefix
+    escaped = quote(raw_id, safe="")
+    if kind == "equipment":
+        return f"/equipment/items/{escaped}/"
+    if kind == "document":
+        return f"/documents/{escaped}/"
+    if kind == "person":
+        return "/organization/"
+    return ""
+
+
 def _segment_html(
     segment: dict[str, Any],
     annotations: dict[str, dict[str, str]],
@@ -110,11 +132,20 @@ def _segment_html(
     text = _escaped_text(str(segment.get("text") or ""))
     reference = segment.get("reference")
     if isinstance(reference, dict) and reference.get("label"):
-        text = format_html(
-            '<span class="opj-reference-token" title="{}">{}</span>',
-            reference.get("label"),
-            text,
-        )
+        url = _reference_url(reference)
+        if url:
+            text = format_html(
+                '<a class="opj-reference-token" href="{}" title="Открыть: {}">{}</a>',
+                url,
+                reference.get("label"),
+                text,
+            )
+        else:
+            text = format_html(
+                '<span class="opj-reference-token is-unresolved" '
+                'title="Связанный объект недоступен для перехода">{}</span>',
+                text,
+            )
     return format_html('<span class="{}">{}</span>', " ".join(classes), text)
 
 
@@ -215,6 +246,19 @@ def _date_group(entry: OperationalLogEntry) -> CleanJournalGroup:
     )
 
 
+def _stable_lifecycle(entry: OperationalLogEntry):
+    lifecycle = entry_lifecycle_context(entry)
+    try:
+        verify_registered_snapshot(entry)
+        for event in lifecycle.lifecycle_entries:
+            verify_registered_snapshot(event)
+    except ValidationError:
+        integrity_ok = False
+    else:
+        integrity_ok = True
+    return replace(lifecycle, integrity_ok=integrity_ok)
+
+
 def build_clean_journal_groups(
     *,
     entries: list[OperationalLogEntry],
@@ -232,7 +276,7 @@ def build_clean_journal_groups(
 
     groups: OrderedDict[str, CleanJournalGroup] = OrderedDict()
     for entry in entries:
-        lifecycle = entry_lifecycle_context(entry)
+        lifecycle = _stable_lifecycle(entry)
         if lifecycle.is_child:
             continue
         draft = drafts.get(_draft_public_id(entry))
@@ -275,6 +319,7 @@ def build_clean_journal_groups(
                     presentation.editor_payload
                 ),
                 "defect_links": list(entry.equipment_defect_links.all()),
+                "show_date": False,
             }
         )
 
@@ -286,4 +331,9 @@ def build_clean_journal_groups(
                 row["entry"].sequence_number,
             )
         )
+        previous_date = None
+        for row in group.rows:
+            current_date = timezone.localtime(row["entry"].event_at).date()
+            row["show_date"] = current_date != previous_date
+            previous_date = current_date
     return result
