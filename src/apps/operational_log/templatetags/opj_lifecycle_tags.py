@@ -6,6 +6,7 @@ from django import template
 from django.core.exceptions import ValidationError
 from django.utils.html import json_script
 
+from ..models import OperationalDraftEntry
 from ..opj_integrity import verify_registered_snapshot
 from ..opj_lifecycle import (
     TYPE_COMMUNICATION,
@@ -14,7 +15,11 @@ from ..opj_lifecycle import (
     entry_lifecycle_context,
     registered_entry_for_draft,
 )
-from ..opj_presentation import entry_presentation, present_editor_document
+from ..opj_presentation import (
+    entry_presentation,
+    journal_number_map,
+    present_editor_document,
+)
 
 register = template.Library()
 
@@ -65,6 +70,40 @@ def opj_registered_removed_drafts(drafts):
     ]
 
 
+def _journal_number_cache(context, journal):
+    cache = context.render_context.setdefault(
+        "opj_journal_number_cache",
+        {},
+    )
+    if journal.pk in cache:
+        return cache[journal.pk]
+
+    entries = list(journal.entries.all())
+    draft_ids = set()
+    for entry in entries:
+        payload = entry.typed_payload if isinstance(entry.typed_payload, dict) else {}
+        draft = payload.get("draft") if isinstance(payload.get("draft"), dict) else {}
+        public_id = str(draft.get("public_id") or "")
+        if public_id:
+            draft_ids.add(public_id)
+    drafts = {
+        str(draft.public_id): draft
+        for draft in OperationalDraftEntry.objects.filter(
+            public_id__in=draft_ids,
+        ).only("public_id", "position")
+    }
+    cache[journal.pk] = journal_number_map(entries, drafts)
+    return cache[journal.pk]
+
+
+@register.simple_tag(takes_context=True)
+def opj_journal_number(context, entry):
+    return _journal_number_cache(context, entry.journal).get(
+        entry.pk,
+        entry.sequence_number,
+    )
+
+
 @register.simple_tag
 def opj_shift_clean_summary(shift):
     draft_ids = {
@@ -74,8 +113,8 @@ def opj_shift_clean_summary(shift):
     entries = []
     for entry in (
         shift.journal.entries.filter(type_code__in=(TYPE_ENTRY, TYPE_COMMUNICATION))
-        .only("sequence_number", "registered_at", "typed_payload")
-        .order_by("sequence_number")
+        .only("registered_at", "typed_payload")
+        .order_by("registered_at", "pk")
     ):
         payload = entry.typed_payload if isinstance(entry.typed_payload, dict) else {}
         draft = payload.get("draft") if isinstance(payload.get("draft"), dict) else {}
@@ -84,6 +123,5 @@ def opj_shift_clean_summary(shift):
     last = entries[-1] if entries else None
     return {
         "count": len(entries),
-        "last_sequence": last.sequence_number if last else None,
         "last_registered_at": last.registered_at if last else None,
     }
