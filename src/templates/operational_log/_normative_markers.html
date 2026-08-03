@@ -1,118 +1,37 @@
-{% load static %}
 <style>
-/* Shared OPJ journal-form repair: this partial is used by clean and print rows. */
-td.opj-clean-markers,
-td.approved-journal-visas,
-td.journal-print-markers {
-    display: table-cell !important;
-    min-width: 0 !important;
-    overflow: visible !important;
-    vertical-align: top !important;
-    text-align: center !important;
-}
-.approved-journal-table:not(.is-opj-chronology-ready) tbody,
-.approved-journal-print-table:not(.is-opj-chronology-ready) tbody {
-    visibility: hidden;
-}
-.opj-normative-marker,
-.draft-normative-marker {
-    position: relative;
-    display: inline-grid;
-    width: 38px;
-    min-width: 38px;
-    height: 46px;
-    min-height: 46px;
-    margin: 0 2px 4px;
-    place-items: center;
-    align-content: center;
-    padding: 3px;
-    border: 1px solid currentColor;
-    border-radius: 7px;
-    background: var(--theme-surface, #fff);
-    color: var(--theme-danger, #c7352b);
-    line-height: 1;
-    vertical-align: top;
-}
-.opj-normative-marker.is-pz_remove,
-.opj-normative-marker.is-zn_off,
-.draft-normative-marker.is-pz_remove,
-.draft-normative-marker.is-zn_off {
-    color: var(--theme-primary, #2563eb) !important;
-}
-.opj-normative-marker.is-cleared,
-.draft-normative-marker.is-cleared {
-    color: var(--theme-danger, #c7352b) !important;
-}
-.draft-normative-marker-cross {
-    position: absolute;
-    z-index: 2;
-    inset: 50% auto auto 50%;
+.approved-journal-print-table .draft-normative-marker > .draft-normative-marker-cross {
     display: none;
+}
+.approved-journal-print-table .draft-normative-marker.is-cleared > .draft-normative-marker-cross {
+    display: block;
     width: 112%;
     height: 112%;
     font-size: 0;
+    opacity: 1;
     transform: translate(-50%, -50%);
-    pointer-events: none;
 }
-.is-cleared > .draft-normative-marker-cross { display: block; }
-.draft-normative-marker-cross::before,
-.draft-normative-marker-cross::after {
+.approved-journal-print-table .draft-normative-marker-cross::before,
+.approved-journal-print-table .draft-normative-marker-cross::after {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 2px;
+    width: 0.45mm;
     height: 118%;
     border-radius: 999px;
     background: currentColor;
     content: "";
 }
-.draft-normative-marker-cross::before { transform: translate(-50%, -50%) rotate(45deg); }
-.draft-normative-marker-cross::after { transform: translate(-50%, -50%) rotate(-45deg); }
-.opj-marker-popover {
-    position: absolute;
-    z-index: 500;
-    left: 50%;
-    bottom: calc(100% + 7px);
-    display: none;
-    width: max-content;
-    min-width: 210px;
-    max-width: min(420px, calc(100vw - 24px));
-    gap: 4px;
-    padding: 10px 12px;
-    border: 1px solid var(--theme-border-strong, #94a3b8);
-    border-radius: 7px;
-    background: var(--theme-surface-elevated, #fff);
-    box-shadow: 0 14px 32px rgba(15, 23, 42, .22);
-    color: var(--theme-text, #111827);
-    font-family: var(--font-family-base, "Onest Variable", "Onest", system-ui, sans-serif);
-    font-size: .72rem;
-    font-weight: 400;
-    line-height: 1.4;
-    text-align: left;
-    transform: translateX(-50%);
-    white-space: normal;
+.approved-journal-print-table .draft-normative-marker-cross::before {
+    transform: translate(-50%, -50%) rotate(45deg);
 }
-.opj-marker-popover strong,
-.opj-marker-popover span { display: block; }
-.opj-marker-popover .opj-marker-source-text {
-    color: var(--theme-text, #111827);
-    font-weight: 550;
+.approved-journal-print-table .draft-normative-marker-cross::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
 }
-.opj-normative-marker:hover .opj-marker-popover,
-.opj-normative-marker:focus-visible .opj-marker-popover { display: grid; }
-.opj-clean-time.is-emergency::after,
-.journal-print-time.is-emergency::after,
-.draft-ledger-time.is-emergency::after {
-    inset: -.22rem -.46rem !important;
-    border: 3px solid var(--theme-danger, #c7352b) !important;
-    border-radius: 50% !important;
-    transform: rotate(-4deg) !important;
-}
-/* Author/registration timestamp is runtime service metadata, not a journal-form requisite. */
-.journal-print-author { display: none !important; }
-@media print {
-    .opj-marker-popover,
-    .opj-marker-count { display: none !important; }
+.approved-journal-print-table .journal-print-time.is-emergency::after {
+    inset: 0 -0.7mm;
+    border: 0.55mm solid #c7352b;
+    border-radius: 999px;
+    transform: none;
 }
 </style>
 {% for marker in markers %}
@@ -121,19 +40,17 @@ td.journal-print-markers {
       data-opj-marker
       data-marker-kind="{{ marker.kind }}"
       data-marker-number="{{ marker.pz_number }}"
-      title="{{ marker.label }}{% if marker.count > 1 %} · {{ marker.count }} отметки{% endif %}">
+      aria-label="{{ marker.label|default:'Нормативная отметка' }}{% if marker.pz_number %}, №{{ marker.pz_number }}{% endif %}">
     <span class="draft-normative-marker-top">
         {% if marker.kind == 'pz_install' or marker.kind == 'pz_remove' %}ПЗ{% else %}ЗН{% endif %}
     </span>
     <span class="draft-normative-marker-bolt" aria-hidden="true">ϟ</span>
     {% if marker.pz_number %}<span class="draft-normative-marker-bottom">№{{ marker.pz_number }}</span>{% endif %}
     <i class="draft-normative-marker-cross" aria-hidden="true"></i>
-    {% if marker.count > 1 %}<small class="opj-marker-count" aria-label="Количество одинаковых отметок">×{{ marker.count }}</small>{% endif %}
+    {% if marker.count > 1 %}<small class="opj-marker-count" aria-label="Количество отметок">×{{ marker.count }}</small>{% endif %}
     <span class="opj-marker-popover" role="tooltip">
         <strong>{{ marker.label|default:"Нормативная отметка" }}</strong>
-        {% if marker.source_text %}<span class="opj-marker-source-text">{{ marker.source_text }}</span>{% endif %}
-        {% if marker.pz_number %}<span>Номер ПЗ: {{ marker.pz_number }}</span>{% endif %}
-        {% if marker.count > 1 %}<span>Исходных отметок: {{ marker.count }}</span>{% endif %}
+        <ul class="opj-marker-source-list" data-marker-source-list></ul>
     </span>
 </span>
 {% empty %}
@@ -142,11 +59,15 @@ td.journal-print-markers {
 <script>
 (() => {
     "use strict";
-    if (window.__EOD_OPJ_MARKER_CHRONOLOGY__) return;
-    window.__EOD_OPJ_MARKER_CHRONOLOGY__ = true;
+    if (window.__EOD_OPJ_MARKER_RUNTIME_00601__) return;
+    window.__EOD_OPJ_MARKER_RUNTIME_00601__ = true;
 
-    function rowSequence(table) {
-        return Array.from(table.querySelectorAll("tbody tr"));
+    let floatingPopover = null;
+
+    function rowsInChronology() {
+        return Array.from(document.querySelectorAll(
+            ".approved-journal-table tbody tr, .approved-journal-print-table tbody tr"
+        ));
     }
 
     function markerKey(marker) {
@@ -157,10 +78,54 @@ td.journal-print-markers {
         return "";
     }
 
-    function applyChronology(table) {
+    function sourceSelector(kind) {
+        return kind === "pz_remove" || kind === "zn_off"
+            ? ".opj-rich-segment.is-normative-close"
+            : ".opj-rich-segment.is-normative-open";
+    }
+
+    function normalizedText(node) {
+        return (node.textContent || "").replace(/\s+/g, " ").trim();
+    }
+
+    function populateSourceList(marker) {
+        const list = marker.querySelector("[data-marker-source-list]");
+        if (!list) return;
+        const row = marker.closest("tr");
+        const kind = marker.dataset.markerKind || "";
+        const number = (marker.dataset.markerNumber || "").trim();
+        let values = row
+            ? Array.from(row.querySelectorAll(sourceSelector(kind)))
+                .map(normalizedText)
+                .filter(Boolean)
+            : [];
+
+        if (number) {
+            const normalizedNumber = number.replace(/^№\s*/, "");
+            const matching = values.filter((value) =>
+                value.includes(number) ||
+                value.includes(`№${normalizedNumber}`) ||
+                value.includes(`№ ${normalizedNumber}`)
+            );
+            if (matching.length) values = matching;
+        }
+
+        values = values.filter((value, index) => values.indexOf(value) === index);
+        list.replaceChildren();
+        values.forEach((value) => {
+            const item = document.createElement("li");
+            item.textContent = value;
+            list.append(item);
+        });
+        list.hidden = values.length === 0;
+    }
+
+    function applyChronology() {
         const installed = new Map();
-        rowSequence(table).forEach((row) => {
+        rowsInChronology().forEach((row) => {
             row.querySelectorAll("[data-opj-marker]").forEach((marker) => {
+                marker.classList.remove("is-cleared");
+                populateSourceList(marker);
                 const kind = marker.dataset.markerKind || "";
                 const key = markerKey(marker);
                 if (!key) return;
@@ -172,49 +137,80 @@ td.journal-print-markers {
                 }
                 if (kind === "pz_remove" || kind === "zn_off") {
                     const list = installed.get(key) || [];
-                    const source = list.find((item) => !item.classList.contains("is-cleared"));
-                    if (source) {
-                        source.classList.add("is-cleared");
-                        source.setAttribute("aria-label", `${source.title || "Установка"}; позднее снято`);
-                        const popup = source.querySelector(".opj-marker-popover");
-                        if (popup && !popup.querySelector(".opj-marker-cleared-state")) {
-                            const state = document.createElement("span");
-                            state.className = "opj-marker-cleared-state";
-                            state.textContent = "Позднее снято по хронологии журнала";
-                            popup.append(state);
-                        }
-                    }
+                    const source = [...list].reverse().find(
+                        (item) => !item.classList.contains("is-cleared")
+                    );
+                    if (source) source.classList.add("is-cleared");
                 }
             });
         });
     }
 
-    function renumber(table, printMode) {
-        let number = 0;
-        rowSequence(table).forEach((row) => {
-            if (row.querySelector(".approved-journal-empty, .journal-print-empty")) return;
-            number += 1;
-            const target = row.querySelector(printMode
-                ? ".journal-print-number"
-                : ".approved-journal-date-time small");
-            if (target) target.textContent = `№ ${number}`;
-            row.dataset.journalNumber = String(number);
-        });
+    function closePopover() {
+        if (floatingPopover) floatingPopover.remove();
+        floatingPopover = null;
+    }
+
+    function placePopover(trigger, popover) {
+        const margin = 12;
+        const rect = trigger.getBoundingClientRect();
+        popover.style.visibility = "hidden";
+        document.body.append(popover);
+        const box = popover.getBoundingClientRect();
+        let left = rect.left + rect.width / 2 - box.width / 2;
+        left = Math.max(margin, Math.min(left, window.innerWidth - box.width - margin));
+        let top = rect.top - box.height - 8;
+        if (top < margin) top = rect.bottom + 8;
+        top = Math.max(margin, Math.min(top, window.innerHeight - box.height - margin));
+        popover.style.left = `${Math.round(left)}px`;
+        popover.style.top = `${Math.round(top)}px`;
+        popover.style.visibility = "";
+    }
+
+    function openPopover(trigger) {
+        const source = trigger.querySelector(".opj-marker-popover");
+        if (!source) return;
+        closePopover();
+        floatingPopover = source.cloneNode(true);
+        floatingPopover.classList.add("is-floating");
+        floatingPopover.setAttribute("aria-hidden", "false");
+        placePopover(trigger, floatingPopover);
     }
 
     function initialize() {
-        document.querySelectorAll(".approved-journal-table").forEach((table) => {
-            applyChronology(table);
-            renumber(table, false);
-            table.classList.add("is-opj-chronology-ready");
-        });
-        document.querySelectorAll(".approved-journal-print-table").forEach((table) => {
-            applyChronology(table);
-            renumber(table, true);
-            table.classList.add("is-opj-chronology-ready");
-        });
-        document.querySelectorAll(".journal-print-author").forEach((node) => node.remove());
+        applyChronology();
+        document.querySelectorAll(
+            ".approved-journal-table, .approved-journal-print-table"
+        ).forEach((table) => table.classList.add("is-opj-chronology-ready"));
     }
+
+    document.addEventListener("pointerover", (event) => {
+        const marker = event.target.closest?.("[data-opj-marker]");
+        if (!marker || marker.contains(event.relatedTarget)) return;
+        openPopover(marker);
+    });
+
+    document.addEventListener("pointerout", (event) => {
+        const marker = event.target.closest?.("[data-opj-marker]");
+        if (!marker || marker.contains(event.relatedTarget)) return;
+        closePopover();
+    });
+
+    document.addEventListener("focusin", (event) => {
+        const marker = event.target.closest?.("[data-opj-marker]");
+        if (marker) openPopover(marker);
+    });
+
+    document.addEventListener("focusout", (event) => {
+        const marker = event.target.closest?.("[data-opj-marker]");
+        if (marker && !marker.contains(event.relatedTarget)) closePopover();
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && floatingPopover) closePopover();
+    });
+    window.addEventListener("resize", closePopover);
+    document.addEventListener("scroll", closePopover, true);
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", initialize, {once: true});
