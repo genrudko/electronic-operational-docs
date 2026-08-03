@@ -64,6 +64,7 @@
             <span>{{ clean_summary.count }} записей</span>
             {% if clean_summary.last_sequence %}<span>последняя № {{ clean_summary.last_sequence }}</span>{% endif %}
             {% if clean_summary.last_registered_at %}<span>{{ clean_summary.last_registered_at|date:"H:i" }}</span>{% endif %}
+            <span>Рабочий черновик · автосохранение</span>
         </div>
     </div>
     <div class="opj-clean-summary-actions">
