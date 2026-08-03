@@ -6,7 +6,7 @@
 {% block main_class %}opj-main journal-main journal-main-width-{{ ui_preferences.journal_width|lower }}{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'operational_log/opj_registered_actions.css' %}?v=opjlifecycle00301">
-<link rel="stylesheet" href="{% static 'operational_log/opj_lifecycle_acceptance_repair.css' %}?v=opjlifecycle00402">
+<link rel="stylesheet" href="{% static 'operational_log/opj_lifecycle_acceptance_repair.css' %}?v=opjlifecycle00501">
 {% endblock %}
 
 {% block content %}
@@ -38,7 +38,7 @@
 <section class="opj-clean-context-bar screen-only" aria-label="Выбор смены">
     <div class="opj-clean-context-copy">
         <strong>{% if selected_shift %}Чистовик выбранной смены{% else %}Чистовик по сменам и датам{% endif %}</strong>
-        <span>Записи показаны в хронологии события и сгруппированы по сменному контексту.</span>
+        <span>Номера записей идут сквозным хронологическим порядком журнала и не зависят от времени регистрации.</span>
     </div>
     <form method="get" class="opj-shift-selector-form">
         <label for="opj-shift-selector">Смена</label>
@@ -121,35 +121,39 @@
             <div><span class="opj-clean-shift-date">{{ group.date_label }}</span><strong>{{ group.period_label }}</strong></div>
             <span>{{ group.rows|length }} записей</span>
         </header>
-        <div class="approved-journal-table-wrap da-table-wrap">
-            <table class="approved-journal-table da-table" aria-label="{{ form_contract.title }} · {{ group.date_label }}">
+        <div class="approved-journal-table-wrap">
+            <table class="approved-journal-table" aria-label="{{ form_contract.title }} · {{ group.date_label }}">
                 <colgroup>{% for column in form_contract.columns %}<col data-approved-column="{{ column.key }}" style="width: {{ column.width_percent }}%;">{% endfor %}</colgroup>
                 <thead><tr>{% for column in form_contract.columns %}<th scope="col">{{ column.title }}</th>{% endfor %}</tr></thead>
                 <tbody>
                 {% for row in group.rows %}
-                    <tr id="entry-{{ row.entry.sequence_number }}" class="approved-journal-row opj-clean-entry-row{% if row.presentation.emergency %} is-emergency-event{% endif %}{% if row.lifecycle.state.status == 'CANCELLED' %} is-cancelled{% elif row.lifecycle.state.status == 'CORRECTED' %} is-corrected{% endif %}">
+                    <tr id="entry-{{ row.entry.sequence_number }}" class="approved-journal-row opj-clean-entry-row{% if row.presentation.emergency %} is-emergency-event{% endif %}{% if row.lifecycle.state.status == 'CANCELLED' %} is-cancelled{% elif row.lifecycle.state.status == 'CORRECTED' %} is-corrected{% endif %}" data-journal-number="{{ row.journal_number }}">
                         <td class="approved-journal-date-time">
                             <span class="opj-entry-date-placeholder">{% if row.show_date %}{{ row.entry.event_at|date:"d.m.Y" }}{% endif %}</span>
                             <strong class="opj-clean-time{% if row.presentation.emergency %} is-emergency{% endif %}">{{ row.entry.event_at|date:"H:i" }}</strong>
-                            <small>№ {{ row.entry.sequence_number }}</small>
+                            <small>№ {{ row.journal_number }}</small>
                         </td>
                         <td class="approved-journal-message">
                             <div class="opj-entry-document opj-rich-content">{{ row.presentation.html }}</div>
                             {% if row.entry.equipment_links.all or row.entry.document_links.all %}
                             <div class="approved-journal-links">
-                                {% for link in row.entry.equipment_links.all %}<a href="{% url 'equipment:detail' link.equipment.public_id %}">Оборудование: {{ link.dispatcher_name_snapshot }}</a>{% endfor %}
-                                {% for link in row.entry.document_links.all %}<a href="{% url 'documents:detail' link.document.public_id %}">Документ: {{ link.registration_number_snapshot }} — {{ link.title_snapshot }}</a>{% endfor %}
+                                {% for link in row.entry.equipment_links.all %}
+                                <button type="button" class="opj-reference-token" data-opj-reference-token data-reference-kind="equipment" data-reference-value="equipment:{{ link.equipment.public_id }}" data-reference-label="{{ link.dispatcher_name_snapshot }}" data-reference-url="{% url 'equipment:detail' link.equipment.public_id %}">Оборудование: {{ link.dispatcher_name_snapshot }}</button>
+                                {% endfor %}
+                                {% for link in row.entry.document_links.all %}
+                                <button type="button" class="opj-reference-token" data-opj-reference-token data-reference-kind="document" data-reference-value="document:{{ link.document.public_id }}" data-reference-label="{{ link.registration_number_snapshot }} — {{ link.title_snapshot }}" data-reference-url="{% url 'documents:detail' link.document.public_id %}">Документ: {{ link.registration_number_snapshot }} — {{ link.title_snapshot }}</button>
+                                {% endfor %}
                             </div>
                             {% endif %}
 
                             <div class="opj-entry-footer screen-only">
-                                <div class="opj-entry-footer-main">
+                                <div class="opj-entry-statuses">
                                     <span class="opj-entry-state-chip is-{{ row.lifecycle.state.status|lower }}">{{ row.lifecycle.state.status_label }}</span>
                                     {% if row.entry.type_code == 'opj-communication' %}<span class="opj-entry-kind-chip">{{ row.presentation.entry_kind_label }}</span>{% endif %}
                                     {% if row.lifecycle.state.correction_count %}<span class="opj-entry-meta">Исправлений: {{ row.lifecycle.state.correction_count }}</span>{% endif %}
                                     {% if row.defect_links %}<span class="opj-entry-meta">Связан дефект</span>{% endif %}
-                                    <span class="approved-journal-author">Автор записи: {{ row.entry.author_full_name_snapshot }} · зарегистрировано {{ row.entry.registered_at|date:"d.m.Y H:i" }}</span>
                                 </div>
+                                <span class="approved-journal-author">Автор записи: {{ row.entry.author_full_name_snapshot }} · зарегистрировано {{ row.entry.registered_at|date:"d.m.Y H:i" }}</span>
                                 <div class="opj-entry-actions" data-entry-actions>
                                     <button class="da-button is-secondary is-compact opj-entry-actions-trigger" type="button" data-entry-actions-toggle aria-expanded="false">
                                         <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-edit"></use></svg>
@@ -158,19 +162,19 @@
                                     </button>
                                     <div class="opj-entry-actions-menu da-overlay" data-entry-actions-menu role="menu" hidden>
                                         {% if row.lifecycle.state.status != 'CANCELLED' %}
-                                        <button type="button" role="menuitem" data-open-correction data-correct-url="{% url 'operational_log:entry_correct' journal.pk row.entry.sequence_number %}" data-entry-label="Запись № {{ row.entry.sequence_number }} от {{ row.entry.event_at|date:'d.m.Y H:i' }}" data-editor-payload-id="opj-editor-payload-{{ row.entry.sequence_number }}">
+                                        <button type="button" role="menuitem" data-open-correction data-correct-url="{% url 'operational_log:entry_correct' journal.pk row.entry.sequence_number %}" data-entry-label="Запись № {{ row.journal_number }} от {{ row.entry.event_at|date:'d.m.Y H:i' }}" data-editor-payload-id="opj-editor-payload-{{ row.entry.sequence_number }}">
                                             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-edit"></use></svg>
                                             <span><strong>Исправить запись</strong><small>Новой связанной записью</small></span>
                                         </button>
-                                        <button type="button" role="menuitem" class="is-danger" data-open-cancellation data-cancel-url="{% url 'operational_log:entry_cancel' journal.pk row.entry.sequence_number %}" data-entry-label="Запись № {{ row.entry.sequence_number }} от {{ row.entry.event_at|date:'d.m.Y H:i' }}">
+                                        <button type="button" role="menuitem" class="is-danger" data-open-cancellation data-cancel-url="{% url 'operational_log:entry_cancel' journal.pk row.entry.sequence_number %}" data-entry-label="Запись № {{ row.journal_number }} от {{ row.entry.event_at|date:'d.m.Y H:i' }}">
                                             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-delete"></use></svg>
                                             <span><strong>Отменить запись</strong><small>Исходный текст сохранится</small></span>
                                         </button>
                                         {% endif %}
-                                        {% if row.lifecycle.lifecycle_entries %}
+                                        {% if row.lifecycle_rows %}
                                         <button type="button" role="menuitem" data-toggle-entry-history data-history-id="opj-entry-history-{{ row.entry.sequence_number }}">
                                             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-history"></use></svg>
-                                            <span><strong>История изменений</strong><small>{{ row.lifecycle.lifecycle_entries|length }} связанных событий</small></span>
+                                            <span><strong>История изменений</strong><small>{{ row.lifecycle_rows|length }} связанных событий</small></span>
                                         </button>
                                         {% endif %}
                                         {% for link in row.defect_links %}
@@ -188,20 +192,19 @@
                                 </div>
                             </div>
 
-                            {% if row.lifecycle.lifecycle_entries %}
+                            {% if row.lifecycle_rows %}
                             <div id="opj-entry-history-{{ row.entry.sequence_number }}" class="opj-entry-history screen-only" data-entry-history hidden>
                                 <div class="opj-entry-history-heading">
-                                    <div><strong>История записи № {{ row.entry.sequence_number }}</strong><span>Первоначальная редакция сохранена неизменной</span></div>
+                                    <div><strong>История записи № {{ row.journal_number }}</strong><span>Первоначальная редакция сохранена неизменной</span></div>
                                     <button type="button" class="da-button is-tertiary is-compact" data-close-entry-history>Свернуть</button>
                                 </div>
                                 <div class="opj-entry-original-copy"><span>Первоначальный текст</span><p>{{ row.entry.content }}</p></div>
                                 <ol class="opj-related-event-list">
-                                {% for event in row.lifecycle.lifecycle_entries %}
-                                    {% opj_entry_presentation event as event_presentation %}
+                                {% for lifecycle_row in row.lifecycle_rows %}
                                     <li>
-                                        <div class="opj-related-event-meta"><strong>№ {{ event.sequence_number }} · {{ event.type_title }}</strong><span>{{ event.event_at|date:"d.m.Y H:i" }} · {{ event.author_full_name_snapshot }}</span></div>
-                                        <div class="opj-related-event-content opj-rich-content">{{ event_presentation.html }}</div>
-                                        {% if event.typed_payload.reason %}<p class="opj-related-event-reason">Причина: {{ event.typed_payload.reason }}</p>{% endif %}
+                                        <div class="opj-related-event-meta"><strong>№ {{ lifecycle_row.journal_number }} · {{ lifecycle_row.entry.type_title }}</strong><span>{{ lifecycle_row.entry.event_at|date:"d.m.Y H:i" }} · {{ lifecycle_row.entry.author_full_name_snapshot }}</span></div>
+                                        <div class="opj-related-event-content opj-rich-content">{{ lifecycle_row.presentation.html }}</div>
+                                        {% if lifecycle_row.entry.typed_payload.reason %}<p class="opj-related-event-reason">Причина: {{ lifecycle_row.entry.typed_payload.reason }}</p>{% endif %}
                                     </li>
                                 {% endfor %}
                                 </ol>
@@ -267,9 +270,9 @@
     </form>
 </dialog>
 
+{{ semantic_reference_catalog|json_script:"opj-semantic-reference-catalog" }}
 {% include "operational_log/_shift_workspace_overlays.html" %}
 
 <script src="{% static 'operational_log/draft_editor.js' %}?v=011364" defer></script>
-<script src="{% static 'operational_log/opj_registered_actions_v2.js' %}?v=opjlifecycle00402" defer></script>
-<script src="{% static 'operational_log/opj_actions_navigation_guard.js' %}?v=opjlifecycle00402" defer></script>
+<script src="{% static 'operational_log/opj_clean_journal.js' %}?v=opjlifecycle00501" defer></script>
 {% endblock %}
