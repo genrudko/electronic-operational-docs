@@ -21,9 +21,9 @@ preview: UNTOUCHED
 ```text
 canonical documentation tip: main / b77b7911f41ec6c3d1e7e5019558362a058ce237
 coordination tip at work-item start: 17663cf67d12c02d24177e554d6eb7d364e405e4
-active implementation state: REWORK IN PROGRESS
-user acceptance: ABSENT / FIRST CANDIDATE REJECTED
-current development candidate: STALE UNTIL NEW TRUSTED DELIVERY
+active implementation state: REWORK IMPLEMENTED / DEPLOYED FOR VISUAL ACCEPTANCE
+user acceptance: ABSENT / FIRST CANDIDATE REJECTED / CURRENT CANDIDATE PENDING
+current development candidate: CURRENT PR HEAD / TRUSTED DEVELOPMENT
 ```
 
 ## Active OPJ-LIFECYCLE-001
@@ -76,11 +76,16 @@ b77b7911f41ec6c3d1e7e5019558362a058ce237  decision-log additions
 - autosave/move/remove/restore зарегистрированной строки блокируются на маршрутах;
 - correction/cancellation/communication встроены в зарегистрированный журнал;
 - communication model сокращена до оперативно значимого результата;
-- focused regression contract переписан;
-- final exact-head CI и trusted development delivery ещё не завершены;
-- визуальная приёмка нового кандидата ещё не начиналась.
+- системные `confirm/alert` заменены проектными диалогами;
+- поддержаны пакетная регистрация, группировка чистовика по сменам, rich-text, аварийные и ПЗ/ЗН отметки;
+- отдельный audit-блок и глобальная дефектная панель отсутствуют;
+- визуальный слой использует Direction A, Onest Variable, EOD Outline 24, semantic theme tokens и принятую трёхграфную форму;
+- focused/full tests и пять exact-head workflows успешны;
+- trusted development delivery выполнен с подтверждением exact `LIVE_SHA`;
+- Preview не изменялся;
+- визуальная приёмка текущего кандидата ещё не выполнена.
 
-Текущий development до новой trusted delivery не является доказательством rework-кандидата. Предыдущее exact-head evidence для `9d04b2a...` относится к полностью отклонённой реализации и считается superseded.
+Текущий development является новым rework-кандидатом для отдельной пользовательской визуальной приёмки. Предыдущее exact-head evidence для `9d04b2a...`, `a3c0e97...` и других ранних head относится к полностью отклонённым или superseded реализациям.
 
 ## Accepted PERSONNEL-AUTHORITY-001 baseline
 
