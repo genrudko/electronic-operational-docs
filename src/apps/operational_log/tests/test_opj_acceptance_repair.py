@@ -4,6 +4,7 @@ from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.db import connection
 from django.test import Client, SimpleTestCase
 from django.urls import reverse
 
@@ -81,7 +82,12 @@ class OperationalJournalAcceptanceRepairTests(OperationalLogTestCase):
 
         self.assertTrue(verify_registered_snapshot(entry))
 
-        type(entry).objects.filter(pk=entry.pk).update(content="Подмена содержания")
+        table = entry._meta.db_table
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f'UPDATE "{table}" SET content = %s WHERE id = %s',
+                ["Подмена содержания", entry.pk],
+            )
         entry.refresh_from_db()
         with self.assertRaises(ValidationError):
             verify_registered_snapshot(entry)
