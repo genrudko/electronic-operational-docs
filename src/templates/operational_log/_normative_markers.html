@@ -10,6 +10,10 @@ td.journal-print-markers {
     vertical-align: top !important;
     text-align: center !important;
 }
+.approved-journal-table:not(.is-opj-chronology-ready) tbody,
+.approved-journal-print-table:not(.is-opj-chronology-ready) tbody {
+    visibility: hidden;
+}
 .opj-normative-marker,
 .draft-normative-marker {
     position: relative;
@@ -29,7 +33,12 @@ td.journal-print-markers {
     line-height: 1;
     vertical-align: top;
 }
-.opj-normative-marker[hidden] { display: none !important; }
+.opj-normative-marker.is-pz_remove,
+.opj-normative-marker.is-zn_off,
+.draft-normative-marker.is-pz_remove,
+.draft-normative-marker.is-zn_off {
+    color: var(--theme-primary, #2563eb) !important;
+}
 .opj-normative-marker.is-cleared,
 .draft-normative-marker.is-cleared {
     color: var(--theme-danger, #c7352b) !important;
@@ -66,33 +75,38 @@ td.journal-print-markers {
     bottom: calc(100% + 7px);
     display: none;
     width: max-content;
-    min-width: 190px;
-    max-width: min(380px, calc(100vw - 24px));
-    gap: 3px;
-    padding: 9px 11px;
+    min-width: 210px;
+    max-width: min(420px, calc(100vw - 24px));
+    gap: 4px;
+    padding: 10px 12px;
     border: 1px solid var(--theme-border-strong, #94a3b8);
     border-radius: 7px;
     background: var(--theme-surface-elevated, #fff);
     box-shadow: 0 14px 32px rgba(15, 23, 42, .22);
     color: var(--theme-text, #111827);
-    font-size: .68rem;
+    font-family: var(--font-family-base, "Onest Variable", "Onest", system-ui, sans-serif);
+    font-size: .72rem;
     font-weight: 400;
-    line-height: 1.35;
+    line-height: 1.4;
     text-align: left;
     transform: translateX(-50%);
     white-space: normal;
 }
 .opj-marker-popover strong,
 .opj-marker-popover span { display: block; }
+.opj-marker-popover .opj-marker-source-text {
+    color: var(--theme-text, #111827);
+    font-weight: 550;
+}
 .opj-normative-marker:hover .opj-marker-popover,
 .opj-normative-marker:focus-visible .opj-marker-popover { display: grid; }
 .opj-clean-time.is-emergency::after,
 .journal-print-time.is-emergency::after,
 .draft-ledger-time.is-emergency::after {
-    inset: -.08rem -.18rem !important;
-    border: 2px solid var(--theme-danger, #c7352b) !important;
+    inset: -.22rem -.46rem !important;
+    border: 3px solid var(--theme-danger, #c7352b) !important;
     border-radius: 50% !important;
-    transform: none !important;
+    transform: rotate(-4deg) !important;
 }
 /* Author/registration timestamp is runtime service metadata, not a journal-form requisite. */
 .journal-print-author { display: none !important; }
@@ -117,6 +131,7 @@ td.journal-print-markers {
     {% if marker.count > 1 %}<small class="opj-marker-count" aria-label="Количество одинаковых отметок">×{{ marker.count }}</small>{% endif %}
     <span class="opj-marker-popover" role="tooltip">
         <strong>{{ marker.label|default:"Нормативная отметка" }}</strong>
+        {% if marker.source_text %}<span class="opj-marker-source-text">{{ marker.source_text }}</span>{% endif %}
         {% if marker.pz_number %}<span>Номер ПЗ: {{ marker.pz_number }}</span>{% endif %}
         {% if marker.count > 1 %}<span>Исходных отметок: {{ marker.count }}</span>{% endif %}
     </span>
@@ -162,12 +177,12 @@ td.journal-print-markers {
                         source.classList.add("is-cleared");
                         source.setAttribute("aria-label", `${source.title || "Установка"}; позднее снято`);
                         const popup = source.querySelector(".opj-marker-popover");
-                        if (popup) {
+                        if (popup && !popup.querySelector(".opj-marker-cleared-state")) {
                             const state = document.createElement("span");
+                            state.className = "opj-marker-cleared-state";
                             state.textContent = "Позднее снято по хронологии журнала";
                             popup.append(state);
                         }
-                        marker.hidden = true;
                     }
                 }
             });
@@ -191,10 +206,12 @@ td.journal-print-markers {
         document.querySelectorAll(".approved-journal-table").forEach((table) => {
             applyChronology(table);
             renumber(table, false);
+            table.classList.add("is-opj-chronology-ready");
         });
         document.querySelectorAll(".approved-journal-print-table").forEach((table) => {
             applyChronology(table);
             renumber(table, true);
+            table.classList.add("is-opj-chronology-ready");
         });
         document.querySelectorAll(".journal-print-author").forEach((node) => node.remove());
     }
