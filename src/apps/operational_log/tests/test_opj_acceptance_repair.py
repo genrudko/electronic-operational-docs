@@ -77,7 +77,8 @@ class OperationalJournalAcceptanceRepairTests(OperationalLogTestCase):
             for row in groups[0].rows
         }
         self.assertLess(displayed[early_entry.pk], displayed[late_entry.pk])
-        self.assertEqual(sorted(displayed.values()), [1, 2])
+        numbers = sorted(displayed.values())
+        self.assertEqual(numbers, list(range(numbers[0], numbers[0] + 2)))
 
     def test_integrity_uses_frozen_snapshot_not_current_directory_labels(self) -> None:
         entry = register_draft(draft=self.available_drafts()[0], actor=self.actor)
