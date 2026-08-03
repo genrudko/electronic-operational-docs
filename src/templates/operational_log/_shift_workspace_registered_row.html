@@ -51,8 +51,7 @@
                 <div class="draft-ledger-meta">
                     <span class="opj-clean-copy-chip">Чистовик · № {{ registration.entry.sequence_number }}</span>
                     <span class="draft-meta-chip">{{ lifecycle.state.status_label }}</span>
-                    <span class="draft-meta-chip">Зарегистрировано {{ registration.entry.registered_at|date:"d.m.Y H:i" }}</span>
-                    <span class="draft-meta-chip">{{ registration.entry.author_full_name_snapshot }}</span>
+                    <span class="draft-meta-chip">{{ registration.entry.author_full_name_snapshot }} · {{ registration.entry.registered_at|date:"d.m.Y H:i" }}</span>
                 </div>
                 <a
                     class="da-button is-secondary is-compact opj-open-clean-entry"
@@ -62,14 +61,7 @@
         </div>
 
         <div class="draft-ledger-visas opj-clean-markers" aria-label="Нормативные отметки">
-            {% for marker in presentation.markers %}
-            <span class="opj-normative-marker is-{{ marker.kind }}" title="{{ marker.label }}">
-                <span>{% if marker.kind == 'pz_install' or marker.kind == 'pz_remove' %}ПЗ{% else %}ЗН{% endif %}</span>
-                <b aria-hidden="true">ϟ</b>
-                {% if marker.pz_number %}<small>№{{ marker.pz_number }}</small>{% endif %}
-                {% if marker.kind == 'pz_remove' or marker.kind == 'zn_off' %}<i aria-hidden="true">×</i>{% endif %}
-            </span>
-            {% endfor %}
+            {% include "operational_log/_normative_markers.html" with markers=presentation.markers %}
         </div>
     </div>
 </article>
