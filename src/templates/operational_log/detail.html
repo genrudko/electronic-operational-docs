@@ -6,7 +6,7 @@
 {% block main_class %}opj-main journal-main journal-main-width-{{ ui_preferences.journal_width|lower }}{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'operational_log/opj_registered_actions.css' %}?v=opjlifecycle00301">
-<link rel="stylesheet" href="{% static 'operational_log/opj_lifecycle_acceptance_repair.css' %}?v=opjlifecycle00401">
+<link rel="stylesheet" href="{% static 'operational_log/opj_lifecycle_acceptance_repair.css' %}?v=opjlifecycle00402">
 {% endblock %}
 
 {% block content %}
@@ -30,7 +30,7 @@
         <button class="da-button is-secondary" type="button" data-open-journal-settings>Настроить вид</button>
         <a class="da-button" href="{% url 'operational_log:print' journal.pk %}{% if selected_shift %}?shift={{ selected_shift }}{% endif %}" target="_blank" rel="noopener">
             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-print"></use></svg>
-            <span>Печатная форма</span>
+            <span>Печать формы</span>
         </a>
     </div>
 </section>
@@ -148,7 +148,7 @@
                                     {% if row.entry.type_code == 'opj-communication' %}<span class="opj-entry-kind-chip">{{ row.presentation.entry_kind_label }}</span>{% endif %}
                                     {% if row.lifecycle.state.correction_count %}<span class="opj-entry-meta">Исправлений: {{ row.lifecycle.state.correction_count }}</span>{% endif %}
                                     {% if row.defect_links %}<span class="opj-entry-meta">Связан дефект</span>{% endif %}
-                                    <span class="approved-journal-author">{{ row.entry.author_full_name_snapshot }} · зарегистрировано {{ row.entry.registered_at|date:"d.m.Y H:i" }}</span>
+                                    <span class="approved-journal-author">Автор записи: {{ row.entry.author_full_name_snapshot }} · зарегистрировано {{ row.entry.registered_at|date:"d.m.Y H:i" }}</span>
                                 </div>
                                 <div class="opj-entry-actions" data-entry-actions>
                                     <button class="da-button is-secondary is-compact opj-entry-actions-trigger" type="button" data-entry-actions-toggle aria-expanded="false">
@@ -270,5 +270,6 @@
 {% include "operational_log/_shift_workspace_overlays.html" %}
 
 <script src="{% static 'operational_log/draft_editor.js' %}?v=011364" defer></script>
-<script src="{% static 'operational_log/opj_registered_actions_v2.js' %}?v=opjlifecycle00401" defer></script>
+<script src="{% static 'operational_log/opj_registered_actions_v2.js' %}?v=opjlifecycle00402" defer></script>
+<script src="{% static 'operational_log/opj_actions_navigation_guard.js' %}?v=opjlifecycle00402" defer></script>
 {% endblock %}
