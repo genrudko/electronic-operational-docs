@@ -1,5 +1,5 @@
 {% for marker in markers %}
-<span class="draft-normative-marker is-{{ marker.kind }}" title="{{ marker.label }}">
+<span class="draft-normative-marker opj-normative-marker is-{{ marker.kind }}" title="{{ marker.label }}">
     <span class="draft-normative-marker-top">
         {% if marker.kind == 'pz_install' or marker.kind == 'pz_remove' %}ПЗ{% else %}ЗН{% endif %}
     </span>
