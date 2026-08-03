@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
@@ -16,10 +16,11 @@ from apps.organizations.models import InterfacePreference
 
 from .form_contracts import OPERATIONAL_JOURNAL_FORM
 from .forms import JournalDisplayPreferenceForm
-from .models import OperationalDraftEntry, OperationalJournal
+from .models import OperationalJournal
 from .opj_integrity import verify_registered_snapshot
 from .opj_lifecycle import _accessible_journal, register_draft
 from .opj_presentation import build_clean_journal_groups
+from .opj_print_presentation import build_print_journal_groups
 from .opj_registration_order import ordered_registration_drafts
 from .services import active_shift_for_journal, require_operational_employee, timeline_queryset
 
@@ -221,8 +222,6 @@ def register_single_draft_view(
 
 
 def _shift_redirect(journal: OperationalJournal) -> HttpResponse:
-    from django.shortcuts import redirect
-
     return redirect(reverse("operational_log:shift_workspace", args=(journal.pk,)))
 
 
@@ -278,7 +277,7 @@ def print_journal_view(
     journal = _accessible_journal(employee, journal_id)
     entries = _journal_entries(journal)
     selected_shift = _selected_shift_public_id(request, journal)
-    groups = build_clean_journal_groups(
+    groups = build_print_journal_groups(
         entries=entries,
         selected_shift=selected_shift,
     )
