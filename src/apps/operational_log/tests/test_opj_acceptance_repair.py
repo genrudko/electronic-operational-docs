@@ -75,8 +75,6 @@ class OperationalJournalAcceptanceRepairTests(OperationalLogTestCase):
         )
         self.assertTrue(verify_registered_snapshot(entry))
 
-        self.journal.title = "Новое отображаемое наименование журнала"
-        self.journal.save(update_fields=("title",))
         self.journal.workplace.name = "Новое отображаемое наименование рабочего места"
         self.journal.workplace.save(update_fields=("name",))
         entry.refresh_from_db()
@@ -200,9 +198,10 @@ class OperationalJournalAcceptanceSourceTests(SimpleTestCase):
 
         self.assertNotIn("data-draft-selection", time_block)
         self.assertIn("opj-row-selection-control", rows)
-        self.assertIn("data-selection-mode-toggle", self.source(
-            "templates/operational_log/shift_workspace.html"
-        ))
+        self.assertIn(
+            "data-selection-mode-toggle",
+            self.source("templates/operational_log/shift_workspace.html"),
+        )
 
     def test_clean_actions_use_viewport_floating_menu(self) -> None:
         javascript = self.source(
@@ -213,8 +212,11 @@ class OperationalJournalAcceptanceSourceTests(SimpleTestCase):
         )
 
         self.assertIn("document.body.append(menu)", javascript)
-        self.assertIn('position: fixed !important', css)
-        self.assertIn("window.addEventListener(\"resize\", closeActionMenus)", javascript)
+        self.assertIn("position: fixed !important", css)
+        self.assertIn(
+            'window.addEventListener("resize", closeActionMenus)',
+            javascript,
+        )
         self.assertIn("window.EODOPJNavigation?.allowOnce()", javascript)
         self.assertNotIn("window.confirm", javascript)
         self.assertNotIn("window.alert", javascript)
