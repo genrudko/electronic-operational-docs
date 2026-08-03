@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -111,10 +111,28 @@ def _validated_draft_ids(request: HttpRequest) -> list[uuid.UUID]:
         try:
             value = uuid.UUID(str(raw))
         except (TypeError, ValueError, AttributeError) as error:
-            raise ValidationError("Передан некорректный идентификатор строки.") from error
+            raise ValidationError(
+                "Передан некорректный идентификатор строки."
+            ) from error
         if value not in result:
             result.append(value)
     return result
+
+
+def _selected_shift_public_id(
+    request: HttpRequest,
+    journal: OperationalJournal,
+) -> str:
+    raw_value = request.GET.get("shift", "").strip()
+    if not raw_value:
+        return ""
+    try:
+        public_id = uuid.UUID(raw_value)
+    except (ValueError, AttributeError):
+        return ""
+    if not journal.shifts.filter(public_id=public_id).exists():
+        return ""
+    return str(public_id)
 
 
 @require_POST
@@ -236,7 +254,11 @@ def correct_entry_structured(
     with transaction.atomic():
         locked = (
             OperationalLogEntry.objects.select_for_update()
-            .select_related("journal", "journal__organization", "journal__workplace")
+            .select_related(
+                "journal",
+                "journal__organization",
+                "journal__workplace",
+            )
             .get(pk=entry.pk)
         )
         _ensure_original_target(locked)
@@ -398,9 +420,7 @@ def clean_journal_view(
             integrity_failures += 1
         technical_rows.append({"entry": entry, "integrity_ok": integrity_ok})
 
-    selected_shift = request.GET.get("shift", "").strip()
-    if selected_shift and not journal.shifts.filter(public_id=selected_shift).exists():
-        selected_shift = ""
+    selected_shift = _selected_shift_public_id(request, journal)
     groups = build_clean_journal_groups(
         entries=entries,
         selected_shift=selected_shift,
@@ -415,6 +435,7 @@ def clean_journal_view(
             "rows": technical_rows,
             "form_contract": OPERATIONAL_JOURNAL_FORM,
             "display_form": JournalDisplayPreferenceForm(instance=preferences),
+            "ui_preferences": preferences,
             "active_shift": active_shift_for_journal(journal),
             "first_entry": entries[0] if entries else None,
             "last_entry": entries[-1] if entries else None,
