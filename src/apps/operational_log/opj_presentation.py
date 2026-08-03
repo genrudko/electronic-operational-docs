@@ -27,7 +27,7 @@ from .opj_lifecycle import TYPE_CORRECTION, entry_lifecycle_context
 class EditorPresentation:
     html: SafeString
     emergency: bool
-    markers: tuple[dict[str, str], ...]
+    markers: tuple[dict[str, Any], ...]
     editor_payload: dict[str, Any]
     editor_payload_json: str
     entry_kind_label: str
@@ -98,9 +98,35 @@ def _reference_url(reference: dict[str, Any]) -> str:
         return f"/equipment/items/{escaped}/"
     if kind == "document":
         return f"/documents/{escaped}/"
-    if kind == "person":
+    if kind in {"person", "employee"}:
         return "/organization/"
     return ""
+
+
+def _reference_html(reference: dict[str, Any], text: SafeString) -> SafeString:
+    identity = str(reference.get("reference") or "").strip()
+    kind = str(reference.get("kind") or "").strip()
+    label = str(reference.get("label") or "").strip()
+    url = _reference_url(reference)
+    if not identity or not label:
+        return text
+    if not url:
+        return format_html(
+            '<span class="opj-reference-token is-unresolved" '
+            'title="Связанный объект недоступен для перехода">{}</span>',
+            text,
+        )
+    return format_html(
+        '<button type="button" class="opj-reference-token" '
+        'data-opj-reference-token data-reference-kind="{}" '
+        'data-reference-value="{}" data-reference-label="{}" '
+        'data-reference-url="{}" title="Показать связанную карточку">{}</button>',
+        kind,
+        identity,
+        label,
+        url,
+        text,
+    )
 
 
 def _segment_html(
@@ -131,21 +157,8 @@ def _segment_html(
 
     text = _escaped_text(str(segment.get("text") or ""))
     reference = segment.get("reference")
-    if isinstance(reference, dict) and reference.get("label"):
-        url = _reference_url(reference)
-        if url:
-            text = format_html(
-                '<a class="opj-reference-token" href="{}" title="Открыть: {}">{}</a>',
-                url,
-                reference.get("label"),
-                text,
-            )
-        else:
-            text = format_html(
-                '<span class="opj-reference-token is-unresolved" '
-                'title="Связанный объект недоступен для перехода">{}</span>',
-                text,
-            )
+    if isinstance(reference, dict):
+        text = _reference_html(reference, text)
     return format_html('<span class="{}">{}</span>', " ".join(classes), text)
 
 
@@ -176,6 +189,26 @@ def _block_html(
     return mark_safe(f'<{tag} class="opj-rich-list">{"".join(items)}</{tag}>')
 
 
+def _marker_rows(annotation_rows: dict[str, dict[str, str]]) -> tuple[dict[str, Any], ...]:
+    buckets: OrderedDict[tuple[str, str], dict[str, Any]] = OrderedDict()
+    for row in annotation_rows.values():
+        kind = str(row.get("kind") or "")
+        if not kind or kind == "emergency":
+            continue
+        pz_number = str(row.get("pz_number") or "")
+        key = (kind, pz_number)
+        if key not in buckets:
+            buckets[key] = {
+                "kind": kind,
+                "label": str(row.get("label") or ""),
+                "pz_number": pz_number,
+                "count": 1,
+            }
+        else:
+            buckets[key]["count"] += 1
+    return tuple(buckets.values())
+
+
 def present_editor_document(document: dict[str, Any]) -> EditorPresentation:
     normalized = normalize_editor_document(document)
     annotation_rows = {
@@ -189,25 +222,13 @@ def present_editor_document(document: dict[str, Any]) -> EditorPresentation:
             for block in normalized.get("blocks") or []
         )
     )
-    markers: list[dict[str, str]] = []
-    for row in annotation_rows.values():
-        kind = str(row.get("kind") or "")
-        if kind == "emergency":
-            continue
-        markers.append(
-            {
-                "kind": kind,
-                "label": str(row.get("label") or ""),
-                "pz_number": str(row.get("pz_number") or ""),
-            }
-        )
     entry_kind = str(normalized.get("entry_kind") or "normal")
     return EditorPresentation(
         html=html,
         emergency=any(
             row.get("kind") == "emergency" for row in annotation_rows.values()
         ),
-        markers=tuple(markers),
+        markers=_marker_rows(annotation_rows),
         editor_payload=normalized,
         editor_payload_json=serialize_editor_document(normalized),
         entry_kind_label=ENTRY_KIND_LABELS.get(entry_kind, ENTRY_KIND_LABELS["normal"]),
@@ -259,6 +280,26 @@ def _stable_lifecycle(entry: OperationalLogEntry):
     return replace(lifecycle, integrity_ok=integrity_ok)
 
 
+def journal_number_map(
+    entries: Iterable[OperationalLogEntry],
+    drafts: dict[str, OperationalDraftEntry] | None = None,
+) -> dict[int, int]:
+    draft_rows = drafts or {}
+
+    def order_key(entry: OperationalLogEntry):
+        draft = draft_rows.get(_draft_public_id(entry))
+        source_position = draft.position if draft is not None else 1_000_000_000
+        return (
+            entry.event_at,
+            source_position,
+            entry.sequence_number,
+            entry.pk,
+        )
+
+    ordered = sorted(entries, key=order_key)
+    return {entry.pk: index for index, entry in enumerate(ordered, start=1)}
+
+
 def build_clean_journal_groups(
     *,
     entries: list[OperationalLogEntry],
@@ -273,6 +314,7 @@ def build_clean_journal_groups(
             public_id__in=draft_ids
         ).select_related("shift")
     }
+    numbers = journal_number_map(entries, drafts)
 
     groups: OrderedDict[str, CleanJournalGroup] = OrderedDict()
     for entry in entries:
@@ -310,10 +352,20 @@ def build_clean_journal_groups(
             entry,
             lifecycle_entries=lifecycle.lifecycle_entries,
         )
+        lifecycle_rows = [
+            {
+                "entry": event,
+                "journal_number": numbers.get(event.pk, event.sequence_number),
+                "presentation": entry_presentation(event),
+            }
+            for event in lifecycle.lifecycle_entries
+        ]
         group.rows.append(
             {
                 "entry": entry,
+                "journal_number": numbers.get(entry.pk, entry.sequence_number),
                 "lifecycle": lifecycle,
+                "lifecycle_rows": lifecycle_rows,
                 "presentation": presentation,
                 "effective_content": editor_document_to_text(
                     presentation.editor_payload
@@ -325,12 +377,7 @@ def build_clean_journal_groups(
 
     result = sorted(groups.values(), key=lambda item: item.start_at)
     for group in result:
-        group.rows.sort(
-            key=lambda row: (
-                row["entry"].event_at,
-                row["entry"].sequence_number,
-            )
-        )
+        group.rows.sort(key=lambda row: row["journal_number"])
         previous_date = None
         for row in group.rows:
             current_date = timezone.localtime(row["entry"].event_at).date()
