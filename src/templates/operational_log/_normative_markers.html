@@ -1,3 +1,6 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'operational_log/opj_acceptance_repair_v2.css' %}?v=opjlifecycle00601">
+<script src="{% static 'operational_log/opj_acceptance_repair_v2.js' %}?v=opjlifecycle00601" defer></script>
 {% for marker in markers %}
 <span class="opj-normative-marker is-{{ marker.kind }} draft-normative-marker{% if marker.kind == 'pz_remove' or marker.kind == 'zn_off' %} is-cleared{% endif %}" tabindex="0" aria-label="{{ marker.label }}{% if marker.count > 1 %}; всего отметок: {{ marker.count }}{% endif %}">
     <span class="draft-normative-marker-top">
