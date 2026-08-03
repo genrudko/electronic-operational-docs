@@ -7,7 +7,7 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'operational_log/opj_workspace_controls.css' %}?v=opjux00105">
 <link rel="stylesheet" href="{% static 'operational_log/opj_registered_actions.css' %}?v=opjlifecycle00301">
-<link rel="stylesheet" href="{% static 'operational_log/opj_lifecycle_acceptance_repair.css' %}?v=opjlifecycle00402">
+<link rel="stylesheet" href="{% static 'operational_log/opj_lifecycle_acceptance_repair.css' %}?v=opjlifecycle00501">
 {% endblock %}
 
 {% block content %}
@@ -62,8 +62,7 @@
         <strong>Чистовик текущей смены</strong>
         <div class="opj-clean-summary-meta">
             <span>{{ clean_summary.count }} записей</span>
-            {% if clean_summary.last_sequence %}<span>последняя № {{ clean_summary.last_sequence }}</span>{% endif %}
-            {% if clean_summary.last_registered_at %}<span>{{ clean_summary.last_registered_at|date:"H:i" }}</span>{% endif %}
+            {% if clean_summary.last_registered_at %}<span>последняя регистрация {{ clean_summary.last_registered_at|date:"H:i" }}</span>{% endif %}
             <span>Рабочий черновик · автосохранение</span>
         </div>
     </div>
@@ -110,7 +109,7 @@
                 <span aria-hidden="true"></span>
             </label>
             <strong data-selected-count>Выбрано: 0</strong>
-            <span>Регистрация выполняется по хронологии журнала без пропусков.</span>
+            <span>Выбранные строки будут зарегистрированы по времени события.</span>
         </div>
         <div class="opj-batch-registration-actions">
             <button type="button" class="da-button is-tertiary is-compact" data-clear-draft-selection>Снять выделение</button>
@@ -173,7 +172,7 @@
             </button>
         </header>
         <div class="opj-dialog-body">
-            <p class="opj-dialog-lead">Строки будут зарегистрированы по времени события и позиции в черновике. После регистрации они останутся в смене, но станут неизменяемыми.</p>
+            <p class="opj-dialog-lead">Строки останутся в сменном черновике как неизменяемые. Их журнальные номера определит общая хронология событий, а не время регистрации.</p>
             <div class="opj-register-selection-summary">
                 <strong data-register-dialog-count>Выбрано строк: 0</strong>
                 <div data-register-dialog-list></div>
@@ -190,10 +189,10 @@
 </dialog>
 
 <script src="{% static 'operational_log/draft_editor.js' %}?v=011364" defer></script>
-<script src="{% static 'operational_log/opj_draft_guard.js' %}?v=opjlifecycle00402" defer></script>
+<script src="{% static 'operational_log/opj_draft_guard.js' %}?v=opjlifecycle00501" defer></script>
 <script src="{% static 'operational_log/draft_workspace.js' %}?v=011364" defer></script>
 <script src="{% static 'operational_log/draft_reference_navigation.js' %}?v=011364" defer></script>
 <script src="{% static 'operational_log/opj_workspace_controls.js' %}?v=opjux00105" defer></script>
-<script src="{% static 'operational_log/opj_registered_actions_v2.js' %}?v=opjlifecycle00402" defer></script>
+<script src="{% static 'operational_log/opj_registered_actions_v2.js' %}?v=opjlifecycle00501" defer></script>
 {% endif %}
 {% endblock %}
