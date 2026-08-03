@@ -189,23 +189,53 @@ def _block_html(
     return mark_safe(f'<{tag} class="opj-rich-list">{"".join(items)}</{tag}>')
 
 
-def _marker_rows(annotation_rows: dict[str, dict[str, str]]) -> tuple[dict[str, Any], ...]:
+def _annotation_source_text(document: dict[str, Any]) -> dict[str, str]:
+    values: dict[str, list[str]] = {}
+    for block in document.get("blocks") or []:
+        segments = block.get("segments") or []
+        if block.get("type") in {"ordered_list", "bullet_list"}:
+            segments = [
+                segment
+                for item in block.get("items") or []
+                for segment in item.get("segments") or []
+            ]
+        for segment in segments:
+            text = " ".join(str(segment.get("text") or "").split())
+            if not text:
+                continue
+            for annotation_id in segment.get("annotations") or []:
+                bucket = values.setdefault(str(annotation_id), [])
+                if text not in bucket:
+                    bucket.append(text)
+    return {key: "; ".join(parts) for key, parts in values.items()}
+
+
+def _marker_rows(
+    annotation_rows: dict[str, dict[str, str]],
+    source_text: dict[str, str],
+) -> tuple[dict[str, Any], ...]:
     buckets: OrderedDict[tuple[str, str], dict[str, Any]] = OrderedDict()
-    for row in annotation_rows.values():
+    for annotation_id, row in annotation_rows.items():
         kind = str(row.get("kind") or "")
         if not kind or kind == "emergency":
             continue
         pz_number = str(row.get("pz_number") or "")
         key = (kind, pz_number)
+        detail = source_text.get(annotation_id, "")
         if key not in buckets:
             buckets[key] = {
                 "kind": kind,
                 "label": str(row.get("label") or ""),
                 "pz_number": pz_number,
                 "count": 1,
+                "details": [detail] if detail else [],
             }
         else:
             buckets[key]["count"] += 1
+            if detail and detail not in buckets[key]["details"]:
+                buckets[key]["details"].append(detail)
+    for marker in buckets.values():
+        marker["source_text"] = "; ".join(marker.pop("details"))
     return tuple(buckets.values())
 
 
@@ -228,7 +258,7 @@ def present_editor_document(document: dict[str, Any]) -> EditorPresentation:
         emergency=any(
             row.get("kind") == "emergency" for row in annotation_rows.values()
         ),
-        markers=_marker_rows(annotation_rows),
+        markers=_marker_rows(annotation_rows, _annotation_source_text(normalized)),
         editor_payload=normalized,
         editor_payload_json=serialize_editor_document(normalized),
         entry_kind_label=ENTRY_KIND_LABELS.get(entry_kind, ENTRY_KIND_LABELS["normal"]),
