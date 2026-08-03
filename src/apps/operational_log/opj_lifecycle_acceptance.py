@@ -22,7 +22,11 @@ from .opj_lifecycle import _accessible_journal, register_draft
 from .opj_presentation import build_clean_journal_groups
 from .opj_print_presentation import build_print_journal_groups
 from .opj_registration_order import ordered_registration_drafts
-from .services import active_shift_for_journal, require_operational_employee, timeline_queryset
+from .services import (
+    active_shift_for_journal,
+    require_operational_employee,
+    timeline_queryset,
+)
 
 MAX_BATCH_SIZE = 100
 
@@ -127,7 +131,9 @@ def _register_ordered_rows(
                     {
                         "public_id": str(draft.public_id),
                         "ok": False,
-                        "message": "Строка не перенесена после ошибки предыдущей записи.",
+                        "message": (
+                            "Строка не перенесена после ошибки предыдущей записи."
+                        ),
                     }
                 )
         return results, registered_count, failed_count
@@ -201,7 +207,7 @@ def register_single_draft_view(
     shift = active_shift_for_journal(journal)
     if shift is None:
         messages.error(request, "Открытая смена не найдена.")
-        return _shift_redirect(journal)
+        return _shift_redirect(journal, public_id)
     try:
         results, registered_count, _ = _register_ordered_rows(
             shift=shift,
@@ -214,15 +220,26 @@ def register_single_draft_view(
         if registered_count:
             messages.success(
                 request,
-                f"Запись перенесена в чистовик под № {results[0]['sequence_number']}.",
+                (
+                    "Запись перенесена в чистовик под № "
+                    f"{results[0]['sequence_number']}."
+                ),
             )
         elif results:
             messages.error(request, results[0]["message"])
-    return _shift_redirect(journal)
+    return _shift_redirect(journal, public_id)
 
 
-def _shift_redirect(journal: OperationalJournal) -> HttpResponse:
-    return redirect(reverse("operational_log:shift_workspace", args=(journal.pk,)))
+def _shift_redirect(
+    journal: OperationalJournal,
+    public_id: uuid.UUID | None = None,
+) -> HttpResponse:
+    response = redirect(
+        reverse("operational_log:shift_workspace", args=(journal.pk,))
+    )
+    if public_id is not None:
+        response["Location"] = f"{response['Location']}#draft-{public_id}"
+    return response
 
 
 @login_required
