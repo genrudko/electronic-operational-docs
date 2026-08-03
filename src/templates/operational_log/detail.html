@@ -2,22 +2,19 @@
 {% load static opj_lifecycle_tags %}
 
 {% block title %}{{ journal.title }} · ЭОД{% endblock %}
-{% block body_class %}direction-a-body da-active opj-direction-a{% endblock %}
+{% block body_class %}direction-a-body da-active opj-direction-a opj-clean-journal-page{% endblock %}
 {% block main_class %}opj-main journal-main journal-main-width-{{ ui_preferences.journal_width|lower }}{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'operational_log/opj_registered_actions.css' %}?v=opjlifecycle00202">
+<link rel="stylesheet" href="{% static 'operational_log/opj_registered_actions.css' %}?v=opjlifecycle00301">
 {% endblock %}
 
 {% block content %}
 <section class="journal-workspace-bar da-page-header screen-only">
     <div class="journal-workspace-title">
-        <div class="eyebrow">ОПЕРАТИВНАЯ ДОКУМЕНТАЦИЯ</div>
+        <div class="eyebrow">ЗАРЕГИСТРИРОВАННЫЙ ОПЕРАТИВНЫЙ ЖУРНАЛ</div>
         <h1>{{ journal.title }}</h1>
         <div class="journal-workspace-meta">
-            <span><strong>{{ summary.total }}</strong> записей</span>
-            {% if first_entry and last_entry %}
-                <span>{{ first_entry.event_at|date:"d.m.Y H:i" }} — {{ last_entry.event_at|date:"d.m.Y H:i" }}</span>
-            {% endif %}
+            <span><strong>{{ summary.total }}</strong> зарегистрированных записей</span>
             {% if summary.integrity_failures %}
                 <span class="journal-integrity-error">{{ summary.integrity_failures }} записей требуют проверки</span>
             {% else %}
@@ -28,270 +25,173 @@
 
     <div class="journal-workspace-actions da-actions">
         <a class="da-button is-quiet" href="{% url 'operational_log:registry' %}">К журналам</a>
-        <a class="da-button is-secondary shift-workspace-link" href="{% url 'operational_log:shift_workspace' journal.pk %}">
-            {% if active_shift %}Рабочая смена{% else %}Открыть смену{% endif %}
-        </a>
-        <button class="da-button is-secondary journal-settings-trigger" type="button" aria-haspopup="dialog" onclick="document.getElementById('journal-display-settings').showModal()">Настроить вид</button>
-        <button class="da-button journal-print-button" type="button" onclick="window.print()">Печать формы</button>
+        <a class="da-button is-secondary shift-workspace-link" href="{% url 'operational_log:shift_workspace' journal.pk %}">{% if active_shift %}Рабочая смена{% else %}Открыть смену{% endif %}</a>
+        <button class="da-button is-secondary" type="button" data-open-journal-settings>Настроить вид</button>
+        <button class="da-button" type="button" data-print-journal><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-print"></use></svg><span>Печать формы</span></button>
     </div>
+</section>
+
+<section class="opj-clean-context-bar screen-only" aria-label="Выбор смены">
+    <div class="opj-clean-context-copy">
+        <strong>{% if selected_shift %}Чистовик выбранной смены{% else %}Чистовик по сменам и датам{% endif %}</strong>
+        <span>Зарегистрированные записи не смешиваются в бесконтекстный поток.</span>
+    </div>
+    <form method="get" class="opj-shift-selector-form">
+        <label for="opj-shift-selector">Смена</label>
+        <select id="opj-shift-selector" class="da-field" name="shift">
+            <option value="">Все смены</option>
+            {% for option in shift_options %}
+            <option value="{{ option.public_id }}"{% if selected_shift == option.public_id|stringformat:'s' %} selected{% endif %}>{{ option.planned_start_at|date:"d.m.Y" }} · {{ option.planned_start_at|date:"H:i" }}–{{ option.planned_end_at|date:"H:i" }}</option>
+            {% endfor %}
+        </select>
+        <button class="da-button is-secondary is-compact" type="submit">Показать</button>
+    </form>
 </section>
 
 <dialog id="journal-display-settings" class="journal-settings-dialog da-overlay screen-only" aria-labelledby="journal-settings-title">
     <form method="post" action="{% url 'operational_log:update_display' journal.pk %}" class="journal-settings-form">
         {% csrf_token %}
         <header class="journal-settings-header">
-            <div>
-                <div class="eyebrow">ПЕРСОНАЛЬНОЕ ОТОБРАЖЕНИЕ</div>
-                <h2 id="journal-settings-title">Настройки журнала</h2>
-                <p>Меняется только рабочий экран. Утверждённая форма и печать остаются неизменными.</p>
-            </div>
-            <button class="journal-settings-close" type="button" aria-label="Закрыть настройки" onclick="this.closest('dialog').close()">×</button>
+            <div><div class="eyebrow">ПЕРСОНАЛЬНОЕ ОТОБРАЖЕНИЕ</div><h2 id="journal-settings-title">Настройки журнала</h2><p>Меняется только рабочий экран. Утверждённая форма и печать остаются неизменными.</p></div>
         </header>
-
         <div class="journal-settings-body">
             <fieldset class="journal-settings-section">
                 <legend>Шапка и ширина</legend>
-                <div class="journal-heading-choice-grid">
-                    {% for option in display_form.journal_heading_mode %}
-                        <label class="journal-heading-choice">{{ option.tag }}<span>{{ option.choice_label }}</span></label>
-                    {% endfor %}
-                </div>
+                <div class="journal-heading-choice-grid">{% for option in display_form.journal_heading_mode %}<label class="journal-heading-choice">{{ option.tag }}<span>{{ option.choice_label }}</span></label>{% endfor %}</div>
                 <small class="journal-settings-help">{{ display_form.journal_heading_mode.help_text }}</small>
-                <div class="journal-setting-field">
-                    <label for="{{ display_form.journal_width.id_for_label }}">{{ display_form.journal_width.label }}</label>
-                    {{ display_form.journal_width }}
-                </div>
+                <div class="journal-setting-field"><label for="{{ display_form.journal_width.id_for_label }}">{{ display_form.journal_width.label }}</label>{{ display_form.journal_width }}</div>
             </fieldset>
-
             <fieldset class="journal-settings-section">
                 <legend>Шрифт и плотность</legend>
                 <div class="journal-settings-grid">
-                    <div class="journal-setting-field">
-                        <label for="{{ display_form.journal_font_family.id_for_label }}">{{ display_form.journal_font_family.label }}</label>
-                        {{ display_form.journal_font_family }}
-                    </div>
-                    <div class="journal-setting-field">
-                        <label for="{{ display_form.journal_density.id_for_label }}">{{ display_form.journal_density.label }}</label>
-                        {{ display_form.journal_density }}
-                    </div>
+                    <div class="journal-setting-field"><label for="{{ display_form.journal_font_family.id_for_label }}">{{ display_form.journal_font_family.label }}</label>{{ display_form.journal_font_family }}</div>
+                    <div class="journal-setting-field"><label for="{{ display_form.journal_density.id_for_label }}">{{ display_form.journal_density.label }}</label>{{ display_form.journal_density }}</div>
                 </div>
             </fieldset>
-
             <fieldset class="journal-settings-section">
                 <legend>Размеры текста</legend>
                 <div class="journal-settings-grid journal-typography-settings-grid">
-                    <div class="journal-setting-field">
-                        <label for="{{ display_form.journal_font_size.id_for_label }}">{{ display_form.journal_font_size.label }}</label>
-                        {{ display_form.journal_font_size }}
-                    </div>
-                    <div class="journal-setting-field">
-                        <label for="{{ display_form.journal_time_font_size.id_for_label }}">{{ display_form.journal_time_font_size.label }}</label>
-                        {{ display_form.journal_time_font_size }}
-                    </div>
-                    <div class="journal-setting-field">
-                        <label for="{{ display_form.journal_date_font_size.id_for_label }}">{{ display_form.journal_date_font_size.label }}</label>
-                        {{ display_form.journal_date_font_size }}
-                    </div>
-                    <div class="journal-setting-field">
-                        <label for="{{ display_form.journal_table_header_font_size.id_for_label }}">{{ display_form.journal_table_header_font_size.label }}</label>
-                        {{ display_form.journal_table_header_font_size }}
-                    </div>
-                    <div class="journal-setting-field">
-                        <label for="{{ display_form.journal_title_font_size.id_for_label }}">{{ display_form.journal_title_font_size.label }}</label>
-                        {{ display_form.journal_title_font_size }}
-                    </div>
+                    <div class="journal-setting-field"><label for="{{ display_form.journal_font_size.id_for_label }}">{{ display_form.journal_font_size.label }}</label>{{ display_form.journal_font_size }}</div>
+                    <div class="journal-setting-field"><label for="{{ display_form.journal_time_font_size.id_for_label }}">{{ display_form.journal_time_font_size.label }}</label>{{ display_form.journal_time_font_size }}</div>
+                    <div class="journal-setting-field"><label for="{{ display_form.journal_date_font_size.id_for_label }}">{{ display_form.journal_date_font_size.label }}</label>{{ display_form.journal_date_font_size }}</div>
+                    <div class="journal-setting-field"><label for="{{ display_form.journal_table_header_font_size.id_for_label }}">{{ display_form.journal_table_header_font_size.label }}</label>{{ display_form.journal_table_header_font_size }}</div>
+                    <div class="journal-setting-field"><label for="{{ display_form.journal_title_font_size.id_for_label }}">{{ display_form.journal_title_font_size.label }}</label>{{ display_form.journal_title_font_size }}</div>
                 </div>
                 <small class="journal-settings-help">Экранные размеры не изменяют утверждённую печатную форму.</small>
             </fieldset>
-
             <fieldset class="journal-settings-section">
                 <legend>Служебные сведения</legend>
-                <label class="journal-setting-toggle">
-                    {{ display_form.journal_show_authors }}
-                    <span><strong>{{ display_form.journal_show_authors.label }}</strong><small>{{ display_form.journal_show_authors.help_text }}</small></span>
-                </label>
-                <label class="journal-setting-toggle">
-                    {{ display_form.journal_show_links }}
-                    <span><strong>{{ display_form.journal_show_links.label }}</strong><small>{{ display_form.journal_show_links.help_text }}</small></span>
-                </label>
+                <label class="journal-setting-toggle">{{ display_form.journal_show_authors }}<span><strong>{{ display_form.journal_show_authors.label }}</strong><small>{{ display_form.journal_show_authors.help_text }}</small></span></label>
+                <label class="journal-setting-toggle">{{ display_form.journal_show_links }}<span><strong>{{ display_form.journal_show_links.label }}</strong><small>{{ display_form.journal_show_links.help_text }}</small></span></label>
             </fieldset>
         </div>
-
-        <footer class="journal-settings-footer">
-            <button class="da-button" type="submit">Сохранить отображение</button>
-            <button class="da-button is-secondary" type="button" onclick="this.closest('dialog').close()">Отмена</button>
-        </footer>
+        <footer class="journal-settings-footer"><button class="da-button" type="submit">Сохранить отображение</button><button class="da-button is-secondary" type="button" data-close-journal-settings>Отмена</button></footer>
     </form>
 </dialog>
 
-<section
-    class="approved-journal-shell journal-heading-{{ ui_preferences.journal_heading_mode|lower }} journal-font-{{ ui_preferences.journal_font_family|lower }} journal-size-{{ ui_preferences.journal_font_size|lower }} journal-entry-size-{{ ui_preferences.journal_font_size|lower }} journal-time-size-{{ ui_preferences.journal_time_font_size|lower }} journal-date-size-{{ ui_preferences.journal_date_font_size|lower }} journal-table-header-size-{{ ui_preferences.journal_table_header_font_size|lower }} journal-title-size-{{ ui_preferences.journal_title_font_size|lower }} journal-density-{{ ui_preferences.journal_density|lower }}{% if not ui_preferences.journal_show_authors %} journal-authors-hidden{% endif %}{% if not ui_preferences.journal_show_links %} journal-links-hidden{% endif %}"
-    data-approved-journal-form="{{ form_contract.code }}"
-    data-approved-journal-columns="{{ form_contract.columns|length }}"
-    data-journal-heading-mode="{{ ui_preferences.journal_heading_mode|lower }}"
-    data-journal-entry-size="{{ ui_preferences.journal_font_size|lower }}"
-    data-journal-time-size="{{ ui_preferences.journal_time_font_size|lower }}"
-    data-journal-date-size="{{ ui_preferences.journal_date_font_size|lower }}"
-    data-journal-table-header-size="{{ ui_preferences.journal_table_header_font_size|lower }}"
-    data-journal-title-size="{{ ui_preferences.journal_title_font_size|lower }}"
->
+<section class="approved-journal-shell journal-heading-{{ ui_preferences.journal_heading_mode|lower }} journal-font-{{ ui_preferences.journal_font_family|lower }} journal-size-{{ ui_preferences.journal_font_size|lower }} journal-entry-size-{{ ui_preferences.journal_font_size|lower }} journal-time-size-{{ ui_preferences.journal_time_font_size|lower }} journal-date-size-{{ ui_preferences.journal_date_font_size|lower }} journal-table-header-size-{{ ui_preferences.journal_table_header_font_size|lower }} journal-title-size-{{ ui_preferences.journal_title_font_size|lower }} journal-density-{{ ui_preferences.journal_density|lower }}{% if not ui_preferences.journal_show_authors %} journal-authors-hidden{% endif %}{% if not ui_preferences.journal_show_links %} journal-links-hidden{% endif %}" data-approved-journal-form="{{ form_contract.code }}" data-approved-journal-columns="{{ form_contract.columns|length }}">
     <header class="approved-journal-heading">
-        <div class="approved-journal-heading-full">
-            <div class="approved-journal-form-label screen-only">УТВЕРЖДЁННАЯ ФОРМА</div>
-            <h2>{{ form_contract.title|upper }}</h2>
-            <p>{{ journal.workplace.name }}</p>
-            {% if journal.workplace.division %}<p>{{ journal.workplace.division.name }}</p>{% endif %}
-            <small class="screen-only">{{ form_contract.source_reference }}</small>
-        </div>
-        <div class="approved-journal-heading-compact screen-only">
-            <strong>{{ form_contract.title|upper }}</strong>
-            <span>{{ journal.workplace.name }}</span>
-            {% if journal.workplace.division %}<small>{{ journal.workplace.division.name }}</small>{% endif %}
-        </div>
+        <div class="approved-journal-heading-full"><div class="approved-journal-form-label screen-only">УТВЕРЖДЁННАЯ ФОРМА</div><h2>{{ form_contract.title|upper }}</h2><p>{{ journal.workplace.name }}</p>{% if journal.workplace.division %}<p>{{ journal.workplace.division.name }}</p>{% endif %}<small class="screen-only">{{ form_contract.source_reference }}</small></div>
+        <div class="approved-journal-heading-compact screen-only"><strong>{{ form_contract.title|upper }}</strong><span>{{ journal.workplace.name }}</span>{% if journal.workplace.division %}<small>{{ journal.workplace.division.name }}</small>{% endif %}</div>
     </header>
 
-    <div class="approved-journal-table-wrap da-table-wrap">
-        <table class="approved-journal-table da-table" aria-label="{{ form_contract.title }}">
-            <colgroup>
-                {% for column in form_contract.columns %}<col data-approved-column="{{ column.key }}" style="width: {{ column.width_percent }}%;">{% endfor %}
-            </colgroup>
-            <thead>
-                <tr>{% for column in form_contract.columns %}<th scope="col">{{ column.title }}</th>{% endfor %}</tr>
-            </thead>
-            <tbody>
-            {% for row in rows %}
-                {% opj_entry_lifecycle row.entry as lifecycle %}
-                <tr id="entry-{{ row.entry.sequence_number }}" class="approved-journal-row{% if not row.integrity_ok or not lifecycle.integrity_ok %} approved-journal-row-invalid{% endif %}">
-                    <td class="approved-journal-date-time">
-                        <span>{{ row.entry.event_at|date:"d.m.Y" }}</span>
-                        <strong>{{ row.entry.event_at|date:"H:i" }}</strong>
-                        <small>№ {{ row.entry.sequence_number }}</small>
-                    </td>
-                    <td class="approved-journal-message">
-                        <div class="opj-row-state-line screen-only">
-                            {% if lifecycle.is_child %}
-                                <span class="opj-entry-kind-chip">{{ lifecycle.child_label }}</span>
-                            {% elif row.entry.type_code == "opj-communication" %}
-                                <span class="opj-entry-kind-chip">{{ row.entry.type_title }}</span>
-                                <span class="opj-entry-state-chip is-{{ lifecycle.state.status|lower }}">{{ lifecycle.state.status_label }}</span>
-                            {% else %}
-                                <span class="opj-entry-state-chip is-{{ lifecycle.state.status|lower }}">{{ lifecycle.state.status_label }}</span>
-                                {% if lifecycle.state.correction_count %}<span>{{ lifecycle.state.correction_count }} исправл.</span>{% endif %}
-                            {% endif %}
-                        </div>
+    {% for group in groups %}
+    <section class="opj-clean-shift-group" id="{% if group.is_shift %}shift-{{ group.shift_public_id }}{% else %}{{ group.key|slugify }}{% endif %}">
+        <header class="opj-clean-shift-heading"><div><span class="opj-clean-shift-date">{{ group.date_label }}</span><strong>{{ group.period_label }}</strong></div><span>{{ group.rows|length }} записей</span></header>
+        <div class="approved-journal-table-wrap da-table-wrap">
+            <table class="approved-journal-table da-table" aria-label="{{ form_contract.title }} · {{ group.date_label }}">
+                <colgroup>{% for column in form_contract.columns %}<col data-approved-column="{{ column.key }}" style="width: {{ column.width_percent }}%;">{% endfor %}</colgroup>
+                <thead><tr>{% for column in form_contract.columns %}<th scope="col">{{ column.title }}</th>{% endfor %}</tr></thead>
+                <tbody>
+                {% for row in group.rows %}
+                    <tr id="entry-{{ row.entry.sequence_number }}" class="approved-journal-row opj-clean-entry-row{% if row.presentation.emergency %} is-emergency-event{% endif %}{% if row.lifecycle.state.status == 'CANCELLED' %} is-cancelled{% elif row.lifecycle.state.status == 'CORRECTED' %} is-corrected{% endif %}">
+                        <td class="approved-journal-date-time"><span>{{ row.entry.event_at|date:"d.m.Y" }}</span><strong class="opj-clean-time{% if row.presentation.emergency %} is-emergency{% endif %}">{{ row.entry.event_at|date:"H:i" }}</strong><small>№ {{ row.entry.sequence_number }}</small></td>
+                        <td class="approved-journal-message">
+                            <div class="opj-entry-document opj-rich-content">{{ row.presentation.html }}</div>
+                            {% if row.entry.equipment_links.all or row.entry.document_links.all %}<div class="approved-journal-links">{% for link in row.entry.equipment_links.all %}<span>Оборудование: {{ link.dispatcher_name_snapshot }}</span>{% endfor %}{% for link in row.entry.document_links.all %}<a href="{% url 'documents:detail' link.document.public_id %}">Документ: {{ link.registration_number_snapshot }} — {{ link.title_snapshot }}</a>{% endfor %}</div>{% endif %}
 
-                        <p>{{ row.entry.content }}</p>
-
-                        {% if lifecycle.is_child and lifecycle.linked_original %}
-                            <div class="opj-row-source-line screen-only">
-                                <span>Относится к исходной записи</span>
-                                <a href="#entry-{{ lifecycle.linked_original.sequence_number }}">№ {{ lifecycle.linked_original.sequence_number }}</a>
-                            </div>
-                        {% endif %}
-
-                        {% if not lifecycle.is_child and lifecycle.state.status == "CORRECTED" %}
-                        <details class="opj-effective-version screen-only">
-                            <summary>Показать действующую редакцию</summary>
-                            <div class="opj-effective-version-body">
-                                <p>{{ lifecycle.state.effective_content }}</p>
-                            </div>
-                        </details>
-                        {% endif %}
-
-                        {% if not lifecycle.is_child and lifecycle.lifecycle_entries %}
-                        <details class="opj-original-history screen-only">
-                            <summary>Исправления и отмена · {{ lifecycle.lifecycle_entries|length }}</summary>
-                            <div class="opj-original-history-body">
-                                <p><strong>Первоначальный текст сохранён:</strong> {{ row.entry.content }}</p>
-                                <ul class="opj-related-event-list">
-                                {% for event in lifecycle.lifecycle_entries %}
-                                    <li>
-                                        <strong><a href="#entry-{{ event.sequence_number }}">№ {{ event.sequence_number }}</a> · {{ event.type_title }}</strong>
-                                        <span>{{ event.event_at|date:"d.m.Y H:i" }} · {{ event.author_full_name_snapshot }}</span>
-                                    </li>
-                                {% endfor %}
-                                </ul>
-                            </div>
-                        </details>
-                        {% endif %}
-
-                        {% if row.entry.equipment_links.all or row.entry.document_links.all %}
-                        <div class="approved-journal-links">
-                            {% for link in row.entry.equipment_links.all %}<span>Оборудование: {{ link.dispatcher_name_snapshot }}</span>{% endfor %}
-                            {% for link in row.entry.document_links.all %}
-                                <a href="{% url 'documents:detail' link.document.public_id %}">Документ: {{ link.registration_number_snapshot }} — {{ link.title_snapshot }}</a>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        <div class="approved-journal-author">Автор записи: {{ row.entry.author_full_name_snapshot }}, {{ row.entry.author_position_snapshot }}</div>
-
-                        {% if not lifecycle.is_child %}
-                        <details class="opj-row-actions screen-only">
-                            <summary>Исправить или отменить</summary>
-                            <div class="opj-row-actions-body">
-                                {% if lifecycle.state.status != "CANCELLED" %}
-                                <div class="opj-row-actions-grid">
-                                    <form method="post" action="{% url 'operational_log:entry_correct' journal.pk row.entry.sequence_number %}" class="opj-row-action-card" onsubmit="return window.confirm('Добавить исправление новой записью? Первоначальный текст останется неизменным.')">
-                                        {% csrf_token %}
-                                        <h4>Исправить запись</h4>
-                                        <label>
-                                            <span>Как должно быть</span>
-                                            <textarea name="replacement_content" maxlength="20000" required>{{ lifecycle.state.effective_content }}</textarea>
-                                        </label>
-                                        <label>
-                                            <span>Причина исправления</span>
-                                            <textarea name="reason" maxlength="1000" required></textarea>
-                                        </label>
-                                        <button class="da-button is-secondary is-compact" type="submit">Добавить исправление</button>
-                                    </form>
-
-                                    <form method="post" action="{% url 'operational_log:entry_cancel' journal.pk row.entry.sequence_number %}" class="opj-row-action-card is-danger" onsubmit="return window.confirm('Отменить запись новой записью в чистовике? Исходная запись не будет удалена.')">
-                                        {% csrf_token %}
-                                        <h4>Отменить запись</h4>
-                                        <label>
-                                            <span>Причина отмены</span>
-                                            <textarea name="reason" maxlength="1000" required></textarea>
-                                        </label>
-                                        <button class="da-button is-secondary is-compact" type="submit">Добавить отмену</button>
-                                    </form>
+                            <div class="opj-entry-footer screen-only">
+                                <div class="opj-entry-footer-main">
+                                    <span class="opj-entry-state-chip is-{{ row.lifecycle.state.status|lower }}">{{ row.lifecycle.state.status_label }}</span>
+                                    {% if row.entry.type_code == 'opj-communication' %}<span class="opj-entry-kind-chip">{{ row.presentation.entry_kind_label }}</span>{% endif %}
+                                    {% if row.lifecycle.state.correction_count %}<span class="opj-entry-meta">Исправлений: {{ row.lifecycle.state.correction_count }}</span>{% endif %}
+                                    {% if row.defect_links %}<span class="opj-entry-meta">Связан дефект</span>{% endif %}
+                                    <span class="approved-journal-author">{{ row.entry.author_full_name_snapshot }} · {{ row.entry.registered_at|date:"d.m.Y H:i" }}</span>
                                 </div>
-                                {% else %}
-                                    <p class="opj-row-source-line">Запись отменена. Новое исправление или повторная отмена недоступны.</p>
-                                {% endif %}
+                                <div class="opj-entry-actions" data-entry-actions>
+                                    <button class="da-button is-secondary is-compact opj-entry-actions-trigger" type="button" data-entry-actions-toggle aria-expanded="false"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-edit"></use></svg><span>Действия</span><svg class="ui-icon is-chevron" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-chevron-right"></use></svg></button>
+                                    <div class="opj-entry-actions-menu da-overlay" data-entry-actions-menu role="menu" hidden>
+                                        {% if row.lifecycle.state.status != 'CANCELLED' %}
+                                        <button type="button" role="menuitem" data-open-correction data-correct-url="{% url 'operational_log:entry_correct' journal.pk row.entry.sequence_number %}" data-entry-label="Запись № {{ row.entry.sequence_number }} от {{ row.entry.event_at|date:'d.m.Y H:i' }}" data-editor-payload-id="opj-editor-payload-{{ row.entry.sequence_number }}"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-edit"></use></svg><span><strong>Исправить запись</strong><small>Новой связанной записью</small></span></button>
+                                        <button type="button" role="menuitem" class="is-danger" data-open-cancellation data-cancel-url="{% url 'operational_log:entry_cancel' journal.pk row.entry.sequence_number %}" data-entry-label="Запись № {{ row.entry.sequence_number }} от {{ row.entry.event_at|date:'d.m.Y H:i' }}"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-delete"></use></svg><span><strong>Отменить запись</strong><small>Исходный текст сохранится</small></span></button>
+                                        {% endif %}
+                                        {% if row.lifecycle.lifecycle_entries %}<button type="button" role="menuitem" data-toggle-entry-history data-history-id="opj-entry-history-{{ row.entry.sequence_number }}"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-history"></use></svg><span><strong>История изменений</strong><small>{{ row.lifecycle.lifecycle_entries|length }} связанных событий</small></span></button>{% endif %}
+                                        {% for link in row.defect_links %}<a role="menuitem" href="{% url 'equipment_defects:detail' link.record.public_id %}"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-module-defects"></use></svg><span><strong>Открыть дефект</strong><small>{{ link.record.registration_number }}</small></span></a>{% empty %}<a role="menuitem" href="{% url 'equipment_defects:create_from_operational_log' row.entry.pk %}"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-module-defects"></use></svg><span><strong>Создать дефект</strong><small>Связать с этой записью</small></span></a>{% endfor %}
+                                    </div>
+                                </div>
                             </div>
-                        </details>
-                        {% endif %}
 
-                        {% if not row.integrity_ok or not lifecycle.integrity_ok %}<strong class="opj-row-integrity-warning screen-only">Зарегистрированная запись требует проверки целостности</strong>{% endif %}
-                    </td>
-                    <td class="approved-journal-visas"><span aria-hidden="true">&nbsp;</span></td>
-                </tr>
-            {% empty %}
-                <tr><td class="approved-journal-empty" colspan="3">В журнале пока нет зарегистрированных записей.</td></tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                            {% if row.lifecycle.lifecycle_entries %}
+                            <div id="opj-entry-history-{{ row.entry.sequence_number }}" class="opj-entry-history screen-only" data-entry-history hidden>
+                                <div class="opj-entry-history-heading"><div><strong>История записи № {{ row.entry.sequence_number }}</strong><span>Первоначальная редакция сохранена неизменной</span></div><button type="button" class="da-button is-tertiary is-compact" data-close-entry-history>Свернуть</button></div>
+                                <div class="opj-entry-original-copy"><span>Первоначальный текст</span><p>{{ row.entry.content }}</p></div>
+                                <ol class="opj-related-event-list">
+                                {% for event in row.lifecycle.lifecycle_entries %}
+                                    {% opj_entry_presentation event as event_presentation %}
+                                    <li><div class="opj-related-event-meta"><strong>№ {{ event.sequence_number }} · {{ event.type_title }}</strong><span>{{ event.event_at|date:"d.m.Y H:i" }} · {{ event.author_full_name_snapshot }}</span></div><div class="opj-related-event-content opj-rich-content">{{ event_presentation.html }}</div>{% if event.typed_payload.reason %}<p class="opj-related-event-reason">Причина: {{ event.typed_payload.reason }}</p>{% endif %}</li>
+                                {% endfor %}
+                                </ol>
+                            </div>
+                            {% endif %}
+                            {% opj_editor_payload_script row.presentation row.entry.sequence_number %}
+                            {% if not row.lifecycle.integrity_ok %}<strong class="opj-row-integrity-warning screen-only">Зарегистрированная запись требует проверки целостности</strong>{% endif %}
+                        </td>
+                        <td class="approved-journal-visas opj-clean-markers">
+                            {% for marker in row.presentation.markers %}<span class="opj-normative-marker is-{{ marker.kind }}" title="{{ marker.label }}"><span>{% if marker.kind == 'pz_install' or marker.kind == 'pz_remove' %}ПЗ{% else %}ЗН{% endif %}</span><b aria-hidden="true">ϟ</b>{% if marker.pz_number %}<small>№{{ marker.pz_number }}</small>{% endif %}{% if marker.kind == 'pz_remove' or marker.kind == 'zn_off' %}<i aria-hidden="true">×</i>{% endif %}</span>{% empty %}<span aria-hidden="true">&nbsp;</span>{% endfor %}
+                        </td>
+                    </tr>
+                {% empty %}<tr><td class="approved-journal-empty" colspan="3">В этой смене зарегистрированных записей пока нет.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% empty %}<div class="approved-journal-empty opj-clean-empty">{% if selected_shift %}Для выбранной смены чистовик пока не сформирован.{% else %}Зарегистрированных записей пока нет.{% endif %}</div>{% endfor %}
 </section>
 
-{% if ui_preferences.show_technical_details %}
-<details class="technical-panel journal-technical-register technical-only screen-only">
-    <summary>Технические реквизиты зарегистрированных записей</summary>
-    <div class="table-wrap da-table-wrap">
-        <table class="da-table">
-            <thead><tr><th>№</th><th>Время регистрации</th><th>Внутренний тип</th><th>SHA-256</th></tr></thead>
-            <tbody>
-            {% for row in rows %}
-                <tr>
-                    <td>{{ row.entry.sequence_number }}</td>
-                    <td>{{ row.entry.registered_at|date:"d.m.Y H:i:s" }}</td>
-                    <td>{{ row.entry.type_code|default:"—" }}</td>
-                    <td><code>{{ row.entry.digest }}</code></td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+<dialog class="opj-action-dialog da-overlay screen-only" data-correction-dialog aria-labelledby="opj-correction-title">
+    <div class="opj-dialog-surface">
+        <header class="opj-dialog-header"><span class="opj-dialog-icon" aria-hidden="true"><svg class="ui-icon"><use href="{% static 'system/icons.svg' %}#icon-edit"></use></svg></span><div><span class="eyebrow">ИСПРАВЛЕНИЕ В ЧИСТОВИКЕ</span><h2 id="opj-correction-title">Исправить запись</h2><p data-correction-entry-label></p></div></header>
+        <form method="post" data-correction-form>
+            {% csrf_token %}<input type="hidden" name="return_shift" value="{{ selected_shift }}">
+            <div class="opj-dialog-body">
+                <p class="opj-dialog-lead">Исходная запись останется неизменной. Исправленная редакция будет зарегистрирована отдельным связанным событием со всеми нормативными отметками.</p>
+                <div class="opj-correction-editor-card" data-draft-card data-draft-id="correction" data-entry-at="">
+                    <div class="opj-correction-toolbar" role="toolbar" aria-label="Форматирование исправленной редакции">
+                        <button type="button" class="da-icon-button" data-editor-command="bold" aria-label="Полужирный" title="Полужирный"><strong>Ж</strong></button><button type="button" class="da-icon-button" data-editor-command="italic" aria-label="Курсив" title="Курсив"><em>К</em></button><button type="button" class="da-icon-button" data-editor-command="underline" aria-label="Подчёркивание" title="Подчёркивание"><u>Ч</u></button><button type="button" class="da-button is-secondary is-compact" data-normative-trigger aria-haspopup="menu" aria-expanded="false">Нормативные отметки</button><button type="button" class="da-button is-tertiary is-compact" data-editor-command="clear">Очистить формат</button>
+                    </div>
+                    <div class="opj-correction-editor" data-draft-form><input type="hidden" name="editor_schema_version" value="operational-draft-editor.v4" data-editor-schema-version><textarea name="replacement_content" maxlength="20000" data-editor-fallback aria-label="Исправленное содержание"></textarea><textarea name="replacement_editor_payload" data-editor-payload hidden aria-hidden="true" tabindex="-1"></textarea><div class="draft-rich-editor-host" data-rich-editor-host></div></div>
+                </div>
+                <label class="opj-dialog-field"><span>Причина исправления</span><textarea name="reason" maxlength="1000" rows="3" required placeholder="Кратко укажите, что и почему исправлено"></textarea></label>
+                <p class="opj-dialog-error" data-correction-error role="alert" hidden></p>
+            </div>
+            <footer class="opj-dialog-footer"><button type="button" class="da-button is-secondary" data-close-correction>Отмена</button><button type="submit" class="da-button">Зарегистрировать исправление</button></footer>
+        </form>
     </div>
-</details>
-{% endif %}
+</dialog>
+
+<dialog class="opj-action-dialog da-overlay screen-only" data-cancellation-dialog aria-labelledby="opj-cancellation-title">
+    <form method="post" class="opj-dialog-surface" data-cancellation-form>
+        {% csrf_token %}<input type="hidden" name="return_shift" value="{{ selected_shift }}">
+        <header class="opj-dialog-header"><span class="opj-dialog-icon is-danger" aria-hidden="true"><svg class="ui-icon"><use href="{% static 'system/icons.svg' %}#icon-delete"></use></svg></span><div><span class="eyebrow">ОТМЕНА В ЧИСТОВИКЕ</span><h2 id="opj-cancellation-title">Отменить запись</h2><p data-cancellation-entry-label></p></div></header>
+        <div class="opj-dialog-body"><p class="opj-dialog-lead">Запись не удаляется. В журнале появится связанное событие отмены с указанной причиной.</p><label class="opj-dialog-field"><span>Причина отмены</span><textarea name="reason" maxlength="1000" rows="4" required placeholder="Укажите предметную причину отмены"></textarea></label></div>
+        <footer class="opj-dialog-footer"><button type="button" class="da-button is-secondary" data-close-cancellation>Назад</button><button type="submit" class="da-button is-danger">Зарегистрировать отмену</button></footer>
+    </form>
+</dialog>
+
+{% include "operational_log/_shift_workspace_overlays.html" %}
+
+<details class="technical-panel screen-only technical-only"><summary>Служебная проверка зарегистрированных записей</summary><div class="technical-panel-body"><p>Сквозная нумерация, регистрационное время и контроль целостности доступны для технической проверки.</p>{% for row in rows %}<div class="technical-entry"><strong>№ {{ row.entry.sequence_number }}</strong><span>{{ row.entry.registered_at|date:"d.m.Y H:i:s" }}</span><code>{{ row.entry.digest }}</code><span>{% if row.integrity_ok %}Целостность подтверждена{% else %}Требуется проверка{% endif %}</span></div>{% endfor %}</div></details>
+
+<script src="{% static 'operational_log/draft_editor.js' %}?v=011364" defer></script>
+<script src="{% static 'operational_log/opj_registered_actions.js' %}?v=opjlifecycle00301" defer></script>
 {% endblock %}
