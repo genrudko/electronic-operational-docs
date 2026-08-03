@@ -10,6 +10,7 @@
         id="draft-{{ draft.public_id }}"
         class="draft-ledger-row opj-entry-row"
         data-draft-card
+        data-registerable-draft
         data-draft-id="{{ draft.public_id }}"
         data-entry-date="{{ draft.event_at|date:'Y-m-d' }}"
         data-entry-date-label="{{ draft.event_at|date:'d.m.Y' }}"
@@ -40,14 +41,25 @@
             <input type="hidden" name="editor_schema_version" value="{{ draft.editor_schema_version }}" data-editor-schema-version>
 
             <div class="draft-ledger-time">
-                <input
-                    type="text"
-                    inputmode="numeric"
-                    autocomplete="off"
-                    value="{{ draft.event_at|date:'H:i' }}"
-                    data-quick-time
-                    aria-label="Время события"
-                >
+                <div class="opj-draft-time-line">
+                    <label class="opj-row-selector" title="Выбрать строку для переноса в чистовик">
+                        <input
+                            type="checkbox"
+                            value="{{ draft.public_id }}"
+                            data-draft-selection
+                            aria-label="Выбрать запись {{ draft.event_at|date:'H:i' }}"
+                        >
+                        <span aria-hidden="true"></span>
+                    </label>
+                    <input
+                        type="text"
+                        inputmode="numeric"
+                        autocomplete="off"
+                        value="{{ draft.event_at|date:'H:i' }}"
+                        data-quick-time
+                        aria-label="Время события"
+                    >
+                </div>
             </div>
 
             <div class="draft-ledger-content">
@@ -82,11 +94,10 @@
 
                     <div class="draft-mini-toolbar draft-row-action-toolbar" data-mini-toolbar aria-label="Действия с записью">
                         <button
-                            type="submit"
+                            type="button"
                             class="da-button is-compact opj-register-draft-button"
-                            formaction="{% url 'operational_log:register_draft_lifecycle' journal.pk draft.public_id %}"
                             data-register-draft
-                            onclick="return window.confirm('Перенести сохранённую строку в чистовик? После регистрации её можно будет исправить только новой записью в чистовике.')"
+                            data-draft-id="{{ draft.public_id }}"
                         >В чистовик</button>
                         <span class="draft-row-action-separator" aria-hidden="true"></span>
                         <button
