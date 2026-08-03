@@ -7,6 +7,7 @@ from ..opj_lifecycle import (
     entry_lifecycle_context,
     registered_entry_for_draft,
 )
+from ..opj_presentation import entry_presentation, present_editor_document
 
 register = template.Library()
 
@@ -19,6 +20,16 @@ def opj_draft_registration(draft):
 @register.simple_tag
 def opj_entry_lifecycle(entry):
     return entry_lifecycle_context(entry)
+
+
+@register.simple_tag
+def opj_entry_presentation(entry, lifecycle_entries=None):
+    return entry_presentation(entry, lifecycle_entries=lifecycle_entries)
+
+
+@register.simple_tag
+def opj_editor_presentation(editor_payload):
+    return present_editor_document(editor_payload)
 
 
 @register.simple_tag
