@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import opj_lifecycle, views
+from . import opj_lifecycle, opj_lifecycle_repair, views
 
 app_name = "operational_log"
 
@@ -20,6 +20,11 @@ urlpatterns = [
         "operations/journal/<int:journal_id>/shift/drafts/add/",
         views.add_draft_entry,
         name="add_draft",
+    ),
+    path(
+        "operations/journal/<int:journal_id>/shift/drafts/register-selected/",
+        opj_lifecycle_repair.register_drafts_batch_view,
+        name="register_drafts_batch",
     ),
     path(
         (
@@ -68,12 +73,12 @@ urlpatterns = [
     ),
     path(
         "operations/journal/<int:journal_id>/entries/<int:sequence_number>/correct/",
-        opj_lifecycle.correct_entry_view,
+        opj_lifecycle_repair.correct_entry_view,
         name="entry_correct",
     ),
     path(
         "operations/journal/<int:journal_id>/entries/<int:sequence_number>/cancel/",
-        opj_lifecycle.cancel_entry_view,
+        opj_lifecycle_repair.cancel_entry_view,
         name="entry_cancel",
     ),
     path(
@@ -83,7 +88,7 @@ urlpatterns = [
     ),
     path(
         "operations/journal/<int:journal_id>/",
-        views.detail,
+        opj_lifecycle_repair.clean_journal_view,
         name="detail",
     ),
 ]
