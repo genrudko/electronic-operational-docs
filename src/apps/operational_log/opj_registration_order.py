@@ -10,17 +10,17 @@ from .models import OperationalDraftEntry, OperationalShift
 REGISTERED_DRAFT_TYPES = ("opj-entry", "opj-communication")
 
 
-def _registered_draft_sequences(shift: OperationalShift) -> dict[str, tuple[int, object]]:
-    result: dict[str, tuple[int, object]] = {}
+def _registered_draft_ids(shift: OperationalShift) -> set[str]:
+    result: set[str] = set()
     entries = shift.journal.entries.filter(
         type_code__in=REGISTERED_DRAFT_TYPES,
-    ).only("sequence_number", "event_at", "typed_payload")
+    ).only("typed_payload")
     for entry in entries:
         payload = entry.typed_payload if isinstance(entry.typed_payload, dict) else {}
         draft = payload.get("draft") if isinstance(payload.get("draft"), dict) else {}
         public_id = str(draft.get("public_id") or "")
         if public_id:
-            result[public_id] = (entry.sequence_number, entry.event_at)
+            result.add(public_id)
     return result
 
 
@@ -29,12 +29,12 @@ def ordered_registration_drafts(
     shift: OperationalShift,
     requested_ids: Iterable[uuid.UUID],
 ) -> list[OperationalDraftEntry]:
-    """Return requested drafts in journal chronology and reject gaps.
+    """Return selected draft rows in event chronology.
 
-    Official numbering is append-only, so an earlier draft cannot be inserted
-    after a later source row has already received a number.  A batch therefore
-    must be the chronological prefix of all currently registerable, non-empty
-    rows in the open shift.
+    Registration time must not determine the visible journal number.  Rows may
+    therefore be registered later than neighbouring rows; the clean journal
+    computes its official continuous display order from event time and source
+    position.  The immutable database sequence remains an internal identity.
     """
 
     requested = list(dict.fromkeys(requested_ids))
@@ -48,41 +48,20 @@ def ordered_registration_drafts(
         .order_by("event_at", "position", "pk")
     )
     by_id = {row.public_id: row for row in active_rows}
-    missing = [value for value in requested if value not in by_id]
-    if missing:
+    if any(value not in by_id for value in requested):
         raise ValidationError("Одна из выбранных строк не относится к текущей смене.")
 
-    registrations = _registered_draft_sequences(shift)
-    registerable = [
-        row
-        for row in active_rows
-        if row.content.strip()
-        and str(row.public_id) not in registrations
-    ]
-    requested_set = set(requested)
-    selected = [row for row in registerable if row.public_id in requested_set]
-    if len(selected) != len(requested):
+    registered_ids = _registered_draft_ids(shift)
+    selected = [by_id[value] for value in requested]
+    if any(
+        not row.content.strip() or str(row.public_id) in registered_ids
+        for row in selected
+    ):
         raise ValidationError(
             "Одна из выбранных строк уже зарегистрирована или не содержит записи."
         )
 
-    expected_prefix = registerable[: len(selected)]
-    if [row.public_id for row in selected] != [row.public_id for row in expected_prefix]:
-        first = registerable[0] if registerable else None
-        detail = (
-            f" Сначала зарегистрируйте запись {first.event_at:%d.%m.%Y %H:%M}."
-            if first is not None
-            else ""
-        )
-        raise ValidationError(
-            "Нельзя оставлять хронологический разрыв в чистовике." + detail
-        )
-
-    registered_times = [event_at for _, event_at in registrations.values()]
-    if registered_times and selected and selected[0].event_at < max(registered_times):
-        raise ValidationError(
-            "Более поздняя строка этой смены уже получила номер. "
-            "Раннюю запись оформите как пропущенную запись без перенумерации журнала."
-        )
-
-    return selected
+    return sorted(
+        selected,
+        key=lambda row: (row.event_at, row.position, row.pk),
+    )
