@@ -6,7 +6,7 @@
 {% block main_class %}opj-main opj-shift-main{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'operational_log/opj_workspace_controls.css' %}?v=opjux00105">
-<link rel="stylesheet" href="{% static 'operational_log/opj_registered_actions.css' %}?v=opjlifecycle00201">
+<link rel="stylesheet" href="{% static 'operational_log/opj_registered_actions.css' %}?v=opjlifecycle00301">
 {% endblock %}
 
 {% block content %}
@@ -28,7 +28,7 @@
         </span>
     </div>
     {% endif %}
-    <a class="da-button is-secondary is-compact opj-registered-link" href="{% url 'operational_log:detail' journal.pk %}">Зарегистрированный журнал</a>
+    <a class="da-button is-secondary is-compact opj-registered-link" href="{% url 'operational_log:detail' journal.pk %}{% if shift %}?shift={{ shift.public_id }}{% endif %}">Зарегистрированный журнал</a>
 </header>
 
 {% if not shift %}
@@ -54,7 +54,7 @@
     </form>
 </section>
 {% else %}
-<details class="opj-registered-context da-panel-flat" data-opj-registered-context>
+<details class="opj-registered-context da-panel-flat" data-opj-registered-context data-detail-url="{% url 'operational_log:detail' journal.pk %}?shift={{ shift.public_id }}">
     <summary>
         <span class="opj-registered-context-heading">
             <svg class="opj-context-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5"/></svg>
@@ -93,6 +93,24 @@
 >
     {% include "operational_log/_shift_workspace_toolbar.html" %}
 
+    <div class="opj-batch-registration-bar" data-batch-registration-bar hidden>
+        <div class="opj-batch-selection-state">
+            <label class="opj-row-selector is-header">
+                <input type="checkbox" data-select-all-drafts aria-label="Выбрать все незарегистрированные строки">
+                <span aria-hidden="true"></span>
+            </label>
+            <strong data-selected-count>Выбрано: 0</strong>
+            <span>Строки будут сохранены и перенесены в чистовик в порядке журнала.</span>
+        </div>
+        <div class="opj-batch-registration-actions">
+            <button type="button" class="da-button is-tertiary is-compact" data-clear-draft-selection>Снять выделение</button>
+            <button type="button" class="da-button is-compact" data-register-selected>
+                <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg>
+                <span>В чистовик</span>
+            </button>
+        </div>
+    </div>
+
     <div class="opj-editor-container" data-draft-book>
         <section class="opj-ledger-surface draft-page-shell" data-page-shell="left">
             <div class="opj-ledger-header draft-table-header">
@@ -124,10 +142,47 @@
     {% include "operational_log/_shift_workspace_overlays.html" %}
 </section>
 
+<dialog
+    class="opj-action-dialog da-overlay"
+    data-register-dialog
+    data-batch-url="{% url 'operational_log:register_drafts_batch' journal.pk %}"
+    aria-labelledby="opj-register-dialog-title"
+>
+    <form method="dialog" class="opj-dialog-surface">
+        <header class="opj-dialog-header">
+            <span class="opj-dialog-icon" aria-hidden="true">
+                <svg class="ui-icon"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg>
+            </span>
+            <div>
+                <span class="eyebrow">РЕГИСТРАЦИЯ</span>
+                <h2 id="opj-register-dialog-title">Перенести в чистовик</h2>
+                <p>{{ shift.planned_start_at|date:"d.m.Y" }} · смена {{ shift.planned_start_at|date:"H:i" }}–{{ shift.planned_end_at|date:"H:i" }}</p>
+            </div>
+            <button type="button" class="da-icon-button" data-dialog-close aria-label="Закрыть">
+                <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-delete"></use></svg>
+            </button>
+        </header>
+        <div class="opj-dialog-body">
+            <p class="opj-dialog-lead">После регистрации строки останутся в рабочей смене, но станут неизменяемыми. Исправление будет оформляться новой записью в чистовике.</p>
+            <div class="opj-register-selection-summary">
+                <strong data-register-dialog-count>Выбрано строк: 0</strong>
+                <div data-register-dialog-list></div>
+            </div>
+            <p class="opj-dialog-error" data-register-dialog-error role="alert" hidden></p>
+        </div>
+        <footer class="opj-dialog-footer">
+            <button type="button" class="da-button is-secondary" data-dialog-close>Отмена</button>
+            <button type="button" class="da-button" data-register-confirm>
+                <span data-register-confirm-label>Перенести в чистовик</span>
+            </button>
+        </footer>
+    </form>
+</dialog>
+
 <script src="{% static 'operational_log/draft_editor.js' %}?v=011364" defer></script>
 <script src="{% static 'operational_log/draft_workspace.js' %}?v=011364" defer></script>
 <script src="{% static 'operational_log/draft_reference_navigation.js' %}?v=011364" defer></script>
 <script src="{% static 'operational_log/opj_workspace_controls.js' %}?v=opjux00105" defer></script>
-<script src="{% static 'operational_log/opj_registered_actions.js' %}?v=opjlifecycle00201" defer></script>
+<script src="{% static 'operational_log/opj_registered_actions.js' %}?v=opjlifecycle00301" defer></script>
 {% endif %}
 {% endblock %}
