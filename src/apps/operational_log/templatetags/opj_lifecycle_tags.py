@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django import template
+from django.utils.html import json_script
 
 from ..opj_lifecycle import (
     draft_registration_context,
@@ -30,6 +31,11 @@ def opj_entry_presentation(entry, lifecycle_entries=None):
 @register.simple_tag
 def opj_editor_presentation(editor_payload):
     return present_editor_document(editor_payload)
+
+
+@register.simple_tag
+def opj_editor_payload_script(presentation, element_id: str):
+    return json_script(presentation.editor_payload, element_id)
 
 
 @register.simple_tag
