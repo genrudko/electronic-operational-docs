@@ -1,0 +1,356 @@
+/* OPJ-LIFECYCLE-001 acceptance repair.
+ * This file only aligns the lifecycle UI with the accepted Direction A and
+ * specialised OPJ ledger. It does not define an independent design system.
+ */
+
+/* Compact, live clean-journal summary in the shift workspace. */
+.opj-clean-summary {
+    display: flex;
+    min-height: 38px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 5px;
+    padding: 5px 8px;
+    border: 1px solid var(--da-border);
+    border-radius: var(--da-radius-sm);
+    background: var(--theme-surface);
+}
+
+.opj-clean-summary-main,
+.opj-clean-summary-meta,
+.opj-clean-summary-actions {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 7px;
+}
+
+.opj-clean-summary-main {
+    flex: 1 1 auto;
+}
+
+.opj-clean-summary-main .ui-icon {
+    color: var(--da-blue-dark);
+}
+
+.opj-clean-summary-main strong {
+    font-size: 0.7rem;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.opj-clean-summary-meta {
+    color: var(--da-muted);
+    font-size: 0.61rem;
+    font-weight: 650;
+}
+
+.opj-clean-summary-meta span + span::before {
+    margin-right: 7px;
+    color: var(--da-border-strong);
+    content: "·";
+}
+
+/* Batch selection is a temporary mode, not a permanent fourth column. */
+.opj-row-selection-control {
+    display: none;
+}
+
+.opj-workspace.is-selection-mode .opj-row-selection-control {
+    display: inline-grid;
+}
+
+.opj-selection-mode-toggle[aria-pressed="true"] {
+    border-color: var(--theme-primary);
+    background: var(--theme-primary-soft);
+    color: var(--theme-primary);
+}
+
+.opj-workspace.is-selection-mode .opj-register-draft-button {
+    display: none;
+}
+
+.opj-workspace:not(.is-selection-mode) .opj-batch-registration-bar {
+    display: none !important;
+}
+
+.opj-row-selection-control {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+}
+
+.opj-row-selection-control span {
+    width: 17px;
+    height: 17px;
+}
+
+.opj-selection-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Registered and editable rows use the same document typography. */
+.opj-registered-draft-content,
+.opj-entry-document {
+    color: var(--theme-text);
+    font-family: inherit;
+    font-size: var(--opj-entry-font-size, 0.84rem);
+    font-weight: 400;
+    line-height: var(--opj-entry-line-height, 1.38);
+}
+
+.opj-registered-draft-row .draft-ledger-time,
+.opj-registered-draft-row .opj-clean-time {
+    font-family: inherit;
+    font-size: var(--opj-time-font-size, 0.82rem);
+    font-weight: 700;
+}
+
+.opj-registered-draft-footer {
+    display: grid;
+    min-height: 34px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    margin-top: 7px;
+    padding-top: 6px;
+}
+
+.opj-registered-draft-footer .draft-ledger-meta {
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow: hidden;
+}
+
+.opj-registered-draft-footer .draft-meta-chip,
+.opj-clean-copy-chip {
+    overflow: hidden;
+    max-width: 100%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* One shared graphical language for emergency, PZ and ZN marks. */
+.opj-clean-time {
+    position: relative;
+    display: inline-grid;
+    min-width: 3.25rem;
+    min-height: 1.7rem;
+    place-items: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.opj-clean-time.is-emergency::after {
+    position: absolute;
+    inset: -0.08rem -0.16rem;
+    border: 2px solid var(--theme-danger);
+    border-radius: 50%;
+    content: "";
+    pointer-events: none;
+    transform: none;
+}
+
+.opj-clean-markers,
+.approved-journal-visas {
+    align-content: flex-start;
+    align-items: flex-start;
+}
+
+.draft-normative-marker {
+    position: relative;
+    display: inline-grid;
+    min-width: 42px;
+    min-height: 48px;
+    place-items: center;
+    align-content: center;
+    padding: 3px 4px;
+    border: 1px solid currentColor;
+    border-radius: 7px;
+    background: var(--theme-surface);
+    color: var(--theme-danger);
+    line-height: 1;
+}
+
+.draft-normative-marker.is-zn_off,
+.draft-normative-marker.is-pz_remove {
+    color: var(--theme-primary);
+}
+
+.draft-normative-marker-top,
+.draft-normative-marker-bottom {
+    font-size: 0.62rem;
+    font-weight: 750;
+    font-variant-numeric: tabular-nums;
+}
+
+.draft-normative-marker-bolt {
+    margin: 2px 0;
+    font-size: 1rem;
+    font-weight: 750;
+}
+
+.draft-normative-marker-cross {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    font-size: 2.35rem;
+    font-weight: 400;
+    line-height: 1;
+    opacity: 0.74;
+    transform: translate(-50%, -50%);
+}
+
+.opj-empty-marker {
+    display: block;
+    min-height: 1px;
+}
+
+/* The journal remains a three-column form with one collapsed border grid. */
+.approved-journal-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    table-layout: fixed;
+}
+
+.approved-journal-table th,
+.approved-journal-table td {
+    border: 1px solid var(--theme-border-strong);
+}
+
+.approved-journal-table-wrap {
+    border: 0;
+}
+
+.approved-journal-date-time {
+    text-align: center;
+}
+
+.approved-journal-date-time .opj-entry-date-placeholder {
+    display: block;
+    min-height: 1.2em;
+}
+
+/* Main record first; one level status rail below it. */
+.opj-entry-footer {
+    display: grid;
+    min-height: 36px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    padding-top: 6px;
+}
+
+.opj-entry-footer-main {
+    display: flex;
+    min-width: 0;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.opj-entry-footer .approved-journal-author {
+    min-width: 0;
+    margin-left: auto;
+    overflow: hidden;
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.opj-entry-state-chip,
+.opj-entry-kind-chip,
+.opj-entry-meta {
+    flex: 0 0 auto;
+}
+
+.opj-entry-actions {
+    position: static;
+}
+
+/* A portal-mounted menu never contributes to table/page overflow. */
+.opj-entry-actions-menu.is-floating {
+    position: fixed !important;
+    z-index: 240;
+    inset: auto !important;
+    width: min(310px, calc(100vw - 24px));
+    max-height: min(420px, calc(100vh - 24px));
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
+.opj-entry-actions-menu.is-floating[hidden] {
+    display: none;
+}
+
+.opj-reference-token {
+    color: var(--theme-primary);
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 0.17em;
+    cursor: pointer;
+}
+
+.opj-reference-token:hover,
+.opj-reference-token:focus-visible {
+    text-decoration-style: solid;
+}
+
+.opj-reference-token.is-unresolved {
+    color: var(--theme-text-muted);
+    cursor: default;
+}
+
+/* History is clearly subordinate but remains traceable to the source row. */
+.opj-entry-history {
+    margin-top: 8px;
+    border-left-width: 3px;
+}
+
+.opj-related-event-list li {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+@media (max-width: 980px) {
+    .opj-clean-summary,
+    .opj-entry-footer,
+    .opj-registered-draft-footer {
+        align-items: stretch;
+        grid-template-columns: 1fr;
+    }
+
+    .opj-clean-summary {
+        display: grid;
+    }
+
+    .opj-clean-summary-actions,
+    .opj-entry-actions {
+        justify-self: end;
+    }
+
+    .opj-entry-footer-main {
+        flex-wrap: wrap;
+    }
+
+    .opj-entry-footer .approved-journal-author {
+        flex-basis: 100%;
+        margin-left: 0;
+        text-align: left;
+    }
+}
+
+@media (max-width: 640px) {
+    .opj-clean-summary-actions,
+    .opj-clean-summary-actions .da-button,
+    .opj-entry-actions,
+    .opj-entry-actions-trigger {
+        width: 100%;
+    }
+
+    .opj-entry-actions-trigger {
+        justify-content: center;
+    }
+}
