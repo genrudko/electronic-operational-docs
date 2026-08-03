@@ -1,68 +1,185 @@
-/* OPJ-LIFECYCLE-001: geometry for actions embedded in accepted OPJ screens.
- * Colour and typography resolve only through shared Direction A/theme owners.
+/* OPJ-LIFECYCLE-001 repair.
+ * The file owns only OPJ lifecycle composition. Typography, controls, colours,
+ * radii and iconography resolve through the shared Direction A contracts.
  */
 
+.opj-clean-journal-page,
+.opj-action-dialog,
+.opj-batch-registration-bar,
+.opj-entry-footer,
+.opj-entry-actions-menu {
+    font-family: var(--font-interface);
+}
+
 .opj-register-draft-button {
-    min-height: 30px;
-    padding: 0.35rem 0.7rem;
+    min-height: 32px;
+    padding-inline: 0.72rem;
     white-space: nowrap;
 }
 
-.opj-draft-is-registered,
+/* Draft selection and batch registration. */
+.opj-draft-time-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.38rem;
+}
+
+.opj-row-selector {
+    position: relative;
+    display: inline-grid;
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+    place-items: center;
+    cursor: pointer;
+}
+
+.opj-row-selector input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.opj-row-selector span {
+    display: block;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--theme-border-strong);
+    border-radius: 4px;
+    background: var(--theme-control);
+    box-shadow: inset 0 0 0 2px var(--theme-control);
+    transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+}
+
+.opj-row-selector input:focus-visible + span {
+    outline: 2px solid var(--theme-focus);
+    outline-offset: 2px;
+}
+
+.opj-row-selector input:checked + span {
+    border-color: var(--theme-primary);
+    background: var(--theme-primary);
+    box-shadow: inset 0 0 0 3px var(--theme-control);
+}
+
+.opj-entry-row.is-selected-for-registration {
+    box-shadow: inset 3px 0 0 var(--theme-primary);
+}
+
+.opj-batch-registration-bar {
+    position: sticky;
+    top: calc(var(--da-topbar-height) + 54px);
+    z-index: 44;
+    display: flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.52rem 0.72rem;
+    border-bottom: 1px solid var(--theme-border);
+    background: var(--theme-surface);
+    box-shadow: 0 8px 18px rgba(28, 47, 73, 0.08);
+}
+
+.opj-batch-registration-bar[hidden] {
+    display: none;
+}
+
+.opj-batch-selection-state,
+.opj-batch-registration-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.opj-batch-selection-state strong {
+    color: var(--theme-text);
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.opj-batch-selection-state > span {
+    color: var(--theme-text-muted);
+    font-size: 0.74rem;
+}
+
+.opj-batch-registration-actions {
+    flex: 0 0 auto;
+}
+
+/* Registered rows inside the shift workspace. */
+.opj-draft-is-registered {
+    background: color-mix(in srgb, var(--theme-success-soft) 46%, var(--theme-surface));
+}
+
 .opj-registered-draft-row {
-    background: var(--theme-success-soft);
+    background: transparent;
 }
 
 .opj-registered-draft-row .draft-ledger-time {
-    color: var(--theme-success);
-    font-weight: 700;
+    color: var(--theme-text);
+    font-weight: 600;
 }
 
-.opj-registered-draft-content {
-    margin: 0;
+.opj-registered-draft-content,
+.opj-entry-document {
+    min-width: 0;
     color: var(--theme-text);
-    white-space: pre-wrap;
+}
+
+.opj-registered-draft-footer {
+    margin-top: 0.5rem;
+    padding-top: 0.45rem;
+    border-top: 1px solid var(--theme-border);
 }
 
 .opj-clean-copy-chip,
 .opj-entry-state-chip,
 .opj-entry-kind-chip {
     display: inline-flex;
+    min-height: 22px;
     align-items: center;
-    min-height: 24px;
-    padding: 0.15rem 0.5rem;
+    gap: 0.34rem;
+    padding: 0.12rem 0.48rem;
     border: 1px solid var(--theme-border);
     border-radius: 999px;
     background: var(--theme-surface-soft);
     color: var(--theme-text-muted);
-    font-family: var(--font-interface);
-    font-size: 0.76rem;
-    font-weight: 650;
+    font-size: 0.7rem;
+    font-weight: 600;
     line-height: 1.2;
+    white-space: nowrap;
+}
+
+.opj-clean-copy-chip::before,
+.opj-entry-state-chip::before,
+.opj-entry-kind-chip::before {
+    width: 6px;
+    height: 6px;
+    flex: 0 0 6px;
+    border-radius: 50%;
+    background: currentColor;
+    content: "";
 }
 
 .opj-clean-copy-chip,
 .opj-entry-state-chip.is-registered {
-    border-color: var(--theme-success);
-    background: var(--theme-success-soft);
     color: var(--theme-success);
 }
 
 .opj-entry-state-chip.is-corrected {
-    border-color: var(--theme-warning);
-    background: var(--theme-warning-soft);
     color: var(--theme-warning);
 }
 
 .opj-entry-state-chip.is-cancelled {
-    border-color: var(--theme-danger);
-    background: var(--theme-danger-soft);
     color: var(--theme-danger);
 }
 
 .opj-entry-kind-chip {
-    border-color: var(--theme-primary);
-    background: var(--theme-primary-soft);
     color: var(--theme-primary);
 }
 
@@ -70,183 +187,827 @@
     flex: 0 0 auto;
 }
 
-.opj-row-state-line,
-.opj-row-source-line {
+/* Clean journal context and shift grouping. */
+.opj-clean-context-bar {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
-    gap: 0.45rem;
-    margin-top: 0.55rem;
-}
-
-.opj-row-source-line {
-    color: var(--theme-text-muted);
-    font-size: 0.82rem;
-}
-
-.opj-row-source-line a {
-    font-weight: 650;
-}
-
-.opj-effective-version,
-.opj-original-history,
-.opj-row-actions {
-    margin-top: 0.65rem;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0 0 0.8rem;
+    padding: 0.72rem 0.85rem;
     border: 1px solid var(--theme-border);
-    border-radius: 8px;
+    border-radius: var(--da-radius-sm);
+    background: var(--theme-surface);
+}
+
+.opj-clean-context-copy {
+    display: grid;
+    gap: 0.12rem;
+}
+
+.opj-clean-context-copy strong {
+    color: var(--theme-text);
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+
+.opj-clean-context-copy span {
+    color: var(--theme-text-muted);
+    font-size: 0.72rem;
+}
+
+.opj-shift-selector-form {
+    display: flex;
+    align-items: center;
+    gap: 0.48rem;
+}
+
+.opj-shift-selector-form label {
+    color: var(--theme-text-muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.opj-shift-selector-form select {
+    min-width: 250px;
+}
+
+.opj-clean-shift-group + .opj-clean-shift-group {
+    border-top: 8px solid var(--theme-canvas);
+}
+
+.opj-clean-shift-heading {
+    display: flex;
+    min-height: 46px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.56rem 0.8rem;
+    border-bottom: 1px solid var(--theme-border-strong);
     background: var(--theme-surface-soft);
 }
 
-.opj-effective-version > summary,
-.opj-original-history > summary,
-.opj-row-actions > summary {
-    cursor: pointer;
-    padding: 0.55rem 0.7rem;
+.opj-clean-shift-heading > div {
+    display: flex;
+    align-items: baseline;
+    gap: 0.65rem;
+}
+
+.opj-clean-shift-date {
     color: var(--theme-primary);
-    font-family: var(--font-interface);
-    font-size: 0.84rem;
+    font-size: 1rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.opj-clean-shift-heading strong {
+    color: var(--theme-text);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.opj-clean-shift-heading > span {
+    color: var(--theme-text-muted);
+    font-size: 0.7rem;
+}
+
+.opj-clean-empty {
+    padding: 2.5rem 1rem;
+}
+
+/* Read-only editor projection. */
+.opj-rich-content {
+    display: grid;
+    gap: 0.28rem;
+    min-width: 0;
+}
+
+.opj-rich-paragraph {
+    min-height: 1.2em;
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.opj-rich-list {
+    display: grid;
+    gap: 0.18rem;
+    margin: 0;
+    padding-left: 1.35rem;
+}
+
+.opj-rich-segment.is-bold {
     font-weight: 700;
 }
 
-.opj-effective-version[open] > summary,
-.opj-original-history[open] > summary,
-.opj-row-actions[open] > summary {
+.opj-rich-segment.is-italic {
+    font-style: italic;
+}
+
+.opj-rich-segment.is-underlined {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+}
+
+.opj-rich-segment.is-struck {
+    text-decoration: line-through;
+}
+
+.opj-rich-segment.is-text-red {
+    color: var(--theme-danger);
+}
+
+.opj-rich-segment.is-text-blue {
+    color: var(--theme-primary);
+}
+
+.opj-rich-segment.is-normative-open,
+.opj-rich-segment.is-normative-close {
+    position: relative;
+    padding-bottom: 0.08em;
+    text-decoration-line: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 0.2em;
+}
+
+.opj-rich-segment.is-normative-open {
+    text-decoration-color: var(--theme-danger);
+}
+
+.opj-rich-segment.is-normative-close {
+    text-decoration-color: var(--theme-primary);
+}
+
+.opj-reference-token {
+    border-bottom: 1px dotted var(--theme-primary);
+    color: var(--theme-primary);
+}
+
+/* Source-bound graphical marks. */
+.opj-clean-time {
+    position: relative;
+    display: inline-grid;
+    min-width: 3.4rem;
+    min-height: 2rem;
+    place-items: center;
+    border-radius: 50%;
+    font-variant-numeric: tabular-nums;
+}
+
+.opj-clean-time.is-emergency::after {
+    position: absolute;
+    inset: -0.18rem -0.28rem;
+    border: 2px solid var(--theme-danger);
+    border-radius: 50%;
+    content: "";
+    pointer-events: none;
+    transform: rotate(-5deg);
+}
+
+.opj-clean-markers {
+    display: flex;
+    min-height: 48px;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.42rem;
+}
+
+.opj-normative-marker {
+    position: relative;
+    display: inline-grid;
+    min-width: 42px;
+    min-height: 48px;
+    place-items: center;
+    align-content: center;
+    padding: 0.2rem 0.24rem;
+    border: 1px solid currentColor;
+    border-radius: 7px;
+    background: var(--theme-surface);
+    color: var(--theme-danger);
+    line-height: 1;
+}
+
+.opj-normative-marker.is-zn_off,
+.opj-normative-marker.is-pz_remove {
+    color: var(--theme-primary);
+}
+
+.opj-normative-marker > span {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+
+.opj-normative-marker > b {
+    margin: 0.12rem 0;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.opj-normative-marker > small {
+    font-size: 0.62rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.opj-normative-marker > i {
+    position: absolute;
+    inset: 50% auto auto 50%;
+    font-size: 2.4rem;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1;
+    opacity: 0.72;
+    transform: translate(-50%, -50%) rotate(-8deg);
+}
+
+/* Main text first; service state and actions below. */
+.opj-clean-entry-row.is-cancelled .opj-entry-document {
+    opacity: 0.82;
+}
+
+.opj-entry-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 0.64rem;
+    padding-top: 0.48rem;
+    border-top: 1px solid var(--theme-border);
+}
+
+.opj-entry-footer-main {
+    display: flex;
+    min-width: 0;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.52rem;
+}
+
+.opj-entry-meta,
+.opj-entry-footer .approved-journal-author {
+    color: var(--theme-text-muted);
+    font-size: 0.67rem;
+    font-weight: 400;
+}
+
+.opj-entry-footer .approved-journal-author {
+    overflow: hidden;
+    max-width: 100%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.opj-entry-actions {
+    position: relative;
+    flex: 0 0 auto;
+}
+
+.opj-entry-actions-trigger .is-chevron {
+    width: 14px;
+    height: 14px;
+    transition: transform 120ms ease;
+}
+
+.opj-entry-actions-trigger[aria-expanded="true"] .is-chevron {
+    transform: rotate(90deg);
+}
+
+.opj-entry-actions-menu {
+    position: absolute;
+    z-index: 70;
+    top: calc(100% + 0.35rem);
+    right: 0;
+    display: grid;
+    width: min(310px, calc(100vw - 2rem));
+    overflow: hidden;
+    padding: 0.3rem;
+    border: 1px solid var(--theme-border-strong);
+    border-radius: var(--da-radius-sm);
+    background: var(--theme-surface-elevated, var(--theme-surface));
+    box-shadow: var(--da-shadow-lg, 0 18px 44px rgba(28, 47, 73, 0.18));
+}
+
+.opj-entry-actions-menu[hidden] {
+    display: none;
+}
+
+.opj-entry-actions-menu button,
+.opj-entry-actions-menu a {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
+    align-items: center;
+    gap: 0.62rem;
+    width: 100%;
+    min-height: 48px;
+    padding: 0.5rem 0.58rem;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--theme-text);
+    font: inherit;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.opj-entry-actions-menu button:hover,
+.opj-entry-actions-menu button:focus-visible,
+.opj-entry-actions-menu a:hover,
+.opj-entry-actions-menu a:focus-visible {
+    background: var(--theme-surface-soft);
+    outline: none;
+}
+
+.opj-entry-actions-menu .is-danger {
+    color: var(--theme-danger);
+}
+
+.opj-entry-actions-menu span {
+    display: grid;
+    gap: 0.08rem;
+}
+
+.opj-entry-actions-menu strong {
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+.opj-entry-actions-menu small {
+    color: var(--theme-text-muted);
+    font-size: 0.66rem;
+}
+
+/* Linked correction and cancellation history. */
+.opj-entry-history {
+    margin-top: 0.65rem;
+    overflow: hidden;
+    border: 1px solid var(--theme-border);
+    border-left: 3px solid var(--theme-warning);
+    border-radius: var(--da-radius-sm);
+    background: var(--theme-surface-soft);
+}
+
+.opj-entry-history[hidden] {
+    display: none;
+}
+
+.opj-entry-history-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.58rem 0.68rem;
     border-bottom: 1px solid var(--theme-border);
 }
 
-.opj-effective-version-body,
-.opj-original-history-body,
-.opj-row-actions-body {
-    padding: 0.7rem;
+.opj-entry-history-heading > div {
+    display: grid;
+    gap: 0.08rem;
 }
 
-.opj-effective-version-body > p,
-.opj-original-history-body > p {
-    margin: 0;
+.opj-entry-history-heading strong {
+    color: var(--theme-text);
+    font-size: 0.76rem;
+    font-weight: 600;
+}
+
+.opj-entry-history-heading span,
+.opj-entry-original-copy > span {
+    color: var(--theme-text-muted);
+    font-size: 0.66rem;
+}
+
+.opj-entry-original-copy {
+    padding: 0.58rem 0.68rem;
+    border-bottom: 1px solid var(--theme-border);
+    background: var(--theme-surface);
+}
+
+.opj-entry-original-copy p {
+    margin: 0.24rem 0 0;
+    color: var(--theme-text-muted);
+    font-size: 0.74rem;
     white-space: pre-wrap;
 }
 
 .opj-related-event-list {
     display: grid;
-    gap: 0.45rem;
-    margin: 0.6rem 0 0;
+    gap: 0;
+    margin: 0;
     padding: 0;
     list-style: none;
 }
 
 .opj-related-event-list li {
-    padding: 0.5rem 0.6rem;
-    border-left: 3px solid var(--theme-border-strong);
-    background: var(--theme-surface);
-}
-
-.opj-related-event-list strong,
-.opj-related-event-list span {
-    display: block;
-}
-
-.opj-related-event-list span {
-    margin-top: 0.2rem;
-    color: var(--theme-text-muted);
-    font-size: 0.8rem;
-}
-
-.opj-row-actions-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.7rem;
+    gap: 0.35rem;
+    padding: 0.65rem 0.7rem;
+    border-bottom: 1px solid var(--theme-border);
+    background: transparent;
 }
 
-.opj-row-action-card {
-    min-width: 0;
-    padding: 0.7rem;
-    border: 1px solid var(--theme-border);
-    border-radius: 8px;
-    background: var(--theme-surface);
+.opj-related-event-list li:last-child {
+    border-bottom: 0;
 }
 
-.opj-row-action-card h4 {
-    margin: 0 0 0.55rem;
+.opj-related-event-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.45rem;
+}
+
+.opj-related-event-meta strong {
     color: var(--theme-text);
-    font-family: var(--font-interface);
-    font-size: 0.9rem;
+    font-size: 0.72rem;
+    font-weight: 600;
 }
 
-.opj-row-action-card label {
-    display: grid;
-    gap: 0.3rem;
-    margin-top: 0.5rem;
+.opj-related-event-meta span,
+.opj-related-event-reason {
     color: var(--theme-text-muted);
-    font-size: 0.78rem;
+    font-size: 0.66rem;
 }
 
-.opj-row-action-card textarea {
-    width: 100%;
-    min-height: 76px;
-    box-sizing: border-box;
-    padding: 0.5rem;
-    border: 1px solid var(--theme-border-strong);
-    border-radius: 6px;
-    background: var(--theme-control);
-    color: var(--theme-text);
-    font: inherit;
-    resize: vertical;
-}
-
-.opj-row-action-card button {
-    margin-top: 0.6rem;
-}
-
-.opj-row-action-card.is-danger {
-    border-color: var(--theme-danger);
-}
-
-.opj-row-action-card.is-danger h4 {
-    color: var(--theme-danger);
+.opj-related-event-reason {
+    margin: 0;
 }
 
 .opj-row-integrity-warning {
     display: inline-block;
     margin-top: 0.55rem;
     color: var(--theme-danger);
+    font-size: 0.72rem;
+}
+
+/* Shared-style modal surfaces. */
+.opj-action-dialog {
+    width: min(720px, calc(100vw - 2rem));
+    max-height: min(88vh, 820px);
+    margin: auto;
+    padding: 0;
+    overflow: visible;
+    border: 0;
+    border-radius: var(--da-radius);
+    background: transparent;
+    color: var(--theme-text);
+}
+
+.opj-action-dialog::backdrop,
+.journal-settings-dialog::backdrop {
+    background: rgba(12, 23, 38, 0.48);
+    backdrop-filter: blur(3px);
+}
+
+.opj-dialog-surface {
+    display: grid;
+    max-height: inherit;
+    overflow: hidden;
+    border: 1px solid var(--theme-border-strong);
+    border-radius: var(--da-radius);
+    background: var(--theme-surface-elevated, var(--theme-surface));
+    box-shadow: 0 24px 70px rgba(12, 23, 38, 0.28);
+}
+
+.opj-dialog-header {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: start;
+    gap: 0.75rem;
+    padding: 1rem 1.05rem 0.85rem;
+    border-bottom: 1px solid var(--theme-border);
+}
+
+.opj-dialog-header .eyebrow {
+    margin: 0 0 0.18rem;
+    color: var(--theme-text-muted);
+    font-size: 0.64rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+.opj-dialog-header h2 {
+    margin: 0;
+    color: var(--theme-text);
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.opj-dialog-header p {
+    margin: 0.2rem 0 0;
+    color: var(--theme-text-muted);
+    font-size: 0.72rem;
+}
+
+.opj-dialog-icon {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 10px;
+    background: var(--theme-primary-soft);
+    color: var(--theme-primary);
+}
+
+.opj-dialog-icon.is-danger {
+    background: var(--theme-danger-soft);
+    color: var(--theme-danger);
+}
+
+.opj-dialog-body {
+    min-height: 0;
+    overflow: auto;
+    padding: 0.9rem 1.05rem 1rem;
+}
+
+.opj-dialog-lead {
+    margin: 0 0 0.78rem;
+    color: var(--theme-text-muted);
+    font-size: 0.76rem;
+    line-height: 1.45;
+}
+
+.opj-dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.75rem 1.05rem;
+    border-top: 1px solid var(--theme-border);
+    background: var(--theme-surface-soft);
+}
+
+.opj-dialog-field {
+    display: grid;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+    color: var(--theme-text);
+    font-size: 0.74rem;
+    font-weight: 600;
+}
+
+.opj-dialog-field textarea,
+.opj-correction-editor textarea,
+.opj-register-selection-summary {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--theme-border-strong);
+    border-radius: var(--da-radius-sm);
+    background: var(--theme-control);
+    color: var(--theme-text);
+    font: inherit;
+}
+
+.opj-dialog-field textarea {
+    min-height: 86px;
+    padding: 0.62rem 0.68rem;
+    resize: vertical;
+}
+
+.opj-register-selection-summary {
+    display: grid;
+    gap: 0.45rem;
+    padding: 0.7rem;
+}
+
+.opj-register-selection-summary > strong {
     font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.opj-register-selection-summary > div {
+    display: grid;
+    max-height: 250px;
+    overflow: auto;
+    gap: 0.3rem;
+}
+
+.opj-register-selection-item {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 0.55rem;
+    padding: 0.42rem 0.48rem;
+    border-radius: 7px;
+    background: var(--theme-surface-soft);
+    font-size: 0.72rem;
+}
+
+.opj-register-selection-item strong {
+    font-variant-numeric: tabular-nums;
+}
+
+.opj-register-selection-item span {
+    overflow: hidden;
+    color: var(--theme-text-muted);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.opj-dialog-error {
+    margin: 0.65rem 0 0;
+    padding: 0.55rem 0.65rem;
+    border-radius: 7px;
+    background: var(--theme-danger-soft);
+    color: var(--theme-danger);
+    font-size: 0.72rem;
+}
+
+.opj-correction-editor-card {
+    overflow: visible;
+    border: 1px solid var(--theme-border-strong);
+    border-radius: var(--da-radius-sm);
+    background: var(--theme-surface);
+}
+
+.opj-correction-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.42rem;
+    border-bottom: 1px solid var(--theme-border);
+    background: var(--theme-surface-soft);
+}
+
+.opj-correction-editor {
+    min-height: 150px;
+    padding: 0.65rem;
+}
+
+.opj-correction-editor .draft-rich-editor-host,
+.opj-correction-editor .draft-rich-editor {
+    min-height: 132px;
+}
+
+.opj-correction-editor .draft-rich-editor {
+    padding: 0.55rem;
+    border: 0;
+    outline: none;
+}
+
+.opj-correction-editor .draft-rich-editor:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--theme-focus);
+}
+
+.opj-action-dialog .draft-floating-kind-trigger,
+.opj-action-dialog [data-reference-trigger] {
+    display: none;
 }
 
 @media (max-width: 1024px) {
-    .opj-row-actions-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 640px) {
-    .opj-register-draft-button {
-        width: 100%;
-    }
-
-    .opj-registered-draft-row .draft-ledger-lower {
+    .opj-clean-context-bar,
+    .opj-entry-footer {
         align-items: stretch;
         flex-direction: column;
     }
 
+    .opj-shift-selector-form {
+        width: 100%;
+    }
+
+    .opj-shift-selector-form select {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .opj-entry-actions {
+        align-self: flex-end;
+    }
+}
+
+@media (max-width: 640px) {
+    .opj-register-draft-button,
     .opj-open-clean-entry {
         width: 100%;
         justify-content: center;
     }
 
-    .opj-row-actions-body,
-    .opj-effective-version-body,
-    .opj-original-history-body {
-        padding: 0.55rem;
+    .opj-draft-time-line {
+        align-items: flex-start;
+    }
+
+    .opj-batch-registration-bar {
+        position: sticky;
+        top: var(--da-topbar-height);
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .opj-batch-selection-state {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .opj-batch-selection-state > span {
+        flex-basis: calc(100% - 32px);
+    }
+
+    .opj-batch-registration-actions,
+    .opj-batch-registration-actions .da-button {
+        width: 100%;
+    }
+
+    .opj-clean-context-bar,
+    .opj-shift-selector-form,
+    .opj-clean-shift-heading,
+    .opj-clean-shift-heading > div {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .opj-shift-selector-form .da-button {
+        width: 100%;
+    }
+
+    .opj-entry-footer .approved-journal-author {
+        flex-basis: 100%;
+    }
+
+    .opj-entry-actions {
+        width: 100%;
+        align-self: stretch;
+    }
+
+    .opj-entry-actions-trigger {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .opj-entry-actions-menu {
+        position: fixed;
+        z-index: 120;
+        inset: auto 0 0;
+        width: auto;
+        padding: 0.55rem 0.65rem max(0.65rem, env(safe-area-inset-bottom));
+        border-width: 1px 0 0;
+        border-radius: var(--da-radius) var(--da-radius) 0 0;
+        box-shadow: 0 -18px 44px rgba(12, 23, 38, 0.22);
+    }
+
+    .opj-entry-history-heading,
+    .opj-related-event-meta {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .opj-action-dialog {
+        width: 100vw;
+        max-width: none;
+        max-height: 92vh;
+        margin: auto 0 0;
+    }
+
+    .opj-dialog-surface {
+        border-width: 1px 0 0;
+        border-radius: var(--da-radius) var(--da-radius) 0 0;
+    }
+
+    .opj-dialog-header {
+        padding-inline: 0.8rem;
+    }
+
+    .opj-dialog-body {
+        padding-inline: 0.8rem;
+    }
+
+    .opj-dialog-footer {
+        padding: 0.7rem 0.8rem max(0.7rem, env(safe-area-inset-bottom));
+    }
+
+    .opj-dialog-footer .da-button {
+        flex: 1 1 0;
+    }
+
+    .opj-correction-toolbar .da-button {
+        flex: 1 1 auto;
     }
 }
 
 @media print {
-    .opj-row-actions,
-    .opj-row-state-line,
-    .opj-row-source-line,
-    .opj-effective-version,
-    .opj-original-history,
-    .opj-row-integrity-warning {
+    .opj-clean-context-bar,
+    .opj-entry-footer,
+    .opj-entry-history,
+    .opj-row-integrity-warning,
+    .opj-action-dialog,
+    .opj-batch-registration-bar {
         display: none !important;
+    }
+
+    .opj-clean-shift-group + .opj-clean-shift-group {
+        break-before: page;
+        border-top: 0;
+    }
+
+    .opj-clean-shift-heading {
+        background: transparent;
+    }
+
+    .opj-clean-time.is-emergency::after {
+        border-color: currentColor;
     }
 }
