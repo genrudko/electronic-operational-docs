@@ -1,5 +1,5 @@
 {% extends "shared/direction_a/base.html" %}
-{% load static %}
+{% load static opj_lifecycle_tags %}
 
 {% block title %}Рабочая смена · {{ journal.title }} · ЭОД{% endblock %}
 {% block body_class %}direction-a-body da-active opj-direction-a opj-workspace-page{% endblock %}
@@ -7,6 +7,7 @@
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'operational_log/opj_workspace_controls.css' %}?v=opjux00105">
 <link rel="stylesheet" href="{% static 'operational_log/opj_registered_actions.css' %}?v=opjlifecycle00301">
+<link rel="stylesheet" href="{% static 'operational_log/opj_lifecycle_acceptance_repair.css' %}?v=opjlifecycle00401">
 {% endblock %}
 
 {% block content %}
@@ -54,22 +55,30 @@
     </form>
 </section>
 {% else %}
-<details class="opj-registered-context da-panel-flat" data-opj-registered-context data-detail-url="{% url 'operational_log:detail' journal.pk %}?shift={{ shift.public_id }}">
-    <summary>
-        <span class="opj-registered-context-heading">
-            <svg class="opj-context-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5"/></svg>
-            <strong>Зарегистрированные записи</strong>
-            <span class="opj-registered-context-meta">Загрузка…</span>
-        </span>
-        <span class="opj-work-boundary" data-opj-work-boundary>
-            <svg class="opj-context-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6zM14 3v5h5M9 12h6M9 16h4"/></svg>
-            <strong>Рабочий черновик</strong>
-            <small>Автосохранение</small>
-            <svg class="opj-autosave-check" viewBox="0 0 24 24" role="img" aria-label="Автосохранение включено"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
-        </span>
-    </summary>
-    <div class="opj-registered-context-body">Загрузка зарегистрированного журнала…</div>
-</details>
+{% opj_shift_clean_summary shift as clean_summary %}
+<section class="opj-clean-summary" aria-label="Состояние чистовика текущей смены">
+    <div class="opj-clean-summary-main">
+        <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg>
+        <strong>Чистовик текущей смены</strong>
+        <div class="opj-clean-summary-meta">
+            <span>{{ clean_summary.count }} записей</span>
+            {% if clean_summary.last_sequence %}<span>последняя № {{ clean_summary.last_sequence }}</span>{% endif %}
+            {% if clean_summary.last_registered_at %}<span>{{ clean_summary.last_registered_at|date:"H:i" }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="opj-clean-summary-actions">
+        <button
+            type="button"
+            class="da-button is-tertiary is-compact opj-selection-mode-toggle"
+            data-selection-mode-toggle
+            aria-pressed="false"
+        >
+            <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-check"></use></svg>
+            <span>Выбрать записи</span>
+        </button>
+        <a class="da-button is-secondary is-compact" href="{% url 'operational_log:detail' journal.pk %}?shift={{ shift.public_id }}">Открыть чистовик</a>
+    </div>
+</section>
 
 <section
     class="opj-workspace da-panel screen-journal-theme"
@@ -100,7 +109,7 @@
                 <span aria-hidden="true"></span>
             </label>
             <strong data-selected-count>Выбрано: 0</strong>
-            <span>Строки будут сохранены и перенесены в чистовик в порядке журнала.</span>
+            <span>Регистрация выполняется по хронологии журнала без пропусков.</span>
         </div>
         <div class="opj-batch-registration-actions">
             <button type="button" class="da-button is-tertiary is-compact" data-clear-draft-selection>Снять выделение</button>
@@ -163,7 +172,7 @@
             </button>
         </header>
         <div class="opj-dialog-body">
-            <p class="opj-dialog-lead">После регистрации строки останутся в рабочей смене, но станут неизменяемыми. Исправление будет оформляться новой записью в чистовике.</p>
+            <p class="opj-dialog-lead">Строки будут зарегистрированы по времени события и позиции в черновике. После регистрации они останутся в смене, но станут неизменяемыми.</p>
             <div class="opj-register-selection-summary">
                 <strong data-register-dialog-count>Выбрано строк: 0</strong>
                 <div data-register-dialog-list></div>
@@ -180,9 +189,10 @@
 </dialog>
 
 <script src="{% static 'operational_log/draft_editor.js' %}?v=011364" defer></script>
+<script src="{% static 'operational_log/opj_draft_guard.js' %}?v=opjlifecycle00401" defer></script>
 <script src="{% static 'operational_log/draft_workspace.js' %}?v=011364" defer></script>
 <script src="{% static 'operational_log/draft_reference_navigation.js' %}?v=011364" defer></script>
 <script src="{% static 'operational_log/opj_workspace_controls.js' %}?v=opjux00105" defer></script>
-<script src="{% static 'operational_log/opj_registered_actions.js' %}?v=opjlifecycle00301" defer></script>
+<script src="{% static 'operational_log/opj_registered_actions_v2.js' %}?v=opjlifecycle00401" defer></script>
 {% endif %}
 {% endblock %}
