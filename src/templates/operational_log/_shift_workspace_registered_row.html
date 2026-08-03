@@ -1,6 +1,7 @@
 {% load opj_lifecycle_tags %}
 {% opj_entry_lifecycle registration.entry as lifecycle %}
 {% opj_entry_presentation registration.entry lifecycle.lifecycle_entries as presentation %}
+{% opj_journal_number registration.entry as journal_number %}
 <article
     id="draft-{{ draft.public_id }}"
     class="draft-ledger-row opj-entry-row opj-draft-is-registered{% if presentation.emergency %} is-emergency-event{% endif %}"
@@ -17,6 +18,7 @@
     data-entry-author="{{ registration.entry.author_full_name_snapshot }}"
     data-entry-version="{{ draft.version }}"
     data-entry-status="{{ lifecycle.state.status_label }}"
+    data-journal-number="{{ journal_number }}"
     data-registered-draft
 >
     <form
@@ -48,15 +50,15 @@
         <div class="draft-ledger-content">
             <div class="opj-registered-draft-content opj-rich-content">{{ presentation.html }}</div>
             <div class="draft-ledger-lower opj-registered-draft-footer">
-                <div class="draft-ledger-meta">
-                    <span class="opj-clean-copy-chip">Чистовик · № {{ registration.entry.sequence_number }}</span>
+                <div class="draft-ledger-meta opj-registered-draft-meta">
+                    <a
+                        class="opj-clean-copy-chip opj-open-clean-entry"
+                        href="{% url 'operational_log:detail' journal.pk %}?shift={{ draft.shift.public_id }}#entry-{{ registration.entry.sequence_number }}"
+                        title="Открыть запись № {{ journal_number }} в чистовике"
+                    >Чистовик · № {{ journal_number }}</a>
                     <span class="draft-meta-chip">{{ lifecycle.state.status_label }}</span>
-                    <span class="draft-meta-chip">{{ registration.entry.author_full_name_snapshot }} · {{ registration.entry.registered_at|date:"d.m.Y H:i" }}</span>
+                    <span class="draft-meta-chip opj-registered-author">{{ registration.entry.author_full_name_snapshot }} · {{ registration.entry.registered_at|date:"d.m.Y H:i" }}</span>
                 </div>
-                <a
-                    class="da-button is-secondary is-compact opj-open-clean-entry"
-                    href="{% url 'operational_log:detail' journal.pk %}?shift={{ draft.shift.public_id }}#entry-{{ registration.entry.sequence_number }}"
-                >Открыть в чистовике</a>
             </div>
         </div>
 
