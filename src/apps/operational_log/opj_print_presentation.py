@@ -25,9 +25,11 @@ def build_print_journal_groups(
             )
             original["is_lifecycle_event"] = False
             original["target_entry"] = None
+            original["target_journal_number"] = None
             original["reason"] = ""
             print_rows.append(original)
-            for event in row["lifecycle"].lifecycle_entries:
+            for lifecycle_row in row["lifecycle_rows"]:
+                event = lifecycle_row["entry"]
                 payload = (
                     event.typed_payload
                     if isinstance(event.typed_payload, dict)
@@ -36,19 +38,16 @@ def build_print_journal_groups(
                 print_rows.append(
                     {
                         "entry": event,
-                        "presentation": entry_presentation(event),
+                        "journal_number": lifecycle_row["journal_number"],
+                        "presentation": lifecycle_row["presentation"],
                         "is_lifecycle_event": True,
                         "target_entry": row["entry"],
+                        "target_journal_number": row["journal_number"],
                         "reason": str(payload.get("reason") or ""),
                         "show_date": False,
                     }
                 )
-        print_rows.sort(
-            key=lambda row: (
-                row["entry"].event_at,
-                row["entry"].sequence_number,
-            )
-        )
+        print_rows.sort(key=lambda row: row["journal_number"])
         previous_date = None
         for row in print_rows:
             current_date = timezone.localtime(row["entry"].event_at).date()
