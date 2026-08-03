@@ -16,7 +16,7 @@ from apps.organizations.models import InterfacePreference
 
 from .form_contracts import OPERATIONAL_JOURNAL_FORM
 from .forms import JournalDisplayPreferenceForm
-from .models import OperationalJournal
+from .models import OperationalDraftEntry, OperationalJournal
 from .opj_integrity import verify_registered_snapshot
 from .opj_lifecycle import _accessible_journal, register_draft
 from .opj_presentation import build_clean_journal_groups
@@ -27,6 +27,7 @@ from .services import (
     require_operational_employee,
     timeline_queryset,
 )
+from .views import _semantic_reference_catalog
 
 MAX_BATCH_SIZE = 100
 
@@ -181,7 +182,7 @@ def register_drafts_batch_view(
     if failed_count:
         messages.error(
             request,
-            "Регистрация остановлена на первой ошибке, хронология сохранена.",
+            "Регистрация остановлена на первой ошибке.",
         )
     return JsonResponse(
         {
@@ -220,10 +221,7 @@ def register_single_draft_view(
         if registered_count:
             messages.success(
                 request,
-                (
-                    "Запись перенесена в чистовик под № "
-                    f"{results[0]['sequence_number']}."
-                ),
+                "Запись перенесена в чистовик и поставлена в журнальную хронологию.",
             )
         elif results:
             messages.error(request, results[0]["message"])
@@ -240,6 +238,31 @@ def _shift_redirect(
     if public_id is not None:
         response["Location"] = f"{response['Location']}#draft-{public_id}"
     return response
+
+
+def _clean_reference_catalog(
+    journal: OperationalJournal,
+    selected_shift: str,
+) -> dict[str, list[dict[str, Any]]]:
+    selected = (
+        journal.shifts.filter(public_id=selected_shift).first()
+        if selected_shift
+        else None
+    )
+    shift = selected or active_shift_for_journal(journal)
+    drafts = list(
+        OperationalDraftEntry.objects.filter(
+            shift__journal=journal,
+            is_removed=False,
+        )
+        .select_related(
+            "shift",
+            "updated_by",
+            "updated_by__position",
+        )
+        .order_by("event_at", "position", "pk")[:500]
+    )
+    return _semantic_reference_catalog(journal, shift, drafts)
 
 
 @login_required
@@ -262,6 +285,7 @@ def clean_journal_view(
             verify_registered_snapshot(entry)
         except ValidationError:
             integrity_failures += 1
+    active_shift = active_shift_for_journal(journal)
     return render(
         request,
         "operational_log/detail.html",
@@ -271,12 +295,15 @@ def clean_journal_view(
             "form_contract": OPERATIONAL_JOURNAL_FORM,
             "display_form": JournalDisplayPreferenceForm(instance=preferences),
             "ui_preferences": preferences,
-            "active_shift": active_shift_for_journal(journal),
+            "active_shift": active_shift,
             "first_entry": entries[0] if entries else None,
             "last_entry": entries[-1] if entries else None,
             "selected_shift": selected_shift,
             "shift_options": list(journal.shifts.order_by("-planned_start_at")),
-            "semantic_reference_catalog": {},
+            "semantic_reference_catalog": _clean_reference_catalog(
+                journal,
+                selected_shift,
+            ),
             "summary": {
                 "total": len(entries),
                 "integrity_failures": integrity_failures,
