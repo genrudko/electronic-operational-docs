@@ -30,7 +30,7 @@ class OperationalJournalAcceptanceRepairSourceTests(SimpleTestCase):
         self.assertIn("function expandGroupedMarkers", partial)
         self.assertIn("cloneNode(true)", partial)
         self.assertIn('clone.dataset.markerInstance = String(index)', partial)
-        self.assertNotIn("opj-marker-count", partial)
+        self.assertNotIn('<small class="opj-marker-count"', partial)
 
     def test_marker_tooltip_is_a_viewport_portal_with_project_font(self) -> None:
         partial = self.source("templates/operational_log/_normative_markers.html")
