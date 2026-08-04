@@ -63,17 +63,14 @@ class OperationalJournalAcceptanceRepairSourceTests(SimpleTestCase):
         self.assertNotIn('classList.add("is-opj-chronology-ready")', partial)
         self.assertNotIn("target.textContent = `№", partial)
 
-    def test_marker_geometry_is_owned_by_render_blocking_stylesheet(self) -> None:
+    def test_critical_marker_style_is_available_before_marker_markup(self) -> None:
         partial = self.source("templates/operational_log/_normative_markers.html")
-        css = self.source(
-            "static/operational_log/opj_lifecycle_acceptance_repair.css"
-        )
 
-        self.assertNotIn("opj-marker-critical", partial)
-        self.assertNotIn("document.head.append(style)", partial)
-        self.assertIn(".opj-normative-marker,", css)
-        self.assertIn("width: 38px !important", css)
-        self.assertIn("overflow: hidden !important", css)
+        style_position = partial.index("opj-marker-critical-00608")
+        marker_position = partial.index("{% for marker in markers %}")
+        self.assertLess(style_position, marker_position)
+        self.assertIn("document.head.append(style)", partial)
+        self.assertIn("opj_acceptance_action_repair.js", partial)
 
     def test_emergency_outline_matches_compact_heavy_accepted_oval(self) -> None:
         css = self.source(
