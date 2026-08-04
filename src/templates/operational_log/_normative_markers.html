@@ -1,12 +1,4 @@
 {% load static %}
-<link rel="stylesheet" href="{% static 'operational_log/opj_lifecycle_acceptance_repair.css' %}?v=opjlifecycle00603" data-opj-marker-repair-stylesheet>
-<style>
-/* The draft workspace stays out of the first paint until its final single/spread
- * pages contain rows. This prevents the server placeholder table from flashing. */
-.opj-workspace-page [data-draft-workspace]:not(.is-opj-first-paint-ready) {
-    visibility: hidden;
-}
-</style>
 {% for marker in markers %}
 <span class="draft-normative-marker opj-normative-marker is-{{ marker.kind }}"
       tabindex="0"
@@ -26,14 +18,53 @@
 {% empty %}
 <span class="opj-empty-marker" aria-hidden="true">&nbsp;</span>
 {% endfor %}
-<script>
+<script data-opj-marker-runtime data-repair-css-url="{% static 'operational_log/opj_lifecycle_acceptance_repair.css' %}?v=opjlifecycle00604">
 (() => {
     "use strict";
-    if (window.__EOD_OPJ_MARKER_RUNTIME_00603__) return;
-    window.__EOD_OPJ_MARKER_RUNTIME_00603__ = true;
+    const runtimeScript = document.currentScript;
+    if (window.__EOD_OPJ_MARKER_RUNTIME_00604__) return;
+    window.__EOD_OPJ_MARKER_RUNTIME_00604__ = true;
 
     let floatingPopover = null;
     let chronologyQueued = false;
+
+    function installCriticalStyle() {
+        if (document.getElementById("opj-repair-critical-00604")) return;
+        const style = document.createElement("style");
+        style.id = "opj-repair-critical-00604";
+        style.textContent = `
+            html.opj-repair-css-pending .approved-journal-shell,
+            html.opj-repair-css-pending [data-draft-workspace],
+            .opj-workspace-page [data-draft-workspace]:not(.is-opj-first-paint-ready) {
+                visibility: hidden !important;
+            }
+        `;
+        document.head.append(style);
+    }
+
+    function ensureRepairStylesheet() {
+        installCriticalStyle();
+        const target = runtimeScript?.dataset.repairCssUrl || "";
+        if (!target) return;
+        const root = document.documentElement;
+        root.classList.add("opj-repair-css-pending");
+        let link = document.querySelector(
+            'link[href*="opj_lifecycle_acceptance_repair.css"]',
+        );
+        if (!link) {
+            link = document.createElement("link");
+            link.rel = "stylesheet";
+            document.head.append(link);
+        }
+        const finish = () => root.classList.remove("opj-repair-css-pending");
+        if (link.getAttribute("href") === target && link.sheet) {
+            finish();
+            return;
+        }
+        link.addEventListener("load", finish, {once: true});
+        link.addEventListener("error", finish, {once: true});
+        link.href = target;
+    }
 
     function installFirstPaintGuard() {
         const workspace = document.querySelector("[data-draft-workspace]");
@@ -219,6 +250,7 @@
     const observer = new MutationObserver(queueChronology);
     observer.observe(document.documentElement, {childList: true, subtree: true});
 
+    ensureRepairStylesheet();
     installFirstPaintGuard();
     applyChronology();
     if (document.readyState === "loading") {
