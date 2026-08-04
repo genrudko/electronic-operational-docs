@@ -4,6 +4,7 @@ from . import (
     opj_lifecycle,
     opj_lifecycle_acceptance,
     opj_lifecycle_repair,
+    opj_runtime_repair,
     views,
 )
 
@@ -98,7 +99,7 @@ urlpatterns = [
     ),
     path(
         "operations/journal/<int:journal_id>/",
-        opj_lifecycle_acceptance.clean_journal_view,
+        opj_runtime_repair.clean_journal_runtime_view,
         name="detail",
     ),
 ]
