@@ -1,8 +1,8 @@
 (() => {
     "use strict";
 
-    if (window.__EOD_OPJ_ACCEPTANCE_ACTION_REPAIR_00609__) return;
-    window.__EOD_OPJ_ACCEPTANCE_ACTION_REPAIR_00609__ = true;
+    if (window.__EOD_OPJ_ACCEPTANCE_ACTION_REPAIR_00610__) return;
+    window.__EOD_OPJ_ACCEPTANCE_ACTION_REPAIR_00610__ = true;
 
     let floatingMenu = null;
 
@@ -14,7 +14,10 @@
         document.querySelectorAll(
             "[data-action-portal], [data-action-repair-portal]",
         ).forEach((node) => {
-            if (floatingMenu?.menu !== node) node.remove();
+            if (floatingMenu?.menu === node || node.closest("[data-entry-actions]")) {
+                return;
+            }
+            node.remove();
         });
     }
 
@@ -30,6 +33,7 @@
         menu.style.removeProperty("top");
         menu.style.removeProperty("width");
         menu.style.removeProperty("visibility");
+        delete menu.dataset.actionRepairPortal;
         root.append(menu);
         trigger.setAttribute("aria-expanded", "false");
         floatingMenu = null;
