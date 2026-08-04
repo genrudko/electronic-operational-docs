@@ -21,6 +21,8 @@ class OperationalJournalFinalActionPrintRepairTests(SimpleTestCase):
         self.assertIn("opjlifecycle00609", partial)
         self.assertIn("document.body.append(menu)", javascript)
         self.assertIn("root.append(menu)", javascript)
+        self.assertIn("delete menu.dataset.actionRepairPortal", javascript)
+        self.assertIn('node.closest("[data-entry-actions]")', javascript)
         self.assertIn("event.stopImmediatePropagation()", javascript)
         self.assertIn("removeLegacyPortals", javascript)
         self.assertNotIn("actionPortal = source.cloneNode(true)", javascript)
