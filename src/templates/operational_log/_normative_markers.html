@@ -3,9 +3,9 @@
 (() => {
     "use strict";
 
-    if (!document.getElementById("opj-marker-critical-00608")) {
+    if (!document.getElementById("opj-marker-critical-00611")) {
         const style = document.createElement("style");
-        style.id = "opj-marker-critical-00608";
+        style.id = "opj-marker-critical-00611";
         style.textContent = `
             .opj-clean-journal-page .approved-journal-date-time {
                 text-align: center !important;
@@ -103,12 +103,13 @@
             .draft-normative-marker > .draft-normative-marker-cross {
                 position: absolute !important;
                 z-index: 4;
-                top: 12px !important;
-                left: 4px !important;
+                top: 1px !important;
+                left: 1px !important;
                 display: none !important;
-                width: 30px !important;
-                height: 27px !important;
+                width: calc(100% - 2px) !important;
+                height: calc(100% - 2px) !important;
                 overflow: hidden !important;
+                border-radius: 6px;
                 pointer-events: none;
             }
             .draft-normative-marker.is-cleared > .draft-normative-marker-cross {
@@ -119,19 +120,19 @@
                 position: absolute;
                 top: 50%;
                 left: 50%;
-                width: 31px;
-                height: 2px;
+                width: 60px;
+                height: 2.5px;
                 border-radius: 999px;
                 background: #175cd3;
-                box-shadow: 0 0 0 1px rgb(255 255 255 / 70%);
+                box-shadow: 0 0 0 1px rgb(255 255 255 / 82%);
                 content: "";
                 transform-origin: center;
             }
             .draft-normative-marker.is-cleared > .draft-normative-marker-cross::before {
-                transform: translate(-50%, -50%) rotate(43deg);
+                transform: translate(-50%, -50%) rotate(52deg);
             }
             .draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
-                transform: translate(-50%, -50%) rotate(-43deg);
+                transform: translate(-50%, -50%) rotate(-52deg);
             }
             .opj-marker-count { display: none !important; }
             .opj-clean-time.is-emergency::after,
@@ -206,25 +207,25 @@
                 vertical-align: top !important;
             }
             .approved-journal-print-table .draft-normative-marker > .draft-normative-marker-cross {
-                top: 3.1mm !important;
-                left: 1.05mm !important;
-                width: 8.1mm !important;
-                height: 7.2mm !important;
+                top: .25mm !important;
+                left: .25mm !important;
+                width: calc(100% - .5mm) !important;
+                height: calc(100% - .5mm) !important;
             }
             .approved-journal-print-table .draft-normative-marker.is-cleared > .draft-normative-marker-cross::before,
             .approved-journal-print-table .draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
-                width: 8.3mm;
-                height: .45mm;
+                width: 15.8mm;
+                height: .6mm;
             }
         `;
         document.head.append(style);
     }
 
     if (document.body?.classList.contains("opj-clean-journal-page")
-        && !document.getElementById("opj-acceptance-action-repair-00609")) {
+        && !document.getElementById("opj-acceptance-action-repair-00611")) {
         const actionScript = document.createElement("script");
-        actionScript.id = "opj-acceptance-action-repair-00609";
-        actionScript.src = "{% static 'operational_log/opj_acceptance_action_repair.js' %}?v=opjlifecycle00609";
+        actionScript.id = "opj-acceptance-action-repair-00611";
+        actionScript.src = "{% static 'operational_log/opj_acceptance_action_repair.js' %}?v=opjlifecycle00611";
         actionScript.async = false;
         document.head.append(actionScript);
     }
@@ -252,11 +253,11 @@
 <script data-opj-marker-runtime>
 (() => {
     "use strict";
-    if (window.__EOD_OPJ_MARKER_RUNTIME_00608__) {
-        window.__EOD_OPJ_MARKER_REFRESH_00608__?.();
+    if (window.__EOD_OPJ_MARKER_RUNTIME_00611__) {
+        window.__EOD_OPJ_MARKER_REFRESH_00611__?.();
         return;
     }
-    window.__EOD_OPJ_MARKER_RUNTIME_00608__ = true;
+    window.__EOD_OPJ_MARKER_RUNTIME_00611__ = true;
 
     let floatingPopover = null;
     let refreshQueued = false;
@@ -336,7 +337,7 @@
         });
     }
 
-    window.__EOD_OPJ_MARKER_REFRESH_00608__ = applyChronology;
+    window.__EOD_OPJ_MARKER_REFRESH_00611__ = applyChronology;
 
     function queueRefresh() {
         if (refreshQueued) return;
