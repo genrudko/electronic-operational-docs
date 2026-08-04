@@ -3,9 +3,9 @@
 (() => {
     "use strict";
 
-    if (!document.getElementById("opj-marker-critical-00611")) {
+    if (!document.getElementById("opj-marker-critical-00612")) {
         const style = document.createElement("style");
-        style.id = "opj-marker-critical-00611";
+        style.id = "opj-marker-critical-00612";
         style.textContent = `
             .opj-clean-journal-page .approved-journal-date-time {
                 text-align: center !important;
@@ -104,13 +104,19 @@
                 position: absolute !important;
                 z-index: 4;
                 top: 1px !important;
+                right: 1px !important;
+                bottom: 1px !important;
                 left: 1px !important;
                 display: none !important;
-                width: calc(100% - 2px) !important;
-                height: calc(100% - 2px) !important;
+                width: auto !important;
+                height: auto !important;
                 overflow: hidden !important;
                 border-radius: 6px;
+                font-size: 0 !important;
+                line-height: 0 !important;
+                opacity: 1 !important;
                 pointer-events: none;
+                transform: none !important;
             }
             .draft-normative-marker.is-cleared > .draft-normative-marker-cross {
                 display: block !important;
@@ -159,7 +165,8 @@
             .opj-action-portal {
                 position: fixed !important;
                 z-index: 800 !important;
-                inset: auto !important;
+                right: auto !important;
+                bottom: auto !important;
                 display: grid !important;
                 max-height: min(420px, calc(100vh - 24px)) !important;
                 overflow: auto !important;
@@ -168,7 +175,8 @@
             .opj-marker-popover.is-floating {
                 position: fixed !important;
                 z-index: 700 !important;
-                inset: auto !important;
+                right: auto !important;
+                bottom: auto !important;
                 display: grid !important;
                 width: min(360px, calc(100vw - 24px)) !important;
                 min-width: min(220px, calc(100vw - 24px)) !important;
@@ -208,9 +216,12 @@
             }
             .approved-journal-print-table .draft-normative-marker > .draft-normative-marker-cross {
                 top: .25mm !important;
+                right: .25mm !important;
+                bottom: .25mm !important;
                 left: .25mm !important;
-                width: calc(100% - .5mm) !important;
-                height: calc(100% - .5mm) !important;
+                width: auto !important;
+                height: auto !important;
+                transform: none !important;
             }
             .approved-journal-print-table .draft-normative-marker.is-cleared > .draft-normative-marker-cross::before,
             .approved-journal-print-table .draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
@@ -219,15 +230,6 @@
             }
         `;
         document.head.append(style);
-    }
-
-    if (document.body?.classList.contains("opj-clean-journal-page")
-        && !document.getElementById("opj-acceptance-action-repair-00611")) {
-        const actionScript = document.createElement("script");
-        actionScript.id = "opj-acceptance-action-repair-00611";
-        actionScript.src = "{% static 'operational_log/opj_acceptance_action_repair.js' %}?v=opjlifecycle00611";
-        actionScript.async = false;
-        document.head.append(actionScript);
     }
 })();
 </script>
@@ -253,11 +255,11 @@
 <script data-opj-marker-runtime>
 (() => {
     "use strict";
-    if (window.__EOD_OPJ_MARKER_RUNTIME_00611__) {
-        window.__EOD_OPJ_MARKER_REFRESH_00611__?.();
+    if (window.__EOD_OPJ_MARKER_RUNTIME_00612__) {
+        window.__EOD_OPJ_MARKER_REFRESH_00612__?.();
         return;
     }
-    window.__EOD_OPJ_MARKER_RUNTIME_00611__ = true;
+    window.__EOD_OPJ_MARKER_RUNTIME_00612__ = true;
 
     let floatingPopover = null;
     let refreshQueued = false;
@@ -337,7 +339,7 @@
         });
     }
 
-    window.__EOD_OPJ_MARKER_REFRESH_00611__ = applyChronology;
+    window.__EOD_OPJ_MARKER_REFRESH_00612__ = applyChronology;
 
     function queueRefresh() {
         if (refreshQueued) return;
