@@ -11,27 +11,32 @@ class OperationalJournalFirstPaintGuardTests(SimpleTestCase):
     def source(self, relative: str) -> str:
         return (ROOT / relative).read_text(encoding="utf-8")
 
-    def test_shift_template_hides_workspace_in_head_until_final_pages_exist(self) -> None:
+    def test_render_blocking_repair_css_neutralizes_stale_hide_rule(self) -> None:
         template = self.source("templates/operational_log/shift_workspace.html")
-
-        self.assertIn(
-            "[data-draft-workspace]:not(.is-opj-first-paint-ready)",
-            template,
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
         )
-        self.assertIn("opj_first_paint_guard.js", template)
-        self.assertIn("opjlifecycle00604", template)
+
+        self.assertIn("opj_lifecycle_acceptance_repair.css", template)
         self.assertLess(
-            template.index("opj_first_paint_guard.js"),
+            template.index("opj_lifecycle_acceptance_repair.css"),
             template.index("{% block content %}"),
         )
+        self.assertIn(
+            "html body.opj-workspace-page main.opj-shift-main "
+            "[data-draft-workspace]",
+            css,
+        )
+        self.assertIn("visibility: visible !important", css)
 
-    def test_guard_reveals_only_materialized_single_or_spread_page(self) -> None:
+    def test_compatibility_guard_reveals_synchronously(self) -> None:
         script = self.source(
             "static/operational_log/opj_first_paint_guard.js"
         )
 
-        self.assertIn('querySelectorAll("[data-page-body]")', script)
-        self.assertIn("body.childElementCount > 0", script)
         self.assertIn('classList.add("is-opj-first-paint-ready")', script)
-        self.assertIn("MutationObserver(reveal)", script)
-        self.assertIn("observer.observe(workspace", script)
+        self.assertIn('dataset.opjFirstPaintGuard = "disabled"', script)
+        self.assertNotIn("MutationObserver", script)
+        self.assertNotIn("requestAnimationFrame", script)
+        self.assertNotIn("setTimeout", script)
+        self.assertNotIn("childElementCount", script)
