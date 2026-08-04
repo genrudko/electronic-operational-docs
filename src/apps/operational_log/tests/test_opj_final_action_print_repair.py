@@ -17,8 +17,10 @@ class OperationalJournalFinalActionPrintRepairTests(SimpleTestCase):
             "static/operational_log/opj_acceptance_action_repair.js"
         )
 
-        self.assertIn("opj-acceptance-action-repair-00609", partial)
-        self.assertIn("opjlifecycle00609", partial)
+        self.assertIn("opj-acceptance-action-repair-00611", partial)
+        self.assertIn("opjlifecycle00611", partial)
+        self.assertNotIn("opj-acceptance-action-repair-00609", partial)
+        self.assertNotIn("opjlifecycle00609", partial)
         self.assertIn("document.body.append(menu)", javascript)
         self.assertIn("root.append(menu)", javascript)
         self.assertIn("delete menu.dataset.actionRepairPortal", javascript)
@@ -26,6 +28,19 @@ class OperationalJournalFinalActionPrintRepairTests(SimpleTestCase):
         self.assertIn("event.stopImmediatePropagation()", javascript)
         self.assertIn("removeLegacyPortals", javascript)
         self.assertNotIn("actionPortal = source.cloneNode(true)", javascript)
+
+    def test_cleared_marker_is_crossed_across_the_complete_badge(self) -> None:
+        partial = self.source("templates/operational_log/_normative_markers.html")
+
+        self.assertIn("top: 1px !important", partial)
+        self.assertIn("left: 1px !important", partial)
+        self.assertIn("width: calc(100% - 2px) !important", partial)
+        self.assertIn("height: calc(100% - 2px) !important", partial)
+        self.assertIn("width: 60px", partial)
+        self.assertIn("rotate(52deg)", partial)
+        self.assertIn("rotate(-52deg)", partial)
+        self.assertNotIn("top: 12px !important", partial)
+        self.assertNotIn("width: 31px", partial)
 
     def test_print_visas_remain_a_native_table_cell(self) -> None:
         partial = self.source("templates/operational_log/_normative_markers.html")
