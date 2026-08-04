@@ -1,4 +1,4 @@
-@import url("./opj_lifecycle_acceptance_repair_base.css?v=opjlifecycle00608");
+@import url("./opj_lifecycle_acceptance_repair_base.css?v=opjlifecycle00611");
 
 /* OPJ-LIFECYCLE-001 acceptance repair.
  * Preserve the accepted draft marker artwork and the native three-column table.
@@ -145,17 +145,18 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
     white-space: nowrap;
 }
 
-/* Removal remains a separate blue marker. Only the central symbol area of the
- * preceding installation marker is crossed; labels and card border stay clean. */
+/* Removal remains a separate blue marker. The preceding installation badge is
+ * crossed across its complete face, including the label and number. */
 .draft-normative-marker > .draft-normative-marker-cross {
     position: absolute !important;
     z-index: 4;
-    top: 12px !important;
-    left: 4px !important;
+    top: 1px !important;
+    left: 1px !important;
     display: none !important;
-    width: 30px !important;
-    height: 27px !important;
+    width: calc(100% - 2px) !important;
+    height: calc(100% - 2px) !important;
     overflow: hidden !important;
+    border-radius: 6px;
     pointer-events: none;
 }
 
@@ -168,21 +169,21 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 31px;
-    height: 2px;
+    width: 60px;
+    height: 2.5px;
     border-radius: 999px;
     background: #175cd3;
-    box-shadow: 0 0 0 1px rgb(255 255 255 / 70%);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 82%);
     content: "";
     transform-origin: center;
 }
 
 .draft-normative-marker.is-cleared > .draft-normative-marker-cross::before {
-    transform: translate(-50%, -50%) rotate(43deg);
+    transform: translate(-50%, -50%) rotate(52deg);
 }
 
 .draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
-    transform: translate(-50%, -50%) rotate(-43deg);
+    transform: translate(-50%, -50%) rotate(-52deg);
 }
 
 .opj-marker-count {
@@ -305,15 +306,15 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
     }
 
     .approved-journal-print-table .draft-normative-marker > .draft-normative-marker-cross {
-        top: 3.1mm !important;
-        left: 1.05mm !important;
-        width: 8.1mm !important;
-        height: 7.2mm !important;
+        top: 0.25mm !important;
+        left: 0.25mm !important;
+        width: calc(100% - 0.5mm) !important;
+        height: calc(100% - 0.5mm) !important;
     }
 
     .approved-journal-print-table .draft-normative-marker.is-cleared > .draft-normative-marker-cross::before,
     .approved-journal-print-table .draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
-        width: 8.3mm;
-        height: 0.45mm;
+        width: 15.8mm;
+        height: 0.6mm;
     }
 }
