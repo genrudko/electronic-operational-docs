@@ -1,74 +1,89 @@
 (() => {
     "use strict";
 
-    if (window.__EOD_OPJ_ACCEPTANCE_ACTION_REPAIR_00608__) return;
-    window.__EOD_OPJ_ACCEPTANCE_ACTION_REPAIR_00608__ = true;
+    if (window.__EOD_OPJ_ACCEPTANCE_ACTION_REPAIR_00609__) return;
+    window.__EOD_OPJ_ACCEPTANCE_ACTION_REPAIR_00609__ = true;
 
-    let actionPortal = null;
-    let actionTrigger = null;
+    let floatingMenu = null;
 
     function clamp(value, minimum, maximum) {
         return Math.max(minimum, Math.min(value, maximum));
     }
 
+    function removeLegacyPortals() {
+        document.querySelectorAll(
+            "[data-action-portal], [data-action-repair-portal]",
+        ).forEach((node) => {
+            if (floatingMenu?.menu !== node) node.remove();
+        });
+    }
+
     function closeActionMenu({restoreFocus = false} = {}) {
-        actionPortal?.remove();
-        actionPortal = null;
-        if (actionTrigger) {
-            actionTrigger.setAttribute("aria-expanded", "false");
-            if (restoreFocus && actionTrigger.isConnected) {
-                actionTrigger.focus({preventScroll: true});
-            }
+        if (!floatingMenu) {
+            removeLegacyPortals();
+            return;
         }
-        actionTrigger = null;
+        const {menu, root, trigger} = floatingMenu;
+        menu.hidden = true;
+        menu.classList.remove("is-floating", "opj-action-portal");
+        menu.style.removeProperty("left");
+        menu.style.removeProperty("top");
+        menu.style.removeProperty("width");
+        menu.style.removeProperty("visibility");
+        root.append(menu);
+        trigger.setAttribute("aria-expanded", "false");
+        floatingMenu = null;
+        removeLegacyPortals();
+        if (restoreFocus && trigger.isConnected) {
+            trigger.focus({preventScroll: true});
+        }
     }
 
     function positionActionMenu(trigger, menu) {
         const margin = 12;
+        const gap = 6;
         const triggerRect = trigger.getBoundingClientRect();
+        const width = Math.min(310, window.innerWidth - margin * 2);
+        menu.style.width = `${width}px`;
         menu.style.visibility = "hidden";
-        menu.style.width = `${Math.min(310, window.innerWidth - margin * 2)}px`;
-        document.body.append(menu);
+        menu.hidden = false;
         const menuRect = menu.getBoundingClientRect();
-        let top = triggerRect.bottom + 6;
+        let top = triggerRect.bottom + gap;
         if (top + menuRect.height > window.innerHeight - margin) {
-            top = triggerRect.top - menuRect.height - 6;
+            top = triggerRect.top - menuRect.height - gap;
         }
-        menu.style.left = `${Math.round(clamp(
+        const left = clamp(
             triggerRect.right - menuRect.width,
             margin,
             window.innerWidth - menuRect.width - margin,
-        ))}px`;
-        menu.style.top = `${Math.round(clamp(
-            top,
-            margin,
-            window.innerHeight - menuRect.height - margin,
-        ))}px`;
+        );
+        top = clamp(top, margin, window.innerHeight - menuRect.height - margin);
+        menu.style.left = `${Math.round(left)}px`;
+        menu.style.top = `${Math.round(top)}px`;
         menu.style.visibility = "";
     }
 
     function openActionMenu(trigger) {
-        if (actionTrigger === trigger) {
+        const root = trigger.closest("[data-entry-actions]");
+        const menu = root?.querySelector("[data-entry-actions-menu]");
+        if (!root || !menu) return;
+        if (floatingMenu?.trigger === trigger) {
             closeActionMenu({restoreFocus: true});
             return;
         }
-        closeActionMenu();
-        const source = trigger.closest("[data-entry-actions]")
-            ?.querySelector("[data-entry-actions-menu]");
-        if (!source) return;
 
-        actionTrigger = trigger;
-        actionTrigger.setAttribute("aria-expanded", "true");
-        actionPortal = source.cloneNode(true);
-        actionPortal.hidden = false;
-        actionPortal.classList.add("is-floating", "opj-action-portal");
-        actionPortal.dataset.actionRepairPortal = "";
-        positionActionMenu(trigger, actionPortal);
-        actionPortal.querySelector("[role=menuitem]")?.focus({preventScroll: true});
+        closeActionMenu();
+        removeLegacyPortals();
+        trigger.setAttribute("aria-expanded", "true");
+        menu.classList.add("is-floating", "opj-action-portal");
+        menu.dataset.actionRepairPortal = "";
+        document.body.append(menu);
+        floatingMenu = {menu, root, trigger};
+        positionActionMenu(trigger, menu);
     }
 
     function editorPayload(scriptId) {
-        const node = document.getElementById(scriptId);
+        const node = document.getElementById(scriptId || "");
         if (!node) return {};
         try {
             return JSON.parse(node.textContent || "{}");
@@ -93,11 +108,12 @@
             window.EODDraftEditor?.initializeRow(card);
             window.EODDraftEditor?.bindToolbar(dialog);
         } catch (_error) {
-            // Native textareas remain usable even if the rich editor is unavailable.
+            // Native fields remain available when the rich editor cannot initialise.
         }
     }
 
     function openCorrection(button) {
+        closeActionMenu();
         const dialog = document.querySelector("[data-correction-dialog]");
         const form = dialog?.querySelector("[data-correction-form]");
         const editorForm = dialog?.querySelector("[data-draft-form]");
@@ -105,9 +121,8 @@
 
         const payload = editorPayload(button.dataset.editorPayloadId);
         form.action = button.dataset.correctUrl || "";
-        dialog.querySelector("[data-correction-entry-label]").textContent = (
-            button.dataset.entryLabel || ""
-        );
+        const label = dialog.querySelector("[data-correction-entry-label]");
+        if (label) label.textContent = button.dataset.entryLabel || "";
         const reason = form.querySelector("[name=reason]");
         if (reason) reason.value = "";
         const payloadField = form.querySelector("[name=replacement_editor_payload]");
@@ -119,11 +134,15 @@
         try {
             window.EODDraftEditor?.acceptSaved(editorForm, {editor_payload: payload});
         } catch (_error) {
-            // Fallback textarea was already populated above.
+            // Fallback textarea already contains the registered text.
         }
         dialog.showModal();
         window.requestAnimationFrame(() => {
-            window.EODDraftEditor?.focus(editorForm, "end");
+            try {
+                window.EODDraftEditor?.focus(editorForm, "end");
+            } catch (_error) {
+                contentField?.focus({preventScroll: true});
+            }
         });
     }
 
@@ -133,19 +152,19 @@
         try {
             window.EODDraftEditor?.deactivate(editorForm);
         } catch (_error) {
-            // Closing the dialog must remain available without the rich editor.
+            // Closing must never depend on editor state.
         }
         if (dialog?.open) dialog.close();
     }
 
     function openCancellation(button) {
+        closeActionMenu();
         const dialog = document.querySelector("[data-cancellation-dialog]");
         const form = dialog?.querySelector("[data-cancellation-form]");
         if (!dialog || !form) return;
         form.action = button.dataset.cancelUrl || "";
-        dialog.querySelector("[data-cancellation-entry-label]").textContent = (
-            button.dataset.entryLabel || ""
-        );
+        const label = dialog.querySelector("[data-cancellation-entry-label]");
+        if (label) label.textContent = button.dataset.entryLabel || "";
         const reason = form.querySelector("[name=reason]");
         if (reason) reason.value = "";
         dialog.showModal();
@@ -158,13 +177,14 @@
     }
 
     function toggleHistory(button) {
+        closeActionMenu();
         const history = document.getElementById(button.dataset.historyId || "");
         if (!history) return;
         history.hidden = !history.hidden;
         if (!history.hidden) history.scrollIntoView({block: "nearest"});
     }
 
-    document.addEventListener("click", (event) => {
+    function handleActionClick(event) {
         const toggle = event.target.closest?.("[data-entry-actions-toggle]");
         if (toggle) {
             event.preventDefault();
@@ -177,7 +197,6 @@
         if (correction) {
             event.preventDefault();
             event.stopImmediatePropagation();
-            closeActionMenu();
             openCorrection(correction);
             return;
         }
@@ -186,7 +205,6 @@
         if (cancellation) {
             event.preventDefault();
             event.stopImmediatePropagation();
-            closeActionMenu();
             openCancellation(cancellation);
             return;
         }
@@ -195,7 +213,6 @@
         if (history) {
             event.preventDefault();
             event.stopImmediatePropagation();
-            closeActionMenu();
             toggleHistory(history);
             return;
         }
@@ -222,37 +239,26 @@
             return;
         }
 
-        if (event.target.closest?.("[data-open-journal-settings]")) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            document.getElementById("journal-display-settings")?.showModal();
-            return;
-        }
-
-        if (event.target.closest?.("[data-close-journal-settings]")) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            document.getElementById("journal-display-settings")?.close();
-            return;
-        }
-
         if (event.target.closest?.("[data-action-repair-portal] a[href]")) {
             closeActionMenu();
             return;
         }
 
-        if (actionPortal && !actionPortal.contains(event.target)) closeActionMenu();
-    }, true);
+        if (floatingMenu && !floatingMenu.menu.contains(event.target)) {
+            closeActionMenu();
+        }
+    }
 
+    document.addEventListener("click", handleActionClick, true);
     document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && actionPortal) {
+        if (event.key !== "Escape") return;
+        if (floatingMenu) {
             event.preventDefault();
             closeActionMenu({restoreFocus: true});
         }
     });
-
     window.addEventListener("resize", () => closeActionMenu());
-    document.addEventListener("scroll", () => closeActionMenu(), true);
+    window.addEventListener("scroll", () => closeActionMenu(), {passive: true});
 
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", initializeCorrectionEditor, {once: true});
