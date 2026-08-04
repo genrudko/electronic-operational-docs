@@ -217,7 +217,7 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
 .opj-workspace[data-view-mode="spread"] .opj-clean-markers,
 .opj-workspace[data-view-mode="spread"] .draft-ledger-visas {
     display: flex !important;
-    max-height: 113px;
+    max-height: 96px;
     gap: 5px !important;
     padding: 5px 3px !important;
     overflow: auto !important;
