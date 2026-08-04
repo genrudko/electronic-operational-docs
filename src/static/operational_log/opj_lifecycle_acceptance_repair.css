@@ -1,27 +1,42 @@
-@import url("./opj_lifecycle_acceptance_repair_base.css?v=opjlifecycle00603");
+@import url("./opj_lifecycle_acceptance_repair_base.css?v=opjlifecycle00608");
 
 /* OPJ-LIFECYCLE-001 acceptance repair.
- * Preserve the accepted draft marker artwork instead of creating a second
- * PZ/ZN visual language for registered and print views.
+ * Preserve the accepted draft marker artwork and the native three-column table.
  */
 .opj-registered-context,
 [data-opj-registered-context] {
     display: none !important;
 }
 
-/* A stale template may still contain the former delayed first-paint rule.
- * This higher-specificity rule is loaded as render-blocking CSS and keeps the
- * server-rendered workspace visible from the first paint. */
 html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
     visibility: visible !important;
 }
 
-/* The emergency mark follows the time itself, never the complete table cell. */
+/* Keep the complete date/time stack centred in the first table column. */
+.opj-clean-journal-page .approved-journal-date-time {
+    text-align: center !important;
+    vertical-align: top !important;
+}
+
+.opj-clean-journal-page .approved-journal-date-time > span,
+.opj-clean-journal-page .approved-journal-date-time > small {
+    display: block !important;
+    width: 100% !important;
+    text-align: center !important;
+}
+
 .opj-clean-time,
 .journal-print-time {
     width: max-content !important;
     min-width: 0 !important;
     padding-inline: 0.28rem;
+}
+
+.opj-clean-journal-page .approved-journal-date-time .opj-clean-time {
+    display: grid !important;
+    margin: 0.12rem auto !important;
+    place-items: center !important;
+    text-align: center !important;
 }
 
 .opj-clean-time.is-emergency::after,
@@ -34,12 +49,27 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
     transform: none !important;
 }
 
-/* Exact accepted draft arrangement: compact individual cards in a wrapping
- * row. No count badge and no stretched grid item. */
-.opj-clean-markers,
-.approved-journal-visas,
-.draft-ledger-visas,
-.draft-ledger-visas.has-normative-markers {
+/* A TD must remain a table-cell. Turning it into flex broke the third-column
+ * border grid and row-height calculation. Markers wrap as inline-grid children. */
+.opj-clean-journal-page .approved-journal-visas.opj-clean-markers {
+    display: table-cell !important;
+    min-width: 0;
+    padding: 5px 3px !important;
+    overflow: visible !important;
+    text-align: center !important;
+    vertical-align: top !important;
+    white-space: normal !important;
+}
+
+.opj-clean-journal-page .approved-journal-visas.opj-clean-markers > .opj-normative-marker,
+.opj-clean-journal-page .approved-journal-visas.opj-clean-markers > .draft-normative-marker {
+    display: inline-grid !important;
+    margin: 2px !important;
+    vertical-align: top !important;
+}
+
+.opj-workspace-page .draft-ledger-visas,
+.opj-workspace-page .draft-ledger-visas.has-normative-markers {
     display: flex !important;
     min-width: 0;
     flex-wrap: wrap !important;
@@ -63,7 +93,7 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
     grid-template-rows: auto 28px auto !important;
     place-items: center !important;
     padding: 1px 2px 2px !important;
-    overflow: visible !important;
+    overflow: hidden !important;
     border: 1px solid currentColor !important;
     border-radius: 7px !important;
     background: var(--theme-surface, #fff) !important;
@@ -115,12 +145,17 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
     white-space: nowrap;
 }
 
-/* A removal/off operation remains its own blue marker. The accepted blue X is
- * applied only to the preceding installation/on marker. */
+/* Removal remains a separate blue marker. Only the central symbol area of the
+ * preceding installation marker is crossed; labels and card border stay clean. */
 .draft-normative-marker > .draft-normative-marker-cross {
     position: absolute !important;
-    inset: 6px 1px 3px !important;
+    z-index: 4;
+    top: 12px !important;
+    left: 4px !important;
     display: none !important;
+    width: 30px !important;
+    height: 27px !important;
+    overflow: hidden !important;
     pointer-events: none;
 }
 
@@ -133,29 +168,57 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 44px;
-    height: 3px;
+    width: 31px;
+    height: 2px;
     border-radius: 999px;
     background: #175cd3;
-    box-shadow: 0 0 0 1px rgb(255 255 255 / 62%);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 70%);
     content: "";
     transform-origin: center;
 }
 
 .draft-normative-marker.is-cleared > .draft-normative-marker-cross::before {
-    transform: translate(-50%, -50%) rotate(45deg);
+    transform: translate(-50%, -50%) rotate(43deg);
 }
 
 .draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
-    transform: translate(-50%, -50%) rotate(-45deg);
+    transform: translate(-50%, -50%) rotate(-43deg);
 }
 
 .opj-marker-count {
     display: none !important;
 }
 
-/* The tooltip belongs to the interface and therefore uses the project font.
- * It is a fixed body portal, clamped to the visible viewport. */
+.opj-clean-journal-page .journal-workspace-actions a[href*="/print"] {
+    border-color: var(--theme-border-strong) !important;
+    background: var(--theme-surface) !important;
+    color: var(--theme-primary) !important;
+    box-shadow: none !important;
+}
+
+.opj-clean-journal-page .journal-workspace-actions a[href*="/print"]:hover,
+.opj-clean-journal-page .journal-workspace-actions a[href*="/print"]:focus-visible {
+    border-color: var(--theme-primary) !important;
+    background: var(--theme-primary-soft) !important;
+}
+
+.opj-action-portal,
+.opj-entry-actions-menu.is-floating {
+    position: fixed !important;
+    z-index: 800 !important;
+    inset: auto !important;
+    display: grid !important;
+    width: min(310px, calc(100vw - 24px));
+    max-height: min(420px, calc(100vh - 24px));
+    overflow: auto !important;
+    overscroll-behavior: contain;
+}
+
+.opj-action-portal[hidden],
+.opj-entry-actions-menu.is-floating[hidden] {
+    display: none !important;
+}
+
 .opj-marker-popover {
     display: none !important;
 }
@@ -212,9 +275,6 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
     content: "•";
 }
 
-/* Spread mode keeps the same artwork; only the containing cell scrolls when
- * there are many individual markers. */
-.opj-workspace[data-view-mode="spread"] .opj-clean-markers,
 .opj-workspace[data-view-mode="spread"] .draft-ledger-visas {
     display: flex !important;
     max-height: 96px;
@@ -242,5 +302,18 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
         background: #fff !important;
         print-color-adjust: exact;
         -webkit-print-color-adjust: exact;
+    }
+
+    .approved-journal-print-table .draft-normative-marker > .draft-normative-marker-cross {
+        top: 3.1mm !important;
+        left: 1.05mm !important;
+        width: 8.1mm !important;
+        height: 7.2mm !important;
+    }
+
+    .approved-journal-print-table .draft-normative-marker.is-cleared > .draft-normative-marker-cross::before,
+    .approved-journal-print-table .draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
+        width: 8.3mm;
+        height: 0.45mm;
     }
 }
