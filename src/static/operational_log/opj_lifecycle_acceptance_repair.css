@@ -1,23 +1,72 @@
-@import url("./opj_lifecycle_acceptance_repair_base.css?v=opjlifecycle00601");
+@import url("./opj_lifecycle_acceptance_repair_base.css?v=opjlifecycle00603");
 
-/* OPJ-LIFECYCLE-001 fourth acceptance repair.
- * The final journal state is hidden before first paint and revealed only after
- * marker chronology has been applied. Marker overlays are viewport portals.
+/* OPJ-LIFECYCLE-001 fifth acceptance repair.
+ * The journal is server-visible immediately. Marker chronology no longer owns
+ * visibility of table rows. PZ/ZN cards keep the accepted compact geometry.
  */
 .opj-registered-context,
 [data-opj-registered-context] {
     display: none !important;
 }
 
-.approved-journal-table:not(.is-opj-chronology-ready) tbody {
-    visibility: hidden;
+/* The accepted emergency mark is the same compact heavy oval in draft,
+ * registered screen and print forms. It follows the time, not the whole cell.
+ */
+.opj-clean-time,
+.journal-print-time {
+    width: max-content !important;
+    min-width: 0 !important;
+    padding-inline: 0.28rem;
 }
 
 .opj-clean-time.is-emergency::after,
-.draft-ledger-time.is-emergency::after {
-    inset: -0.08rem -0.20rem !important;
-    border: 2px solid var(--theme-danger, #c7352b) !important;
+.draft-ledger-time.is-emergency::after,
+.journal-print-time.is-emergency::after {
+    inset: -0.18rem -0.36rem !important;
+    border: 3px solid var(--theme-danger, #c7352b) !important;
     border-radius: 999px !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* Accepted PZ/ZN card: one fixed vertical card, stable three-line rhythm and
+ * no stretching by the table or by the count badge. */
+.opj-clean-markers,
+.approved-journal-visas,
+.draft-ledger-visas {
+    grid-template-columns: repeat(auto-fit, 38px) !important;
+    grid-auto-rows: 46px;
+    align-content: start !important;
+    align-items: start !important;
+    justify-content: center !important;
+    justify-items: center !important;
+    gap: 5px !important;
+}
+
+.opj-normative-marker,
+.draft-normative-marker {
+    box-sizing: border-box !important;
+    display: inline-grid !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    max-height: 46px !important;
+    grid-template-rows: 10px 18px 10px !important;
+    place-items: center !important;
+    align-content: center !important;
+    justify-content: center !important;
+    padding: 4px 2px 3px !important;
+    overflow: visible !important;
+    border: 1.5px solid currentColor !important;
+    border-radius: 7px !important;
+    background: var(--theme-surface, #fff) !important;
+    color: var(--theme-danger, #c7352b) !important;
+    font-family: var(--font-interface, "Onest Variable", "Onest", system-ui, sans-serif) !important;
+    font-style: normal !important;
+    line-height: 1 !important;
+    vertical-align: top !important;
     transform: none !important;
 }
 
@@ -25,21 +74,101 @@
 .opj-normative-marker.is-zn_off,
 .draft-normative-marker.is-pz_remove,
 .draft-normative-marker.is-zn_off {
-    color: var(--theme-primary, #2563eb) !important;
+    color: var(--theme-primary, #1672b8) !important;
 }
 
+.draft-normative-marker-top,
+.draft-normative-marker-bottom {
+    display: block !important;
+    width: 100%;
+    overflow: hidden;
+    color: inherit;
+    font-family: inherit !important;
+    font-size: 0.58rem !important;
+    font-weight: 800 !important;
+    line-height: 10px !important;
+    text-align: center;
+    text-overflow: clip;
+    white-space: nowrap;
+}
+
+.draft-normative-marker-bolt {
+    display: block !important;
+    width: 100%;
+    margin: 0 !important;
+    color: inherit;
+    font-family: inherit !important;
+    font-size: 0.98rem !important;
+    font-style: normal !important;
+    font-weight: 800 !important;
+    line-height: 18px !important;
+    text-align: center;
+    transform: none !important;
+}
+
+/* A removal remains a separate blue card. Only the earlier installation gets
+ * the explicit blue cross. */
 .draft-normative-marker > .draft-normative-marker-cross {
     display: none !important;
 }
 
 .draft-normative-marker.is-cleared > .draft-normative-marker-cross {
+    position: absolute !important;
+    z-index: 2;
+    inset: 50% auto auto 50% !important;
     display: block !important;
+    width: 112% !important;
+    height: 112% !important;
+    color: var(--theme-primary, #1672b8) !important;
+    font-size: 0 !important;
+    opacity: 1 !important;
+    transform: translate(-50%, -50%) !important;
+    pointer-events: none;
 }
 
-.opj-workspace[data-view-mode="spread"] .opj-clean-markers {
-    max-height: 96px;
+.draft-normative-marker.is-cleared > .draft-normative-marker-cross::before,
+.draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 2px;
+    height: 116%;
+    border-radius: 999px;
+    background: currentColor;
+    content: "";
 }
 
+.draft-normative-marker.is-cleared > .draft-normative-marker-cross::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.opj-marker-count {
+    position: absolute !important;
+    z-index: 3;
+    right: -7px !important;
+    top: -7px !important;
+    display: inline-grid !important;
+    min-width: 18px !important;
+    height: 18px !important;
+    place-items: center;
+    padding: 0 3px !important;
+    border: 1px solid currentColor !important;
+    border-radius: 999px !important;
+    background: var(--theme-surface-elevated, #fff) !important;
+    color: inherit;
+    font-family: inherit !important;
+    font-size: 0.54rem !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+    white-space: nowrap;
+}
+
+/* Viewport popover. It is created as a body portal and therefore cannot widen
+ * or be clipped by the third journal column. */
 .opj-marker-popover {
     display: none !important;
 }
@@ -49,11 +178,11 @@
     z-index: 700 !important;
     inset: auto !important;
     display: grid !important;
-    width: min(420px, calc(100vw - 24px)) !important;
-    min-width: min(240px, calc(100vw - 24px)) !important;
+    width: min(360px, calc(100vw - 24px)) !important;
+    min-width: min(220px, calc(100vw - 24px)) !important;
     max-width: calc(100vw - 24px) !important;
-    max-height: min(440px, calc(100vh - 24px)) !important;
-    gap: 6px;
+    max-height: min(360px, calc(100vh - 24px)) !important;
+    gap: 7px;
     overflow: auto !important;
     padding: 10px 12px;
     border: 1px solid var(--theme-border-strong, #94a3b8);
@@ -72,7 +201,8 @@
 }
 
 .opj-marker-popover.is-floating strong {
-    font-weight: 700;
+    font-family: inherit !important;
+    font-weight: 750;
 }
 
 .opj-marker-source-list {
@@ -95,9 +225,18 @@
     content: "•";
 }
 
+.opj-workspace[data-view-mode="spread"] .opj-clean-markers {
+    max-height: 96px;
+}
+
 @media print {
     .opj-marker-popover,
     .opj-marker-popover.is-floating {
         display: none !important;
+    }
+
+    .opj-normative-marker,
+    .draft-normative-marker {
+        background: #fff !important;
     }
 }
