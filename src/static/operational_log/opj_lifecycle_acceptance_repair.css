@@ -45,6 +45,7 @@
 
 .opj-normative-marker,
 .draft-normative-marker {
+    position: relative !important;
     box-sizing: border-box !important;
     display: inline-grid !important;
     width: 38px !important;
@@ -57,7 +58,7 @@
     place-items: center !important;
     align-content: center !important;
     justify-content: center !important;
-    padding: 4px 2px 3px !important;
+    padding: 3px 2px 2px !important;
     overflow: visible !important;
     border: 1.5px solid currentColor !important;
     border-radius: 7px !important;
@@ -65,6 +66,7 @@
     color: var(--theme-danger, #c7352b) !important;
     font-family: var(--font-interface, "Onest Variable", "Onest", system-ui, sans-serif) !important;
     font-style: normal !important;
+    font-variant-numeric: tabular-nums;
     line-height: 1 !important;
     vertical-align: top !important;
     transform: none !important;
