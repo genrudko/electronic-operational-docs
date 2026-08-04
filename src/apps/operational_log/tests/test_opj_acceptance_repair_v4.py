@@ -66,7 +66,7 @@ class OperationalJournalAcceptanceRepairSourceTests(SimpleTestCase):
     def test_critical_marker_style_is_available_before_marker_markup(self) -> None:
         partial = self.source("templates/operational_log/_normative_markers.html")
 
-        style_position = partial.index("opj-marker-critical-00608")
+        style_position = partial.index("opj-marker-critical-00611")
         marker_position = partial.index("{% for marker in markers %}")
         self.assertLess(style_position, marker_position)
         self.assertIn("document.head.append(style)", partial)
@@ -100,7 +100,7 @@ class OperationalJournalAcceptanceRepairSourceTests(SimpleTestCase):
         self.assertNotIn("width: 42px !important", css)
         self.assertNotIn("height: 48px !important", css)
 
-    def test_removal_marker_remains_visible_and_cross_is_local_to_symbol(self) -> None:
+    def test_removal_marker_remains_visible_and_crosses_complete_source_badge(self) -> None:
         partial = self.source("templates/operational_log/_normative_markers.html")
         css = self.source(
             "static/operational_log/opj_lifecycle_acceptance_repair.css"
@@ -112,13 +112,16 @@ class OperationalJournalAcceptanceRepairSourceTests(SimpleTestCase):
             ".draft-normative-marker.is-cleared > .draft-normative-marker-cross",
             css,
         )
-        self.assertIn("top: 12px !important", css)
-        self.assertIn("left: 4px !important", css)
-        self.assertIn("width: 30px !important", css)
-        self.assertIn("height: 27px !important", css)
-        self.assertIn("width: 31px", css)
-        self.assertIn("height: 2px", css)
-        self.assertIn("overflow: hidden !important", css)
+        self.assertIn("top: 1px !important", css)
+        self.assertIn("left: 1px !important", css)
+        self.assertIn("width: calc(100% - 2px) !important", css)
+        self.assertIn("height: calc(100% - 2px) !important", css)
+        self.assertIn("width: 60px", css)
+        self.assertIn("height: 2.5px", css)
+        self.assertIn("rotate(52deg)", css)
+        self.assertIn("rotate(-52deg)", css)
+        self.assertNotIn("top: 12px !important", css)
+        self.assertNotIn("width: 31px", css)
         self.assertIn(
             ".draft-normative-marker.is-pz_remove",
             css,
