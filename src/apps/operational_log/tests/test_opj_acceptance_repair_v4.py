@@ -101,5 +101,6 @@ class OperationalJournalFifthAcceptanceRepairSourceTests(SimpleTestCase):
             "static/operational_log/opj_lifecycle_acceptance_repair.css"
         )
 
-        self.assertIn("opjlifecycle00603", partial)
+        self.assertIn("opjlifecycle00604", partial)
         self.assertIn("opjlifecycle00603", css)
+        self.assertIn("opj-repair-css-pending", partial)
