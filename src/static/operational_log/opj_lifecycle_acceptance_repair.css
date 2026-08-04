@@ -1,15 +1,15 @@
 @import url("./opj_lifecycle_acceptance_repair_base.css?v=opjlifecycle00603");
 
 /* OPJ-LIFECYCLE-001 acceptance repair.
- * This layer restores the previously accepted PZ/ZN visual form verbatim in
- * screen and print contexts. It does not invent a new marker geometry.
+ * Preserve the accepted draft marker artwork instead of creating a second
+ * PZ/ZN visual language for registered and print views.
  */
 .opj-registered-context,
 [data-opj-registered-context] {
     display: none !important;
 }
 
-/* Accepted emergency mark: one compact heavy oval around the time itself. */
+/* The emergency mark follows the time itself, never the complete table cell. */
 .opj-clean-time,
 .journal-print-time {
     width: max-content !important;
@@ -27,10 +27,12 @@
     transform: none !important;
 }
 
-/* Exact previously accepted marker layout. */
+/* Exact accepted draft arrangement: compact individual cards in a wrapping
+ * row. No count badge and no stretched grid item. */
 .opj-clean-markers,
 .approved-journal-visas,
-.draft-ledger-visas {
+.draft-ledger-visas,
+.draft-ledger-visas.has-normative-markers {
     display: flex !important;
     min-width: 0;
     flex-wrap: wrap !important;
@@ -46,118 +48,107 @@
 .draft-normative-marker {
     position: relative !important;
     box-sizing: border-box !important;
-    display: inline-grid !important;
-    width: 42px !important;
-    min-width: 42px !important;
-    max-width: 42px !important;
-    height: 48px !important;
-    min-height: 48px !important;
-    max-height: 48px !important;
-    grid-template-rows: auto auto auto !important;
+    display: grid !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    min-height: 49px !important;
+    grid-template-rows: auto 28px auto !important;
     place-items: center !important;
-    align-content: center !important;
-    justify-content: center !important;
-    padding: 3px 4px !important;
+    padding: 1px 2px 2px !important;
     overflow: visible !important;
     border: 1px solid currentColor !important;
     border-radius: 7px !important;
     background: var(--theme-surface, #fff) !important;
-    color: var(--theme-danger, #b42318) !important;
-    font-family: var(--font-interface, "Onest Variable", "Onest", system-ui, sans-serif) !important;
+    color: #b42318 !important;
+    font-family: Arial, sans-serif !important;
     font-style: normal !important;
-    font-weight: 750 !important;
+    font-weight: 900 !important;
     line-height: 1 !important;
     text-align: center !important;
     vertical-align: top !important;
-    transform: none !important;
 }
 
-.opj-normative-marker.is-pz_remove,
 .opj-normative-marker.is-zn_off,
-.draft-normative-marker.is-pz_remove,
-.draft-normative-marker.is-zn_off {
-    color: var(--theme-primary, #175cd3) !important;
+.opj-normative-marker.is-pz_remove,
+.draft-normative-marker.is-zn_off,
+.draft-normative-marker.is-pz_remove {
+    color: #175cd3 !important;
 }
 
-.draft-normative-marker-top,
-.draft-normative-marker-bottom {
-    display: block !important;
-    width: 100%;
-    min-height: 0 !important;
-    overflow: hidden;
+.draft-normative-marker-top {
+    min-height: 10px !important;
     color: inherit;
     font-family: inherit !important;
-    font-size: 0.62rem !important;
-    font-weight: 750 !important;
-    font-variant-numeric: tabular-nums;
-    line-height: 1 !important;
-    text-align: center;
-    text-overflow: clip;
+    font-size: 9px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.03em;
+    line-height: 10px !important;
     white-space: nowrap;
 }
 
 .draft-normative-marker-bolt {
-    display: block !important;
-    width: 100%;
-    margin: 2px 0 !important;
+    margin: 0 !important;
     color: inherit;
     font-family: inherit !important;
-    font-size: 1rem !important;
+    font-size: 34px !important;
     font-style: normal !important;
-    font-weight: 750 !important;
-    line-height: 1 !important;
-    text-align: center;
-    transform: none !important;
+    font-weight: 900 !important;
+    line-height: 26px !important;
+    transform: skew(-8deg) !important;
 }
 
-/* The blue removal card remains independent. Only the earlier installation
- * receives the accepted large blue cross. */
+.draft-normative-marker-bottom {
+    min-height: 10px !important;
+    color: inherit;
+    font-family: inherit !important;
+    font-size: 9px !important;
+    font-weight: 900 !important;
+    line-height: 10px !important;
+    white-space: nowrap;
+}
+
+/* A removal/off operation remains its own blue marker. The accepted blue X is
+ * applied only to the preceding installation/on marker. */
 .draft-normative-marker > .draft-normative-marker-cross {
-    display: none !important;
-}
-
-.draft-normative-marker.is-cleared > .draft-normative-marker-cross {
     position: absolute !important;
-    z-index: 2;
-    inset: 50% auto auto 50% !important;
-    display: grid !important;
-    width: 100% !important;
-    height: 100% !important;
-    place-items: center;
-    color: var(--theme-primary, #175cd3) !important;
-    font-size: 0 !important;
-    font-style: normal !important;
-    font-weight: 400 !important;
-    line-height: 1 !important;
-    opacity: 0.78 !important;
-    transform: translate(-50%, -50%) !important;
+    inset: 6px 1px 3px !important;
+    display: none !important;
     pointer-events: none;
 }
 
+.draft-normative-marker.is-cleared > .draft-normative-marker-cross {
+    display: block !important;
+}
+
+.draft-normative-marker.is-cleared > .draft-normative-marker-cross::before,
+.draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 3px;
+    border-radius: 999px;
+    background: #175cd3;
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 62%);
+    content: "";
+    transform-origin: center;
+}
+
 .draft-normative-marker.is-cleared > .draft-normative-marker-cross::before {
-    display: block;
-    color: inherit;
-    content: "×";
-    font-family: Arial, sans-serif;
-    font-size: 2.35rem;
-    font-style: normal;
-    font-weight: 400;
-    line-height: 1;
-    text-shadow: 0 0 1px var(--theme-surface, #fff);
+    transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
-    display: none !important;
-    content: none !important;
+    transform: translate(-50%, -50%) rotate(-45deg);
 }
 
-/* The accepted form shows the individual cards; a service count badge must not
- * sit over and deform the marker. */
 .opj-marker-count {
     display: none !important;
 }
 
-/* Viewport popover: never widens or clips the third journal column. */
+/* The tooltip belongs to the interface and therefore uses the project font.
+ * It is a fixed body portal, clamped to the visible viewport. */
 .opj-marker-popover {
     display: none !important;
 }
@@ -214,11 +205,12 @@
     content: "•";
 }
 
-/* Spread mode must not silently replace the accepted card with a smaller one. */
+/* Spread mode keeps the same artwork; only the containing cell scrolls when
+ * there are many individual markers. */
 .opj-workspace[data-view-mode="spread"] .opj-clean-markers,
 .opj-workspace[data-view-mode="spread"] .draft-ledger-visas {
     display: flex !important;
-    max-height: 108px;
+    max-height: 113px;
     gap: 5px !important;
     padding: 5px 3px !important;
     overflow: auto !important;
@@ -226,22 +218,10 @@
 
 .opj-workspace[data-view-mode="spread"] .opj-normative-marker,
 .opj-workspace[data-view-mode="spread"] .draft-normative-marker {
-    width: 42px !important;
-    min-width: 42px !important;
-    max-width: 42px !important;
-    height: 48px !important;
-    min-height: 48px !important;
-    max-height: 48px !important;
-    border-radius: 7px !important;
-}
-
-.opj-workspace[data-view-mode="spread"] .draft-normative-marker-top,
-.opj-workspace[data-view-mode="spread"] .draft-normative-marker-bottom {
-    font-size: 0.62rem !important;
-}
-
-.opj-workspace[data-view-mode="spread"] .draft-normative-marker-bolt {
-    font-size: 1rem !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    min-height: 49px !important;
 }
 
 @media print {
