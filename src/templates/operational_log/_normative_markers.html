@@ -5,49 +5,32 @@
       data-opj-marker
       data-marker-kind="{{ marker.kind }}"
       data-marker-number="{{ marker.pz_number }}"
+      data-marker-count="{{ marker.count|default:1 }}"
       data-marker-label="{{ marker.label|default:'Нормативная отметка' }}"
-      aria-label="{{ marker.label|default:'Нормативная отметка' }}{% if marker.pz_number %}, №{{ marker.pz_number }}{% endif %}{% if marker.count > 1 %}, отметок {{ marker.count }}{% endif %}">
+      aria-label="{{ marker.label|default:'Нормативная отметка' }}{% if marker.pz_number %}, №{{ marker.pz_number }}{% endif %}">
     <span class="draft-normative-marker-top">
         {% if marker.kind == 'pz_install' or marker.kind == 'pz_remove' %}ПЗ{% else %}ЗН{% endif %}
     </span>
     <span class="draft-normative-marker-bolt" aria-hidden="true">ϟ</span>
     {% if marker.pz_number %}<span class="draft-normative-marker-bottom">№{{ marker.pz_number }}</span>{% endif %}
     <i class="draft-normative-marker-cross" aria-hidden="true"></i>
-    {% if marker.count > 1 %}<small class="opj-marker-count" aria-label="Количество отметок">×{{ marker.count }}</small>{% endif %}
 </span>
 {% empty %}
 <span class="opj-empty-marker" aria-hidden="true">&nbsp;</span>
 {% endfor %}
-<script data-opj-marker-runtime data-repair-css-url="{% static 'operational_log/opj_lifecycle_acceptance_repair.css' %}?v=opjlifecycle00604">
+<script data-opj-marker-runtime data-repair-css-url="{% static 'operational_log/opj_lifecycle_acceptance_repair.css' %}?v=opjlifecycle00605">
 (() => {
     "use strict";
     const runtimeScript = document.currentScript;
-    if (window.__EOD_OPJ_MARKER_RUNTIME_00604__) return;
-    window.__EOD_OPJ_MARKER_RUNTIME_00604__ = true;
+    if (window.__EOD_OPJ_MARKER_RUNTIME_00605__) return;
+    window.__EOD_OPJ_MARKER_RUNTIME_00605__ = true;
 
     let floatingPopover = null;
-    let chronologyQueued = false;
-
-    function installCriticalStyle() {
-        if (document.getElementById("opj-repair-critical-00604")) return;
-        const style = document.createElement("style");
-        style.id = "opj-repair-critical-00604";
-        style.textContent = `
-            html.opj-repair-css-pending .approved-journal-shell,
-            html.opj-repair-css-pending [data-draft-workspace],
-            .opj-workspace-page [data-draft-workspace]:not(.is-opj-first-paint-ready) {
-                visibility: hidden !important;
-            }
-        `;
-        document.head.append(style);
-    }
+    let refreshQueued = false;
 
     function ensureRepairStylesheet() {
-        installCriticalStyle();
         const target = runtimeScript?.dataset.repairCssUrl || "";
         if (!target) return;
-        const root = document.documentElement;
-        root.classList.add("opj-repair-css-pending");
         let link = document.querySelector(
             'link[href*="opj_lifecycle_acceptance_repair.css"]',
         );
@@ -56,38 +39,35 @@
             link.rel = "stylesheet";
             document.head.append(link);
         }
-        const finish = () => root.classList.remove("opj-repair-css-pending");
-        if (link.getAttribute("href") === target && link.sheet) {
-            finish();
-            return;
+        if (link.getAttribute("href") !== target) {
+            link.href = target;
         }
-        link.addEventListener("load", finish, {once: true});
-        link.addEventListener("error", finish, {once: true});
-        link.href = target;
     }
 
-    function installFirstPaintGuard() {
-        const workspace = document.querySelector("[data-draft-workspace]");
-        if (!workspace || workspace.dataset.opjFirstPaintGuard === "true") return;
-        workspace.dataset.opjFirstPaintGuard = "true";
+    function normalizedMarkerCount(marker) {
+        const value = Number.parseInt(marker.dataset.markerCount || "1", 10);
+        return Number.isFinite(value) && value > 0 ? Math.min(value, 100) : 1;
+    }
 
-        let observer = null;
-        const revealWhenMaterialized = () => {
-            const bodies = Array.from(workspace.querySelectorAll("[data-page-body]"));
-            const materialized = bodies.some((body) => body.childElementCount > 0);
-            if (!materialized) return false;
-            workspace.classList.add("is-opj-first-paint-ready");
-            observer?.disconnect();
-            return true;
-        };
-
-        observer = new MutationObserver(revealWhenMaterialized);
-        observer.observe(workspace, {childList: true, subtree: true});
-        window.requestAnimationFrame(revealWhenMaterialized);
-        window.setTimeout(() => {
-            workspace.classList.add("is-opj-first-paint-ready");
-            observer?.disconnect();
-        }, 2500);
+    function expandGroupedMarkers(root = document) {
+        root.querySelectorAll(
+            "[data-opj-marker][data-marker-count]:not([data-marker-expanded])",
+        ).forEach((marker) => {
+            const count = normalizedMarkerCount(marker);
+            marker.dataset.markerExpanded = "true";
+            marker.dataset.markerInstance = "0";
+            marker.dataset.markerCount = "1";
+            let anchor = marker;
+            for (let index = 1; index < count; index += 1) {
+                const clone = marker.cloneNode(true);
+                clone.dataset.markerExpanded = "true";
+                clone.dataset.markerInstance = String(index);
+                clone.dataset.markerCount = "1";
+                clone.classList.remove("is-cleared");
+                anchor.after(clone);
+                anchor = clone;
+            }
+        });
     }
 
     function rowsInChronology() {
@@ -114,7 +94,7 @@
     }
 
     function applyChronology() {
-        chronologyQueued = false;
+        expandGroupedMarkers();
         const installed = new Map();
         rowsInChronology().forEach((row) => {
             row.querySelectorAll("[data-opj-marker]").forEach((marker) => {
@@ -139,10 +119,13 @@
         });
     }
 
-    function queueChronology() {
-        if (chronologyQueued) return;
-        chronologyQueued = true;
-        queueMicrotask(applyChronology);
+    function queueRefresh() {
+        if (refreshQueued) return;
+        refreshQueued = true;
+        queueMicrotask(() => {
+            refreshQueued = false;
+            applyChronology();
+        });
     }
 
     function closePopover() {
@@ -174,7 +157,12 @@
             ));
             if (matching.length) values = matching;
         }
-        return values.filter((value, index) => values.indexOf(value) === index);
+        values = values.filter((value, index) => values.indexOf(value) === index);
+        const instance = Number.parseInt(marker.dataset.markerInstance || "0", 10);
+        if (Number.isFinite(instance) && values[instance]) {
+            return [values[instance]];
+        }
+        return values;
     }
 
     function placePopover(trigger, popover) {
@@ -247,17 +235,13 @@
     window.addEventListener("resize", closePopover);
     document.addEventListener("scroll", closePopover, true);
 
-    const observer = new MutationObserver(queueChronology);
+    const observer = new MutationObserver(queueRefresh);
     observer.observe(document.documentElement, {childList: true, subtree: true});
 
     ensureRepairStylesheet();
-    installFirstPaintGuard();
     applyChronology();
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", () => {
-            installFirstPaintGuard();
-            applyChronology();
-        }, {once: true});
+        document.addEventListener("DOMContentLoaded", applyChronology, {once: true});
     }
 })();
 </script>
