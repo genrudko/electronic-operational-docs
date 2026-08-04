@@ -1,17 +1,15 @@
 @import url("./opj_lifecycle_acceptance_repair_base.css?v=opjlifecycle00603");
 
-/* OPJ-LIFECYCLE-001 fifth acceptance repair.
- * The journal is server-visible immediately. Marker chronology no longer owns
- * visibility of table rows. PZ/ZN cards keep the accepted compact geometry.
+/* OPJ-LIFECYCLE-001 acceptance repair.
+ * This layer restores the previously accepted PZ/ZN visual form verbatim in
+ * screen and print contexts. It does not invent a new marker geometry.
  */
 .opj-registered-context,
 [data-opj-registered-context] {
     display: none !important;
 }
 
-/* The accepted emergency mark is the same compact heavy oval in draft,
- * registered screen and print forms. It follows the time, not the whole cell.
- */
+/* Accepted emergency mark: one compact heavy oval around the time itself. */
 .opj-clean-time,
 .journal-print-time {
     width: max-content !important;
@@ -29,18 +27,19 @@
     transform: none !important;
 }
 
-/* Accepted PZ/ZN card: one fixed vertical card, stable three-line rhythm and
- * no stretching by the table or by the count badge. */
+/* Exact previously accepted marker layout. */
 .opj-clean-markers,
 .approved-journal-visas,
 .draft-ledger-visas {
-    grid-template-columns: repeat(auto-fit, 38px) !important;
-    grid-auto-rows: 46px;
-    align-content: start !important;
-    align-items: start !important;
+    display: flex !important;
+    min-width: 0;
+    flex-wrap: wrap !important;
+    align-content: flex-start !important;
+    align-items: flex-start !important;
     justify-content: center !important;
-    justify-items: center !important;
     gap: 5px !important;
+    padding: 5px 3px !important;
+    overflow: visible !important;
 }
 
 .opj-normative-marker,
@@ -48,26 +47,27 @@
     position: relative !important;
     box-sizing: border-box !important;
     display: inline-grid !important;
-    width: 38px !important;
-    min-width: 38px !important;
-    max-width: 38px !important;
-    height: 46px !important;
-    min-height: 46px !important;
-    max-height: 46px !important;
-    grid-template-rows: 10px 18px 10px !important;
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    grid-template-rows: auto auto auto !important;
     place-items: center !important;
     align-content: center !important;
     justify-content: center !important;
-    padding: 3px 2px 2px !important;
+    padding: 3px 4px !important;
     overflow: visible !important;
-    border: 1.5px solid currentColor !important;
+    border: 1px solid currentColor !important;
     border-radius: 7px !important;
     background: var(--theme-surface, #fff) !important;
-    color: var(--theme-danger, #c7352b) !important;
+    color: var(--theme-danger, #b42318) !important;
     font-family: var(--font-interface, "Onest Variable", "Onest", system-ui, sans-serif) !important;
     font-style: normal !important;
-    font-variant-numeric: tabular-nums;
+    font-weight: 750 !important;
     line-height: 1 !important;
+    text-align: center !important;
     vertical-align: top !important;
     transform: none !important;
 }
@@ -76,19 +76,21 @@
 .opj-normative-marker.is-zn_off,
 .draft-normative-marker.is-pz_remove,
 .draft-normative-marker.is-zn_off {
-    color: var(--theme-primary, #1672b8) !important;
+    color: var(--theme-primary, #175cd3) !important;
 }
 
 .draft-normative-marker-top,
 .draft-normative-marker-bottom {
     display: block !important;
     width: 100%;
+    min-height: 0 !important;
     overflow: hidden;
     color: inherit;
     font-family: inherit !important;
-    font-size: 0.58rem !important;
-    font-weight: 800 !important;
-    line-height: 10px !important;
+    font-size: 0.62rem !important;
+    font-weight: 750 !important;
+    font-variant-numeric: tabular-nums;
+    line-height: 1 !important;
     text-align: center;
     text-overflow: clip;
     white-space: nowrap;
@@ -97,19 +99,19 @@
 .draft-normative-marker-bolt {
     display: block !important;
     width: 100%;
-    margin: 0 !important;
+    margin: 2px 0 !important;
     color: inherit;
     font-family: inherit !important;
-    font-size: 0.98rem !important;
+    font-size: 1rem !important;
     font-style: normal !important;
-    font-weight: 800 !important;
-    line-height: 18px !important;
+    font-weight: 750 !important;
+    line-height: 1 !important;
     text-align: center;
     transform: none !important;
 }
 
-/* A removal remains a separate blue card. Only the earlier installation gets
- * the explicit blue cross. */
+/* The blue removal card remains independent. Only the earlier installation
+ * receives the accepted large blue cross. */
 .draft-normative-marker > .draft-normative-marker-cross {
     display: none !important;
 }
@@ -118,59 +120,44 @@
     position: absolute !important;
     z-index: 2;
     inset: 50% auto auto 50% !important;
-    display: block !important;
-    width: 112% !important;
-    height: 112% !important;
-    color: var(--theme-primary, #1672b8) !important;
+    display: grid !important;
+    width: 100% !important;
+    height: 100% !important;
+    place-items: center;
+    color: var(--theme-primary, #175cd3) !important;
     font-size: 0 !important;
-    opacity: 1 !important;
+    font-style: normal !important;
+    font-weight: 400 !important;
+    line-height: 1 !important;
+    opacity: 0.78 !important;
     transform: translate(-50%, -50%) !important;
     pointer-events: none;
 }
 
-.draft-normative-marker.is-cleared > .draft-normative-marker-cross::before,
-.draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 2px;
-    height: 116%;
-    border-radius: 999px;
-    background: currentColor;
-    content: "";
-}
-
 .draft-normative-marker.is-cleared > .draft-normative-marker-cross::before {
-    transform: translate(-50%, -50%) rotate(45deg);
+    display: block;
+    color: inherit;
+    content: "×";
+    font-family: Arial, sans-serif;
+    font-size: 2.35rem;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1;
+    text-shadow: 0 0 1px var(--theme-surface, #fff);
 }
 
 .draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
-    transform: translate(-50%, -50%) rotate(-45deg);
+    display: none !important;
+    content: none !important;
 }
 
+/* The accepted form shows the individual cards; a service count badge must not
+ * sit over and deform the marker. */
 .opj-marker-count {
-    position: absolute !important;
-    z-index: 3;
-    right: -7px !important;
-    top: -7px !important;
-    display: inline-grid !important;
-    min-width: 18px !important;
-    height: 18px !important;
-    place-items: center;
-    padding: 0 3px !important;
-    border: 1px solid currentColor !important;
-    border-radius: 999px !important;
-    background: var(--theme-surface-elevated, #fff) !important;
-    color: inherit;
-    font-family: inherit !important;
-    font-size: 0.54rem !important;
-    font-weight: 800 !important;
-    line-height: 1 !important;
-    white-space: nowrap;
+    display: none !important;
 }
 
-/* Viewport popover. It is created as a body portal and therefore cannot widen
- * or be clipped by the third journal column. */
+/* Viewport popover: never widens or clips the third journal column. */
 .opj-marker-popover {
     display: none !important;
 }
@@ -227,8 +214,34 @@
     content: "•";
 }
 
-.opj-workspace[data-view-mode="spread"] .opj-clean-markers {
-    max-height: 96px;
+/* Spread mode must not silently replace the accepted card with a smaller one. */
+.opj-workspace[data-view-mode="spread"] .opj-clean-markers,
+.opj-workspace[data-view-mode="spread"] .draft-ledger-visas {
+    display: flex !important;
+    max-height: 108px;
+    gap: 5px !important;
+    padding: 5px 3px !important;
+    overflow: auto !important;
+}
+
+.opj-workspace[data-view-mode="spread"] .opj-normative-marker,
+.opj-workspace[data-view-mode="spread"] .draft-normative-marker {
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    border-radius: 7px !important;
+}
+
+.opj-workspace[data-view-mode="spread"] .draft-normative-marker-top,
+.opj-workspace[data-view-mode="spread"] .draft-normative-marker-bottom {
+    font-size: 0.62rem !important;
+}
+
+.opj-workspace[data-view-mode="spread"] .draft-normative-marker-bolt {
+    font-size: 1rem !important;
 }
 
 @media print {
@@ -240,5 +253,7 @@
     .opj-normative-marker,
     .draft-normative-marker {
         background: #fff !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
     }
 }
