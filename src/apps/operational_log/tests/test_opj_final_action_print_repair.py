@@ -11,36 +11,43 @@ class OperationalJournalFinalActionPrintRepairTests(SimpleTestCase):
     def source(self, relative: str) -> str:
         return (ROOT / relative).read_text(encoding="utf-8")
 
-    def test_actions_runtime_is_cache_busted_and_moves_real_menu(self) -> None:
+    def test_actions_use_one_page_owned_controller_with_visible_coordinates(self) -> None:
         partial = self.source("templates/operational_log/_normative_markers.html")
-        javascript = self.source(
-            "static/operational_log/opj_acceptance_action_repair.js"
+        detail = self.source("templates/operational_log/detail.html")
+        javascript = self.source("static/operational_log/opj_clean_journal.js")
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
         )
 
-        self.assertIn("opj-acceptance-action-repair-00611", partial)
-        self.assertIn("opjlifecycle00611", partial)
-        self.assertNotIn("opj-acceptance-action-repair-00609", partial)
-        self.assertNotIn("opjlifecycle00609", partial)
-        self.assertIn("document.body.append(menu)", javascript)
-        self.assertIn("root.append(menu)", javascript)
-        self.assertIn("delete menu.dataset.actionRepairPortal", javascript)
-        self.assertIn('node.closest("[data-entry-actions]")', javascript)
-        self.assertIn("event.stopImmediatePropagation()", javascript)
-        self.assertIn("removeLegacyPortals", javascript)
-        self.assertNotIn("actionPortal = source.cloneNode(true)", javascript)
+        self.assertNotIn("opj_acceptance_action_repair.js", partial)
+        self.assertIn("opj_clean_journal.js", detail)
+        self.assertIn("actionPortal = source.cloneNode(true)", javascript)
+        self.assertIn("document.body.append(actionPortal)", javascript)
+        self.assertIn("overlay.style.left", javascript)
+        self.assertIn("overlay.style.top", javascript)
+        self.assertIn(".opj-action-portal", css)
+        self.assertIn("right: auto !important", css)
+        self.assertIn("bottom: auto !important", css)
+        self.assertNotIn("inset: auto !important", css)
 
     def test_cleared_marker_is_crossed_across_the_complete_badge(self) -> None:
         partial = self.source("templates/operational_log/_normative_markers.html")
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
+        )
 
-        self.assertIn("top: 1px !important", partial)
-        self.assertIn("left: 1px !important", partial)
-        self.assertIn("width: calc(100% - 2px) !important", partial)
-        self.assertIn("height: calc(100% - 2px) !important", partial)
-        self.assertIn("width: 60px", partial)
-        self.assertIn("rotate(52deg)", partial)
-        self.assertIn("rotate(-52deg)", partial)
-        self.assertNotIn("top: 12px !important", partial)
-        self.assertNotIn("width: 31px", partial)
+        for source in (partial, css):
+            self.assertIn("top: 1px !important", source)
+            self.assertIn("right: 1px !important", source)
+            self.assertIn("bottom: 1px !important", source)
+            self.assertIn("left: 1px !important", source)
+            self.assertIn("width: auto !important", source)
+            self.assertIn("height: auto !important", source)
+            self.assertIn("transform: none !important", source)
+            self.assertIn("width: 60px", source)
+            self.assertIn("rotate(52deg)", source)
+            self.assertIn("rotate(-52deg)", source)
+        self.assertNotIn("width: calc(100% - 2px) !important", css)
 
     def test_print_visas_remain_a_native_table_cell(self) -> None:
         partial = self.source("templates/operational_log/_normative_markers.html")
