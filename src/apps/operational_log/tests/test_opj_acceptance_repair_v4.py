@@ -65,17 +65,28 @@ class OperationalJournalFifthAcceptanceRepairSourceTests(SimpleTestCase):
         self.assertIn("border-radius: 999px !important", css)
         self.assertIn("transform: none !important", css)
 
-    def test_accepted_marker_card_geometry_is_fixed_and_centered(self) -> None:
+    def test_previously_accepted_marker_card_is_restored_verbatim(self) -> None:
         css = self.source(
             "static/operational_log/opj_lifecycle_acceptance_repair.css"
         )
 
-        self.assertIn("width: 38px !important", css)
-        self.assertIn("height: 46px !important", css)
-        self.assertIn("grid-template-rows: 10px 18px 10px !important", css)
-        self.assertIn("border: 1.5px solid currentColor !important", css)
+        self.assertIn("width: 42px !important", css)
+        self.assertIn("height: 48px !important", css)
+        self.assertIn("padding: 3px 4px !important", css)
+        self.assertIn("border: 1px solid currentColor !important", css)
         self.assertIn("border-radius: 7px !important", css)
-        self.assertIn("line-height: 18px !important", css)
+        self.assertIn("font-size: 0.62rem !important", css)
+        self.assertIn("font-size: 1rem !important", css)
+        self.assertNotIn("width: 38px !important", css)
+        self.assertNotIn("height: 46px !important", css)
+
+    def test_service_count_badge_cannot_deform_the_marker(self) -> None:
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
+        )
+
+        self.assertIn(".opj-marker-count", css)
+        self.assertIn("display: none !important", css)
 
     def test_removal_marker_remains_visible_and_only_prior_install_is_crossed(self) -> None:
         partial = self.source("templates/operational_log/_normative_markers.html")
@@ -89,11 +100,24 @@ class OperationalJournalFifthAcceptanceRepairSourceTests(SimpleTestCase):
             ".draft-normative-marker.is-cleared > .draft-normative-marker-cross",
             css,
         )
+        self.assertIn('content: "×"', css)
         self.assertIn(
             ".draft-normative-marker.is-pz_remove",
             css,
         )
         self.assertIn("color: var(--theme-primary", css)
+
+    def test_spread_mode_keeps_the_same_accepted_marker(self) -> None:
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
+        )
+
+        self.assertIn(
+            '.opj-workspace[data-view-mode="spread"] .opj-normative-marker',
+            css,
+        )
+        self.assertIn("width: 42px !important", css)
+        self.assertIn("height: 48px !important", css)
 
     def test_current_repair_assets_use_fresh_cache_revision(self) -> None:
         partial = self.source("templates/operational_log/_normative_markers.html")
