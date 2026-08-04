@@ -190,6 +190,21 @@
                 overscroll-behavior: contain;
                 pointer-events: none;
             }
+            .approved-journal-print-table td.journal-print-markers {
+                display: table-cell !important;
+                min-width: 0 !important;
+                padding: 2mm !important;
+                overflow: hidden !important;
+                text-align: center !important;
+                vertical-align: top !important;
+                white-space: normal !important;
+            }
+            .approved-journal-print-table td.journal-print-markers > .opj-normative-marker,
+            .approved-journal-print-table td.journal-print-markers > .draft-normative-marker {
+                display: inline-grid !important;
+                margin: .6mm !important;
+                vertical-align: top !important;
+            }
             .approved-journal-print-table .draft-normative-marker > .draft-normative-marker-cross {
                 top: 3.1mm !important;
                 left: 1.05mm !important;
@@ -206,10 +221,10 @@
     }
 
     if (document.body?.classList.contains("opj-clean-journal-page")
-        && !document.getElementById("opj-acceptance-action-repair-00608")) {
+        && !document.getElementById("opj-acceptance-action-repair-00609")) {
         const actionScript = document.createElement("script");
-        actionScript.id = "opj-acceptance-action-repair-00608";
-        actionScript.src = "{% static 'operational_log/opj_acceptance_action_repair.js' %}?v=opjlifecycle00608";
+        actionScript.id = "opj-acceptance-action-repair-00609";
+        actionScript.src = "{% static 'operational_log/opj_acceptance_action_repair.js' %}?v=opjlifecycle00609";
         actionScript.async = false;
         document.head.append(actionScript);
     }
