@@ -66,11 +66,11 @@ class OperationalJournalAcceptanceRepairSourceTests(SimpleTestCase):
     def test_critical_marker_style_is_available_before_marker_markup(self) -> None:
         partial = self.source("templates/operational_log/_normative_markers.html")
 
-        style_position = partial.index("opj-marker-critical-00611")
+        style_position = partial.index("opj-marker-critical-00612")
         marker_position = partial.index("{% for marker in markers %}")
         self.assertLess(style_position, marker_position)
         self.assertIn("document.head.append(style)", partial)
-        self.assertIn("opj_acceptance_action_repair.js", partial)
+        self.assertNotIn("opj_acceptance_action_repair.js", partial)
 
     def test_emergency_outline_matches_compact_heavy_accepted_oval(self) -> None:
         css = self.source(
@@ -113,15 +113,17 @@ class OperationalJournalAcceptanceRepairSourceTests(SimpleTestCase):
             css,
         )
         self.assertIn("top: 1px !important", css)
+        self.assertIn("right: 1px !important", css)
+        self.assertIn("bottom: 1px !important", css)
         self.assertIn("left: 1px !important", css)
-        self.assertIn("width: calc(100% - 2px) !important", css)
-        self.assertIn("height: calc(100% - 2px) !important", css)
+        self.assertIn("width: auto !important", css)
+        self.assertIn("height: auto !important", css)
+        self.assertIn("transform: none !important", css)
         self.assertIn("width: 60px", css)
         self.assertIn("height: 2.5px", css)
         self.assertIn("rotate(52deg)", css)
         self.assertIn("rotate(-52deg)", css)
-        self.assertNotIn("top: 12px !important", css)
-        self.assertNotIn("width: 31px", css)
+        self.assertNotIn("width: calc(100% - 2px) !important", css)
         self.assertIn(
             ".draft-normative-marker.is-pz_remove",
             css,
