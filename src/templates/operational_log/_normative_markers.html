@@ -1,52 +1,20 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'operational_log/opj_lifecycle_acceptance_repair.css' %}?v=opjlifecycle00603" data-opj-marker-repair-stylesheet>
 <style>
-.approved-journal-table:not(.is-opj-chronology-ready) tbody {
+/* The draft workspace stays out of the first paint until its final single/spread
+ * pages contain rows. This prevents the server placeholder table from flashing. */
+.opj-workspace-page [data-draft-workspace]:not(.is-opj-first-paint-ready) {
     visibility: hidden;
-}
-.opj-marker-popover {
-    display: none;
-}
-.approved-journal-print-table .draft-normative-marker > .draft-normative-marker-cross {
-    display: none;
-}
-.approved-journal-print-table .draft-normative-marker.is-cleared > .draft-normative-marker-cross {
-    display: block;
-    width: 112%;
-    height: 112%;
-    font-size: 0;
-    opacity: 1;
-    transform: translate(-50%, -50%);
-}
-.approved-journal-print-table .draft-normative-marker-cross::before,
-.approved-journal-print-table .draft-normative-marker-cross::after {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 0.45mm;
-    height: 118%;
-    border-radius: 999px;
-    background: currentColor;
-    content: "";
-}
-.approved-journal-print-table .draft-normative-marker-cross::before {
-    transform: translate(-50%, -50%) rotate(45deg);
-}
-.approved-journal-print-table .draft-normative-marker-cross::after {
-    transform: translate(-50%, -50%) rotate(-45deg);
-}
-.approved-journal-print-table .journal-print-time.is-emergency::after {
-    inset: 0 -0.7mm;
-    border: 0.55mm solid #c7352b;
-    border-radius: 999px;
-    transform: none;
 }
 </style>
 {% for marker in markers %}
-<span class="opj-normative-marker is-{{ marker.kind }} draft-normative-marker"
+<span class="draft-normative-marker opj-normative-marker is-{{ marker.kind }}"
       tabindex="0"
       data-opj-marker
       data-marker-kind="{{ marker.kind }}"
       data-marker-number="{{ marker.pz_number }}"
-      aria-label="{{ marker.label|default:'Нормативная отметка' }}{% if marker.pz_number %}, №{{ marker.pz_number }}{% endif %}">
+      data-marker-label="{{ marker.label|default:'Нормативная отметка' }}"
+      aria-label="{{ marker.label|default:'Нормативная отметка' }}{% if marker.pz_number %}, №{{ marker.pz_number }}{% endif %}{% if marker.count > 1 %}, отметок {{ marker.count }}{% endif %}">
     <span class="draft-normative-marker-top">
         {% if marker.kind == 'pz_install' or marker.kind == 'pz_remove' %}ПЗ{% else %}ЗН{% endif %}
     </span>
@@ -54,10 +22,6 @@
     {% if marker.pz_number %}<span class="draft-normative-marker-bottom">№{{ marker.pz_number }}</span>{% endif %}
     <i class="draft-normative-marker-cross" aria-hidden="true"></i>
     {% if marker.count > 1 %}<small class="opj-marker-count" aria-label="Количество отметок">×{{ marker.count }}</small>{% endif %}
-    <span class="opj-marker-popover" role="tooltip">
-        <strong>{{ marker.label|default:"Нормативная отметка" }}</strong>
-        <ul class="opj-marker-source-list" data-marker-source-list></ul>
-    </span>
 </span>
 {% empty %}
 <span class="opj-empty-marker" aria-hidden="true">&nbsp;</span>
@@ -65,88 +29,65 @@
 <script>
 (() => {
     "use strict";
-    if (window.__EOD_OPJ_MARKER_RUNTIME_00602__) return;
-    window.__EOD_OPJ_MARKER_RUNTIME_00602__ = true;
+    if (window.__EOD_OPJ_MARKER_RUNTIME_00603__) return;
+    window.__EOD_OPJ_MARKER_RUNTIME_00603__ = true;
 
     let floatingPopover = null;
+    let chronologyQueued = false;
 
-    function ensureRepairStylesheet() {
-        const link = document.querySelector(
-            'link[href*="opj_lifecycle_acceptance_repair.css"]'
-        );
-        if (!link) return Promise.resolve();
-        const target = `${link.href.split("?")[0]}?v=opjlifecycle00602`;
-        if (link.href === target && link.sheet) return Promise.resolve();
-        return new Promise((resolve) => {
-            const finish = () => resolve();
-            link.addEventListener("load", finish, {once: true});
-            link.addEventListener("error", finish, {once: true});
-            link.href = target;
-        });
+    function installFirstPaintGuard() {
+        const workspace = document.querySelector("[data-draft-workspace]");
+        if (!workspace || workspace.dataset.opjFirstPaintGuard === "true") return;
+        workspace.dataset.opjFirstPaintGuard = "true";
+
+        let observer = null;
+        const revealWhenMaterialized = () => {
+            const bodies = Array.from(workspace.querySelectorAll("[data-page-body]"));
+            const materialized = bodies.some((body) => body.childElementCount > 0);
+            if (!materialized) return false;
+            workspace.classList.add("is-opj-first-paint-ready");
+            observer?.disconnect();
+            return true;
+        };
+
+        observer = new MutationObserver(revealWhenMaterialized);
+        observer.observe(workspace, {childList: true, subtree: true});
+        window.requestAnimationFrame(revealWhenMaterialized);
+        window.setTimeout(() => {
+            workspace.classList.add("is-opj-first-paint-ready");
+            observer?.disconnect();
+        }, 2500);
     }
 
     function rowsInChronology() {
-        return Array.from(document.querySelectorAll(
-            ".approved-journal-table tbody tr, .approved-journal-print-table tbody tr"
-        ));
+        const selectors = [
+            "[data-row-store] [data-draft-card]",
+            ".approved-journal-table tbody tr",
+            ".approved-journal-print-table tbody tr",
+        ];
+        const rows = [];
+        selectors.forEach((selector) => {
+            document.querySelectorAll(selector).forEach((row) => {
+                if (!rows.includes(row)) rows.push(row);
+            });
+        });
+        return rows;
     }
 
     function markerKey(marker) {
         const kind = marker.dataset.markerKind || "";
-        const number = marker.dataset.markerNumber || "";
-        if (kind.startsWith("pz_")) return `pz:${number}`;
+        const number = (marker.dataset.markerNumber || "").trim();
+        if (kind.startsWith("pz_")) return number ? `pz:${number}` : "";
         if (kind.startsWith("zn_")) return `zn:${number || "common"}`;
         return "";
     }
 
-    function sourceSelector(kind) {
-        return kind === "pz_remove" || kind === "zn_off"
-            ? ".opj-rich-segment.is-normative-close"
-            : ".opj-rich-segment.is-normative-open";
-    }
-
-    function normalizedText(node) {
-        return (node.textContent || "").replace(/\s+/g, " ").trim();
-    }
-
-    function populateSourceList(marker) {
-        const list = marker.querySelector("[data-marker-source-list]");
-        if (!list) return;
-        const row = marker.closest("tr");
-        const kind = marker.dataset.markerKind || "";
-        const number = (marker.dataset.markerNumber || "").trim();
-        let values = row
-            ? Array.from(row.querySelectorAll(sourceSelector(kind)))
-                .map(normalizedText)
-                .filter(Boolean)
-            : [];
-
-        if (number) {
-            const normalizedNumber = number.replace(/^№\s*/, "");
-            const matching = values.filter((value) =>
-                value.includes(number) ||
-                value.includes(`№${normalizedNumber}`) ||
-                value.includes(`№ ${normalizedNumber}`)
-            );
-            if (matching.length) values = matching;
-        }
-
-        values = values.filter((value, index) => values.indexOf(value) === index);
-        list.replaceChildren();
-        values.forEach((value) => {
-            const item = document.createElement("li");
-            item.textContent = value;
-            list.append(item);
-        });
-        list.hidden = values.length === 0;
-    }
-
     function applyChronology() {
+        chronologyQueued = false;
         const installed = new Map();
         rowsInChronology().forEach((row) => {
             row.querySelectorAll("[data-opj-marker]").forEach((marker) => {
                 marker.classList.remove("is-cleared");
-                populateSourceList(marker);
                 const kind = marker.dataset.markerKind || "";
                 const key = markerKey(marker);
                 if (!key) return;
@@ -159,7 +100,7 @@
                 if (kind === "pz_remove" || kind === "zn_off") {
                     const list = installed.get(key) || [];
                     const source = [...list].reverse().find(
-                        (item) => !item.classList.contains("is-cleared")
+                        (candidate) => !candidate.classList.contains("is-cleared"),
                     );
                     if (source) source.classList.add("is-cleared");
                 }
@@ -167,21 +108,54 @@
         });
     }
 
+    function queueChronology() {
+        if (chronologyQueued) return;
+        chronologyQueued = true;
+        queueMicrotask(applyChronology);
+    }
+
     function closePopover() {
-        if (floatingPopover) floatingPopover.remove();
+        floatingPopover?.remove();
         floatingPopover = null;
+    }
+
+    function normalizedText(node) {
+        return (node.textContent || "").replace(/\s+/g, " ").trim();
+    }
+
+    function exactUnderlinedFragments(marker) {
+        const row = marker.closest("tr, [data-draft-card]");
+        if (!row) return [];
+        const kind = marker.dataset.markerKind || "";
+        const selector = kind === "pz_remove" || kind === "zn_off"
+            ? ".opj-rich-segment.is-normative-close"
+            : ".opj-rich-segment.is-normative-open";
+        let values = Array.from(row.querySelectorAll(selector))
+            .map(normalizedText)
+            .filter(Boolean);
+
+        const number = (marker.dataset.markerNumber || "").replace(/^№\s*/, "").trim();
+        if (number) {
+            const matching = values.filter((value) => (
+                value.includes(`№${number}`)
+                || value.includes(`№ ${number}`)
+                || value.includes(number)
+            ));
+            if (matching.length) values = matching;
+        }
+        return values.filter((value, index) => values.indexOf(value) === index);
     }
 
     function placePopover(trigger, popover) {
         const margin = 12;
-        const rect = trigger.getBoundingClientRect();
+        const triggerRect = trigger.getBoundingClientRect();
         popover.style.visibility = "hidden";
         document.body.append(popover);
         const box = popover.getBoundingClientRect();
-        let left = rect.left + rect.width / 2 - box.width / 2;
+        let left = triggerRect.left + triggerRect.width / 2 - box.width / 2;
         left = Math.max(margin, Math.min(left, window.innerWidth - box.width - margin));
-        let top = rect.top - box.height - 8;
-        if (top < margin) top = rect.bottom + 8;
+        let top = triggerRect.top - box.height - 8;
+        if (top < margin) top = triggerRect.bottom + 8;
         top = Math.max(margin, Math.min(top, window.innerHeight - box.height - margin));
         popover.style.left = `${Math.round(left)}px`;
         popover.style.top = `${Math.round(top)}px`;
@@ -189,30 +163,38 @@
     }
 
     function openPopover(trigger) {
-        const source = trigger.querySelector(".opj-marker-popover");
-        if (!source) return;
         closePopover();
-        floatingPopover = source.cloneNode(true);
-        floatingPopover.classList.add("is-floating");
-        floatingPopover.setAttribute("aria-hidden", "false");
-        placePopover(trigger, floatingPopover);
+        const popover = document.createElement("aside");
+        popover.className = "opj-marker-popover is-floating";
+        popover.setAttribute("role", "tooltip");
+
+        const heading = document.createElement("strong");
+        heading.textContent = trigger.dataset.markerLabel || "Нормативная отметка";
+        popover.append(heading);
+
+        const values = exactUnderlinedFragments(trigger);
+        if (values.length) {
+            const list = document.createElement("ul");
+            list.className = "opj-marker-source-list";
+            values.forEach((value) => {
+                const item = document.createElement("li");
+                item.textContent = value;
+                list.append(item);
+            });
+            popover.append(list);
+        }
+
+        floatingPopover = popover;
+        placePopover(trigger, popover);
     }
 
-    async function initialize() {
-        await ensureRepairStylesheet();
-        applyChronology();
-        document.querySelectorAll(
-            ".approved-journal-table, .approved-journal-print-table"
-        ).forEach((table) => table.classList.add("is-opj-chronology-ready"));
-    }
-
-    document.addEventListener("pointerover", (event) => {
+    document.addEventListener("mouseover", (event) => {
         const marker = event.target.closest?.("[data-opj-marker]");
         if (!marker || marker.contains(event.relatedTarget)) return;
         openPopover(marker);
     });
 
-    document.addEventListener("pointerout", (event) => {
+    document.addEventListener("mouseout", (event) => {
         const marker = event.target.closest?.("[data-opj-marker]");
         if (!marker || marker.contains(event.relatedTarget)) return;
         closePopover();
@@ -229,15 +211,21 @@
     });
 
     document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && floatingPopover) closePopover();
+        if (event.key === "Escape") closePopover();
     });
     window.addEventListener("resize", closePopover);
     document.addEventListener("scroll", closePopover, true);
 
+    const observer = new MutationObserver(queueChronology);
+    observer.observe(document.documentElement, {childList: true, subtree: true});
+
+    installFirstPaintGuard();
+    applyChronology();
     if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", initialize, {once: true});
-    } else {
-        void initialize();
+        document.addEventListener("DOMContentLoaded", () => {
+            installFirstPaintGuard();
+            applyChronology();
+        }, {once: true});
     }
 })();
 </script>
