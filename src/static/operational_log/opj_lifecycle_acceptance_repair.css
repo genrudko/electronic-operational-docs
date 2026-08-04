@@ -9,6 +9,13 @@
     display: none !important;
 }
 
+/* A stale template may still contain the former delayed first-paint rule.
+ * This higher-specificity rule is loaded as render-blocking CSS and keeps the
+ * server-rendered workspace visible from the first paint. */
+html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
+    visibility: visible !important;
+}
+
 /* The emergency mark follows the time itself, never the complete table cell. */
 .opj-clean-time,
 .journal-print-time {
