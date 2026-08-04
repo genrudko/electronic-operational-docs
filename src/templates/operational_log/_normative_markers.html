@@ -1,4 +1,147 @@
-{% load static %}
+<script>
+(() => {
+    "use strict";
+    if (document.getElementById("opj-marker-critical-00606")) return;
+    const style = document.createElement("style");
+    style.id = "opj-marker-critical-00606";
+    style.textContent = `
+        .opj-clean-markers,
+        .approved-journal-visas,
+        .draft-ledger-visas,
+        .draft-ledger-visas.has-normative-markers {
+            display: flex !important;
+            min-width: 0;
+            flex-wrap: wrap !important;
+            align-content: flex-start !important;
+            align-items: flex-start !important;
+            justify-content: center !important;
+            gap: 5px !important;
+            padding: 5px 3px !important;
+            overflow: visible !important;
+        }
+        .opj-normative-marker,
+        .draft-normative-marker {
+            position: relative !important;
+            box-sizing: border-box !important;
+            display: grid !important;
+            width: 38px !important;
+            min-width: 38px !important;
+            max-width: 38px !important;
+            min-height: 49px !important;
+            grid-template-rows: auto 28px auto !important;
+            place-items: center !important;
+            padding: 1px 2px 2px !important;
+            overflow: visible !important;
+            border: 1px solid currentColor !important;
+            border-radius: 7px !important;
+            background: var(--theme-surface, #fff) !important;
+            color: #b42318 !important;
+            font-family: Arial, sans-serif !important;
+            font-style: normal !important;
+            font-weight: 900 !important;
+            line-height: 1 !important;
+            text-align: center !important;
+        }
+        .opj-normative-marker.is-zn_off,
+        .opj-normative-marker.is-pz_remove,
+        .draft-normative-marker.is-zn_off,
+        .draft-normative-marker.is-pz_remove {
+            color: #175cd3 !important;
+        }
+        .draft-normative-marker-top {
+            min-height: 10px !important;
+            color: inherit;
+            font: 900 9px/10px Arial, sans-serif !important;
+            letter-spacing: .03em;
+            white-space: nowrap;
+        }
+        .draft-normative-marker-bolt {
+            margin: 0 !important;
+            color: inherit;
+            font: 900 34px/26px Arial, sans-serif !important;
+            transform: skew(-8deg) !important;
+        }
+        .draft-normative-marker-bottom {
+            min-height: 10px !important;
+            color: inherit;
+            font: 900 9px/10px Arial, sans-serif !important;
+            white-space: nowrap;
+        }
+        .draft-normative-marker > .draft-normative-marker-cross {
+            position: absolute !important;
+            inset: 6px 1px 3px !important;
+            display: none !important;
+            pointer-events: none;
+        }
+        .draft-normative-marker.is-cleared > .draft-normative-marker-cross {
+            display: block !important;
+        }
+        .draft-normative-marker.is-cleared > .draft-normative-marker-cross::before,
+        .draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 44px;
+            height: 3px;
+            border-radius: 999px;
+            background: #175cd3;
+            box-shadow: 0 0 0 1px rgb(255 255 255 / 62%);
+            content: "";
+            transform-origin: center;
+        }
+        .draft-normative-marker.is-cleared > .draft-normative-marker-cross::before {
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+        .draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
+            transform: translate(-50%, -50%) rotate(-45deg);
+        }
+        .opj-marker-count { display: none !important; }
+        .opj-clean-time,
+        .journal-print-time {
+            width: max-content !important;
+            min-width: 0 !important;
+            padding-inline: .28rem;
+        }
+        .opj-clean-time.is-emergency::after,
+        .draft-ledger-time.is-emergency::after,
+        .journal-print-time.is-emergency::after {
+            inset: -.18rem -.36rem !important;
+            border: 3px solid var(--theme-danger, #c7352b) !important;
+            border-radius: 999px !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+        .opj-marker-popover { display: none !important; }
+        .opj-marker-popover.is-floating {
+            position: fixed !important;
+            z-index: 700 !important;
+            inset: auto !important;
+            display: grid !important;
+            width: min(360px, calc(100vw - 24px)) !important;
+            min-width: min(220px, calc(100vw - 24px)) !important;
+            max-width: calc(100vw - 24px) !important;
+            max-height: min(360px, calc(100vh - 24px)) !important;
+            gap: 7px;
+            overflow: auto !important;
+            padding: 10px 12px;
+            border: 1px solid var(--theme-border-strong, #94a3b8);
+            border-radius: 7px;
+            background: var(--theme-surface-elevated, #fff);
+            box-shadow: 0 14px 32px rgba(15, 23, 42, .22);
+            color: var(--theme-text, #111827);
+            font-family: var(--font-interface, "Onest Variable", "Onest", system-ui, sans-serif) !important;
+            font-size: .72rem;
+            font-weight: 400;
+            line-height: 1.4;
+            text-align: left;
+            transform: none !important;
+            overscroll-behavior: contain;
+            pointer-events: none;
+        }
+    `;
+    document.head.append(style);
+})();
+</script>
 {% for marker in markers %}
 <span class="draft-normative-marker opj-normative-marker is-{{ marker.kind }}"
       tabindex="0"
@@ -18,31 +161,17 @@
 {% empty %}
 <span class="opj-empty-marker" aria-hidden="true">&nbsp;</span>
 {% endfor %}
-<script data-opj-marker-runtime data-repair-css-url="{% static 'operational_log/opj_lifecycle_acceptance_repair.css' %}?v=opjlifecycle00605">
+<script data-opj-marker-runtime>
 (() => {
     "use strict";
-    const runtimeScript = document.currentScript;
-    if (window.__EOD_OPJ_MARKER_RUNTIME_00605__) return;
-    window.__EOD_OPJ_MARKER_RUNTIME_00605__ = true;
+    if (window.__EOD_OPJ_MARKER_RUNTIME_00606__) {
+        window.__EOD_OPJ_MARKER_REFRESH_00606__?.();
+        return;
+    }
+    window.__EOD_OPJ_MARKER_RUNTIME_00606__ = true;
 
     let floatingPopover = null;
     let refreshQueued = false;
-
-    function ensureRepairStylesheet() {
-        const target = runtimeScript?.dataset.repairCssUrl || "";
-        if (!target) return;
-        let link = document.querySelector(
-            'link[href*="opj_lifecycle_acceptance_repair.css"]',
-        );
-        if (!link) {
-            link = document.createElement("link");
-            link.rel = "stylesheet";
-            document.head.append(link);
-        }
-        if (link.getAttribute("href") !== target) {
-            link.href = target;
-        }
-    }
 
     function normalizedMarkerCount(marker) {
         const value = Number.parseInt(marker.dataset.markerCount || "1", 10);
@@ -119,6 +248,8 @@
         });
     }
 
+    window.__EOD_OPJ_MARKER_REFRESH_00606__ = applyChronology;
+
     function queueRefresh() {
         if (refreshQueued) return;
         refreshQueued = true;
@@ -148,7 +279,9 @@
             .map(normalizedText)
             .filter(Boolean);
 
-        const number = (marker.dataset.markerNumber || "").replace(/^№\s*/, "").trim();
+        const number = (marker.dataset.markerNumber || "")
+            .replace(/^№\s*/, "")
+            .trim();
         if (number) {
             const matching = values.filter((value) => (
                 value.includes(`№${number}`)
@@ -238,7 +371,6 @@
     const observer = new MutationObserver(queueRefresh);
     observer.observe(document.documentElement, {childList: true, subtree: true});
 
-    ensureRepairStylesheet();
     applyChronology();
     if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", applyChronology, {once: true});
