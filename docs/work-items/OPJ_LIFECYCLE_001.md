@@ -4,14 +4,17 @@
 
 ```text
 work item: OPJ-LIFECYCLE-001
-issue: #46
+issue: #46 / CLOSED / COMPLETED
 branch: feature/opj-lifecycle-001
-PR: #47 / OPEN / DRAFT / NOT MERGED
+PR: #47 / CLOSED / MERGED
 baseline main tip at start: 17663cf67d12c02d24177e554d6eb7d364e405e4
-status: REWORK IMPLEMENTED / DEPLOYED FOR VISUAL ACCEPTANCE
-user acceptance: ABSENT
+accepted exact head: 65997a9d51de4d066ec07277d4c660bfc307650e
+merge commit: c4e344342b647ce59a390a04329d2cadb1f34d7c
+status: ACCEPTED / MERGED
+user acceptance: PASSED ON DEVELOPMENT IN REGULAR MICROSOFT EDGE PROFILE
 preview: UNTOUCHED
-merge authorization: ABSENT
+merge method: ORDINARY MERGE COMMIT
+squash / rebase: NOT USED
 ```
 
 ## Причина rework
@@ -96,7 +99,9 @@ Demo фиксирует не стенограмму и не отдельную �
 - исправление использует тот же editor v4 и те же нормативные отметки;
 - статус и действия размещены компактно под основной записью, а история раскрывается в контексте строки;
 - дефект создаётся из конкретной записи; глобальная инородная дефектная панель отсутствует;
-- технический audit-блок не подменяет утверждённую журнальную форму.
+- технический audit-блок не подменяет утверждённую журнальную форму;
+- меню `Действия` проверено в штатном профиле Microsoft Edge;
+- дата, время и номер записи в первой графе выровнены по верхнему краю.
 
 ## Техническая валидация
 
@@ -108,7 +113,19 @@ Demo фиксирует не стенограмму и не отдельную �
 - Django system check чистый;
 - миграции применимы, ожидающих миграций нет;
 - Preview не затронут;
-- визуальная пользовательская приёмка текущего кандидата остаётся отдельным обязательным gate.
+- пользовательская визуальная приёмка выполнена и завершена успешно.
+
+Exact-head evidence:
+
+```text
+AUTO-001A Foundation CI:     30986956669 / SUCCESS
+AUTO-001B Controller CI:     30986956714 / SUCCESS
+EOD Development Stack:      30986956637 / SUCCESS
+EOD Documentation Contract: 30986956684 / SUCCESS
+EOD CI:                      30986956738 / SUCCESS
+accepted exact head:         65997a9d51de4d066ec07277d4c660bfc307650e
+merge commit:                c4e344342b647ce59a390a04329d2cadb1f34d7c
+```
 
 ## Acceptance criteria
 
@@ -121,7 +138,7 @@ Demo фиксирует не стенограмму и не отдельную �
 - registered journal показывает источник, действующую редакцию и обратный переход без отдельной технодемо-страницы;
 - ручная карточка разговора с направлением/организацией/стенограммой отсутствует;
 - существующие draft/revision/autosave/editor/print contracts сохранены;
-- light/dark/system и viewports 1440×900, 1024×768, 390×844 подлежат пользовательской визуальной проверке;
+- light/dark/system и viewports 1440×900, 1024×768, 390×844 проверены в ходе итерационной пользовательской приёмки;
 - focused/full tests, пять exact-head workflows и trusted development deployment успешны;
-- пользовательская визуальная приёмка выполнена отдельно;
-- merge и Ready for Review выполняются только по отдельной команде пользователя.
+- пользовательская визуальная приёмка завершена;
+- merge выполнен только после отдельной явной команды пользователя.
