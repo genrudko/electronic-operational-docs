@@ -3,7 +3,7 @@
 **Дата:** 05.08.2026
 **Work item:** `PROJECT-SUSTAINABILITY-001`
 **Issue / PR:** `#48 / #49`
-**Статус документа:** `DECISION RECORD CANDIDATE / USER ACCEPTANCE REQUIRED`
+**Статус документа:** `DECISION RECORD CANDIDATE / USER RE-ACCEPTANCE REQUIRED`
 
 ## 1. Правило чтения
 
@@ -83,7 +83,7 @@
 
 ### PSD-011 — export and portability
 
-- **[PROPOSAL]** До pilot определить schema-versioned export package, включающий records, snapshots, signatures/confirmations, authority snapshots, audit, source IDs and attachments.
+- **[PROPOSAL]** До pilot определить schema-versioned export package, включающий records, snapshots, signatures/confirmations, authority snapshots, audit, source IDs and attachments, когда это требуется конкретным pilot scope, contract, exit plan или regulatory obligation.
 - **[PROPOSAL]** Export считается готовым только после round-trip verification.
 
 ## 5. Deployment и эксплуатация
@@ -130,8 +130,8 @@
 
 ### PSD-019 — uploads
 
-- **[PROPOSAL]** Все uploads/imports подчиняются centralized policy: size, MIME, extension, naming, quarantine/AV, isolated storage, authorization and retention.
-- **[VERIFY]** Полный attack-surface inventory обязателен до выбора реализации.
+- **[PROPOSAL]** Если pilot включает uploads/imports, все такие surfaces подчиняются centralized policy: size, MIME, extension, naming, quarantine/AV, isolated storage, authorization and retention.
+- **[VERIFY]** Полный attack-surface inventory обязателен до выбора реализации и до включения соответствующих surfaces в pilot.
 
 ## 7. Source governance
 
@@ -143,23 +143,27 @@
 
 ### PSD-021 — module source requirements
 
-- **[PROPOSAL]** Каждый module/capability имеет machine-readable список mandatory source IDs and local instructions.
-- **[PROPOSAL]** Missing/stale mandatory source блокирует начало work item.
+- **[PROPOSAL]** Target state: каждый module/capability имеет machine-readable список mandatory source IDs and local instructions.
+- **[PROPOSAL]** Missing/stale mandatory source блокирует старт новых module work items после реализации `MODULE-SOURCE-GOVERNANCE-001`.
+- **[PROPOSAL]** SAFE-CONTINUATION не объявляет этот механизм уже реализованным или доступным.
 - **[PROPOSAL]** Normative evidence, enterprise practice, competitor evidence and user decision хранятся раздельно.
 
 ## 8. Sequencing decisions
 
 ### PSD-022 — два gate вместо бесконечной паузы
 
-- **[PROPOSAL]** `SAFE-CONTINUATION` закрывает минимальные prerequisites до массовой предметной разработки.
-- **[PROPOSAL]** `PILOT-READY` закрывает полный operational/security/support baseline до реального пилота.
+- **[PROPOSAL]** `SAFE-CONTINUATION` закрывает минимальные prerequisites, после которых владелец может отдельно разрешить ограниченную работу в существующем принятом контуре.
+- **[PROPOSAL]** `PILOT-READY` закрывает обязательный pilot core, применимые `CRITICAL`-риски, pilot-scope-dependent работы и residual-risk decisions; завершение всех фаз 0–7 механически не требуется.
+- **[PROPOSAL]** Восемь фаз сохраняются как полная программа индустриализации.
 - **[PROPOSAL]** Это предотвращает две крайности: unsafe feature rush и многомесячный big-bang platform rewrite.
 
 ### PSD-023 — предметная очередь
 
 - **[DECISION]** `SHIFT-HANDOVER-001` не начинается внутри `PROJECT-SUSTAINABILITY-001`.
-- **[PROPOSAL]** После принятия программы сначала закрываются Phase 0 and SAFE-CONTINUATION work items; затем владелец отдельным решением разрешает продолжение предметной очереди.
-- **[PROPOSAL]** Новый module после SAFE-CONTINUATION обязан использовать activation contract, source requirements and UX page profile.
+- **[PROPOSAL]** После SAFE-CONTINUATION владелец отдельным решением может разрешить ограниченную работу над существующим принятым контуром, например `SHIFT-HANDOVER-001`.
+- **[PROPOSAL]** Массовая реализация новых журналов и модулей начинается только после `MODULE-REGISTRY-001`, базовой `UX-PLATFORM-FOUNDATION-001` вместе с `PAGE-TEMPLATE-LIBRARY-001` и `MODULE-SOURCE-GOVERNANCE-001`.
+- **[PROPOSAL]** До реализации source governance и page profiles они считаются prerequisites, а не уже доступными обязательными capabilities.
+- **[PROPOSAL]** Исключение требует отдельного ADR и явного решения владельца с ограниченным scope и принятыми рисками.
 
 ### PSD-024 — reference modules
 
@@ -185,19 +189,20 @@
 ### PSD-027 — pilot declaration
 
 - **[PROPOSAL]** Green CI, working Preview или successful demo не равны pilot readiness.
-- **[PROPOSAL]** `PILOT-READINESS-001` должен независимо проверить module control, identity/security, data/recovery, operations, UX/browser, performance and support handover.
-- **[DECISION]** Финальное разрешение pilot даёт владелец продукта отдельным явным решением; limitations публикуются без приукрашивания.
+- **[PROPOSAL]** `PILOT-READINESS-001` независимо проверяет mandatory core, applicable CRITICAL risks, pilot-scope-dependent work, residual HIGH/MEDIUM risks, module control, identity/security, data/recovery, operations, UX/browser and support handover.
+- **[PROPOSAL]** Неприменимые к pilot scope долгосрочные work items не блокируют pilot автоматически, но их неприменимость должна быть обоснована и принята.
+- **[DECISION]** Финальное разрешение pilot даёт владелец продукта отдельным явным решением; limitations и residual risks публикуются без приукрашивания.
 
-## 11. Решения, требующие явной приёмки владельца
+## 11. Решения, требующие явной повторной приёмки владельца
 
-При принятии PR #49 владелец подтверждает либо корректирует:
+При повторной приёмке PR #49 владелец подтверждает либо корректирует:
 
 1. **[PROPOSAL]** two-gate model `SAFE-CONTINUATION / PILOT-READY`;
 2. **[PROPOSAL]** Phase 0–7 sequence и risk priorities;
 3. **[PROPOSAL]** static installed apps + scoped control plane вместо dynamic app loading;
 4. **[PROPOSAL]** single-node first pilot target;
 5. **[PROPOSAL]** mandatory restore certificate and immutable release manifest;
-6. **[PROPOSAL]** mandatory security/observability/browser/support gates;
-7. **[PROPOSAL]** resumption rule for `SHIFT-HANDOVER-001` after SAFE-CONTINUATION decision.
+6. **[PROPOSAL]** risk- and scope-based PILOT-READY core instead of all-phases completion;
+7. **[PROPOSAL]** limited resumption rule for `SHIFT-HANDOVER-001` after SAFE-CONTINUATION and stricter prerequisites for mass new modules.
 
 До такой приёмки все перечисленные пункты остаются proposal, а PR #49 — Draft / NOT MERGED.
