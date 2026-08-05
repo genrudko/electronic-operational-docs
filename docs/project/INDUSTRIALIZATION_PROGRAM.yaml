@@ -1,6 +1,6 @@
 schema_version: eod.industrialization-program.v1
 program_id: PROJECT-SUSTAINABILITY-001
-version: 1.0-candidate
+version: 1.0-candidate-repair1
 date: 2026-08-05
 status: PROPOSAL
 canonical_owner: docs/project/INDUSTRIALIZATION_PROGRAM.yaml
@@ -29,34 +29,97 @@ principles:
 gates:
   - id: SAFE-CONTINUATION
     classification: PROPOSAL
-    purpose: Minimum prerequisites before mass domain-module implementation resumes.
+    purpose: Minimum prerequisites before an owner may authorize limited work in an existing accepted domain contour.
     required_work_items:
       - PROJECT-STATE-RECONCILIATION-001
       - INDUSTRIALIZATION-PROGRAM-EXECUTION-001
+      - MODULE-ACTIVATION-CONTRACT-001
       - SECRET-HYGIENE-001
       - DEPENDENCY-PROVENANCE-001
       - DEPLOYMENT-PROFILE-001
       - BACKUP-RESTORE-DRILL-001
       - SECURITY-BASELINE-001
-      - MODULE-ACTIVATION-CONTRACT-001
     acceptance:
       - Canonical planning views agree and automated checks prevent drift.
+      - Module activation semantics are accepted before implementation.
       - No reusable credentials are exposed by CI or documentation.
       - Dependency and image inputs are reproducible and attributable.
       - Pilot/production configuration contract fails closed.
-      - A representative backup has been restored and verified.
-      - Module activation semantics are accepted before implementation.
+      - A representative backup has been restored, verified and certified.
+      - Risk register and industrial backlog have owners and acceptance.
+    post_gate_policy:
+      limited_existing_contour_work:
+        allowed_only_by: explicit_product_owner_decision
+        example: SHIFT-HANDOVER-001
+      mass_new_journals_and_modules:
+        allowed_after:
+          - MODULE-REGISTRY-001
+          - UX-PLATFORM-FOUNDATION-001
+          - PAGE-TEMPLATE-LIBRARY-001
+          - MODULE-SOURCE-GOVERNANCE-001
+      exception:
+        requires:
+          - separate_ADR
+          - explicit_product_owner_decision
+          - bounded_scope_and_accepted_risks
   - id: PILOT-READY
     classification: PROPOSAL
-    purpose: Mandatory evidence gate before real pilot users or operational data.
-    required_phases: [0, 1, 2, 3, 4, 5, 6, 7]
+    purpose: Mandatory evidence gate before real pilot users, operational data or a pilot facility.
+    required_core_work_items:
+      - PROJECT-STATE-RECONCILIATION-001
+      - INDUSTRIALIZATION-PROGRAM-EXECUTION-001
+      - MODULE-ACTIVATION-CONTRACT-001
+      - SECRET-HYGIENE-001
+      - DEPENDENCY-PROVENANCE-001
+      - DEPLOYMENT-PROFILE-001
+      - BACKUP-RESTORE-DRILL-001
+      - SECURITY-BASELINE-001
+      - MODULE-REGISTRY-001
+      - DATA-INTEGRITY-HARDENING-001
+      - MIGRATION-SAFETY-001
+      - MODULE-MIGRATION-COMPATIBILITY-001
+      - DATA-GOVERNANCE-001
+      - RELEASE-ROLLBACK-001
+      - OBSERVABILITY-001
+      - INCIDENT-RESPONSE-001
+      - AUTH-RBAC-HARDENING-001
+      - SECURITY-PIPELINE-001
+      - UX-BROWSER-GATES-001
+      - SUPPORT-HANDOVER-001
+      - PILOT-READINESS-001
+    critical_risk_policy:
+      applicable: close_or_explicitly_accept_with_bounded_controls_owner_due_date_and_review_condition
+      not_applicable: document_scope_evidence_and_owner_approval
+    scope_dependent_work_items:
+      - id: UPLOAD-HARDENING-001
+        trigger: Pilot enables any upload, import or file-download surface.
+      - id: DATA-PORTABILITY-001
+        trigger: Pilot contract, exit plan, disaster migration or regulatory response requires portable export.
+      - id: LEGACY-UX-MIGRATION-001
+        trigger: Pilot includes routes with unresolved legacy/overlay risk.
+      - id: UX-PLATFORM-FOUNDATION-001
+        trigger: Pilot introduces a new page family, journal or module UI.
+      - id: PAGE-TEMPLATE-LIBRARY-001
+        trigger: Pilot introduces a new page family, journal or module UI.
+      - id: MODULE-SOURCE-GOVERNANCE-001
+        trigger: Pilot introduces a new module/capability or requires source freshness beyond accepted evidence.
+      - id: DRIVE-LIBRARY-GOVERNANCE-001
+        trigger: Google Drive materials are used in pilot operation or acceptance.
+      - id: PERFORMANCE-BASELINE-001
+        trigger: Pilot workload exceeds a bounded single-site small-cohort profile or PSR-031 is not explicitly accepted.
+    residual_risk_policy:
+      high_medium: close_or_record_owner_controls_due_date_review_condition_and_explicit_owner_acceptance
+      long_term_not_applicable: does_not_block_without_pilot_specific_justification
     acceptance:
-      - All CRITICAL risks are closed or explicitly accepted with bounded controls.
+      - Mandatory core work items are accepted.
+      - Every applicable CRITICAL risk is closed or explicitly accepted with bounded controls.
+      - Pilot-scope-dependent work is completed or formally shown not applicable.
+      - Residual HIGH and MEDIUM risks follow the residual-risk policy.
       - Scoped module activation and history preservation are demonstrated.
       - Recovery, rollback, observability, incident response and security controls are exercised.
-      - Critical UX scenarios pass supported browser, viewport, theme and print gates.
+      - Critical pilot UX scenarios pass supported browser, viewport, theme and print gates.
       - Another specialist completes install, restore, upgrade and diagnosis from repository documentation.
-      - Product owner explicitly approves the pilot and its known limitations.
+      - Product owner explicitly approves the pilot scope, residual risks and known limitations.
 phases:
   - id: 0
     name: Governance and canonical-state integrity
@@ -78,9 +141,16 @@ phases:
         acceptance:
           - Industrial backlog, gates and risks are represented in canonical planning.
   - id: 1
-    name: Safe and reproducible runtime baseline
-    objective: Close the highest recovery, configuration and security risks.
+    name: SAFE-CONTINUATION architecture and runtime baseline
+    objective: Accept module semantics and close the highest recovery, configuration and security risks.
     work_items:
+      - id: MODULE-ACTIVATION-CONTRACT-001
+        priority: P0
+        type: ARCHITECTURE
+        risks: [PSR-004, PSR-005, PSR-014]
+        dependencies: [PROJECT-STATE-RECONCILIATION-001]
+        acceptance:
+          - Manifest, lifecycle, scope precedence, guards and retention semantics accepted.
       - id: SECRET-HYGIENE-001
         priority: P0
         type: SECURITY
@@ -117,13 +187,6 @@ phases:
         dependencies: [DEPLOYMENT-PROFILE-001]
         acceptance:
           - Threat model, hardening controls and negative tests accepted.
-      - id: MODULE-ACTIVATION-CONTRACT-001
-        priority: P0
-        type: ARCHITECTURE
-        risks: [PSR-004, PSR-005, PSR-014]
-        dependencies: [PROJECT-STATE-RECONCILIATION-001]
-        acceptance:
-          - Manifest, lifecycle, scope precedence, guards and retention semantics accepted.
   - id: 2
     name: Modular platform control plane
     objective: Implement scoped optional modules without dynamic Django app loading.
@@ -143,13 +206,7 @@ phases:
         dependencies: [MODULE-ACTIVATION-CONTRACT-001]
         acceptance:
           - Dependency graph is cycle-free and forbidden imports fail CI.
-      - id: MODULE-MIGRATION-COMPATIBILITY-001
-        priority: P0
-        type: MIGRATION_TESTING
-        risks: [PSR-013, PSR-014]
-        dependencies: [MODULE-REGISTRY-001, MIGRATION-SAFETY-001]
-        acceptance:
-          - Active/inactive module combinations upgrade and reactivate without data loss.
+          - Maintainability hotspots have owners and new ignores require explicit decisions.
   - id: 3
     name: Data reliability and controlled release
     objective: Make data integrity, upgrade and rollback auditable and repeatable.
@@ -168,6 +225,13 @@ phases:
         dependencies: [BACKUP-RESTORE-DRILL-001]
         acceptance:
           - Representative N-1/N-2 databases upgrade with preserved invariants.
+      - id: MODULE-MIGRATION-COMPATIBILITY-001
+        priority: P0
+        type: MIGRATION_TESTING
+        risks: [PSR-013, PSR-014]
+        dependencies: [MODULE-REGISTRY-001, MIGRATION-SAFETY-001]
+        acceptance:
+          - Active/inactive module combinations upgrade and reactivate without data loss.
       - id: DATA-GOVERNANCE-001
         priority: P1
         type: DATA_GOVERNANCE
@@ -270,7 +334,7 @@ phases:
         risks: [PSR-027]
         dependencies: [PROJECT-STATE-RECONCILIATION-001]
         acceptance:
-          - Missing mandatory sources block work-item start.
+          - Missing mandatory sources block new module work-item start after this capability is implemented.
       - id: DRIVE-LIBRARY-GOVERNANCE-001
         priority: P2
         type: KNOWLEDGE_GOVERNANCE
@@ -302,14 +366,14 @@ phases:
         risks: [PSR-030]
         dependencies:
           - MODULE-MIGRATION-COMPATIBILITY-001
-          - DATA-PORTABILITY-001
+          - DATA-GOVERNANCE-001
           - SECURITY-PIPELINE-001
-          - UPLOAD-HARDENING-001
           - UX-BROWSER-GATES-001
-          - PERFORMANCE-BASELINE-001
           - SUPPORT-HANDOVER-001
         acceptance:
-          - All critical risks closed or explicitly accepted with compensating controls.
+          - Mandatory pilot core is accepted.
+          - Applicable critical risks are closed or explicitly accepted with compensating controls.
+          - Scope-dependent and residual risks follow the PILOT-READY policies.
           - Product owner explicitly approves pilot scope and limitations.
 deferred_modules:
   - id: NOTES
@@ -322,3 +386,37 @@ deferred_modules:
     target: post_pilot_last_priority
     dependencies: []
     notes: Local Exchange integration is not a SAFE-CONTINUATION or PILOT-READY dependency.
+consistency_contract:
+  classification: PROPOSAL
+  work_item_reference_rule:
+    source: risk_register.proposed_work_item
+    separators: [" -> "]
+    requirement: Every referenced work item exists in phases or is explicitly listed in special_statuses.
+    special_statuses: []
+  dependency_reference_rule:
+    requirement: Every dependency names an existing work item.
+  phase_order_rule:
+    requirement: A sequential phase work item cannot depend on a work item in a later phase.
+  gate_reference_rule:
+    requirement: Every required gate work item exists in phases.
+  markdown_projection_rule:
+    safe_continuation:
+      exact_required_work_items: true
+      exact_post_gate_boundaries: true
+    pilot_ready:
+      required_projection:
+        - required_core_work_items
+        - critical_risk_policy
+        - scope_dependent_work_items
+        - residual_risk_policy
+        - explicit_product_owner_decision
+  validation_snapshot:
+    program_version: 1.0-candidate-repair1
+    method: one_off_documentation_validator
+    result: PASS
+    checks:
+      risk_work_item_references: PASS
+      dependency_references: PASS
+      phase_order: PASS
+      gate_work_items_exist: PASS
+      markdown_yaml_gate_projection: PASS
