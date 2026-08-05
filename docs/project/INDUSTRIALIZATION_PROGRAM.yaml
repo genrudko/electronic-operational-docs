@@ -1,6 +1,6 @@
 schema_version: eod.industrialization-program.v1
 program_id: PROJECT-SUSTAINABILITY-001
-version: 1.0-candidate-repair1
+version: 1.0-candidate-repair2
 date: 2026-08-05
 status: PROPOSAL
 canonical_owner: docs/project/INDUSTRIALIZATION_PROGRAM.yaml
@@ -98,15 +98,26 @@ gates:
       - id: LEGACY-UX-MIGRATION-001
         trigger: Pilot includes routes with unresolved legacy/overlay risk.
       - id: UX-PLATFORM-FOUNDATION-001
-        trigger: Pilot introduces a new page family, journal or module UI.
+        trigger: Pilot introduces a new page family, journal or module UI, or another explicitly recorded pilot trigger requires the shared UX foundation.
       - id: PAGE-TEMPLATE-LIBRARY-001
-        trigger: Pilot introduces a new page family, journal or module UI.
+        trigger: Pilot introduces a new page family, journal or module UI, or another explicitly recorded pilot trigger requires reusable page templates.
       - id: MODULE-SOURCE-GOVERNANCE-001
         trigger: Pilot introduces a new module/capability or requires source freshness beyond accepted evidence.
       - id: DRIVE-LIBRARY-GOVERNANCE-001
         trigger: Google Drive materials are used in pilot operation or acceptance.
       - id: PERFORMANCE-BASELINE-001
         trigger: Pilot workload exceeds a bounded single-site small-cohort profile or PSR-031 is not explicitly accepted.
+    browser_gate_policy:
+      route_scope: actual_critical_pilot_routes
+      screen_scope:
+        - existing_accepted_screens
+        - migrated_screens
+      requires_general_ux_refactor: false
+      ux_foundation_and_page_templates_required_when:
+        - new_page_family
+        - new_journal
+        - new_module_ui
+        - other_explicitly_recorded_pilot_trigger
     residual_risk_policy:
       high_medium: close_or_record_owner_controls_due_date_review_condition_and_explicit_owner_acceptance
       long_term_not_applicable: does_not_block_without_pilot_specific_justification
@@ -117,7 +128,7 @@ gates:
       - Residual HIGH and MEDIUM risks follow the residual-risk policy.
       - Scoped module activation and history preservation are demonstrated.
       - Recovery, rollback, observability, incident response and security controls are exercised.
-      - Critical pilot UX scenarios pass supported browser, viewport, theme and print gates.
+      - Actual critical pilot routes on existing accepted and migrated screens pass supported browser, viewport, theme and print gates without requiring a general UX refactor.
       - Another specialist completes install, restore, upgrade and diagnosis from repository documentation.
       - Product owner explicitly approves the pilot scope, residual risks and known limitations.
 phases:
@@ -314,9 +325,11 @@ phases:
         priority: P1
         type: UX_TESTING
         risks: [PSR-009]
-        dependencies: [UX-PLATFORM-FOUNDATION-001]
+        dependencies: [DEPLOYMENT-PROFILE-001, MODULE-REGISTRY-001]
         acceptance:
-          - Critical routes pass supported browser, theme, viewport, keyboard and print gates.
+          - Actual critical pilot routes on existing accepted and migrated screens pass supported browser, theme, viewport, keyboard and print gates.
+          - Browser-gate execution does not require a preceding general UX refactor.
+          - UX foundation and page templates are required only by a documented pilot trigger such as a new page family, journal or module UI.
       - id: PAGE-TEMPLATE-LIBRARY-001
         priority: P1
         type: UX_PLATFORM
@@ -399,6 +412,14 @@ consistency_contract:
     requirement: A sequential phase work item cannot depend on a work item in a later phase.
   gate_reference_rule:
     requirement: Every required gate work item exists in phases.
+  gate_dependency_closure_rule:
+    source: gates.PILOT-READY.required_core_work_items
+    traversal: direct_and_transitive
+    requirement: Every direct and transitive dependency of a required core work item also appears in required_core_work_items.
+    failure_conditions:
+      - dependency_missing_from_program
+      - dependency_outside_required_core_work_items
+      - hidden_scope_dependent_dependency
   markdown_projection_rule:
     safe_continuation:
       exact_required_work_items: true
@@ -408,10 +429,11 @@ consistency_contract:
         - required_core_work_items
         - critical_risk_policy
         - scope_dependent_work_items
+        - browser_gate_policy
         - residual_risk_policy
         - explicit_product_owner_decision
   validation_snapshot:
-    program_version: 1.0-candidate-repair1
+    program_version: 1.0-candidate-repair2
     method: one_off_documentation_validator
     result: PASS
     checks:
@@ -419,4 +441,15 @@ consistency_contract:
       dependency_references: PASS
       phase_order: PASS
       gate_work_items_exist: PASS
+      gate_dependency_transitive_closure: PASS
+      hidden_scope_dependent_dependencies: PASS
+      hidden_scope_dependency_negative_fixture: PASS
+      browser_gate_policy_projection: PASS
       markdown_yaml_gate_projection: PASS
+    evidence:
+      work_items: 30
+      risk_register_rows: 34
+      required_core_work_items: 21
+      transitive_core_dependencies: 18
+      dependencies_outside_required_core: []
+      hidden_scope_dependent_dependencies: []
