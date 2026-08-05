@@ -133,6 +133,15 @@ def python_findings(path: str, text: str) -> list[Finding]:
     except SyntaxError:
         return []
     results: list[Finding] = []
+    test_fixture_assignments: set[int] = set()
+    if "/tests/" in path.casefold() or path.casefold().startswith("tests/"):
+        for class_node in (item for item in ast.walk(tree) if isinstance(item, ast.ClassDef)):
+            if class_node.name.endswith(("Test", "Tests", "TestCase")):
+                test_fixture_assignments.update(
+                    id(item)
+                    for item in ast.walk(class_node)
+                    if isinstance(item, (ast.Assign, ast.AnnAssign))
+                )
     for node in ast.walk(tree):
         targets: list[ast.AST] = []
         value_node: ast.AST | None = None
@@ -153,6 +162,10 @@ def python_findings(path: str, text: str) -> list[Finding]:
                     not is_sensitive_name(name)
                     or is_safe_placeholder(value)
                     or is_named_test_fixture(path, value)
+                    or (
+                        id(node) in test_fixture_assignments
+                        and name.casefold() == "password"
+                    )
                 ):
                     continue
                 upper = name.upper()
@@ -178,11 +191,23 @@ def python_findings(path: str, text: str) -> list[Finding]:
         for child in ast.walk(node):
             if isinstance(child, ast.Name) and is_sensitive_name(child.id):
                 results.append(
-                    finding(path, node.lineno, "credential-output", "credential-bearing-output", child.id)
+                    finding(
+                        path,
+                        node.lineno,
+                        "credential-output",
+                        "credential-bearing-output",
+                        child.id,
+                    )
                 )
             elif isinstance(child, ast.Attribute) and is_sensitive_name(child.attr):
                 results.append(
-                    finding(path, node.lineno, "credential-output", "credential-bearing-output", child.attr)
+                    finding(
+                        path,
+                        node.lineno,
+                        "credential-output",
+                        "credential-bearing-output",
+                        child.attr,
+                    )
                 )
     return results
 
@@ -191,11 +216,11 @@ def literal_value(raw: str) -> str | None:
     value = raw.strip().rstrip(",")
     if " #" in value:
         value = value.split(" #", 1)[0].rstrip()
-    if not value or value in {"None", "null", "NULL", "~", "''", '""'}:
+    if not value or value in {"None", "null", "NULL", "~", "''", '\"\"'}:
         return ""
     if any(marker in value for marker in ("${", "$(", "${{", "`")):
         return None
-    if value[0:1] in {"'", '"'}:
+    if value[0:1] in {"'", '\"'}:
         try:
             parsed = ast.literal_eval(value)
         except (SyntaxError, ValueError):
@@ -206,6 +231,10 @@ def literal_value(raw: str) -> str | None:
     if value.casefold() in {"true", "false", "yes", "no", "on", "off"}:
         return None
     if value.startswith(("$", "<")):
+        return None
+    if any(marker in value for marker in ("(", ")", "[", "]", "{", "}")):
+        return None
+    if re.search(r"\b(?:if|for|else|and|or)\b|\.get\(", value):
         return None
     return value
 
@@ -265,11 +294,15 @@ def scan_text(path: str, text: str) -> list[Finding]:
         results.extend(python_findings(path, text))
     for number, line in enumerate(lines, start=1):
         if PRIVATE_KEY.search(line):
-            results.append(finding(path, number, "private-key-marker", "private-key-material", line))
+            results.append(
+                finding(path, number, "private-key-marker", "private-key-material", line)
+            )
         for match in SECRET_DSN.finditer(line):
             value = match.group("value")
             if not is_safe_placeholder(value) and not is_named_test_fixture(path, value):
-                results.append(finding(path, number, "secret-bearing-dsn", "credential-in-url", value))
+                results.append(
+                    finding(path, number, "secret-bearing-dsn", "credential-in-url", value)
+                )
         for token_class, pattern in TOKEN_PATTERNS:
             for match in pattern.finditer(line):
                 value = match.group(0)
@@ -298,8 +331,11 @@ def scan_text(path: str, text: str) -> list[Finding]:
                 if is_sensitive_name(name) and value is not None and not is_safe_placeholder(value):
                     results.append(
                         finding(
-                            path, number, "explicit-credential-assignment",
-                            "committed-credential-literal", value,
+                            path,
+                            number,
+                            "explicit-credential-assignment",
+                            "committed-credential-literal",
+                            value,
                         )
                     )
             if (
@@ -314,7 +350,13 @@ def scan_text(path: str, text: str) -> list[Finding]:
                 nearby = "\n".join(lines[number - 1 : min(len(lines), number + 12)])
                 if SHELL_SECRET_REFERENCE.search(nearby):
                     results.append(
-                        finding(path, number, "shell-xtrace-secret", "xtrace-near-secret-command", nearby)
+                        finding(
+                            path,
+                            number,
+                            "shell-xtrace-secret",
+                            "xtrace-near-secret-command",
+                            nearby,
+                        )
                     )
         if re.search(
             r"(?i)(?:output of:|run:?)\s*(?:sudo\s+)?cat\s+"
@@ -323,8 +365,11 @@ def scan_text(path: str, text: str) -> list[Finding]:
         ):
             results.append(
                 finding(
-                    path, number, "credential-retrieval-instruction",
-                    "operator-secret-print-command", line,
+                    path,
+                    number,
+                    "credential-retrieval-instruction",
+                    "operator-secret-print-command",
+                    line,
                 )
             )
     if is_workflow:
@@ -352,17 +397,26 @@ def scan_text(path: str, text: str) -> list[Finding]:
                 if raw_names or unsafe_cat:
                     results.append(
                         finding(
-                            path, start + 1, "workflow-summary-leak",
-                            "unbounded-output-in-summary", block,
+                            path,
+                            start + 1,
+                            "workflow-summary-leak",
+                            "unbounded-output-in-summary",
+                            block,
                         )
                     )
             if ARTIFACT_ACTION.search(block):
                 for artifact_path in artifact_paths(block):
-                    if ARTIFACT_RISKY_PATH.search(artifact_path) and artifact_path not in sanitised:
+                    if (
+                        ARTIFACT_RISKY_PATH.search(artifact_path)
+                        and artifact_path not in sanitised
+                    ):
                         results.append(
                             finding(
-                                path, start + 1, "artifact-leak",
-                                "raw-or-secret-bearing-artifact", block,
+                                path,
+                                start + 1,
+                                "artifact-leak",
+                                "raw-or-secret-bearing-artifact",
+                                block,
                             )
                         )
                         break
@@ -408,7 +462,18 @@ def history_inventory(root: Path, max_commits: int) -> dict[str, object]:
         text=True,
     ).stdout.splitlines()
     completed = subprocess.run(
-        ["git", "-C", str(root), "grep", "-I", "-i", "-n", "-E", HISTORY_GREP_PATTERN, *revs],
+        [
+            "git",
+            "-C",
+            str(root),
+            "grep",
+            "-I",
+            "-i",
+            "-n",
+            "-E",
+            HISTORY_GREP_PATTERN,
+            *revs,
+        ],
         check=False,
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
@@ -474,7 +539,9 @@ def command_history(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="AST-aware EOD tracked-content secret scanner")
+    parser = argparse.ArgumentParser(
+        description="AST-aware EOD tracked-content secret scanner"
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
     scan = subparsers.add_parser("scan")
     scan.add_argument("--root", default=".")
