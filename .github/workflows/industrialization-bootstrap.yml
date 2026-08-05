@@ -1,58 +1,13 @@
-name: Industrialization Bootstrap
+name: Industrialization Payload Staging
 
 on:
-  push:
-    branches:
-      - governance/industrialization-program-execution-001
+  workflow_dispatch:
 
 permissions:
-  contents: write
-
-concurrency:
-  group: industrialization-bootstrap-${{ github.ref }}
-  cancel-in-progress: false
+  contents: read
 
 jobs:
-  synchronize-and-export:
-    if: github.actor != 'github-actions[bot]'
+  staged:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout work-item branch
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Confirm branch includes current main
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin main
-          git merge-base --is-ancestor origin/main HEAD
-
-      - name: Export synchronized source snapshot
-        shell: bash
-        run: |
-          set -euo pipefail
-          git rev-parse HEAD > EXACT_HEAD.txt
-          git rev-parse origin/main > BASE_MAIN.txt
-          tar --exclude=.git -czf /tmp/eod-synchronized-source.tgz .
-
-      - name: Upload synchronized source snapshot
-        id: upload
-        uses: actions/upload-artifact@v4
-        with:
-          name: eod-synchronized-source
-          path: /tmp/eod-synchronized-source.tgz
-          if-no-files-found: error
-          retention-days: 1
-
-      - name: Publish bootstrap run identity
-        shell: bash
-        run: |
-          set -euo pipefail
-          printf '%s\n' "$GITHUB_RUN_ID" > .github/industrialization-bootstrap-run-id.txt
-          git add .github/industrialization-bootstrap-run-id.txt
-          git commit -m "chore: record industrialization bootstrap run"
-          git push origin HEAD:governance/industrialization-program-execution-001
+      - run: echo "Payload staging only; execution is enabled after all chunks are present."
