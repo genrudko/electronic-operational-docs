@@ -239,7 +239,7 @@ section.
 Невинномысск и КДЦ ВЭС, отдельный contractor scenario и результаты
 `ALLOW / DENY / VERIFY`.
 
-Management candidate предоставляет ручной create/edit/deactivate, XLSX
+Принятый bounded contour предоставляет ручной create/edit/deactivate, XLSX
 templates, preview/publish, exact condition details, special qualifications и
 external operational contacts без загрузки реальных персональных данных.
 
@@ -259,22 +259,24 @@ reporting, site service, RZA, internal/external, light/dark и responsive states
 
 ## CURRENT CODE STATUS / CAPABILITIES
 
-`IMPLEMENTED-CANDIDATE`; release `IN_PROGRESS`; active work item
-`PERSONNEL-AUTHORITY-001`, issue #42, Draft PR #43.
+Текущий planning status принадлежит только
+`docs/project/DEMO_RELEASE_PLAN.yaml`. По принятой истории GitHub модуль имеет
+`IMPLEMENTED-ACCEPTED`; release `ACCEPTED`.
 
-- `CAP-PERSONNEL-REGISTRY`: hierarchy, reporting lines, site service, contacts,
-  qualification, management workspace, profile and create/edit/deactivate;
-  `AC-PERSONNEL-REGISTRY-001` — candidate.
-- `CAP-AUTHORITY-GRANTS`: published cell → exact condition detail → linked
-  evaluator projection and versioned edit; `AC-AUTHORITY-GRANTS-001` — candidate.
-- `CAP-AUTHORITY-ACTION-TIME`: explainable `ALLOW / DENY / VERIFY`, append-only
-  snapshot, digest and correction link; `AC-AUTHORITY-ACTION-TIME-001` —
-  candidate.
-- `CAP-AUTHORITY-EXTERNAL`: separate external operational directory,
-  contractor engagement and bounded substitution; `AC-AUTHORITY-EXTERNAL-001`
-  — candidate.
-- controlled personnel XLSX preview/publish is implemented inside the bounded
-  registry capability and does not replace the general imports module.
+Историческое acceptance evidence: PR #43, exact head
+`d659ab949db2942c064eec3c298d031a9684c67d`, merge commit
+`2a2013a51bfdc9de602b095adcb28a51b8d4487e`.
+
+- `CAP-PERSONNEL-REGISTRY` /
+  `AC-PERSONNEL-REGISTRY-001` — accepted.
+- `CAP-AUTHORITY-GRANTS` /
+  `AC-AUTHORITY-GRANTS-001` — accepted.
+- `CAP-AUTHORITY-ACTION-TIME` /
+  `AC-AUTHORITY-ACTION-TIME-001` — accepted.
+- `CAP-AUTHORITY-EXTERNAL` /
+  `AC-AUTHORITY-EXTERNAL-001` — accepted.
+- controlled personnel XLSX preview/publish входит в bounded registry
+  capability и не заменяет общий imports module.
 
 ## OPEN VERIFY ITEMS / FORBIDDEN ASSUMPTIONS
 
@@ -293,5 +295,5 @@ Forbidden:
 - скрывать или выдумывать неизвестное дополнительное условие;
 - удалять карточку или историю физически;
 - объявлять `VERIFY` разрешением;
-- подключать OPJ/SHIFT/DEFECT/work-permit/switching lifecycles в этом PR;
-- писать в preview или выполнять merge без команды пользователя.
+- считать принятый personnel contour реализацией downstream OPJ/SHIFT/DEFECT,
+  work-permit или switching lifecycle.
