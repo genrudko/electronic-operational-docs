@@ -1,14 +1,14 @@
 # PROJECT-SUSTAINABILITY-001 — доказательный baseline сопровождаемости ЭОД
 
-**Дата аудита:** 05.08.2026  
-**Репозиторий:** `genrudko/electronic-operational-docs`  
-**Issue:** `#48`  
-**Draft PR:** `#49`  
-**Ветка:** `audit/project-sustainability-001`  
-**Initial exact head аудита:** `8ddae63ad3c6bf3f2a3f55a0c385f3f10283aebf`  
-**Текущий main на factual preflight:** `8bd895f5b0f18df0eb4a9adc60c6c6d1f8a29db9`  
-**Accepted application baseline, зафиксированный в `CURRENT_STATE.md`:** `c4e344342b647ce59a390a04329d2cadb1f34d7c`  
-**Тип работы:** `DOCUMENTATION / ARCHITECTURE / AUDIT`  
+**Дата аудита:** 05.08.2026
+**Репозиторий:** `genrudko/electronic-operational-docs`
+**Issue:** `#48`
+**Draft PR:** `#49`
+**Ветка:** `audit/project-sustainability-001`
+**Initial exact head аудита:** `8ddae63ad3c6bf3f2a3f55a0c385f3f10283aebf`
+**Текущий main на factual preflight:** `8bd895f5b0f18df0eb4a9adc60c6c6d1f8a29db9`
+**Accepted application baseline, зафиксированный в `CURRENT_STATE.md`:** `c4e344342b647ce59a390a04329d2cadb1f34d7c`
+**Тип работы:** `DOCUMENTATION / ARCHITECTURE / AUDIT`
 **Runtime/Preview impact:** `NONE / UNTOUCHED`
 
 ## 1. Итоговый вердикт
@@ -202,7 +202,7 @@
 6. **[PROPOSAL] Operations:** logs, metrics, alerts, dashboards, retention, severity/escalation and on-call ownership.
 7. **[PROPOSAL] Security:** threat model, dependency/secret/container scans, upload controls, patch policy and remediation SLA.
 8. **[PROPOSAL] UX:** supported-browser matrix, desktop/mobile/theme gates, no false actions, critical scenarios visually accepted.
-9. **[PROPOSAL] Support:** clean install/handover by another specialist and complete runbook set.
+9. **[PROPOSAL] Support:** clean install/handover by another специалист and complete runbook set.
 10. **[DECISION] Product truth:** known limitations documented; no claim of legal/industrial readiness beyond accepted evidence.
 
 ## 13. Рекомендуемая граница продолжения разработки
