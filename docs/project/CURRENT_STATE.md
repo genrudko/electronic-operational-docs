@@ -8,15 +8,44 @@
 ```text
 repository: genrudko/electronic-operational-docs
 accepted main baseline: main / c4e344342b647ce59a390a04329d2cadb1f34d7c
-active work item: NONE
-active issue: NONE
-active PR: NONE
-active branch: NONE
-runtime impact: DEVELOPMENT / accepted OPJ candidate
+active work item: PROJECT-SUSTAINABILITY-001
+active issue: #48 / OPEN
+active PR: #49 / OPEN / DRAFT / NOT MERGED
+active branch: audit/project-sustainability-001
+active baseline: c57a84752fae7a5265f393f77568849365be50a7
+runtime impact: NONE / DOCUMENTATION AND ARCHITECTURE AUDIT ONLY
 preview: UNTOUCHED
 ```
 
-Дополнительные factual markers:
+## Active PROJECT-SUSTAINABILITY-001
+
+После принятия `OPJ-LIFECYCLE-001` пользователь явно приостановил продолжение
+очереди новых предметных модулей до формирования программы промышленной
+подготовки продукта.
+
+Текущий work item:
+
+- проводит factual audit репозитория, архитектуры, UX, данных, безопасности,
+  deployment и operations;
+- определяет target modular-platform и UX-platform contracts;
+- формирует source/knowledge governance и risk-ranked очередь последующих работ;
+- включает личные и общие заметки в target product architecture;
+- фиксирует интеграцию с локальным Exchange как wishlist последней очереди;
+- не изменяет product code, models, migrations, data, runtime или Preview;
+- не реализует саму промышленную архитектуру;
+- не продолжает `SHIFT-HANDOVER-001` до пользовательской приёмки программы;
+- не переводится в Ready for Review и не merge без отдельной команды пользователя.
+
+```text
+issue: #48
+PR: #49 / OPEN / DRAFT / NOT MERGED
+branch: audit/project-sustainability-001
+initial head: 3b5f86b884eb0b061764ffd6298a15d53c05c3e9
+user acceptance: ABSENT
+merge authorization: ABSENT
+```
+
+Дополнительные accepted baseline markers:
 
 ```text
 accepted OPJ exact head: 65997a9d51de4d066ec07277d4c660bfc307650e
