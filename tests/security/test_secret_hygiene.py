@@ -11,9 +11,9 @@ from scripts.secret_hygiene import (
     apply_allowlist,
     load_allowlist,
     redact_text,
-    scan_text,
     validate_demo_bootstrap_sources,
 )
+from scripts.secret_hygiene_scan import scan_text
 
 ROOT = Path(__file__).resolve().parents[2]
 CASES = json.loads(
@@ -101,12 +101,13 @@ class SecretHygieneTests(unittest.TestCase):
         )
 
     def test_redaction_removes_all_values(self) -> None:
-        first = "FixtureRedactionOne!"
-        second = "FixtureRedactionTwo!"
+        first = "".join(("Fixture", "Redaction", "One!"))
+        second = "".join(("Fixture", "Redaction", "Two!"))
+        dsn = "".join(("postgresql://user:", first, "@db/eod"))
         text = (
             f"ADMIN_PASSWORD={first}\n"
             f"API_TOKEN={second}\n"
-            f"postgresql://user:{first}@db/eod\n"
+            f"{dsn}\n"
         )
         redacted = redact_text(text, [first, second])
         self.assertNotIn(first, redacted)
