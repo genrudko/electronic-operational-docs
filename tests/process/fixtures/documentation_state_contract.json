@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "cases": [
+    {
+      "id": "positive",
+      "mutation": {
+        "type": "none"
+      },
+      "expected_rule": null
+    },
+    {
+      "id": "missing-work-item-reference",
+      "mutation": {
+        "type": "plan_module_set",
+        "module_id": "PERSONNEL-AUTHORITY",
+        "field": "work_item",
+        "value": "MISSING-WORK-ITEM-001"
+      },
+      "expected_rule": "module-work-item-reference"
+    },
+    {
+      "id": "duplicate-work-item-id",
+      "mutation": {
+        "type": "plan_duplicate_work_item",
+        "work_item_id": "OPJ-LIFECYCLE-001"
+      },
+      "expected_rule": "work-item-id-uniqueness"
+    },
+    {
+      "id": "dependency-on-missing-work-item",
+      "mutation": {
+        "type": "program_append_dependency",
+        "work_item_id": "PROJECT-STATE-RECONCILIATION-001",
+        "dependency": "MISSING-WORK-ITEM-001"
+      },
+      "expected_rule": "dependency-reference"
+    },
+    {
+      "id": "mandatory-core-dependency-outside-core",
+      "mutation": {
+        "type": "program_remove_gate_item",
+        "gate_id": "PILOT-READY",
+        "work_item_id": "DEPENDENCY-PROVENANCE-001"
+      },
+      "expected_rule": "mandatory-core-transitive-closure"
+    },
+    {
+      "id": "hidden-scope-dependent-dependency",
+      "mutation": {
+        "type": "program_append_dependency",
+        "work_item_id": "UX-BROWSER-GATES-001",
+        "dependency": "UX-PLATFORM-FOUNDATION-001"
+      },
+      "expected_rule": "hidden-scope-dependent-dependency"
+    },
+    {
+      "id": "reverse-interphase-dependency",
+      "mutation": {
+        "type": "program_append_dependency",
+        "work_item_id": "PROJECT-STATE-RECONCILIATION-001",
+        "dependency": "MODULE-REGISTRY-001"
+      },
+      "expected_rule": "phase-order"
+    },
+    {
+      "id": "missing-gate-work-item",
+      "mutation": {
+        "type": "program_append_gate_item",
+        "gate_id": "SAFE-CONTINUATION",
+        "work_item_id": "MISSING-GATE-ITEM-001"
+      },
+      "expected_rule": "gate-work-item-reference"
+    },
+    {
+      "id": "stale-accepted-status",
+      "mutation": {
+        "type": "plan_module_set",
+        "module_id": "PERSONNEL-AUTHORITY",
+        "field": "status",
+        "value": "READY"
+      },
+      "expected_rule": "stale-accepted-status"
+    },
+    {
+      "id": "duplicate-volatile-owner",
+      "mutation": {
+        "type": "append_text",
+        "path": "docs/product/MODULE_MAP.md",
+        "text": "\nactive PR: #999\n"
+      },
+      "expected_rule": "single-volatile-owner"
+    },
+    {
+      "id": "markdown-yaml-projection-mismatch",
+      "mutation": {
+        "type": "replace_text",
+        "path": "docs/project/INDUSTRIALIZATION_PROGRAM.md",
+        "old": "`PILOT-READY`",
+        "new": "`PILOT-READY-BROKEN`",
+        "count": 1
+      },
+      "expected_rule": "exact-generated-projection"
+    },
+    {
+      "id": "stale-derived-view",
+      "mutation": {
+        "type": "replace_text",
+        "path": "docs/product/MODULE_MAP.md",
+        "old": "`PERSONNEL-AUTHORITY`",
+        "new": "`PERSONNEL-AUTHORITY-STALE`",
+        "count": 1
+      },
+      "expected_rule": "exact-generated-projection"
+    }
+  ]
+}
