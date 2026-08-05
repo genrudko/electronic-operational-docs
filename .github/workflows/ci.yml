@@ -28,7 +28,7 @@ jobs:
         env:
           POSTGRES_DB: eod_ci
           POSTGRES_USER: eod_ci
-          POSTGRES_PASSWORD: eod_ci_password
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         options: >-
@@ -41,13 +41,12 @@ jobs:
       PYTHONUNBUFFERED: "1"
       PYTHONDONTWRITEBYTECODE: "1"
       EOD_DEPLOYMENT_MODE: ci
-      DJANGO_SECRET_KEY: ci-only-not-for-deployment
       DJANGO_DEBUG: "0"
       DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost,testserver
       DB_ENGINE: postgresql
       POSTGRES_DB: eod_ci
       POSTGRES_USER: eod_ci
-      POSTGRES_PASSWORD: eod_ci_password
+      POSTGRES_PASSWORD: ""
       POSTGRES_HOST: 127.0.0.1
       POSTGRES_PORT: "5432"
       EOD_DATABASE_PROFILE: gate
@@ -57,6 +56,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Set up Python 3.13
         uses: actions/setup-python@v6
@@ -64,6 +65,14 @@ jobs:
           python-version: "3.13"
           cache: pip
           cache-dependency-path: pyproject.toml
+
+      - name: Create masked ephemeral Django key
+        shell: bash
+        run: |
+          set -euo pipefail
+          value="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+          printf '::add-mask::%s\n' "$value"
+          printf 'DJANGO_SECRET_KEY=%s\n' "$value" >>"$GITHUB_ENV"
 
       - name: Install project and development dependencies
         run: |
@@ -104,17 +113,26 @@ jobs:
       - name: Collect static files
         run: python manage.py collectstatic --noinput --clear
 
-      - name: Run full Django test suite
+      - name: Run full Django test suite with sanitised output
         id: django-tests
         shell: bash
         run: |
-          set -o pipefail
-          python manage.py test apps --verbosity 2 2>&1 | tee django-test.log
+          set -euo pipefail
+          raw_file="$(mktemp)"
+          printf 'DJANGO_TEST_RAW_FILE=%s\n' "$raw_file" >>"$GITHUB_ENV"
+          set +e
+          python manage.py test apps --verbosity 2 >"$raw_file" 2>&1
+          test_status=$?
+          set -e
+          python scripts/secret_hygiene.py redact --input "$raw_file" --output django-test.sanitized.txt --env DJANGO_SECRET_KEY
+          cat django-test.sanitized.txt
+          exit "$test_status"
 
-      - name: Build actionable Django failure report
+      - name: Build sanitised Django failure report
         if: ${{ failure() && steps.django-tests.outcome == 'failure' }}
         shell: bash
         run: |
+          set -euo pipefail
           python - <<'PY'
           from __future__ import annotations
 
@@ -122,22 +140,18 @@ jobs:
           import re
           from pathlib import Path
 
-
-          log_path = Path("django-test.log")
+          log_path = Path("django-test.sanitized.txt")
           lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
-
           failure_headers = [
               line.strip()
               for line in lines
               if re.match(r"^(FAIL|ERROR):\s+", line.strip())
           ]
-
           header_indexes = [
               index
               for index, line in enumerate(lines)
               if re.match(r"^(FAIL|ERROR):\s+", line.strip())
           ]
-
           if header_indexes:
               start = header_indexes[0]
               while start > 0 and not (
@@ -150,13 +164,11 @@ jobs:
               diagnostic_lines = lines[start:]
           else:
               diagnostic_lines = lines[-400:]
-
           summary_markers = [
               line.strip()
               for line in lines
               if line.strip().startswith(("FAILED (", "FAILED", "ERRORS", "FAILURES"))
           ]
-
           report_lines = [
               "EOD Django test failure diagnostics",
               f"repository: {os.environ.get('GITHUB_REPOSITORY', 'unknown')}",
@@ -166,43 +178,49 @@ jobs:
               "",
               "failing tests:",
           ]
-
           if failure_headers:
               report_lines.extend(f"- {header}" for header in failure_headers)
           else:
               report_lines.append("- exact header was not detected; inspect captured tail below")
-
           if summary_markers:
               report_lines.extend(["", "test summary:"])
               report_lines.extend(f"- {marker}" for marker in summary_markers[-20:])
-
-          report_lines.extend(["", "failure output:", ""]) 
+          report_lines.extend(["", "failure output:", ""])
           report_lines.extend(diagnostic_lines)
-
-          report = "\n".join(report_lines).rstrip() + "\n"
-          Path("django-test-failure.txt").write_text(report, encoding="utf-8")
-
+          Path("django-test-failure.pending.txt").write_text(
+              "\n".join(report_lines).rstrip() + "\n",
+              encoding="utf-8",
+          )
           summary_path = Path(os.environ["GITHUB_STEP_SUMMARY"])
-          safe_report = report.replace("```", "` ` `")
           with summary_path.open("a", encoding="utf-8") as summary:
-              summary.write("## Django test failure diagnostics\n\n")
-              summary.write("```text\n")
-              summary.write(safe_report)
-              summary.write("```\n")
+              summary.write("## Django test failure\n\n")
+              summary.write(
+                  "Sanitised diagnostics are available in the retained workflow artifact.\n"
+              )
           PY
+          python scripts/secret_hygiene.py redact --input django-test-failure.pending.txt --output django-test-diagnostics.sanitized.txt --env DJANGO_SECRET_KEY
+          rm -f django-test-failure.pending.txt
+          cat django-test-diagnostics.sanitized.txt
 
-          cat django-test-failure.txt
-
-      - name: Upload Django failure diagnostics
+      - name: Upload sanitised Django failure diagnostics
         if: ${{ failure() && steps.django-tests.outcome == 'failure' }}
         uses: actions/upload-artifact@v7
         with:
           name: django-test-diagnostics-${{ github.run_id }}
           path: |
-            django-test-failure.txt
-            django-test.log
+            django-test-diagnostics.sanitized.txt
+            django-test.sanitized.txt
           if-no-files-found: error
           retention-days: 14
+
+      - name: Remove raw Django test output
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -n "${DJANGO_TEST_RAW_FILE:-}" ]]; then
+            rm -f "$DJANGO_TEST_RAW_FILE"
+          fi
 
       - name: Verify repository remains unchanged
         shell: bash
@@ -218,17 +236,28 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
-      DJANGO_SECRET_KEY: ci-preview-secret-not-for-deployment-0123456789
       DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost
       POSTGRES_DB: eod_preview_ci
       POSTGRES_USER: eod_preview_ci
-      POSTGRES_PASSWORD: eod_preview_ci_password
       EOD_PREVIEW_PORT: "8765"
       TIME_ZONE: Europe/Moscow
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Create masked ephemeral preview credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          django_value="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+          postgres_value="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+          printf '::add-mask::%s\n' "$django_value"
+          printf '::add-mask::%s\n' "$postgres_value"
+          printf 'DJANGO_SECRET_KEY=%s\n' "$django_value" >>"$GITHUB_ENV"
+          printf 'POSTGRES_PASSWORD=%s\n' "$postgres_value" >>"$GITHUB_ENV"
 
       - name: Validate preview Compose configuration
         run: docker compose -f compose.preview.yaml config --quiet
@@ -269,25 +298,29 @@ jobs:
             exit 1
           fi
 
-      - name: Capture preview diagnostics after failure
+      - name: Capture sanitised preview diagnostics after failure
         if: ${{ failure() }}
         shell: bash
         run: |
+          set -euo pipefail
+          raw_file="$(mktemp)"
           {
             echo "===== docker compose ps --all ====="
             docker compose -f compose.preview.yaml ps --all
             echo
             echo "===== docker compose logs ====="
             docker compose -f compose.preview.yaml logs --no-color
-          } >preview-diagnostics.log 2>&1
-          cat preview-diagnostics.log
+          } >"$raw_file" 2>&1
+          python scripts/secret_hygiene.py redact --input "$raw_file" --output preview-diagnostics.sanitized.txt --env DJANGO_SECRET_KEY --env POSTGRES_PASSWORD
+          rm -f "$raw_file"
+          cat preview-diagnostics.sanitized.txt
 
-      - name: Upload preview diagnostics after failure
+      - name: Upload sanitised preview diagnostics after failure
         if: ${{ failure() }}
         uses: actions/upload-artifact@v7
         with:
           name: preview-diagnostics-${{ github.run_id }}
-          path: preview-diagnostics.log
+          path: preview-diagnostics.sanitized.txt
           if-no-files-found: error
           retention-days: 7
 
@@ -321,7 +354,6 @@ jobs:
           import urllib.error
           import urllib.request
           from pathlib import Path
-
 
           token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
           chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
