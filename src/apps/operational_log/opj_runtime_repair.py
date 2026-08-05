@@ -7,7 +7,7 @@ from django.http import HttpRequest, HttpResponse
 from .opj_lifecycle_acceptance import clean_journal_view
 
 _STALE_ASSET_VERSION = b"opjlifecycle00501"
-_CURRENT_ASSET_VERSION = b"opjlifecycle00613"
+_CURRENT_ASSET_VERSION = b"opjlifecycle00614"
 
 
 def _replace_clean_journal_asset_version(response: HttpResponse) -> HttpResponse:
