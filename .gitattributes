@@ -16,10 +16,6 @@
 # Markdown hard-break markers while keeping trailing-space checks everywhere else.
 docs/ux/UX-001_v0.3/*.md whitespace=-trailing-space
 
-# Generated program metadata uses Markdown hard breaks and is byte-for-byte
-# checked against the generator by the Documentation Contract.
-docs/project/INDUSTRIALIZATION_PROGRAM.md whitespace=-trailing-space
-
 *.png binary
 *.jpg binary
 *.jpeg binary
