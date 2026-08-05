@@ -108,7 +108,7 @@ printf '\n===== GITHUB ACTIONS VPS ACCESS =====\n'
 printf 'Create repository Actions secrets:\n'
 printf 'EOD_VPS_HOST              = VPS hostname or IP\n'
 printf 'EOD_VPS_PORT              = SSH port, normally 22\n'
-printf 'EOD_VPS_SSH_PRIVATE_KEY   = output of: sudo cat %s\n' "$CLIENT_KEY"
+printf 'EOD_VPS_SSH_PRIVATE_KEY   = securely import from root-owned file %s; value not printed\n' "$CLIENT_KEY"
 printf 'EOD_VPS_HOST_KEY          = output of: ssh-keyscan -p <port> <host>\n'
 printf '\nDo not send either private key to chat.\n'
 
