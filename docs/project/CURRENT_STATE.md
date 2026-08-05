@@ -1,42 +1,71 @@
 # ЭОД — текущее состояние
 
-**Дата factual check:** 03.08.2026
+**Дата factual check:** 05.08.2026
 
 **Единственный владелец:** accepted main baseline, active work item/issue/PR/branch
 и runtime state.
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted main baseline: main / 2db8947062434861d2336eb474cd762e11aabb44
-active work item: OPJ-LIFECYCLE-001
-active issue: #46
-active PR: #47 / OPEN / DRAFT / NOT MERGED
-active branch: feature/opj-lifecycle-001
-runtime impact: DEVELOPMENT
+accepted main baseline: main / c4e344342b647ce59a390a04329d2cadb1f34d7c
+active work item: NONE
+active issue: NONE
+active PR: NONE
+active branch: NONE
+runtime impact: DEVELOPMENT / accepted OPJ candidate
 preview: UNTOUCHED
 ```
 
 Дополнительные factual markers:
 
 ```text
-canonical documentation tip: main / b77b7911f41ec6c3d1e7e5019558362a058ce237
-coordination tip at work-item start: 17663cf67d12c02d24177e554d6eb7d364e405e4
-active implementation state: REWORK IMPLEMENTED / DEPLOYED FOR VISUAL ACCEPTANCE
-user acceptance: ABSENT / FIRST CANDIDATE REJECTED / CURRENT CANDIDATE PENDING
-current development candidate: CURRENT PR HEAD / TRUSTED DEVELOPMENT
+accepted OPJ exact head: 65997a9d51de4d066ec07277d4c660bfc307650e
+accepted OPJ merge commit: c4e344342b647ce59a390a04329d2cadb1f34d7c
+user acceptance: PASSED ON DEVELOPMENT IN EDGE
+merge method: ORDINARY MERGE COMMIT
+squash / rebase: NOT USED
 ```
 
-## Active OPJ-LIFECYCLE-001
+## Accepted OPJ-LIFECYCLE-001 baseline
 
-Следующий work item открыт по канонической очереди после принятых
-`UX-THEME-001`, `MASTER-DATA-ALIGNMENT-001`, `NORMATIVE-EVIDENCE-001` и
-`PERSONNEL-AUTHORITY-001`.
+`OPJ-LIFECYCLE-001` принят пользователем после проверки development-кандидата
+в штатном профиле Microsoft Edge и merged обычным merge commit:
 
-### Пользовательское решение 03.08.2026
+```text
+accepted PR: #47 / CLOSED / MERGED
+accepted exact head: 65997a9d51de4d066ec07277d4c660bfc307650e
+merge commit / accepted main: c4e344342b647ce59a390a04329d2cadb1f34d7c
+issue: #46 / CLOSED / COMPLETED
+preview: UNTOUCHED
+```
 
-Первый development-кандидат полностью отклонён. Отдельная lifecycle page, технический presentation layer и ручная карточка разговора не принимаются и не подлежат косметическому repair.
+Принятый baseline включает:
 
-Каноническая документация `main` дополнена прямыми documentation-only commits по явной команде пользователя:
+- переход отдельной строки ОЖ из редактируемого сменного черновика в зарегистрированный неизменяемый чистовик;
+- исправления и отмены только новыми зарегистрированными строками без переписывания оригинала;
+- принятую хронологию и геометрию отметок ПЗ/ЗН;
+- устойчивую трёхграфную экранную и печатную форму;
+- цветовые аварийные отметки и печатное представление;
+- reference previews и композицию статусов зарегистрированных строк;
+- работающее меню `Действия` в штатном Microsoft Edge;
+- дату, время и номер записи у верхней границы первой графы;
+- обход устаревших assets в цикле пользовательской приёмки.
+
+Все пять обязательных exact-head workflows завершились успешно на
+`65997a9d51de4d066ec07277d4c660bfc307650e`:
+
+```text
+AUTO-001A Foundation CI:     30986956669 / SUCCESS
+AUTO-001B Controller CI:     30986956714 / SUCCESS
+EOD Development Stack:      30986956637 / SUCCESS
+EOD Documentation Contract: 30986956684 / SUCCESS
+EOD CI:                      30986956738 / SUCCESS
+```
+
+### Канонические границы OPJ / SHIFT / CROSS-DOC
+
+Каноническая документация `main` ранее дополнена прямыми documentation-only
+commits без удаления исторического материала:
 
 ```text
 0da9ef412ec25001c9fa49c4f8f395d151c28137  OPJ draft-to-clean boundary
@@ -46,46 +75,20 @@ current development candidate: CURRENT PR HEAD / TRUSTED DEVELOPMENT
 b77b7911f41ec6c3d1e7e5019558362a058ce237  decision-log additions
 ```
 
-Исторические положения не удалялись; добавлены уточняющие границы.
-
-### Исправленная граница active work item
+Принятые границы:
 
 - принятый `shift_workspace`, редактор, autosave и revisions сохраняются;
 - редактирование существует только в черновике;
 - регистрация подготовленной строки создаёт неизменяемую запись чистовика;
-- зарегистрированная строка не исчезает из сменного workspace, остаётся видимой и становится read-only;
-- исправление и отмена выполняются только в зарегистрированном журнале новой строкой;
-- результат оперативных переговоров фиксируется в хронологии ОЖ, а не отдельной карточкой звонка;
-- основной UI не показывает digest, raw authority decision и append-only internals как предметную функцию;
+- зарегистрированная строка остаётся видимой и становится read-only;
+- исправление и отмена выполняются только новой зарегистрированной строкой;
+- результат оперативных переговоров фиксируется в хронологии ОЖ;
 - отдельная lifecycle page отсутствует;
-- узкая внутренняя связь OPJ допустима; общий relation engine относится к `CROSS-DOC-001`;
+- общий relation engine относится к `CROSS-DOC-001`;
 - handover report и двустороннее подтверждение относятся к `SHIFT-HANDOVER-001`;
 - action-time authority evaluation/snapshot сохраняется в системном контуре;
 - `DENY` блокирует создание предметного факта;
-- Preview защищён;
-- Ready for Review и merge запрещены без отдельной команды пользователя.
-
-### Текущее rework-состояние ветки
-
-- rejected standalone lifecycle template удалён;
-- rejected feature-global lifecycle CSS/JS удалены;
-- shared Direction A base возвращён к принятому состоянию;
-- регистрация больше не вызывает `remove_draft_entry`;
-- duplicate registration блокируется;
-- зарегистрированная строка показывается в shift workspace как строка чистовика;
-- autosave/move/remove/restore зарегистрированной строки блокируются на маршрутах;
-- correction/cancellation/communication встроены в зарегистрированный журнал;
-- communication model сокращена до оперативно значимого результата;
-- системные `confirm/alert` заменены проектными диалогами;
-- поддержаны пакетная регистрация, группировка чистовика по сменам, rich-text, аварийные и ПЗ/ЗН отметки;
-- отдельный audit-блок и глобальная дефектная панель отсутствуют;
-- визуальный слой использует Direction A, Onest Variable, EOD Outline 24, semantic theme tokens и принятую трёхграфную форму;
-- focused/full tests и пять exact-head workflows успешны;
-- trusted development delivery выполнен с подтверждением exact `LIVE_SHA`;
-- Preview не изменялся;
-- визуальная приёмка текущего кандидата ещё не выполнена.
-
-Текущий development является новым rework-кандидатом для отдельной пользовательской визуальной приёмки. Предыдущее exact-head evidence для `9d04b2a...`, `a3c0e97...` и других ранних head относится к полностью отклонённым или superseded реализациям.
+- Preview защищён.
 
 ## Accepted PERSONNEL-AUTHORITY-001 baseline
 
