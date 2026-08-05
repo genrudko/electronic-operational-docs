@@ -51,14 +51,17 @@ jobs:
           scripts/demo_release_plan.py
           scripts/project_state_contract.py
           scripts/release_plan_compat_validation.py
+          scripts/module_contract_status_projection.py
           tests/process/test_project_state_contract.py
           tests/process/test_release_plan_compatibility.py
+          tests/process/test_module_contract_status_projection.py
 
       - name: Run project-state contract regressions
         run: >-
           python -m unittest -v
           tests.process.test_project_state_contract
           tests.process.test_release_plan_compatibility
+          tests.process.test_module_contract_status_projection
 
       - name: Validate documentation contract
         run: python scripts/check_documentation_contract.py
