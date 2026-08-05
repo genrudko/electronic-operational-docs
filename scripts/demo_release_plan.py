@@ -3,9 +3,16 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 try:
+    from .release_plan_compat_validation import (
+        validate_release_plan_compatibility,
+    )
     from .release_plan_model import PROGRAM_PATH, ROOT, load_plan, load_program
-    from .release_plan_validation import validate_repository
+    from .release_plan_validation import (
+        validate_repository as validate_industrialization_repository,
+    )
     from .release_plan_views import (
         render_checklist,
         render_module_map,
@@ -13,8 +20,13 @@ try:
         render_sequence,
     )
 except ImportError:
+    from release_plan_compat_validation import (
+        validate_release_plan_compatibility,
+    )
     from release_plan_model import PROGRAM_PATH, ROOT, load_plan, load_program
-    from release_plan_validation import validate_repository
+    from release_plan_validation import (
+        validate_repository as validate_industrialization_repository,
+    )
     from release_plan_views import (
         render_checklist,
         render_module_map,
@@ -32,6 +44,14 @@ __all__ = [
     "render_sequence",
     "validate_repository",
 ]
+
+
+def validate_repository(root: Path = ROOT) -> list[str]:
+    """Run both restored release-plan and new industrialization guarantees."""
+    plan = load_plan(root)
+    errors = validate_release_plan_compatibility(plan, root)
+    errors.extend(validate_industrialization_repository(root))
+    return errors
 
 
 def main() -> int:
