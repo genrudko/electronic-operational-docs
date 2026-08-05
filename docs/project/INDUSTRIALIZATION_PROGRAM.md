@@ -1,6 +1,6 @@
 # ЭОД — программа индустриализации платформы
 
-**Версия:** `1.0-candidate-repair1`
+**Версия:** `1.0-candidate-repair2`
 **Дата:** 05.08.2026
 **Источник:** `PROJECT-SUSTAINABILITY-001`
 **Machine-readable owner:** `docs/project/INDUSTRIALIZATION_PROGRAM.yaml`
@@ -83,6 +83,8 @@
 - **[PROPOSAL]** Каждый применимый `CRITICAL`-риск закрывается либо явно принимается владельцем с ограниченным сроком, compensating controls, ответственным и условиями пересмотра.
 - **[PROPOSAL]** Неприменимость риска к конкретному pilot scope должна быть доказана и зафиксирована; молчаливое исключение запрещено.
 - **[PROPOSAL]** Pilot-scope-dependent work items становятся обязательными по своим triggers: `UPLOAD-HARDENING-001`, `DATA-PORTABILITY-001`, `LEGACY-UX-MIGRATION-001`, `UX-PLATFORM-FOUNDATION-001`, `PAGE-TEMPLATE-LIBRARY-001`, `MODULE-SOURCE-GOVERNANCE-001`, `DRIVE-LIBRARY-GOVERNANCE-001`, `PERFORMANCE-BASELINE-001`.
+- **[PROPOSAL]** `UX-BROWSER-GATES-001` обязателен для фактического набора critical pilot routes и проверяет существующие принятые и уже мигрированные экраны; этот gate не требует предварительного общего UX-рефакторинга.
+- **[PROPOSAL]** `UX-PLATFORM-FOUNDATION-001` и `PAGE-TEMPLATE-LIBRARY-001` становятся обязательными только при введении новой page family, нового журнала, нового module UI либо при другом явно зафиксированном pilot trigger.
 - **[PROPOSAL]** Остаточные `HIGH`/`MEDIUM`-риски должны быть закрыты, либо включены в датированный residual-risk register с owner, compensating controls, сроком и явным решением владельца.
 - **[PROPOSAL]** Неприменимые к pilot scope долгосрочные работы не блокируют pilot автоматически; решение и обоснование фиксирует `PILOT-READINESS-001`.
 - **[DECISION]** Финальное разрешение pilot всегда даёт владелец продукта отдельным явным решением с опубликованными ограничениями.
@@ -366,11 +368,16 @@ Implementation work item после `MODULE-ACTIVATION-CONTRACT-001`:
 
 ### 5.3 `UX-BROWSER-GATES-001`
 
-- critical route browser tests;
+**Dependencies:** `DEPLOYMENT-PROFILE-001`, `MODULE-REGISTRY-001`.
+
+- browser gates обязательны для фактического набора critical pilot routes;
+- проверяются существующие принятые и уже мигрированные экраны;
+- выполнение browser gates не требует предварительного общего UX-рефакторинга;
 - Edge-compatible Chromium and Chrome;
 - theme, viewport, print and keyboard gates;
 - controlled screenshot baselines;
-- stale asset/cache-busting checks.
+- stale asset/cache-busting checks;
+- `UX-PLATFORM-FOUNDATION-001` и `PAGE-TEMPLATE-LIBRARY-001` требуются только при новой page family, новом журнале, новом module UI либо другом зафиксированном pilot trigger.
 
 ### 5.4 `PAGE-TEMPLATE-LIBRARY-001`
 
@@ -472,7 +479,9 @@ Independent evidence review:
 
 ## 7. Machine-readable consistency contract
 
-- **[FACT]** `INDUSTRIALIZATION_PROGRAM.yaml` содержит machine-readable `consistency_contract` для проверки risk/work-item references, dependency references, межфазного порядка, gate existence и ключевой Markdown/YAML projection.
+- **[FACT]** `INDUSTRIALIZATION_PROGRAM.yaml` содержит machine-readable `consistency_contract` для проверки risk/work-item references, dependency references, межфазного порядка, gate existence, транзитивной замкнутости mandatory core и ключевой Markdown/YAML projection.
+- **[FACT]** Для `PILOT-READY` каждая прямая и транзитивная dependency обязательного core также должна входить в `required_core_work_items`; скрытая зависимость на scope-dependent или отсутствующий work item блокирует validation.
+- **[FACT]** One-off validation подтверждает замкнутость core и отдельно проходит negative fixture: искусственная скрытая dependency на scope-dependent work item корректно отклоняется.
 - **[PROPOSAL]** В этом documentation-only repair consistency contract проверяется отдельной одноразовой валидацией; превращение его в постоянный executable Documentation Contract относится к `PROJECT-STATE-RECONCILIATION-001`, а не к текущему scope.
 - **[DECISION]** Machine-readable owner остаётся YAML; Markdown не вводит самостоятельный состав gates или work items.
 
