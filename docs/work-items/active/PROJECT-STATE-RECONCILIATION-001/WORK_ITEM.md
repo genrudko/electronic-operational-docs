@@ -1,168 +1,116 @@
 # PROJECT-STATE-RECONCILIATION-001 — каноническое состояние и защита от drift
 
-## Состояние
+## Ownership
 
-```text
-work item: PROJECT-STATE-RECONCILIATION-001
-issue: #50 / OPEN
-branch: governance/project-state-reconciliation-001
-PR: #51 / OPEN / DRAFT / NOT MERGED
-accepted program baseline: 916a6d708ff4bd8433218068a204547b4a9abf84
-coordination baseline main: 44193bac6ba23c9c7a9d9c9025dd0e26df5932aa
-risk profile: DOCS / GOVERNANCE / DOCUMENTATION_AUTOMATION
-runtime impact: NONE
-preview: UNTOUCHED
-user acceptance: ABSENT
-merge authorization: ABSENT
-```
+Volatile coordination belongs only to
+[`CURRENT_STATE.md`](../../../project/CURRENT_STATE.md). This work-item contract
+does not repeat current SHA, issue, PR, branch, runtime or Preview values.
 
-## Цель
+Planning status belongs to
+[`DEMO_RELEASE_PLAN.yaml`](../../../project/DEMO_RELEASE_PLAN.yaml).
+Industrialization phases/dependencies/gates are defined by
+[`INDUSTRIALIZATION_PROGRAM.yaml`](../../../project/INDUSTRIALIZATION_PROGRAM.yaml).
 
-Восстановить согласованное каноническое состояние проекта после принятия
-`PROJECT-SUSTAINABILITY-001` и сделать расхождение planning/state views
-автоматически обнаруживаемым.
+## Goal
 
-Это первый work item фазы 0 программы индустриализации и обязательная
-зависимость gate `SAFE-CONTINUATION`.
+Restore factual canonical state after accepted `PROJECT-SUSTAINABILITY-001` and
+make future documentation/planning drift fail closed. This is Phase 0 work and a
+mandatory `SAFE-CONTINUATION` dependency.
 
-## Подтверждённая проблема
+## Implemented factual reconciliation
 
-Аудит `PROJECT-SUSTAINABILITY-001` установил, что фактическая история GitHub,
-`DEMO_RELEASE_PLAN.yaml`, module/work-item views и отдельные history/compatibility
-документы расходятся. Текущий Documentation Contract не доказывает полную
-согласованность accepted state, dependencies и gate projections.
+GitHub history was reconciled for accepted and active contours, including:
 
-## Обязательный factual preflight
-
-Перед изменениями проверить:
-
-1. current `main` и историю merged PR;
-2. open/closed issues и фактические accepted exact heads;
-3. `AGENTS.md`;
-4. `docs/INDEX.md`;
-5. `docs/project/CURRENT_STATE.md`;
-6. `docs/project/CURRENT_HANDOFF.md`;
-7. `docs/project/DEMO_RELEASE_PLAN.yaml`;
-8. `docs/project/INDUSTRIALIZATION_PROGRAM.yaml`;
-9. `docs/project/INDUSTRIALIZATION_PROGRAM.md`;
-10. `docs/product/MODULE_MAP.md`;
-11. `docs/product/IMPLEMENTATION_SEQUENCE.md`;
-12. `docs/project/DEMO_RELEASE_MASTER_CHECKLIST.md`;
-13. `docs/project/BASELINE_HISTORY.md`;
-14. `docs/project/ACCEPTANCE_HISTORY.md`;
-15. Documentation Contract workflow, scripts and tests.
-
-GitHub state сильнее документации. Не исправлять статусы по памяти или только по
-названиям исторических work items.
-
-## Scope
-
-### 1. Factual reconciliation
-
-- построить factual ledger merged PR, closed issues, exact heads и merge commits;
-- установить фактические accepted capabilities и незавершённые work items;
-- отделить accepted application/product baselines от documentation coordination tips;
-- зафиксировать `VERIFY`, когда evidence недостаточно.
-
-### 2. Canonical ownership
-
-- сохранить `CURRENT_STATE.md` единственным владельцем volatile state;
-- сохранить `DEMO_RELEASE_PLAN.yaml` единственным machine-readable владельцем
-  release/module/capability/work-item planning state;
-- оставить `CURRENT_HANDOFF.md` навигатором без volatile values;
-- не превращать compatibility pointers и history documents в конкурирующих
-  владельцев статуса.
-
-### 3. Plan and derived views
-
-Без изменения принятого предметного Demo scope согласовать:
-
-- `docs/project/DEMO_RELEASE_PLAN.yaml`;
-- `docs/product/MODULE_MAP.md`;
-- `docs/product/IMPLEMENTATION_SEQUENCE.md`;
-- `docs/project/DEMO_RELEASE_MASTER_CHECKLIST.md`;
-- применимые compatibility pointers;
-- baseline и acceptance history.
-
-В частности корректно отразить принятые:
-
+- `MASTER-DATA-ALIGNMENT-001`;
+- `NORMATIVE-EVIDENCE-001`;
 - `PERSONNEL-AUTHORITY-001`;
 - `OPJ-LIFECYCLE-001`;
-- `PROJECT-SUSTAINABILITY-001`.
+- `PROJECT-SUSTAINABILITY-001`;
+- current `PROJECT-STATE-RECONCILIATION-001`.
 
-### 4. Permanent documentation validation
+Accepted candidate/final heads and merge commits are retained in the canonical
+planning evidence and historical ledgers. Where a PR had a user-accepted
+candidate followed by synchronization, both heads are preserved instead of
+being collapsed.
 
-Интегрировать постоянные проверки:
+## Implemented ownership model
 
-- work-item references существуют;
-- dependencies ссылаются на существующие work items;
-- последовательная фаза не зависит от более поздней фазы;
-- gate work items существуют;
-- прямые и транзитивные зависимости mandatory `PILOT-READY` core также входят в
-  mandatory core;
-- scope-dependent work item не становится скрытой зависимостью mandatory core;
-- Markdown/YAML projections согласованы;
-- accepted/module/work-item state не устарел относительно canonical ledger;
-- volatile fact не имеет нескольких владельцев;
-- derived views совпадают с machine-readable owner.
+- `CURRENT_STATE.md` — only volatile project-state owner.
+- `DEMO_RELEASE_PLAN.yaml` — only release/module/capability/work-item status
+  owner.
+- `INDUSTRIALIZATION_PROGRAM.yaml` — accepted definition of 8 phases, 30 work
+  items, dependencies, risks and gate boundaries; no current status ownership.
+- `CURRENT_HANDOFF.md` — navigation only.
+- `MODULE_MAP.md`, `IMPLEMENTATION_SEQUENCE.md`,
+  `DEMO_RELEASE_MASTER_CHECKLIST.md` and `INDUSTRIALIZATION_PROGRAM.md` —
+  deterministic generated views.
+- baseline/acceptance histories — event ledgers, never current-state owners.
 
-### 5. Negative fixtures
+## Permanent validator
 
-Проверки обязаны падать как минимум при:
+The Documentation Contract now rejects:
 
-- ссылке на отсутствующий work item;
-- dependency outside mandatory core;
-- hidden scope-dependent dependency;
-- stale accepted state;
-- duplicate owner volatile values;
-- Markdown/YAML projection drift.
+1. duplicate work-item IDs;
+2. missing module/work-item references;
+3. risk-register `proposed_work_item` references that do not resolve;
+4. dependencies on absent work items;
+5. normal dependencies on later phases;
+6. missing gate work items;
+7. direct or transitive `PILOT-READY` mandatory-core dependencies outside core;
+8. hidden mandatory dependencies on scope-dependent work items;
+9. stale accepted module/work-item status;
+10. accepted work items retained in execution queue;
+11. duplicate owner-style volatile fields;
+12. Markdown/program projection drift;
+13. stale generated module map, sequence, checklist or program human view;
+14. active work item whose planning status is not `IN_PROGRESS`.
 
-## Out of scope
+Every contract diagnostic includes file, identifier, rule, expected and actual.
 
-- product code и пользовательское предметное поведение;
-- models, migrations и data;
-- runtime, VPS, deployment и Preview;
-- module registry/activation implementation;
-- UX foundation или общий UX refactor;
-- `SHIFT-HANDOVER-001`;
-- новые журналы и предметные модули;
-- изменение утверждённых gate boundaries или состава программы без отдельного
-  решения владельца продукта.
+## Fail-closed fixture catalog
 
-## Allowed boundary
+`tests/process/fixtures/documentation_state_contract.json` contains:
 
-Ожидаемый diff ограничен:
+- positive baseline;
+- missing work-item reference;
+- duplicate work-item ID;
+- dependency on absent work item;
+- mandatory-core dependency outside core;
+- hidden dependency on scope-dependent work item;
+- reverse interphase dependency;
+- missing gate work item;
+- stale accepted status;
+- duplicate volatile owner;
+- Markdown/YAML projection mismatch;
+- stale derived view.
 
-- canonical и derived project/product/process documentation;
-- documentation validation scripts/tests/workflow только в объёме постоянного
-  consistency gate;
-- work-item evidence.
+## Preserved boundaries
 
-Любое изменение `src/`, migrations, product templates/static или runtime Compose
-запрещено.
+No product code, Django models, migrations, data, runtime, Compose, VPS or
+Preview changes are allowed or included. The work item does not implement module
+activation/registry, does not start `SHIFT-HANDOVER-001`, does not create new
+journals/modules and does not change accepted `SAFE-CONTINUATION` or
+`PILOT-READY` boundaries.
 
-## Acceptance
+The Demo subject scope remains unchanged. The product queue is only marked
+paused pending `SAFE-CONTINUATION` and a separate explicit owner decision.
 
-- factual GitHub ledger воспроизводим;
-- canonical owners не противоречат друг другу;
-- release plan и обязательные derived views совпадают;
-- accepted work items отражены корректно;
-- permanent validator воспроизводит принятые one-off consistency rules;
-- negative fixtures доказательно отклоняются;
-- Documentation Contract и применимые exact-head workflows зелёные;
-- no product/runtime/schema/data/Preview impact;
-- PR остаётся Draft до отдельной пользовательской приёмки;
-- merge выполняется только по отдельной явной команде пользователя.
+## Validation profile
+
+`DOCS / GOVERNANCE / DOCUMENTATION_AUTOMATION`
+
+Required before user acceptance:
+
+- compile updated validators/tests;
+- full positive and negative fixture suite;
+- Documentation Contract;
+- all applicable exact-head workflows;
+- final changed-file boundary review;
+- confirmation of no product/runtime/schema/data diff;
+- PR body with exact-head run IDs;
+- PR remains Draft.
 
 ## Stop condition
 
-Остановиться после:
-
-1. factual reconciliation;
-2. синхронизации canonical owner и derived views;
-3. интеграции permanent validator и negative fixtures;
-4. прохождения профильных checks;
-5. обновления PR body по exact head;
-6. представления содержательного отчёта пользователю.
-
-Не переводить PR в Ready for Review и не выполнять merge.
+Stop on user acceptance. Do not move PR to Ready for Review and do not merge
+without a separate explicit command.
