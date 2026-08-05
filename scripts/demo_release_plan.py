@@ -14,6 +14,12 @@ try:
         validate_release_plan_compatibility,
     )
     from .release_plan_model import PROGRAM_PATH, ROOT, load_plan, load_program
+    from .industrialization_execution import (
+        load_raw as load_execution_raw,
+        render_execution_backlog,
+        validate_execution_contract,
+        validate_execution_view,
+    )
     from .release_plan_validation import (
         validate_repository as validate_industrialization_repository,
     )
@@ -34,6 +40,12 @@ except ImportError:
         validate_release_plan_compatibility,
     )
     from scripts.release_plan_model import PROGRAM_PATH, ROOT, load_plan, load_program
+    from scripts.industrialization_execution import (
+        load_raw as load_execution_raw,
+        render_execution_backlog,
+        validate_execution_contract,
+        validate_execution_view,
+    )
     from scripts.release_plan_validation import (
         validate_repository as validate_industrialization_repository,
     )
@@ -52,6 +64,7 @@ __all__ = [
     "render_module_map",
     "render_program_markdown",
     "render_sequence",
+    "render_execution_backlog",
     "validate_repository",
 ]
 
@@ -62,6 +75,9 @@ def validate_repository(root: Path = ROOT) -> list[str]:
     errors = validate_release_plan_compatibility(plan, root)
     errors.extend(validate_module_contract_status_projections(plan, root))
     errors.extend(validate_industrialization_repository(root))
+    program_raw, execution_plan = load_execution_raw(root)
+    errors.extend(validate_execution_contract(program_raw, execution_plan, root))
+    errors.extend(validate_execution_view(program_raw, execution_plan, root))
     return errors
 
 

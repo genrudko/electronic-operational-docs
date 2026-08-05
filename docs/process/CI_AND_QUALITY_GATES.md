@@ -70,9 +70,22 @@ Documentation Contract является постоянным fail-closed gate. �
 - `docs/product/MODULE_MAP.md`;
 - `docs/product/IMPLEMENTATION_SEQUENCE.md`;
 - `docs/project/DEMO_RELEASE_MASTER_CHECKLIST.md`;
-- `docs/project/INDUSTRIALIZATION_PROGRAM.md`.
+- `docs/project/INDUSTRIALIZATION_PROGRAM.md`;
+- `docs/project/INDUSTRIALIZATION_EXECUTION_BACKLOG.md`.
 
 Любое ручное расхождение считается stale derived view и блокирует gate.
+
+### Industrial execution contract
+
+Дополнительно проверяются все 30 work items: owner role, evidence requirements,
+risk/gate classification, state machine, dependency closure, Phase 0/1 start
+policy, parallelization limits, frozen gate membership и residual-risk records.
+Mutable execution state читается только из `DEMO_RELEASE_PLAN.yaml`; наличие
+`status`/`execution_state` внутри program item считается вторым planning owner.
+
+Residual risk не считается принятым по одному status: обязательны applicability,
+роль и named accountable owner, controls, due date, review condition, affected
+gate, acceptance authority/status/evidence и expiration/review date.
 
 ### Fail-closed fixtures
 
