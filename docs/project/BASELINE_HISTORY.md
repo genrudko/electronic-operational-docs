@@ -17,11 +17,14 @@ Baseline фиксируется после применимых technical gates,
 | 2026-07-28 | `a880a632b750309c7fbfb918af15b49d99b5a93f` | UX-FOUNDATION-001 merge | accepted UX foundation |
 | 2026-07-30 | `50d96842e8700540832210990993e64fc2e3636d` | OPJ-UX-001 merge | accepted product/UX baseline |
 | 2026-07-30 | `2a9b92362b90861501cf11d073668478655fd191` | PROJECT-BASELINE-001 merge | accepted DEMO-RELEASE BASELINE V1.0 |
+| 2026-08-05 | `916a6d708ff4bd8433218068a204547b4a9abf84` | PROJECT-SUSTAINABILITY-001 merge | accepted industrialization evidence and program baseline |
 
 ## Accepted main baseline
 
 ```text
-main / 2a9b92362b90861501cf11d073668478655fd191
+main / 916a6d708ff4bd8433218068a204547b4a9abf84
 ```
 
-`PROJECT-BASELINE-001` завершён; следующим work item утверждён `UX-THEME-001`.
+`PROJECT-SUSTAINABILITY-001` завершён и принят. Программа промышленной подготовки содержит 8 фаз, 30 work items, gates `SAFE-CONTINUATION` и `PILOT-READY`; первым последующим work item определён `PROJECT-STATE-RECONCILIATION-001`.
+
+Этот documentation/architecture baseline не означает достижения `SAFE-CONTINUATION` или готовности к пилоту и не изменяет runtime, schema, data или Preview.
