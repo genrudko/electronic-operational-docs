@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import collections
 import datetime as dt
 import hashlib
@@ -28,10 +29,12 @@ SENSITIVE_NAME = re.compile(
     r"client[_-]?secret|database[_-]?url|dsn)"
 )
 ASSIGNMENT = re.compile(
-    r"(?i)(?P<name>[A-Z0-9_.-]*(?:PASSWORD|PASSWD|PWD|API[_-]?KEY|API[_-]?TOKEN|"
-    r"ACCESS[_-]?TOKEN|AUTH[_-]?TOKEN|SECRET(?:[_-]?KEY)?|PRIVATE[_-]?KEY|"
-    r"WEBHOOK[_-]?SECRET|CLIENT[_-]?SECRET|DATABASE[_-]?URL|DSN)[A-Z0-9_.-]*)"
-    r"\s*(?::|=)\s*(?P<value>[^\n]+)"
+    r"^\s*(?:-\s*)?[\"']?(?P<name>[A-Z_][A-Z0-9_.-]*(?:PASSWORD|PASSWD|PWD|"
+    r"API[_-]?KEY|API[_-]?TOKEN|ACCESS[_-]?TOKEN|AUTH[_-]?TOKEN|"
+    r"SECRET(?:[_-]?KEY)?|PRIVATE[_-]?KEY|WEBHOOK[_-]?SECRET|"
+    r"CLIENT[_-]?SECRET|DATABASE[_-]?URL|DSN)[A-Z0-9_.-]*)[\"']?"
+    r"\s*(?P<separator>:|=)\s*(?P<value>[^\n]+)$",
+    re.IGNORECASE,
 )
 PRIVATE_KEY = re.compile(r"-----BEGIN (?:RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----")
 SECRET_DSN = re.compile(
@@ -49,6 +52,13 @@ OUTPUT_CALL = re.compile(
     r"(?i)(?:\becho\b|\bprintf\b|\bprint\s*\(|stdout\.write|stderr\.write|"
     r"logger\.|logging\.|console\.log)"
 )
+SECRET_REFERENCE = re.compile(
+    r"(?i)(?:\$\{?[A-Z0-9_]*(?:PASSWORD|PASSWD|PWD|API[_-]?KEY|API[_-]?TOKEN|"
+    r"ACCESS[_-]?TOKEN|AUTH[_-]?TOKEN|SECRET(?:[_-]?KEY)?|PRIVATE[_-]?KEY|"
+    r"WEBHOOK[_-]?SECRET|CLIENT[_-]?SECRET|DATABASE[_-]?URL|DSN)[A-Z0-9_]*\}?|"
+    r"\b(?:password|passwd|pwd|api_key|api_token|access_token|auth_token|"
+    r"secret_key|private_key|webhook_secret|client_secret|database_url|dsn)\b)"
+)
 SHELL_TRACE = re.compile(r"(?:^|\s)set\s+(?:-x|-[A-Za-z]*x[A-Za-z]*|-o\s+xtrace)(?:\s|$)")
 ARTIFACT_ACTION = re.compile(r"actions/upload-artifact@")
 ARTIFACT_RISKY_PATH = re.compile(
@@ -57,9 +67,13 @@ ARTIFACT_RISKY_PATH = re.compile(
 )
 PLACEHOLDER_TOKENS = (
     "${", "${{", "<required", "<secret", "<token", "<password", "<generated",
-    "change-me", "changeme", "placeholder", "example.invalid", "redacted",
-    "not-for-deployment", "fixture-only", "test-only", "dummy", "fake",
+    "change-me", "changeme", "replace-me", "replace-this", "placeholder",
+    "example.invalid", "redacted", "not-for-deployment", "fixture-only",
+    "test-only", "dummy", "fake",
 )
+COMMON_TEST_PLACEHOLDERS = {
+    "password", "passwd", "secret", "token", "test-password", "test-secret", "test-token",
+}
 HISTORY_GREP_PATTERN = (
     r"PRIVATE KEY|PASSWORD|PASSWD|PWD|API[_-]?KEY|API[_-]?TOKEN|ACCESS[_-]?TOKEN|"
     r"AUTH[_-]?TOKEN|SECRET[_-]?KEY|PRIVATE[_-]?KEY|WEBHOOK[_-]?SECRET|"
@@ -115,23 +129,48 @@ def _strip_rhs(raw: str) -> str:
         value = value[:-1].rstrip()
     if " #" in value:
         value = value.split(" #", 1)[0].rstrip()
-    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
-        value = value[1:-1]
     return value.strip()
 
 
+def _literal_string(raw: str) -> str | None:
+    value = _strip_rhs(raw)
+    if not value:
+        return ""
+    if value in {"None", "null", "NULL", "~", "''", '""'}:
+        return ""
+    if value[0:1] in {"'", '"'}:
+        try:
+            parsed = ast.literal_eval(value)
+        except (SyntaxError, ValueError):
+            return value[1:-1] if len(value) > 1 else ""
+        return parsed if isinstance(parsed, str) else None
+    if re.fullmatch(r"[-+]?\d+(?:\.\d+)?", value):
+        return None
+    if value.lower() in {"true", "false", "yes", "no", "on", "off"}:
+        return None
+    if value.startswith(("$", "${", "<")):
+        return None
+    if re.match(
+        r"(?i)(?:os\.|env\(|getenv\(|settings\.|secrets\.|hashlib\.|Path\(|"
+        r"str\(|int\(|bool\(|list\(|dict\(|tuple\(|frozenset\(|re\.|lambda\b)",
+        value,
+    ):
+        return None
+    if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.]*(?:\([^\n]*\))?", value):
+        return None
+    if re.search(r"\b(?:if|for|else|and|or)\b|[+*/]|\.get\(", value):
+        return None
+    return value
+
+
 def is_safe_placeholder(value: str) -> bool:
-    stripped = _strip_rhs(value)
-    lowered = stripped.lower()
-    if not stripped:
+    literal = _literal_string(value)
+    if literal is None or literal == "":
         return True
-    if stripped in {"None", "null", "NULL", "~", "''", '""'}:
-        return True
-    if stripped.startswith(("os.environ", "env(", "getenv(", "settings.", "secrets.")):
-        return True
-    if stripped.startswith(("$", "${", "<")):
-        return True
+    lowered = literal.lower()
     if any(token in lowered for token in PLACEHOLDER_TOKENS):
+        return True
+    if lowered in COMMON_TEST_PLACEHOLDERS:
         return True
     if re.fullmatch(r"\*{3,}|x{6,}", lowered):
         return True
@@ -155,12 +194,8 @@ def _read_text(path: Path) -> str | None:
     if path.suffix.lower() in BINARY_SUFFIXES:
         return None
     try:
-        size = path.stat().st_size
-    except OSError:
-        return None
-    if size > MAX_TEXT_BYTES:
-        return None
-    try:
+        if path.stat().st_size > MAX_TEXT_BYTES:
+            return None
         data = path.read_bytes()
     except OSError:
         return None
@@ -171,6 +206,18 @@ def _read_text(path: Path) -> str | None:
 
 def _finding(path: str, line: int, rule: str, actual: str, value: str) -> Finding:
     return Finding(path=path, line=line, rule=rule, actual_class=actual, value=value)
+
+
+def _workflow_step_block(lines: list[str], start_index: int) -> str:
+    block = [lines[start_index]]
+    base_indent = len(lines[start_index]) - len(lines[start_index].lstrip())
+    for line in lines[start_index + 1 :]:
+        stripped = line.lstrip()
+        indent = len(line) - len(stripped)
+        if stripped.startswith("- name:") and indent <= base_indent:
+            break
+        block.append(line)
+    return "\n".join(block)
 
 
 def scan_text(path: str, text: str) -> list[Finding]:
@@ -193,47 +240,93 @@ def scan_text(path: str, text: str) -> list[Finding]:
             for match in pattern.finditer(line):
                 findings.append(_finding(path, index, "token-like-value", token_class, match.group(0)))
 
-        for match in ASSIGNMENT.finditer(line):
-            name = match.group("name")
-            value = _strip_rhs(match.group("value"))
-            if is_safe_placeholder(value):
-                continue
-            rule = "explicit-credential-assignment"
-            actual = "committed-credential-literal"
-            if "DEMO" in name.upper() and any(part in name.upper() for part in ("PASSWORD", "PASSWD", "PWD")):
-                rule = "reusable-demo-credential"
-                actual = "reusable-demo-password"
-            findings.append(_finding(path, index, rule, actual, value))
+        assignment = ASSIGNMENT.match(line)
+        if assignment:
+            name = assignment.group("name")
+            raw_value = assignment.group("value")
+            literal = _literal_string(raw_value)
+            if literal is not None and not is_safe_placeholder(raw_value):
+                rule = "explicit-credential-assignment"
+                actual = "committed-credential-literal"
+                upper_name = name.upper()
+                if "DEMO" in upper_name and any(
+                    part in upper_name for part in ("PASSWORD", "PASSWD", "PWD")
+                ):
+                    rule = "reusable-demo-credential"
+                    actual = "reusable-demo-password"
+                findings.append(_finding(path, index, rule, actual, literal))
 
-        if OUTPUT_CALL.search(line) and SENSITIVE_NAME.search(line):
-            if "::add-mask::" not in line and not re.search(
-                r"(?i)(?:not printed|never printed|was not printed|redacted|masked|value not printed)",
+        if (
+            OUTPUT_CALL.search(line)
+            and SECRET_REFERENCE.search(line)
+            and "::add-mask::" not in line
+            and "GITHUB_ENV" not in line
+            and not re.search(
+                r"(?i)(?:not printed|never printed|was not printed|redacted|masked|"
+                r"value not printed|is required)",
                 line,
-            ):
-                findings.append(_finding(path, index, "credential-output", "credential-bearing-output", line))
+            )
+        ):
+            findings.append(_finding(path, index, "credential-output", "credential-bearing-output", line))
 
-        if re.search(r"(?i)(?:output of:|run:?)\s*(?:sudo\s+)?cat\s+[^\s]*(?:key|secret|credential)", line):
-            findings.append(_finding(path, index, "credential-retrieval-instruction", "operator-secret-print-command", line))
+        if re.search(
+            r"(?i)(?:output of:|run:?)\s*(?:sudo\s+)?cat\s+"
+            r"[^\s]*(?:key|secret|credential)",
+            line,
+        ):
+            findings.append(
+                _finding(
+                    path,
+                    index,
+                    "credential-retrieval-instruction",
+                    "operator-secret-print-command",
+                    line,
+                )
+            )
 
         if SHELL_TRACE.search(line):
             nearby = "\n".join(lines[index - 1 : min(len(lines), index + 12)])
-            if SENSITIVE_NAME.search(nearby):
-                findings.append(_finding(path, index, "shell-xtrace-secret", "xtrace-near-secret-command", nearby))
+            if SECRET_REFERENCE.search(nearby):
+                findings.append(
+                    _finding(path, index, "shell-xtrace-secret", "xtrace-near-secret-command", nearby)
+                )
 
     if is_workflow:
-        for index, line in enumerate(lines, start=1):
+        for zero_index, line in enumerate(lines):
+            index = zero_index + 1
             if "GITHUB_STEP_SUMMARY" in line:
-                nearby = "\n".join(lines[max(0, index - 16) : min(len(lines), index + 3)])
+                block = _workflow_step_block(lines, zero_index)
                 if re.search(
                     r"\$\{?[A-Za-z_][A-Za-z0-9_]*(?:_OUTPUT|_LOG|_RESPONSE|_RAW)\}?",
-                    nearby,
+                    block,
                     re.IGNORECASE,
-                ) or re.search(r"(?i)(?:cat|printf).*?(?:raw|output|log|response)", nearby):
-                    findings.append(_finding(path, index, "workflow-summary-leak", "unbounded-output-in-summary", nearby))
+                ) or re.search(r"(?i)(?:cat|printf).*?(?:raw|output|log|response)", block):
+                    findings.append(
+                        _finding(
+                            path,
+                            index,
+                            "workflow-summary-leak",
+                            "unbounded-output-in-summary",
+                            block,
+                        )
+                    )
             if ARTIFACT_ACTION.search(line):
-                block = "\n".join(lines[index - 1 : min(len(lines), index + 18)])
-                if ARTIFACT_RISKY_PATH.search(block):
-                    findings.append(_finding(path, index, "artifact-leak", "raw-or-secret-bearing-artifact", block))
+                block = _workflow_step_block(lines, zero_index)
+                path_lines = "\n".join(
+                    item
+                    for item in block.splitlines()
+                    if re.search(r"^\s*(?:path:|-\s+).*", item)
+                )
+                if ARTIFACT_RISKY_PATH.search(path_lines):
+                    findings.append(
+                        _finding(
+                            path,
+                            index,
+                            "artifact-leak",
+                            "raw-or-secret-bearing-artifact",
+                            block,
+                        )
+                    )
 
     unique: dict[tuple[str, int, str, str], Finding] = {}
     for item in findings:
@@ -254,7 +347,10 @@ def scan_repository(root: Path) -> list[Finding]:
     return sorted(findings, key=lambda item: (item.path, item.line, item.rule, item.identifier))
 
 
-def load_allowlist(path: Path, *, today: dt.date | None = None) -> tuple[list[AllowEntry], list[str]]:
+def load_allowlist(
+    path: Path,
+    *,    today: dt.date | None = None,
+) -> tuple[list[AllowEntry], list[str]]:
     if not path.exists():
         return [], [
             f"file={path.as_posix()} identifier=allowlist-missing rule=allowlist-contract "
@@ -347,9 +443,9 @@ def apply_allowlist(
         else:
             remaining.append(finding)
     errors = [
-        f"file={allowlist_path.as_posix()} identifier={identifier} rule=stale-allowlist-entry "
-        "expected=matching-current-finding actual=unmatched"
-        for path, rule, identifier in sorted(allowed - matched)
+        f"file={allowlist_path.as_posix()} identifier={identifier} "
+        "rule=stale-allowlist-entry expected=matching-current-finding actual=unmatched"
+        for _, _, identifier in sorted(allowed - matched)
     ]
     return remaining, errors
 
@@ -370,9 +466,10 @@ def validate_demo_bootstrap_sources(sources: Mapping[str, str]) -> list[str]:
         text = sources.get(role, "")
         for marker in markers:
             if marker not in text:
+                safe_id = hashlib.sha256((role + marker).encode()).hexdigest()[:12]
                 errors.append(
-                    f"file={role} identifier=bootstrap-{hashlib.sha256((role + marker).encode()).hexdigest()[:12]} "
-                    f"rule=missing-mandatory-injection expected=marker-present actual=missing-{marker.lower()}"
+                    f"file={role} identifier=bootstrap-{safe_id} rule=missing-mandatory-injection "
+                    f"expected=marker-present actual=missing-{marker.lower()}"
                 )
     combined = "\n".join(sources.values())
     if re.search(r"(?m)^\s*DEMO_PASSWORD\s*=", combined):
@@ -400,15 +497,7 @@ def redact_text(text: str, explicit_values: Iterable[str] = ()) -> str:
     redacted = PRIVATE_KEY.sub("-----BEGIN [REDACTED] PRIVATE KEY-----", redacted)
     for _, pattern in TOKEN_PATTERNS:
         redacted = pattern.sub("[REDACTED]", redacted)
-
-    def redact_assignment(match: re.Match[str]) -> str:
-        value = _strip_rhs(match.group("value"))
-        if not value or is_safe_placeholder(value):
-            return match.group(0)
-        prefix = match.group(0)[: match.start("value") - match.start(0)]
-        return prefix + "[REDACTED]"
-
-    return ASSIGNMENT.sub(redact_assignment, redacted)
+    return redacted
 
 
 def _history_lines(root: Path, max_commits: int) -> tuple[int, list[tuple[str, int, str]]]:
@@ -485,7 +574,10 @@ def _command_scan(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 1
-    print(f"SECRET_HYGIENE=PASS scanned_files={len(_tracked_paths(root))} allowlist_entries={len(entries)}")
+    print(
+        f"SECRET_HYGIENE=PASS scanned_files={len(_tracked_paths(root))} "
+        f"allowlist_entries={len(entries)}"
+    )
     return 0
 
 
@@ -506,7 +598,9 @@ def _command_history(args: argparse.Namespace) -> int:
     output = json.dumps(report, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     if args.output:
         Path(args.output).write_text(output + "\n", encoding="utf-8")
-    counts = ",".join(f"{key}:{value}" for key, value in report["counts_by_rule"].items()) or "none"
+    counts = ",".join(
+        f"{key}:{value}" for key, value in report["counts_by_rule"].items()
+    ) or "none"
     print(
         f"HISTORY_SECRET_INVENTORY commits={report['commit_depth']} "
         f"unique_findings={report['unique_findings']} counts={counts}"
