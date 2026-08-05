@@ -6,7 +6,7 @@
 work item: PROJECT-SUSTAINABILITY-001
 issue: #48
 branch: audit/project-sustainability-001
-PR: PENDING
+PR: #49 / OPEN / DRAFT / NOT MERGED
 baseline main: c57a84752fae7a5265f393f77568849365be50a7
 risk profile: DOCS / ARCHITECTURE / AUDIT
 runtime impact: NONE
