@@ -9,11 +9,11 @@
 repository: genrudko/electronic-operational-docs
 accepted main baseline: main / c4e344342b647ce59a390a04329d2cadb1f34d7c
 active work item: PROJECT-SUSTAINABILITY-001
-active issue: #48 / OPEN
+active issue: #48
 active PR: #49 / OPEN / DRAFT / NOT MERGED
 active branch: audit/project-sustainability-001
 active baseline: c57a84752fae7a5265f393f77568849365be50a7
-runtime impact: NONE / DOCUMENTATION AND ARCHITECTURE AUDIT ONLY
+runtime impact: NONE
 preview: UNTOUCHED
 ```
 
