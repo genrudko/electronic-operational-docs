@@ -121,7 +121,9 @@ jobs:
             --request dev-fast-001-request.json \
             --summary dev-fast-001-summary.md \
             --outputs "$GITHUB_OUTPUT"
-          cat dev-fast-001-summary.md >>"$GITHUB_STEP_SUMMARY"
+          python scripts/secret_hygiene.py redact --input dev-fast-001-summary.md --output dev-fast-001-summary.sanitized.md
+          cat dev-fast-001-summary.sanitized.md >>"$GITHUB_STEP_SUMMARY"
+          rm -f dev-fast-001-summary.md
 
       - name: Validate restricted SSH configuration
         shell: bash
@@ -148,15 +150,17 @@ jobs:
           printf '%s\n' "$VPS_HOST_KEY" >"$HOME/.ssh/known_hosts"
           chmod 0600 "$HOME/.ssh/known_hosts"
 
-      - name: Apply exact presentation overlay to development
+      - name: Apply exact presentation overlay with sanitised output
         id: apply
         shell: bash
         env:
           PR_NUMBER: ${{ steps.validate.outputs.pr_number }}
           HEAD_SHA: ${{ steps.validate.outputs.head_sha }}
         run: |
+          set -euo pipefail
+          raw_file="$(mktemp)"
           set +e
-          controller_output="$(ssh \
+          ssh \
             -p "$VPS_PORT" \
             -i "$HOME/.ssh/eod_automation" \
             -o BatchMode=yes \
@@ -164,18 +168,19 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
             "eod-automation@$VPS_HOST" \
-            "hot-refresh $PR_NUMBER $HEAD_SHA $GITHUB_RUN_ID" 2>&1)"
+            "hot-refresh $PR_NUMBER $HEAD_SHA $GITHUB_RUN_ID" \
+            >"$raw_file" 2>&1
           controller_rc=$?
           set -e
-          printf '%s\n' "$controller_output" | tee dev-fast-controller-output.txt
+          python scripts/secret_hygiene.py redact --input "$raw_file" --output dev-fast-controller-output.sanitized.txt --env VPS_HOST --env VPS_PORT --env VPS_KEY --env VPS_HOST_KEY
+          rm -f "$raw_file"
+          cat dev-fast-controller-output.sanitized.txt
           {
             echo
             echo "## DEV-FAST-001 controller result"
             echo
-            echo '```text'
-            printf '%s\n' "$controller_output"
-            echo '```'
-            echo
+            echo "- Sanitised controller output: **workflow log and retained artifact**"
+            echo "- Result code: \`$controller_rc\`"
             echo "- Full exact-head deployment: **NO**"
             echo "- Database operations: **NONE**"
             echo "- Preview: **UNTOUCHED**"
@@ -183,11 +188,11 @@ jobs:
           } >>"$GITHUB_STEP_SUMMARY"
           exit "$controller_rc"
 
-      - name: Upload hot-refresh controller diagnostics
+      - name: Upload sanitised hot-refresh controller diagnostics
         if: ${{ failure() && steps.apply.outcome == 'failure' }}
         uses: actions/upload-artifact@v7
         with:
           name: dev-fast-controller-diagnostics-${{ github.run_id }}
-          path: dev-fast-controller-output.txt
+          path: dev-fast-controller-output.sanitized.txt
           if-no-files-found: error
           retention-days: 14
