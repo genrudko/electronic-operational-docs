@@ -25,6 +25,7 @@
 | [`project/DEMO_RELEASE_PLAN.yaml`](project/DEMO_RELEASE_PLAN.yaml) | release/module/capability/work-item status, depth, dependencies, sources и acceptance |
 | [`project/CURRENT_HANDOFF.md`](project/CURRENT_HANDOFF.md) | навигация к актуальным владельцам без независимого volatile state |
 | [`project/BASELINE_HISTORY.md`](project/BASELINE_HISTORY.md) | история принятых baseline, но не текущий state |
+| [`project/INDUSTRIALIZATION_EXECUTION_BACKLOG.md`](project/INDUSTRIALIZATION_EXECUTION_BACKLOG.md) | generated execution backlog, gate/risk/progress projection без собственного mutable status |
 
 ## Demo-release baseline
 

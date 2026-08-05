@@ -12,6 +12,7 @@ from scripts.demo_release_plan import (
     load_plan,
     load_program,
     render_checklist,
+    render_execution_backlog,
     render_module_map,
     render_program_markdown,
     render_sequence,
@@ -195,6 +196,7 @@ class DocumentationStateContractFixtureTests(unittest.TestCase):
             "docs/project/DEMO_RELEASE_PLAN.yaml",
             "docs/project/INDUSTRIALIZATION_PROGRAM.yaml",
             "docs/project/INDUSTRIALIZATION_PROGRAM.md",
+            "docs/project/INDUSTRIALIZATION_EXECUTION_BACKLOG.md",
             "docs/project/DEMO_RELEASE_MASTER_CHECKLIST.md",
             "docs/product/MODULE_MAP.md",
             "docs/product/IMPLEMENTATION_SEQUENCE.md",
@@ -350,6 +352,10 @@ class DocumentationStateContractFixtureTests(unittest.TestCase):
             ROOT
             / "docs/project/INDUSTRIALIZATION_PROGRAM.md": render_program_markdown(
                 raw_program
+            ),
+            ROOT
+            / "docs/project/INDUSTRIALIZATION_EXECUTION_BACKLOG.md": render_execution_backlog(
+                raw_program, plan
             ),
         }
         for path, content in expected.items():

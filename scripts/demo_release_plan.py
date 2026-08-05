@@ -7,6 +7,14 @@ import sys
 from pathlib import Path
 
 try:
+    from .industrialization_execution import (
+        load_raw as load_execution_raw,
+    )
+    from .industrialization_execution import (
+        render_execution_backlog,
+        validate_execution_contract,
+        validate_execution_view,
+    )
     from .module_contract_status_projection import (
         validate_module_contract_status_projections,
     )
@@ -27,6 +35,14 @@ except ImportError:
     repository_root = str(Path(__file__).resolve().parents[1])
     if repository_root not in sys.path:
         sys.path.insert(0, repository_root)
+    from scripts.industrialization_execution import (
+        load_raw as load_execution_raw,
+    )
+    from scripts.industrialization_execution import (
+        render_execution_backlog,
+        validate_execution_contract,
+        validate_execution_view,
+    )
     from scripts.module_contract_status_projection import (
         validate_module_contract_status_projections,
     )
@@ -52,6 +68,7 @@ __all__ = [
     "render_module_map",
     "render_program_markdown",
     "render_sequence",
+    "render_execution_backlog",
     "validate_repository",
 ]
 
@@ -62,6 +79,9 @@ def validate_repository(root: Path = ROOT) -> list[str]:
     errors = validate_release_plan_compatibility(plan, root)
     errors.extend(validate_module_contract_status_projections(plan, root))
     errors.extend(validate_industrialization_repository(root))
+    program_raw, execution_plan = load_execution_raw(root)
+    errors.extend(validate_execution_contract(program_raw, execution_plan, root))
+    errors.extend(validate_execution_view(program_raw, execution_plan, root))
     return errors
 
 

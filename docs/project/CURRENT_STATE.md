@@ -8,10 +8,10 @@
 ```text
 repository: genrudko/electronic-operational-docs
 accepted main baseline: main / 9d6d48ad25d45cd79673c7017980a8bd92fa961a
-active work item: NONE
-active issue: NONE
-active PR: NONE
-active branch: NONE
+active work item: INDUSTRIALIZATION-PROGRAM-EXECUTION-001
+active issue: #52
+active PR: #53 / OPEN / DRAFT / NOT MERGED
+active branch: governance/industrialization-program-execution-001
 runtime impact: NONE
 preview: UNTOUCHED
 ```
@@ -46,7 +46,7 @@ preview: UNTOUCHED
 - 21 focused regression tests и зелёные exact-head workflows;
 - отсутствие product/runtime/schema/data/Preview изменений.
 
-`SAFE-CONTINUATION` после этого merge ещё не достигнут. Следующий обязательный work item Phase 0 — `INDUSTRIALIZATION-PROGRAM-EXECUTION-001`; issue #52, branch `governance/industrialization-program-execution-001` и Draft PR #53 подготовлены, но новый work item станет канонически активным после первого согласованного planning/state transition commit.
+`SAFE-CONTINUATION` после этого merge ещё не достигнут. `INDUSTRIALIZATION-PROGRAM-EXECUTION-001` канонически переведён в `IN_PROGRESS` в issue #52, ветке `governance/industrialization-program-execution-001` и Draft PR #53. Предметная очередь остаётся paused; `SHIFT-HANDOVER-001` не стартовал.
 
 ## Accepted PROJECT-SUSTAINABILITY-001 baseline
 
