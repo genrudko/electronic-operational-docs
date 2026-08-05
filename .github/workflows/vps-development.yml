@@ -288,7 +288,7 @@ jobs:
             echo "Automatic merge: absent"
           } >>"$GITHUB_STEP_SUMMARY"
 
-      - name: Roll back an unconfirmed deployment with sanitised output
+      - name: Roll back an unconfirmed deployment after workflow failure or cancellation
         if: ${{ (failure() || cancelled()) && steps.deploy.outputs.attempted == 'true' }}
         continue-on-error: true
         timeout-minutes: 10
