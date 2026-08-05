@@ -8,6 +8,12 @@
       "merge_commit": "9d6d48ad25d45cd79673c7017980a8bd92fa961a"
     },
     "INDUSTRIALIZATION-PROGRAM-EXECUTION-001": {
+      "canonical_status": "ACCEPTED",
+      "pr": 53,
+      "exact_head": "9eec9b94392df45b44e7ad4165e8c76d06d05b36",
+      "merge_commit": "3c02c5c05cdf604bbf230d215b82ddd875ab1421"
+    },
+    "SECRET-HYGIENE-001": {
       "canonical_status": "IN_PROGRESS"
     }
   },
@@ -19,7 +25,7 @@
     {"id": "accepted-without-evidence", "mutation": {"type": "plan_set_status", "work_item_id": "INDUSTRIALIZATION-PROGRAM-EXECUTION-001", "status": "ACCEPTED", "remove_evidence": true}, "expected_rule": "accepted-execution-evidence"},
     {"id": "in-progress-with-blocked-dependency", "mutation": {"type": "plan_set_status", "work_item_id": "DEPENDENCY-PROVENANCE-001", "status": "IN_PROGRESS"}, "expected_rule": "in-progress-dependency-closure"},
     {"id": "dependency-bypass", "mutation": {"type": "plan_set_status", "work_item_id": "DEPLOYMENT-PROFILE-001", "status": "READY"}, "expected_rule": "dependency-bypass"},
-    {"id": "illegal-parallel-start", "mutation": {"type": "plan_set_status", "work_item_id": "PROJECT-STATE-RECONCILIATION-001", "status": "IN_PROGRESS", "remove_transition": true}, "expected_rule": "parallelization-limit"},
+    {"id": "illegal-parallel-start", "mutation": {"type": "batch", "mutations": [{"type": "plan_set_status", "work_item_id": "MODULE-ACTIVATION-CONTRACT-001", "status": "IN_PROGRESS"}, {"type": "program_set_parallel_max_active", "group_id": "P1-FOUNDATION-PARALLEL", "value": 1}]}, "expected_rule": "parallelization-limit"},
     {"id": "missing-risk", "mutation": {"type": "program_set_item_field", "work_item_id": "MODULE-ACTIVATION-CONTRACT-001", "field": "risks", "value": []}, "expected_rule": "risk-classification"},
     {"id": "unknown-risk", "mutation": {"type": "program_set_item_field", "work_item_id": "MODULE-ACTIVATION-CONTRACT-001", "field": "risks", "value": ["PSR-999"]}, "expected_rule": "risk-reference"},
     {"id": "missing-gate-impact", "mutation": {"type": "program_remove_item_field", "work_item_id": "MODULE-ACTIVATION-CONTRACT-001", "field": "gate_impact"}, "expected_rule": "gate-classification"},
@@ -29,7 +35,7 @@
     {"id": "residual-risk-without-due-date", "mutation": {"type": "append_residual_risk", "overrides": {"due_date": ""}}, "expected_rule": "residual-risk-due-date"},
     {"id": "residual-risk-without-controls", "mutation": {"type": "append_residual_risk", "overrides": {"compensating_controls": []}}, "expected_rule": "residual-risk-controls"},
     {"id": "residual-risk-without-review-condition", "mutation": {"type": "append_residual_risk", "overrides": {"review_condition": ""}}, "expected_rule": "residual-risk-review-condition"},
-    {"id": "github-canonical-status-mismatch", "mutation": {"type": "github_evidence_set", "work_item_id": "INDUSTRIALIZATION-PROGRAM-EXECUTION-001", "field": "canonical_status", "value": "ACCEPTED"}, "expected_rule": "github-canonical-status"},
+    {"id": "github-canonical-status-mismatch", "mutation": {"type": "github_evidence_set", "work_item_id": "SECRET-HYGIENE-001", "field": "canonical_status", "value": "NOT_STARTED"}, "expected_rule": "github-canonical-status"},
     {"id": "stale-generated-progress-view", "mutation": {"type": "append_view_text", "text": "\nSTALE\n"}, "expected_rule": "exact-generated-projection"},
     {"id": "duplicate-planning-owner", "mutation": {"type": "program_set_item_field", "work_item_id": "MODULE-ACTIVATION-CONTRACT-001", "field": "execution_state", "value": "NOT_STARTED"}, "expected_rule": "single-planning-state-owner"},
     {"id": "accepted-left-in-active-queue", "mutation": {"type": "plan_add_active_queue", "work_item_id": "PROJECT-STATE-RECONCILIATION-001"}, "expected_rule": "accepted-work-item-not-queued"}
