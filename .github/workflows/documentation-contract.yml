@@ -4,90 +4,61 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: eod-industrialization-lint-repair-${{ github.event.pull_request.number }}
+  group: eod-documentation-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  industrialization-lint-repair:
-    if: github.event.pull_request.head.ref == 'governance/industrialization-program-execution-001'
+  documentation-contract:
+    name: Canonical documentation contract
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 10
 
     steps:
-      - name: Checkout PR head
+      - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
 
       - name: Set up Python 3.13
         uses: actions/setup-python@v6
         with:
           python-version: "3.13"
-          cache: pip
-          cache-dependency-path: pyproject.toml
 
-      - name: Materialize lint repairs and verify exact blobs
+      - name: Check Git whitespace
+        env:
+          BASE_REF: ${{ github.base_ref }}
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
-          from __future__ import annotations
+          if [[ -n "$BASE_REF" ]]; then
+            git diff --check "origin/${BASE_REF}...HEAD"
+          else
+            git diff --check HEAD~1..HEAD
+          fi
 
-          import base64
-          import gzip
-          import hashlib
-          from pathlib import Path
+      - name: Compile documentation checkers
+        run: >-
+          python -m compileall -q
+          scripts/check_documentation_contract.py
+          scripts/check_documentation_contract_core.py
+          scripts/check_demo_release_plan.py
+          scripts/demo_release_plan.py
+          scripts/project_state_contract.py
+          scripts/release_plan_compat_validation.py
+          scripts/module_contract_status_projection.py
+          scripts/industrialization_execution.py
+          tests/process/test_project_state_contract.py
+          tests/process/test_release_plan_compatibility.py
+          tests/process/test_module_contract_status_projection.py
+          tests/process/test_industrialization_execution.py
 
-          source_root = Path(".github/industrialization-lint-repair")
-          payloads = {
-              "scripts/demo_release_plan.py": (
-                  (source_root / "demo2.b64").read_text(encoding="utf-8"),
-                  "f65584354e85f00b5bf27baed8b6cd74178b3239",
-              ),
-              "scripts/industrialization_execution.py": (
-                  "".join(
-                      (source_root / f"execution.part{index:02d}").read_text(
-                          encoding="utf-8"
-                      )
-                      for index in range(4)
-                  ),
-                  "072b7eef825ce637ca2a37e61f862b55da0b4650",
-              ),
-              "tests/process/test_project_state_contract.py": (
-                  (source_root / "test_state.b64").read_text(encoding="utf-8"),
-                  "8c663357071a5ebedb929ddf20415df711a68d17",
-              ),
-          }
-          for target_name, (payload, expected_sha) in payloads.items():
-              content = gzip.decompress(base64.b64decode(payload))
-              actual_sha = hashlib.sha1(
-                  f"blob {len(content)}\0".encode("ascii") + content
-              ).hexdigest()
-              if actual_sha != expected_sha:
-                  raise SystemExit(
-                      f"{target_name}: expected {expected_sha}, actual {actual_sha}"
-                  )
-              target = Path(target_name)
-              target.write_bytes(content)
-              print(f"verified {target_name}: {actual_sha}")
-          PY
-
-      - name: Install project development dependencies
-        run: |
-          python -m pip install --upgrade pip setuptools wheel
-          python -m pip install --editable ".[dev]"
-          python -m pip check
-
-      - name: Run Ruff
-        run: python -m ruff check .
-
-      - name: Run focused execution-contract tests
+      - name: Run project-state contract regressions
         run: >-
           python -m unittest -v
           tests.process.test_project_state_contract
@@ -98,19 +69,5 @@ jobs:
       - name: Validate documentation contract
         run: python scripts/check_documentation_contract.py
 
-      - name: Check whitespace
-        run: git diff --check
-
-      - name: Commit verified lint repair
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            scripts/demo_release_plan.py \
-            scripts/industrialization_execution.py \
-            tests/process/test_project_state_contract.py
-          git diff --cached --check
-          git commit -m "fix: satisfy industrialization contract lint"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+      - name: Confirm clean checkout
+        run: git diff --exit-code
