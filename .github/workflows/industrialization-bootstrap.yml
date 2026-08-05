@@ -22,15 +22,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Merge current main without rewriting history
+      - name: Confirm branch includes current main
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin main
-          git merge --no-ff origin/main -m "Merge main into governance/industrialization-program-execution-001"
-          git push origin HEAD:governance/industrialization-program-execution-001
+          git merge-base --is-ancestor origin/main HEAD
 
       - name: Export synchronized source snapshot
         shell: bash
@@ -41,9 +40,19 @@ jobs:
           tar --exclude=.git -czf /tmp/eod-synchronized-source.tgz .
 
       - name: Upload synchronized source snapshot
+        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: eod-synchronized-source
           path: /tmp/eod-synchronized-source.tgz
           if-no-files-found: error
           retention-days: 1
+
+      - name: Publish bootstrap run identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$GITHUB_RUN_ID" > .github/industrialization-bootstrap-run-id.txt
+          git add .github/industrialization-bootstrap-run-id.txt
+          git commit -m "chore: record industrialization bootstrap run"
+          git push origin HEAD:governance/industrialization-program-execution-001
