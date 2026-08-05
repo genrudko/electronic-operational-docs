@@ -1,9 +1,9 @@
 # ЭОД — программа индустриализации платформы
 
-**Версия:** `1.0-candidate`  
-**Дата:** 05.08.2026  
-**Источник:** `PROJECT-SUSTAINABILITY-001`  
-**Machine-readable owner:** `docs/project/INDUSTRIALIZATION_PROGRAM.yaml`  
+**Версия:** `1.0-candidate`
+**Дата:** 05.08.2026
+**Источник:** `PROJECT-SUSTAINABILITY-001`
+**Machine-readable owner:** `docs/project/INDUSTRIALIZATION_PROGRAM.yaml`
 **Статус:** `PROPOSAL / USER ACCEPTANCE REQUIRED`
 
 ## 1. Назначение
@@ -59,7 +59,7 @@
 
 ### 0.1 `PROJECT-STATE-RECONCILIATION-001`
 
-**Риски:** PSR-001, PSR-002, PSR-034  
+**Риски:** PSR-001, PSR-002, PSR-034
 **Тип:** documentation/process automation
 
 - **[FACT]** Current release plan and human-readable views содержат stale statuses.
@@ -70,7 +70,7 @@
 
 ### 0.2 `INDUSTRIALIZATION-PROGRAM-EXECUTION-001`
 
-**Риски:** PSR-034  
+**Риски:** PSR-034
 **Тип:** governance
 
 - **[PROPOSAL]** После принятия этой программы добавить work items в canonical plan без изменения предметного Demo scope.
@@ -82,7 +82,7 @@
 
 ### 1.1 `SECRET-HYGIENE-001`
 
-**Риск:** PSR-021  
+**Риск:** PSR-021
 **Приоритет:** немедленно
 
 - удалить passwords из CI output;
