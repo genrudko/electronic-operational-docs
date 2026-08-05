@@ -19,17 +19,28 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
-      DJANGO_SECRET_KEY: ci-development-secret-not-for-deployment-0123456789
       DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost
       POSTGRES_DB: eod_development
       POSTGRES_USER: eod_development
-      POSTGRES_PASSWORD: eod_development_ci_password
       EOD_DEVELOPMENT_PORT: "8766"
       TIME_ZONE: Europe/Moscow
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Create masked ephemeral development credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          django_value="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+          postgres_value="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+          printf '::add-mask::%s\n' "$django_value"
+          printf '::add-mask::%s\n' "$postgres_value"
+          printf 'DJANGO_SECRET_KEY=%s\n' "$django_value" >>"$GITHUB_ENV"
+          printf 'POSTGRES_PASSWORD=%s\n' "$postgres_value" >>"$GITHUB_ENV"
 
       - name: Validate development shell scripts
         shell: bash
@@ -85,25 +96,33 @@ jobs:
             exit 1
           fi
 
-      - name: Capture development diagnostics after failure
+      - name: Capture sanitised development diagnostics after failure
         if: ${{ failure() }}
         shell: bash
         run: |
+          set -euo pipefail
+          raw_file="$(mktemp)"
           {
             echo "===== docker compose ps --all ====="
             docker compose -f compose.development.yaml ps --all
             echo
             echo "===== docker compose logs ====="
             docker compose -f compose.development.yaml logs --no-color
-          } >development-diagnostics.log 2>&1
-          cat development-diagnostics.log
+          } >"$raw_file" 2>&1
+          python scripts/secret_hygiene.py redact \
+            --input "$raw_file" \
+            --output development-diagnostics.txt \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD
+          rm -f "$raw_file"
+          cat development-diagnostics.txt
 
-      - name: Upload development diagnostics after failure
+      - name: Upload sanitised development diagnostics after failure
         if: ${{ failure() }}
         uses: actions/upload-artifact@v7
         with:
           name: development-diagnostics-${{ github.run_id }}
-          path: development-diagnostics.log
+          path: development-diagnostics.txt
           if-no-files-found: error
           retention-days: 7
 
