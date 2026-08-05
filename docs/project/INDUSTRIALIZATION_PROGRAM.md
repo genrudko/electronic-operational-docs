@@ -1,10 +1,10 @@
 # ЭОД — программа индустриализации платформы
 
-**Версия:** `1.0-candidate`
+**Версия:** `1.0-candidate-repair1`
 **Дата:** 05.08.2026
 **Источник:** `PROJECT-SUSTAINABILITY-001`
 **Machine-readable owner:** `docs/project/INDUSTRIALIZATION_PROGRAM.yaml`
-**Статус:** `PROPOSAL / USER ACCEPTANCE REQUIRED`
+**Статус:** `PROPOSAL / USER RE-ACCEPTANCE REQUIRED`
 
 ## 1. Назначение
 
@@ -24,34 +24,68 @@
 
 ### GATE SC — SAFE-CONTINUATION
 
-Закрывается до возобновления массовой реализации предметных модулей.
+Закрывается до отдельного решения владельца о возобновлении ограниченной предметной работы.
 
-Минимальные условия:
+Обязательный состав work items:
+
+1. `PROJECT-STATE-RECONCILIATION-001`;
+2. `INDUSTRIALIZATION-PROGRAM-EXECUTION-001`;
+3. `MODULE-ACTIVATION-CONTRACT-001`;
+4. `SECRET-HYGIENE-001`;
+5. `DEPENDENCY-PROVENANCE-001`;
+6. `DEPLOYMENT-PROFILE-001`;
+7. `BACKUP-RESTORE-DRILL-001`;
+8. `SECURITY-BASELINE-001`.
+
+Условия gate:
 
 1. canonical planning state согласован и автоматически проверяется;
-2. module activation target contract принят;
+2. module activation target contract принят до реализации models/migrations;
 3. публичные/постоянные demo credentials устранены из логов;
 4. зависимости и container bases воспроизводимо зафиксированы;
 5. pilot/production configuration contract определён и fail-closed;
-6. выполнен контрольный restore на non-production контуре;
+6. выполнен и сертифицирован контрольный restore на non-production контуре;
 7. risk register и industrial backlog имеют владельцев и acceptance.
 
-- **[PROPOSAL]** После GATE SC можно возобновлять ограниченную предметную разработку, но нельзя объявлять систему готовой к пилоту.
+- **[PROPOSAL]** После GATE SC отдельным решением владельца может быть разрешена ограниченная работа над существующим принятым контуром, например `SHIFT-HANDOVER-001`.
+- **[PROPOSAL]** GATE SC сам по себе не разрешает массовую реализацию новых журналов и модулей и не означает готовность к пилоту.
 
 ### GATE PR — PILOT-READY
 
-Закрывается до подключения реального пилотного объекта/пользователей.
+Закрывается до подключения реального пилотного объекта, пользователей или operational data. Восемь фаз остаются полной программой индустриализации, но gate не требует механического завершения всех фаз и всех work items.
 
-Дополнительно:
+#### Обязательный core-набор
 
-- scoped module activation реализована и tested;
-- observability/alerting/incident response работают;
-- upgrade/rollback rehearsed;
-- security pipeline и upload policy работают;
-- data retention/export/integrity accepted;
-- browser/visual gates закрывают critical routes;
-- independent install/support handover пройден;
-- performance baseline и pilot acceptance утверждены.
+1. `PROJECT-STATE-RECONCILIATION-001`;
+2. `INDUSTRIALIZATION-PROGRAM-EXECUTION-001`;
+3. `MODULE-ACTIVATION-CONTRACT-001`;
+4. `SECRET-HYGIENE-001`;
+5. `DEPENDENCY-PROVENANCE-001`;
+6. `DEPLOYMENT-PROFILE-001`;
+7. `BACKUP-RESTORE-DRILL-001`;
+8. `SECURITY-BASELINE-001`;
+9. `MODULE-REGISTRY-001`;
+10. `DATA-INTEGRITY-HARDENING-001`;
+11. `MIGRATION-SAFETY-001`;
+12. `MODULE-MIGRATION-COMPATIBILITY-001`;
+13. `DATA-GOVERNANCE-001`;
+14. `RELEASE-ROLLBACK-001`;
+15. `OBSERVABILITY-001`;
+16. `INCIDENT-RESPONSE-001`;
+17. `AUTH-RBAC-HARDENING-001`;
+18. `SECURITY-PIPELINE-001`;
+19. `UX-BROWSER-GATES-001`;
+20. `SUPPORT-HANDOVER-001`;
+21. `PILOT-READINESS-001`.
+
+#### Risk и scope policy
+
+- **[PROPOSAL]** Каждый применимый `CRITICAL`-риск закрывается либо явно принимается владельцем с ограниченным сроком, compensating controls, ответственным и условиями пересмотра.
+- **[PROPOSAL]** Неприменимость риска к конкретному pilot scope должна быть доказана и зафиксирована; молчаливое исключение запрещено.
+- **[PROPOSAL]** Pilot-scope-dependent work items становятся обязательными по своим triggers: `UPLOAD-HARDENING-001`, `DATA-PORTABILITY-001`, `LEGACY-UX-MIGRATION-001`, `UX-PLATFORM-FOUNDATION-001`, `PAGE-TEMPLATE-LIBRARY-001`, `MODULE-SOURCE-GOVERNANCE-001`, `DRIVE-LIBRARY-GOVERNANCE-001`, `PERFORMANCE-BASELINE-001`.
+- **[PROPOSAL]** Остаточные `HIGH`/`MEDIUM`-риски должны быть закрыты, либо включены в датированный residual-risk register с owner, compensating controls, сроком и явным решением владельца.
+- **[PROPOSAL]** Неприменимые к pilot scope долгосрочные работы не блокируют pilot автоматически; решение и обоснование фиксирует `PILOT-READINESS-001`.
+- **[DECISION]** Финальное разрешение pilot всегда даёт владелец продукта отдельным явным решением с опубликованными ограничениями.
 
 ## 4. Risk-ranked последовательность
 
@@ -78,9 +112,26 @@
 
 **Acceptance:** machine-readable industrial backlog связан с risk register; GATE SC/GATE PR отображаются в master checklist.
 
-## Фаза 1 — безопасный и воспроизводимый runtime baseline
+## Фаза 1 — SAFE-CONTINUATION architecture and runtime baseline
 
-### 1.1 `SECRET-HYGIENE-001`
+### 1.1 `MODULE-ACTIVATION-CONTRACT-001`
+
+**Риски:** PSR-004, PSR-005, PSR-014
+
+Документационный/architecture work item после governance reconciliation:
+
+- manifest schema;
+- lifecycle states;
+- scope precedence;
+- dependency/conflict rules;
+- data preservation/reactivation;
+- migration behavior;
+- route/service/task/admin/export guard contract;
+- audit events and UX behavior.
+
+**Acceptance:** owner accepts all ambiguous semantics before models/migrations.
+
+### 1.2 `SECRET-HYGIENE-001`
 
 **Риск:** PSR-021
 **Приоритет:** немедленно
@@ -92,7 +143,7 @@
 
 **Acceptance:** secret scan и manual grep не находят active credentials; tests не печатают passwords; demo access reproducible through safe procedure.
 
-### 1.2 `DEPENDENCY-PROVENANCE-001`
+### 1.3 `DEPENDENCY-PROVENANCE-001`
 
 **Риски:** PSR-017, PSR-023, PSR-016
 
@@ -104,7 +155,7 @@
 
 **Acceptance:** две сборки одного commit разрешают одинаковый dependency set; SBOM привязан к image digest; critical vulnerabilities block release.
 
-### 1.3 `DEPLOYMENT-PROFILE-001`
+### 1.4 `DEPLOYMENT-PROFILE-001`
 
 **Риски:** PSR-003, PSR-022, PSR-018
 
@@ -115,7 +166,7 @@
 
 **Acceptance:** unsafe settings refuse start; `manage.py check --deploy` and external session/TLS smoke pass; Preview semantics unchanged.
 
-### 1.4 `BACKUP-RESTORE-DRILL-001`
+### 1.5 `BACKUP-RESTORE-DRILL-001`
 
 **Риски:** PSR-015, PSR-013
 
@@ -127,7 +178,7 @@
 
 **Acceptance:** successful restore with checksum, measured duration, object/integrity evidence and owner decision.
 
-### 1.5 `SECURITY-BASELINE-001`
+### 1.6 `SECURITY-BASELINE-001`
 
 **Риски:** PSR-022, PSR-023, PSR-024, PSR-033
 
@@ -142,33 +193,17 @@
 
 ### GATE SC decision
 
-- **[PROPOSAL]** GATE SC review проводится после 1.1–1.5 и Phase 0.
-- **[PROPOSAL]** `SHIFT-HANDOVER-001` или иной предметный work item может стартовать только после отдельного решения владельца по результатам GATE SC.
+- **[PROPOSAL]** GATE SC review проводится после Phase 0 и work items 1.1–1.6.
+- **[PROPOSAL]** Ограниченная работа над существующим принятым контуром, включая возможный `SHIFT-HANDOVER-001`, требует отдельного решения владельца по результатам GATE SC.
+- **[PROPOSAL]** Массовая реализация новых журналов и модулей не начинается до `MODULE-REGISTRY-001`, `UX-PLATFORM-FOUNDATION-001`, `PAGE-TEMPLATE-LIBRARY-001` и `MODULE-SOURCE-GOVERNANCE-001`.
 
 ## Фаза 2 — modular platform control plane
 
-### 2.1 `MODULE-ACTIVATION-CONTRACT-001`
-
-**Риски:** PSR-004, PSR-005, PSR-014
-
-Документационный/architecture work item:
-
-- manifest schema;
-- lifecycle states;
-- scope precedence;
-- dependency/conflict rules;
-- data preservation/reactivation;
-- migration behavior;
-- route/service/task/admin/export guard contract;
-- audit events and UX behavior.
-
-**Acceptance:** owner accepts all ambiguous semantics before models/migrations.
-
-### 2.2 `MODULE-REGISTRY-001`
+### 2.1 `MODULE-REGISTRY-001`
 
 **Риски:** PSR-004, PSR-005
 
-Implementation work item после 2.1:
+Implementation work item после `MODULE-ACTIVATION-CONTRACT-001`:
 
 - registry models/services;
 - scoped activation;
@@ -180,7 +215,7 @@ Implementation work item после 2.1:
 
 **Acceptance:** matrix with at least two organizations, two sites and multiple workplaces; mixed module sets; disable preserves history; no bypass.
 
-### 2.3 `MODULE-BOUNDARY-GATES-001`
+### 2.2 `MODULE-BOUNDARY-GATES-001`
 
 **Риски:** PSR-006, PSR-007
 
@@ -188,20 +223,10 @@ Implementation work item после 2.1:
 - dependency/import rules;
 - public service interfaces;
 - complexity/ignore budget;
+- maintainability hotspot ownership;
 - dead-path and duplicate-service inventory.
 
-**Acceptance:** CI dependency graph cycle-free; prohibited imports fail; hot spots have explicit owners.
-
-### 2.4 `MODULE-MIGRATION-COMPATIBILITY-001`
-
-**Риски:** PSR-013, PSR-014
-
-- upgrade tests for active/inactive combinations;
-- reactivation after upgrade;
-- no data deletion on retirement;
-- compatibility matrix by release.
-
-**Acceptance:** representative combinations migrate and rollback decision is documented.
+**Acceptance:** CI dependency graph cycle-free; prohibited imports fail; hot spots have explicit owners; new ignores require explicit decision and debt trend does not worsen.
 
 ## Фаза 3 — data reliability and controlled release
 
@@ -224,7 +249,20 @@ Implementation work item после 2.1:
 - expand/migrate/contract policy for destructive changes;
 - migration runtime and lock analysis.
 
-### 3.3 `DATA-GOVERNANCE-001`
+### 3.3 `MODULE-MIGRATION-COMPATIBILITY-001`
+
+**Риски:** PSR-013, PSR-014
+
+- upgrade tests for active/inactive combinations;
+- reactivation after upgrade;
+- no data deletion on retirement;
+- compatibility matrix by release.
+
+**Dependencies:** `MODULE-REGISTRY-001`, `MIGRATION-SAFETY-001`.
+
+**Acceptance:** representative combinations migrate and rollback decision is documented.
+
+### 3.4 `DATA-GOVERNANCE-001`
 
 **Риски:** PSR-026, PSR-032
 
@@ -235,7 +273,7 @@ Implementation work item после 2.1:
 - attachment/source linkage;
 - deletion prohibitions and allowed anonymization.
 
-### 3.4 `DATA-PORTABILITY-001`
+### 3.5 `DATA-PORTABILITY-001`
 
 **Риск:** PSR-032
 
@@ -244,7 +282,7 @@ Implementation work item после 2.1:
 - checksums/manifests;
 - round-trip verification into isolated environment.
 
-### 3.5 `RELEASE-ROLLBACK-001`
+### 3.6 `RELEASE-ROLLBACK-001`
 
 **Риски:** PSR-016, PSR-015
 
@@ -394,22 +432,28 @@ Implementation work item после 2.1:
 Independent evidence review:
 
 - product scope and limitations;
+- mandatory core work items;
+- applicable CRITICAL risks;
+- pilot-scope-dependent work;
+- residual HIGH/MEDIUM risks;
 - module activation;
 - identity/security;
 - data/recovery;
 - operations/incident;
 - UX/browser;
-- performance;
+- performance where triggered by pilot scope;
 - support/handover;
 - pilot-specific local instructions and data profile.
 
-**Acceptance:** all CRITICAL risks closed or explicitly accepted by owner with bounded compensating controls; all mandatory evidence attached; user explicitly approves pilot.
+**Acceptance:** mandatory core complete; every applicable CRITICAL risk closed or explicitly accepted with bounded compensating controls; scope-dependent evidence resolved; residual risks recorded; owner explicitly approves pilot.
 
 ## 5. Отношение к предметной очереди
 
 - **[DECISION]** `SHIFT-HANDOVER-001` не начинается внутри текущего audit work item.
-- **[PROPOSAL]** После GATE SC владелец выбирает: продолжить Phase 2 first либо разрешить один ограниченный domain work item параллельно с дальнейшей platform sequence. Выбор фиксируется в canonical plan, а не в чате.
-- **[PROPOSAL]** Новые modules после GATE SC обязаны использовать module activation contract, source requirements and UX page profile; исключение запрещено без ADR.
+- **[PROPOSAL]** После GATE SC владелец может отдельным решением разрешить один ограниченный work item в существующем принятом контуре, например `SHIFT-HANDOVER-001`. Решение фиксируется в canonical plan, а не только в чате.
+- **[PROPOSAL]** Массовая реализация новых журналов и модулей начинается только после реализации `MODULE-REGISTRY-001`, базовой `UX-PLATFORM-FOUNDATION-001` вместе с `PAGE-TEMPLATE-LIBRARY-001` и `MODULE-SOURCE-GOVERNANCE-001`.
+- **[PROPOSAL]** SAFE-CONTINUATION не утверждает, что ещё не реализованные source requirements или page profiles уже доступны; до их реализации они остаются prerequisites, а не действующими capabilities.
+- **[PROPOSAL]** Исключение из этой границы требует отдельного ADR и явного решения владельца с ограниченным scope и принятыми рисками.
 - **[DECISION]** OPJ и DEFECT не переписываются; они становятся reference implementations и мигрируют только по доказанным gaps.
 
 ## 6. NOTES и MAIL-INTEGRATION
@@ -426,9 +470,15 @@ Independent evidence review:
 - **[DECISION]** Она не входит в GATE SC, GATE PR и первый pilot.
 - **[PROPOSAL]** Будущий work item начинается только после доказанного доступного integration contract предприятия и security review.
 
-## 7. Change control
+## 7. Machine-readable consistency contract
+
+- **[FACT]** `INDUSTRIALIZATION_PROGRAM.yaml` содержит machine-readable `consistency_contract` для проверки risk/work-item references, dependency references, межфазного порядка, gate existence и ключевой Markdown/YAML projection.
+- **[PROPOSAL]** В этом documentation-only repair consistency contract проверяется отдельной одноразовой валидацией; превращение его в постоянный executable Documentation Contract относится к `PROJECT-STATE-RECONCILIATION-001`, а не к текущему scope.
+- **[DECISION]** Machine-readable owner остаётся YAML; Markdown не вводит самостоятельный состав gates или work items.
+
+## 8. Change control
 
 - **[PROPOSAL]** `INDUSTRIALIZATION_PROGRAM.yaml` — единственный machine-readable owner этой программы.
-- **[PROPOSAL]** MD является human-readable projection; расхождение блокирует Documentation Contract.
+- **[PROPOSAL]** MD является human-readable projection; расхождение блокирует acceptance программы.
 - **[PROPOSAL]** Изменение sequence, gates или risk ownership выполняется отдельным decision record.
 - **[DECISION]** Merge/Ready for Review текущего PR требует отдельной команды владельца.
