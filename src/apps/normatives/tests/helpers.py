@@ -1,3 +1,5 @@
+import os
+
 from django.core.management import call_command
 
 from apps.organizations.models import Employee
@@ -16,3 +18,4 @@ class NormativeDemoMixin:
             "workplace",
         ).get(user__username="operator.demo")
         cls.user = cls.employee.user
+        cls.password = os.environ["EOD_DEMO_USER_PASSWORD"]
