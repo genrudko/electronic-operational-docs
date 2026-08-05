@@ -7,6 +7,9 @@ import sys
 from pathlib import Path
 
 try:
+    from .module_contract_status_projection import (
+        validate_module_contract_status_projections,
+    )
     from .release_plan_compat_validation import (
         validate_release_plan_compatibility,
     )
@@ -24,6 +27,9 @@ except ImportError:
     repository_root = str(Path(__file__).resolve().parents[1])
     if repository_root not in sys.path:
         sys.path.insert(0, repository_root)
+    from scripts.module_contract_status_projection import (
+        validate_module_contract_status_projections,
+    )
     from scripts.release_plan_compat_validation import (
         validate_release_plan_compatibility,
     )
@@ -51,9 +57,10 @@ __all__ = [
 
 
 def validate_repository(root: Path = ROOT) -> list[str]:
-    """Run both restored release-plan and new industrialization guarantees."""
+    """Run restored release, module projection and industrialization rules."""
     plan = load_plan(root)
     errors = validate_release_plan_compatibility(plan, root)
+    errors.extend(validate_module_contract_status_projections(plan, root))
     errors.extend(validate_industrialization_repository(root))
     return errors
 
