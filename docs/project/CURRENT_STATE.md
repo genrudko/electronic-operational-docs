@@ -7,43 +7,78 @@
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted main baseline: main / c4e344342b647ce59a390a04329d2cadb1f34d7c
-active work item: PROJECT-SUSTAINABILITY-001
-active issue: #48
-active PR: #49 / OPEN / DRAFT / NOT MERGED
-active branch: audit/project-sustainability-001
-active baseline: c57a84752fae7a5265f393f77568849365be50a7
+accepted main baseline: main / 916a6d708ff4bd8433218068a204547b4a9abf84
+active work item: PROJECT-STATE-RECONCILIATION-001
+active issue: #50
+active PR: #51 / OPEN / DRAFT / NOT MERGED
+active branch: governance/project-state-reconciliation-001
+active baseline: 916a6d708ff4bd8433218068a204547b4a9abf84
 runtime impact: NONE
 preview: UNTOUCHED
 ```
 
-## Active PROJECT-SUSTAINABILITY-001
+## Active PROJECT-STATE-RECONCILIATION-001
 
-После принятия `OPJ-LIFECYCLE-001` пользователь явно приостановил продолжение
-очереди новых предметных модулей до формирования программы промышленной
-подготовки продукта.
+Первый work item фазы 0 принятой программы промышленной подготовки:
 
-Текущий work item:
-
-- проводит factual audit репозитория, архитектуры, UX, данных, безопасности,
-  deployment и operations;
-- определяет target modular-platform и UX-platform contracts;
-- формирует source/knowledge governance и risk-ranked очередь последующих работ;
-- включает личные и общие заметки в target product architecture;
-- фиксирует интеграцию с локальным Exchange как wishlist последней очереди;
-- не изменяет product code, models, migrations, data, runtime или Preview;
-- не реализует саму промышленную архитектуру;
-- не продолжает `SHIFT-HANDOVER-001` до пользовательской приёмки программы;
+- сверяет фактическую историю GitHub с canonical planning state;
+- актуализирует `DEMO_RELEASE_PLAN.yaml` без изменения принятого Demo scope;
+- синхронизирует module map, implementation sequence, master checklist и
+  применимые compatibility/history views;
+- вводит постоянную automation-проверку stale status, missing references,
+  dependency closure, hidden scope-dependent dependencies и duplicate owners;
+- сохраняет исторические документы и не удаляет их;
+- не меняет product code, models, migrations, data, runtime или Preview;
+- не начинает `SHIFT-HANDOVER-001`, module registry, UX refactor или новые
+  предметные журналы;
 - не переводится в Ready for Review и не merge без отдельной команды пользователя.
 
 ```text
-issue: #48
-PR: #49 / OPEN / DRAFT / NOT MERGED
-branch: audit/project-sustainability-001
-initial head: 3b5f86b884eb0b061764ffd6298a15d53c05c3e9
+issue: #50 / OPEN
+PR: #51 / OPEN / DRAFT / NOT MERGED
+branch: governance/project-state-reconciliation-001
+baseline main: 916a6d708ff4bd8433218068a204547b4a9abf84
 user acceptance: ABSENT
 merge authorization: ABSENT
 ```
+
+## Accepted PROJECT-SUSTAINABILITY-001 baseline
+
+`PROJECT-SUSTAINABILITY-001` принят пользователем и merged обычным merge commit:
+
+```text
+accepted PR: #49 / CLOSED / MERGED
+accepted exact head: cdf3238ca986761dbecc61a60bd28941ff8219ac
+merge commit / accepted main: 916a6d708ff4bd8433218068a204547b4a9abf84
+issue: #48 / CLOSED / COMPLETED
+user acceptance: PASSED
+merge method: ORDINARY MERGE COMMIT
+squash / rebase: NOT USED
+runtime impact: NONE
+preview: UNTOUCHED
+```
+
+Принятый baseline включает:
+
+- factual audit репозитория, архитектуры, UX, данных, security, deployment и operations;
+- risk register: 34 риска — 7 CRITICAL, 22 HIGH и 5 MEDIUM;
+- программу из 8 фаз и 30 work items;
+- gates `SAFE-CONTINUATION` и `PILOT-READY`;
+- обязательный `PILOT-READY` core из 21 work item;
+- browser gates для фактических critical pilot routes без скрытой обязательности
+  общего UX-рефакторинга;
+- trigger-based обязательность UX foundation и page-template library;
+- прямую и транзитивную замкнутость mandatory core;
+- сохранение modular Django monolith и phased migration без big-bang rewrite;
+- NOTES как будущий optional product module;
+- MAIL-INTEGRATION как post-pilot wishlist последней очереди.
+
+Все пять обязательных exact-head workflows завершились успешно на
+`cdf3238ca986761dbecc61a60bd28941ff8219ac`; полный suite — `716 tests / OK`.
+
+Принятие программы не означает достижения `SAFE-CONTINUATION` или готовности к
+пилоту. Первый обязательный последующий work item —
+`PROJECT-STATE-RECONCILIATION-001`.
 
 Дополнительные accepted baseline markers:
 
