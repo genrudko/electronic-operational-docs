@@ -7,14 +7,47 @@
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted main baseline: main / 9d6d48ad25d45cd79673c7017980a8bd92fa961a
-active work item: INDUSTRIALIZATION-PROGRAM-EXECUTION-001
-active issue: #52
-active PR: #53 / OPEN / DRAFT / NOT MERGED
-active branch: governance/industrialization-program-execution-001
+accepted main baseline: main / 3c02c5c05cdf604bbf230d215b82ddd875ab1421
+active work item: NONE
+active issue: NONE
+active PR: NONE
+active branch: NONE
 runtime impact: NONE
 preview: UNTOUCHED
 ```
+
+## Accepted INDUSTRIALIZATION-PROGRAM-EXECUTION-001 baseline
+
+`INDUSTRIALIZATION-PROGRAM-EXECUTION-001` принят пользователем и merged обычным merge commit:
+
+```text
+accepted PR: #53 / CLOSED / MERGED
+accepted exact head: 9eec9b94392df45b44e7ad4165e8c76d06d05b36
+merge commit / accepted main: 3c02c5c05cdf604bbf230d215b82ddd875ab1421
+issue: #52 / CLOSED / COMPLETED
+user acceptance: PASSED
+merge method: ORDINARY MERGE COMMIT
+squash / rebase: NOT USED
+runtime impact: NONE
+preview: UNTOUCHED
+```
+
+Принятый baseline включает:
+
+- исполнимый backlog всех 30 industrialization work items;
+- owner roles, acceptance-evidence requirements, risks, dependencies и gate impact;
+- fail-closed state transitions, dependency closure и parallelization limits;
+- residual-risk contract с owner, controls, due/review и explicit acceptance evidence;
+- deterministic backlog, phase, gate, dependency и risk projections;
+- positive baseline и 20 negative fail-closed fixtures;
+- постоянный Documentation Contract для execution backlog;
+- 23 focused regression tests и зелёные exact-head workflows;
+- отсутствие product/runtime/schema/data/Preview изменений.
+
+Phase 0 завершена. `SAFE-CONTINUATION` после этого merge ещё не достигнут:
+приняты 2 из 8 обязательных work items. Предметная очередь остаётся paused,
+`SHIFT-HANDOVER-001` не стартовал. Следующий work item Phase 1 должен быть
+открыт отдельным issue/branch/Draft PR и не становится активным автоматически.
 
 ## Accepted PROJECT-STATE-RECONCILIATION-001 baseline
 
