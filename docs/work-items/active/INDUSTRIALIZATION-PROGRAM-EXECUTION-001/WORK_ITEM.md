@@ -12,9 +12,9 @@ merge commit: 3c02c5c05cdf604bbf230d215b82ddd875ab1421
 user acceptance: PASSED
 merge method: ORDINARY MERGE COMMIT
 squash / rebase: NOT USED
-runtime impact: NONE
-preview: UNTOUCHED
 ```
+
+Runtime и Preview state принадлежат только `docs/project/CURRENT_STATE.md` и здесь не дублируются.
 
 ## Цель
 
