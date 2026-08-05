@@ -28,6 +28,7 @@ Baseline фиксируется после применимых technical gates,
 | 2026-08-04 | `c4e344342b647ce59a390a04329d2cadb1f34d7c` | OPJ-LIFECYCLE-001 merge | accepted OPJ lifecycle module |
 | 2026-08-05 | `916a6d708ff4bd8433218068a204547b4a9abf84` | PROJECT-SUSTAINABILITY-001 merge | accepted industrialization evidence/program baseline |
 | 2026-08-05 | `9d6d48ad25d45cd79673c7017980a8bd92fa961a` | PROJECT-STATE-RECONCILIATION-001 merge | accepted canonical-state and documentation-drift protection baseline |
+| 2026-08-05 | `3c02c5c05cdf604bbf230d215b82ddd875ab1421` | INDUSTRIALIZATION-PROGRAM-EXECUTION-001 merge | accepted executable backlog and Phase 0 completion baseline |
 
 ## Reconciliation note — 2026-08-05
 
@@ -37,8 +38,12 @@ Baseline фиксируется после применимых technical gates,
 
 После принятия `PROJECT-STATE-RECONCILIATION-001` canonical release-plan data,
 source/scenario/post-demo mappings, current-state contract и deterministic views
-защищены постоянными fail-closed validators. Следующий work item Phase 0 —
-`INDUSTRIALIZATION-PROGRAM-EXECUTION-001`.
+защищены постоянными fail-closed validators.
+
+После принятия `INDUSTRIALIZATION-PROGRAM-EXECUTION-001` Phase 0 завершена,
+industrial backlog стал исполнимым и проверяемым, а прогресс gates и residual
+risks защищён постоянным Documentation Contract. Это не означает достижения
+`SAFE-CONTINUATION`: принято 2 из 8 его обязательных work items.
 
 Canonical current state не выводится из последней строки таблицы: его всегда
 нужно читать в `CURRENT_STATE.md`. Planning status и accepted work-item evidence
