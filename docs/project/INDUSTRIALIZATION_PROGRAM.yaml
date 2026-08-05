@@ -1,0 +1,324 @@
+schema_version: eod.industrialization-program.v1
+program_id: PROJECT-SUSTAINABILITY-001
+version: 1.0-candidate
+date: 2026-08-05
+status: PROPOSAL
+canonical_owner: docs/project/INDUSTRIALIZATION_PROGRAM.yaml
+human_view: docs/project/INDUSTRIALIZATION_PROGRAM.md
+risk_register: docs/audits/PROJECT_SUSTAINABILITY_RISK_REGISTER_20260805.csv
+baseline_audit: docs/audits/PROJECT_SUSTAINABILITY_BASELINE_20260805.md
+principles:
+  - id: modular-monolith
+    classification: DECISION
+    statement: Preserve the modular Django monolith; no microservices without proven necessity.
+  - id: no-big-bang
+    classification: DECISION
+    statement: Industrialize through bounded work items; do not rewrite the product wholesale.
+  - id: one-product
+    classification: DECISION
+    statement: One deployable product and application version with scoped optional modules.
+  - id: history-preservation
+    classification: DECISION
+    statement: Module deactivation never deletes historical data.
+  - id: github-canonical
+    classification: DECISION
+    statement: GitHub remains the only canonical source; Drive is a material library.
+  - id: risk-traceability
+    classification: PROPOSAL
+    statement: Every industrialization work item must close named risk IDs and provide acceptance evidence.
+gates:
+  - id: SAFE-CONTINUATION
+    classification: PROPOSAL
+    purpose: Minimum prerequisites before mass domain-module implementation resumes.
+    required_work_items:
+      - PROJECT-STATE-RECONCILIATION-001
+      - INDUSTRIALIZATION-PROGRAM-EXECUTION-001
+      - SECRET-HYGIENE-001
+      - DEPENDENCY-PROVENANCE-001
+      - DEPLOYMENT-PROFILE-001
+      - BACKUP-RESTORE-DRILL-001
+      - SECURITY-BASELINE-001
+      - MODULE-ACTIVATION-CONTRACT-001
+    acceptance:
+      - Canonical planning views agree and automated checks prevent drift.
+      - No reusable credentials are exposed by CI or documentation.
+      - Dependency and image inputs are reproducible and attributable.
+      - Pilot/production configuration contract fails closed.
+      - A representative backup has been restored and verified.
+      - Module activation semantics are accepted before implementation.
+  - id: PILOT-READY
+    classification: PROPOSAL
+    purpose: Mandatory evidence gate before real pilot users or operational data.
+    required_phases: [0, 1, 2, 3, 4, 5, 6, 7]
+    acceptance:
+      - All CRITICAL risks are closed or explicitly accepted with bounded controls.
+      - Scoped module activation and history preservation are demonstrated.
+      - Recovery, rollback, observability, incident response and security controls are exercised.
+      - Critical UX scenarios pass supported browser, viewport, theme and print gates.
+      - Another specialist completes install, restore, upgrade and diagnosis from repository documentation.
+      - Product owner explicitly approves the pilot and its known limitations.
+phases:
+  - id: 0
+    name: Governance and canonical-state integrity
+    objective: Restore a reliable source of truth before platform implementation.
+    work_items:
+      - id: PROJECT-STATE-RECONCILIATION-001
+        priority: P0
+        type: DOCUMENTATION_AUTOMATION
+        risks: [PSR-001, PSR-002, PSR-034]
+        dependencies: []
+        acceptance:
+          - One canonical status owner and consistent derived views.
+          - Documentation checker rejects stale accepted/module/work-item state.
+      - id: INDUSTRIALIZATION-PROGRAM-EXECUTION-001
+        priority: P0
+        type: GOVERNANCE
+        risks: [PSR-034]
+        dependencies: [PROJECT-STATE-RECONCILIATION-001]
+        acceptance:
+          - Industrial backlog, gates and risks are represented in canonical planning.
+  - id: 1
+    name: Safe and reproducible runtime baseline
+    objective: Close the highest recovery, configuration and security risks.
+    work_items:
+      - id: SECRET-HYGIENE-001
+        priority: P0
+        type: SECURITY
+        risks: [PSR-021]
+        dependencies: []
+        acceptance:
+          - No active or reusable credentials appear in logs, repository or artifacts.
+      - id: DEPENDENCY-PROVENANCE-001
+        priority: P0
+        type: SUPPLY_CHAIN
+        risks: [PSR-017, PSR-023, PSR-016]
+        dependencies: [SECRET-HYGIENE-001]
+        acceptance:
+          - Locked hashed dependencies, pinned image digests, SBOM and build provenance.
+      - id: DEPLOYMENT-PROFILE-001
+        priority: P0
+        type: DEPLOYMENT
+        risks: [PSR-003, PSR-022, PSR-018]
+        dependencies: [DEPENDENCY-PROVENANCE-001]
+        acceptance:
+          - Unsafe pilot/production configuration refuses to start.
+          - Deploy and external TLS/session checks pass.
+      - id: BACKUP-RESTORE-DRILL-001
+        priority: P0
+        type: DISASTER_RECOVERY
+        risks: [PSR-015, PSR-013]
+        dependencies: [DEPLOYMENT-PROFILE-001]
+        acceptance:
+          - Restore certificate records checksum, RPO/RTO, duration, counts and integrity.
+      - id: SECURITY-BASELINE-001
+        priority: P0
+        type: SECURITY_ARCHITECTURE
+        risks: [PSR-022, PSR-023, PSR-024, PSR-033]
+        dependencies: [DEPLOYMENT-PROFILE-001]
+        acceptance:
+          - Threat model, hardening controls and negative tests accepted.
+      - id: MODULE-ACTIVATION-CONTRACT-001
+        priority: P0
+        type: ARCHITECTURE
+        risks: [PSR-004, PSR-005, PSR-014]
+        dependencies: [PROJECT-STATE-RECONCILIATION-001]
+        acceptance:
+          - Manifest, lifecycle, scope precedence, guards and retention semantics accepted.
+  - id: 2
+    name: Modular platform control plane
+    objective: Implement scoped optional modules without dynamic Django app loading.
+    work_items:
+      - id: MODULE-REGISTRY-001
+        priority: P0
+        type: PRODUCT_PLATFORM
+        risks: [PSR-004, PSR-005]
+        dependencies: [MODULE-ACTIVATION-CONTRACT-001, SECURITY-BASELINE-001]
+        acceptance:
+          - Mixed module sets work across organizations, sites and workplaces.
+          - Deactivation blocks new actions and preserves readable history.
+      - id: MODULE-BOUNDARY-GATES-001
+        priority: P1
+        type: ARCHITECTURE_AUTOMATION
+        risks: [PSR-006, PSR-007]
+        dependencies: [MODULE-ACTIVATION-CONTRACT-001]
+        acceptance:
+          - Dependency graph is cycle-free and forbidden imports fail CI.
+      - id: MODULE-MIGRATION-COMPATIBILITY-001
+        priority: P0
+        type: MIGRATION_TESTING
+        risks: [PSR-013, PSR-014]
+        dependencies: [MODULE-REGISTRY-001, MIGRATION-SAFETY-001]
+        acceptance:
+          - Active/inactive module combinations upgrade and reactivate without data loss.
+  - id: 3
+    name: Data reliability and controlled release
+    objective: Make data integrity, upgrade and rollback auditable and repeatable.
+    work_items:
+      - id: DATA-INTEGRITY-HARDENING-001
+        priority: P0
+        type: DATA_RELIABILITY
+        risks: [PSR-011, PSR-012]
+        dependencies: [DEPLOYMENT-PROFILE-001]
+        acceptance:
+          - Least-privilege writes and periodic digest/audit integrity reports.
+      - id: MIGRATION-SAFETY-001
+        priority: P0
+        type: MIGRATION_ENGINEERING
+        risks: [PSR-013]
+        dependencies: [BACKUP-RESTORE-DRILL-001]
+        acceptance:
+          - Representative N-1/N-2 databases upgrade with preserved invariants.
+      - id: DATA-GOVERNANCE-001
+        priority: P1
+        type: DATA_GOVERNANCE
+        risks: [PSR-026, PSR-032]
+        dependencies: [DATA-INTEGRITY-HARDENING-001]
+        acceptance:
+          - Classification, retention, archive, legal hold and export rules accepted.
+      - id: DATA-PORTABILITY-001
+        priority: P1
+        type: DATA_PORTABILITY
+        risks: [PSR-032]
+        dependencies: [DATA-GOVERNANCE-001]
+        acceptance:
+          - Versioned checksummed export is round-trip verified.
+      - id: RELEASE-ROLLBACK-001
+        priority: P0
+        type: RELEASE_ENGINEERING
+        risks: [PSR-016, PSR-015]
+        dependencies: [DEPENDENCY-PROVENANCE-001, MIGRATION-SAFETY-001, BACKUP-RESTORE-DRILL-001]
+        acceptance:
+          - Immutable release manifest and measured rollback rehearsal.
+  - id: 4
+    name: Operations and security completion
+    objective: Detect, diagnose and contain failures and attacks.
+    work_items:
+      - id: OBSERVABILITY-001
+        priority: P0
+        type: OPERATIONS
+        risks: [PSR-018, PSR-019]
+        dependencies: [DEPLOYMENT-PROFILE-001, MODULE-REGISTRY-001]
+        acceptance:
+          - Structured logs, correlation, readiness, metrics, dashboards and alerts exercised.
+      - id: INCIDENT-RESPONSE-001
+        priority: P0
+        type: OPERATIONS
+        risks: [PSR-020]
+        dependencies: [OBSERVABILITY-001, RELEASE-ROLLBACK-001]
+        acceptance:
+          - Severity/escalation model and technical incident exercise completed.
+      - id: AUTH-RBAC-HARDENING-001
+        priority: P0
+        type: IDENTITY_SECURITY
+        risks: [PSR-024, PSR-033]
+        dependencies: [SECURITY-BASELINE-001, MODULE-REGISTRY-001]
+        acceptance:
+          - Privileged assurance, access reviews, break-glass and admin guards tested.
+      - id: SECURITY-PIPELINE-001
+        priority: P0
+        type: SECURITY_AUTOMATION
+        risks: [PSR-023]
+        dependencies: [DEPENDENCY-PROVENANCE-001, SECURITY-BASELINE-001]
+        acceptance:
+          - Secret, SAST, dependency and container scans are required checks.
+      - id: UPLOAD-HARDENING-001
+        priority: P1
+        type: APPLICATION_SECURITY
+        risks: [PSR-025]
+        dependencies: [SECURITY-BASELINE-001]
+        acceptance:
+          - All upload/import surfaces enforce centralized safety and access policy.
+  - id: 5
+    name: Unified UX platform
+    objective: Migrate incrementally without accumulating overlays or a second design system.
+    work_items:
+      - id: UX-PLATFORM-FOUNDATION-001
+        priority: P1
+        type: UX_PLATFORM
+        risks: [PSR-008, PSR-009, PSR-010]
+        dependencies: [MODULE-ACTIVATION-CONTRACT-001]
+        acceptance:
+          - Executable primitives and standard page profiles use DEFECT and OPJ references.
+      - id: LEGACY-UX-MIGRATION-001
+        priority: P1
+        type: UX_MIGRATION
+        risks: [PSR-008]
+        dependencies: [UX-PLATFORM-FOUNDATION-001]
+        acceptance:
+          - Route/template/static inventory and evidence-based layer removal.
+      - id: UX-BROWSER-GATES-001
+        priority: P1
+        type: UX_TESTING
+        risks: [PSR-009]
+        dependencies: [UX-PLATFORM-FOUNDATION-001]
+        acceptance:
+          - Critical routes pass supported browser, theme, viewport, keyboard and print gates.
+      - id: PAGE-TEMPLATE-LIBRARY-001
+        priority: P1
+        type: UX_PLATFORM
+        risks: [PSR-010]
+        dependencies: [UX-PLATFORM-FOUNDATION-001]
+        acceptance:
+          - Registry, journal, specialist workspace and timeline profiles are reusable.
+  - id: 6
+    name: Knowledge and source governance
+    objective: Ensure each module starts with complete and fresh evidence.
+    work_items:
+      - id: MODULE-SOURCE-GOVERNANCE-001
+        priority: P1
+        type: KNOWLEDGE_GOVERNANCE
+        risks: [PSR-027]
+        dependencies: [PROJECT-STATE-RECONCILIATION-001]
+        acceptance:
+          - Missing mandatory sources block work-item start.
+      - id: DRIVE-LIBRARY-GOVERNANCE-001
+        priority: P2
+        type: KNOWLEDGE_GOVERNANCE
+        risks: [PSR-028]
+        dependencies: [MODULE-SOURCE-GOVERNANCE-001]
+        acceptance:
+          - Drive originals are checksum-traceable to GitHub metadata and decisions.
+  - id: 7
+    name: Pilot and independent support
+    objective: Prove the platform can be operated and transferred safely.
+    work_items:
+      - id: PERFORMANCE-BASELINE-001
+        priority: P1
+        type: PERFORMANCE
+        risks: [PSR-031]
+        dependencies: [DEPLOYMENT-PROFILE-001, OBSERVABILITY-001]
+        acceptance:
+          - Workload, P95 latency, resource headroom and soak results accepted.
+      - id: SUPPORT-HANDOVER-001
+        priority: P0
+        type: OPERATIONS_HANDOVER
+        risks: [PSR-029]
+        dependencies: [OBSERVABILITY-001, INCIDENT-RESPONSE-001, RELEASE-ROLLBACK-001]
+        acceptance:
+          - Another specialist installs, restores, upgrades, rolls back and diagnoses without oral guidance.
+      - id: PILOT-READINESS-001
+        priority: P0
+        type: INDEPENDENT_ACCEPTANCE
+        risks: [PSR-030]
+        dependencies:
+          - MODULE-MIGRATION-COMPATIBILITY-001
+          - DATA-PORTABILITY-001
+          - SECURITY-PIPELINE-001
+          - UPLOAD-HARDENING-001
+          - UX-BROWSER-GATES-001
+          - PERFORMANCE-BASELINE-001
+          - SUPPORT-HANDOVER-001
+        acceptance:
+          - All critical risks closed or explicitly accepted with compensating controls.
+          - Product owner explicitly approves pilot scope and limitations.
+deferred_modules:
+  - id: NOTES
+    classification: DECISION
+    target: optional_product_module
+    earliest_dependencies: [MODULE-REGISTRY-001, DATA-GOVERNANCE-001, PAGE-TEMPLATE-LIBRARY-001]
+    notes: Personal and shared notes; never treated as registered operational facts by default.
+  - id: MAIL-INTEGRATION
+    classification: WISHLIST
+    target: post_pilot_last_priority
+    dependencies: []
+    notes: Local Exchange integration is not a SAFE-CONTINUATION or PILOT-READY dependency.
