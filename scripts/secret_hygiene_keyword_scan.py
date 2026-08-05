@@ -4,7 +4,7 @@ import ast
 import subprocess
 import sys
 from collections.abc import Iterable
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from scripts.secret_hygiene import Finding
 from scripts.secret_hygiene_scan import (
@@ -12,6 +12,44 @@ from scripts.secret_hygiene_scan import (
     is_safe_placeholder,
     is_sensitive_name,
 )
+
+TEST_FIXTURE_VALUE_MARKERS = (
+    "fixture",
+    "test",
+    "synthetic",
+    "strongpass",
+)
+TEST_NEGATIVE_VALUES = {
+    "wrong",
+    "wrong-password",
+    "invalid",
+    "invalid-password",
+    "incorrect-password",
+}
+
+
+def is_test_source_path(path: str) -> bool:
+    pure_path = PurePosixPath(path.casefold())
+    name = pure_path.name
+    return (
+        "tests" in pure_path.parts
+        or name.startswith("test_")
+        or name.endswith("_test.py")
+        or name in {"test_support.py", "base.py"}
+        and any(part in {"tests", "equipment_defects"} for part in pure_path.parts)
+    )
+
+
+def is_safe_test_keyword_fixture(path: str, value: str) -> bool:
+    if is_named_test_fixture(path, value):
+        return True
+    if not is_test_source_path(path):
+        return False
+    lowered = value.casefold().strip()
+    return (
+        lowered in TEST_NEGATIVE_VALUES
+        or any(marker in lowered for marker in TEST_FIXTURE_VALUE_MARKERS)
+    )
 
 
 def scan_python_keyword_literals(path: str, text: str) -> list[Finding]:
@@ -33,7 +71,10 @@ def scan_python_keyword_literals(path: str, text: str) -> list[Finding]:
             ):
                 continue
             value = keyword.value.value
-            if is_safe_placeholder(value) or is_named_test_fixture(path, value):
+            if (
+                is_safe_placeholder(value)
+                or is_safe_test_keyword_fixture(path, value)
+            ):
                 continue
             findings.append(
                 Finding(
