@@ -4,16 +4,40 @@
 
 ```text
 work item: PROJECT-SUSTAINABILITY-001
-issue: #48
+issue: #48 / CLOSED / COMPLETED
 branch: audit/project-sustainability-001
-PR: #49 / OPEN / DRAFT / NOT MERGED
+PR: #49 / CLOSED / MERGED
 baseline main: c57a84752fae7a5265f393f77568849365be50a7
+accepted exact head: cdf3238ca986761dbecc61a60bd28941ff8219ac
+merge commit: 916a6d708ff4bd8433218068a204547b4a9abf84
 risk profile: DOCS / ARCHITECTURE / AUDIT
 runtime impact: NONE
 preview: UNTOUCHED
-user acceptance: ABSENT
-merge authorization: ABSENT
+user acceptance: PASSED
+merge authorization: EXERCISED BY EXPLICIT OWNER COMMAND
+merge method: ORDINARY MERGE COMMIT
+squash / rebase: NOT USED
 ```
+
+## Принятый результат
+
+Пользователь принял доказательный baseline сопровождаемости и программу
+промышленной подготовки ЭОД. Приняты:
+
+- factual baseline текущего репозитория и платформы;
+- risk register из 34 рисков: 7 CRITICAL, 22 HIGH и 5 MEDIUM;
+- программа из 8 фаз и 30 work items;
+- отдельные gates `SAFE-CONTINUATION` и `PILOT-READY`;
+- обязательный `PILOT-READY` core из 21 work item;
+- trigger-based статус UX foundation и page-template library;
+- транзитивная замкнутость mandatory core;
+- сохранение modular Django monolith без big-bang rewrite;
+- NOTES как будущий optional module;
+- MAIL-INTEGRATION как post-pilot wishlist последней очереди.
+
+Первым последующим work item определён
+`PROJECT-STATE-RECONCILIATION-001`. Принятие программы само по себе не означает
+достижение `SAFE-CONTINUATION` или готовность к пилоту.
 
 ## Цель
 
@@ -228,13 +252,11 @@ docs/decisions/PROJECT_SUSTAINABILITY_001_DECISIONS.md
 
 ## Stop condition
 
-Остановиться после:
+Work item завершён после:
 
-1. завершения factual audit;
+1. factual audit;
 2. публикации всех обязательных артефактов;
-3. прохождения documentation gates;
-4. обновления Draft PR body по exact head;
-5. представления пользователю краткого содержательного отчёта и очереди следующих
-   work items.
-
-Не переводить PR в Ready for Review и не выполнять merge.
+3. прохождения documentation gates и пяти final exact-head workflows;
+4. содержательной пользовательской приёмки;
+5. явного разрешения merge;
+6. ordinary merge commit `916a6d708ff4bd8433218068a204547b4a9abf84`.
