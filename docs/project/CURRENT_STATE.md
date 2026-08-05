@@ -8,13 +8,29 @@
 ```text
 repository: genrudko/electronic-operational-docs
 accepted main baseline: main / 3c02c5c05cdf604bbf230d215b82ddd875ab1421
-active work item: NONE
-active issue: NONE
-active PR: NONE
-active branch: NONE
-runtime impact: NONE
+active work item: SECRET-HYGIENE-001
+active issue: #54
+active PR: #56 / OPEN / DRAFT / NOT MERGED
+active branch: security/secret-hygiene-001
+runtime impact: DEVELOPMENT
 preview: UNTOUCHED
 ```
+
+## Active SECRET-HYGIENE-001 execution
+
+`SECRET-HYGIENE-001` выполняется только в issue #54, ветке
+`security/secret-hygiene-001` и Draft PR #56.
+
+Runtime impact классифицирован как `DEVELOPMENT`: work item изменяет
+development/demo bootstrap и credential-injection contract, но не разрешает
+автоматическое изменение действующего VPS. Любая доказанно необходимая rotation
+действующего development runtime должна выполняться отдельно, контролируемо и
+только после inventory фактически используемых значений. Preview остаётся
+`UNTOUCHED`.
+
+Предметная очередь сохраняется в состоянии
+`PAUSED_PENDING_SAFE_CONTINUATION_AND_EXPLICIT_OWNER_DECISION`.
+`SHIFT-HANDOVER-001` не стартовал.
 
 ## Accepted INDUSTRIALIZATION-PROGRAM-EXECUTION-001 baseline
 
