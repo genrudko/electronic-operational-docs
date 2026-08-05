@@ -1,38 +1,39 @@
 # ЭОД — история приёмок
 
 Этот документ разделяет technical success, runtime evidence, предметную,
-визуальную и integration acceptance.
+визуальную и integration acceptance. Он является историческим ledger и не
+владеет active work item, current main, runtime или Preview state.
 
-## PROJECT-SUSTAINABILITY-001
+## Factual reconciliation ledger — 2026-08-05
 
-**Статус:** documentation/architecture audit accepted and merged.
+| Work item | PR | Accepted/final exact head | Merge commit | Acceptance |
+|---|---:|---|---|---|
+| `PLAN-001` | #7 | `fb313f270254720b0f7d7815fffc2cb05d577901` evidence head | `b75db8bc073e4b02a3254512e9b99d00f3e6e0e2` | evidence and integration accepted |
+| `DEFECT-001` | #16 | `79f3db7e5c47e1ac8ab2568028d06e4043c2c70e` final PR head; accepted candidate `0692012d735447908ae2839f9d6254b8fac89b52` | `883a108c8be2a8cd075846fdd175916917911ef6` | product/UX accepted |
+| `PROJECT-BASELINE-001` | #27 | `8c2b08f3c9e873640f8a4e6c5334294ccfce611d` | `2a9b92362b90861501cf11d073668478655fd191` | DEMO-RELEASE BASELINE V1.0 accepted |
+| `UX-THEME-001` | #30 | `93e30896f70ccc4bb4eaf9b4b71513e4ef188893`; accepted candidate `8aeb5296d3d13338d79aec6fbb27b16c39325573` | `0d9be8c360ca22fc504ce2b11a14b6bb82c77ea5` | bounded theme slice accepted |
+| `MASTER-DATA-ALIGNMENT-001` | #35 | `e507b63ab35a4767c25364d729accb9a741af874` | `b644048f1ec17e19e03c2e4fb538fc0cfc1f5feb` | bounded master-data slice accepted |
+| `NORMATIVE-EVIDENCE-001` | #41 | `24848d04984b61b0b183f3ed2b04117b3e05e5f9` | `6e5171776cd6bc02fcbc45eb9532a6a0e58e15f0` | module accepted |
+| `PERSONNEL-AUTHORITY-001` | #43 | `d659ab949db2942c064eec3c298d031a9684c67d` | `2a2013a51bfdc9de602b095adcb28a51b8d4487e` | module accepted |
+| `POST-MERGE-DEPLOY-VERIFY-001` | #45 | `e8b053f5fda51f23e2506a1a45a405f5c2ee3b6c` | `2db8947062434861d2336eb474cd762e11aabb44` | development deployment carrier accepted; Preview untouched |
+| `OPJ-LIFECYCLE-001` | #47 | `65997a9d51de4d066ec07277d4c660bfc307650e` | `c4e344342b647ce59a390a04329d2cadb1f34d7c` | module accepted in Microsoft Edge development profile |
+| `PROJECT-SUSTAINABILITY-001` | #49 | `cdf3238ca986761dbecc61a60bd28941ff8219ac` | `916a6d708ff4bd8433218068a204547b4a9abf84` | audit and industrialization program accepted |
 
-```text
-issue: #48 / CLOSED / COMPLETED
-PR: #49 / CLOSED / MERGED
-accepted exact head: cdf3238ca986761dbecc61a60bd28941ff8219ac
-merge commit: 916a6d708ff4bd8433218068a204547b4a9abf84
-merge method: ORDINARY MERGE COMMIT
-squash / rebase: NOT USED
-runtime impact: NONE
-preview: UNTOUCHED
-```
+### Why two heads appear for some historical PRs
 
-Приняты:
+For `DEFECT-001` and `UX-THEME-001`, user acceptance occurred on a bounded
+candidate before later branch synchronization/coordination. The ledger retains
+both the accepted candidate and the actual final PR head instead of collapsing
+them into one misleading SHA.
 
-- factual sustainability baseline;
-- risk register: 34 риска — 7 CRITICAL, 22 HIGH, 5 MEDIUM;
-- industrialization program: 8 фаз и 30 work items;
-- gates `SAFE-CONTINUATION` и `PILOT-READY`;
-- `PILOT-READY` mandatory core из 21 work item;
-- browser-gate policy без скрытой зависимости от общего UX-рефакторинга;
-- trigger-based обязательность `UX-PLATFORM-FOUNDATION-001` и
-  `PAGE-TEMPLATE-LIBRARY-001`;
-- транзитивная замкнутость mandatory core;
-- modular Django monolith, phased industrialization и запрет big-bang rewrite;
-- NOTES как будущий optional module и MAIL-INTEGRATION как post-pilot wishlist.
+### Corrected historical snapshot
 
-Final exact-head evidence:
+The older acceptance document contained a period snapshot where PR #7 was still
+`OPEN / DRAFT / NOT MERGED`. That statement was true at the time of the snapshot
+but became stale after the later accepted merge. It is superseded by the ledger
+above; the existence of the earlier contradiction is explicitly preserved here.
+
+## PROJECT-SUSTAINABILITY-001 exact-head evidence
 
 ```text
 EOD Documentation Contract: 31002573221 / SUCCESS
@@ -40,147 +41,48 @@ AUTO-001B Controller CI:     31002572719 / SUCCESS
 AUTO-001A Foundation CI:     31002572760 / SUCCESS
 EOD Development Stack:      31002573298 / SUCCESS
 EOD CI:                      31002573388 / SUCCESS
-full suite:                 716 tests / OK
+full suite:                  716 tests / OK
 ```
 
-Приёмка программы не является приёмкой промышленной готовности. Первый
-последующий work item — `PROJECT-STATE-RECONCILIATION-001`.
+Accepted: 34-risk register, 8 phases, 30 work items, `SAFE-CONTINUATION`,
+`PILOT-READY`, mandatory core of 21 work items, scope-triggered UX foundation
+and page templates, and browser gates without a hidden general UX dependency.
+This acceptance does not mean either gate has been achieved.
 
-## Исторические product/infrastructure приёмки
+## OPJ-LIFECYCLE-001 exact-head evidence
+
+```text
+AUTO-001A Foundation CI:     30986956669 / SUCCESS
+AUTO-001B Controller CI:     30986956714 / SUCCESS
+EOD Development Stack:      30986956637 / SUCCESS
+EOD Documentation Contract: 30986956684 / SUCCESS
+EOD CI:                      30986956738 / SUCCESS
+```
+
+Accepted: immutable registration, historical correction/cancellation, OPJ
+communication facts, accepted PZ/ZN chronology, stable screen/print form,
+reference previews, Edge actions menu and upper-aligned first column.
+
+## Earlier infrastructure/process acceptances
 
 | Этап | Статус | Ключевое доказательство |
 |---|---|---|
 | Patch 011.6.2 Repair 4 | Technical + visual accepted | 485 tests |
-| Patch 011.7 Repair 1 Revision 10 | Technical accepted, затем repaired | 495 tests |
-| Patch 011.7 Repair 2 | Technical + visual accepted | Source-bound forms boundary |
+| Patch 011.7 Repair 1 Revision 10 | Technical accepted, then repaired | 495 tests |
+| Patch 011.7 Repair 2 | Technical + visual accepted | source-bound forms boundary |
 | INFRA-001 | Accepted | Linux/Python/PostgreSQL CI |
-| INFRA-002 | Accepted | Healthy preview, `eod_preview`, HTTP 200 |
-| INFRA-003 | Accepted | Isolated `eod-development`, `eod_development` |
-| DOCS-001 | Accepted | Canonical project operating system |
-| DOCS-002 | Accepted | Baseline metadata |
+| INFRA-002 | Accepted | healthy preview, `eod_preview`, HTTP 200 |
+| INFRA-003 | Accepted | isolated `eod-development`, `eod_development` |
+| DOCS-001 | Accepted | canonical project operating system |
+| DOCS-002 | Accepted | baseline metadata |
 | DOCS-003 | Provisional accepted | UX v0.3, no visual acceptance |
 | QUALITY-001 | Technical accepted | `497/497 OK` |
-| AUTO-000 | Accepted | Automation contract and security boundary |
+| AUTO-000 | Accepted | automation contract and security boundary |
+| AUTO-001A/B | Accepted/practically verified | exact-SHA development controller, no automatic merge |
 
-## AUTO-001A/B
+## Interpretation rule
 
-**Статус:** accepted and practically verified.
-
-### Accepted implementation
-
-- trusted workflow/controller foundation;
-- restricted `eod-automation` user;
-- forced SSH gateway;
-- read-only GitHub deploy key;
-- root-owned fixed controller/Compose/Dockerfile;
-- exact PR SHA fetch;
-- exact-SHA image;
-- isolated PostgreSQL checks and full tests;
-- development backup/migrations/health;
-- confirm/rollback transaction;
-- preview isolation;
-- no automatic merge.
-
-### Main history
-
-```text
-AUTO-001B merge:
-21e101f957808d744052da99709d63f1410b7bc3
-
-trusted validator repair/current main:
-37a2390a2a45e2abb73e60318d5429ed326efb53
-```
-
-### Practical verification
-
-Canary exact SHA was deployed to development through trusted controller,
-validated and closed without merge. Preview remained untouched. Controller
-status/rollback path was practically checked.
-
-## PLAN-001 evidence acceptance
-
-**Статус:** evidence collection accepted by permanent integration Chat 0.
-
-```text
-PR:
-#7
-
-evidence exact head:
-fb313f270254720b0f7d7815fffc2cb05d577901
-
-evidence ZIP SHA-256:
-58df47f83d1758d2e6aa8b32e1d5a70efb8c453454d8759e25d913e7f031619a
-
-Django tests:
-502 / OK
-
-manifest:
-VERIFIED
-```
-
-Подтверждено:
-
-- exact release/image source parity;
-- development database `eod_development`;
-- migrations clean;
-- global executable gates pass;
-- package manifest/checksums valid;
-- development healthy;
-- controller transaction `NONE`;
-- pending run ID `NONE`;
-- preview healthy and `UNTOUCHED`.
-
-## PLAN-001 integration decision
-
-Это ручное решение Чата 0, не machine verdict:
-
-```text
-generic structured-journal core:
-SUBSTANTIALLY IMPLEMENTED
-
-structured journals pack:
-NOT COMPLETE
-
-operational journal:
-ADVANCED BUT LIFECYCLE INCOMPLETE
-
-work permits/orders:
-NOT IMPLEMENTED AS VERTICAL SLICE
-
-switching documents:
-NOT IMPLEMENTED AS VERTICAL SLICE
-
-repeatable presentation dataset:
-BLOCKING GAP
-
-recommended first vertical slice:
-DEFECT JOURNAL
-```
-
-## PR #7 acceptance status
-
-```text
-merge:
-BLOCKED PENDING NARROW REPAIR
-
-branch:
-plan/001-evidence-audit
-
-state:
-OPEN / DRAFT / NOT MERGED
-```
-
-До acceptance нужны:
-
-- explicit ownership classifier;
-- absent/unknown/not-applicable semantics;
-- runtime data provenance split;
-- source catalog/published type/records split;
-- false-positive regression;
-- canonical docs;
-- five exact-head CI;
-- one final AUTO-001B deployment/evidence run;
-- separate user merge decision.
-
-Функциональная реализация Defect Journal ещё не начата и не считается частью
-PLAN-001 acceptance.
+Technical success, user acceptance, merge and post-merge deployment are distinct
+events. Historical records may contain earlier candidate snapshots; current
+status must never be inferred from them. Use `CURRENT_STATE.md` for volatile
+coordination and `DEMO_RELEASE_PLAN.yaml` for planning status.

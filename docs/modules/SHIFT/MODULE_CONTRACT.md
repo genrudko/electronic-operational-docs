@@ -28,7 +28,9 @@ snapshot OPJ/defects/groundings/works · не меняет source facts.
 `DEMO-BOUNDED`: shift start; report; active states; two-side confirmation. Post-demo: HR roster integration; offline handover.
 
 ## CURRENT CODE STATUS / CAPABILITIES
-`IMPLEMENTED-PARTIAL`; release `IN_PROGRESS`. `CAP-SHIFT-START` (IN_PROGRESS/IMPLEMENTED-PARTIAL; SHIFT-HANDOVER-001; AC-SHIFT-START-001), `CAP-SHIFT-HANDOVER` (NOT_STARTED/ABSENT; SHIFT-HANDOVER-001; AC-SHIFT-HANDOVER-001)
+`IMPLEMENTED-PARTIAL`; release `READY`. `CAP-SHIFT-START` (IN_PROGRESS/IMPLEMENTED-PARTIAL; SHIFT-HANDOVER-001; AC-SHIFT-START-001), `CAP-SHIFT-HANDOVER` (NOT_STARTED/ABSENT; SHIFT-HANDOVER-001; AC-SHIFT-HANDOVER-001)
+
+Текущий release/code status является проверяемой проекцией `docs/project/DEMO_RELEASE_PLAN.yaml`; исторические capability markers сохраняются как evidence текущего bounded состояния, но не являются отдельным владельцем planning status.
 
 ## DEPENDENCIES / UX CONTRACT
 Dependencies: `OPJ`, `PERSONNEL-AUTHORITY`. Direction A; 1440×900, 1024×768, 390×844; loading/empty/error/readonly/long-data.
