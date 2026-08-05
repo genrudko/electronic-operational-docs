@@ -3,6 +3,49 @@
 Этот документ разделяет technical success, runtime evidence, предметную,
 визуальную и integration acceptance.
 
+## PROJECT-SUSTAINABILITY-001
+
+**Статус:** documentation/architecture audit accepted and merged.
+
+```text
+issue: #48 / CLOSED / COMPLETED
+PR: #49 / CLOSED / MERGED
+accepted exact head: cdf3238ca986761dbecc61a60bd28941ff8219ac
+merge commit: 916a6d708ff4bd8433218068a204547b4a9abf84
+merge method: ORDINARY MERGE COMMIT
+squash / rebase: NOT USED
+runtime impact: NONE
+preview: UNTOUCHED
+```
+
+Приняты:
+
+- factual sustainability baseline;
+- risk register: 34 риска — 7 CRITICAL, 22 HIGH, 5 MEDIUM;
+- industrialization program: 8 фаз и 30 work items;
+- gates `SAFE-CONTINUATION` и `PILOT-READY`;
+- `PILOT-READY` mandatory core из 21 work item;
+- browser-gate policy без скрытой зависимости от общего UX-рефакторинга;
+- trigger-based обязательность `UX-PLATFORM-FOUNDATION-001` и
+  `PAGE-TEMPLATE-LIBRARY-001`;
+- транзитивная замкнутость mandatory core;
+- modular Django monolith, phased industrialization и запрет big-bang rewrite;
+- NOTES как будущий optional module и MAIL-INTEGRATION как post-pilot wishlist.
+
+Final exact-head evidence:
+
+```text
+EOD Documentation Contract: 31002573221 / SUCCESS
+AUTO-001B Controller CI:     31002572719 / SUCCESS
+AUTO-001A Foundation CI:     31002572760 / SUCCESS
+EOD Development Stack:      31002573298 / SUCCESS
+EOD CI:                      31002573388 / SUCCESS
+full suite:                 716 tests / OK
+```
+
+Приёмка программы не является приёмкой промышленной готовности. Первый
+последующий work item — `PROJECT-STATE-RECONCILIATION-001`.
+
 ## Исторические product/infrastructure приёмки
 
 | Этап | Статус | Ключевое доказательство |
