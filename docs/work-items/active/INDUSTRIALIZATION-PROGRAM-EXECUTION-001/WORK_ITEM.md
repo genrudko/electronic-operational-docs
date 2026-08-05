@@ -2,7 +2,19 @@
 
 ## Статус
 
-`IN_PROGRESS` после открытия issue #52 и отдельного Draft PR. Финальная приёмка и merge требуют отдельной явной команды владельца продукта.
+`ACCEPTED / MERGED`.
+
+```text
+issue: #52 / CLOSED / COMPLETED
+PR: #53 / CLOSED / MERGED
+accepted exact head: 9eec9b94392df45b44e7ad4165e8c76d06d05b36
+merge commit: 3c02c5c05cdf604bbf230d215b82ddd875ab1421
+user acceptance: PASSED
+merge method: ORDINARY MERGE COMMIT
+squash / rebase: NOT USED
+runtime impact: NONE
+preview: UNTOUCHED
+```
 
 ## Цель
 
@@ -87,6 +99,18 @@ Validator должен обнаруживать как минимум:
 - runtime/schema/data/Preview не затронуты;
 - PR остаётся Draft до отдельной команды владельца.
 
+## Acceptance result
+
+- все 30 work items получили execution metadata;
+- все 34 риска покрыты;
+- Phase 0/1 ordering и parallelization limits защищены validator;
+- residual-risk contract принят;
+- execution backlog и gate views детерминированы;
+- one positive и 20 negative fixtures встроены в Documentation Contract;
+- focused suite: 23 tests / OK;
+- пять exact-head workflow: SUCCESS;
+- product/runtime/schema/data/Preview не затронуты.
+
 ## Stop condition
 
-После завершения реализации и exact-head проверок остановиться на пользовательской приёмке. `SAFE-CONTINUATION` после этого work item всё ещё не достигнут: остаются обязательные Phase 1 работы.
+Выполнена. Phase 0 завершена. `SAFE-CONTINUATION` ещё не достигнут: принято 2 из 8 обязательных work items, предметная очередь остаётся paused.
