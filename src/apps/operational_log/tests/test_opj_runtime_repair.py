@@ -30,7 +30,7 @@ class OperationalJournalRuntimeRepairTests(SimpleTestCase):
 
         body = response.content.decode("utf-8")
         self.assertNotIn("opjlifecycle00501", body)
-        self.assertEqual(body.count("opjlifecycle00613"), 2)
+        self.assertEqual(body.count("opjlifecycle00614"), 2)
         self.assertEqual(response.headers["Cache-Control"], "no-store, max-age=0")
         self.assertEqual(response.headers["Pragma"], "no-cache")
 
