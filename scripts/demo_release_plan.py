@@ -7,6 +7,14 @@ import sys
 from pathlib import Path
 
 try:
+    from .industrialization_execution import (
+        load_raw as load_execution_raw,
+    )
+    from .industrialization_execution import (
+        render_execution_backlog,
+        validate_execution_contract,
+        validate_execution_view,
+    )
     from .module_contract_status_projection import (
         validate_module_contract_status_projections,
     )
@@ -14,12 +22,6 @@ try:
         validate_release_plan_compatibility,
     )
     from .release_plan_model import PROGRAM_PATH, ROOT, load_plan, load_program
-    from .industrialization_execution import (
-        load_raw as load_execution_raw,
-        render_execution_backlog,
-        validate_execution_contract,
-        validate_execution_view,
-    )
     from .release_plan_validation import (
         validate_repository as validate_industrialization_repository,
     )
@@ -33,6 +35,14 @@ except ImportError:
     repository_root = str(Path(__file__).resolve().parents[1])
     if repository_root not in sys.path:
         sys.path.insert(0, repository_root)
+    from scripts.industrialization_execution import (
+        load_raw as load_execution_raw,
+    )
+    from scripts.industrialization_execution import (
+        render_execution_backlog,
+        validate_execution_contract,
+        validate_execution_view,
+    )
     from scripts.module_contract_status_projection import (
         validate_module_contract_status_projections,
     )
@@ -40,12 +50,6 @@ except ImportError:
         validate_release_plan_compatibility,
     )
     from scripts.release_plan_model import PROGRAM_PATH, ROOT, load_plan, load_program
-    from scripts.industrialization_execution import (
-        load_raw as load_execution_raw,
-        render_execution_backlog,
-        validate_execution_contract,
-        validate_execution_view,
-    )
     from scripts.release_plan_validation import (
         validate_repository as validate_industrialization_repository,
     )

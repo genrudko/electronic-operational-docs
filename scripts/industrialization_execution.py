@@ -12,8 +12,9 @@ from __future__ import annotations
 import csv
 import json
 from collections import defaultdict
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 try:
     from .release_plan_model import (
@@ -248,7 +249,7 @@ def _validate_item_metadata(
     groups = program_raw.get("execution_contract", {}).get(
         "parallelization_groups", {}
     )
-    for phase, item in program_items:
+    for _phase, item in program_items:
         item_id = str(item.get("id", "<missing>"))
         required_text = (
             ("owner_role", "owner-role", "non-empty role"),
@@ -849,8 +850,12 @@ def render_execution_backlog(
         "",
         f"- Phase 0: `{'COMPLETE' if _phase_zero_complete(plan_items) else 'IN PROGRESS'}`.",
         f"- `SAFE-CONTINUATION`: `{safe_done}/{safe_total}` accepted; **NOT ACHIEVED**.",
-        f"- `PILOT-READY` mandatory core: `{pilot_done}/{pilot_total}` accepted; **NOT ACHIEVED**.",
-        "- Предметная очередь: `PAUSED_PENDING_SAFE_CONTINUATION_AND_EXPLICIT_OWNER_DECISION`.",
+        (
+            "- `PILOT-READY` mandatory core: "
+            f"`{pilot_done}/{pilot_total}` accepted; **NOT ACHIEVED**."
+        ),
+        "- Предметная очередь: "
+        "`PAUSED_PENDING_SAFE_CONTINUATION_AND_EXPLICIT_OWNER_DECISION`.",
         "- `SHIFT-HANDOVER-001`: `NOT STARTED`; automatic start forbidden.",
         "- Достижение всех checklist items не заменяет отдельное решение владельца.",
         "",
@@ -859,13 +864,23 @@ def render_execution_backlog(
         "| Данные | Единственный владелец |",
         "|---|---|",
         "| Volatile active project state | `docs/project/CURRENT_STATE.md` |",
-        "| Work-item execution state and acceptance evidence | `docs/project/DEMO_RELEASE_PLAN.yaml` |",
-        "| Phases, dependencies, execution policy, risks and gate boundaries | `docs/project/INDUSTRIALIZATION_PROGRAM.yaml` |",
+        (
+            "| Work-item execution state and acceptance evidence | "
+            "`docs/project/DEMO_RELEASE_PLAN.yaml` |"
+        ),
+        (
+            "| Phases, dependencies, execution policy, risks and gate boundaries | "
+            "`docs/project/INDUSTRIALIZATION_PROGRAM.yaml` |"
+        ),
         "| Этот backlog и progress tables | generated projection only |",
         "",
         "## 3. Full industrial backlog",
         "",
-        "| Phase | Work item | Priority | Type | State | Risks | Dependencies | Owner role | Acceptance evidence | Gate impact | Parallel group | Sequential constraint | Current blocker |",
+        (
+            "| Phase | Work item | Priority | Type | State | Risks | Dependencies | "
+            "Owner role | Acceptance evidence | Gate impact | Parallel group | "
+            "Sequential constraint | Current blocker |"
+        ),
         "|---:|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for phase, item in _program_items(program_raw):
@@ -875,7 +890,8 @@ def render_execution_backlog(
             f"`{dependency}`" for dependency in item.get("dependencies", [])
         ) or "—"
         evidence_text = ", ".join(
-            f"`{field}`" for field in item.get("acceptance_evidence_requirements", [])
+            f"`{field}`"
+            for field in item.get("acceptance_evidence_requirements", [])
         ) or "—"
         current_blockers = blockers(item_id, phase, item, plan_items)
         blocker_text = "; ".join(current_blockers) if current_blockers else "—"
@@ -887,9 +903,20 @@ def render_execution_backlog(
             f"`{item.get('parallelization_group')}` | "
             f"`{item.get('sequential_constraint')}` | {blocker_text} |"
         )
-    lines.extend(["", "## 4. Progress by phase", "", "| Phase | Accepted | Active | Blocked | Not started/ready |", "|---:|---:|---:|---:|---:|"])
+    lines.extend(
+        [
+            "",
+            "## 4. Progress by phase",
+            "",
+            "| Phase | Accepted | Active | Blocked | Not started/ready |",
+            "|---:|---:|---:|---:|---:|",
+        ]
+    )
     for phase in sorted(phase_items):
-        values = [statuses.get(str(item["id"]), "MISSING") for item in phase_items[phase]]
+        values = [
+            statuses.get(str(item["id"]), "MISSING")
+            for item in phase_items[phase]
+        ]
         lines.append(
             f"| {phase} | {values.count('ACCEPTED')}/{len(values)} | "
             f"{sum(value in ACTIVE_STATES for value in values)} | "
@@ -898,16 +925,66 @@ def render_execution_backlog(
         )
     lines.extend(["", "## 5. SAFE-CONTINUATION progress", ""])
     for item_id in EXPECTED_SAFE:
-        lines.append(f"- [{'x' if statuses.get(item_id) == 'ACCEPTED' else ' '}] `{item_id}` — `{statuses.get(item_id, 'MISSING')}`.")
-    lines.extend(["", "Completion of all eight items still requires an explicit product-owner decision before any limited domain continuation.", "", "## 6. PILOT-READY mandatory core", ""])
+        checked = "x" if statuses.get(item_id) == "ACCEPTED" else " "
+        status = statuses.get(item_id, "MISSING")
+        lines.append(f"- [{checked}] `{item_id}` — `{status}`.")
+    lines.extend(
+        [
+            "",
+            "Completion of all eight items still requires an explicit "
+            "product-owner decision before any limited domain continuation.",
+            "",
+            "## 6. PILOT-READY mandatory core",
+            "",
+        ]
+    )
     for item_id in EXPECTED_PILOT_CORE:
-        lines.append(f"- [{'x' if statuses.get(item_id) == 'ACCEPTED' else ' '}] `{item_id}` — `{statuses.get(item_id, 'MISSING')}`.")
-    lines.extend(["", "## 7. Pilot-scope-dependent triggers", "", "| Work item | Trigger | Current state |", "|---|---|---|"])
+        checked = "x" if statuses.get(item_id) == "ACCEPTED" else " "
+        status = statuses.get(item_id, "MISSING")
+        lines.append(f"- [{checked}] `{item_id}` — `{status}`.")
+    lines.extend(
+        [
+            "",
+            "## 7. Pilot-scope-dependent triggers",
+            "",
+            "| Work item | Trigger | Current state |",
+            "|---|---|---|",
+        ]
+    )
     for entry in _scope_entries(_gate(program_raw, "PILOT-READY")):
         item_id = str(entry["id"])
-        lines.append(f"| `{item_id}` | {entry['trigger']} | `{statuses.get(item_id, 'MISSING')}` |")
-    lines.extend(["", "## 8. Dependency and parallelization", "", "### Phase 0 / Phase 1 order", "", "1. `PROJECT-STATE-RECONCILIATION-001` is the accepted prerequisite.", "2. `INDUSTRIALIZATION-PROGRAM-EXECUTION-001` completes Phase 0 only after its own acceptance.", "3. Phase 1 is not complete or started automatically by Phase 0 acceptance.", "4. After Phase 0 acceptance, `MODULE-ACTIVATION-CONTRACT-001` and `SECRET-HYGIENE-001` may start in parallel.", "5. `DEPENDENCY-PROVENANCE-001` follows `SECRET-HYGIENE-001`; `DEPLOYMENT-PROFILE-001` follows dependency provenance.", "6. `BACKUP-RESTORE-DRILL-001` and `SECURITY-BASELINE-001` may run in parallel after deployment profile acceptance.", "7. Dependency bypass and exceeding a parallel group limit are fail-closed.", "", "### Parallelization groups", "", "| Group | Mode | Max active | Members |", "|---|---|---:|---|"])
-    groups = program_raw.get("execution_contract", {}).get("parallelization_groups", {})
+        status = statuses.get(item_id, "MISSING")
+        lines.append(f"| `{item_id}` | {entry['trigger']} | `{status}` |")
+    lines.extend(
+        [
+            "",
+            "## 8. Dependency and parallelization",
+            "",
+            "### Phase 0 / Phase 1 order",
+            "",
+            "1. `PROJECT-STATE-RECONCILIATION-001` is the accepted prerequisite.",
+            "2. `INDUSTRIALIZATION-PROGRAM-EXECUTION-001` completes Phase 0 "
+            "only after its own acceptance.",
+            "3. Phase 1 is not complete or started automatically by Phase 0 "
+            "acceptance.",
+            "4. After Phase 0 acceptance, `MODULE-ACTIVATION-CONTRACT-001` and "
+            "`SECRET-HYGIENE-001` may start in parallel.",
+            "5. `DEPENDENCY-PROVENANCE-001` follows `SECRET-HYGIENE-001`; "
+            "`DEPLOYMENT-PROFILE-001` follows dependency provenance.",
+            "6. `BACKUP-RESTORE-DRILL-001` and `SECURITY-BASELINE-001` may run "
+            "in parallel after deployment profile acceptance.",
+            "7. Dependency bypass and exceeding a parallel group limit are "
+            "fail-closed.",
+            "",
+            "### Parallelization groups",
+            "",
+            "| Group | Mode | Max active | Members |",
+            "|---|---|---:|---|",
+        ]
+    )
+    groups = program_raw.get("execution_contract", {}).get(
+        "parallelization_groups", {}
+    )
     members: dict[str, list[str]] = defaultdict(list)
     for _, item in _program_items(program_raw):
         members[str(item.get("parallelization_group"))].append(str(item.get("id")))
@@ -917,28 +994,73 @@ def render_execution_backlog(
             + ", ".join(f"`{value}`" for value in members.get(group_id, []))
             + " |"
         )
-    lines.extend(["", "## 9. Risk-to-work-item ownership", "", "| Risk | Work items / owner roles |", "|---|---|"])
+    lines.extend(
+        [
+            "",
+            "## 9. Risk-to-work-item ownership",
+            "",
+            "| Risk | Work items / owner roles |",
+            "|---|---|",
+        ]
+    )
     risk_owners: dict[str, list[str]] = defaultdict(list)
     for _, item in _program_items(program_raw):
         for risk_id in item.get("risks", []):
-            risk_owners[str(risk_id)].append(f"`{item['id']}` / `{item.get('owner_role')}`")
+            risk_owners[str(risk_id)].append(
+                f"`{item['id']}` / `{item.get('owner_role')}`"
+            )
     for risk_id in sorted(risk_owners):
         lines.append(f"| `{risk_id}` | {'; '.join(risk_owners[risk_id])} |")
-    lines.extend(["", "## 10. Residual-risk contract", "", "A risk is not accepted merely because a `status` field says so. Every accepted or temporarily retained risk must contain:", ""])
+    lines.extend(
+        [
+            "",
+            "## 10. Residual-risk contract",
+            "",
+            "A risk is not accepted merely because a `status` field says so. "
+            "Every accepted or temporarily retained risk must contain:",
+            "",
+        ]
+    )
     for field in REQUIRED_RESIDUAL_FIELDS:
         lines.append(f"- `{field}`")
     records = program_raw.get("residual_risks", [])
     lines.extend(["", f"Current residual-risk records: `{len(records)}`.", ""])
     if records:
-        lines.extend(["| Risk | Applicability | Owner | Gate | Acceptance | Due/review |", "|---|---|---|---|---|---|"])
+        lines.extend(
+            [
+                "| Risk | Applicability | Owner | Gate | Acceptance | Due/review |",
+                "|---|---|---|---|---|---|",
+            ]
+        )
         for record in records:
             lines.append(
                 f"| `{record.get('risk_id')}` | `{record.get('applicability')}` | "
-                f"`{record.get('owner_role')}` / `{record.get('accountable_owner')}` | "
-                f"`{record.get('affected_gate')}` | `{record.get('acceptance_status')}` | "
-                f"`{record.get('due_date')}` / `{record.get('expires_or_review_at')}` |"
+                f"`{record.get('owner_role')}` / "
+                f"`{record.get('accountable_owner')}` | "
+                f"`{record.get('affected_gate')}` | "
+                f"`{record.get('acceptance_status')}` | "
+                f"`{record.get('due_date')}` / "
+                f"`{record.get('expires_or_review_at')}` |"
             )
-    lines.extend(["", "## 11. Fail-closed rules", "", "- Missing owner/evidence/risk/gate/parallelization metadata is rejected.", "- Invalid states and transitions are rejected.", "- `ACCEPTED` requires the declared evidence fields.", "- Start or acceptance with an open dependency is rejected.", "- Phase 1 start before all Phase 0 items are accepted is rejected.", "- Gate membership is compared with the owner-approved frozen sets.", "- Residual risks require named accountability, controls, due/review and explicit authority.", "- A second mutable planning-state owner is rejected.", "- This generated file is compared byte-for-byte.", ""])
+    lines.extend(
+        [
+            "",
+            "## 11. Fail-closed rules",
+            "",
+            "- Missing owner/evidence/risk/gate/parallelization metadata is "
+            "rejected.",
+            "- Invalid states and transitions are rejected.",
+            "- `ACCEPTED` requires the declared evidence fields.",
+            "- Start or acceptance with an open dependency is rejected.",
+            "- Phase 1 start before all Phase 0 items are accepted is rejected.",
+            "- Gate membership is compared with the owner-approved frozen sets.",
+            "- Residual risks require named accountability, controls, due/review "
+            "and explicit authority.",
+            "- A second mutable planning-state owner is rejected.",
+            "- This generated file is compared byte-for-byte.",
+            "",
+        ]
+    )
     return "\n".join(lines)
 
 

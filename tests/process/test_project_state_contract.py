@@ -12,10 +12,10 @@ from scripts.demo_release_plan import (
     load_plan,
     load_program,
     render_checklist,
+    render_execution_backlog,
     render_module_map,
     render_program_markdown,
     render_sequence,
-    render_execution_backlog,
 )
 from scripts.project_state_contract import (
     parse_current_state,
