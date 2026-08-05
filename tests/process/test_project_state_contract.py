@@ -103,6 +103,12 @@ class OwnershipTests(unittest.TestCase):
             "owners": {
                 "state": "docs/project/CURRENT_STATE.md",
                 "plan": "docs/project/DEMO_RELEASE_PLAN.yaml",
+                "coverage_source": (
+                    "docs/product/REFERENCE_OPERATIONAL_DOCUMENTATION_COVERAGE.csv"
+                ),
+                "coverage_decisions": (
+                    "docs/product/REFERENCE_OPERATIONAL_DOCUMENTATION_DECISIONS.csv"
+                ),
             }
         }
         self.assertEqual(validate_plan_ownership(plan), [])
@@ -127,6 +133,7 @@ class ExecutionContextTests(unittest.TestCase):
             "pull_request": {
                 "state": "open",
                 "draft": True,
+                "merged": False,
                 "base": {"sha": SHA},
                 "head": {"ref": "repair/process-gate-state-001"},
             },
@@ -140,6 +147,7 @@ class ExecutionContextTests(unittest.TestCase):
             "pull_request": {
                 "state": "open",
                 "draft": True,
+                "merged": False,
                 "base": {"sha": LATER_SHA},
                 "head": {"ref": "repair/process-gate-state-001"},
             },
@@ -160,6 +168,7 @@ class ExecutionContextTests(unittest.TestCase):
             "pull_request": {
                 "state": "open",
                 "draft": True,
+                "merged": False,
                 "base": {"sha": SHA},
                 "head": {"ref": "feature/master-data-alignment-001"},
             },
@@ -190,6 +199,13 @@ class DocumentationStateContractFixtureTests(unittest.TestCase):
             "docs/product/MODULE_MAP.md",
             "docs/product/IMPLEMENTATION_SEQUENCE.md",
             "docs/audits/PROJECT_SUSTAINABILITY_RISK_REGISTER_20260805.csv",
+            "docs/product/REFERENCE_OPERATIONAL_DOCUMENTATION_COVERAGE.csv",
+            "docs/product/REFERENCE_OPERATIONAL_DOCUMENTATION_DECISIONS.csv",
+            "docs/product/REFERENCE_OPERATIONAL_DOCUMENTATION_DECISION_PROFILES.csv",
+            "docs/evidence/SOURCE_REGISTRY.csv",
+            "docs/evidence/COMPETITOR_CAPABILITY_MATRIX.csv",
+            "docs/evidence/DOCUMENT_LEGAL_MODE_MATRIX.csv",
+            "docs/evidence/PERSONNEL_AUTHORITY_MATRIX.csv",
         ]
         plan = load_plan(ROOT)
         relative_paths.extend(
