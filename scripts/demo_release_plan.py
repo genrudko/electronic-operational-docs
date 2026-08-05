@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 try:
@@ -20,14 +21,17 @@ try:
         render_sequence,
     )
 except ImportError:
-    from release_plan_compat_validation import (
+    repository_root = str(Path(__file__).resolve().parents[1])
+    if repository_root not in sys.path:
+        sys.path.insert(0, repository_root)
+    from scripts.release_plan_compat_validation import (
         validate_release_plan_compatibility,
     )
-    from release_plan_model import PROGRAM_PATH, ROOT, load_plan, load_program
-    from release_plan_validation import (
+    from scripts.release_plan_model import PROGRAM_PATH, ROOT, load_plan, load_program
+    from scripts.release_plan_validation import (
         validate_repository as validate_industrialization_repository,
     )
-    from release_plan_views import (
+    from scripts.release_plan_views import (
         render_checklist,
         render_module_map,
         render_program_markdown,
