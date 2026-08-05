@@ -44,23 +44,27 @@ jobs:
           import hashlib
           from pathlib import Path
 
-          entries = {
-              "demo.b64": (
-                  "scripts/demo_release_plan.py",
+          source_root = Path(".github/industrialization-lint-repair")
+          payloads = {
+              "scripts/demo_release_plan.py": (
+                  (source_root / "demo.b64").read_text(encoding="utf-8"),
                   "d280865bf6da478ece98fabddcca3c62d882c13f",
               ),
-              "execution.b64": (
-                  "scripts/industrialization_execution.py",
+              "scripts/industrialization_execution.py": (
+                  "".join(
+                      (source_root / f"execution.part{index:02d}").read_text(
+                          encoding="utf-8"
+                      )
+                      for index in range(4)
+                  ),
                   "072b7eef825ce637ca2a37e61f862b55da0b4650",
               ),
-              "test_state.b64": (
-                  "tests/process/test_project_state_contract.py",
+              "tests/process/test_project_state_contract.py": (
+                  (source_root / "test_state.b64").read_text(encoding="utf-8"),
                   "8c663357071a5ebedb929ddf20415df711a68d17",
               ),
           }
-          source_root = Path(".github/industrialization-lint-repair")
-          for payload_name, (target_name, expected_sha) in entries.items():
-              payload = (source_root / payload_name).read_text(encoding="utf-8")
+          for target_name, (payload, expected_sha) in payloads.items():
               content = gzip.decompress(base64.b64decode(payload))
               actual_sha = hashlib.sha1(
                   f"blob {len(content)}\0".encode("ascii") + content
