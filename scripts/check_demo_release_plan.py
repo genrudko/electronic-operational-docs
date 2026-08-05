@@ -1,26 +1,19 @@
 #!/usr/bin/env python3
-from demo_release_plan import load, validate
+from pathlib import Path
+
+from demo_release_plan import validate_repository
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def main() -> int:
-    # Stage 1 remains the audit origin, but an accepted bounded work item advances
-    # the canonical current-code expectation for that module only.
-    expected_code = validate.__globals__["EXPECTED_CODE"]
-    original_expected_code = dict(expected_code)
-    expected_code["NORMATIVE-EVIDENCE"] = "IMPLEMENTED-ACCEPTED"
-    try:
-        errors = validate(load())
-    finally:
-        expected_code.clear()
-        expected_code.update(original_expected_code)
+    errors = validate_repository(ROOT)
     if errors:
-        print("Demo release plan contract: FAILED")
+        print("Demo release / industrialization state contract: FAILED")
         for error in errors:
             print(f"- {error}")
         return 1
-    print("Demo release plan contract: OK")
-    print("Modules: 27")
-    print("Reference rows: 66")
+    print("Demo release / industrialization state contract: OK")
     return 0
 
 
