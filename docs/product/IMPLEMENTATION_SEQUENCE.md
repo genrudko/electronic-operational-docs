@@ -1,8 +1,8 @@
 # Последовательность реализации
 
-> Источник: `DEMO_RELEASE_PLAN.yaml`. Dependency order и execution queue имеют разные назначения.
+> GENERATED VIEW. Dependency topology и статусы выводятся из `DEMO_RELEASE_PLAN.yaml` и принятого `INDUSTRIALIZATION_PROGRAM.yaml`.
 
-## 1. Топологический порядок зависимостей
+## 1. Топологический порядок Demo-модулей
 
 1. `PLATFORM` — зависимости: нет.
 2. `MASTER-DATA` — зависимости: `PLATFORM`.
@@ -32,46 +32,74 @@
 26. `DASHBOARD-REPORTING` — зависимости: `CROSS-DOC`, `OPJ`, `DEFECT`, `SHIFT`.
 27. `DEMO-DATA` — зависимости: `DASHBOARD-REPORTING`.
 
-## 2. Очередь work items после принятия baseline
+## 2. Текущая программа исполнения
 
-1. `UX-THEME-001` / `UX` — Единая light/dark/system тема Direction A.
-2. `MASTER-DATA-ALIGNMENT-001` / `MASTER-DATA` — Закрыть master-data gaps для authority.
-3. `NORMATIVE-EVIDENCE-001` / `NORMATIVE-EVIDENCE` — Evidence taxonomy, legal modes и ПЭП.
-4. `PERSONNEL-AUTHORITY-001` / `PERSONNEL-AUTHORITY` — Rights/scope/validity/action-time snapshot.
-5. `OPJ-LIFECYCLE-001` / `OPJ` — Registration/correction/communication.
-6. `SHIFT-HANDOVER-001` / `SHIFT` — Handover report and two-side evidence.
-7. `CROSS-DOC-001` / `CROSS-DOC` — Typed links/provenance.
-8. `APPLICATION-001` / `APPLICATION` — Оперативные заявки.
-9. `GROUNDING-001` / `GROUNDING` — Inventory and placement/removal.
-10. `OPERATIONAL-ORDERS-001` / `OPERATIONAL-ORDERS` — Paper journal mirror.
-11. `WORK-PERMIT-001` / `WORK-PERMIT` — Hybrid permit authoring.
-12. `PERMIT-WORK-JOURNAL-001` / `PERMIT-WORK-JOURNAL` — Electronic permit-work journal.
-13. `ORDER-WORK-JOURNAL-001` / `ORDER-WORK-JOURNAL` — Paper order-work journal mirror.
-14. `CURRENT-OPERATION-WORKS-001` / `CURRENT-OPERATION-WORKS` — List/schedule/execution/journal.
-15. `EQUIPMENT-INSPECTIONS-001` / `EQUIPMENT-INSPECTIONS` — Schedule/checklist/deviation/defect.
-16. `EQUIPMENT-COMMISSIONING-001` / `EQUIPMENT-COMMISSIONING` — Bounded commissioning journal.
-17. `RZA-TM-001` / `RZA-TM` — Bounded RZA/TM contour.
-18. `BREAKER-INTERRUPTIONS-001` / `BREAKER-INTERRUPTIONS` — Interruptions/resource.
-19. `BATTERY-INSPECTION-001` / `BATTERY-INSPECTION` — Battery checklist/measurements.
-20. `WORKPLACE-DOCS-001` / `WORKPLACE-DOCS` — Completeness/review/familiarization.
-21. `SCHEMES-DOCUMENTS-001` / `SCHEMES-DOCUMENTS` — Scheme versions/viewer.
-22. `EMERGENCY-READINESS-001` / `EMERGENCY-READINESS` — Emergency quick access.
-23. `SWITCHING-DOCUMENTS-001` / `SWITCHING-DOCUMENTS` — Manual switching documents.
-24. `DASHBOARD-REPORTING-001` / `DASHBOARD-REPORTING` — Derived operational views.
-25. `DEMO-DATA-001` / `DEMO-DATA` — Final scenarios/reset.
+`SAFE-CONTINUATION`: **ещё не достигнут**.
 
-Принятый `DEFECT-001` не открывается повторно; accepted foundations остаются prerequisites.
+| Фаза | Work item | Статус | Зависимости |
+|---:|---|---|---|
+| 0 | `INDUSTRIALIZATION-PROGRAM-EXECUTION-001` | `NOT_STARTED` | `PROJECT-STATE-RECONCILIATION-001` |
+| 0 | `PROJECT-STATE-RECONCILIATION-001` | `IN_PROGRESS` | — |
+| 1 | `BACKUP-RESTORE-DRILL-001` | `NOT_STARTED` | `DEPLOYMENT-PROFILE-001` |
+| 1 | `DEPENDENCY-PROVENANCE-001` | `NOT_STARTED` | `SECRET-HYGIENE-001` |
+| 1 | `DEPLOYMENT-PROFILE-001` | `NOT_STARTED` | `DEPENDENCY-PROVENANCE-001` |
+| 1 | `MODULE-ACTIVATION-CONTRACT-001` | `NOT_STARTED` | `PROJECT-STATE-RECONCILIATION-001` |
+| 1 | `SECRET-HYGIENE-001` | `NOT_STARTED` | — |
+| 1 | `SECURITY-BASELINE-001` | `NOT_STARTED` | `DEPLOYMENT-PROFILE-001` |
+| 2 | `MODULE-BOUNDARY-GATES-001` | `NOT_STARTED` | `MODULE-ACTIVATION-CONTRACT-001` |
+| 2 | `MODULE-REGISTRY-001` | `NOT_STARTED` | `MODULE-ACTIVATION-CONTRACT-001`, `SECURITY-BASELINE-001` |
+| 3 | `DATA-GOVERNANCE-001` | `NOT_STARTED` | `DATA-INTEGRITY-HARDENING-001` |
+| 3 | `DATA-INTEGRITY-HARDENING-001` | `NOT_STARTED` | `DEPLOYMENT-PROFILE-001` |
+| 3 | `DATA-PORTABILITY-001` | `NOT_STARTED` | `DATA-GOVERNANCE-001` |
+| 3 | `MIGRATION-SAFETY-001` | `NOT_STARTED` | `BACKUP-RESTORE-DRILL-001` |
+| 3 | `MODULE-MIGRATION-COMPATIBILITY-001` | `NOT_STARTED` | `MODULE-REGISTRY-001`, `MIGRATION-SAFETY-001` |
+| 3 | `RELEASE-ROLLBACK-001` | `NOT_STARTED` | `DEPENDENCY-PROVENANCE-001`, `MIGRATION-SAFETY-001`, `BACKUP-RESTORE-DRILL-001` |
+| 4 | `AUTH-RBAC-HARDENING-001` | `NOT_STARTED` | `SECURITY-BASELINE-001`, `MODULE-REGISTRY-001` |
+| 4 | `INCIDENT-RESPONSE-001` | `NOT_STARTED` | `OBSERVABILITY-001`, `RELEASE-ROLLBACK-001` |
+| 4 | `OBSERVABILITY-001` | `NOT_STARTED` | `DEPLOYMENT-PROFILE-001`, `MODULE-REGISTRY-001` |
+| 4 | `SECURITY-PIPELINE-001` | `NOT_STARTED` | `DEPENDENCY-PROVENANCE-001`, `SECURITY-BASELINE-001` |
+| 4 | `UPLOAD-HARDENING-001` | `NOT_STARTED` | `SECURITY-BASELINE-001` |
+| 5 | `LEGACY-UX-MIGRATION-001` | `NOT_STARTED` | `UX-PLATFORM-FOUNDATION-001` |
+| 5 | `PAGE-TEMPLATE-LIBRARY-001` | `NOT_STARTED` | `UX-PLATFORM-FOUNDATION-001` |
+| 5 | `UX-BROWSER-GATES-001` | `NOT_STARTED` | `DEPLOYMENT-PROFILE-001`, `MODULE-REGISTRY-001` |
+| 5 | `UX-PLATFORM-FOUNDATION-001` | `NOT_STARTED` | `MODULE-ACTIVATION-CONTRACT-001` |
+| 6 | `DRIVE-LIBRARY-GOVERNANCE-001` | `NOT_STARTED` | `MODULE-SOURCE-GOVERNANCE-001` |
+| 6 | `MODULE-SOURCE-GOVERNANCE-001` | `NOT_STARTED` | `PROJECT-STATE-RECONCILIATION-001` |
+| 7 | `PERFORMANCE-BASELINE-001` | `NOT_STARTED` | `DEPLOYMENT-PROFILE-001`, `OBSERVABILITY-001` |
+| 7 | `PILOT-READINESS-001` | `NOT_STARTED` | `MODULE-MIGRATION-COMPATIBILITY-001`, `DATA-GOVERNANCE-001`, `SECURITY-PIPELINE-001`, `UX-BROWSER-GATES-001`, `SUPPORT-HANDOVER-001` |
+| 7 | `SUPPORT-HANDOVER-001` | `NOT_STARTED` | `OBSERVABILITY-001`, `INCIDENT-RESPONSE-001`, `RELEASE-ROLLBACK-001` |
 
-## 3. Граница ближайших OPJ / SHIFT / CROSS-DOC work items
+## 3. Предметная очередь Demo
 
-### `OPJ-LIFECYCLE-001`
+Статус очереди: `PAUSED_PENDING_SAFE_CONTINUATION_AND_EXPLICIT_OWNER_DECISION`.
 
-Завершает переход отдельной строки ОЖ из редактируемого сменного черновика в зарегистрированный неизменяемый чистовик. Включает внутреннюю связь черновой и зарегистрированной записи, исправление/отмену только в чистовике и фиксацию оперативно значимого результата переговоров внутри хронологии ОЖ. Не реализует сдачу смены и не создаёт универсальный междокументный relation engine.
+Работа `SHIFT-HANDOVER-001` и следующие предметные work items не стартуют автоматически. После достижения `SAFE-CONTINUATION` требуется отдельное явное решение владельца.
 
-### `SHIFT-HANDOVER-001`
+| # | Work item | Модуль | Цель |
+|---:|---|---|---|
+| 1 | `SHIFT-HANDOVER-001` | `SHIFT` | Handover report and two-side evidence |
+| 2 | `CROSS-DOC-001` | `CROSS-DOC` | Typed links/provenance |
+| 3 | `APPLICATION-001` | `APPLICATION` | Оперативные заявки |
+| 4 | `GROUNDING-001` | `GROUNDING` | Inventory and placement/removal |
+| 5 | `OPERATIONAL-ORDERS-001` | `OPERATIONAL-ORDERS` | Paper journal mirror |
+| 6 | `WORK-PERMIT-001` | `WORK-PERMIT` | Hybrid permit authoring |
+| 7 | `PERMIT-WORK-JOURNAL-001` | `PERMIT-WORK-JOURNAL` | Electronic permit-work journal |
+| 8 | `ORDER-WORK-JOURNAL-001` | `ORDER-WORK-JOURNAL` | Paper order-work journal mirror |
+| 9 | `CURRENT-OPERATION-WORKS-001` | `CURRENT-OPERATION-WORKS` | List/schedule/execution/journal |
+| 10 | `EQUIPMENT-INSPECTIONS-001` | `EQUIPMENT-INSPECTIONS` | Schedule/checklist/deviation/defect |
+| 11 | `EQUIPMENT-COMMISSIONING-001` | `EQUIPMENT-COMMISSIONING` | Bounded commissioning journal |
+| 12 | `RZA-TM-001` | `RZA-TM` | Bounded RZA/TM contour |
+| 13 | `BREAKER-INTERRUPTIONS-001` | `BREAKER-INTERRUPTIONS` | Interruptions/resource |
+| 14 | `BATTERY-INSPECTION-001` | `BATTERY-INSPECTION` | Battery checklist/measurements |
+| 15 | `WORKPLACE-DOCS-001` | `WORKPLACE-DOCS` | Completeness/review/familiarization |
+| 16 | `SCHEMES-DOCUMENTS-001` | `SCHEMES-DOCUMENTS` | Scheme versions/viewer |
+| 17 | `EMERGENCY-READINESS-001` | `EMERGENCY-READINESS` | Emergency quick access |
+| 18 | `SWITCHING-DOCUMENTS-001` | `SWITCHING-DOCUMENTS` | Manual switching documents |
+| 19 | `DASHBOARD-REPORTING-001` | `DASHBOARD-REPORTING` | Derived operational views |
+| 20 | `DEMO-DATA-001` | `DEMO-DATA` | Final scenarios/reset |
 
-Использует уже зарегистрированный журнал для подготовки отчёта передачи смены, снимка активных состояний и независимых подтверждений сдающей и принимающей сторон. Не подменяет регистрацию строк ОЖ и не превращает закрытие смены в скрытую массовую регистрацию черновика.
+## 4. Принятые границы OPJ / SHIFT / CROSS-DOC
 
-### `CROSS-DOC-001`
-
-Реализует общесистемные горизонтальные и вертикальные связи между ОЖ, дефектами, заявками, работами, оборудованием и другими документами: typed relations, provenance, context snapshots, backlinks, source trail и relation graph. До него допускаются только узкие внутренние связи lifecycle конкретного модуля.
+- `OPJ-LIFECYCLE-001` принят: immutable registration, correction/cancellation новыми фактами и фиксация оперативно значимого результата переговоров.
+- `SHIFT-HANDOVER-001` остаётся отдельным не начатым work item: отчёт передачи смены и независимые подтверждения сторон.
+- `CROSS-DOC-001` остаётся отдельным work item общего relation engine; внутренние lifecycle-связи принятых модулей его не подменяют.
