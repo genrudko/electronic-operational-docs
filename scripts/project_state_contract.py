@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Single-owner project-state contract plus canonical planning validation."""
+"""Validate canonical current state and the single-owner documentation contract."""
 
 from __future__ import annotations
 
@@ -16,16 +16,42 @@ HANDOFF_PATH = "docs/project/CURRENT_HANDOFF.md"
 PLAN_PATH = "docs/project/DEMO_RELEASE_PLAN.yaml"
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 SHA_ANY_RE = re.compile(r"\b[0-9a-f]{40}\b")
-FIELD_RE = re.compile(r"(?m)^([a-z ]+):\s*(.+?)\s*$", re.IGNORECASE)
-VOLATILE_FIELDS = (
+WORK_ITEM_RE = re.compile(r"^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*-\d{3}$")
+ISSUE_RE = re.compile(r"^#[1-9][0-9]*$")
+PR_RE = re.compile(
+    r"^#(?P<number>[1-9][0-9]*) / (?P<state>OPEN|CLOSED) / "
+    r"(?P<review>DRAFT|READY) / (?P<merge>NOT MERGED|MERGED)$"
+)
+BRANCH_RE = re.compile(r"^[A-Za-z0-9._/-]+$")
+VOLATILE_FIELD_RE = re.compile(
+    r"(?im)^\s*(accepted main baseline|active work item|active issue|"
+    r"active pr|active branch|runtime impact|preview)\s*:"
+)
+REQUIRED_STATE_KEYS = (
+    "repository",
     "accepted main baseline",
     "active work item",
     "active issue",
-    "active pr",
+    "active PR",
     "active branch",
     "runtime impact",
     "preview",
 )
+EXPECTED_OWNERS = {
+    "state": STATE_PATH,
+    "plan": PLAN_PATH,
+    "coverage_source": (
+        "docs/product/REFERENCE_OPERATIONAL_DOCUMENTATION_COVERAGE.csv"
+    ),
+    "coverage_decisions": (
+        "docs/product/REFERENCE_OPERATIONAL_DOCUMENTATION_DECISIONS.csv"
+    ),
+}
+VOLATILE_OWNER_ALLOWLIST = {
+    STATE_PATH,
+    "docs/project/ACCEPTANCE_HISTORY.md",
+    "docs/project/BASELINE_HISTORY.md",
+}
 
 
 @dataclass(frozen=True)
@@ -35,75 +61,134 @@ class CurrentState:
     active_work_item: str | None
     active_issue: int | None
     active_pr: int | None
+    active_pr_state: str | None
+    active_pr_review: str | None
+    active_pr_merge: str | None
     active_branch: str | None
     runtime_impact: str
     preview: str
 
 
-def _none_or_value(value: str) -> str | None:
-    return None if value.strip().upper() == "NONE" else value.strip()
+def _state_block(text: str) -> str:
+    for match in re.finditer(
+        r"```text\s*\n(?P<body>.*?)\n```", text, re.DOTALL
+    ):
+        body = match.group("body")
+        if "repository:" in body and "accepted main baseline:" in body:
+            return body
+    raise ValueError("CURRENT_STATE canonical text block not found")
+
+
+def _key_values(block: str) -> dict[str, str]:
+    values: dict[str, str] = {}
+    for number, raw_line in enumerate(block.splitlines(), start=1):
+        line = raw_line.strip()
+        if not line:
+            continue
+        if ":" not in line:
+            raise ValueError(
+                f"CURRENT_STATE line {number} is not key/value"
+            )
+        key, value = (part.strip() for part in line.split(":", 1))
+        if key in values:
+            raise ValueError(f"CURRENT_STATE duplicate key: {key}")
+        values[key] = value
+    missing = [key for key in REQUIRED_STATE_KEYS if key not in values]
+    if missing:
+        raise ValueError(
+            "CURRENT_STATE missing keys: " + ", ".join(missing)
+        )
+    return values
+
+
+def _valid_branch(value: str) -> bool:
+    if not BRANCH_RE.fullmatch(value):
+        return False
+    if value.startswith("/") or value.endswith("/"):
+        return False
+    if value.startswith(".") or value.endswith("."):
+        return False
+    if "//" in value or ".." in value or "@{" in value:
+        return False
+    return not any(part.endswith(".lock") for part in value.split("/"))
 
 
 def parse_current_state(text: str) -> CurrentState:
-    blocks = re.findall(r"```text\s*\n(.*?)```", text, flags=re.DOTALL)
-    candidate: dict[str, str] | None = None
-    for block in blocks:
-        fields = {key.lower(): value for key, value in FIELD_RE.findall(block)}
-        required = {
-            "repository",
-            "accepted main baseline",
-            "active work item",
-            "active issue",
-            "active pr",
-            "active branch",
-            "runtime impact",
-            "preview",
-        }
-        if required.issubset(fields):
-            candidate = fields
-            break
-    if candidate is None:
-        raise ValueError("CURRENT_STATE canonical state block missing")
+    values = _key_values(_state_block(text))
+    repository = values["repository"]
+    if repository != "genrudko/electronic-operational-docs":
+        raise ValueError("CURRENT_STATE repository invalid")
 
-    accepted_raw = candidate["accepted main baseline"]
-    accepted_match = re.fullmatch(r"main\s*/\s*([0-9a-f]{40})", accepted_raw)
-    if accepted_match is None:
+    baseline_prefix = "main / "
+    baseline = values["accepted main baseline"]
+    if not baseline.startswith(baseline_prefix):
+        raise ValueError(
+            "CURRENT_STATE accepted main must use 'main / <sha>'"
+        )
+    accepted_main = baseline.removeprefix(baseline_prefix)
+    if not SHA_RE.fullmatch(accepted_main):
         raise ValueError("CURRENT_STATE accepted main SHA invalid")
-    accepted_main = accepted_match.group(1)
 
-    work_item = _none_or_value(candidate["active work item"])
-    issue_raw = _none_or_value(candidate["active issue"])
-    pr_raw = _none_or_value(candidate["active pr"])
-    branch = _none_or_value(candidate["active branch"])
+    work_item_raw = values["active work item"]
+    issue_raw = values["active issue"]
+    pr_raw = values["active PR"]
+    branch_raw = values["active branch"]
+    active_values = (work_item_raw, issue_raw, pr_raw, branch_raw)
+    inactive = all(value == "NONE" for value in active_values)
+    partially_inactive = any(value == "NONE" for value in active_values)
+    if partially_inactive and not inactive:
+        raise ValueError(
+            "CURRENT_STATE active work item/issue/PR/branch must be "
+            "all set or all NONE"
+        )
 
-    issue: int | None = None
-    pr: int | None = None
-    if issue_raw is not None:
-        match = re.fullmatch(r"#(\d+)", issue_raw)
-        if match is None:
+    if inactive:
+        work_item = None
+        issue = None
+        pr_number = None
+        pr_state = None
+        pr_review = None
+        pr_merge = None
+        branch = None
+    else:
+        if not WORK_ITEM_RE.fullmatch(work_item_raw):
+            raise ValueError("CURRENT_STATE active work item ID invalid")
+        if not ISSUE_RE.fullmatch(issue_raw):
             raise ValueError("CURRENT_STATE active issue invalid")
-        issue = int(match.group(1))
-    if pr_raw is not None:
-        match = re.match(r"#(\d+)\b", pr_raw)
-        if match is None:
-            raise ValueError("CURRENT_STATE active PR invalid")
-        pr = int(match.group(1))
+        pr_match = PR_RE.fullmatch(pr_raw)
+        if pr_match is None:
+            raise ValueError("CURRENT_STATE active PR descriptor invalid")
+        if not _valid_branch(branch_raw):
+            raise ValueError("CURRENT_STATE active branch invalid")
+        work_item = work_item_raw
+        issue = int(issue_raw.removeprefix("#"))
+        pr_number = int(pr_match.group("number"))
+        pr_state = pr_match.group("state")
+        pr_review = pr_match.group("review")
+        pr_merge = pr_match.group("merge")
+        branch = branch_raw
 
-    active_values = (work_item, issue, pr, branch)
-    if any(value is None for value in active_values) and not all(
-        value is None for value in active_values
-    ):
-        raise ValueError("CURRENT_STATE active tuple must be all set or all NONE")
+    runtime_impact = values["runtime impact"]
+    valid_runtime = {"NONE", "DEVELOPMENT", "PREVIEW", "BOTH"}
+    if runtime_impact not in valid_runtime:
+        raise ValueError("CURRENT_STATE runtime impact invalid")
+    preview = values["preview"]
+    valid_preview = {"UNTOUCHED", "CURRENT", "DRIFT", "UNKNOWN"}
+    if preview not in valid_preview:
+        raise ValueError("CURRENT_STATE preview status invalid")
 
     return CurrentState(
-        repository=candidate["repository"],
+        repository=repository,
         accepted_main=accepted_main,
         active_work_item=work_item,
         active_issue=issue,
-        active_pr=pr,
+        active_pr=pr_number,
+        active_pr_state=pr_state,
+        active_pr_review=pr_review,
+        active_pr_merge=pr_merge,
         active_branch=branch,
-        runtime_impact=candidate["runtime impact"],
-        preview=candidate["preview"],
+        runtime_impact=runtime_impact,
+        preview=preview,
     )
 
 
@@ -115,32 +200,20 @@ def validate_handoff(text: str) -> list[str]:
     )
     for marker in required_markers:
         if marker not in text:
-            errors.append(f"CURRENT_HANDOFF navigation marker missing: {marker}")
+            errors.append(
+                f"CURRENT_HANDOFF navigation marker missing: {marker}"
+            )
     if SHA_ANY_RE.search(text):
         errors.append("CURRENT_HANDOFF contains volatile SHA")
-    lowered = text.lower()
-    for field in VOLATILE_FIELDS:
-        if re.search(rf"(?m)^\s*{re.escape(field)}\s*:", lowered):
-            errors.append("CURRENT_HANDOFF contains volatile state field")
-            break
+    if VOLATILE_FIELD_RE.search(text):
+        errors.append("CURRENT_HANDOFF contains volatile state field")
     return errors
 
 
 def validate_plan_ownership(plan: dict[str, Any]) -> list[str]:
     errors: list[str] = []
-    owners = plan.get("owners")
-    expected = {
-        "state": STATE_PATH,
-        "plan": PLAN_PATH,
-    }
-    if not isinstance(owners, dict):
-        errors.append("DEMO_RELEASE_PLAN owners mapping missing")
-    else:
-        for key, value in expected.items():
-            if owners.get(key) != value:
-                errors.append(
-                    f"DEMO_RELEASE_PLAN owner {key} must be {value}, got {owners.get(key)!r}"
-                )
+    if plan.get("owners") != EXPECTED_OWNERS:
+        errors.append("canonical owners invalid")
     forbidden = (
         "accepted_main",
         "active",
@@ -150,20 +223,23 @@ def validate_plan_ownership(plan: dict[str, Any]) -> list[str]:
         "active_branch",
     )
     for key in forbidden:
-        if key in plan:
-            if key == "accepted_main":
-                errors.append(
-                    "DEMO_RELEASE_PLAN duplicates accepted main owned by CURRENT_STATE"
-                )
-            elif key == "active":
-                errors.append(
-                    "DEMO_RELEASE_PLAN duplicates active work owned by CURRENT_STATE"
-                )
-            else:
-                errors.append(
-                    "DEMO_RELEASE_PLAN duplicates volatile state owned by "
-                    f"CURRENT_STATE: {key}"
-                )
+        if key not in plan:
+            continue
+        if key == "accepted_main":
+            errors.append(
+                "DEMO_RELEASE_PLAN duplicates accepted main owned by "
+                "CURRENT_STATE"
+            )
+        elif key == "active":
+            errors.append(
+                "DEMO_RELEASE_PLAN duplicates active work owned by "
+                "CURRENT_STATE"
+            )
+        else:
+            errors.append(
+                "DEMO_RELEASE_PLAN duplicates volatile state owned by "
+                f"CURRENT_STATE: {key}"
+            )
     return errors
 
 
@@ -174,17 +250,50 @@ def validate_execution_context(
     origin_main: str | None = None,
 ) -> list[str]:
     errors: list[str] = []
-    if event and "pull_request" in event:
-        pr = event["pull_request"]
-        if state.active_pr is not None and int(event.get("number", -1)) != state.active_pr:
-            errors.append("CURRENT_STATE active PR does not match workflow pull request")
-        head_ref = pr.get("head", {}).get("ref")
-        if state.active_branch is not None and head_ref != state.active_branch:
-            errors.append("CURRENT_STATE active branch does not match workflow pull request")
-        if pr.get("state") != "open":
-            errors.append("CURRENT_STATE active PR is not open in workflow event")
-        if not pr.get("draft", False):
-            errors.append("CURRENT_STATE active PR must remain Draft")
+    pull_request = event.get("pull_request") if event else None
+    if isinstance(pull_request, dict):
+        head = pull_request.get("head", {})
+        head_ref = head.get("ref") if isinstance(head, dict) else None
+        number = event.get("number")
+        event_state = str(pull_request.get("state", "")).upper()
+        event_review = "DRAFT" if pull_request.get("draft") else "READY"
+        event_merge = (
+            "MERGED" if pull_request.get("merged", False) else "NOT MERGED"
+        )
+        checks = (
+            (
+                state.active_pr,
+                number,
+                "CURRENT_STATE active PR does not match workflow pull request",
+            ),
+            (
+                state.active_branch,
+                head_ref,
+                "CURRENT_STATE active branch does not match workflow "
+                "pull request",
+            ),
+            (
+                state.active_pr_state,
+                event_state,
+                "CURRENT_STATE active PR state does not match workflow "
+                "pull request",
+            ),
+            (
+                state.active_pr_review,
+                event_review,
+                "CURRENT_STATE active PR review state does not match "
+                "workflow pull request",
+            ),
+            (
+                state.active_pr_merge,
+                event_merge,
+                "CURRENT_STATE active PR merge state does not match "
+                "workflow pull request",
+            ),
+        )
+        for expected, actual, message in checks:
+            if expected != actual:
+                errors.append(message)
     if origin_main is not None and not SHA_RE.fullmatch(origin_main):
         errors.append("origin/main SHA invalid")
     return errors
@@ -201,43 +310,39 @@ def _load_event() -> dict[str, Any] | None:
     return loaded if isinstance(loaded, dict) else None
 
 
-def validate_duplicate_volatile_owners(
-    root: Path, plan: dict[str, Any]
-) -> list[str]:
-    """Reject explicit owner-style volatile fields outside CURRENT_STATE.
+def _documentation_markdown_paths(root: Path) -> list[Path]:
+    paths = list((root / "docs").rglob("*.md"))
+    paths.extend(root.glob("*.md"))
+    return sorted({path.resolve() for path in paths if path.is_file()})
 
-    Historical SHAs and event ledgers are allowed. What is forbidden is a second
-    file exposing the canonical owner field syntax.
-    """
+
+def validate_duplicate_volatile_owners(root: Path) -> list[str]:
+    """Scan all applicable Markdown for a second volatile-state owner."""
     errors: list[str] = []
-    paths = {
-        HANDOFF_PATH,
-        "docs/project/INDUSTRIALIZATION_PROGRAM.md",
-        *plan.get("views", {}).values(),
-        *(module.get("contract", "") for module in plan.get("modules", [])),
-    }
-    pattern = re.compile(
-        r"(?im)^\s*(accepted main baseline|active work item|active issue|"
-        r"active pr|active branch|runtime impact|preview)\s*:"
-    )
-    for relative in sorted(path for path in paths if path and path != STATE_PATH):
-        file_path = root / relative
-        if not file_path.is_file():
+    for file_path in _documentation_markdown_paths(root):
+        relative = file_path.relative_to(root).as_posix()
+        if relative in VOLATILE_OWNER_ALLOWLIST:
             continue
-        for match in pattern.finditer(file_path.read_text(encoding="utf-8")):
+        text = file_path.read_text(encoding="utf-8")
+        for match in VOLATILE_FIELD_RE.finditer(text):
             field = match.group(1).lower()
             errors.append(
                 f"{relative}: [{field}] rule=single-volatile-owner; "
-                f"expected='owned only by {STATE_PATH}'; "
+                f"expected='owned only by {STATE_PATH} or explicit "
+                "historical-ledger allowlist'; "
                 "actual='owner-style field present'"
             )
     return errors
 
 
-def validate_repository(root: Path = ROOT, *, verify_context: bool = False) -> list[str]:
+def validate_repository(
+    root: Path = ROOT, *, verify_context: bool = False
+) -> list[str]:
     errors: list[str] = []
     try:
-        state = parse_current_state((root / STATE_PATH).read_text(encoding="utf-8"))
+        state = parse_current_state(
+            (root / STATE_PATH).read_text(encoding="utf-8")
+        )
     except (OSError, ValueError) as exc:
         return [
             f"{STATE_PATH}: [state] rule=current-state-parse; "
@@ -254,11 +359,14 @@ def validate_repository(root: Path = ROOT, *, verify_context: bool = False) -> l
     errors.extend(validate_handoff(handoff))
 
     try:
-        plan = json.loads((root / PLAN_PATH).read_text(encoding="utf-8"))
+        plan = json.loads(
+            (root / PLAN_PATH).read_text(encoding="utf-8")
+        )
     except (OSError, json.JSONDecodeError) as exc:
         return errors + [
             f"{PLAN_PATH}: [load] rule=plan-load; "
-            f"expected='valid JSON-compatible YAML'; actual={str(exc)!r}"
+            "expected='valid JSON-compatible YAML'; "
+            f"actual={str(exc)!r}"
         ]
     if not isinstance(plan, dict):
         return errors + [
@@ -266,24 +374,25 @@ def validate_repository(root: Path = ROOT, *, verify_context: bool = False) -> l
             f"expected='object'; actual={type(plan).__name__!r}"
         ]
     errors.extend(validate_plan_ownership(plan))
-    errors.extend(validate_duplicate_volatile_owners(root, plan))
+    errors.extend(validate_duplicate_volatile_owners(root))
 
     if verify_context:
-        event = _load_event()
-        origin_main = os.environ.get("EOD_ORIGIN_MAIN_SHA")
         errors.extend(
             validate_execution_context(
-                state, event=event, origin_main=origin_main
+                state,
+                event=_load_event(),
+                origin_main=os.environ.get("EOD_ORIGIN_MAIN_SHA"),
             )
         )
 
     try:
-        from demo_release_plan import validate_repository as validate_release_repository
+        from demo_release_plan import (
+            validate_repository as validate_release_repository,
+        )
     except ModuleNotFoundError:
         from scripts.demo_release_plan import (
             validate_repository as validate_release_repository,
         )
-
     errors.extend(validate_release_repository(root))
 
     work_item_status = {
@@ -305,11 +414,14 @@ def validate_repository(root: Path = ROOT, *, verify_context: bool = False) -> l
 def require_repository(
     root: Path = ROOT, *, verify_context: bool = False
 ) -> CurrentState:
-    """Compatibility wrapper for historical gates and current callers."""
     errors = validate_repository(root, verify_context=verify_context)
     if errors:
-        raise AssertionError("Project state contract failed: " + "; ".join(errors))
-    return parse_current_state((root / STATE_PATH).read_text(encoding="utf-8"))
+        raise AssertionError(
+            "Project state contract failed: " + "; ".join(errors)
+        )
+    return parse_current_state(
+        (root / STATE_PATH).read_text(encoding="utf-8")
+    )
 
 
 def main() -> int:
@@ -319,7 +431,9 @@ def main() -> int:
         for error in errors:
             print(f"- {error}")
         return 1
-    state = parse_current_state((ROOT / STATE_PATH).read_text(encoding="utf-8"))
+    state = parse_current_state(
+        (ROOT / STATE_PATH).read_text(encoding="utf-8")
+    )
     print("Project state contract: OK")
     print(f"Accepted main baseline: {state.accepted_main}")
     print(f"Active work item: {state.active_work_item or 'NONE'}")
