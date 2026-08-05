@@ -2,9 +2,9 @@
 
 > GENERATED HUMAN VIEW. Machine-readable definition: `docs/project/INDUSTRIALIZATION_PROGRAM.yaml`; work-item statuses: `docs/project/DEMO_RELEASE_PLAN.yaml`. Ручное изменение этого файла будет отклонено Documentation Contract.
 
-**Версия:** `1.0`  
-**Дата:** `2026-08-05`  
-**Источник:** `PROJECT-SUSTAINABILITY-001`  
+**Версия:** `1.0`
+**Дата:** `2026-08-05`
+**Источник:** `PROJECT-SUSTAINABILITY-001`
 **Статус:** `ACCEPTED`
 
 ## 1. Принципы
@@ -33,6 +33,33 @@ Minimum prerequisites before an owner may authorize limited work in an existing 
 - `BACKUP-RESTORE-DRILL-001`
 - `SECURITY-BASELINE-001`
 
+Post-gate policy:
+
+```json
+{
+  "exception": {
+    "requires": [
+      "separate_ADR",
+      "explicit_product_owner_decision",
+      "bounded_scope_and_accepted_risks"
+    ]
+  },
+  "limited_existing_contour_work": {
+    "allowed_only_by": "explicit_product_owner_decision",
+    "example": "SHIFT-HANDOVER-001"
+  },
+  "mass_new_journals_and_modules": {
+    "allowed_after": [
+      "MODULE-REGISTRY-001",
+      "UX-PLATFORM-FOUNDATION-001",
+      "PAGE-TEMPLATE-LIBRARY-001",
+      "MODULE-SOURCE-GOVERNANCE-001"
+    ]
+  }
+}
+```
+
+
 Acceptance:
 
 - Canonical planning views agree and automated checks prevent drift.
@@ -42,12 +69,6 @@ Acceptance:
 - Pilot/production configuration contract fails closed.
 - A representative backup has been restored, verified and certified.
 - Risk register and industrial backlog have owners and acceptance.
-
-Post-gate boundary:
-
-- limited existing contour work: only by `explicit_product_owner_decision` (example `SHIFT-HANDOVER-001`);
-- mass new journals/modules only after `MODULE-REGISTRY-001`, `UX-PLATFORM-FOUNDATION-001`, `PAGE-TEMPLATE-LIBRARY-001`, `MODULE-SOURCE-GOVERNANCE-001`;
-- exception requires `separate_ADR`, `explicit_product_owner_decision`, `bounded_scope_and_accepted_risks`.
 
 ### `PILOT-READY`
 
@@ -77,10 +98,42 @@ Mandatory evidence gate before real pilot users, operational data or a pilot fac
 - `SUPPORT-HANDOVER-001`
 - `PILOT-READINESS-001`
 
-Critical-risk policy:
+critical_risk_policy:
 
-- `applicable`: `close_or_explicitly_accept_with_bounded_controls_owner_due_date_and_review_condition`
-- `not_applicable`: `document_scope_evidence_and_owner_approval`
+```json
+{
+  "applicable": "close_or_explicitly_accept_with_bounded_controls_owner_due_date_and_review_condition",
+  "not_applicable": "document_scope_evidence_and_owner_approval"
+}
+```
+
+browser_gate_policy:
+
+```json
+{
+  "requires_general_ux_refactor": false,
+  "route_scope": "actual_critical_pilot_routes",
+  "screen_scope": [
+    "existing_accepted_screens",
+    "migrated_screens"
+  ],
+  "ux_foundation_and_page_templates_required_when": [
+    "new_page_family",
+    "new_journal",
+    "new_module_ui",
+    "other_explicitly_recorded_pilot_trigger"
+  ]
+}
+```
+
+residual_risk_policy:
+
+```json
+{
+  "high_medium": "close_or_record_owner_controls_due_date_review_condition_and_explicit_owner_acceptance",
+  "long_term_not_applicable": "does_not_block_without_pilot_specific_justification"
+}
+```
 
 Scope-dependent work items:
 
@@ -92,18 +145,6 @@ Scope-dependent work items:
 - `MODULE-SOURCE-GOVERNANCE-001` — Pilot introduces a new module/capability or requires source freshness beyond accepted evidence.
 - `DRIVE-LIBRARY-GOVERNANCE-001` — Google Drive materials are used in pilot operation or acceptance.
 - `PERFORMANCE-BASELINE-001` — Pilot workload exceeds a bounded single-site small-cohort profile or PSR-031 is not explicitly accepted.
-
-Browser-gate policy:
-
-- route scope: `actual_critical_pilot_routes`;
-- screen scope: `existing_accepted_screens, migrated_screens`;
-- general UX refactor required: `false`;
-- UX foundation/page templates trigger: `new_page_family, new_journal, new_module_ui, other_explicitly_recorded_pilot_trigger`.
-
-Residual-risk policy:
-
-- `high_medium`: `close_or_record_owner_controls_due_date_review_condition_and_explicit_owner_acceptance`
-- `long_term_not_applicable`: `does_not_block_without_pilot_specific_justification`
 
 Acceptance:
 
@@ -430,10 +471,7 @@ Prove the platform can be operated and transferred safely.
   - Scope-dependent and residual risks follow the PILOT-READY policies.
   - Product owner explicitly approves pilot scope and limitations.
 
-## 4. Deferred modules
-
-
-## 5. Consistency contract
+## 4. Consistency contract
 
 - Work-item IDs are unique.
 - Every risk-register `proposed_work_item` resolves.
@@ -443,58 +481,3 @@ Prove the platform can be operated and transferred safely.
 - Hidden scope-dependent mandatory dependencies are forbidden.
 - Markdown/YAML gate projection and required derived views are exact.
 - Work-item/module accepted status and canonical ownership are fail-closed.
-
-<!-- BEGIN GENERATED INDUSTRIALIZATION GATE PROJECTION -->
-## Machine-checked gate projection
-
-- Program version: `1.0`.
-- Program status: `ACCEPTED`.
-- Work items: `30`.
-
-### `SAFE-CONTINUATION`
-
-- `PROJECT-STATE-RECONCILIATION-001`
-- `INDUSTRIALIZATION-PROGRAM-EXECUTION-001`
-- `MODULE-ACTIVATION-CONTRACT-001`
-- `SECRET-HYGIENE-001`
-- `DEPENDENCY-PROVENANCE-001`
-- `DEPLOYMENT-PROFILE-001`
-- `BACKUP-RESTORE-DRILL-001`
-- `SECURITY-BASELINE-001`
-
-### `PILOT-READY`
-
-- `PROJECT-STATE-RECONCILIATION-001`
-- `INDUSTRIALIZATION-PROGRAM-EXECUTION-001`
-- `MODULE-ACTIVATION-CONTRACT-001`
-- `SECRET-HYGIENE-001`
-- `DEPENDENCY-PROVENANCE-001`
-- `DEPLOYMENT-PROFILE-001`
-- `BACKUP-RESTORE-DRILL-001`
-- `SECURITY-BASELINE-001`
-- `MODULE-REGISTRY-001`
-- `DATA-INTEGRITY-HARDENING-001`
-- `MIGRATION-SAFETY-001`
-- `MODULE-MIGRATION-COMPATIBILITY-001`
-- `DATA-GOVERNANCE-001`
-- `RELEASE-ROLLBACK-001`
-- `OBSERVABILITY-001`
-- `INCIDENT-RESPONSE-001`
-- `AUTH-RBAC-HARDENING-001`
-- `SECURITY-PIPELINE-001`
-- `UX-BROWSER-GATES-001`
-- `SUPPORT-HANDOVER-001`
-- `PILOT-READINESS-001`
-
-### `PILOT-READY` scope-dependent work items
-
-- `DATA-PORTABILITY-001`
-- `DRIVE-LIBRARY-GOVERNANCE-001`
-- `LEGACY-UX-MIGRATION-001`
-- `MODULE-SOURCE-GOVERNANCE-001`
-- `PAGE-TEMPLATE-LIBRARY-001`
-- `PERFORMANCE-BASELINE-001`
-- `UPLOAD-HARDENING-001`
-- `UX-PLATFORM-FOUNDATION-001`
-
-<!-- END GENERATED INDUSTRIALIZATION GATE PROJECTION -->
