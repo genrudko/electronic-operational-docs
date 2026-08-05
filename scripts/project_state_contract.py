@@ -141,7 +141,14 @@ def validate_plan_ownership(plan: dict[str, Any]) -> list[str]:
                 errors.append(
                     f"DEMO_RELEASE_PLAN owner {key} must be {value}, got {owners.get(key)!r}"
                 )
-    forbidden = ("accepted_main", "active", "runtime", "preview", "active_pr", "active_branch")
+    forbidden = (
+        "accepted_main",
+        "active",
+        "runtime",
+        "preview",
+        "active_pr",
+        "active_branch",
+    )
     for key in forbidden:
         if key in plan:
             if key == "accepted_main":
@@ -154,7 +161,8 @@ def validate_plan_ownership(plan: dict[str, Any]) -> list[str]:
                 )
             else:
                 errors.append(
-                    f"DEMO_RELEASE_PLAN duplicates volatile state owned by CURRENT_STATE: {key}"
+                    "DEMO_RELEASE_PLAN duplicates volatile state owned by "
+                    f"CURRENT_STATE: {key}"
                 )
     return errors
 
@@ -198,7 +206,7 @@ def validate_duplicate_volatile_owners(
 ) -> list[str]:
     """Reject explicit owner-style volatile fields outside CURRENT_STATE.
 
-    Historical SHAs and event ledgers are allowed.  What is forbidden is a second
+    Historical SHAs and event ledgers are allowed. What is forbidden is a second
     file exposing the canonical owner field syntax.
     """
     errors: list[str] = []
@@ -220,7 +228,8 @@ def validate_duplicate_volatile_owners(
             field = match.group(1).lower()
             errors.append(
                 f"{relative}: [{field}] rule=single-volatile-owner; "
-                f"expected='owned only by {STATE_PATH}'; actual='owner-style field present'"
+                f"expected='owned only by {STATE_PATH}'; "
+                "actual='owner-style field present'"
             )
     return errors
 
@@ -230,23 +239,31 @@ def validate_repository(root: Path = ROOT, *, verify_context: bool = False) -> l
     try:
         state = parse_current_state((root / STATE_PATH).read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
-        return [f"{STATE_PATH}: [state] rule=current-state-parse; expected='valid canonical block'; actual={str(exc)!r}"]
+        return [
+            f"{STATE_PATH}: [state] rule=current-state-parse; "
+            f"expected='valid canonical block'; actual={str(exc)!r}"
+        ]
 
     try:
         handoff = (root / HANDOFF_PATH).read_text(encoding="utf-8")
     except OSError as exc:
-        return [f"{HANDOFF_PATH}: [handoff] rule=handoff-exists; expected='file'; actual={str(exc)!r}"]
+        return [
+            f"{HANDOFF_PATH}: [handoff] rule=handoff-exists; "
+            f"expected='file'; actual={str(exc)!r}"
+        ]
     errors.extend(validate_handoff(handoff))
 
     try:
         plan = json.loads((root / PLAN_PATH).read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         return errors + [
-            f"{PLAN_PATH}: [load] rule=plan-load; expected='valid JSON-compatible YAML'; actual={str(exc)!r}"
+            f"{PLAN_PATH}: [load] rule=plan-load; "
+            f"expected='valid JSON-compatible YAML'; actual={str(exc)!r}"
         ]
     if not isinstance(plan, dict):
         return errors + [
-            f"{PLAN_PATH}: [root] rule=plan-root; expected='object'; actual={type(plan).__name__!r}"
+            f"{PLAN_PATH}: [root] rule=plan-root; "
+            f"expected='object'; actual={type(plan).__name__!r}"
         ]
     errors.extend(validate_plan_ownership(plan))
     errors.extend(validate_duplicate_volatile_owners(root, plan))
@@ -260,10 +277,9 @@ def validate_repository(root: Path = ROOT, *, verify_context: bool = False) -> l
             )
         )
 
-    # Import lazily to keep this module usable by focused unit tests.
     try:
         from demo_release_plan import validate_repository as validate_release_repository
-    except ModuleNotFoundError:  # package import used by unittest
+    except ModuleNotFoundError:
         from scripts.demo_release_plan import (
             validate_repository as validate_release_repository,
         )
@@ -279,10 +295,21 @@ def validate_repository(root: Path = ROOT, *, verify_context: bool = False) -> l
         actual = work_item_status.get(state.active_work_item)
         if actual != "IN_PROGRESS":
             errors.append(
-                f"{PLAN_PATH}: [{state.active_work_item}] rule=active-work-item-status; "
-                f"expected='IN_PROGRESS'; actual={actual!r}"
+                f"{PLAN_PATH}: [{state.active_work_item}] "
+                "rule=active-work-item-status; expected='IN_PROGRESS'; "
+                f"actual={actual!r}"
             )
     return errors
+
+
+def require_repository(
+    root: Path = ROOT, *, verify_context: bool = False
+) -> CurrentState:
+    """Compatibility wrapper for historical gates and current callers."""
+    errors = validate_repository(root, verify_context=verify_context)
+    if errors:
+        raise AssertionError("Project state contract failed: " + "; ".join(errors))
+    return parse_current_state((root / STATE_PATH).read_text(encoding="utf-8"))
 
 
 def main() -> int:
