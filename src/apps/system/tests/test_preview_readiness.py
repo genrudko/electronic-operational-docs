@@ -1,3 +1,5 @@
+import os
+
 from django.contrib.auth import authenticate, get_user_model
 from django.core.management import call_command
 from django.test import TestCase
@@ -11,6 +13,7 @@ class PreviewReadinessTests(TestCase):
 
         user_model = get_user_model()
         usernames = ("operator.demo", "supervisor.demo")
+        injected_password = os.environ["EOD_DEMO_USER_PASSWORD"]
 
         self.assertEqual(
             user_model.objects.filter(username__in=usernames, is_active=True).count(),
@@ -25,5 +28,5 @@ class PreviewReadinessTests(TestCase):
         for username in usernames:
             with self.subTest(username=username):
                 self.assertIsNotNone(
-                    authenticate(username=username, password="EodDemo!2026")
+                    authenticate(username=username, password=injected_password)
                 )
