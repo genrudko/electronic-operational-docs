@@ -1,8 +1,8 @@
 # PROJECT-SUSTAINABILITY-001 — решения и предложения
 
-**Дата:** 05.08.2026  
-**Work item:** `PROJECT-SUSTAINABILITY-001`  
-**Issue / PR:** `#48 / #49`  
+**Дата:** 05.08.2026
+**Work item:** `PROJECT-SUSTAINABILITY-001`
+**Issue / PR:** `#48 / #49`
 **Статус документа:** `DECISION RECORD CANDIDATE / USER ACCEPTANCE REQUIRED`
 
 ## 1. Правило чтения
