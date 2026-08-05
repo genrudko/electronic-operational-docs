@@ -7,40 +7,46 @@
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted main baseline: main / 916a6d708ff4bd8433218068a204547b4a9abf84
-active work item: PROJECT-STATE-RECONCILIATION-001
-active issue: #50
-active PR: #51 / OPEN / DRAFT / NOT MERGED
-active branch: governance/project-state-reconciliation-001
-active baseline: 916a6d708ff4bd8433218068a204547b4a9abf84
+accepted main baseline: main / 9d6d48ad25d45cd79673c7017980a8bd92fa961a
+active work item: NONE
+active issue: NONE
+active PR: NONE
+active branch: NONE
 runtime impact: NONE
 preview: UNTOUCHED
 ```
 
-## Active PROJECT-STATE-RECONCILIATION-001
+## Accepted PROJECT-STATE-RECONCILIATION-001 baseline
 
-Первый work item фазы 0 принятой программы промышленной подготовки:
-
-- сверяет фактическую историю GitHub с canonical planning state;
-- актуализирует `DEMO_RELEASE_PLAN.yaml` без изменения принятого Demo scope;
-- синхронизирует module map, implementation sequence, master checklist и
-  применимые compatibility/history views;
-- вводит постоянную automation-проверку stale status, missing references,
-  dependency closure, hidden scope-dependent dependencies и duplicate owners;
-- сохраняет исторические документы и не удаляет их;
-- не меняет product code, models, migrations, data, runtime или Preview;
-- не начинает `SHIFT-HANDOVER-001`, module registry, UX refactor или новые
-  предметные журналы;
-- не переводится в Ready for Review и не merge без отдельной команды пользователя.
+`PROJECT-STATE-RECONCILIATION-001` принят пользователем и merged обычным merge commit:
 
 ```text
-issue: #50 / OPEN
-PR: #51 / OPEN / DRAFT / NOT MERGED
-branch: governance/project-state-reconciliation-001
-baseline main: 916a6d708ff4bd8433218068a204547b4a9abf84
-user acceptance: ABSENT
-merge authorization: ABSENT
+accepted PR: #51 / CLOSED / MERGED
+accepted exact head: a6534a5fb2e5ae59bfba6cd36e9e80ebc69801d6
+merge commit / accepted main: 9d6d48ad25d45cd79673c7017980a8bd92fa961a
+issue: #50 / CLOSED / COMPLETED
+user acceptance: PASSED
+merge method: ORDINARY MERGE COMMIT
+squash / rebase: NOT USED
+runtime impact: NONE
+preview: UNTOUCHED
 ```
+
+Принятый baseline включает:
+
+- factual reconciliation GitHub, canonical release plan и обязательных derived views;
+- сохранение schema 2 как совместимого superset принятого schema-1 contract;
+- сохранение source IDs, coverage mappings, post-demo contours и presentation scenarios;
+- fail-closed проверку release identity, 27-модульного каталога и evidence matrices;
+- strict `CURRENT_STATE.md` parser и сверку PR context с GitHub event;
+- общий single-owner scan всего применимого Markdown-контура;
+- deterministic projections module map, implementation sequence, master checklist и industrialization program;
+- fail-closed industrialization dependency, gate и mandatory-core checks;
+- status projection всех 27 module contracts из canonical plan;
+- 21 focused regression tests и зелёные exact-head workflows;
+- отсутствие product/runtime/schema/data/Preview изменений.
+
+`SAFE-CONTINUATION` после этого merge ещё не достигнут. Следующий обязательный work item Phase 0 — `INDUSTRIALIZATION-PROGRAM-EXECUTION-001`; issue #52, branch `governance/industrialization-program-execution-001` и Draft PR #53 подготовлены, но новый work item станет канонически активным после первого согласованного planning/state transition commit.
 
 ## Accepted PROJECT-SUSTAINABILITY-001 baseline
 

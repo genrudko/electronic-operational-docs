@@ -18,6 +18,7 @@
 | `POST-MERGE-DEPLOY-VERIFY-001` | #45 | `e8b053f5fda51f23e2506a1a45a405f5c2ee3b6c` | `2db8947062434861d2336eb474cd762e11aabb44` | development deployment carrier accepted; Preview untouched |
 | `OPJ-LIFECYCLE-001` | #47 | `65997a9d51de4d066ec07277d4c660bfc307650e` | `c4e344342b647ce59a390a04329d2cadb1f34d7c` | module accepted in Microsoft Edge development profile |
 | `PROJECT-SUSTAINABILITY-001` | #49 | `cdf3238ca986761dbecc61a60bd28941ff8219ac` | `916a6d708ff4bd8433218068a204547b4a9abf84` | audit and industrialization program accepted |
+| `PROJECT-STATE-RECONCILIATION-001` | #51 | `a6534a5fb2e5ae59bfba6cd36e9e80ebc69801d6` | `9d6d48ad25d45cd79673c7017980a8bd92fa961a` | canonical state reconciliation and fail-closed documentation drift protection accepted |
 
 ### Why two heads appear for some historical PRs
 
@@ -32,6 +33,23 @@ The older acceptance document contained a period snapshot where PR #7 was still
 `OPEN / DRAFT / NOT MERGED`. That statement was true at the time of the snapshot
 but became stale after the later accepted merge. It is superseded by the ledger
 above; the existence of the earlier contradiction is explicitly preserved here.
+
+## PROJECT-STATE-RECONCILIATION-001 exact-head evidence
+
+```text
+EOD Documentation Contract: 31028053053 / SUCCESS
+AUTO-001A Foundation CI:     31028054968 / SUCCESS
+AUTO-001B Controller CI:     31028054494 / SUCCESS
+EOD Development Stack:      31028054190 / SUCCESS
+EOD CI:                      31028053507 / SUCCESS
+focused regressions:         21 tests / OK
+```
+
+Accepted: schema-2 compatible superset of the canonical release plan, preserved
+source/scenario/post-demo data, restored schema-1 guarantees, strict current-state
+contract, global single-owner scan, generated planning views, industrialization
+gate/dependency checks and all-module status projection. Runtime and Preview were
+untouched.
 
 ## PROJECT-SUSTAINABILITY-001 exact-head evidence
 
