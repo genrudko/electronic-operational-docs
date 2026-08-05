@@ -148,7 +148,9 @@ jobs:
             --policy .github/auto001a-foundation.json \
             --summary auto001b-summary.md \
             --outputs "$GITHUB_OUTPUT"
-          cat auto001b-summary.md >>"$GITHUB_STEP_SUMMARY"
+          python scripts/secret_hygiene.py redact --input auto001b-summary.md --output auto001b-summary.sanitized.md
+          cat auto001b-summary.sanitized.md >>"$GITHUB_STEP_SUMMARY"
+          rm -f auto001b-summary.md
 
   deploy-development:
     name: Verify exact SHA on isolated development VPS
@@ -170,6 +172,13 @@ jobs:
       PROFILE: ${{ needs.validate-trusted-request.outputs.deployment_profile }}
 
     steps:
+      - name: Checkout trusted redaction utility from main event SHA
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
       - name: Validate connection configuration
         shell: bash
         run: |
@@ -191,13 +200,15 @@ jobs:
           printf '%s\n' "$VPS_HOST_KEY" >"$HOME/.ssh/known_hosts"
           chmod 0600 "$HOME/.ssh/known_hosts"
 
-      - name: Run fixed VPS controller for exact SHA
+      - name: Run fixed VPS controller for exact SHA with sanitised output
         id: deploy
         shell: bash
         run: |
-          set +e
+          set -euo pipefail
           printf 'attempted=true\n' >>"$GITHUB_OUTPUT"
-          ssh_output="$(ssh \
+          raw_file="$(mktemp)"
+          set +e
+          ssh \
             -p "$VPS_PORT" \
             -i "$HOME/.ssh/eod_automation" \
             -o BatchMode=yes \
@@ -205,17 +216,20 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
             "eod-automation@$VPS_HOST" \
-            "deploy $PROFILE $PR_NUMBER $HEAD_SHA $GITHUB_RUN_ID" 2>&1)"
+            "deploy $PROFILE $PR_NUMBER $HEAD_SHA $GITHUB_RUN_ID" \
+            >"$raw_file" 2>&1
           rc=$?
           set -e
-          printf '%s\n' "$ssh_output"
+          python scripts/secret_hygiene.py redact --input "$raw_file" --output vps-controller.sanitized.txt --env VPS_HOST --env VPS_PORT --env VPS_KEY --env VPS_HOST_KEY
+          rm -f "$raw_file"
+          cat vps-controller.sanitized.txt
           printf 'result_code=%s\n' "$rc" >>"$GITHUB_OUTPUT"
           {
             echo "## VPS controller"
             echo
-            echo '```text'
-            printf '%s\n' "$ssh_output"
-            echo '```'
+            echo "Sanitised controller output was written to the workflow log."
+            echo
+            echo "Result code: \`$rc\`"
           } >>"$GITHUB_STEP_SUMMARY"
 
       - name: Stop on controller error
@@ -274,14 +288,15 @@ jobs:
             echo "Automatic merge: absent"
           } >>"$GITHUB_STEP_SUMMARY"
 
-      - name: Roll back an unconfirmed deployment after workflow failure or cancellation
+      - name: Roll back an unconfirmed deployment with sanitised output
         if: ${{ (failure() || cancelled()) && steps.deploy.outputs.attempted == 'true' }}
         continue-on-error: true
         timeout-minutes: 10
         shell: bash
         run: |
+          raw_file="$(mktemp)"
           set +e
-          rollback_output="$(ssh \
+          ssh \
             -p "$VPS_PORT" \
             -i "$HOME/.ssh/eod_automation" \
             -o BatchMode=yes \
@@ -289,10 +304,12 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
             "eod-automation@$VPS_HOST" \
-            "rollback-pending" 2>&1)"
+            "rollback-pending" >"$raw_file" 2>&1
           rollback_rc=$?
           set -e
-          printf '%s\n' "$rollback_output"
+          python scripts/secret_hygiene.py redact --input "$raw_file" --output vps-rollback.sanitized.txt --env VPS_HOST --env VPS_PORT --env VPS_KEY --env VPS_HOST_KEY
+          rm -f "$raw_file"
+          cat vps-rollback.sanitized.txt
           {
             echo
             echo "Fallback rollback was requested because the VPS deployment was not confirmed."
