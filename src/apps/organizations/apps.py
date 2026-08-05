@@ -9,6 +9,7 @@ class OrganizationsConfig(AppConfig):
     def ready(self) -> None:
         from . import (  # noqa: F401
             authority_models,
+            demo_access_signals,
             personnel_management_models,
             personnel_reference_models,
             personnel_reference_signals,
