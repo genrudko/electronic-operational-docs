@@ -1,0 +1,52 @@
+name: Industrialization Assembly
+
+on:
+  push:
+    paths:
+      - '.github/industrialization-assembly/**'
+      - '.github/workflows/industrialization-assembly.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  assemble:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: governance/industrialization-program-execution-001
+          fetch-depth: 0
+      - name: Restore exact files
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d .github/industrialization-assembly/plan.gz.b64 | gzip -d > docs/project/DEMO_RELEASE_PLAN.yaml
+          base64 -d .github/industrialization-assembly/program.gz.b64 | gzip -d > docs/project/INDUSTRIALIZATION_PROGRAM.yaml
+          base64 -d .github/industrialization-assembly/backlog.gz.b64 | gzip -d > docs/project/INDUSTRIALIZATION_EXECUTION_BACKLOG.md
+          base64 -d .github/industrialization-assembly/validator.gz.b64 | gzip -d > scripts/industrialization_execution.py
+          chmod 755 scripts/industrialization_execution.py
+      - name: Verify Git blob identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object docs/project/DEMO_RELEASE_PLAN.yaml)" = "6656f59c569f4a68e7f02f136627edb6671b7b66"
+          test "$(git hash-object docs/project/INDUSTRIALIZATION_PROGRAM.yaml)" = "c93d7cfdde228b3889f1644c6b15f52bf1e5c8dd"
+          test "$(git hash-object docs/project/INDUSTRIALIZATION_EXECUTION_BACKLOG.md)" = "ae532fb1181964f3a7cf90a1577d961851aee32b"
+          test "$(git hash-object scripts/industrialization_execution.py)" = "943bc3825f4d9205234a597140e1d3787f9e491b"
+      - name: Run focused contract tests
+        run: |
+          python -m unittest tests.process.test_project_state_contract tests.process.test_industrialization_execution -v
+          python scripts/demo_release_plan.py
+      - name: Commit verified result and remove transport
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .github/industrialization-assembly
+          rm -f .github/workflows/industrialization-assembly.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "feat: complete industrialization execution contract [skip ci]"
+          git push origin HEAD:governance/industrialization-program-execution-001
