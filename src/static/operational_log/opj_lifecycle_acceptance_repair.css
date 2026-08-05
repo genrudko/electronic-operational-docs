@@ -209,6 +209,36 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
     background: var(--theme-primary-soft) !important;
 }
 
+/* The source menu is the canonical visible surface. The cloned viewport portal
+ * remains an implementation aid only and is deliberately suppressed. This
+ * avoids profile-specific Chromium failures where Edge creates the clone but
+ * never paints or exposes it, while preserving the existing action semantics. */
+.opj-clean-journal-page .opj-entry-actions {
+    position: relative !important;
+}
+
+.opj-clean-journal-page .opj-action-portal,
+.opj-clean-journal-page .opj-entry-actions-menu.is-floating {
+    display: none !important;
+}
+
+.opj-clean-journal-page .opj-entry-actions:has(
+    > .opj-entry-actions-trigger[aria-expanded="true"]
+) > .opj-entry-actions-menu:not(.is-floating) {
+    position: absolute !important;
+    z-index: 800 !important;
+    top: calc(100% + 6px) !important;
+    right: 0 !important;
+    bottom: auto !important;
+    left: auto !important;
+    display: grid !important;
+    width: min(310px, calc(100vw - 24px)) !important;
+    max-height: min(420px, calc(100vh - 24px)) !important;
+    overflow: auto !important;
+    visibility: visible !important;
+    overscroll-behavior: contain;
+}
+
 .opj-action-portal,
 .opj-entry-actions-menu.is-floating {
     position: fixed !important;
