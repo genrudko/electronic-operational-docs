@@ -47,8 +47,8 @@ jobs:
           source_root = Path(".github/industrialization-lint-repair")
           payloads = {
               "scripts/demo_release_plan.py": (
-                  (source_root / "demo.b64").read_text(encoding="utf-8"),
-                  "d280865bf6da478ece98fabddcca3c62d882c13f",
+                  (source_root / "demo2.b64").read_text(encoding="utf-8"),
+                  "f65584354e85f00b5bf27baed8b6cd74178b3239",
               ),
               "scripts/industrialization_execution.py": (
                   "".join(
