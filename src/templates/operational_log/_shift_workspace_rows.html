@@ -1,9 +1,16 @@
+{% load opj_lifecycle_tags %}
+{% opj_registered_removed_drafts removed_drafts as legacy_registered_drafts %}
 <div class="draft-row-store" data-row-store hidden>
 {% for draft in drafts %}
+    {% opj_draft_registration draft as registration %}
+    {% if registration.is_registered %}
+        {% include "operational_log/_shift_workspace_registered_row.html" with draft=draft registration=registration %}
+    {% else %}
     <article
         id="draft-{{ draft.public_id }}"
         class="draft-ledger-row opj-entry-row"
         data-draft-card
+        data-registerable-draft
         data-draft-id="{{ draft.public_id }}"
         data-entry-date="{{ draft.event_at|date:'Y-m-d' }}"
         data-entry-date-label="{{ draft.event_at|date:'d.m.Y' }}"
@@ -34,14 +41,16 @@
             <input type="hidden" name="editor_schema_version" value="{{ draft.editor_schema_version }}" data-editor-schema-version>
 
             <div class="draft-ledger-time">
-                <input
-                    type="text"
-                    inputmode="numeric"
-                    autocomplete="off"
-                    value="{{ draft.event_at|date:'H:i' }}"
-                    data-quick-time
-                    aria-label="Время события"
-                >
+                <div class="opj-draft-time-line">
+                    <input
+                        type="text"
+                        inputmode="numeric"
+                        autocomplete="off"
+                        value="{{ draft.event_at|date:'H:i' }}"
+                        data-quick-time
+                        aria-label="Время события"
+                    >
+                </div>
             </div>
 
             <div class="draft-ledger-content">
@@ -75,6 +84,22 @@
                     </div>
 
                     <div class="draft-mini-toolbar draft-row-action-toolbar" data-mini-toolbar aria-label="Действия с записью">
+                        <label class="opj-row-selector opj-row-selection-control" title="Выбрать строку для переноса в чистовик">
+                            <input
+                                type="checkbox"
+                                value="{{ draft.public_id }}"
+                                data-draft-selection
+                                aria-label="Выбрать запись {{ draft.event_at|date:'H:i' }}"
+                            >
+                            <span aria-hidden="true"></span>
+                        </label>
+                        <button
+                            type="button"
+                            class="da-button is-compact opj-register-draft-button"
+                            data-register-draft
+                            data-draft-id="{{ draft.public_id }}"
+                        >В чистовик</button>
+                        <span class="draft-row-action-separator" aria-hidden="true"></span>
                         <button
                             type="button"
                             class="draft-row-action"
@@ -131,10 +156,17 @@
             <button type="button" class="draft-inline-undo-close" data-inline-undo-close aria-label="Закрыть без восстановления">×</button>
         </div>
     </article>
+    {% endif %}
+{% endfor %}
+
+{% for item in legacy_registered_drafts %}
+    {% include "operational_log/_shift_workspace_registered_row.html" with draft=item.draft registration=item %}
 {% empty %}
+    {% if not drafts %}
     <div class="empty-state" data-empty-draft>
         <h3>Черновых записей пока нет</h3>
         <p>Добавьте первую запись.</p>
     </div>
+    {% endif %}
 {% endfor %}
 </div>

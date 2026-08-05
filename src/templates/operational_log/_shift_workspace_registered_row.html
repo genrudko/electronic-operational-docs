@@ -1,0 +1,70 @@
+{% load opj_lifecycle_tags %}
+{% opj_entry_lifecycle registration.entry as lifecycle %}
+{% opj_entry_presentation registration.entry lifecycle.lifecycle_entries as presentation %}
+{% opj_journal_number registration.entry as journal_number %}
+<article
+    id="draft-{{ draft.public_id }}"
+    class="draft-ledger-row opj-entry-row opj-draft-is-registered{% if presentation.emergency %} is-emergency-event{% endif %}"
+    data-draft-card
+    data-draft-id="{{ draft.public_id }}"
+    data-entry-date="{{ draft.event_at|date:'Y-m-d' }}"
+    data-entry-date-label="{{ draft.event_at|date:'d.m.Y' }}"
+    data-entry-at="{{ draft.event_at|date:'Y-m-d\TH:i' }}"
+    data-entry-position="{{ draft.position }}"
+    data-created-at="{{ draft.created_at|date:'c' }}"
+    data-entry-filled="true"
+    data-entry-kind="registered"
+    data-entry-kind-label="Чистовик"
+    data-entry-author="{{ registration.entry.author_full_name_snapshot }}"
+    data-entry-version="{{ draft.version }}"
+    data-entry-status="{{ lifecycle.state.status_label }}"
+    data-journal-number="{{ journal_number }}"
+    data-registered-draft
+>
+    <form
+        method="post"
+        action="{% url 'operational_log:autosave_draft' journal.pk draft.public_id %}"
+        data-draft-form
+        hidden
+        aria-hidden="true"
+    >
+        {% csrf_token %}
+        <input type="hidden" name="public_id" value="{{ draft.public_id }}">
+        <input type="hidden" name="expected_version" value="{{ draft.version }}" data-draft-version>
+        <input type="hidden" name="event_at" value="{{ draft.event_at|date:'Y-m-d\TH:i' }}" data-event-at>
+        <input type="hidden" name="editor_schema_version" value="{{ draft.editor_schema_version }}" data-editor-schema-version>
+        <input type="text" value="{{ draft.event_at|date:'H:i' }}" data-quick-time tabindex="-1">
+        <button type="button" data-date-button data-current-date="{{ draft.event_at|date:'d.m.Y' }}" tabindex="-1"></button>
+        <textarea name="content" data-auto-grow data-editor-fallback tabindex="-1">{{ draft.content }}</textarea>
+        <textarea name="editor_payload" data-editor-payload tabindex="-1">{{ draft.editor_payload_json|default:"{}" }}</textarea>
+        <div data-rich-editor-host></div>
+        <span data-save-status></span>
+        <span data-version-label>{{ draft.version }}</span>
+    </form>
+
+    <div class="draft-ledger-form opj-registered-draft-row" aria-label="Зарегистрированная строка чистовика">
+        <div class="draft-ledger-time">
+            <span class="opj-clean-time{% if presentation.emergency %} is-emergency{% endif %}">{{ draft.event_at|date:"H:i" }}</span>
+        </div>
+
+        <div class="draft-ledger-content">
+            <div class="opj-registered-draft-content opj-rich-content">{{ presentation.html }}</div>
+            <div class="draft-ledger-lower opj-registered-draft-footer">
+                <div class="draft-ledger-meta opj-registered-draft-meta">
+                    <a
+                        class="opj-clean-copy-chip opj-open-clean-entry"
+                        href="{% url 'operational_log:detail' journal.pk %}?shift={{ draft.shift.public_id }}#entry-{{ registration.entry.sequence_number }}"
+                        aria-label="Открыть в чистовике запись № {{ journal_number }}"
+                        title="Открыть в чистовике"
+                    >Чистовик · № {{ journal_number }}</a>
+                    <span class="draft-meta-chip">{{ lifecycle.state.status_label }}</span>
+                    <span class="draft-meta-chip opj-registered-author">{{ registration.entry.author_full_name_snapshot }} · {{ registration.entry.registered_at|date:"d.m.Y H:i" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="draft-ledger-visas opj-clean-markers" aria-label="Нормативные отметки">
+            {% include "operational_log/_normative_markers.html" with markers=presentation.markers %}
+        </div>
+    </div>
+</article>

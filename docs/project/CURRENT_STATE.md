@@ -1,6 +1,6 @@
 # ЭОД — текущее состояние
 
-**Дата factual check:** 02.08.2026
+**Дата factual check:** 03.08.2026
 
 **Единственный владелец:** accepted main baseline, active work item/issue/PR/branch
 и runtime state.
@@ -8,13 +8,84 @@
 ```text
 repository: genrudko/electronic-operational-docs
 accepted main baseline: main / 2db8947062434861d2336eb474cd762e11aabb44
-active work item: NONE
-active issue: NONE
-active PR: NONE
-active branch: NONE
-runtime impact: DEVELOPMENT / LIVE e8b053f5fda51f23e2506a1a45a405f5c2ee3b6c
+active work item: OPJ-LIFECYCLE-001
+active issue: #46
+active PR: #47 / OPEN / DRAFT / NOT MERGED
+active branch: feature/opj-lifecycle-001
+runtime impact: DEVELOPMENT
 preview: UNTOUCHED
 ```
+
+Дополнительные factual markers:
+
+```text
+canonical documentation tip: main / b77b7911f41ec6c3d1e7e5019558362a058ce237
+coordination tip at work-item start: 17663cf67d12c02d24177e554d6eb7d364e405e4
+active implementation state: REWORK IMPLEMENTED / DEPLOYED FOR VISUAL ACCEPTANCE
+user acceptance: ABSENT / FIRST CANDIDATE REJECTED / CURRENT CANDIDATE PENDING
+current development candidate: CURRENT PR HEAD / TRUSTED DEVELOPMENT
+```
+
+## Active OPJ-LIFECYCLE-001
+
+Следующий work item открыт по канонической очереди после принятых
+`UX-THEME-001`, `MASTER-DATA-ALIGNMENT-001`, `NORMATIVE-EVIDENCE-001` и
+`PERSONNEL-AUTHORITY-001`.
+
+### Пользовательское решение 03.08.2026
+
+Первый development-кандидат полностью отклонён. Отдельная lifecycle page, технический presentation layer и ручная карточка разговора не принимаются и не подлежат косметическому repair.
+
+Каноническая документация `main` дополнена прямыми documentation-only commits по явной команде пользователя:
+
+```text
+0da9ef412ec25001c9fa49c4f8f395d151c28137  OPJ draft-to-clean boundary
+593aed366df08cfff34bd6ab94f6580b2c448e9a  SHIFT boundary against OPJ registration
+042d5f7902e625bd75dc091469b1d4e46c285153  horizontal and vertical CROSS-DOC relations
+7f9e47bc97ae1ed5cc037d45c5e71e41ae7c7070  nearest work-item boundaries
+b77b7911f41ec6c3d1e7e5019558362a058ce237  decision-log additions
+```
+
+Исторические положения не удалялись; добавлены уточняющие границы.
+
+### Исправленная граница active work item
+
+- принятый `shift_workspace`, редактор, autosave и revisions сохраняются;
+- редактирование существует только в черновике;
+- регистрация подготовленной строки создаёт неизменяемую запись чистовика;
+- зарегистрированная строка не исчезает из сменного workspace, остаётся видимой и становится read-only;
+- исправление и отмена выполняются только в зарегистрированном журнале новой строкой;
+- результат оперативных переговоров фиксируется в хронологии ОЖ, а не отдельной карточкой звонка;
+- основной UI не показывает digest, raw authority decision и append-only internals как предметную функцию;
+- отдельная lifecycle page отсутствует;
+- узкая внутренняя связь OPJ допустима; общий relation engine относится к `CROSS-DOC-001`;
+- handover report и двустороннее подтверждение относятся к `SHIFT-HANDOVER-001`;
+- action-time authority evaluation/snapshot сохраняется в системном контуре;
+- `DENY` блокирует создание предметного факта;
+- Preview защищён;
+- Ready for Review и merge запрещены без отдельной команды пользователя.
+
+### Текущее rework-состояние ветки
+
+- rejected standalone lifecycle template удалён;
+- rejected feature-global lifecycle CSS/JS удалены;
+- shared Direction A base возвращён к принятому состоянию;
+- регистрация больше не вызывает `remove_draft_entry`;
+- duplicate registration блокируется;
+- зарегистрированная строка показывается в shift workspace как строка чистовика;
+- autosave/move/remove/restore зарегистрированной строки блокируются на маршрутах;
+- correction/cancellation/communication встроены в зарегистрированный журнал;
+- communication model сокращена до оперативно значимого результата;
+- системные `confirm/alert` заменены проектными диалогами;
+- поддержаны пакетная регистрация, группировка чистовика по сменам, rich-text, аварийные и ПЗ/ЗН отметки;
+- отдельный audit-блок и глобальная дефектная панель отсутствуют;
+- визуальный слой использует Direction A, Onest Variable, EOD Outline 24, semantic theme tokens и принятую трёхграфную форму;
+- focused/full tests и пять exact-head workflows успешны;
+- trusted development delivery выполнен с подтверждением exact `LIVE_SHA`;
+- Preview не изменялся;
+- визуальная приёмка текущего кандидата ещё не выполнена.
+
+Текущий development является новым rework-кандидатом для отдельной пользовательской визуальной приёмки. Предыдущее exact-head evidence для `9d04b2a...`, `a3c0e97...` и других ранних head относится к полностью отклонённым или superseded реализациям.
 
 ## Accepted PERSONNEL-AUTHORITY-001 baseline
 
@@ -72,10 +143,6 @@ live SHA:                    e8b053f5fda51f23e2506a1a45a405f5c2ee3b6c
 rollback:                    NOT EXECUTED
 preview:                     UNTOUCHED
 ```
-
-Development продолжает работать на точном carrier head `e8b053f5...`; его дерево
-включено в accepted main merge commit `2db8947...`. Product behavior, schema,
-migrations, workflow и controller в carrier repair не изменялись.
 
 Release/module/capability/work-item planning state остаётся в
 [`DEMO_RELEASE_PLAN.yaml`](DEMO_RELEASE_PLAN.yaml). Navigation без дублирования

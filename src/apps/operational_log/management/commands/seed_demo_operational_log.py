@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
@@ -9,8 +9,14 @@ from django.utils import timezone
 
 from apps.documents.models import Document
 from apps.equipment.models import EquipmentAsset
+from apps.organizations.authority_models import (
+    AuthorityBasisStatus,
+    AuthorityScopeKind,
+    OperationalAuthorityGrant,
+)
 from apps.organizations.models import (
     Employee,
+    OperationalRightDefinition,
     Organization,
     Workplace,
 )
@@ -26,6 +32,58 @@ from ...services import (
     open_shift,
     register_entry,
 )
+
+OPJ_ACTION_CODES = (
+    "OPJ.REGISTER",
+    "OPJ.CORRECT",
+    "OPJ.CANCEL",
+    "OPJ.COMMUNICATION",
+)
+
+
+def ensure_demo_opj_authority(
+    *,
+    organization: Organization,
+    actor: Employee,
+    journal: OperationalJournal,
+) -> None:
+    right, _ = OperationalRightDefinition.objects.update_or_create(
+        code="operational_journal_actions",
+        defaults={
+            "name": "Ведение оперативного журнала и оперативных переговоров",
+            "category": "COMMUNICATIONS",
+            "value_kind": "QUALIFIED",
+            "description": (
+                "Демонстрационное структурированное право на регистрацию, "
+                "исправление и отмену записей ОЖ, а также фиксацию переговоров."
+            ),
+            "display_order": 35,
+            "is_active": True,
+        },
+    )
+    valid_from = datetime(2026, 1, 1, 0, 0, 0, tzinfo=UTC)
+    valid_until = datetime(2027, 12, 31, 23, 59, 0, tzinfo=UTC)
+    for action_code in OPJ_ACTION_CODES:
+        OperationalAuthorityGrant.objects.update_or_create(
+            employee=actor,
+            action_code=action_code,
+            scope_kind=AuthorityScopeKind.WORKPLACE,
+            scope_reference=str(journal.workplace_id),
+            valid_from=valid_from,
+            basis_reference="DEMO-ONLY / OPJ-LIFECYCLE-001 / R1",
+            defaults={
+                "organization": organization,
+                "right_definition": right,
+                "scope_label": journal.workplace.name,
+                "granting_organization": organization,
+                "basis_status": AuthorityBasisStatus.CONFIRMED,
+                "source_ids": ["DEMO-SYNTHETIC", "OPJ-LIFECYCLE-001"],
+                "valid_until": valid_until,
+                "is_active": True,
+                "allow_substitution": False,
+                "created_by": None,
+            },
+        )
 
 
 class Command(BaseCommand):
@@ -60,6 +118,11 @@ class Command(BaseCommand):
             },
         )
         OperationalJournalSequence.objects.get_or_create(journal=journal)
+        ensure_demo_opj_authority(
+            organization=organization,
+            actor=actor,
+            journal=journal,
+        )
 
         local_timezone = timezone.get_current_timezone()
 

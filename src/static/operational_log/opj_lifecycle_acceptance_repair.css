@@ -1,0 +1,361 @@
+@import url("./opj_lifecycle_acceptance_repair_base.css?v=opjlifecycle00612");
+
+/* OPJ-LIFECYCLE-001 acceptance repair.
+ * Preserve the accepted draft marker artwork and the native three-column table.
+ */
+.opj-registered-context,
+[data-opj-registered-context] {
+    display: none !important;
+}
+
+html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
+    visibility: visible !important;
+}
+
+/* Keep the complete date/time stack centred in the first table column. */
+.opj-clean-journal-page .approved-journal-date-time {
+    text-align: center !important;
+    vertical-align: top !important;
+}
+
+.opj-clean-journal-page .approved-journal-date-time > span,
+.opj-clean-journal-page .approved-journal-date-time > small {
+    display: block !important;
+    width: 100% !important;
+    text-align: center !important;
+}
+
+.opj-clean-time,
+.journal-print-time {
+    width: max-content !important;
+    min-width: 0 !important;
+    padding-inline: 0.28rem;
+}
+
+.opj-clean-journal-page .approved-journal-date-time .opj-clean-time {
+    display: grid !important;
+    margin: 0.12rem auto !important;
+    place-items: center !important;
+    text-align: center !important;
+}
+
+.opj-clean-time.is-emergency::after,
+.draft-ledger-time.is-emergency::after,
+.journal-print-time.is-emergency::after {
+    inset: -0.18rem -0.36rem !important;
+    border: 3px solid var(--theme-danger, #c7352b) !important;
+    border-radius: 999px !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* A TD must remain a table-cell. Turning it into flex broke the third-column
+ * border grid and row-height calculation. Markers wrap as inline-grid children. */
+.opj-clean-journal-page .approved-journal-visas.opj-clean-markers {
+    display: table-cell !important;
+    min-width: 0;
+    padding: 5px 3px !important;
+    overflow: visible !important;
+    text-align: center !important;
+    vertical-align: top !important;
+    white-space: normal !important;
+}
+
+.opj-clean-journal-page .approved-journal-visas.opj-clean-markers > .opj-normative-marker,
+.opj-clean-journal-page .approved-journal-visas.opj-clean-markers > .draft-normative-marker {
+    display: inline-grid !important;
+    margin: 2px !important;
+    vertical-align: top !important;
+}
+
+.opj-workspace-page .draft-ledger-visas,
+.opj-workspace-page .draft-ledger-visas.has-normative-markers {
+    display: flex !important;
+    min-width: 0;
+    flex-wrap: wrap !important;
+    align-content: flex-start !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    padding: 5px 3px !important;
+    overflow: visible !important;
+}
+
+.opj-normative-marker,
+.draft-normative-marker {
+    position: relative !important;
+    box-sizing: border-box !important;
+    display: grid !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    min-height: 49px !important;
+    grid-template-rows: auto 28px auto !important;
+    place-items: center !important;
+    padding: 1px 2px 2px !important;
+    overflow: hidden !important;
+    border: 1px solid currentColor !important;
+    border-radius: 7px !important;
+    background: var(--theme-surface, #fff) !important;
+    color: #b42318 !important;
+    font-family: Arial, sans-serif !important;
+    font-style: normal !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+    text-align: center !important;
+    vertical-align: top !important;
+}
+
+.opj-normative-marker.is-zn_off,
+.opj-normative-marker.is-pz_remove,
+.draft-normative-marker.is-zn_off,
+.draft-normative-marker.is-pz_remove {
+    color: #175cd3 !important;
+}
+
+.draft-normative-marker-top {
+    min-height: 10px !important;
+    color: inherit;
+    font-family: inherit !important;
+    font-size: 9px !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.03em;
+    line-height: 10px !important;
+    white-space: nowrap;
+}
+
+.draft-normative-marker-bolt {
+    margin: 0 !important;
+    color: inherit;
+    font-family: inherit !important;
+    font-size: 34px !important;
+    font-style: normal !important;
+    font-weight: 900 !important;
+    line-height: 26px !important;
+    transform: skew(-8deg) !important;
+}
+
+.draft-normative-marker-bottom {
+    min-height: 10px !important;
+    color: inherit;
+    font-family: inherit !important;
+    font-size: 9px !important;
+    font-weight: 900 !important;
+    line-height: 10px !important;
+    white-space: nowrap;
+}
+
+/* Removal remains a separate blue marker. The preceding installation badge is
+ * crossed across its complete face, including the label and number. */
+.draft-normative-marker > .draft-normative-marker-cross {
+    position: absolute !important;
+    z-index: 4;
+    top: 1px !important;
+    right: 1px !important;
+    bottom: 1px !important;
+    left: 1px !important;
+    display: none !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: hidden !important;
+    border-radius: 6px;
+    font-size: 0 !important;
+    line-height: 0 !important;
+    opacity: 1 !important;
+    pointer-events: none;
+    transform: none !important;
+}
+
+.draft-normative-marker.is-cleared > .draft-normative-marker-cross {
+    display: block !important;
+}
+
+.draft-normative-marker.is-cleared > .draft-normative-marker-cross::before,
+.draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 60px;
+    height: 2.5px;
+    border-radius: 999px;
+    background: #175cd3;
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 82%);
+    content: "";
+    transform-origin: center;
+}
+
+.draft-normative-marker.is-cleared > .draft-normative-marker-cross::before {
+    transform: translate(-50%, -50%) rotate(52deg);
+}
+
+.draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
+    transform: translate(-50%, -50%) rotate(-52deg);
+}
+
+.opj-marker-count {
+    display: none !important;
+}
+
+.opj-clean-journal-page .journal-workspace-actions a[href*="/print"] {
+    border-color: var(--theme-border-strong) !important;
+    background: var(--theme-surface) !important;
+    color: var(--theme-primary) !important;
+    box-shadow: none !important;
+}
+
+.opj-clean-journal-page .journal-workspace-actions a[href*="/print"]:hover,
+.opj-clean-journal-page .journal-workspace-actions a[href*="/print"]:focus-visible {
+    border-color: var(--theme-primary) !important;
+    background: var(--theme-primary-soft) !important;
+}
+
+/* The source menu is the canonical visible surface. The cloned viewport portal
+ * remains an implementation aid only and is deliberately suppressed. This
+ * avoids profile-specific Chromium failures where Edge creates the clone but
+ * never paints or exposes it, while preserving the existing action semantics. */
+.opj-clean-journal-page .opj-entry-actions {
+    position: relative !important;
+}
+
+.opj-clean-journal-page .opj-action-portal,
+.opj-clean-journal-page .opj-entry-actions-menu.is-floating {
+    display: none !important;
+}
+
+.opj-clean-journal-page .opj-entry-actions:has(
+    > .opj-entry-actions-trigger[aria-expanded="true"]
+) > .opj-entry-actions-menu:not(.is-floating) {
+    position: absolute !important;
+    z-index: 800 !important;
+    top: calc(100% + 6px) !important;
+    right: 0 !important;
+    bottom: auto !important;
+    left: auto !important;
+    display: grid !important;
+    width: min(310px, calc(100vw - 24px)) !important;
+    max-height: min(420px, calc(100vh - 24px)) !important;
+    overflow: auto !important;
+    visibility: visible !important;
+    overscroll-behavior: contain;
+}
+
+.opj-action-portal,
+.opj-entry-actions-menu.is-floating {
+    position: fixed !important;
+    z-index: 800 !important;
+    right: auto !important;
+    bottom: auto !important;
+    display: grid !important;
+    width: min(310px, calc(100vw - 24px));
+    max-height: min(420px, calc(100vh - 24px));
+    overflow: auto !important;
+    overscroll-behavior: contain;
+}
+
+.opj-action-portal[hidden],
+.opj-entry-actions-menu.is-floating[hidden] {
+    display: none !important;
+}
+
+.opj-marker-popover {
+    display: none !important;
+}
+
+.opj-marker-popover.is-floating {
+    position: fixed !important;
+    z-index: 700 !important;
+    right: auto !important;
+    bottom: auto !important;
+    display: grid !important;
+    width: min(360px, calc(100vw - 24px)) !important;
+    min-width: min(220px, calc(100vw - 24px)) !important;
+    max-width: calc(100vw - 24px) !important;
+    max-height: min(360px, calc(100vh - 24px)) !important;
+    gap: 7px;
+    overflow: auto !important;
+    padding: 10px 12px;
+    border: 1px solid var(--theme-border-strong, #94a3b8);
+    border-radius: 7px;
+    background: var(--theme-surface-elevated, #fff);
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.22);
+    color: var(--theme-text, #111827);
+    font-family: var(--font-interface, "Onest Variable", "Onest", system-ui, sans-serif) !important;
+    font-size: 0.72rem;
+    font-weight: 400;
+    line-height: 1.4;
+    text-align: left;
+    transform: none !important;
+    overscroll-behavior: contain;
+    pointer-events: none;
+}
+
+.opj-marker-popover.is-floating strong {
+    font-family: inherit !important;
+    font-weight: 750;
+}
+
+.opj-marker-source-list {
+    display: grid;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.opj-marker-source-list li {
+    position: relative;
+    padding-left: 12px;
+    overflow-wrap: anywhere;
+}
+
+.opj-marker-source-list li::before {
+    position: absolute;
+    left: 0;
+    content: "•";
+}
+
+.opj-workspace[data-view-mode="spread"] .draft-ledger-visas {
+    display: flex !important;
+    max-height: 96px;
+    gap: 5px !important;
+    padding: 5px 3px !important;
+    overflow: auto !important;
+}
+
+.opj-workspace[data-view-mode="spread"] .opj-normative-marker,
+.opj-workspace[data-view-mode="spread"] .draft-normative-marker {
+    width: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    min-height: 49px !important;
+}
+
+@media print {
+    .opj-marker-popover,
+    .opj-marker-popover.is-floating {
+        display: none !important;
+    }
+
+    .opj-normative-marker,
+    .draft-normative-marker {
+        background: #fff !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .approved-journal-print-table .draft-normative-marker > .draft-normative-marker-cross {
+        top: 0.25mm !important;
+        right: 0.25mm !important;
+        bottom: 0.25mm !important;
+        left: 0.25mm !important;
+        width: auto !important;
+        height: auto !important;
+        transform: none !important;
+    }
+
+    .approved-journal-print-table .draft-normative-marker.is-cleared > .draft-normative-marker-cross::before,
+    .approved-journal-print-table .draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
+        width: 15.8mm;
+        height: 0.6mm;
+    }
+}

@@ -1,0 +1,461 @@
+{% load static %}
+<script>
+(() => {
+    "use strict";
+
+    if (!document.getElementById("opj-marker-critical-00612")) {
+        const style = document.createElement("style");
+        style.id = "opj-marker-critical-00612";
+        style.textContent = `
+            .opj-clean-journal-page .approved-journal-date-time {
+                text-align: center !important;
+                vertical-align: top !important;
+            }
+            .opj-clean-journal-page .approved-journal-date-time > span,
+            .opj-clean-journal-page .approved-journal-date-time > small {
+                display: block !important;
+                width: 100% !important;
+                text-align: center !important;
+            }
+            .opj-clean-journal-page .approved-journal-date-time .opj-clean-time {
+                display: grid !important;
+                width: max-content !important;
+                min-width: 0 !important;
+                margin: .12rem auto !important;
+                padding-inline: .28rem;
+                place-items: center !important;
+                text-align: center !important;
+            }
+            .opj-clean-journal-page .approved-journal-visas.opj-clean-markers {
+                display: table-cell !important;
+                min-width: 0;
+                padding: 5px 3px !important;
+                overflow: visible !important;
+                text-align: center !important;
+                vertical-align: top !important;
+                white-space: normal !important;
+            }
+            .opj-clean-journal-page .approved-journal-visas.opj-clean-markers > .opj-normative-marker,
+            .opj-clean-journal-page .approved-journal-visas.opj-clean-markers > .draft-normative-marker {
+                display: inline-grid !important;
+                margin: 2px !important;
+                vertical-align: top !important;
+            }
+            .opj-workspace-page .draft-ledger-visas,
+            .opj-workspace-page .draft-ledger-visas.has-normative-markers {
+                display: flex !important;
+                min-width: 0;
+                flex-wrap: wrap !important;
+                align-content: flex-start !important;
+                align-items: flex-start !important;
+                justify-content: center !important;
+                gap: 5px !important;
+                padding: 5px 3px !important;
+                overflow: visible !important;
+            }
+            .opj-normative-marker,
+            .draft-normative-marker {
+                position: relative !important;
+                box-sizing: border-box !important;
+                width: 38px !important;
+                min-width: 38px !important;
+                max-width: 38px !important;
+                min-height: 49px !important;
+                grid-template-rows: auto 28px auto !important;
+                place-items: center !important;
+                padding: 1px 2px 2px !important;
+                overflow: hidden !important;
+                border: 1px solid currentColor !important;
+                border-radius: 7px !important;
+                background: var(--theme-surface, #fff) !important;
+                color: #b42318 !important;
+                font-family: Arial, sans-serif !important;
+                font-style: normal !important;
+                font-weight: 900 !important;
+                line-height: 1 !important;
+                text-align: center !important;
+            }
+            .opj-normative-marker.is-zn_off,
+            .opj-normative-marker.is-pz_remove,
+            .draft-normative-marker.is-zn_off,
+            .draft-normative-marker.is-pz_remove {
+                color: #175cd3 !important;
+            }
+            .draft-normative-marker-top {
+                min-height: 10px !important;
+                color: inherit;
+                font: 900 9px/10px Arial, sans-serif !important;
+                letter-spacing: .03em;
+                white-space: nowrap;
+            }
+            .draft-normative-marker-bolt {
+                margin: 0 !important;
+                color: inherit;
+                font: 900 34px/26px Arial, sans-serif !important;
+                transform: skew(-8deg) !important;
+            }
+            .draft-normative-marker-bottom {
+                min-height: 10px !important;
+                color: inherit;
+                font: 900 9px/10px Arial, sans-serif !important;
+                white-space: nowrap;
+            }
+            .draft-normative-marker > .draft-normative-marker-cross {
+                position: absolute !important;
+                z-index: 4;
+                top: 1px !important;
+                right: 1px !important;
+                bottom: 1px !important;
+                left: 1px !important;
+                display: none !important;
+                width: auto !important;
+                height: auto !important;
+                overflow: hidden !important;
+                border-radius: 6px;
+                font-size: 0 !important;
+                line-height: 0 !important;
+                opacity: 1 !important;
+                pointer-events: none;
+                transform: none !important;
+            }
+            .draft-normative-marker.is-cleared > .draft-normative-marker-cross {
+                display: block !important;
+            }
+            .draft-normative-marker.is-cleared > .draft-normative-marker-cross::before,
+            .draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 60px;
+                height: 2.5px;
+                border-radius: 999px;
+                background: #175cd3;
+                box-shadow: 0 0 0 1px rgb(255 255 255 / 82%);
+                content: "";
+                transform-origin: center;
+            }
+            .draft-normative-marker.is-cleared > .draft-normative-marker-cross::before {
+                transform: translate(-50%, -50%) rotate(52deg);
+            }
+            .draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
+                transform: translate(-50%, -50%) rotate(-52deg);
+            }
+            .opj-marker-count { display: none !important; }
+            .opj-clean-time.is-emergency::after,
+            .draft-ledger-time.is-emergency::after,
+            .journal-print-time.is-emergency::after {
+                inset: -.18rem -.36rem !important;
+                border: 3px solid var(--theme-danger, #c7352b) !important;
+                border-radius: 999px !important;
+                box-shadow: none !important;
+                transform: none !important;
+            }
+            .opj-clean-journal-page .journal-workspace-actions a[href*="/print"] {
+                border-color: var(--theme-border-strong) !important;
+                background: var(--theme-surface) !important;
+                color: var(--theme-primary) !important;
+                box-shadow: none !important;
+            }
+            .opj-clean-journal-page .journal-workspace-actions a[href*="/print"]:hover,
+            .opj-clean-journal-page .journal-workspace-actions a[href*="/print"]:focus-visible {
+                border-color: var(--theme-primary) !important;
+                background: var(--theme-primary-soft) !important;
+            }
+            .opj-entry-actions-menu.is-floating,
+            .opj-action-portal {
+                position: fixed !important;
+                z-index: 800 !important;
+                right: auto !important;
+                bottom: auto !important;
+                display: grid !important;
+                max-height: min(420px, calc(100vh - 24px)) !important;
+                overflow: auto !important;
+            }
+            .opj-marker-popover { display: none !important; }
+            .opj-marker-popover.is-floating {
+                position: fixed !important;
+                z-index: 700 !important;
+                right: auto !important;
+                bottom: auto !important;
+                display: grid !important;
+                width: min(360px, calc(100vw - 24px)) !important;
+                min-width: min(220px, calc(100vw - 24px)) !important;
+                max-width: calc(100vw - 24px) !important;
+                max-height: min(360px, calc(100vh - 24px)) !important;
+                gap: 7px;
+                overflow: auto !important;
+                padding: 10px 12px;
+                border: 1px solid var(--theme-border-strong, #94a3b8);
+                border-radius: 7px;
+                background: var(--theme-surface-elevated, #fff);
+                box-shadow: 0 14px 32px rgba(15, 23, 42, .22);
+                color: var(--theme-text, #111827);
+                font-family: var(--font-interface, "Onest Variable", "Onest", system-ui, sans-serif) !important;
+                font-size: .72rem;
+                font-weight: 400;
+                line-height: 1.4;
+                text-align: left;
+                transform: none !important;
+                overscroll-behavior: contain;
+                pointer-events: none;
+            }
+            .approved-journal-print-table td.journal-print-markers {
+                display: table-cell !important;
+                min-width: 0 !important;
+                padding: 2mm !important;
+                overflow: hidden !important;
+                text-align: center !important;
+                vertical-align: top !important;
+                white-space: normal !important;
+            }
+            .approved-journal-print-table td.journal-print-markers > .opj-normative-marker,
+            .approved-journal-print-table td.journal-print-markers > .draft-normative-marker {
+                display: inline-grid !important;
+                margin: .6mm !important;
+                vertical-align: top !important;
+            }
+            .approved-journal-print-table .draft-normative-marker > .draft-normative-marker-cross {
+                top: .25mm !important;
+                right: .25mm !important;
+                bottom: .25mm !important;
+                left: .25mm !important;
+                width: auto !important;
+                height: auto !important;
+                transform: none !important;
+            }
+            .approved-journal-print-table .draft-normative-marker.is-cleared > .draft-normative-marker-cross::before,
+            .approved-journal-print-table .draft-normative-marker.is-cleared > .draft-normative-marker-cross::after {
+                width: 15.8mm;
+                height: .6mm;
+            }
+        `;
+        document.head.append(style);
+    }
+})();
+</script>
+{% for marker in markers %}
+<span class="draft-normative-marker opj-normative-marker is-{{ marker.kind }}"
+      tabindex="0"
+      data-opj-marker
+      data-marker-kind="{{ marker.kind }}"
+      data-marker-number="{{ marker.pz_number }}"
+      data-marker-count="{{ marker.count|default:1 }}"
+      data-marker-label="{{ marker.label|default:'Нормативная отметка' }}"
+      aria-label="{{ marker.label|default:'Нормативная отметка' }}{% if marker.pz_number %}, №{{ marker.pz_number }}{% endif %}">
+    <span class="draft-normative-marker-top">
+        {% if marker.kind == 'pz_install' or marker.kind == 'pz_remove' %}ПЗ{% else %}ЗН{% endif %}
+    </span>
+    <span class="draft-normative-marker-bolt" aria-hidden="true">ϟ</span>
+    {% if marker.pz_number %}<span class="draft-normative-marker-bottom">№{{ marker.pz_number }}</span>{% endif %}
+    <i class="draft-normative-marker-cross" aria-hidden="true"></i>
+</span>
+{% empty %}
+<span class="opj-empty-marker" aria-hidden="true">&nbsp;</span>
+{% endfor %}
+<script data-opj-marker-runtime>
+(() => {
+    "use strict";
+    if (window.__EOD_OPJ_MARKER_RUNTIME_00612__) {
+        window.__EOD_OPJ_MARKER_REFRESH_00612__?.();
+        return;
+    }
+    window.__EOD_OPJ_MARKER_RUNTIME_00612__ = true;
+
+    let floatingPopover = null;
+    let refreshQueued = false;
+
+    function normalizedMarkerCount(marker) {
+        const value = Number.parseInt(marker.dataset.markerCount || "1", 10);
+        return Number.isFinite(value) && value > 0 ? Math.min(value, 100) : 1;
+    }
+
+    function expandGroupedMarkers(root = document) {
+        root.querySelectorAll(
+            "[data-opj-marker][data-marker-count]:not([data-marker-expanded])",
+        ).forEach((marker) => {
+            const count = normalizedMarkerCount(marker);
+            marker.dataset.markerExpanded = "true";
+            marker.dataset.markerInstance = "0";
+            marker.dataset.markerCount = "1";
+            let anchor = marker;
+            for (let index = 1; index < count; index += 1) {
+                const clone = marker.cloneNode(true);
+                clone.dataset.markerExpanded = "true";
+                clone.dataset.markerInstance = String(index);
+                clone.dataset.markerCount = "1";
+                clone.classList.remove("is-cleared");
+                anchor.after(clone);
+                anchor = clone;
+            }
+        });
+    }
+
+    function rowsInChronology() {
+        const selectors = [
+            "[data-row-store] [data-draft-card]",
+            ".approved-journal-table tbody tr",
+            ".approved-journal-print-table tbody tr",
+        ];
+        const rows = [];
+        selectors.forEach((selector) => {
+            document.querySelectorAll(selector).forEach((row) => {
+                if (!rows.includes(row)) rows.push(row);
+            });
+        });
+        return rows;
+    }
+
+    function markerKey(marker) {
+        const kind = marker.dataset.markerKind || "";
+        const number = (marker.dataset.markerNumber || "").trim();
+        if (kind.startsWith("pz_")) return number ? `pz:${number}` : "";
+        if (kind.startsWith("zn_")) return `zn:${number || "common"}`;
+        return "";
+    }
+
+    function applyChronology() {
+        expandGroupedMarkers();
+        const installed = new Map();
+        rowsInChronology().forEach((row) => {
+            row.querySelectorAll("[data-opj-marker]").forEach((marker) => {
+                marker.classList.remove("is-cleared");
+                const kind = marker.dataset.markerKind || "";
+                const key = markerKey(marker);
+                if (!key) return;
+                if (kind === "pz_install" || kind === "zn_on") {
+                    const list = installed.get(key) || [];
+                    list.push(marker);
+                    installed.set(key, list);
+                    return;
+                }
+                if (kind === "pz_remove" || kind === "zn_off") {
+                    const list = installed.get(key) || [];
+                    const source = [...list].reverse().find(
+                        (candidate) => !candidate.classList.contains("is-cleared"),
+                    );
+                    if (source) source.classList.add("is-cleared");
+                }
+            });
+        });
+    }
+
+    window.__EOD_OPJ_MARKER_REFRESH_00612__ = applyChronology;
+
+    function queueRefresh() {
+        if (refreshQueued) return;
+        refreshQueued = true;
+        queueMicrotask(() => {
+            refreshQueued = false;
+            applyChronology();
+        });
+    }
+
+    function closePopover() {
+        floatingPopover?.remove();
+        floatingPopover = null;
+    }
+
+    function normalizedText(node) {
+        return (node.textContent || "").replace(/\s+/g, " ").trim();
+    }
+
+    function exactUnderlinedFragments(marker) {
+        const row = marker.closest("tr, [data-draft-card]");
+        if (!row) return [];
+        const kind = marker.dataset.markerKind || "";
+        const selector = kind === "pz_remove" || kind === "zn_off"
+            ? ".opj-rich-segment.is-normative-close"
+            : ".opj-rich-segment.is-normative-open";
+        let values = Array.from(row.querySelectorAll(selector))
+            .map(normalizedText)
+            .filter(Boolean);
+
+        const number = (marker.dataset.markerNumber || "")
+            .replace(/^№\s*/, "")
+            .trim();
+        if (number) {
+            const matching = values.filter((value) => (
+                value.includes(`№${number}`)
+                || value.includes(`№ ${number}`)
+                || value.includes(number)
+            ));
+            if (matching.length) values = matching;
+        }
+        values = values.filter((value, index) => values.indexOf(value) === index);
+        const instance = Number.parseInt(marker.dataset.markerInstance || "0", 10);
+        if (Number.isFinite(instance) && values[instance]) return [values[instance]];
+        return values;
+    }
+
+    function placePopover(trigger, popover) {
+        const margin = 12;
+        const triggerRect = trigger.getBoundingClientRect();
+        popover.style.visibility = "hidden";
+        document.body.append(popover);
+        const box = popover.getBoundingClientRect();
+        let left = triggerRect.left + triggerRect.width / 2 - box.width / 2;
+        left = Math.max(margin, Math.min(left, window.innerWidth - box.width - margin));
+        let top = triggerRect.top - box.height - 8;
+        if (top < margin) top = triggerRect.bottom + 8;
+        top = Math.max(margin, Math.min(top, window.innerHeight - box.height - margin));
+        popover.style.left = `${Math.round(left)}px`;
+        popover.style.top = `${Math.round(top)}px`;
+        popover.style.visibility = "";
+    }
+
+    function openPopover(trigger) {
+        closePopover();
+        const popover = document.createElement("aside");
+        popover.className = "opj-marker-popover is-floating";
+        popover.setAttribute("role", "tooltip");
+        const heading = document.createElement("strong");
+        heading.textContent = trigger.dataset.markerLabel || "Нормативная отметка";
+        popover.append(heading);
+
+        const values = exactUnderlinedFragments(trigger);
+        if (values.length) {
+            const list = document.createElement("ul");
+            list.className = "opj-marker-source-list";
+            values.forEach((value) => {
+                const item = document.createElement("li");
+                item.textContent = value;
+                list.append(item);
+            });
+            popover.append(list);
+        }
+        floatingPopover = popover;
+        placePopover(trigger, popover);
+    }
+
+    document.addEventListener("mouseover", (event) => {
+        const marker = event.target.closest?.("[data-opj-marker]");
+        if (!marker || marker.contains(event.relatedTarget)) return;
+        openPopover(marker);
+    });
+    document.addEventListener("mouseout", (event) => {
+        const marker = event.target.closest?.("[data-opj-marker]");
+        if (!marker || marker.contains(event.relatedTarget)) return;
+        closePopover();
+    });
+    document.addEventListener("focusin", (event) => {
+        const marker = event.target.closest?.("[data-opj-marker]");
+        if (marker) openPopover(marker);
+    });
+    document.addEventListener("focusout", (event) => {
+        const marker = event.target.closest?.("[data-opj-marker]");
+        if (marker && !marker.contains(event.relatedTarget)) closePopover();
+    });
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closePopover();
+    });
+    window.addEventListener("resize", closePopover);
+    document.addEventListener("scroll", closePopover, true);
+
+    const observer = new MutationObserver(queueRefresh);
+    observer.observe(document.documentElement, {childList: true, subtree: true});
+    applyChronology();
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", applyChronology, {once: true});
+    }
+})();
+</script>

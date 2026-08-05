@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ form_contract.title }} · печатная форма</title>
+    <style>
+        @page { size: A4 landscape; margin: 10mm; }
+        *, *::before, *::after {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        html, body {
+            margin: 0;
+            background: #fff;
+            color: #111827;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10pt;
+        }
+        body { padding: 14px; }
+        .print-toolbar {
+            position: sticky;
+            z-index: 10;
+            top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 0 auto 14px;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+        }
+        .print-toolbar div { display: flex; gap: 8px; }
+        .print-toolbar strong { font-size: 13px; }
+        .print-toolbar button, .print-toolbar a {
+            display: inline-flex;
+            min-height: 34px;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            border: 1px solid #1d4f7a;
+            border-radius: 6px;
+            background: #fff;
+            color: #153a5a;
+            font: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .print-toolbar button { background: #1769a6; color: #fff; }
+        .journal-print-book { width: 100%; max-width: 277mm; margin: 0 auto; }
+        .journal-print-heading { margin: 0 0 6mm; text-align: center; }
+        .journal-print-heading h1 {
+            margin: 0;
+            font-size: 15pt;
+            font-weight: 700;
+            line-height: 1.2;
+            text-transform: uppercase;
+        }
+        .journal-print-heading p { margin: 1.4mm 0 0; font-size: 10pt; line-height: 1.25; }
+        .journal-print-heading small { display: block; margin-top: 1.5mm; font-size: 7.5pt; }
+        .journal-shift-section { break-inside: auto; }
+        .journal-shift-section + .journal-shift-section { break-before: page; }
+        .journal-shift-heading {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 8mm;
+            margin: 0 0 2mm;
+            font-size: 9.5pt;
+        }
+        .journal-shift-heading div { display: flex; align-items: baseline; gap: 4mm; }
+        .journal-shift-heading strong { color: #0b66a3; font-size: 11pt; }
+        .journal-shift-heading span { font-size: 8.5pt; }
+        .approved-journal-print-table {
+            width: 100%;
+            border: 1px solid #111827;
+            border-collapse: collapse;
+            border-spacing: 0;
+            table-layout: fixed;
+        }
+        .approved-journal-print-table col:nth-child(1) { width: 14%; }
+        .approved-journal-print-table col:nth-child(2) { width: 66%; }
+        .approved-journal-print-table col:nth-child(3) { width: 20%; }
+        .approved-journal-print-table thead { display: table-header-group; }
+        .approved-journal-print-table tr { break-inside: avoid; page-break-inside: avoid; }
+        .approved-journal-print-table th,
+        .approved-journal-print-table td {
+            border: 1px solid #111827;
+            vertical-align: top;
+        }
+        .approved-journal-print-table th {
+            padding: 2.2mm 2mm;
+            background: #eef4f8;
+            font-size: 8pt;
+            font-weight: 700;
+            line-height: 1.2;
+            text-align: center;
+        }
+        .approved-journal-print-table td {
+            min-height: 14mm;
+            padding: 2mm;
+            font-size: 8.7pt;
+            line-height: 1.35;
+        }
+        .journal-print-time-cell { text-align: center; }
+        .journal-print-date { display: block; min-height: 1.25em; font-size: 8pt; font-weight: 400; }
+        .journal-print-time {
+            position: relative;
+            display: inline-grid;
+            min-width: 15mm;
+            min-height: 7mm;
+            place-items: center;
+            margin: 0.3mm auto;
+            font-size: 9.5pt;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+        .journal-print-time.is-emergency::after {
+            position: absolute;
+            inset: 0.1mm -0.8mm;
+            border: 0.55mm solid #c7352b;
+            border-radius: 50%;
+            content: "";
+        }
+        .journal-print-number { display: block; margin-top: 1mm; font-size: 7.5pt; }
+        .journal-print-content p { margin: 0; }
+        .journal-print-content p + p,
+        .journal-print-content ul,
+        .journal-print-content ol { margin-top: 1mm; }
+        .opj-rich-list { margin-bottom: 0; padding-left: 5mm; }
+        .is-bold { font-weight: 700; }
+        .is-italic { font-style: italic; }
+        .is-underlined { text-decoration: underline; }
+        .is-struck { text-decoration: line-through; }
+        .is-text-red { color: #c7352b; }
+        .is-text-blue { color: #1269aa; }
+        .is-normative-open {
+            text-decoration-line: underline;
+            text-decoration-color: #c7352b;
+            text-decoration-thickness: 0.35mm;
+            text-underline-offset: 0.18em;
+        }
+        .is-normative-close {
+            text-decoration-line: underline;
+            text-decoration-color: #1269aa;
+            text-decoration-thickness: 0.35mm;
+            text-underline-offset: 0.18em;
+        }
+        button.opj-reference-token,
+        .opj-reference-token {
+            display: inline;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            border-bottom: 0.25mm dotted #1269aa;
+            border-radius: 0;
+            background: transparent;
+            color: #1269aa;
+            font: inherit;
+            line-height: inherit;
+            text-decoration: none;
+        }
+        .journal-print-lifecycle-label { display: block; margin-bottom: 1mm; font-weight: 700; }
+        .journal-print-reason,
+        .journal-print-author {
+            display: block;
+            margin-top: 1.5mm;
+            padding-top: 1mm;
+            border-top: 0.25mm solid #94a3b8;
+            color: #475569;
+            font-size: 7.2pt;
+            line-height: 1.25;
+        }
+        .journal-print-reason { border-top: 0; font-style: italic; }
+        .journal-print-markers {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, 11mm);
+            align-content: start;
+            justify-content: center;
+            gap: 1.2mm;
+            text-align: center;
+        }
+        .opj-normative-marker,
+        .draft-normative-marker {
+            position: relative;
+            display: inline-grid;
+            width: 11mm;
+            min-width: 11mm;
+            height: 13mm;
+            min-height: 13mm;
+            place-items: center;
+            align-content: center;
+            padding: 0.8mm;
+            border: 0.35mm solid currentColor;
+            border-radius: 1.5mm;
+            background: #fff;
+            color: #c7352b;
+            line-height: 1;
+        }
+        .opj-normative-marker.is-zn_off,
+        .opj-normative-marker.is-pz_remove,
+        .draft-normative-marker.is-zn_off,
+        .draft-normative-marker.is-pz_remove,
+        .draft-normative-marker.is-cleared { color: #1269aa; }
+        .draft-normative-marker-top,
+        .draft-normative-marker-bottom { font-size: 6.5pt; font-weight: 700; }
+        .draft-normative-marker-bolt { margin: 0.4mm 0; font-size: 12pt; font-weight: 700; }
+        .draft-normative-marker-cross {
+            position: absolute;
+            inset: 50% auto auto 50%;
+            display: block;
+            font-size: 21pt;
+            font-style: normal;
+            font-weight: 400;
+            opacity: 0.78;
+            transform: translate(-50%, -50%) rotate(-8deg);
+        }
+        .opj-marker-count {
+            position: absolute;
+            right: -1.4mm;
+            top: -1.4mm;
+            display: inline-grid;
+            min-width: 5mm;
+            height: 5mm;
+            place-items: center;
+            padding: 0 0.7mm;
+            border: 0.25mm solid currentColor;
+            border-radius: 50%;
+            background: #fff;
+            font-size: 5.5pt;
+            font-weight: 700;
+        }
+        .journal-print-empty { padding: 12mm !important; text-align: center; }
+        @media print {
+            body { padding: 0; }
+            .print-toolbar { display: none !important; }
+            .journal-print-book { max-width: none; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="print-toolbar" aria-label="Печать оперативного журнала">
+        <strong>{{ form_contract.title }} · утверждённая журнальная форма</strong>
+        <div>
+            <a href="{{ back_url }}">Вернуться к журналу</a>
+            <button type="button" onclick="window.print()">Печать</button>
+        </div>
+    </nav>
+
+    <main class="journal-print-book" data-approved-journal-print="{{ form_contract.code }}">
+        <header class="journal-print-heading">
+            <h1>{{ form_contract.title }}</h1>
+            <p>{{ journal.workplace.name }}</p>
+            {% if journal.workplace.division %}<p>{{ journal.workplace.division.name }}</p>{% endif %}
+            <small>{{ form_contract.source_reference }}</small>
+        </header>
+
+        {% for group in groups %}
+        <section class="journal-shift-section">
+            <header class="journal-shift-heading">
+                <div><strong>{{ group.date_label }}</strong><span>{{ group.period_label }}</span></div>
+                <span>{{ group.rows|length }} записей</span>
+            </header>
+
+            <table class="approved-journal-print-table" aria-label="{{ form_contract.title }} · {{ group.date_label }}">
+                <colgroup><col><col><col></colgroup>
+                <thead><tr>{% for column in form_contract.columns %}<th scope="col">{{ column.title }}</th>{% endfor %}</tr></thead>
+                <tbody>
+                    {% for row in group.rows %}
+                    <tr>
+                        <td class="journal-print-time-cell">
+                            <span class="journal-print-date">{% if row.show_date %}{{ row.entry.event_at|date:"d.m.Y" }}{% endif %}</span>
+                            <strong class="journal-print-time{% if row.presentation.emergency %} is-emergency{% endif %}">{{ row.entry.event_at|date:"H:i" }}</strong>
+                            <span class="journal-print-number">№ {{ row.journal_number }}</span>
+                        </td>
+                        <td class="journal-print-content">
+                            {% if row.is_lifecycle_event %}
+                                {% if row.entry.type_code == 'opj-correction' %}
+                                <strong class="journal-print-lifecycle-label">Исправление к записи № {{ row.target_journal_number }}. Следует читать:</strong>
+                                <div class="opj-rich-content">{{ row.presentation.html }}</div>
+                                {% else %}
+                                <strong class="journal-print-lifecycle-label">Запись № {{ row.target_journal_number }} отменена.</strong>
+                                {% endif %}
+                                {% if row.reason %}<span class="journal-print-reason">Причина: {{ row.reason }}</span>{% endif %}
+                            {% else %}
+                                <div class="opj-rich-content">{{ row.presentation.html }}</div>
+                            {% endif %}
+                            <span class="journal-print-author">{{ row.entry.author_full_name_snapshot }} · зарегистрировано {{ row.entry.registered_at|date:"d.m.Y H:i" }}</span>
+                        </td>
+                        <td class="journal-print-markers">
+                            {% include "operational_log/_normative_markers.html" with markers=row.presentation.markers %}
+                        </td>
+                    </tr>
+                    {% empty %}<tr><td class="journal-print-empty" colspan="3">В выбранной форме зарегистрированных записей нет.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </section>
+        {% empty %}<p class="journal-print-empty">Зарегистрированных записей для печати нет.</p>{% endfor %}
+    </main>
+</body>
+</html>

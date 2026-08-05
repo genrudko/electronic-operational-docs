@@ -1,6 +1,12 @@
 from django.urls import path
 
-from . import views
+from . import (
+    opj_lifecycle,
+    opj_lifecycle_acceptance,
+    opj_lifecycle_repair,
+    opj_runtime_repair,
+    views,
+)
 
 app_name = "operational_log"
 
@@ -22,19 +28,32 @@ urlpatterns = [
         name="add_draft",
     ),
     path(
+        "operations/journal/<int:journal_id>/shift/drafts/register-selected/",
+        opj_lifecycle_acceptance.register_drafts_batch_view,
+        name="register_drafts_batch",
+    ),
+    path(
         (
             "operations/journal/<int:journal_id>/shift/drafts/"
             "<uuid:public_id>/autosave/"
         ),
-        views.autosave_draft_entry,
+        opj_lifecycle.autosave_draft_guard_view,
         name="autosave_draft",
+    ),
+    path(
+        (
+            "operations/journal/<int:journal_id>/shift/drafts/"
+            "<uuid:public_id>/register/"
+        ),
+        opj_lifecycle_acceptance.register_single_draft_view,
+        name="register_draft_lifecycle",
     ),
     path(
         (
             "operations/journal/<int:journal_id>/shift/drafts/"
             "<uuid:public_id>/move/"
         ),
-        views.move_draft_entry_view,
+        opj_lifecycle.move_draft_guard_view,
         name="move_draft",
     ),
     path(
@@ -42,7 +61,7 @@ urlpatterns = [
             "operations/journal/<int:journal_id>/shift/drafts/"
             "<uuid:public_id>/remove/"
         ),
-        views.remove_draft_entry_view,
+        opj_lifecycle.remove_draft_guard_view,
         name="remove_draft",
     ),
     path(
@@ -50,8 +69,23 @@ urlpatterns = [
             "operations/journal/<int:journal_id>/shift/drafts/"
             "<uuid:public_id>/restore/"
         ),
-        views.restore_draft_entry_view,
+        opj_lifecycle.restore_draft_guard_view,
         name="restore_draft",
+    ),
+    path(
+        "operations/journal/<int:journal_id>/entries/<int:sequence_number>/lifecycle/",
+        opj_lifecycle.entry_lifecycle_view,
+        name="entry_lifecycle",
+    ),
+    path(
+        "operations/journal/<int:journal_id>/entries/<int:sequence_number>/correct/",
+        opj_lifecycle_repair.correct_entry_view,
+        name="entry_correct",
+    ),
+    path(
+        "operations/journal/<int:journal_id>/entries/<int:sequence_number>/cancel/",
+        opj_lifecycle_repair.cancel_entry_view,
+        name="entry_cancel",
     ),
     path(
         "operations/journal/<int:journal_id>/display/",
@@ -59,8 +93,13 @@ urlpatterns = [
         name="update_display",
     ),
     path(
+        "operations/journal/<int:journal_id>/print/",
+        opj_lifecycle_acceptance.print_journal_view,
+        name="print",
+    ),
+    path(
         "operations/journal/<int:journal_id>/",
-        views.detail,
+        opj_runtime_repair.clean_journal_runtime_view,
         name="detail",
     ),
 ]

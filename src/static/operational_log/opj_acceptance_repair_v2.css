@@ -1,0 +1,131 @@
+/* OPJ-LIFECYCLE-001 second acceptance repair.
+ * Narrow override for the user-rejected visual regressions. Loaded after the
+ * existing OPJ styles from the shared marker partial used by screen and print.
+ */
+
+/* A journal cell must remain a table cell. Turning TD into grid deforms the
+ * third column and makes screen/print geometry diverge. */
+td.opj-clean-markers,
+td.approved-journal-visas,
+td.journal-print-markers {
+    display: table-cell !important;
+    min-width: 0;
+    padding: 7px 5px !important;
+    overflow: visible !important;
+    vertical-align: top;
+    text-align: center;
+}
+
+.opj-normative-marker,
+.draft-normative-marker {
+    display: inline-grid;
+    margin: 0 2px 4px;
+    vertical-align: top;
+}
+
+/* Removal is represented by the earlier installation sign crossed later in
+ * chronology. The sign itself therefore stays red; only the cross denotes the
+ * later removal fact. */
+.opj-normative-marker.is-pz_remove,
+.opj-normative-marker.is-zn_off,
+.draft-normative-marker.is-pz_remove,
+.draft-normative-marker.is-zn_off,
+.draft-normative-marker.is-cleared {
+    color: var(--theme-danger, #c7352b) !important;
+}
+
+.draft-normative-marker-cross {
+    position: absolute;
+    z-index: 2;
+    inset: 50% auto auto 50%;
+    display: block;
+    width: 115%;
+    height: 115%;
+    font-size: 0 !important;
+    opacity: 1;
+    transform: translate(-50%, -50%) !important;
+    pointer-events: none;
+}
+
+.draft-normative-marker-cross::before,
+.draft-normative-marker-cross::after {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 2px;
+    height: 118%;
+    border-radius: 999px;
+    background: currentColor;
+    content: "";
+    transform-origin: center;
+}
+
+.draft-normative-marker-cross::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.draft-normative-marker-cross::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.opj-marker-popover {
+    position: absolute;
+    z-index: 420;
+    left: 50%;
+    bottom: calc(100% + 8px);
+    display: none;
+    width: max-content;
+    min-width: 180px;
+    max-width: min(360px, calc(100vw - 24px));
+    gap: 4px;
+    padding: 9px 11px;
+    border: 1px solid var(--theme-border-strong, #94a3b8);
+    border-radius: 7px;
+    background: var(--theme-surface-elevated, #fff);
+    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.2);
+    color: var(--theme-text, #111827);
+    font-size: 0.68rem;
+    font-weight: 400;
+    line-height: 1.35;
+    text-align: left;
+    transform: translateX(-50%);
+    white-space: normal;
+}
+
+.opj-marker-popover strong,
+.opj-marker-popover span {
+    display: block;
+}
+
+.opj-normative-marker:hover .opj-marker-popover,
+.opj-normative-marker:focus-visible .opj-marker-popover {
+    display: grid;
+}
+
+/* Accepted emergency mark: the same compact, heavy oval in draft, clean
+ * journal and print. Explicitly reset the old rotated freehand transform. */
+.opj-clean-time.is-emergency::after,
+.journal-print-time.is-emergency::after,
+.draft-ledger-time.is-emergency::after {
+    inset: -0.08rem -0.18rem !important;
+    border-width: 2px !important;
+    border-radius: 50% !important;
+    transform: none !important;
+}
+
+/* The registered journal form contains only journal requisites. Runtime author
+ * and registration diagnostics are screen service data and do not print. */
+@media print {
+    .journal-print-author,
+    .journal-print-reason:not(.is-journal-requisite) {
+        display: none !important;
+    }
+
+    td.journal-print-markers {
+        padding: 2mm !important;
+    }
+
+    .opj-marker-popover {
+        display: none !important;
+    }
+}

@@ -1,11 +1,19 @@
 {% extends "shared/direction_a/base.html" %}
-{% load static %}
+{% load static opj_lifecycle_tags %}
 
 {% block title %}Рабочая смена · {{ journal.title }} · ЭОД{% endblock %}
 {% block body_class %}direction-a-body da-active opj-direction-a opj-workspace-page{% endblock %}
 {% block main_class %}opj-main opj-shift-main{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'operational_log/opj_workspace_controls.css' %}?v=opjux00105">
+<link rel="stylesheet" href="{% static 'operational_log/opj_registered_actions.css' %}?v=opjlifecycle00301">
+<link rel="stylesheet" href="{% static 'operational_log/opj_lifecycle_acceptance_repair.css' %}?v=opjlifecycle00604">
+<style>
+.opj-workspace-page [data-draft-workspace]:not(.is-opj-first-paint-ready) {
+    visibility: hidden !important;
+}
+</style>
+<script src="{% static 'operational_log/opj_first_paint_guard.js' %}?v=opjlifecycle00604" defer></script>
 {% endblock %}
 
 {% block content %}
@@ -23,11 +31,11 @@
         <span class="opj-meta-item">{{ drafts|length }} записей</span>
         <span class="opj-meta-item is-success shift-autosave-indicator">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
-            Автосохранение
+            Автосохранение включено
         </span>
     </div>
     {% endif %}
-    <a class="da-button is-secondary is-compact opj-registered-link" href="{% url 'operational_log:detail' journal.pk %}">Зарегистрированный журнал</a>
+    <a class="da-button is-secondary is-compact opj-registered-link" href="{% url 'operational_log:detail' journal.pk %}{% if shift %}?shift={{ shift.public_id }}{% endif %}">Зарегистрированный журнал</a>
 </header>
 
 {% if not shift %}
@@ -53,22 +61,30 @@
     </form>
 </section>
 {% else %}
-<details class="opj-registered-context da-panel-flat" data-opj-registered-context>
-    <summary>
-        <span class="opj-registered-context-heading">
-            <svg class="opj-context-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5zM8 7h8M8 11h8M8 15h5"/></svg>
-            <strong>Зарегистрированные записи</strong>
-            <span class="opj-registered-context-meta">Загрузка…</span>
-        </span>
-        <span class="opj-work-boundary" data-opj-work-boundary>
-            <svg class="opj-context-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6zM14 3v5h5M9 12h6M9 16h4"/></svg>
-            <strong>Рабочий черновик</strong>
-            <small>Автосохранение</small>
-            <svg class="opj-autosave-check" viewBox="0 0 24 24" role="img" aria-label="Автосохранение включено"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg>
-        </span>
-    </summary>
-    <div class="opj-registered-context-body">Загрузка зарегистрированного журнала…</div>
-</details>
+{% opj_shift_clean_summary shift as clean_summary %}
+<section class="opj-clean-summary" aria-label="Состояние чистовика текущей смены">
+    <div class="opj-clean-summary-main">
+        <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg>
+        <strong>Чистовик текущей смены</strong>
+        <div class="opj-clean-summary-meta">
+            <span>{{ clean_summary.count }} записей</span>
+            {% if clean_summary.last_registered_at %}<span>последняя регистрация {{ clean_summary.last_registered_at|date:"H:i" }}</span>{% endif %}
+            <span>Рабочий черновик · автосохранение</span>
+        </div>
+    </div>
+    <div class="opj-clean-summary-actions">
+        <button
+            type="button"
+            class="da-button is-tertiary is-compact opj-selection-mode-toggle"
+            data-selection-mode-toggle
+            aria-pressed="false"
+        >
+            <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-check"></use></svg>
+            <span>Выбрать записи</span>
+        </button>
+        <a class="da-button is-secondary is-compact" href="{% url 'operational_log:detail' journal.pk %}?shift={{ shift.public_id }}">Открыть чистовик</a>
+    </div>
+</section>
 
 <section
     class="opj-workspace da-panel screen-journal-theme"
@@ -91,6 +107,24 @@
     style="--draft-time-column: 14%; --draft-content-column: 66%; --draft-remarks-column: 20%;"
 >
     {% include "operational_log/_shift_workspace_toolbar.html" %}
+
+    <div class="opj-batch-registration-bar" data-batch-registration-bar hidden>
+        <div class="opj-batch-selection-state">
+            <label class="opj-row-selector is-header">
+                <input type="checkbox" data-select-all-drafts aria-label="Выбрать все незарегистрированные строки">
+                <span aria-hidden="true"></span>
+            </label>
+            <strong data-selected-count>Выбрано: 0</strong>
+            <span>Выбранные строки будут зарегистрированы по времени события.</span>
+        </div>
+        <div class="opj-batch-registration-actions">
+            <button type="button" class="da-button is-tertiary is-compact" data-clear-draft-selection>Снять выделение</button>
+            <button type="button" class="da-button is-compact" data-register-selected>
+                <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg>
+                <span>В чистовик</span>
+            </button>
+        </div>
+    </div>
 
     <div class="opj-editor-container" data-draft-book>
         <section class="opj-ledger-surface draft-page-shell" data-page-shell="left">
@@ -123,9 +157,48 @@
     {% include "operational_log/_shift_workspace_overlays.html" %}
 </section>
 
+<dialog
+    class="opj-action-dialog da-overlay"
+    data-register-dialog
+    data-batch-url="{% url 'operational_log:register_drafts_batch' journal.pk %}"
+    aria-labelledby="opj-register-dialog-title"
+>
+    <form method="dialog" class="opj-dialog-surface">
+        <header class="opj-dialog-header">
+            <span class="opj-dialog-icon" aria-hidden="true">
+                <svg class="ui-icon"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg>
+            </span>
+            <div>
+                <span class="eyebrow">РЕГИСТРАЦИЯ</span>
+                <h2 id="opj-register-dialog-title">Перенести в чистовик</h2>
+                <p>{{ shift.planned_start_at|date:"d.m.Y" }} · смена {{ shift.planned_start_at|date:"H:i" }}–{{ shift.planned_end_at|date:"H:i" }}</p>
+            </div>
+            <button type="button" class="da-icon-button" data-dialog-close aria-label="Закрыть">
+                <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-delete"></use></svg>
+            </button>
+        </header>
+        <div class="opj-dialog-body">
+            <p class="opj-dialog-lead">Строки останутся в сменном черновике как неизменяемые. Их журнальные номера определит общая хронология событий, а не время регистрации.</p>
+            <div class="opj-register-selection-summary">
+                <strong data-register-dialog-count>Выбрано строк: 0</strong>
+                <div data-register-dialog-list></div>
+            </div>
+            <p class="opj-dialog-error" data-register-dialog-error role="alert" hidden></p>
+        </div>
+        <footer class="opj-dialog-footer">
+            <button type="button" class="da-button is-secondary" data-dialog-close>Отмена</button>
+            <button type="button" class="da-button" data-register-confirm>
+                <span data-register-confirm-label>Перенести в чистовик</span>
+            </button>
+        </footer>
+    </form>
+</dialog>
+
 <script src="{% static 'operational_log/draft_editor.js' %}?v=011364" defer></script>
+<script src="{% static 'operational_log/opj_draft_guard.js' %}?v=opjlifecycle00501" defer></script>
 <script src="{% static 'operational_log/draft_workspace.js' %}?v=011364" defer></script>
 <script src="{% static 'operational_log/draft_reference_navigation.js' %}?v=011364" defer></script>
 <script src="{% static 'operational_log/opj_workspace_controls.js' %}?v=opjux00105" defer></script>
+<script src="{% static 'operational_log/opj_registered_actions_v2.js' %}?v=opjlifecycle00501" defer></script>
 {% endif %}
 {% endblock %}
