@@ -51,6 +51,16 @@ VOLATILE_OWNER_ALLOWLIST = {
     STATE_PATH,
     "docs/project/ACCEPTANCE_HISTORY.md",
     "docs/project/BASELINE_HISTORY.md",
+    "docs/automation/AUTO_000_SCOPE.md",
+    "docs/project/DEFECT_001_IMPLEMENTATION.md",
+    "docs/project/OPJ_UX_001_NEW_CHAT_STARTER.md",
+    "docs/work-items/NORMATIVE_EVIDENCE_001.md",
+    "docs/work-items/OPJ_LIFECYCLE_001.md",
+    "docs/work-items/PERSONNEL_AUTHORITY_001.md",
+    "docs/work-items/POST_MERGE_DEPLOY_VERIFY_001.md",
+    "docs/work-items/active/PROJECT-SUSTAINABILITY-001/WORK_ITEM.md",
+    "docs/work-items/active/PROJECT_BASELINE_001_CODEX_STAGE2_PROMPT.md",
+    "docs/work-items/active/PROJECT_BASELINE_001_STAGE2_DECISIONS.md",
 }
 
 
