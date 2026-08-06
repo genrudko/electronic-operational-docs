@@ -26,10 +26,20 @@ jobs:
       TIME_ZONE: Europe/Moscow
 
     steps:
-      - name: Checkout repository
+      - name: Checkout exact head
         uses: actions/checkout@v6
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+
+      - name: Verify exact checked-out SHA
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$EXPECTED_SHA"
+          printf 'EXACT_HEAD=%s\n' "$actual_sha"
 
       - name: Create masked ephemeral development credentials
         shell: bash
@@ -105,6 +115,7 @@ jobs:
           fi
 
       - name: Capture and verify sanitised development diagnostics after failure
+        id: diagnostics
         if: ${{ failure() }}
         shell: bash
         run: |
@@ -125,10 +136,11 @@ jobs:
             --input "$RUNNER_TEMP/development-diagnostics.sanitized.txt" \
             --env DJANGO_SECRET_KEY \
             --env POSTGRES_PASSWORD
+          printf 'verified=true\n' >>"$GITHUB_OUTPUT"
           cat "$RUNNER_TEMP/development-diagnostics.sanitized.txt"
 
       - name: Upload verified sanitised development diagnostics after failure
-        if: ${{ failure() }}
+        if: ${{ failure() && steps.diagnostics.outputs.verified == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: development-diagnostics-${{ github.run_id }}
