@@ -11,6 +11,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from scripts import dependency_provenance_contract as contract
 from scripts.dependency_provenance_contract import ContractViolation
 
 PROFILES = ("tooling", "build", "runtime", "dev", "browser")
@@ -38,6 +39,14 @@ def validate_runtime_install_workflow(text: str) -> None:
     wheel_installs = re.findall(r"pip install[^\n]*\.whl", text)
     if not wheel_installs or any("--no-deps" not in item for item in wheel_installs):
         raise ContractViolation("locked-runtime-install", repr(wheel_installs))
+
+
+def validate_reusable_workflow_reference(reference: str) -> None:
+    if "@" not in reference:
+        raise ContractViolation("immutable-reusable-workflow", reference)
+    _, revision = reference.rsplit("@", 1)
+    if not re.fullmatch(r"[0-9a-f]{40}", revision):
+        raise ContractViolation("immutable-reusable-workflow", reference)
 
 
 def validate_exact_head_workflow(text: str) -> None:
@@ -109,6 +118,16 @@ def validate_namespace_uniqueness(records: list[dict[str, str]]) -> None:
                 "spdx-document-namespace-unique-subject",
                 f"namespace={namespace}",
             )
+
+
+def validate_malformed_lock_fixture(path: Path) -> None:
+    try:
+        contract.parse_lock(path)
+    except ContractViolation as exc:
+        raise ContractViolation(
+            "malformed-truncated-lock-fixture", exc.evidence
+        ) from exc
+    raise ContractViolation("malformed-truncated-lock-fixture", "fixture-was-accepted")
 
 
 def validate_artifact_text(path: str, text: str) -> None:
