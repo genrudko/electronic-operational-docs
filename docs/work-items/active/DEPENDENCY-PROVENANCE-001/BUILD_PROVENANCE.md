@@ -3,7 +3,7 @@
 ## Canonical statement
 
 Build provenance is an in-toto Statement v1 using a SLSA Provenance v1
-predicate. It is generated from workflow outputs, not manually written.
+predicate. It is generated from verified workflow outputs, not manually written.
 
 ```text
 subject.name: final EOD image/artifact
@@ -16,134 +16,123 @@ predicate.runDetails.metadata: run identity and reproducibility metadata
 
 ## Exact-head invariant
 
-The workflow establishes one exact head before any dependency installation:
-
-1. expected SHA comes from `github.event.pull_request.head.sha` or accepted
-   release/event SHA;
-2. `actions/checkout` checks out that exact SHA with persisted credentials off;
-3. `git rev-parse HEAD` must equal expected SHA;
+1. expected SHA comes from PR head or accepted release/event SHA;
+2. checkout uses that exact SHA with persisted credentials off;
+3. `git rev-parse HEAD` equals expected SHA;
 4. dirty/untracked files are rejected before build;
-5. all provenance subjects/materials are produced in that same job/workflow
-   chain or passed by verified digests;
-6. no rebuild is allowed after the subject digest is recorded.
+5. all subjects/materials stay in the same verified digest chain;
+6. no rebuild occurs after subject digest is recorded.
 
-The provenance source material uses the full 40-character commit and repository
-URI. Branch names, PR numbers and human-entered report text are supplementary,
-not identity.
+Full commit and repository URI are identity. Branch, PR number and report text are
+supplementary metadata.
 
 ## Required materials
 
 - repository exact commit;
-- workflow file path and SHA-256 digest as executed at exact head;
+- workflow path and SHA-256 digest as executed;
 - `pyproject.toml` digest;
-- every applicable lock-profile digest;
-- lock generator/tooling identity and digest;
+- `requirements/locks/tooling.txt` digest;
+- `requirements/locks/build.txt` digest;
+- `requirements/locks/runtime.txt` digest;
+- `requirements/locks/dev.txt` digest;
+- `requirements/locks/browser.txt` digest;
+- digest-pinned generator OCI identity;
+- bootstrap manifest/evidence digest and exact tool versions;
 - Dockerfile and relevant Compose/build-config digests;
 - all base/build/service image digests;
 - all external GitHub Action commit SHAs;
 - browser-test image/revision digest when applicable;
 - generated-static manifest digest;
-- source/build wheel digest;
+- wheel digest;
 - final OCI image digest;
-- canonical SBOM digest;
+- canonical SPDX 2.3 namespace and SBOM digest;
+- accepted `SOURCE_DATE_EPOCH` and its exact source evidence;
+- SPDX namespace-contract and build-definition digests;
 - non-secret build parameters affecting output;
 - runner OS/architecture and builder identity.
 
-Mutable tags may be recorded as annotations for humans but never replace resolved
-digests.
+Mutable tags may be annotations but never replace resolved digests.
 
-## Build outputs
+## Deterministic SBOM linkage
 
-A release/build evidence set is valid only when it forms this closed graph:
+Provenance proves that:
+
+- `creationInfo.created` was derived from verified accepted build epoch, not
+  runner wall clock;
+- normalized UTC value is canonical `YYYY-MM-DDTHH:MM:SSZ`;
+- `documentNamespace` was derived from namespace-contract version, final image
+  digest, exact source commit and build-definition digest;
+- repeated normalization of identical evidence is byte-identical;
+- another image/build cannot reuse the namespace;
+- the pinned official SPDX 2.3 schema validated before publication;
+- final SBOM digest belongs to that normalized payload.
+
+The SBOM digest is not used to derive its own namespace; provenance closes that
+link after normalization and avoids circular identity.
+
+## Closed evidence graph
 
 ```text
 exact repository commit
-+ immutable lock/tool/action/image materials
++ accepted generator/bootstrap evidence
++ tooling/build/runtime/dev/browser lock digests
++ immutable tool/action/image materials
++ accepted build epoch/build definition
 → wheel digest
 → final OCI image digest
-→ SPDX SBOM digest
-→ in-toto/SLSA provenance subject/material graph
+→ deterministic SPDX namespace and SBOM digest
+→ in-toto/SLSA subject/material graph
 → verified attestation/publication
 ```
 
-CI diagnostics, test logs and screenshots are evidence artifacts but are not the
-release subject unless separately checksummed and declared.
+## Credentials and publication order
 
-## Credentials and sensitive values
+Provenance may contain parameter names/profile identifiers, never secret values.
+Tokens, passwords, secret connection strings, registry credentials, private
+keys, runtime domain/user data and raw environment dumps are omitted or marked
+according to schema without exposing values.
 
-Provenance may contain **parameter names** and non-secret profile identifiers,
-but never secret values. The following are replaced by an explicit marker such
-as `REDACTED_INPUT` or omitted according to schema:
+Publication order is fail-closed:
 
-- workflow secret values;
-- authentication tokens;
-- passwords and connection strings;
-- private registry credentials;
-- private keys/certificates;
-- runtime domain/user data;
-- raw environment dumps.
-
-The existing secret-hygiene scanner runs on repository and candidate artifacts.
-Sanitization is followed by verification; an unverified or partly redacted
-artifact is not published.
+```text
+exact-head and clean-tree proof
+→ build/normalization/schema/boundary validation
+→ repository and candidate-artifact secret scan
+→ post-redaction verification
+→ provenance generation
+→ attestation verification
+→ publication
+```
 
 ## Permissions
 
-The inventory stage changes no permissions. The implementation stage uses least
-privilege:
+The inventory repair changes no permissions. Future attestation uses default
+`contents: read`; `id-token: write`/`attestations: write` only in a bounded job;
+package write only when publishing an accepted image; no checkout credential
+persistence; no secret exposure to untrusted code. Every external Action is full
+commit SHA and provenance material.
 
-- default `contents: read`;
-- `id-token: write` and `attestations: write` only in the bounded attestation
-  job when required;
-- package write permission only when publishing an accepted image;
-- no checkout credential persistence;
-- no secrets passed to untrusted fork code or third-party actions.
+## Fail-closed validation
 
-Every external Action used for attestation/SBOM is pinned by commit SHA and
-included as a material/dependency.
-
-## Validation
-
-Fail closed when:
-
-- expected SHA and checked-out SHA differ;
-- source commit is missing/short/mutable;
-- provenance subject digest differs from built/published artifact;
-- SBOM digest or subject differs;
-- a resolved dependency uses a tag/branch without digest/SHA;
-- workflow digest does not match exact-head workflow source;
-- lock digest is absent or does not match checked-in canonical lock;
-- provenance is generated before secret-hygiene completion;
-- provenance contains credential-like content;
-- subject is rebuilt after statement generation;
-- materials omit an applicable runtime/build input;
-- attestation verification fails;
-- artifact or evidence comes from another workflow head.
+Reject when expected/checked-out SHA differ; source is mutable/short; subject
+mismatches artifact; any of five lock digests or bootstrap evidence is absent;
+image/Action material is mutable; workflow digest differs; timestamp/namespace
+is volatile, malformed or reused; schema validation fails; provenance precedes
+secret-hygiene; credential-like content appears; subject is rebuilt; applicable
+material is omitted; attestation verification fails; or evidence belongs to
+another head.
 
 ## Reproducibility claim
 
-The contract distinguishes:
-
-- **input reproducibility** — all declared inputs are immutable and attributable;
-- **dependency reproducibility** — exact graph/hashes install successfully;
-- **build repeatability** — same inputs can build a functionally equivalent
-  artifact;
-- **byte-for-byte reproducibility** — only claimed after two independent builds
-  prove identical digests.
-
-This work item does not claim byte-for-byte reproducibility. Timestamps,
-archive ordering, Python wheel metadata, filesystem layers and BuildKit metadata
-must be normalized and independently tested before such a claim.
+The contract distinguishes immutable input identity, exact dependency graph,
+functionally repeatable build and byte-for-byte reproducibility. This stage does
+not claim byte-identical final wheels/OCI layers. That claim requires two
+independent builds with identical digests after timestamp/archive/layer metadata
+normalization.
 
 ## Outside-repository limitations
 
-- availability and retention of registry objects;
-- integrity of upstream publisher build processes;
-- GitHub-hosted runner platform internals;
-- external DNS/network and registry authentication;
-- vendor SBOM accuracy;
-- organization-level repository/Actions settings.
-
-These limitations are recorded in provenance/known limitations and addressed by
-future security, deployment and release work items; they are not silently
-presented as repository guarantees.
+Registry retention/availability, upstream publisher build integrity,
+GitHub-hosted runner internals, DNS/network/authentication, vendor SBOM accuracy
+and organization-level settings remain external boundaries. They are recorded,
+not presented as repository guarantees.
