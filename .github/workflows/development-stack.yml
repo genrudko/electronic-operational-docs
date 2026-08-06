@@ -19,17 +19,38 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
-      DJANGO_SECRET_KEY: ci-development-secret-not-for-deployment-0123456789
       DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost
       POSTGRES_DB: eod_development
       POSTGRES_USER: eod_development
-      POSTGRES_PASSWORD: eod_development_ci_password
       EOD_DEVELOPMENT_PORT: "8766"
       TIME_ZONE: Europe/Moscow
 
     steps:
-      - name: Checkout repository
+      - name: Checkout exact head
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Verify exact checked-out SHA
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$EXPECTED_SHA"
+          printf 'EXACT_HEAD=%s\n' "$actual_sha"
+
+      - name: Create masked ephemeral development credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          django_value="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+          postgres_value="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+          printf '::add-mask::%s\n' "$django_value"
+          printf '::add-mask::%s\n' "$postgres_value"
+          printf 'DJANGO_SECRET_KEY=%s\n' "$django_value" >>"$GITHUB_ENV"
+          printf 'POSTGRES_PASSWORD=%s\n' "$postgres_value" >>"$GITHUB_ENV"
 
       - name: Validate development shell scripts
         shell: bash
@@ -48,14 +69,23 @@ jobs:
       - name: Start development stack
         run: docker compose -f compose.development.yaml up --detach
 
-      - name: Wait for development application health
+      - name: Wait for development application health with verified output
         shell: bash
         run: |
           set -euo pipefail
           for attempt in $(seq 1 45); do
             if curl --fail --silent --show-error \
-              http://127.0.0.1:8766/_health/ >/tmp/eod-development-health.json; then
-              cat /tmp/eod-development-health.json
+              http://127.0.0.1:8766/_health/ >"$RUNNER_TEMP/development-health.raw.json"; then
+              python scripts/secret_hygiene.py redact \
+                --input "$RUNNER_TEMP/development-health.raw.json" \
+                --output "$RUNNER_TEMP/development-health.sanitized.json" \
+                --env DJANGO_SECRET_KEY \
+                --env POSTGRES_PASSWORD
+              python scripts/secret_hygiene.py verify-sanitized \
+                --input "$RUNNER_TEMP/development-health.sanitized.json" \
+                --env DJANGO_SECRET_KEY \
+                --env POSTGRES_PASSWORD
+              cat "$RUNNER_TEMP/development-health.sanitized.json"
               exit 0
             fi
             if (( attempt % 10 == 0 )); then
@@ -79,34 +109,61 @@ jobs:
           app_port="$(docker compose -f compose.development.yaml port app 8766)"
           test "$app_port" = "127.0.0.1:8766"
           if docker compose -f compose.development.yaml port db 5432 \
-            >/tmp/eod-development-db-port.txt 2>&1; then
+            >"$RUNNER_TEMP/development-db-port.raw.txt" 2>&1; then
             echo "Development PostgreSQL must not publish a host port."
-            cat /tmp/eod-development-db-port.txt
             exit 1
           fi
 
-      - name: Capture development diagnostics after failure
+      - name: Capture and verify sanitised development diagnostics after failure
+        id: diagnostics
         if: ${{ failure() }}
         shell: bash
         run: |
+          set -euo pipefail
           {
             echo "===== docker compose ps --all ====="
             docker compose -f compose.development.yaml ps --all
             echo
             echo "===== docker compose logs ====="
             docker compose -f compose.development.yaml logs --no-color
-          } >development-diagnostics.log 2>&1
-          cat development-diagnostics.log
+          } >"$RUNNER_TEMP/development-diagnostics.raw.txt" 2>&1
+          python scripts/secret_hygiene.py redact \
+            --input "$RUNNER_TEMP/development-diagnostics.raw.txt" \
+            --output "$RUNNER_TEMP/development-diagnostics.sanitized.txt" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$RUNNER_TEMP/development-diagnostics.sanitized.txt" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD
+          printf 'verified=true\n' >>"$GITHUB_OUTPUT"
+          cat "$RUNNER_TEMP/development-diagnostics.sanitized.txt"
 
-      - name: Upload development diagnostics after failure
-        if: ${{ failure() }}
+      - name: Upload verified sanitised development diagnostics after failure
+        if: ${{ failure() && steps.diagnostics.outputs.verified == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: development-diagnostics-${{ github.run_id }}
-          path: development-diagnostics.log
+          path: ${{ runner.temp }}/development-diagnostics.sanitized.txt
           if-no-files-found: error
           retention-days: 7
 
       - name: Stop development stack
         if: ${{ always() }}
         run: docker compose -f compose.development.yaml down --volumes --remove-orphans
+
+      - name: Remove development diagnostic transport files
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            "$RUNNER_TEMP/development-health.raw.json" \
+            "$RUNNER_TEMP/development-health.sanitized.json" \
+            "$RUNNER_TEMP/development-db-port.raw.txt" \
+            "$RUNNER_TEMP/development-diagnostics.raw.txt" \
+            "$RUNNER_TEMP/development-diagnostics.sanitized.txt"
+
+      - name: Verify development checkout remains exactly clean
+        if: ${{ always() }}
+        run: python scripts/secret_hygiene.py verify-clean-tree

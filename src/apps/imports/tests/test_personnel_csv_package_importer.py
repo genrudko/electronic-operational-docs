@@ -22,6 +22,7 @@ from apps.imports.tests.personnel_csv_package import (
     synthetic_personnel_csv_package,
 )
 from apps.organizations.models import Division, Employee, Organization, Position
+from tests.credential_fixtures import ephemeral_credential
 
 
 @override_settings(EOD_DATABASE_PROFILE="development")
@@ -44,7 +45,7 @@ class PersonnelCsvPackageImporterTests(TestCase):
         )
         cls.user = get_user_model().objects.create_user(
             username="csv-package-importer",
-            password="CsvPackage-0116a-Test!",
+            password=ephemeral_credential("CsvPackageImporter"),
         )
         cls.employee = Employee.objects.create(
             organization=organization,

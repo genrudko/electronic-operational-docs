@@ -3,10 +3,15 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
+from apps.organizations.demo_access import (
+    DEMO_ACCESS_ENV,
+    DemoAccessPolicyError,
+    reconcile_demo_access,
+)
 from apps.organizations.models import (
     Division,
     Employee,
@@ -21,8 +26,6 @@ from apps.organizations.models import (
     Workplace,
 )
 
-DEMO_PASSWORD = "EodDemo!2026"
-
 
 class Command(BaseCommand):
     help = "Создаёт безопасную презентационную структуру ЦОТУиЭ и вымышленных сотрудников."
@@ -31,7 +34,10 @@ class Command(BaseCommand):
         parser.add_argument(
             "--reset-passwords",
             action="store_true",
-            help="Установить демонстрационный пароль заново.",
+            help=(
+                "Совместимый флаг: доступ всегда настраивается только через "
+                f"{DEMO_ACCESS_ENV}."
+            ),
         )
 
     @transaction.atomic
@@ -214,15 +220,17 @@ class Command(BaseCommand):
             username="operator.demo",
             first_name="Илья",
             last_name="Кузнецов",
-            reset_password=options["reset_passwords"],
         )
         supervisor_user = self._user(
             user_model,
             username="supervisor.demo",
             first_name="Анна",
             last_name="Орлова",
-            reset_password=options["reset_passwords"],
         )
+        try:
+            access_result = reconcile_demo_access(require_injection=True)
+        except DemoAccessPolicyError as exc:
+            raise CommandError(str(exc)) from exc
 
         for demo_user in (operator_user, supervisor_user):
             InterfacePreference.objects.get_or_create(
@@ -325,22 +333,23 @@ class Command(BaseCommand):
         )
 
         self.stdout.write(self.style.SUCCESS("Презентационная структура организации создана или обновлена."))
-        self.stdout.write("Персональные тестовые учётные записи:")
-        self.stdout.write(f"  operator.demo / {DEMO_PASSWORD}")
-        self.stdout.write(f"  supervisor.demo / {DEMO_PASSWORD}")
+        self.stdout.write("Персональные тестовые учётные записи подготовлены.")
+        self.stdout.write(
+            f"Контракт доступа: {access_result.status}; значение {DEMO_ACCESS_ENV} не выводится."
+        )
         self.stdout.write(f"Подразделений: {Division.objects.filter(organization=organization).count()}")
         employee_count = Employee.objects.filter(organization=organization).count()
         self.stdout.write(f"Вымышленных сотрудников: {employee_count}")
         self.stdout.write("Реальные ФИО, контакты и табельные данные не используются.")
 
-    def _user(self, user_model, *, username: str, first_name: str, last_name: str, reset_password: bool):
+    def _user(self, user_model, *, username: str, first_name: str, last_name: str):
         user, created = user_model.objects.get_or_create(username=username)
         user.first_name = first_name
         user.last_name = last_name
         user.email = f"{username}@example.invalid"
         user.is_active = True
         user.is_staff = False
-        if created or reset_password or not user.has_usable_password():
-            user.set_password(DEMO_PASSWORD)
+        if created:
+            user.set_unusable_password()
         user.save()
         return user

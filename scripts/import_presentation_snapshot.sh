@@ -19,7 +19,7 @@ fi
 ARCHIVE_PATH="$(readlink -f "$1")"
 [[ -f "$ARCHIVE_PATH" ]] || { echo "ОШИБКА: архив не найден: $ARCHIVE_PATH" >&2; exit 1; }
 [[ -d "$REPO_DIR/.git" ]] || { echo "ОШИБКА: репозиторий не найден: $REPO_DIR" >&2; exit 1; }
-[[ -f "$ENV_FILE" ]] || { echo "ОШИБКА: secret-файл не найден: $ENV_FILE" >&2; exit 1; }
+[[ -f "$ENV_FILE" ]] || { echo "ОШИБКА: обязательный локальный env-файл не найден." >&2; exit 1; }
 
 install -d -m 0750 -o root -g root "$IMPORT_ROOT" "$BACKUP_ROOT"
 
@@ -172,6 +172,9 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "eod_config.settings")
 django.setup()
 
 manifest = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+demo_credential = os.environ.get("EOD_DEMO_USER_PASSWORD", "").strip()
+if not demo_credential:
+    raise SystemExit("Local demo credential injection is required for verification.")
 errors: list[str] = []
 actual_counts: dict[str, int] = {}
 
@@ -186,7 +189,7 @@ for model_label, expected_count in manifest["model_counts"].items():
         errors.append(f"{model_label}: expected {expected_count}, got {actual}")
 
 for username in ("operator.demo", "supervisor.demo"):
-    if authenticate(username=username, password="EodDemo!2026") is None:
+    if authenticate(username=username, password=demo_credential) is None:
         errors.append(f"{username}: authentication failed")
 
 with connection.cursor() as cursor:
@@ -234,6 +237,7 @@ set +a
 : "${POSTGRES_DB:?POSTGRES_DB is missing in preview.env}"
 : "${POSTGRES_USER:?POSTGRES_USER is missing in preview.env}"
 : "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is missing in preview.env}"
+: "${EOD_DEMO_USER_PASSWORD:?EOD_DEMO_USER_PASSWORD is missing in preview.env}"
 
 PREVIEW_PORT="${EOD_PREVIEW_PORT:-8765}"
 COMPOSE=(
@@ -302,6 +306,7 @@ echo "===== VERIFY IMPORT AGAINST MANIFEST ====="
 "${COMPOSE[@]}" run --rm --no-deps \
     --user 0:0 \
     --entrypoint python \
+    --env EOD_DEMO_USER_PASSWORD \
     --volume "$SNAPSHOT_DIR:/snapshot:ro" \
     app /snapshot/verify_import.py /snapshot/manifest.json
 

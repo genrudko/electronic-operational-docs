@@ -27,6 +27,7 @@ from apps.organizations.personnel_management_models import (
     PersonnelImportStatus,
 )
 from apps.organizations.personnel_management_services import build_personnel_template
+from tests.credential_fixtures import ephemeral_credential
 
 
 class PersonnelManagementViewTests(TestCase):
@@ -35,7 +36,7 @@ class PersonnelManagementViewTests(TestCase):
         user_model = get_user_model()
         cls.user = user_model.objects.create_user(
             username="personnel-editor",
-            password="synthetic-password",
+            password=ephemeral_credential("PersonnelEditor"),
         )
         cls.organization = Organization.objects.create(
             code="PM-ORG",

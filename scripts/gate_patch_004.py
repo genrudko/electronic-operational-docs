@@ -1,8 +1,8 @@
-
 from __future__ import annotations
 
 import inspect
 import os
+import secrets
 import sys
 from pathlib import Path
 from uuid import UUID
@@ -33,9 +33,21 @@ from apps.documents.services import (  # noqa: E402
     register_document_with_password,
     verify_document_integrity,
 )
+from apps.organizations.demo_access import (  # noqa: E402
+    DemoAccessPolicyError,
+    injected_demo_password,
+    validate_demo_password,
+)
 from apps.organizations.models import Employee  # noqa: E402
 
-PASSWORD = "EodDemo!2026"
+DEMO_ACCESS_VALUE = injected_demo_password()
+try:
+    validate_demo_password(DEMO_ACCESS_VALUE)
+except DemoAccessPolicyError as exc:
+    raise SystemExit(
+        "EOD_DEMO_USER_PASSWORD must be injected to run Patch 004 gate."
+    ) from exc
+
 GATE_ID = UUID("00000000-0000-4000-8000-000000000304")
 
 actor = Employee.objects.select_related(
@@ -83,12 +95,15 @@ if wrong.status == Document.Status.DRAFT:
         document_type=document_type,
     ).first()
     before = sequence.last_value if sequence else 0
+    invalid_value = secrets.token_urlsafe(32)
+    while invalid_value == DEMO_ACCESS_VALUE:
+        invalid_value = secrets.token_urlsafe(32)
     try:
         register_document_with_password(
             document=wrong,
             actor=actor,
             user=actor.user,
-            password="wrong-password",
+            password=invalid_value,
         )
     except ValidationError:
         pass
@@ -106,7 +121,7 @@ if wrong.status == Document.Status.DRAFT:
         document=wrong,
         actor=actor,
         user=actor.user,
-        password=PASSWORD,
+        password=DEMO_ACCESS_VALUE,
     )
     wrong = result.document
 
@@ -131,7 +146,7 @@ with transaction.atomic():
         raise SystemExit("Tampered snapshot was not reported as INVALID.")
     transaction.set_rollback(True)
 
-password_corpus = "\n".join(
+credential_corpus = "\n".join(
     [
         snapshot.canonical_json,
         integrity.signature.checksum,
@@ -141,8 +156,8 @@ password_corpus = "\n".join(
         ],
     ]
 )
-if PASSWORD in password_corpus:
-    raise SystemExit("Password leaked into snapshot, signature or audit payload.")
+if DEMO_ACCESS_VALUE in credential_corpus:
+    raise SystemExit("Authentication credential leaked into snapshot, signature or audit payload.")
 
 for model, instance in (
     (SignedSnapshot, snapshot),

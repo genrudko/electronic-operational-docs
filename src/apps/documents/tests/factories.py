@@ -11,10 +11,12 @@ def document_context(
     *,
     code: str = "DOC",
     role_code: str = "operator",
+    credential: str | None = None,
 ):
     employee, user = employee_with_user(
         username=f"{code.lower()}.user",
         code=code,
+        credential=credential,
     )
     scope = ResponsibilityScope.objects.create(
         organization=employee.organization,

@@ -18,6 +18,7 @@ from apps.organizations.models import (
     Position,
     Workplace,
 )
+from tests.credential_fixtures import ephemeral_credential
 
 from .services import register_defect
 
@@ -32,7 +33,7 @@ class DefectFixtureMixin:
         normalized = (
             raw_identifier
             if raw_identifier.isascii() and raw_identifier.replace("-", "").isalnum()
-            else f"fixture-{hashlib.sha256(raw_identifier.encode('utf-8')).hexdigest()[:12]}"
+            else f"fx{hashlib.sha256(raw_identifier.encode('utf-8')).hexdigest()[:6]}"
         )
         organization = Organization.objects.create(
             code=f"ORG-{normalized.upper()}",
@@ -101,7 +102,10 @@ class DefectFixtureMixin:
         last_name: str,
         position_key: str,
     ) -> Employee:
-        user = User.objects.create_user(username=username, password="TestOnly!2026")
+        user = User.objects.create_user(
+            username=username,
+            password=ephemeral_credential(personnel_number),
+        )
         return Employee.objects.create(
             organization=fixture["organization"],
             division=fixture["division"],

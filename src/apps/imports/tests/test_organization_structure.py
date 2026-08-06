@@ -28,10 +28,10 @@ from apps.organizations.models import (
     RoleAssignment,
     Workplace,
 )
+from tests.credential_fixtures import ephemeral_credential
 
 
 class OrganizationStructureImportTests(TestCase):
-    password = "Structure-Test-2026!"
     headers = (
         "Вид структуры;Код;Наименование;Родительский код;"
         "Код подразделения;Краткое наименование;Тип энергообъекта;"
@@ -39,6 +39,7 @@ class OrganizationStructureImportTests(TestCase):
     )
 
     def setUp(self):
+        self.credential = ephemeral_credential("OrganizationStructure")
         user_model = get_user_model()
         self.organization = Organization.objects.create(
             code="STRUCT-ORG",
@@ -61,7 +62,7 @@ class OrganizationStructureImportTests(TestCase):
         )
         self.user = user_model.objects.create_user(
             username="structure-publisher",
-            password=self.password,
+            password=self.credential,
         )
         self.employee = Employee.objects.create(
             organization=self.organization,
@@ -125,7 +126,7 @@ class OrganizationStructureImportTests(TestCase):
             batch=batch,
             actor=self.employee,
             user=self.user,
-            password=self.password,
+            password=self.credential,
             expected_digest=preview.digest,
         )
 
@@ -312,7 +313,7 @@ class OrganizationStructureImportTests(TestCase):
                     batch=batch,
                     actor=self.employee,
                     user=self.user,
-                    password=self.password,
+                    password=self.credential,
                     expected_digest=preview.digest,
                 )
         self.assertFalse(

@@ -59,6 +59,7 @@ services:
       POSTGRES_PORT: "5432"
       EOD_DATABASE_PROFILE: development
       EOD_ALLOW_SQLITE_PATH_OVERRIDE: "0"
+      EOD_DEMO_USER_PASSWORD: ${EOD_DEMO_USER_PASSWORD:-}
       TIME_ZONE: ${TIME_ZONE:-Europe/Moscow}
     ports:
       - 127.0.0.1:${EOD_DEVELOPMENT_PORT:-8766}:8766

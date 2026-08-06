@@ -13,6 +13,7 @@ from apps.documents.services import create_document_draft, register_document_wit
 from apps.documents.tests.factories import document_context
 from apps.organizations.models import Organization
 from apps.organizations.tests.factories import employee_with_user
+from tests.credential_fixtures import ephemeral_credential
 
 from .. import evidence_services
 from ..evidence import (
@@ -37,8 +38,6 @@ from .helpers import NormativeDemoMixin
 
 
 class EvidencePersistenceTests(NormativeDemoMixin, TestCase):
-    password = "EodDemo!2026"
-
     def _published_revision(
         self,
         *,
@@ -179,6 +178,7 @@ class EvidencePersistenceTests(NormativeDemoMixin, TestCase):
 
     def test_password_reauth_event_is_atomic_and_secret_free(self):
         before = EvidenceEvent.objects.count()
+        invalid_credential = ephemeral_credential("InvalidEvidence")
         with self.assertRaises(ValidationError):
             record_evidence_event(
                 actor=self.employee,
@@ -193,7 +193,7 @@ class EvidencePersistenceTests(NormativeDemoMixin, TestCase):
                 source_ids=("SRC-DEC-STAGE2",),
                 confirmation_method=EvidenceConfirmationMethod.PASSWORD_REAUTH,
                 requires_reauthentication=True,
-                password="wrong-password",
+                password=invalid_credential,
             )
         self.assertEqual(EvidenceEvent.objects.count(), before)
 
@@ -343,7 +343,11 @@ class EvidencePersistenceTests(NormativeDemoMixin, TestCase):
 
 class DocumentSignatureEvidenceIntegrationTests(TestCase):
     def test_document_signature_automatically_creates_one_signature_event(self):
-        employee, user, document_type = document_context(code="EVID-SIGN")
+        credential = ephemeral_credential("EvidenceSignature")
+        employee, user, document_type = document_context(
+            code="EVID-SIGN",
+            credential=credential,
+        )
         document = create_document_draft(
             document_type=document_type,
             actor=employee,
@@ -354,7 +358,7 @@ class DocumentSignatureEvidenceIntegrationTests(TestCase):
             document=document,
             actor=employee,
             user=user,
-            password="TestPass!2026",
+            password=credential,
         )
 
         event = EvidenceEvent.objects.get(document_signature_id=result.signature.pk)

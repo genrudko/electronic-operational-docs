@@ -51,6 +51,8 @@ jobs:
 
       - name: Collect live GitHub request facts
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          REQUEST_PATH: ${{ runner.temp }}/auto001b-request.json
         with:
           script: |
             const fs = require('fs');
@@ -133,7 +135,7 @@ jobs:
               })),
             };
             fs.writeFileSync(
-              'auto001b-request.json',
+              process.env.REQUEST_PATH,
               `${JSON.stringify(request, null, 2)}\n`,
               { encoding: 'utf8', mode: 0o600 },
             );
@@ -144,11 +146,30 @@ jobs:
         run: |
           set -euo pipefail
           python -m scripts.automation.auto_001b_request validate \
-            --request auto001b-request.json \
+            --request "$RUNNER_TEMP/auto001b-request.json" \
             --policy .github/auto001a-foundation.json \
-            --summary auto001b-summary.md \
+            --summary "$RUNNER_TEMP/auto001b-summary.raw.md" \
             --outputs "$GITHUB_OUTPUT"
-          cat auto001b-summary.md >>"$GITHUB_STEP_SUMMARY"
+          python scripts/secret_hygiene.py redact \
+            --input "$RUNNER_TEMP/auto001b-summary.raw.md" \
+            --output "$RUNNER_TEMP/auto001b-summary.sanitized.md"
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$RUNNER_TEMP/auto001b-summary.sanitized.md"
+          cat "$RUNNER_TEMP/auto001b-summary.sanitized.md" >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Remove validator transport files
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            "$RUNNER_TEMP/auto001b-request.json" \
+            "$RUNNER_TEMP/auto001b-summary.raw.md" \
+            "$RUNNER_TEMP/auto001b-summary.sanitized.md"
+
+      - name: Verify trusted validator checkout remains exactly clean
+        if: ${{ always() }}
+        run: python scripts/secret_hygiene.py verify-clean-tree
 
   deploy-development:
     name: Verify exact SHA on isolated development VPS
@@ -170,6 +191,13 @@ jobs:
       PROFILE: ${{ needs.validate-trusted-request.outputs.deployment_profile }}
 
     steps:
+      - name: Checkout trusted verification utility from main event SHA
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
       - name: Validate connection configuration
         shell: bash
         run: |
@@ -191,13 +219,14 @@ jobs:
           printf '%s\n' "$VPS_HOST_KEY" >"$HOME/.ssh/known_hosts"
           chmod 0600 "$HOME/.ssh/known_hosts"
 
-      - name: Run fixed VPS controller for exact SHA
+      - name: Run fixed VPS controller with verified sanitised output
         id: deploy
         shell: bash
         run: |
-          set +e
+          set -euo pipefail
           printf 'attempted=true\n' >>"$GITHUB_OUTPUT"
-          ssh_output="$(ssh \
+          set +e
+          ssh \
             -p "$VPS_PORT" \
             -i "$HOME/.ssh/eod_automation" \
             -o BatchMode=yes \
@@ -205,17 +234,31 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
             "eod-automation@$VPS_HOST" \
-            "deploy $PROFILE $PR_NUMBER $HEAD_SHA $GITHUB_RUN_ID" 2>&1)"
+            "deploy $PROFILE $PR_NUMBER $HEAD_SHA $GITHUB_RUN_ID" \
+            >"$RUNNER_TEMP/vps-controller.raw.txt" 2>&1
           rc=$?
           set -e
-          printf '%s\n' "$ssh_output"
+          python scripts/secret_hygiene.py redact \
+            --input "$RUNNER_TEMP/vps-controller.raw.txt" \
+            --output "$RUNNER_TEMP/vps-controller.sanitized.txt" \
+            --env VPS_HOST \
+            --env VPS_PORT \
+            --env VPS_KEY \
+            --env VPS_HOST_KEY
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$RUNNER_TEMP/vps-controller.sanitized.txt" \
+            --env VPS_HOST \
+            --env VPS_PORT \
+            --env VPS_KEY \
+            --env VPS_HOST_KEY
+          cat "$RUNNER_TEMP/vps-controller.sanitized.txt"
           printf 'result_code=%s\n' "$rc" >>"$GITHUB_OUTPUT"
           {
             echo "## VPS controller"
             echo
-            echo '```text'
-            printf '%s\n' "$ssh_output"
-            echo '```'
+            echo "Verified sanitised controller output was written to the workflow log."
+            echo
+            echo "Result code: \`$rc\`"
           } >>"$GITHUB_STEP_SUMMARY"
 
       - name: Stop on controller error
@@ -237,7 +280,7 @@ jobs:
             });
             core.setOutput('head_sha', pr.head.sha);
 
-      - name: Confirm result or rollback stale SHA
+      - name: Confirm result or rollback stale SHA with verified output
         shell: bash
         env:
           LIVE_SHA: ${{ steps.live.outputs.head_sha }}
@@ -254,7 +297,22 @@ jobs:
             "eod-automation@$VPS_HOST"
           )
           if [[ "$LIVE_SHA" != "$HEAD_SHA" ]]; then
-            "${ssh_base[@]}" "rollback $GITHUB_RUN_ID"
+            "${ssh_base[@]}" "rollback $GITHUB_RUN_ID" \
+              >"$RUNNER_TEMP/vps-stale-rollback.raw.txt" 2>&1
+            python scripts/secret_hygiene.py redact \
+              --input "$RUNNER_TEMP/vps-stale-rollback.raw.txt" \
+              --output "$RUNNER_TEMP/vps-stale-rollback.sanitized.txt" \
+              --env VPS_HOST \
+              --env VPS_PORT \
+              --env VPS_KEY \
+              --env VPS_HOST_KEY
+            python scripts/secret_hygiene.py verify-sanitized \
+              --input "$RUNNER_TEMP/vps-stale-rollback.sanitized.txt" \
+              --env VPS_HOST \
+              --env VPS_PORT \
+              --env VPS_KEY \
+              --env VPS_HOST_KEY
+            cat "$RUNNER_TEMP/vps-stale-rollback.sanitized.txt"
             {
               echo "# AUTO-001B result: STALE SHA"
               echo
@@ -264,7 +322,22 @@ jobs:
             } >>"$GITHUB_STEP_SUMMARY"
             exit 1
           fi
-          "${ssh_base[@]}" "confirm $GITHUB_RUN_ID $HEAD_SHA"
+          "${ssh_base[@]}" "confirm $GITHUB_RUN_ID $HEAD_SHA" \
+            >"$RUNNER_TEMP/vps-confirm.raw.txt" 2>&1
+          python scripts/secret_hygiene.py redact \
+            --input "$RUNNER_TEMP/vps-confirm.raw.txt" \
+            --output "$RUNNER_TEMP/vps-confirm.sanitized.txt" \
+            --env VPS_HOST \
+            --env VPS_PORT \
+            --env VPS_KEY \
+            --env VPS_HOST_KEY
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$RUNNER_TEMP/vps-confirm.sanitized.txt" \
+            --env VPS_HOST \
+            --env VPS_PORT \
+            --env VPS_KEY \
+            --env VPS_HOST_KEY
+          cat "$RUNNER_TEMP/vps-confirm.sanitized.txt"
           {
             echo "# AUTO-001B result: SUCCESS"
             echo
@@ -281,7 +354,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          rollback_output="$(ssh \
+          ssh \
             -p "$VPS_PORT" \
             -i "$HOME/.ssh/eod_automation" \
             -o BatchMode=yes \
@@ -289,13 +362,47 @@ jobs:
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
             "eod-automation@$VPS_HOST" \
-            "rollback-pending" 2>&1)"
+            "rollback-pending" >"$RUNNER_TEMP/vps-fallback-rollback.raw.txt" 2>&1
           rollback_rc=$?
           set -e
-          printf '%s\n' "$rollback_output"
+          python scripts/secret_hygiene.py redact \
+            --input "$RUNNER_TEMP/vps-fallback-rollback.raw.txt" \
+            --output "$RUNNER_TEMP/vps-fallback-rollback.sanitized.txt" \
+            --env VPS_HOST \
+            --env VPS_PORT \
+            --env VPS_KEY \
+            --env VPS_HOST_KEY
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$RUNNER_TEMP/vps-fallback-rollback.sanitized.txt" \
+            --env VPS_HOST \
+            --env VPS_PORT \
+            --env VPS_KEY \
+            --env VPS_HOST_KEY
+          cat "$RUNNER_TEMP/vps-fallback-rollback.sanitized.txt"
           {
             echo
             echo "Fallback rollback was requested because the VPS deployment was not confirmed."
             echo "Fallback rollback result code: \`$rollback_rc\`"
           } >>"$GITHUB_STEP_SUMMARY"
           exit "$rollback_rc"
+
+      - name: Remove SSH and VPS diagnostic transport files
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            "$HOME/.ssh/eod_automation" \
+            "$HOME/.ssh/known_hosts" \
+            "$RUNNER_TEMP/vps-controller.raw.txt" \
+            "$RUNNER_TEMP/vps-controller.sanitized.txt" \
+            "$RUNNER_TEMP/vps-stale-rollback.raw.txt" \
+            "$RUNNER_TEMP/vps-stale-rollback.sanitized.txt" \
+            "$RUNNER_TEMP/vps-confirm.raw.txt" \
+            "$RUNNER_TEMP/vps-confirm.sanitized.txt" \
+            "$RUNNER_TEMP/vps-fallback-rollback.raw.txt" \
+            "$RUNNER_TEMP/vps-fallback-rollback.sanitized.txt"
+
+      - name: Verify trusted VPS checkout remains exactly clean
+        if: ${{ always() }}
+        run: python scripts/secret_hygiene.py verify-clean-tree

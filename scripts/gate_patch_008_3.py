@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import secrets
 import sys
 from pathlib import Path
 
@@ -57,6 +58,11 @@ from apps.imports.services import (  # noqa: E402
     publish_import_batch,
     save_column_mapping,
 )
+from apps.organizations.demo_access import (  # noqa: E402
+    DemoAccessPolicyError,
+    injected_demo_password,
+    validate_demo_password,
+)
 from apps.organizations.models import (  # noqa: E402
     Division,
     Employee,
@@ -64,7 +70,13 @@ from apps.organizations.models import (  # noqa: E402
     RoleAssignment,
 )
 
-DEMO_PASSWORD = "EodDemo!2026"
+DEMO_PASSWORD = injected_demo_password()
+try:
+    validate_demo_password(DEMO_PASSWORD)
+except DemoAccessPolicyError as exc:
+    raise SystemExit(
+        "EOD_DEMO_USER_PASSWORD must be injected to run Patch 008.3 gate."
+    ) from exc
 
 publisher = Employee.objects.select_related("user", "organization").get(
     personnel_number="DEMO-002"
@@ -135,12 +147,15 @@ if first_preview.digest != second_preview.digest or len(first_preview.digest) !=
     raise SystemExit("Publication preview digest is not deterministic SHA-256.")
 
 employee_count_before = Employee.objects.filter(organization=organization).count()
+invalid_credential = secrets.token_urlsafe(32)
+while invalid_credential == DEMO_PASSWORD:
+    invalid_credential = secrets.token_urlsafe(32)
 try:
     publish_import_batch(
         batch=employee_batch,
         actor=publisher,
         user=publisher.user,
-        password="wrong-password",
+        password=invalid_credential,
         expected_digest=first_preview.digest,
     )
 except ValidationError:

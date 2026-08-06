@@ -77,6 +77,10 @@ class IndustrializationExecutionFixtureTests(unittest.TestCase):
         mutation_type = mutation["type"]
         if mutation_type == "none":
             return github_evidence
+        if mutation_type == "batch":
+            for nested in mutation["mutations"]:
+                github_evidence = self._mutate(root, nested, github_evidence)
+            return github_evidence
         plan = self._load(root, PLAN_PATH)
         program = self._load(root, PROGRAM_PATH)
         if mutation_type == "program_remove_item_field":
@@ -95,6 +99,10 @@ class IndustrializationExecutionFixtureTests(unittest.TestCase):
             gate[key].remove(mutation["work_item_id"])
         elif mutation_type == "program_set_contract_field":
             program["execution_contract"][mutation["field"]] = mutation["value"]
+        elif mutation_type == "program_set_parallel_max_active":
+            program["execution_contract"]["parallelization_groups"][
+                mutation["group_id"]
+            ]["max_active"] = mutation["value"]
         elif mutation_type == "plan_set_transition":
             item = self._plan_item(plan, mutation["work_item_id"])
             item["transition"] = {

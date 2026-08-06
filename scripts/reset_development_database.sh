@@ -40,12 +40,15 @@ PREVIEW_USER="$(read_env_value "$PREVIEW_ENV" POSTGRES_USER)"
 DEVELOPMENT_DB="$(read_env_value "$DEVELOPMENT_ENV" POSTGRES_DB)"
 DEVELOPMENT_USER="$(read_env_value "$DEVELOPMENT_ENV" POSTGRES_USER)"
 DEVELOPMENT_PORT="$(read_env_value "$DEVELOPMENT_ENV" EOD_DEVELOPMENT_PORT)"
+DEMO_ACCESS_VALUE="$(read_env_value "$DEVELOPMENT_ENV" EOD_DEMO_USER_PASSWORD)"
 
 [[ "$PREVIEW_DB" == "eod_preview" ]] || fail "preview database must be eod_preview, got '$PREVIEW_DB'."
 [[ "$DEVELOPMENT_DB" == "eod_development" ]] || fail "development database must be eod_development, got '$DEVELOPMENT_DB'."
 [[ "$DEVELOPMENT_USER" == "eod_development" ]] || fail "development user must be eod_development."
 [[ "$DEVELOPMENT_PORT" == "8766" ]] || fail "development port must be 8766."
 [[ "$PREVIEW_DB" != "$DEVELOPMENT_DB" ]] || fail "preview and development database names must differ."
+[[ -n "$DEMO_ACCESS_VALUE" ]] || fail "EOD_DEMO_USER_PASSWORD must be injected in the development env file before reset."
+unset DEMO_ACCESS_VALUE
 
 PREVIEW_COMPOSE=(
     docker compose
@@ -154,7 +157,7 @@ echo "===== VERIFY DEVELOPMENT DATABASE ====="
 "${DEVELOPMENT_COMPOSE[@]}" run --rm --no-deps \
     --entrypoint python \
     app manage.py shell -c \
-    'from django.contrib.auth import authenticate; from django.db import connection; assert connection.settings_dict["NAME"] == "eod_development"; assert authenticate(username="operator.demo", password="EodDemo!2026") is not None; assert authenticate(username="supervisor.demo", password="EodDemo!2026") is not None; print("Development database and demo authentication: ok")'
+    'import os; from django.contrib.auth import authenticate; from django.db import connection; value = os.environ.get("EOD_DEMO_USER_PASSWORD", ""); assert value; assert connection.settings_dict["NAME"] == "eod_development"; assert authenticate(username="operator.demo", password=value) is not None; assert authenticate(username="supervisor.demo", password=value) is not None; print("Development database and injected demo authentication: ok")'
 
 echo
 echo "===== START DEVELOPMENT APPLICATION ====="

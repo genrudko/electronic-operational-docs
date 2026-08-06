@@ -26,9 +26,11 @@ The VPS deploy key is read-only. Commits, pull requests and merges are performed
 - keep preview on `8765` and development on `8766`;
 - resetting development data must not write to preview;
 - do not publish PostgreSQL;
-- do not create commits on the VPS.
+- do not create commits on the VPS;
+- never reuse a demo password that has appeared in Git, chat, a workflow log or an artifact;
+- never print local secret values into terminal transcripts or CI logs.
 
-The development entrypoint verifies exact deployment mode, database name/user/host/port, profile and SQLite override before Django starts.
+The development entrypoint verifies exact deployment mode, database name/user/host/port, profile and SQLite override before Django starts. Demo accounts remain unusable unless `EOD_DEMO_USER_PASSWORD` is supplied locally.
 
 ## One-time checkout
 
@@ -59,11 +61,16 @@ Do not use `--single-branch`; the development checkout must be able to switch be
 
 ## One-time development secrets
 
+Create a new local demo password in a password manager first. It must be at least 16 characters and use at least three character classes. Type it into the hidden prompt below; it is not echoed and is never read from the repository.
+
 ```bash
 umask 077
 DEV_ENV_TMP="$(mktemp)"
 DJANGO_SECRET="$(python3 -c 'import secrets; print(secrets.token_hex(64))')"
 POSTGRES_SECRET="$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
+read -rsp 'New local EOD demo password: ' DEMO_ACCESS_SECRET
+echo
+test "${#DEMO_ACCESS_SECRET}" -ge 16
 
 cat > "$DEV_ENV_TMP" <<EOF
 DJANGO_SECRET_KEY=${DJANGO_SECRET}
@@ -71,6 +78,7 @@ DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
 POSTGRES_DB=eod_development
 POSTGRES_USER=eod_development
 POSTGRES_PASSWORD=${POSTGRES_SECRET}
+EOD_DEMO_USER_PASSWORD=${DEMO_ACCESS_SECRET}
 EOD_DEVELOPMENT_PORT=8766
 TIME_ZONE=Europe/Moscow
 EOF
@@ -81,7 +89,7 @@ sudo install -m 0600 -o root -g root \
   /srv/eod/secrets/development.env
 
 rm -f "$DEV_ENV_TMP"
-unset DEV_ENV_TMP DJANGO_SECRET POSTGRES_SECRET
+unset DEV_ENV_TMP DJANGO_SECRET POSTGRES_SECRET DEMO_ACCESS_SECRET
 
 sudo test -s /srv/eod/secrets/development.env
 sudo stat -c '%U:%G %a %n' /srv/eod/secrets/development.env
@@ -93,7 +101,7 @@ Expected:
 root:root 600 /srv/eod/secrets/development.env
 ```
 
-Never print or commit the secret values.
+The known demo usernames remain `operator.demo` and `supervisor.demo`. Use the local password entered above. To rotate it, repeat the hidden prompt procedure, replace only `EOD_DEMO_USER_PASSWORD` in the root-owned env file, and run migrations or recreate the application container. Never print, commit, paste into chat, or place the value in a workflow secret summary.
 
 ## First startup
 
@@ -122,12 +130,13 @@ sudo bash scripts/reset_development_database.sh
 The script:
 
 1. verifies preview `main` and development non-main roles;
-2. backs up current development PostgreSQL;
-3. creates a fresh accepted preview dump;
-4. restores only into `eod_development`;
-5. applies active branch migrations;
-6. verifies database identity and demo accounts;
-7. restarts only the development application.
+2. requires local demo-password injection without displaying it;
+3. backs up current development PostgreSQL;
+4. creates a fresh accepted preview dump;
+5. restores only into `eod_development`;
+6. applies active branch migrations, which rotate or disable demo account access;
+7. verifies database identity and authentication through the injected value;
+8. restarts only the development application.
 
 ## Primary GitHub-first cycle
 

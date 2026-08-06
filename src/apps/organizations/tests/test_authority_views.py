@@ -22,6 +22,7 @@ from apps.organizations.models import (
     Position,
     Workplace,
 )
+from tests.credential_fixtures import ephemeral_credential
 
 MOMENT = datetime(2026, 8, 2, 8, 30, tzinfo=UTC)
 START = datetime(2026, 1, 1, 0, 0, tzinfo=UTC)
@@ -34,7 +35,7 @@ class AuthorityReadOnlyViewTests(TestCase):
         user_model = get_user_model()
         cls.user = user_model.objects.create_user(
             username="authority-reviewer",
-            password="synthetic-password",
+            password=ephemeral_credential("AuthorityReviewer"),
         )
         cls.organization = Organization.objects.create(
             code="AUTH-VIEW",

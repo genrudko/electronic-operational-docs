@@ -18,6 +18,7 @@ from apps.imports.services import (
     save_row_correction,
 )
 from apps.organizations.models import Division, Employee, Organization, Position
+from tests.credential_fixtures import ephemeral_credential
 
 
 class ImportMappingReviewTests(TestCase):
@@ -39,7 +40,7 @@ class ImportMappingReviewTests(TestCase):
         )
         self.user = user_model.objects.create_user(
             username="mapping-review",
-            password="test",
+            password=ephemeral_credential("MappingReview"),
         )
         self.employee = Employee.objects.create(
             organization=self.organization,
