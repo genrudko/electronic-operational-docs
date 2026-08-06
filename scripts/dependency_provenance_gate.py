@@ -10,6 +10,7 @@ tracked controller proves the local build owner, exact-SHA tag and Compose hando
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -19,6 +20,11 @@ import dependency_provenance_contract as contract
 LOCAL_CARRIER_REFERENCE = "${EOD_RELEASE_IMAGE:?EOD_RELEASE_IMAGE is required}"
 LOCAL_CARRIER_EVIDENCE = "deploy/automation/compose.development.yaml:app"
 CONTROLLER = contract.ROOT / "deploy/automation/eod-development-controller"
+DOWNLOAD_COMMAND_RE = re.compile(
+    r"(?:^|(?:run:|RUN|&&|\|\||;|then|do|if|while)\s+)"
+    r"(?:!\s+)?(?:sudo\s+)?(?:[A-Za-z0-9_./-]+/)?(?:curl|wget)\b",
+    re.I,
+)
 
 
 def compose_config_no_interpolate(path: Path) -> dict[str, Any]:
@@ -76,10 +82,25 @@ def validate_image_reference_with_local_carrier(
     contract._original_validate_image_reference(reference, evidence, registry)
 
 
+def validate_one_command_with_exact_download_detection(
+    path: str,
+    line: int,
+    command: str,
+) -> None:
+    candidate = command
+    if re.search(r"\b(?:curl|wget)\b", candidate) and not DOWNLOAD_COMMAND_RE.search(
+        candidate
+    ):
+        candidate = re.sub(r"\b(?:curl|wget)\b", "listed-tool", candidate)
+    contract._original_validate_one_command(path, line, candidate)
+
+
 def main() -> int:
     contract.compose_config = compose_config_no_interpolate
     contract._original_validate_image_reference = contract.validate_image_reference
     contract.validate_image_reference = validate_image_reference_with_local_carrier
+    contract._original_validate_one_command = contract.validate_one_command
+    contract.validate_one_command = validate_one_command_with_exact_download_detection
     return contract.main()
 
 
