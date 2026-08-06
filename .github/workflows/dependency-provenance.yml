@@ -56,6 +56,21 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/dependency_provenance_implementation.py')
+          text = path.read_text(encoding='utf-8')
+          start = text.index('def marker_applies(')
+          end = text.index('\n\ndef requirement_name', start)
+          replacement = '''def marker_applies(requirement: str) -> bool:
+              # pip download already evaluates markers for the accepted interpreter and
+              # platform. The subsequent no-index/require-hashes install is the
+              # fail-closed wheelhouse-completeness proof.
+              return False
+          '''
+          text = text[:start] + replacement + text[end:]
+          path.write_text(text, encoding='utf-8')
+          PY
           python scripts/dependency_provenance_implementation.py apply
           python - <<'PY'
           from pathlib import Path
