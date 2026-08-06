@@ -4,7 +4,7 @@
 
 ## Итог
 
-- tracked files: `876`;
+- tracked files: `886`;
 - inventory entries: `67`;
 - floating inputs: `16`;
 - immutable inputs: `50`;
@@ -29,7 +29,7 @@
 - Containers: Dockerfiles=['Dockerfile', 'deploy/automation/Dockerfile.development']; Compose=['compose.development.yaml', 'compose.preview.yaml', 'compose.yaml', 'deploy/automation/compose.development.yaml'].
 - GitHub Actions: workflows=`10`; temporary=NONE.
 - External downloads: `0`; local runtime probes excluded=`True`.
-- Static assets: tracked=`66`; external references=`0`.
+- Static assets: tracked=`67`; external references=`0`.
 
 ## Totals by class
 
@@ -68,9 +68,9 @@
 | `INP-0018` | `github-action` | `.github/workflows/ci.yml:236` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
 | `INP-0019` | `github-action` | `.github/workflows/ci.yml:275` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
 | `INP-0020` | `github-action` | `.github/workflows/ci.yml:375` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0021` | `github-action` | `.github/workflows/dependency-provenance.yml:27` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0022` | `github-action` | `.github/workflows/dependency-provenance.yml:42` | ci/deployment | `actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0023` | `github-action` | `.github/workflows/dependency-provenance.yml:167` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0021` | `github-action` | `.github/workflows/dependency-provenance.yml:26` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0022` | `github-action` | `.github/workflows/dependency-provenance.yml:51` | ci/deployment | `actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0023` | `github-action` | `.github/workflows/dependency-provenance.yml:168` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
 | `INP-0024` | `github-action` | `.github/workflows/development-stack.yml:30` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
 | `INP-0025` | `github-action` | `.github/workflows/development-stack.yml:144` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
 | `INP-0026` | `github-action` | `.github/workflows/documentation-contract.yml:24` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |

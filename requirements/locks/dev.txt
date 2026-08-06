@@ -10,7 +10,7 @@ asgiref==3.12.1 \
     --hash=sha256:59dcb51c272ad209d59bed5708a64a333083e86017d7fcdd67498eeab7784340 \
     --hash=sha256:fe386d1c2bff7259ea95929266d12a8cf9a8b5a1c2598402967d8792e7a7c094
     # via
-    #   -c /tmp/eod-supply-_6xja6ej/accepted-constraints.txt
+    #   -c <generator>/accepted-constraints.txt
     #   django
 coverage==7.15.4 \
     --hash=sha256:002a438859f7b430bc99afeaf01a6d187dad1d0dc907b64cdeffc632a5db8fd8 \
@@ -135,44 +135,44 @@ coverage==7.15.4 \
     --hash=sha256:ffb3c2aacea411cc7e1d27712490c11108e2de1d39019ae32915493a59a8b9ed \
     --hash=sha256:ffb58d7eff5b7f6ecc6fa21d6288ab7f968a212cb67d682c269c09b9eba3b66f
     # via
-    #   -c /tmp/eod-supply-_6xja6ej/accepted-constraints.txt
-    #   -r /tmp/eod-supply-_6xja6ej/dev.in
+    #   -c <generator>/accepted-constraints.txt
+    #   -r <generator>/dev.in
 django==5.2.17 \
     --hash=sha256:9d4d93be539a18ab80d058eb515900e10951e04c537c5a6b394fc49528d3251f \
     --hash=sha256:f04fb3b36ee119e1af4fa1d397d5fd6cf12700f49321e84d4f4c642c5b1973db
     # via
-    #   -c /tmp/eod-supply-_6xja6ej/accepted-constraints.txt
-    #   -r /tmp/eod-supply-_6xja6ej/dev.in
+    #   -c <generator>/accepted-constraints.txt
+    #   -r <generator>/dev.in
 et-xmlfile==2.0.0 \
     --hash=sha256:7a91720bc756843502c3b7504c77b8fe44217c85c537d85037f0f536151b2caa \
     --hash=sha256:dab3f4764309081ce75662649be815c4c9081e88f0837825f90fd28317d4da54
     # via
-    #   -c /tmp/eod-supply-_6xja6ej/accepted-constraints.txt
+    #   -c <generator>/accepted-constraints.txt
     #   openpyxl
 gunicorn==26.0.0 \
     --hash=sha256:40233d26a5f0d1872916188c276e21641155111c2853f0c2cd55260aec0d24fc \
     --hash=sha256:ca9346f85e3a4aeeb64d491045c16b9a35647abd37ea15efe53080eb8b090baf
     # via
-    #   -c /tmp/eod-supply-_6xja6ej/accepted-constraints.txt
-    #   -r /tmp/eod-supply-_6xja6ej/dev.in
+    #   -c <generator>/accepted-constraints.txt
+    #   -r <generator>/dev.in
 openpyxl==3.1.5 \
     --hash=sha256:5282c12b107bffeef825f4617dc029afaf41d0ea60823bbb665ef3079dc79de2 \
     --hash=sha256:cf0e3cf56142039133628b5acffe8ef0c12bc902d2aadd3e0fe5878dc08d1050
     # via
-    #   -c /tmp/eod-supply-_6xja6ej/accepted-constraints.txt
-    #   -r /tmp/eod-supply-_6xja6ej/dev.in
+    #   -c <generator>/accepted-constraints.txt
+    #   -r <generator>/dev.in
 packaging==26.3 \
     --hash=sha256:94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79 \
     --hash=sha256:d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c
     # via
-    #   -c /tmp/eod-supply-_6xja6ej/accepted-constraints.txt
+    #   -c <generator>/accepted-constraints.txt
     #   gunicorn
 psycopg==3.3.4 \
     --hash=sha256:b6bbc25ccf05c8fad3b061d9db2ef0909a555171b84b07f29458a447253d679a \
     --hash=sha256:e21207764952cff81b6b8bdacad9a3939f2793367fdac2987b3aac36a651b5bc
     # via
-    #   -c /tmp/eod-supply-_6xja6ej/accepted-constraints.txt
-    #   -r /tmp/eod-supply-_6xja6ej/dev.in
+    #   -c <generator>/accepted-constraints.txt
+    #   -r <generator>/dev.in
 psycopg-binary==3.3.4 \
     --hash=sha256:018fbed325936da502feb546642c982dcc4b9ffdea32dfef78dbf3b7f7ad4070 \
     --hash=sha256:0579252a1202cd73e4da137a1426e2dae993ae44e757605344282af3a082848c \
@@ -230,7 +230,7 @@ psycopg-binary==3.3.4 \
     --hash=sha256:fa1cbc10768a796c96d3243656016bf4e337c81c71097270bb7b0ad6210d9765 \
     --hash=sha256:fbd1d4ed566895ad2d3bf4ddfd8bae90026930ddf29df3b9d91d32c8c47866a7
     # via
-    #   -c /tmp/eod-supply-_6xja6ej/accepted-constraints.txt
+    #   -c <generator>/accepted-constraints.txt
     #   psycopg
 ruff==0.16.1 \
     --hash=sha256:07bf434b1c95f4e093be4532068ef4fcf00924eb2ade8796075980902d6fd54a \
@@ -252,17 +252,17 @@ ruff==0.16.1 \
     --hash=sha256:fde5a99e2f97479af66edd6622c6d5a2a7592c77cf4153d9e4428f5eeb55b60c \
     --hash=sha256:fedad7c801dabd3fb9741d76aca39246e6ddd9ca446a015875207bf19f1e6bc7
     # via
-    #   -c /tmp/eod-supply-_6xja6ej/accepted-constraints.txt
-    #   -r /tmp/eod-supply-_6xja6ej/dev.in
+    #   -c <generator>/accepted-constraints.txt
+    #   -r <generator>/dev.in
 sqlparse==0.5.5 \
     --hash=sha256:12a08b3bf3eec877c519589833aed092e2444e68240a3577e8e26148acc7b1ba \
     --hash=sha256:e20d4a9b0b8585fdf63b10d30066c7c94c5d7a7ec47c889a2d83a3caa93ff28e
     # via
-    #   -c /tmp/eod-supply-_6xja6ej/accepted-constraints.txt
+    #   -c <generator>/accepted-constraints.txt
     #   django
 whitenoise==6.12.0 \
     --hash=sha256:f723ebb76a112e98816ff80fcea0a6c9b8ecde835f8ddda25df7a30a3c2db6ad \
     --hash=sha256:fc5e8c572e33ebf24795b47b6a7da8da3c00cff2349f5b04c02f28d0cc5a3cc2
     # via
-    #   -c /tmp/eod-supply-_6xja6ej/accepted-constraints.txt
-    #   -r /tmp/eod-supply-_6xja6ej/dev.in
+    #   -c <generator>/accepted-constraints.txt
+    #   -r <generator>/dev.in

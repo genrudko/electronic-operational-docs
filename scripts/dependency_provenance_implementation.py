@@ -45,6 +45,7 @@ PYTHON_MINOR = "3.13"
 PLATFORM = "linux_x86_64"
 PIP_VERSION = "25.3"
 PIP_TOOLS_VERSION = "7.6.0"
+JSONSCHEMA_VERSION = "4.26.0"
 PLAYWRIGHT_VERSION = "1.58.0"
 SYFT_VERSION = "1.44.0"
 
@@ -90,6 +91,7 @@ ACCEPTED_RESOLUTION = {
     "django": "5.2.17",
     "et-xmlfile": "2.0.0",
     "gunicorn": "26.0.0",
+    "jsonschema": JSONSCHEMA_VERSION,
     "openpyxl": "3.1.5",
     "packaging": "26.3",
     "pip": PIP_VERSION,
@@ -414,7 +416,11 @@ def write_lock_inputs(work: Path) -> dict[str, Path]:
     )
 
     profiles: dict[str, list[str]] = {
-        "tooling": [f"pip=={PIP_VERSION}", f"pip-tools=={PIP_TOOLS_VERSION}"],
+        "tooling": [
+            f"pip=={PIP_VERSION}",
+            f"pip-tools=={PIP_TOOLS_VERSION}",
+            f"jsonschema=={JSONSCHEMA_VERSION}",
+        ],
         "build": [*build_requires, "build>=1.3,<2", "wheel>=0.47,<1"],
         "runtime": list(project.get("dependencies", [])),
         "dev": [*project.get("dependencies", []), *optional.get("dev", [])],
@@ -466,7 +472,10 @@ def normalize_lock_header(path: Path, profile: str) -> None:
         (index for index, line in enumerate(lines) if line and not line.startswith("#")),
         len(lines),
     )
-    body = lines[first_requirement:]
+    body = [
+        re.sub(r"/tmp/eod-supply-[^/\s]+/", "<generator>/", line)
+        for line in lines[first_requirement:]
+    ]
     header = [
         "# GENERATED FILE - DO NOT EDIT",
         f"# profile={profile}",
