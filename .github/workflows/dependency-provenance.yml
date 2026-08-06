@@ -1,5 +1,6 @@
 name: EOD Dependency Provenance
 
+# Permanent implementation/verification controller for DEPENDENCY-PROVENANCE-001.
 on:
   push:
     branches:
