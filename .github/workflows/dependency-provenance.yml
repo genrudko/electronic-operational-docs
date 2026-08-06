@@ -60,6 +60,7 @@ jobs:
           from pathlib import Path
           path = Path('scripts/dependency_provenance_implementation.py')
           text = path.read_text(encoding='utf-8')
+          text = text.replace('PIP_VERSION = "26.2.1"', 'PIP_VERSION = "25.3"')
           start = text.index('def marker_applies(')
           end = text.index('\n\ndef requirement_name', start)
           replacement = '''def marker_applies(requirement: str) -> bool:
