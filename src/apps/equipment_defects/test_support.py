@@ -33,7 +33,7 @@ class DefectFixtureMixin:
         normalized = (
             raw_identifier
             if raw_identifier.isascii() and raw_identifier.replace("-", "").isalnum()
-            else f"fx-{hashlib.sha256(raw_identifier.encode('utf-8')).hexdigest()[:8]}"
+            else f"fx{hashlib.sha256(raw_identifier.encode('utf-8')).hexdigest()[:6]}"
         )
         organization = Organization.objects.create(
             code=f"ORG-{normalized.upper()}",
