@@ -14,7 +14,10 @@
       "merge_commit": "3c02c5c05cdf604bbf230d215b82ddd875ab1421"
     },
     "SECRET-HYGIENE-001": {
-      "canonical_status": "IN_PROGRESS"
+      "canonical_status": "ACCEPTED",
+      "pr": 56,
+      "exact_head": "cd7dc07a9c77a71a5b1166aa7a57ee4d3afa93da",
+      "merge_commit": "95b8dd6017745886f110f052ea0950b3d48173d8"
     }
   },
   "cases": [
