@@ -4,6 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from apps.organizations.models import AuthenticationEvent, ResponsibilityScope, Role, RoleAssignment
+from tests.credential_fixtures import ephemeral_credential
 
 from .factories import employee_with_user
 
@@ -11,7 +12,8 @@ from .factories import employee_with_user
 class PersonalAuthenticationTests(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.employee, cls.user = employee_with_user()
+        cls.credential = ephemeral_credential("Authentication")
+        cls.employee, cls.user = employee_with_user(credential=cls.credential)
         cls.scope = ResponsibilityScope.objects.create(
             organization=cls.employee.organization,
             code="STATION",
@@ -38,7 +40,10 @@ class PersonalAuthenticationTests(TestCase):
         self.assertContains(response, self.employee.full_name)
 
     def test_successful_login_is_audited(self):
-        logged_in = self.client.login(username=self.user.username, password="TestPass!2026")
+        logged_in = self.client.login(
+            username=self.user.username,
+            password=self.credential,
+        )
         self.assertTrue(logged_in)
         event = AuthenticationEvent.objects.get(
             event_type=AuthenticationEvent.EventType.LOGIN_SUCCESS
@@ -48,7 +53,11 @@ class PersonalAuthenticationTests(TestCase):
         self.assertEqual(event.username_snapshot, self.user.username)
 
     def test_failed_login_is_audited(self):
-        logged_in = self.client.login(username=self.user.username, password="wrong-password")
+        invalid_credential = ephemeral_credential("InvalidAuthentication")
+        logged_in = self.client.login(
+            username=self.user.username,
+            password=invalid_credential,
+        )
         self.assertFalse(logged_in)
         event = AuthenticationEvent.objects.get(
             event_type=AuthenticationEvent.EventType.LOGIN_FAILURE
