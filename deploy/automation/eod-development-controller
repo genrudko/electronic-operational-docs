@@ -187,7 +187,9 @@ run_isolated_checks_and_tests() {
     local db_container="eod-auto-test-db-$run_id"
     local test_db="eod_test_$run_id"
     local test_user="eod_test_$run_id"
-    local test_password="eod-test-$run_id-not-persistent"
+    local test_password django_value
+    test_password="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+    django_value="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
 
     cleanup_test_resources "$run_id"
     docker network create "$network" >/dev/null
@@ -218,7 +220,7 @@ run_isolated_checks_and_tests() {
         --network "$network"
         --entrypoint python
         --env EOD_DEPLOYMENT_MODE=development
-        --env DJANGO_SECRET_KEY=auto001b-isolated-test-secret
+        --env "DJANGO_SECRET_KEY=$django_value"
         --env DJANGO_DEBUG=0
         --env DJANGO_ALLOWED_HOSTS=127.0.0.1,localhost
         --env DB_ENGINE=postgresql
@@ -744,7 +746,7 @@ ssh_gateway() {
 
 main() {
     require_root
-    for command in git ssh tar docker curl flock; do
+    for command in git ssh tar docker curl flock python3; do
         require_command "$command"
     done
     load_config
