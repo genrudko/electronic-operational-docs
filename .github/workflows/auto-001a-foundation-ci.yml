@@ -60,7 +60,7 @@ jobs:
       - name: Ruff AUTO-001A sources and tests
         run: |
           python -m ruff check \
-            scripts/autmation/auto_001a_foundation.py \
+            scripts/automation/auto_001a_foundation.py \
             tests/automation/test_auto_001a_foundation.py
 
       - name: Run AUTO-001A tests with verified sanitised output
