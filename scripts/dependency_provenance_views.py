@@ -11,7 +11,11 @@ from math import ceil
 from pathlib import Path
 from typing import Any
 
-from scripts.dependency_provenance_inventory import (
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+if str(REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPOSITORY_ROOT))
+
+from scripts.dependency_provenance_inventory import (  # noqa: E402
     INVENTORY_JSON,
     INVENTORY_MD,
     ROOT,
