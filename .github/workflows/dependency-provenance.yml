@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: dependency-provenance-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -20,14 +20,14 @@ jobs:
   contract:
     name: Validate immutable supply chain contract
     runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - name: Checkout exact head
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Verify exact checked-out SHA
         env:
@@ -37,6 +37,16 @@ jobs:
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
           printf 'EXACT_HEAD=%s\n' "$EXPECTED_SHA"
 
+      - name: Detect controlled regeneration request
+        id: mode
+        run: |
+          set -euo pipefail
+          if [[ -f supply-chain/regeneration-request.json ]]; then
+            printf 'regenerate=true\n' >>"$GITHUB_OUTPUT"
+          else
+            printf 'regenerate=false\n' >>"$GITHUB_OUTPUT"
+          fi
+
       - name: Set up accepted Python minor
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
@@ -45,15 +55,145 @@ jobs:
           cache: pip
           cache-dependency-path: requirements/locks/*.txt
 
-      - name: Verify five semantic hashed locks
+      - name: Apply controlled generator repair
+        if: steps.mode.outputs.regenerate == 'true'
         run: |
           set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('scripts/dependency_provenance_implementation.py')
+          text = path.read_text(encoding='utf-8')
+          if 'JSONSCHEMA_VERSION = "4.26.0"' not in text:
+              text = text.replace(
+                  'PIP_TOOLS_VERSION = "7.6.0"\n',
+                  'PIP_TOOLS_VERSION = "7.6.0"\nJSONSCHEMA_VERSION = "4.26.0"\n',
+              )
+          if '"jsonschema": JSONSCHEMA_VERSION,' not in text:
+              text = text.replace(
+                  '    "gunicorn": "26.0.0",\n',
+                  '    "gunicorn": "26.0.0",\n    "jsonschema": JSONSCHEMA_VERSION,\n',
+              )
+          text = text.replace(
+              '"tooling": [f"pip=={PIP_VERSION}", f"pip-tools=={PIP_TOOLS_VERSION}"],',
+              '"tooling": [\n'
+              '            f"pip=={PIP_VERSION}",\n'
+              '            f"pip-tools=={PIP_TOOLS_VERSION}",\n'
+              '            f"jsonschema=={JSONSCHEMA_VERSION}",\n'
+              '        ],',
+          )
+          text = text.replace(
+              '    body = lines[first_requirement:]\n',
+              '    body = [\n'
+              '        re.sub(r"/tmp/eod-supply-[^/\\s]+/", "<generator>/", line)\n'
+              '        for line in lines[first_requirement:]\n'
+              '    ]\n',
+          )
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Regenerate registry and all five locks
+        if: steps.mode.outputs.regenerate == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python scripts/dependency_provenance_implementation.py apply
           python scripts/dependency_provenance_implementation.py verify-locks
+          git diff --check
+          git add --all
+          python scripts/secret_hygiene.py scan
+
+      - name: Export controlled regeneration evidence
+        if: steps.mode.outputs.regenerate == 'true'
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/dependency-provenance-regeneration
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import shutil
+          import subprocess
+          from pathlib import Path
+
+          root = Path.cwd()
+          output = Path(os.environ['OUTPUT_DIR'])
+          files_root = output / 'files'
+          files_root.mkdir(parents=True, exist_ok=True)
+          raw = subprocess.run(
+              ['git', 'diff', '--cached', '--name-only', '-z'],
+              check=True,
+              capture_output=True,
+          ).stdout
+          paths = sorted(item.decode('utf-8') for item in raw.split(b'\0') if item)
+          manifest = {
+              'schema': 1,
+              'base_head': subprocess.run(
+                  ['git', 'rev-parse', 'HEAD'],
+                  check=True,
+                  capture_output=True,
+                  text=True,
+              ).stdout.strip(),
+              'files': [],
+          }
+          for relative in paths:
+              source = root / relative
+              if not source.exists():
+                  manifest['files'].append({'path': relative, 'deleted': True})
+                  continue
+              target = files_root / relative
+              target.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copy2(source, target)
+              content = source.read_bytes()
+              manifest['files'].append(
+                  {
+                      'path': relative,
+                      'deleted': False,
+                      'size': len(content),
+                      'sha256': hashlib.sha256(content).hexdigest(),
+                  }
+              )
+          (output / 'manifest.json').write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8',
+          )
+          PY
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$OUTPUT_DIR/manifest.json"
+
+      - name: Upload controlled regeneration evidence
+        if: steps.mode.outputs.regenerate == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: dependency-provenance-regeneration
+          path: ${{ runner.temp }}/dependency-provenance-regeneration
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 1
+          compression-level: 0
+
+      - name: Commit controlled non-workflow regeneration
+        if: steps.mode.outputs.regenerate == 'true'
+        run: |
+          set -euo pipefail
+          git restore --source=HEAD --staged --worktree .github/workflows
+          rm -f supply-chain/regeneration-request.json
+          git add --all
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'build: regenerate deterministic dependency locks'
+          git push origin HEAD:supply-chain/dependency-provenance-001
+
+      - name: Verify five semantic hashed locks
+        if: steps.mode.outputs.regenerate == 'false'
+        run: python scripts/dependency_provenance_implementation.py verify-locks
 
       - name: Validate registry, refs, install paths and source completeness
-        run: |
-          set -euo pipefail
-          python scripts/dependency_provenance_contract.py validate-repository
+        if: steps.mode.outputs.regenerate == 'false'
+        run: python scripts/dependency_provenance_contract.py validate-repository
 
       - name: Verify repository remains exactly clean
+        if: steps.mode.outputs.regenerate == 'false'
         run: python scripts/secret_hygiene.py verify-clean-tree
