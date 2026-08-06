@@ -283,7 +283,7 @@
     "compose.yaml": "ef04f5b6737f95e8bedf691c88e6eb612a66f2131e037fcbca0c702a099fb485",
     "deploy/automation/Dockerfile.development": "b36adc4cedf8987b606c1c73a91904b48dca8f1329ac0d7ba392f4909ac017c5",
     "deploy/automation/compose.development.yaml": "569e4daf7574a4aad34d9f6aa0ab9b2fd4412257f18d779fbbc478acf4b40c9c",
-    "pyproject.toml": "6fcc0866d5c62cecb8af297e8dadae098434c4c86d3f642b2ba0c1341c53337a",
+    "pyproject.toml": "54506c1754c6c77aff340f5087974bfe55fad006af7b2a4977e354702ca58bc2",
     "src/static/system/eod_typography.css": "6ed237e0b6221fd57ae32888ecfe77ce8f02afc933ca8da56cc19ffd20c7bfdc"
   },
   "totals": {
