@@ -248,21 +248,21 @@
       "first_id": "INP-0001",
       "last_id": "INP-0017",
       "path": "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.01.json",
-      "sha256": "31aae0877726b14fbc63365aac11eaf9271aec37d0c49961fec1a8b02ce7fcda"
+      "sha256": "4a51510a8fd70e3ef0968c2e97f74b11ecd28ba65ee7f632fa8d3d92db947207"
     },
     {
       "entry_count": 17,
       "first_id": "INP-0018",
       "last_id": "INP-0034",
       "path": "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.02.json",
-      "sha256": "f26a806599e9c83e3e37216508704d754225367256e7e0f7987b698600bc4b6f"
+      "sha256": "b0f08c6a0b3bd8d31d08396b61e94d877f2adb2abb5c671e46d5517291822312"
     },
     {
       "entry_count": 17,
       "first_id": "INP-0035",
       "last_id": "INP-0051",
       "path": "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.03.json",
-      "sha256": "21a35f50ac47628f706f361869488a1b66e50a98451274370ef1ea0159956bee"
+      "sha256": "a9df22da68ef89e3fba2765fc9b35eb718c9d8f8e54558dfc04bec4a87b79ca6"
     },
     {
       "entry_count": 16,
@@ -362,16 +362,16 @@
   ],
   "schema": 2,
   "source_digests": {
-    ".github/workflows/auto-001a-foundation-ci.yml": "0c805cc6b01ac10051e658f2018177371760565e7eee9070e860de8501ecbda7",
-    ".github/workflows/auto-001b-controller-ci.yml": "22d73beab7eafcd7fa4efd04315d973c52142341ffef56923c9b05162b383ee2",
-    ".github/workflows/ci.yml": "2b847cfd86018158c0b1588b60032c2af825021d153150ab6ccb7413dee7d9fc",
-    ".github/workflows/dependency-provenance.yml": "3efedb54ff5b5b9fb4f6b275101eae8ebbbc8c2109e95f54f4bcb1814183c00d",
+    ".github/workflows/auto-001a-foundation-ci.yml": "b0045a6ef15f61d0013505fdf353c62950e4d7a33b46835d9991dd28b218f06a",
+    ".github/workflows/auto-001b-controller-ci.yml": "340dce479c9db549fe236a0f8f2f36ce8428b3f3c9c4b4dd1eca67688694bf5a",
+    ".github/workflows/ci.yml": "8c5de32f8e1232804de2dd1d5ff47a4716f5bc47966def46eaeebe410557ae5e",
+    ".github/workflows/dependency-provenance.yml": "cfcfb441da62e2a370c868de8ca7adc4388a29aaf5754ed15648664ff59900a1",
     ".github/workflows/development-stack.yml": "ae97a01a1f46b61d8a98eb556821c9dbfa07434de232b223023c110cec62fe67",
-    ".github/workflows/documentation-contract.yml": "37a6713c9fb425e60a4ac8983f123da7af10faae78b85bc8e1ddfa64b952b2c4",
-    ".github/workflows/eod-hot-refresh.yml": "7b05c115089eaf2b6907301e06af488b7a774486c62255d06460708caeb113a0",
-    ".github/workflows/secret-hygiene.yml": "98a9917e158910f9ae654198643adceaa912582115077b9193c37c56336a6568",
+    ".github/workflows/documentation-contract.yml": "5f35d6a9a21f57ce6b14ffe72f655a4cd18661fe664173da4a7e0fd5a8919bff",
+    ".github/workflows/eod-hot-refresh.yml": "8e60fdc3a4992eefee0a852fbb5ddca2862a6d3545807f8e31a8923540b4c609",
+    ".github/workflows/secret-hygiene.yml": "fda3547ec633530d3183dc0b88d296ded4fe5add197b98a2252eb30491309f27",
     ".github/workflows/telegram-workflow-notifications.yml": "eff2979fc7b957f16cfbc798154f9f9d641e4f53d93d64441c4e4470b89eda03",
-    ".github/workflows/vps-development.yml": "510e2fc697a8c2c64c5864778c58f48cd7533b8c0ed22ba576b040824317340a",
+    ".github/workflows/vps-development.yml": "ebd78c3f9dc00b5a5a1a07e91abc3e9cbe7a796e408363e6e60878cbf8aa3263",
     "Dockerfile": "4b12bb83ad530ffce4ba45a61564515b6d36164e358e9240d0f4c43b9809c9c2",
     "compose.development.yaml": "5537ce2e1ddb2712de4cacd475097fa5d017b4362324e843337ecf876a27cdbe",
     "compose.preview.yaml": "fd254e30a06b235f088fb8cafaeb25312e868dc1c290d5521e283ae5fd966773",
@@ -389,7 +389,7 @@
     "scripts/demo_release_plan.py": "b7862a65b0e725c0678058ac2e0dcd6667db2a60b86da6888233f7a1fb198089",
     "scripts/dependency_provenance_contract.py": "5bd50a5035cb7368f169b1aa9345d856f77da9fe2d4817b649d19849f345e730",
     "scripts/dependency_provenance_core.py": "aa8045db8abb15896bcec63bda733c2ebd7b121f02f4558137b72b922b79f554",
-    "scripts/dependency_provenance_implementation.py": "35dc9bbc928d3eef8bcb52bb2a65f17a5aa19c4f97ec5411d8305a4d53c7fddb",
+    "scripts/dependency_provenance_implementation.py": "10b258249b678002b5f439f03750df21d17d5fb3de2c568ef9d919ced23c0e90",
     "scripts/dependency_provenance_inventory.py": "870f9bbd4b5ced0585a330c180b6e738378f201125b6a346ee1823a86da60980",
     "scripts/dependency_provenance_views.py": "58aaa48dd6a7b6b27d05eb772232001cadfac5402ddd709caf5017c4ed78932b",
     "scripts/development-entrypoint.sh": "56bb59150836f927b915c12f79b689ee4f45ebc50c9e0ebd02f57557bc48d978",

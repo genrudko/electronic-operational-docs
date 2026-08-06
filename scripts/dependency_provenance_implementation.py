@@ -69,7 +69,7 @@ ACTION_REVISIONS = {
         "sha": "d23441a48e516b6c34aea4fa41551a30e30af803",
     },
     "actions/setup-python": {
-        "version": "v6.1.0",
+        "version": "v6.3.0",
         "sha": "ece7cb06caefa5fff74198d8649806c4678c61a1",
     },
     "actions/upload-artifact": {

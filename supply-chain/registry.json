@@ -124,7 +124,7 @@
       "pip": "25.3",
       "pip_tools": "7.6.0",
       "source": "official PyPI JSON distribution digest plus downloaded wheel SHA-256",
-      "source_commit": "7ce095f16a8ec02ab3155cd0cda90827f18342c2"
+      "source_commit": "19ca75e783971a22b88a73c866eb5a89da9b783a"
     },
     "kind": "pip-tools",
     "oci": {
@@ -145,7 +145,7 @@
     },
     "actions/setup-python": {
       "sha": "ece7cb06caefa5fff74198d8649806c4678c61a1",
-      "version": "v6.1.0"
+      "version": "v6.3.0"
     },
     "actions/upload-artifact": {
       "sha": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
