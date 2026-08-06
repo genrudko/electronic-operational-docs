@@ -2,160 +2,214 @@
 
 ## Preconditions
 
-- architecture decision accepted by product owner;
-- this inventory remains exact on accepted head;
-- no package/version update is mixed into mechanical locking unless required to
-  resolve an explicitly documented incompatibility;
-- same issue/branch/PR policy is used for the implementation work item selected
-  by canonical coordination state;
-- Preview/VPS remain untouched unless a later delivery scope explicitly permits
-  them.
+- repaired architecture decision accepted by product owner;
+- inventory remains exact on accepted head;
+- no package/version update is mixed into mechanical locking unless an
+  explicitly documented incompatibility requires it;
+- Preview/VPS remain untouched unless later scope explicitly permits them;
+- implementation does not start during the current repair stage.
 
-## Phase 1 — canonical metadata and generator
+## Canonical profile set
 
-1. Add a small machine-readable supply-chain registry for:
-   - Python lock profiles/platform;
-   - external container images and readable versions;
-   - GitHub Actions and readable releases;
-   - external downloads/browser inputs;
-   - SBOM/provenance generator identities.
-2. Add a pinned `tooling` bootstrap profile.
-3. Add a repository regeneration/check script using `pip-tools`.
-4. Keep all direct intent in `pyproject.toml`; no duplicated direct requirement
-   lists.
-5. Add deterministic headers and byte-for-byte regeneration checks.
+Every implementation document, command and validator uses exactly:
+
+```text
+tooling
+build
+runtime
+dev
+browser
+```
+
+Canonical paths:
+
+```text
+requirements/locks/tooling.txt
+requirements/locks/build.txt
+requirements/locks/runtime.txt
+requirements/locks/dev.txt
+requirements/locks/browser.txt
+```
+
+## Phase 1 — bootstrap root and generator
+
+1. Add a small machine-readable supply-chain registry for Python profiles and
+   platform, generator/bootstrap evidence, images, Actions, downloads/browser
+   inputs and SBOM/provenance tooling identities.
+2. Select a digest-pinned generator OCI environment with exact Python minor and
+   platform.
+3. Check in a bootstrap manifest containing exact `pip`, `pip-tools` and support
+   distribution identities plus independently verified SHA-256 hashes.
+4. Record generator image digest, tool versions, bootstrap manifest digest and
+   accepted source commit as bootstrap evidence.
+5. Install bootstrap tooling with `--require-hashes` without trusting a
+   candidate `tooling.txt`.
+6. Generate all five profiles.
+7. Perform semantic validation, byte-for-byte regeneration comparison and clean
+   installation proof.
+
+Mandatory sequence:
+
+```text
+digest-pinned generator environment
+→ bootstrap tooling from checked-in exact hashes
+→ regenerate tooling/build/runtime/dev/browser
+→ semantic validation
+→ byte-for-byte comparison
+→ clean installation proof
+```
+
+First accepted tooling lock is accepted atomically with the external generator
+identity and bootstrap evidence. It is not trusted because it generated itself.
 
 Acceptance:
 
-- no network-resolved generator version;
+- no tag-only/network-resolved generator;
+- bootstrap distributions have exact versions and hashes;
+- five-profile set is exact;
 - clean check mode produces zero diff;
 - malformed/manual lock changes fail with named rule IDs.
 
+## Controlled generator upgrade and rollback
+
+Upgrade procedure:
+
+1. previous accepted generator reproduces previous locks byte-for-byte;
+2. candidate image digest/tool versions/bootstrap hashes are recorded;
+3. previous accepted validator verifies candidate bootstrap evidence and policy;
+4. candidate generator regenerates all five profiles;
+5. full graph diff, semantic validation and clean installs pass;
+6. generator identity and five locks are accepted atomically.
+
+Rollback restores from the previous accepted commit the five locks, generator
+image digest, bootstrap manifest/evidence and regeneration contract. The former
+generator must reproduce the restored locks byte-for-byte and pass clean install.
+
 ## Phase 2 — Python lock profiles
 
-1. Generate `build`, `runtime`, `dev` and `browser` locks for Python 3.13 and the
-   accepted Linux architecture profile.
-2. Preserve current accepted dependency ranges/versions as far as resolver and
-   available artifacts permit; do not perform opportunistic upgrades.
+1. Generate `tooling`, `build`, `runtime`, `dev` and `browser` for Python 3.13
+   and accepted Linux architecture.
+2. Preserve accepted dependency ranges/versions as far as resolver and available
+   artifacts permit; no opportunistic upgrades.
 3. Include SHA-256 hashes for every permitted distribution.
-4. Prove clean-environment installation with `--require-hashes`.
-5. Build the application wheel from the locked build environment without
-   unrestricted PEP 517 resolution.
-6. Verify installed graph using `pip check` and an exact package snapshot.
+4. Prove clean installation with `--require-hashes`.
+5. Build wheel from locked build environment without unrestricted PEP 517
+   resolution.
+6. Verify installed graph using `pip check` and exact package snapshot.
 
 Acceptance:
 
-- two clean runs resolve/install the same package/version/hash set;
+- two clean runs produce identical package/version/hash sets;
 - runtime image contains no dev/browser-only packages;
-- all current application tests remain green.
+- all application tests remain green.
 
 ## Phase 3 — consume locks everywhere
 
-1. Replace unrestricted Dockerfile `pip install --upgrade` and `pip install .`
-   resolution with locked build/runtime stages.
-2. Update CI installation to consume exact dev/runtime profiles.
-3. Update browser gates to consume browser profile and pinned browser
-   image/revision.
-4. Scan workflows/scripts for bypass installs and fail closed.
-5. Keep local developer procedure documented and explicit.
+1. Replace unrestricted Dockerfile/workflow installs with locked build/runtime
+   stages.
+2. CI uses exact dev/runtime profiles.
+3. Browser gates use browser profile and pinned browser image/revision.
+4. Repository-wide executable/config scanner rejects bypass installs in
+   workflows, Docker/Compose, shell, deploy/operator Python and task/build files.
+5. Local developer procedure remains explicit.
 
 Acceptance:
 
 - no executable install bypass remains;
-- container build works with dependency network disabled after immutable inputs
-  are fetched/cached;
+- new applicable tracked path is included in source-completeness digests;
 - no product/domain/runtime behavior change beyond dependency determinism.
 
 ## Phase 4 — immutable container images
 
-1. Resolve current accepted human-readable tags to registry digests.
-2. Record registry source, platform and verification timestamp as evidence, not
-   as mutable identity.
-3. Pin Dockerfile, Compose and workflow service images by digest with readable
-   comments/metadata.
-4. Add duplicate-owner and digest/metadata coherence validators.
-5. Validate target architecture explicitly.
+1. Resolve accepted readable tags to registry digests.
+2. Record registry source/platform and verification evidence.
+3. Pin Dockerfile, Compose and workflow images by digest with readable metadata.
+4. Validate duplicate-owner and digest/metadata coherence.
+5. Distinguish local output only through service `build:`, tracked build target or
+   exact canonical local-output registry.
 
 Acceptance:
 
-- tag-only reference fixture fails;
-- changed digest without metadata fails;
+- `image: postgres` and tag-only fixtures fail immutable-input rule;
+- digest reference is immutable;
+- local build service is output;
+- identical short name without build remains external;
 - all images pull/build by exact digest.
 
-## Phase 5 — immutable GitHub Actions
+## Phase 5 — immutable GitHub Actions and downloads
 
-1. Resolve every current Action/reusable workflow ref to a full commit SHA.
+1. Resolve every external Action/reusable workflow to full commit SHA.
 2. Preserve readable release comments.
-3. Add parser-based workflow validator for step-level and job-level `uses:`.
-4. Detect shell downloads and route them through the external-download registry.
-5. Keep least-privilege permissions and exact-head checkout semantics.
+3. Parse step-level and job-level `uses:`.
+4. Route shell downloads through canonical download registry.
+5. Preserve least-privilege and exact-head checkout semantics.
 
 Acceptance:
 
 - no mutable external `uses:` remains;
-- tag/branch/short-SHA negative fixtures fail;
-- existing workflows execute on one exact head.
+- tag/branch/short-SHA fixtures fail;
+- local HTTP probes remain excluded from external-download inputs.
 
-## Phase 6 — deterministic static/build outputs
+## Phase 6 — deterministic build outputs
 
-1. Build wheel and collectstatic output in controlled environment.
+1. Build wheel and collectstatic in controlled environment.
 2. Generate normalized static manifest with path/size/SHA-256.
-3. Record wheel/static manifest digests as provenance materials.
-4. Reject tracked build output/temporary transport files unless explicitly
-   canonical.
+3. Record wheel/static digests as provenance materials.
+4. Reject undeclared tracked build output/transport files.
 
 Acceptance:
 
 - repeated build has identical dependency/static manifests;
-- unexpected generated file fails the boundary gate;
-- clean tree remains exact after tests/build cleanup.
+- unexpected generated file fails boundary gate;
+- clean tree remains exact.
 
-## Phase 7 — SBOM
+## Phase 7 — deterministic SPDX 2.3 JSON
 
-1. Pin SBOM generator identity/digest.
+1. Pin SBOM generator and official SPDX 2.3 schema identities/digests.
 2. Build final OCI image once and resolve final digest.
-3. Generate SPDX 2.3 JSON from that exact digest.
-4. Normalize stable fields/order and validate schema/boundary.
-5. Compare runtime lock against Python components and relationships.
-6. Generate/link service-image SBOMs for exact digests.
-7. Secret-scan candidate SBOM and artifact before publication.
+3. Establish accepted `SOURCE_DATE_EPOCH` from exact source commit timestamp or
+   another explicitly accepted immutable epoch.
+4. Generate SPDX 2.3 JSON from exact image digest.
+5. Preserve mandatory `creationInfo.created` and normalize it to
+   `YYYY-MM-DDTHH:MM:SSZ` UTC; runner wall clock is prohibited.
+6. Generate canonical `documentNamespace` from namespace-contract version, final
+   image digest, exact source commit and build-definition digest.
+7. Normalize stable ordering and prove repeated normalization byte-identical.
+8. Validate pinned official schema before secret scan/publication.
+9. Compare runtime lock with Python components/relationships and link service
+   image SBOMs.
+10. Secret-scan candidate SBOM/artifact before publication.
 
 Acceptance:
 
+- missing/volatile/malformed `creationInfo.created` fails;
+- random or reused namespace fails;
+- another image/build receives another namespace;
+- schema-invalid SPDX fails before publication;
 - subject digest equals final image;
-- required runtime/OS/application components are present;
-- test-only packages and credentials are absent;
-- SBOM is explicitly not presented as vulnerability proof.
+- required components are present and test-only/secret content absent.
 
 ## Phase 8 — exact-head provenance and attestation
 
-1. Generate in-toto/SLSA statement from verified workflow outputs.
-2. Include all inventory-driven immutable materials.
-3. Add bounded least-privilege attestation job/action pinned by SHA.
-4. Verify the attestation against subject digest and repository identity.
-5. Publish only after secret-hygiene outputs prove safe content.
+1. Generate in-toto Statement v1 with SLSA Provenance v1 predicate.
+2. Include exact commit, workflow, all five locks, bootstrap/generator identity,
+   images, Actions, build epoch, namespace, static manifest and SBOM digest.
+3. Add bounded least-privilege attestation job pinned by SHA.
+4. Verify subject digest and repository identity.
+5. Publish only after schema, boundary and secret-hygiene outputs pass.
 
 Acceptance:
 
 - another-head fixture fails;
-- subject/material omission fixture fails;
+- subject/material omission fails;
 - published attestation verifies independently;
 - all run IDs refer to one final exact head.
 
 ## Phase 9 — operator procedures
 
-Document and test:
-
-- ordinary dependency change;
-- emergency vulnerability update;
-- container/action digest refresh;
-- lock regeneration and review;
-- SBOM/provenance verification;
-- rollback to prior lock/image/artifact set;
-- registry/tool outage limitations.
-
-The owner-facing procedure uses a small number of deterministic commands and
-explains what changed in plain language.
+Document and test ordinary change, emergency update, image/Action refresh,
+regeneration/review, generator upgrade, rollback, SBOM/provenance verification
+and registry/tool outage limitations.
 
 ## Required final validation profile
 
@@ -166,8 +220,8 @@ Secret Hygiene current/history/artifact gates
 Ruff / compileall / Django check
 migration check (no migration expected)
 full PostgreSQL suite
-container development and preview smoke as applicable
-SBOM/provenance verification
+container development/preview smoke only when applicable and authorized
+SBOM/provenance verification after implementation
 clean tree
 no temporary workflow files
 all applicable workflows on one final exact head
@@ -175,11 +229,9 @@ all applicable workflows on one final exact head
 
 ## Stop conditions
 
-- no Ready for Review or merge without explicit product-owner instruction;
-- no mass dependency upgrade hidden in lock adoption;
-- no new frontend package manager unless factual frontend build need is first
-  accepted;
-- no VPS/Preview deployment during dependency implementation unless separately
-  authorized;
-- any resolver-forced version change is isolated, explained and reviewed rather
-  than silently accepted.
+- no Ready for Review or merge without explicit owner instruction;
+- no mass dependency update hidden in lock adoption;
+- no frontend package manager without accepted factual need;
+- no VPS/Preview deployment during this repair;
+- no release lock, SBOM or provenance publication during this repair;
+- resolver-forced version changes are isolated and explained.
