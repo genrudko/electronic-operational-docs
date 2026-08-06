@@ -96,11 +96,9 @@ jobs:
           }
           for old, new in metadata.items():
               text = text.replace(old, new)
-          # setup-python shares a major with checkout; correct its exact release
-          # by anchoring the known immutable SHA block after the broad replacement.
           text = text.replace(
-              '"sha": "ece7cb06caefa5fff74198d8649806c4678c61a1",\n        "version": "v6.1.0"',
-              '"sha": "ece7cb06caefa5fff74198d8649806c4678c61a1",\n        "version": "v6.3.0"',
+              '"actions/setup-python": {\n        "version": "v6.1.0"',
+              '"actions/setup-python": {\n        "version": "v6.3.0"',
           )
           path.write_text(text, encoding='utf-8')
           PY
@@ -196,7 +194,7 @@ jobs:
           git add --all
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'build: regenerate exact action metadata'
+          git commit -m 'build: regenerate exact setup-python metadata'
           git push origin HEAD:supply-chain/dependency-provenance-001
 
       - name: Verify five semantic hashed locks
