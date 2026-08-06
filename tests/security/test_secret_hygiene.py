@@ -53,8 +53,14 @@ def _build_case(builder: str) -> str:
                 "steps:",
                 "  - name: Sanitize",
                 "    run: |",
-                "      python scripts/secret_hygiene.py redact --input raw.log --output diagnostics.sanitized.txt",
-                "      python scripts/secret_hygiene.py verify-sanitized --input diagnostics.sanitized.txt",
+                (
+                    "      python scripts/secret_hygiene.py redact "
+                    "--input raw.log --output diagnostics.sanitized.txt"
+                ),
+                (
+                    "      python scripts/secret_hygiene.py verify-sanitized "
+                    "--input diagnostics.sanitized.txt"
+                ),
                 "      cat diagnostics.sanitized.txt",
                 "  - name: Upload",
                 "    uses: actions/upload-artifact@v7",
