@@ -21,6 +21,7 @@ from apps.workplace_docs.models import (
     WorkplaceDocumentList,
     WorkplaceDocumentRevision,
 )
+from tests.credential_fixtures import ephemeral_credential
 
 
 class WorkplaceDocumentTestBase(TestCase):
@@ -47,7 +48,7 @@ class WorkplaceDocumentTestBase(TestCase):
         user_model = get_user_model()
         cls.user = user_model.objects.create_user(
             username="approver",
-            password="StrongPass!2026",
+            password=ephemeral_credential("WorkplaceApprover"),
         )
         cls.employee = Employee.objects.create(
             organization=cls.organization,
@@ -99,7 +100,7 @@ class WorkplaceDocumentTestBase(TestCase):
         )
         cls.foreign_user = user_model.objects.create_user(
             username="foreign",
-            password="StrongPass!2026",
+            password=ephemeral_credential("ForeignWorkplaceUser"),
         )
         cls.foreign_employee = Employee.objects.create(
             organization=cls.foreign_organization,
