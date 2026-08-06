@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: 90
     steps:
       - name: Checkout exact head
-        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
@@ -48,7 +48,7 @@ jobs:
           fi
 
       - name: Set up accepted Python minor
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: '3.13'
           check-latest: false
@@ -88,6 +88,19 @@ jobs:
               '        re.sub(r"/tmp/eod-supply-[^/\\s]+/", "<generator>/", line)\n'
               '        for line in lines[first_requirement:]\n'
               '    ]\n',
+          )
+          metadata = {
+              '"version": "v6"': '"version": "v6.1.0"',
+              '"version": "v7"': '"version": "v7.0.1"',
+              '"version": "v8"': '"version": "v9.0.0"',
+          }
+          for old, new in metadata.items():
+              text = text.replace(old, new)
+          # setup-python shares a major with checkout; correct its exact release
+          # by anchoring the known immutable SHA block after the broad replacement.
+          text = text.replace(
+              '"sha": "ece7cb06caefa5fff74198d8649806c4678c61a1",\n        "version": "v6.1.0"',
+              '"sha": "ece7cb06caefa5fff74198d8649806c4678c61a1",\n        "version": "v6.3.0"',
           )
           path.write_text(text, encoding='utf-8')
           PY
@@ -165,7 +178,7 @@ jobs:
 
       - name: Upload controlled regeneration evidence
         if: steps.mode.outputs.regenerate == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dependency-provenance-regeneration
           path: ${{ runner.temp }}/dependency-provenance-regeneration
@@ -183,7 +196,7 @@ jobs:
           git add --all
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'build: regenerate deterministic dependency locks'
+          git commit -m 'build: regenerate exact action metadata'
           git push origin HEAD:supply-chain/dependency-provenance-001
 
       - name: Verify five semantic hashed locks
