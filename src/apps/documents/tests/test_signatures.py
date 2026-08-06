@@ -23,14 +23,18 @@ from apps.documents.services import (
     sha256_text,
     verify_document_integrity,
 )
+from tests.credential_fixtures import ephemeral_credential
 
 from .factories import document_context
 
 
 class DocumentSignatureTests(TestCase):
     def setUp(self) -> None:
-        self.employee, self.user, self.document_type = document_context(code="SIGN")
-        self.password = "TestPass!2026"
+        self.credential = ephemeral_credential("DocumentSignature")
+        self.employee, self.user, self.document_type = document_context(
+            code="SIGN",
+            credential=self.credential,
+        )
 
     def _draft(self, title: str = "Подписываемый документ") -> Document:
         return create_document_draft(
@@ -45,18 +49,19 @@ class DocumentSignatureTests(TestCase):
             document=document or self._draft(),
             actor=self.employee,
             user=self.user,
-            password=self.password,
+            password=self.credential,
         )
 
     def test_wrong_password_does_not_allocate_number_or_signature(self):
         document = self._draft()
         before = DocumentNumberSequence.objects.count()
+        invalid_credential = ephemeral_credential("InvalidDocumentSignature")
         with self.assertRaises(ValidationError):
             register_document_with_password(
                 document=document,
                 actor=self.employee,
                 user=self.user,
-                password="wrong-password",
+                password=invalid_credential,
             )
         document.refresh_from_db()
         self.assertEqual(document.status, Document.Status.DRAFT)
@@ -71,7 +76,7 @@ class DocumentSignatureTests(TestCase):
                 document=self._draft(),
                 actor=self.employee,
                 user=other_user,
-                password="TestPass!2026",
+                password=self.credential,
             )
 
     def test_success_creates_exactly_one_snapshot_and_signature(self):
@@ -98,7 +103,7 @@ class DocumentSignatureTests(TestCase):
                 for item in AuditEvent.objects.filter(document=result.document)
             ],
         ]
-        self.assertNotIn(self.password, "\n".join(corpus))
+        self.assertNotIn(self.credential, "\n".join(corpus))
 
     def test_content_tamper_is_invalid(self):
         result = self._register()
@@ -217,7 +222,7 @@ class DocumentSignatureTests(TestCase):
         self.assertEqual(event.payload["snapshot_digest"], result.snapshot.digest)
         self.assertEqual(event.payload["signature_checksum"], result.signature.checksum)
         self.assertEqual(event.payload["confirmation_method"], "PASSWORD_REAUTH")
-        self.assertNotIn(self.password, json.dumps(event.payload, ensure_ascii=False))
+        self.assertNotIn(self.credential, json.dumps(event.payload, ensure_ascii=False))
 
     def test_second_registration_attempt_creates_no_duplicate_confirmation(self):
         result = self._register()
@@ -226,7 +231,7 @@ class DocumentSignatureTests(TestCase):
                 document=result.document,
                 actor=self.employee,
                 user=self.user,
-                password=self.password,
+                password=self.credential,
             )
         self.assertEqual(SignedSnapshot.objects.filter(document=result.document).count(), 1)
         self.assertEqual(DocumentSignature.objects.filter(snapshot=result.snapshot).count(), 1)
