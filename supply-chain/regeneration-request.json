@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "work_item": "DEPENDENCY-PROVENANCE-001",
+  "reason": "preserve exact release metadata for already used immutable GitHub Action SHAs",
+  "expected_action_metadata": {
+    "actions/checkout": "v6.1.0",
+    "actions/setup-python": "v6.3.0",
+    "actions/upload-artifact": "v7.0.1",
+    "actions/github-script": "v9.0.0"
+  }
+}
