@@ -64,18 +64,33 @@ jobs:
           scripts/release_plan_compat_validation.py
           scripts/module_contract_status_projection.py
           scripts/industrialization_execution.py
+          scripts/dependency_provenance_inventory.py
           tests/process/test_project_state_contract.py
           tests/process/test_release_plan_compatibility.py
           tests/process/test_module_contract_status_projection.py
           tests/process/test_industrialization_execution.py
+          tests/process/test_dependency_provenance_inventory.py
 
-      - name: Run project-state contract regressions
+      - name: Regenerate dependency inventory views
+        run: python scripts/dependency_provenance_inventory.py write
+
+      - name: Run project-state and dependency-contract regressions
         run: >-
           python -m unittest -v
           tests.process.test_project_state_contract
           tests.process.test_release_plan_compatibility
           tests.process.test_module_contract_status_projection
           tests.process.test_industrialization_execution
+          tests.process.test_dependency_provenance_inventory
+
+      - name: Verify generated dependency inventory is exact
+        run: >-
+          git diff --exit-code --
+          docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.json
+          docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.md
+
+      - name: Validate dependency inventory contract
+        run: python scripts/dependency_provenance_inventory.py check
 
       - name: Validate documentation contract
         run: python scripts/check_documentation_contract.py
