@@ -94,6 +94,23 @@ def validate_service_boundary(component_set: dict[str, Any]) -> None:
         raise ContractViolation("sbom-service-boundary", repr(services))
 
 
+def validate_namespace_uniqueness(records: list[dict[str, str]]) -> None:
+    owners: dict[str, tuple[str, str, str]] = {}
+    for item in records:
+        namespace = item.get("documentNamespace", "")
+        identity = (
+            item.get("imageDigest", ""),
+            item.get("sourceCommit", ""),
+            item.get("buildDefinitionDigest", ""),
+        )
+        previous = owners.setdefault(namespace, identity)
+        if not namespace or previous != identity:
+            raise ContractViolation(
+                "spdx-document-namespace-unique-subject",
+                f"namespace={namespace}",
+            )
+
+
 def validate_artifact_text(path: str, text: str) -> None:
     patterns = (
         r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----",
