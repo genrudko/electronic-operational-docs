@@ -31,15 +31,15 @@ from apps.organizations.models import (
     Role,
     RoleAssignment,
 )
+from tests.credential_fixtures import ephemeral_credential
 
 from .personnel_workbook import synthetic_personnel_workbook
 
 
 @override_settings(EOD_DATABASE_PROFILE="development")
 class PersonnelOperationalAuthorityImporterTests(TestCase):
-    password = "Personnel-0116-Test!"
-
     def setUp(self):
+        self.credential = ephemeral_credential("PersonnelAuthority")
         self.organization = Organization.objects.create(
             code="PERS-ORG",
             name="Синтетическая организация персонала",
@@ -56,7 +56,7 @@ class PersonnelOperationalAuthorityImporterTests(TestCase):
         )
         self.user = get_user_model().objects.create_user(
             username="personnel-publisher",
-            password=self.password,
+            password=self.credential,
         )
         self.publisher = Employee.objects.create(
             organization=self.organization,
@@ -157,7 +157,7 @@ class PersonnelOperationalAuthorityImporterTests(TestCase):
             revision=revision,
             actor=self.publisher,
             user=self.user,
-            password=self.password,
+            password=self.credential,
             expected_digest=preview.digest,
         )
         revision.refresh_from_db()
@@ -201,7 +201,7 @@ class PersonnelOperationalAuthorityImporterTests(TestCase):
             revision=revision,
             actor=self.publisher,
             user=self.user,
-            password=self.password,
+            password=self.credential,
             expected_digest=preview.digest,
         )
         self.assertEqual(publication.result_summary["reused_people"], 1)
@@ -246,7 +246,7 @@ class PersonnelOperationalAuthorityImporterTests(TestCase):
             reverse("imports:personnel_publication", args=[revision.public_id]),
             {
                 "preview_digest": preview.digest,
-                "password": self.password,
+                "password": self.credential,
                 "confirm": "on",
             },
         )
