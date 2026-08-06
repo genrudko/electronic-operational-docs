@@ -55,55 +55,7 @@ jobs:
           cache: pip
           cache-dependency-path: requirements/locks/*.txt
 
-      - name: Apply controlled generator repair
-        if: steps.mode.outputs.regenerate == 'true'
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-
-          path = Path('scripts/dependency_provenance_implementation.py')
-          text = path.read_text(encoding='utf-8')
-          if 'JSONSCHEMA_VERSION = "4.26.0"' not in text:
-              text = text.replace(
-                  'PIP_TOOLS_VERSION = "7.6.0"\n',
-                  'PIP_TOOLS_VERSION = "7.6.0"\nJSONSCHEMA_VERSION = "4.26.0"\n',
-              )
-          if '"jsonschema": JSONSCHEMA_VERSION,' not in text:
-              text = text.replace(
-                  '    "gunicorn": "26.0.0",\n',
-                  '    "gunicorn": "26.0.0",\n    "jsonschema": JSONSCHEMA_VERSION,\n',
-              )
-          text = text.replace(
-              '"tooling": [f"pip=={PIP_VERSION}", f"pip-tools=={PIP_TOOLS_VERSION}"],',
-              '"tooling": [\n'
-              '            f"pip=={PIP_VERSION}",\n'
-              '            f"pip-tools=={PIP_TOOLS_VERSION}",\n'
-              '            f"jsonschema=={JSONSCHEMA_VERSION}",\n'
-              '        ],',
-          )
-          text = text.replace(
-              '    body = lines[first_requirement:]\n',
-              '    body = [\n'
-              '        re.sub(r"/tmp/eod-supply-[^/\\s]+/", "<generator>/", line)\n'
-              '        for line in lines[first_requirement:]\n'
-              '    ]\n',
-          )
-          metadata = {
-              '"version": "v6"': '"version": "v6.1.0"',
-              '"version": "v7"': '"version": "v7.0.1"',
-              '"version": "v8"': '"version": "v9.0.0"',
-          }
-          for old, new in metadata.items():
-              text = text.replace(old, new)
-          text = text.replace(
-              '"actions/setup-python": {\n        "version": "v6.1.0"',
-              '"actions/setup-python": {\n        "version": "v6.3.0"',
-          )
-          path.write_text(text, encoding='utf-8')
-          PY
-
-      - name: Regenerate registry and all five locks
+      - name: Regenerate registry, locks and immutable references
         if: steps.mode.outputs.regenerate == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
@@ -111,79 +63,10 @@ jobs:
           set -euo pipefail
           python scripts/dependency_provenance_implementation.py apply
           python scripts/dependency_provenance_implementation.py verify-locks
+          python scripts/publish_workflow_blobs.py
           git diff --check
           git add --all
           python scripts/secret_hygiene.py scan
-
-      - name: Export controlled regeneration evidence
-        if: steps.mode.outputs.regenerate == 'true'
-        env:
-          OUTPUT_DIR: ${{ runner.temp }}/dependency-provenance-regeneration
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import hashlib
-          import json
-          import os
-          import shutil
-          import subprocess
-          from pathlib import Path
-
-          root = Path.cwd()
-          output = Path(os.environ['OUTPUT_DIR'])
-          files_root = output / 'files'
-          files_root.mkdir(parents=True, exist_ok=True)
-          raw = subprocess.run(
-              ['git', 'diff', '--cached', '--name-only', '-z'],
-              check=True,
-              capture_output=True,
-          ).stdout
-          paths = sorted(item.decode('utf-8') for item in raw.split(b'\0') if item)
-          manifest = {
-              'schema': 1,
-              'base_head': subprocess.run(
-                  ['git', 'rev-parse', 'HEAD'],
-                  check=True,
-                  capture_output=True,
-                  text=True,
-              ).stdout.strip(),
-              'files': [],
-          }
-          for relative in paths:
-              source = root / relative
-              if not source.exists():
-                  manifest['files'].append({'path': relative, 'deleted': True})
-                  continue
-              target = files_root / relative
-              target.parent.mkdir(parents=True, exist_ok=True)
-              shutil.copy2(source, target)
-              content = source.read_bytes()
-              manifest['files'].append(
-                  {
-                      'path': relative,
-                      'deleted': False,
-                      'size': len(content),
-                      'sha256': hashlib.sha256(content).hexdigest(),
-                  }
-              )
-          (output / 'manifest.json').write_text(
-              json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + '\n',
-              encoding='utf-8',
-          )
-          PY
-          python scripts/secret_hygiene.py verify-sanitized \
-            --input "$OUTPUT_DIR/manifest.json"
-
-      - name: Upload controlled regeneration evidence
-        if: steps.mode.outputs.regenerate == 'true'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: dependency-provenance-regeneration
-          path: ${{ runner.temp }}/dependency-provenance-regeneration
-          if-no-files-found: error
-          include-hidden-files: true
-          retention-days: 1
-          compression-level: 0
 
       - name: Commit controlled non-workflow regeneration
         if: steps.mode.outputs.regenerate == 'true'
@@ -194,7 +77,7 @@ jobs:
           git add --all
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'build: regenerate exact setup-python metadata'
+          git commit -m 'build: publish exact workflow blob manifest'
           git push origin HEAD:supply-chain/dependency-provenance-001
 
       - name: Verify five semantic hashed locks
