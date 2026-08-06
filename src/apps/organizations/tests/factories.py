@@ -3,6 +3,7 @@ from datetime import date
 from django.contrib.auth import get_user_model
 
 from apps.organizations.models import Division, Employee, Organization, Position, Workplace
+from tests.credential_fixtures import ephemeral_credential
 
 
 def organization_bundle(code: str = "ORG"):
@@ -23,9 +24,17 @@ def organization_bundle(code: str = "ORG"):
     return organization, division, workplace, position
 
 
-def employee_with_user(username: str = "operator.test", code: str = "ORG"):
+def employee_with_user(
+    username: str = "operator.test",
+    code: str = "ORG",
+    *,
+    credential: str | None = None,
+):
     organization, division, workplace, position = organization_bundle(code)
-    user = get_user_model().objects.create_user(username=username, password="TestPass!2026")
+    user = get_user_model().objects.create_user(
+        username=username,
+        password=credential or ephemeral_credential(code),
+    )
     employee = Employee.objects.create(
         organization=organization,
         division=division,
