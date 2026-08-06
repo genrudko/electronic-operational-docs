@@ -268,7 +268,7 @@
     }
   ],
   "entry_count": 14,
-  "schema": 1,
+  "schema": 2,
   "shard": 2,
   "work_item": "DEPENDENCY-PROVENANCE-001"
 }
