@@ -4,17 +4,26 @@
 
 ## Итог
 
-- tracked files: `871`;
+- tracked files: `873`;
 - inventory entries: `55`;
 - floating inputs: `38`;
 - immutable inputs: `16`;
 - duplicate owner groups: `6`;
 - conflicting owner groups: `3`;
-- source files with dependency/build evidence: `16`.
+- source files with dependency/build evidence: `16`;
+- applicable executable/config sources: `53`;
+- source completeness digests: `55`.
+
+## Executable/config source completeness
+
+- applicable paths: `53`;
+- source kinds: `{'compose': 4, 'dockerfile': 2, 'github-workflow': 9, 'powershell': 3, 'python-operator': 26, 'shell': 8, 'shell-shebang': 1}`;
+- uncovered paths: `NONE`;
+- exact exclusions: `NONE`.
 
 ## Контуры
 
-- Python: pyproject=`True`, requirements=NONE, locks=NONE, hashed lock=`False`.
+- Python: pyproject=`True`, requirements=NONE, locks=NONE, profiles=['tooling', 'build', 'runtime', 'dev', 'browser'], hashed lock=`False`.
 - JavaScript: package/lock files=NONE; separate frontend contour=`False`.
 - Browser: Playwright declared=`True`; binary install operations=NONE; integrity contract=`False`.
 - Containers: Dockerfiles=['Dockerfile', 'deploy/automation/Dockerfile.development']; Compose=['compose.development.yaml', 'compose.preview.yaml', 'compose.yaml', 'deploy/automation/compose.development.yaml'].
@@ -94,7 +103,7 @@
 | `INP-0052` | `python-runtime` | `pyproject.toml` | runtime | `psycopg[binary]>=3.2,<4` | no | absent | floating-range | HIGH | pyproject.toml [project.dependencies] |
 | `INP-0053` | `python-runtime` | `pyproject.toml` | runtime/build/test | `python` | no | not-applicable | partial-range-only | MEDIUM | pyproject.toml [project.requires-python] |
 | `INP-0054` | `python-runtime` | `pyproject.toml` | runtime | `whitenoise>=6.12,<7` | no | absent | floating-range | HIGH | pyproject.toml [project.dependencies] |
-| `INP-0055` | `python-transitive` | `pyproject.toml` | runtime/dev/browser/build | `pip dynamic resolver output` | no | absent | not-reproducible | CRITICAL | proposed generated hashed lock profiles |
+| `INP-0055` | `python-transitive` | `pyproject.toml` | tooling/build/runtime/dev/browser | `pip dynamic resolver output` | no | absent | not-reproducible | CRITICAL | proposed generated hashed lock profiles |
 
 ## Duplicate owner groups
 
