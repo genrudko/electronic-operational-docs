@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: dependency-provenance-${{ github.ref }}
@@ -28,7 +28,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Verify exact checked-out SHA
         env:
@@ -115,9 +115,7 @@ jobs:
               check=True,
               capture_output=True,
           ).stdout
-          paths = sorted(
-              item.decode('utf-8') for item in raw.split(b'\0') if item
-          )
+          paths = sorted(item.decode('utf-8') for item in raw.split(b'\0') if item)
           manifest = {
               'schema': 1,
               'base_head': subprocess.run(
@@ -146,8 +144,7 @@ jobs:
                   }
               )
           (output / 'manifest.json').write_text(
-              json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True)
-              + '\n',
+              json.dumps(manifest, ensure_ascii=False, indent=2, sort_keys=True) + '\n',
               encoding='utf-8',
           )
           (output / 'cached.diff').write_bytes(
@@ -174,6 +171,25 @@ jobs:
           if-no-files-found: error
           retention-days: 1
           compression-level: 0
+
+      - name: Commit non-workflow materialization
+        if: >-
+          github.event_name == 'push' ||
+          (github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.head_ref == 'supply-chain/dependency-provenance-001')
+        run: |
+          set -euo pipefail
+          git restore --source=HEAD --staged --worktree .github/workflows
+          git add --all
+          if [[ -z "$(git diff --cached --name-only)" ]]; then
+            echo 'NON_WORKFLOW_MATERIALIZATION=NONE'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'build: materialise dependency provenance contract'
+          git push origin HEAD:supply-chain/dependency-provenance-001
 
       - name: Validate committed registry and locks
         if: >-
