@@ -75,8 +75,23 @@ jobs:
       - name: Regenerate dependency inventory views
         run: python scripts/dependency_provenance_inventory.py write
 
-      - name: Verify generated inventory is secret-free before publication
-        run: python scripts/secret_hygiene.py scan
+      - name: Prepare verified sanitised inventory drift evidence
+        id: inventory_evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_dir="$RUNNER_TEMP/dependency-inventory-generated-views"
+          mkdir -p "$evidence_dir"
+          for name in DEPENDENCY_BUILD_INVENTORY.json DEPENDENCY_BUILD_INVENTORY.md; do
+            source="docs/work-items/active/DEPENDENCY-PROVENANCE-001/$name"
+            target="$evidence_dir/$name"
+            python scripts/secret_hygiene.py redact \
+              --input "$source" \
+              --output "$target"
+            python scripts/secret_hygiene.py verify-sanitized --input "$target"
+            cmp --silent "$source" "$target"
+          done
+          printf 'verified=true\n' >>"$GITHUB_OUTPUT"
 
       - name: Run project-state and dependency-contract regressions
         run: >-
@@ -94,15 +109,14 @@ jobs:
           docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.md
 
       - name: Upload verified inventory drift evidence after failure
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: ${{ failure() && steps.inventory_evidence.outputs.verified == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dependency-inventory-generated-views
-          path: |
-            docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.json
-            docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.md
+          path: ${{ runner.temp }}/dependency-inventory-generated-views
           if-no-files-found: error
           retention-days: 1
+          compression-level: 0
 
       - name: Validate dependency inventory contract
         run: python scripts/dependency_provenance_inventory.py check
@@ -110,5 +124,11 @@ jobs:
       - name: Validate documentation contract
         run: python scripts/check_documentation_contract.py
 
+      - name: Remove dependency inventory diagnostic transport files
+        if: ${{ always() }}
+        shell: bash
+        run: rm -rf "$RUNNER_TEMP/dependency-inventory-generated-views"
+
       - name: Confirm clean checkout
+        if: ${{ always() }}
         run: python scripts/secret_hygiene.py verify-clean-tree
