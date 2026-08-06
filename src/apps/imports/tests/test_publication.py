@@ -50,12 +50,12 @@ from apps.organizations.models import (
     Role,
     RoleAssignment,
 )
+from tests.credential_fixtures import ephemeral_credential
 
 
 class ControlledImportPublicationTests(TestCase):
-    password = "Publish-Test-2026!"
-
     def setUp(self):
+        self.credential = ephemeral_credential("ImportPublication")
         user_model = get_user_model()
         self.organization = Organization.objects.create(
             code="PUB-ORG",
@@ -78,7 +78,7 @@ class ControlledImportPublicationTests(TestCase):
         )
         self.publisher_user = user_model.objects.create_user(
             username="publisher",
-            password=self.password,
+            password=self.credential,
         )
         self.publisher = Employee.objects.create(
             organization=self.organization,
@@ -109,7 +109,7 @@ class ControlledImportPublicationTests(TestCase):
 
         self.viewer_user = user_model.objects.create_user(
             username="viewer",
-            password=self.password,
+            password=ephemeral_credential("ImportViewer"),
         )
         self.viewer = Employee.objects.create(
             organization=self.organization,
@@ -260,7 +260,7 @@ class ControlledImportPublicationTests(TestCase):
             batch=batch,
             actor=self.publisher,
             user=self.publisher_user,
-            password=self.password,
+            password=self.credential,
             expected_digest=preview.digest,
         )
 
@@ -274,7 +274,7 @@ class ControlledImportPublicationTests(TestCase):
                 batch=batch,
                 actor=self.viewer,
                 user=self.viewer_user,
-                password=self.password,
+                password=self.credential,
                 expected_digest=preview.digest,
             )
 
@@ -316,12 +316,13 @@ class ControlledImportPublicationTests(TestCase):
         batch = self.organization_batch("PUB-NEW-003")
         preview = build_import_publication_preview(batch)
         before = Employee.objects.count()
+        invalid_credential = ephemeral_credential("InvalidImportPublication")
         with self.assertRaisesMessage(ValidationError, "Неверный"):
             publish_import_batch(
                 batch=batch,
                 actor=self.publisher,
                 user=self.publisher_user,
-                password="wrong",
+                password=invalid_credential,
                 expected_digest=preview.digest,
             )
         self.assertEqual(Employee.objects.count(), before)
@@ -339,7 +340,7 @@ class ControlledImportPublicationTests(TestCase):
                 batch=batch,
                 actor=self.publisher,
                 user=self.publisher_user,
-                password=self.password,
+                password=self.credential,
                 expected_digest=preview.digest,
             )
         self.assertEqual(Employee.objects.count(), before)
@@ -421,7 +422,7 @@ class ControlledImportPublicationTests(TestCase):
                 batch=batch,
                 actor=self.publisher,
                 user=self.publisher_user,
-                password=self.password,
+                password=self.credential,
                 expected_digest=preview.digest,
             )
         self.assertEqual(Employee.objects.count(), before)
@@ -526,7 +527,7 @@ class ControlledImportPublicationTests(TestCase):
             reverse("imports:publication", args=[batch.public_id]),
             {
                 "preview_digest": build_import_publication_preview(batch).digest,
-                "password": self.password,
+                "password": self.credential,
                 "confirm": "on",
             },
         )
@@ -544,7 +545,7 @@ class ControlledImportPublicationTests(TestCase):
             reverse("imports:publication", args=[batch.public_id]),
             {
                 "preview_digest": preview.digest,
-                "password": self.password,
+                "password": self.credential,
                 "confirm": "on",
             },
         )
