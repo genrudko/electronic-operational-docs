@@ -1,22 +1,19 @@
-FROM python:3.13-slim-bookworm
-
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app/src \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_NO_CACHE_DIR=1
-
-RUN addgroup --system eod \
-    && adduser --system --ingroup eod --home /app eod
-
-WORKDIR /app
-COPY --chown=eod:eod pyproject.toml manage.py ./
-COPY --chown=eod:eod src ./src
-RUN python -m pip install --upgrade pip setuptools wheel \
-    && python -m pip install . \
-    && mkdir -p /app/staticfiles \
-    && chown -R eod:eod /app/staticfiles
-
-USER eod
-EXPOSE 8766
-CMD ["gunicorn", "--bind", "0.0.0.0:8766", "--workers", "2", "--threads", "4", "--timeout", "60", "--access-logfile", "-", "--error-logfile", "-", "eod_config.wsgi:application"]
+FROM python@sha256:67a1e1f215ccda113cfc024e8639049257e88f273898f595b61476d128d387e8
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PATH="/opt/venv/bin:$PATH"
+WORKDIR /workspace
+RUN python -m venv /opt/venv
+COPY requirements/locks/build.txt requirements/locks/dev.txt /workspace/requirements/locks/
+RUN python -m pip install --disable-pip-version-check --require-hashes \
+    -r requirements/locks/build.txt \
+    && python -m pip install --disable-pip-version-check --require-hashes \
+    -r requirements/locks/dev.txt
+COPY pyproject.toml README.md /workspace/
+COPY src /workspace/src
+RUN python -m build --wheel --no-isolation --outdir /tmp/eod-wheel \
+    && python -m pip install --disable-pip-version-check --no-deps /tmp/eod-wheel/*.whl \
+    && rm -rf /tmp/eod-wheel
+COPY deploy/automation/app-entrypoint.sh /usr/local/bin/eod-development-app-entrypoint
+RUN chmod +x /usr/local/bin/eod-development-app-entrypoint
+EXPOSE 8000
+ENTRYPOINT ["/usr/local/bin/eod-development-app-entrypoint"]
+CMD ["gunicorn", "config.wsgi:application", "--reload", "--bind", "0.0.0.0:8000", "--workers", "2", "--access-logfile", "-", "--error-logfile", "-"]

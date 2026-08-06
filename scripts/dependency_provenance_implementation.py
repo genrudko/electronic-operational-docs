@@ -18,13 +18,11 @@ It is intended to run in the repository-owned dependency-provenance workflow.
 from __future__ import annotations
 
 import argparse
-import base64
 import email
 import hashlib
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -45,7 +43,7 @@ TYPOGRAPHY_PATH = ROOT / "src/static/system/eod_typography.css"
 
 PYTHON_MINOR = "3.13"
 PLATFORM = "linux_x86_64"
-PIP_VERSION = "26.2.1"
+PIP_VERSION = "25.3"
 PIP_TOOLS_VERSION = "7.6.0"
 PLAYWRIGHT_VERSION = "1.58.0"
 SYFT_VERSION = "1.44.0"
@@ -186,10 +184,10 @@ def metadata_requires(wheel: Path) -> list[str]:
 
 
 def marker_applies(requirement: str) -> bool:
-    # Bootstrap wheels are selected for one accepted Python/platform tuple.
-    # pip download performs the authoritative marker evaluation. This helper
-    # only extracts the dependency name from downloaded wheel metadata.
-    return "; extra ==" not in requirement and '; extra ==' not in requirement
+    # pip download already evaluates markers for the accepted interpreter and
+    # platform. The subsequent no-index/require-hashes install is the
+    # fail-closed wheelhouse-completeness proof.
+    return False
 
 
 def requirement_name(requirement: str) -> str:
