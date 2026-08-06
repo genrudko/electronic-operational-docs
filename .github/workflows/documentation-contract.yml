@@ -65,6 +65,7 @@ jobs:
           scripts/module_contract_status_projection.py
           scripts/industrialization_execution.py
           scripts/dependency_provenance_inventory.py
+          scripts/secret_hygiene.py
           tests/process/test_project_state_contract.py
           tests/process/test_release_plan_compatibility.py
           tests/process/test_module_contract_status_projection.py
@@ -73,6 +74,9 @@ jobs:
 
       - name: Regenerate dependency inventory views
         run: python scripts/dependency_provenance_inventory.py write
+
+      - name: Verify generated inventory is secret-free before publication
+        run: python scripts/secret_hygiene.py scan
 
       - name: Run project-state and dependency-contract regressions
         run: >-
@@ -88,6 +92,17 @@ jobs:
           git diff --exit-code --
           docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.json
           docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.md
+
+      - name: Upload verified inventory drift evidence after failure
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: dependency-inventory-generated-views
+          path: |
+            docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.json
+            docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.md
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Validate dependency inventory contract
         run: python scripts/dependency_provenance_inventory.py check
