@@ -18,6 +18,7 @@ from apps.imports.models import (
 )
 from apps.imports.services import create_import_batch, save_column_mapping
 from apps.organizations.models import Division, Employee, Organization, Position
+from tests.credential_fixtures import ephemeral_credential
 
 
 class DataProfilesImportFoundationTests(TestCase):
@@ -36,7 +37,7 @@ class DataProfilesImportFoundationTests(TestCase):
         )
         self.user = user_model.objects.create_user(
             username="profile-importer",
-            password="test-password",
+            password=ephemeral_credential("DataProfileImporter"),
         )
         self.employee = Employee.objects.create(
             organization=self.organization,
