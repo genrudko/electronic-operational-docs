@@ -5,10 +5,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
 
+from scripts import dependency_provenance_core as _core
 from scripts.dependency_provenance_core import (
     EXACT_SOURCE_EXCLUSIONS,
     ExecutableSource,
@@ -27,6 +29,18 @@ ROOT = Path(__file__).resolve().parents[1]
 WORK_ITEM_DIR = Path("docs/work-items/active/DEPENDENCY-PROVENANCE-001")
 INVENTORY_JSON = WORK_ITEM_DIR / "DEPENDENCY_BUILD_INVENTORY.json"
 INVENTORY_MD = WORK_ITEM_DIR / "DEPENDENCY_BUILD_INVENTORY.md"
+
+# A mere mention such as `for command in ... curl ...` is not a download.
+# Match curl/wget only where it occupies an executable command position.
+DOWNLOAD_COMMAND_RE = re.compile(
+    r"(?:^|(?:run:|RUN|&&|\|\||;|then|do)\s+)"
+    r"(?:sudo\s+)?(?:[A-Za-z0-9_./-]+/)?(?:curl|wget)\b",
+    re.I,
+)
+_core.COMMAND_PATTERNS = tuple(
+    (input_class, DOWNLOAD_COMMAND_RE if input_class == "external-download" else pattern)
+    for input_class, pattern in _core.COMMAND_PATTERNS
+)
 
 
 def build_inventory(root: Path = ROOT) -> dict[str, Any]:
@@ -115,7 +129,7 @@ def render_markdown(inventory: dict[str, Any]) -> str:
             "- GitHub Actions: workflows="
             f"`{len(contours['github_actions']['workflow_files'])}`; "
             "temporary="
-            f"{contours['github_actions']['temporary_workflow_files'] or 'NONE'}."
+            f"{contours['github_actions']['temporary_workflow_files'] or 'NONE']}."
         ),
         (
             "- External downloads: "
