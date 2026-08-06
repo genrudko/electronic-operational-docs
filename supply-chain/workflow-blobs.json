@@ -1,0 +1,66 @@
+{
+  "files": [
+    {
+      "git_blob_sha": "6078bb6469bfbcbd0fe82f2c7f305e4c9ab8aa6a",
+      "path": ".github/workflows/auto-001a-foundation-ci.yml",
+      "sha256": "461d46783865b44f2336bc29b14be770593e933553fa435217917151e3c43813",
+      "size": 3947
+    },
+    {
+      "git_blob_sha": "9820e2a0854f1e8579b7b1c3dca48172d75fca06",
+      "path": ".github/workflows/auto-001b-controller-ci.yml",
+      "sha256": "340dce479c9db549fe236a0f8f2f36ce8428b3f3c9c4b4dd1eca67688694bf5a",
+      "size": 5017
+    },
+    {
+      "git_blob_sha": "9f5326c41f2dd09a231294cf362a8f2157fc282d",
+      "path": ".github/workflows/ci.yml",
+      "sha256": "8c5de32f8e1232804de2dd1d5ff47a4716f5bc47966def46eaeebe410557ae5e",
+      "size": 20526
+    },
+    {
+      "git_blob_sha": "bd16df9dfd4b4e102a860be105211621392da7ab",
+      "path": ".github/workflows/dependency-provenance.yml",
+      "sha256": "3158d9b3ff0df1f03a5b3d709439bb88d1a8d891775990530c08c4907a4cd01e",
+      "size": 3316
+    },
+    {
+      "git_blob_sha": "7e74a4f8ca85b631b49b303d6eb118e64ab72e2f",
+      "path": ".github/workflows/development-stack.yml",
+      "sha256": "ae97a01a1f46b61d8a98eb556821c9dbfa07434de232b223023c110cec62fe67",
+      "size": 6713
+    },
+    {
+      "git_blob_sha": "79ae97272974ccc81112cfc0ec3c6cb3e6d73f80",
+      "path": ".github/workflows/documentation-contract.yml",
+      "sha256": "5f35d6a9a21f57ce6b14ffe72f655a4cd18661fe664173da4a7e0fd5a8919bff",
+      "size": 5061
+    },
+    {
+      "git_blob_sha": "204af5427041dc889def33133e52db64fbfc6234",
+      "path": ".github/workflows/eod-hot-refresh.yml",
+      "sha256": "8e60fdc3a4992eefee0a852fbb5ddca2862a6d3545807f8e31a8923540b4c609",
+      "size": 8900
+    },
+    {
+      "git_blob_sha": "321dbcb1ac8862e17f466b63d131966b1c92bfb9",
+      "path": ".github/workflows/secret-hygiene.yml",
+      "sha256": "fda3547ec633530d3183dc0b88d296ded4fe5add197b98a2252eb30491309f27",
+      "size": 3567
+    },
+    {
+      "git_blob_sha": "31f37f1455665688d3ea44109fb5b3beb4aa40e1",
+      "path": ".github/workflows/telegram-workflow-notifications.yml",
+      "sha256": "eff2979fc7b957f16cfbc798154f9f9d641e4f53d93d64441c4e4470b89eda03",
+      "size": 7489
+    },
+    {
+      "git_blob_sha": "91455cfea057705afdb8c496dcd0c0ccbb312af1",
+      "path": ".github/workflows/vps-development.yml",
+      "sha256": "ebd78c3f9dc00b5a5a1a07e91abc3e9cbe7a796e408363e6e60878cbf8aa3263",
+      "size": 15537
+    }
+  ],
+  "schema": 1,
+  "source_head": "4ee1fd21823d723abb90b0cb811b95b7b44c3ca4"
+}

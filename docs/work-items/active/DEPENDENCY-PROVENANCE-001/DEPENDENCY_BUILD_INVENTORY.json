@@ -30,7 +30,7 @@
       ]
     },
     "executable_sources": {
-      "applicable_count": 56,
+      "applicable_count": 57,
       "applicable_paths": [
         ".github/workflows/auto-001a-foundation-ci.yml",
         ".github/workflows/auto-001b-controller-ci.yml",
@@ -70,6 +70,7 @@
         "scripts/import_presentation_snapshot.sh",
         "scripts/plan_001_evidence_audit.py",
         "scripts/project_state_contract.py",
+        "scripts/publish_workflow_blobs.py",
         "scripts/release_plan_compat_validation.py",
         "scripts/release_plan_model.py",
         "scripts/release_plan_validation.py",
@@ -96,7 +97,7 @@
         "dockerfile": 2,
         "github-workflow": 10,
         "powershell": 3,
-        "python-operator": 28,
+        "python-operator": 29,
         "shell": 8,
         "shell-shebang": 1
       },
@@ -199,12 +200,11 @@
         "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
       ],
       "name": "actions/upload-artifact",
-      "occurrences": 8,
+      "occurrences": 7,
       "paths": [
         ".github/workflows/auto-001a-foundation-ci.yml",
         ".github/workflows/auto-001b-controller-ci.yml",
         ".github/workflows/ci.yml",
-        ".github/workflows/dependency-provenance.yml",
         ".github/workflows/development-stack.yml",
         ".github/workflows/documentation-contract.yml",
         ".github/workflows/eod-hot-refresh.yml"
@@ -240,7 +240,7 @@
       ]
     }
   ],
-  "entries_total": 67,
+  "entries_total": 66,
   "entry_format": "full records in deterministic JSON shards",
   "entry_shards": [
     {
@@ -255,30 +255,31 @@
       "first_id": "INP-0018",
       "last_id": "INP-0034",
       "path": "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.02.json",
-      "sha256": "b0f08c6a0b3bd8d31d08396b61e94d877f2adb2abb5c671e46d5517291822312"
+      "sha256": "cbd5d240637a6a3fbfdc64e8e98233e2cd3fcb8d4844124a02581f3d47965bc7"
     },
     {
       "entry_count": 17,
       "first_id": "INP-0035",
       "last_id": "INP-0051",
       "path": "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.03.json",
-      "sha256": "a9df22da68ef89e3fba2765fc9b35eb718c9d8f8e54558dfc04bec4a87b79ca6"
+      "sha256": "51964317f80d203ed79d4f0c4ac90129c5ee26a80c22dd76bb2cb5fae08d33e3"
     },
     {
-      "entry_count": 16,
+      "entry_count": 15,
       "first_id": "INP-0052",
-      "last_id": "INP-0067",
+      "last_id": "INP-0066",
       "path": "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.04.json",
-      "sha256": "7d37ad0ed1cfa2c7115c45f157d096db6179c578e4353eb41df174994d553be6"
+      "sha256": "a793648deab1652348f29b290cf3edca23f2333a8412d79aa9e2a1c9cdb2c5e6"
     }
   ],
   "floating_input_ids": [
     "INP-0009",
-    "INP-0040",
-    "INP-0044",
-    "INP-0048",
-    "INP-0052",
-    "INP-0055",
+    "INP-0039",
+    "INP-0043",
+    "INP-0047",
+    "INP-0051",
+    "INP-0054",
+    "INP-0056",
     "INP-0057",
     "INP-0058",
     "INP-0059",
@@ -286,9 +287,8 @@
     "INP-0061",
     "INP-0062",
     "INP-0063",
-    "INP-0064",
-    "INP-0066",
-    "INP-0067"
+    "INP-0065",
+    "INP-0066"
   ],
   "generation": {
     "deterministic": true,
@@ -339,19 +339,18 @@
     "INP-0036",
     "INP-0037",
     "INP-0038",
-    "INP-0039",
+    "INP-0040",
     "INP-0041",
     "INP-0042",
-    "INP-0043",
+    "INP-0044",
     "INP-0045",
     "INP-0046",
-    "INP-0047",
+    "INP-0048",
     "INP-0049",
     "INP-0050",
-    "INP-0051",
+    "INP-0052",
     "INP-0053",
-    "INP-0054",
-    "INP-0056"
+    "INP-0055"
   ],
   "limitations": [
     "Network registries are not queried; future tag movement is outside repository evidence.",
@@ -362,10 +361,10 @@
   ],
   "schema": 2,
   "source_digests": {
-    ".github/workflows/auto-001a-foundation-ci.yml": "b0045a6ef15f61d0013505fdf353c62950e4d7a33b46835d9991dd28b218f06a",
+    ".github/workflows/auto-001a-foundation-ci.yml": "461d46783865b44f2336bc29b14be770593e933553fa435217917151e3c43813",
     ".github/workflows/auto-001b-controller-ci.yml": "340dce479c9db549fe236a0f8f2f36ce8428b3f3c9c4b4dd1eca67688694bf5a",
     ".github/workflows/ci.yml": "8c5de32f8e1232804de2dd1d5ff47a4716f5bc47966def46eaeebe410557ae5e",
-    ".github/workflows/dependency-provenance.yml": "cfcfb441da62e2a370c868de8ca7adc4388a29aaf5754ed15648664ff59900a1",
+    ".github/workflows/dependency-provenance.yml": "3158d9b3ff0df1f03a5b3d709439bb88d1a8d891775990530c08c4907a4cd01e",
     ".github/workflows/development-stack.yml": "ae97a01a1f46b61d8a98eb556821c9dbfa07434de232b223023c110cec62fe67",
     ".github/workflows/documentation-contract.yml": "5f35d6a9a21f57ce6b14ffe72f655a4cd18661fe664173da4a7e0fd5a8919bff",
     ".github/workflows/eod-hot-refresh.yml": "8e60fdc3a4992eefee0a852fbb5ddca2862a6d3545807f8e31a8923540b4c609",
@@ -401,6 +400,7 @@
     "scripts/import_presentation_snapshot.sh": "8922ae3f01bb170980ad72afb5b1d43b843e94e8e33fe343411506786b70e71c",
     "scripts/plan_001_evidence_audit.py": "845cc3d7b0c9b1128def6c4f812b3768d6399337cbc7c3334ff5abb6b5a7824b",
     "scripts/project_state_contract.py": "69804ce9dec046994b249ee2badc3946771b65f426f28c5473266cd7416e525e",
+    "scripts/publish_workflow_blobs.py": "441db1b9fc16606ac2b3a721ae35e4df3cf163b05fc4e5fca3394427a04e8b01",
     "scripts/release_plan_compat_validation.py": "5846e1c11f457fcc8ce5613b43da2832cd812407a7242cebc26bb8baa8ce9ec8",
     "scripts/release_plan_model.py": "e0acfdf300bf94a6b30d2d90c5b555bc014b839496b4f81945a9a0a0f1418c32",
     "scripts/release_plan_validation.py": "fd540028b2e8e6edf30b61631dd8028741fcc8fcfbdb68a3772472acd5aee732",
@@ -421,11 +421,11 @@
     "tests/security/test_secret_hygiene.py": "39f42a287c1f0c5c8a91f8c24af5202b53d56da848e7321f38e0808ca7f72754"
   },
   "totals": {
-    "applicable_executable_sources": 56,
+    "applicable_executable_sources": 57,
     "by_class": {
       "container-image": 8,
       "container-output": 1,
-      "github-action": 30,
+      "github-action": 29,
       "python-build": 1,
       "python-install": 17,
       "python-optional": 3,
@@ -435,11 +435,11 @@
     "conflicting_owner_groups": 0,
     "duplicate_owner_groups": 6,
     "floating_inputs": 16,
-    "immutable_inputs": 50,
-    "inventory_entries": 67,
-    "source_completeness_digests": 57,
+    "immutable_inputs": 49,
+    "inventory_entries": 66,
+    "source_completeness_digests": 58,
     "source_files": 16,
-    "tracked_files": 886
+    "tracked_files": 888
   },
   "work_item": "DEPENDENCY-PROVENANCE-001"
 }

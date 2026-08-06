@@ -1,8 +1,0 @@
-{
-  "schema": 1,
-  "work_item": "DEPENDENCY-PROVENANCE-001",
-  "reason": "publish exact generated workflow bytes as immutable Git blob objects for connector-applied atomic tree",
-  "scope": [
-    ".github/workflows"
-  ]
-}
