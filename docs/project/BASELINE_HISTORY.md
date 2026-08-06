@@ -29,8 +29,9 @@ Baseline фиксируется после применимых technical gates,
 | 2026-08-05 | `916a6d708ff4bd8433218068a204547b4a9abf84` | PROJECT-SUSTAINABILITY-001 merge | accepted industrialization evidence/program baseline |
 | 2026-08-05 | `9d6d48ad25d45cd79673c7017980a8bd92fa961a` | PROJECT-STATE-RECONCILIATION-001 merge | accepted canonical-state and documentation-drift protection baseline |
 | 2026-08-05 | `3c02c5c05cdf604bbf230d215b82ddd875ab1421` | INDUSTRIALIZATION-PROGRAM-EXECUTION-001 merge | accepted executable backlog and Phase 0 completion baseline |
+| 2026-08-06 | `95b8dd6017745886f110f052ea0950b3d48173d8` | SECRET-HYGIENE-001 merge | accepted credential-hygiene and CI leak-prevention baseline |
 
-## Reconciliation note — 2026-08-05
+## Reconciliation note — 2026-08-06
 
 До `PROJECT-STATE-RECONCILIATION-001` release plan и derived views не отражали
 часть уже принятых merge events. Эта запись сохраняет факт прежнего drift и не
@@ -42,8 +43,12 @@ source/scenario/post-demo mappings, current-state contract и deterministic view
 
 После принятия `INDUSTRIALIZATION-PROGRAM-EXECUTION-001` Phase 0 завершена,
 industrial backlog стал исполнимым и проверяемым, а прогресс gates и residual
-risks защищён постоянным Documentation Contract. Это не означает достижения
-`SAFE-CONTINUATION`: принято 2 из 8 его обязательных work items.
+risks защищён постоянным Documentation Contract.
+
+После принятия `SECRET-HYGIENE-001` reusable credentials удалены из актуального
+repository/CI/artifact контура, canonical scanner и post-redaction verification
+стали постоянными fail-closed gates. Это не означает достижения
+`SAFE-CONTINUATION`: принято 3 из 8 его обязательных work items.
 
 Canonical current state не выводится из последней строки таблицы: его всегда
 нужно читать в `CURRENT_STATE.md`. Planning status и accepted work-item evidence
