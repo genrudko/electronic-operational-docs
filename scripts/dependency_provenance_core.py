@@ -8,9 +8,10 @@ import re
 import subprocess
 import tomllib
 from collections import Counter, defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 SCHEMA = 2
 ACTION_RE = re.compile(r"^\s*-?\s*uses:\s*([^\s#]+)(?:\s*#\s*(.*))?\s*$")
@@ -39,6 +40,11 @@ OPERATOR_NAME_RE = re.compile(
 )
 SHELL_SHEBANG_RE = re.compile(r"^#!.*\b(?:ba|da|k|z)?sh\b")
 PYTHON_SHEBANG_RE = re.compile(r"^#!.*\bpython(?:3(?:\.\d+)?)?\b")
+DOWNLOAD_COMMAND_RE = re.compile(
+    r"(?:^|(?:run:|RUN|&&|\|\||;|then|do)\s+)"
+    r"(?:sudo\s+)?(?:[A-Za-z0-9_./-]+/)?(?:curl|wget)\b",
+    re.I,
+)
 LOCK_NAMES = {
     "Pipfile.lock",
     "package-lock.json",
@@ -90,7 +96,7 @@ COMMAND_PATTERNS = (
             r"yum\s+install)\b"
         ),
     ),
-    ("external-download", re.compile(r"\b(?:curl|wget)\b")),
+    ("external-download", DOWNLOAD_COMMAND_RE),
     (
         "javascript-install",
         re.compile(
