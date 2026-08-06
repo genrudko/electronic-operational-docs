@@ -47,7 +47,11 @@ jobs:
           cache-dependency-path: pyproject.toml
 
       - name: Materialise registry, five locks and immutable references
-        if: github.event_name == 'push'
+        if: >-
+          github.event_name == 'push' ||
+          (github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.head_ref == 'supply-chain/dependency-provenance-001')
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
@@ -64,7 +68,11 @@ jobs:
           git diff --check
 
       - name: Commit deterministic implementation output
-        if: github.event_name == 'push'
+        if: >-
+          github.event_name == 'push' ||
+          (github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository &&
+          github.head_ref == 'supply-chain/dependency-provenance-001')
         run: |
           set -euo pipefail
           if [[ -z "$(git status --porcelain=v1)" ]]; then
@@ -78,7 +86,10 @@ jobs:
           git push origin HEAD:supply-chain/dependency-provenance-001
 
       - name: Validate committed registry and locks
-        if: github.event_name != 'push'
+        if: >-
+          github.event_name == 'workflow_dispatch' ||
+          (github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name != github.repository)
         run: |
           set -euo pipefail
           python scripts/dependency_provenance_implementation.py verify-locks
