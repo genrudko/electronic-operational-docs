@@ -3,8 +3,8 @@
 
 Compose files contain required runtime values that must not be invented in CI.
 This adapter keeps Docker Compose as the structural YAML parser while disabling
-interpolation. Dynamic image expressions therefore remain visible and are still
-rejected by the canonical validator instead of disappearing during parsing.
+interpolation. One exact dynamic local-image carrier is accepted only while its
+tracked controller proves the local build owner, exact-SHA tag and Compose handoff.
 """
 
 from __future__ import annotations
@@ -15,6 +15,10 @@ from pathlib import Path
 from typing import Any
 
 import dependency_provenance_contract as contract
+
+LOCAL_CARRIER_REFERENCE = "${EOD_RELEASE_IMAGE:?EOD_RELEASE_IMAGE is required}"
+LOCAL_CARRIER_EVIDENCE = "deploy/automation/compose.development.yaml:app"
+CONTROLLER = contract.ROOT / "deploy/automation/eod-development-controller"
 
 
 def compose_config_no_interpolate(path: Path) -> dict[str, Any]:
@@ -50,8 +54,32 @@ def compose_config_no_interpolate(path: Path) -> dict[str, Any]:
     return data
 
 
+def local_carrier_owner_is_proven() -> bool:
+    text = CONTROLLER.read_text(encoding="utf-8")
+    required_evidence = (
+        'require_sha() {',
+        'local image="eod-development-app:$sha"',
+        'EOD_RELEASE_IMAGE="$1" docker compose',
+    )
+    return all(item in text for item in required_evidence)
+
+
+def validate_image_reference_with_local_carrier(
+    reference: str,
+    evidence: str,
+    registry: dict[str, Any],
+) -> None:
+    if reference == LOCAL_CARRIER_REFERENCE and evidence == LOCAL_CARRIER_EVIDENCE:
+        if not local_carrier_owner_is_proven():
+            raise contract.ContractViolation("local-build-owner", evidence)
+        return
+    contract._original_validate_image_reference(reference, evidence, registry)
+
+
 def main() -> int:
     contract.compose_config = compose_config_no_interpolate
+    contract._original_validate_image_reference = contract.validate_image_reference
+    contract.validate_image_reference = validate_image_reference_with_local_carrier
     return contract.main()
 
 
