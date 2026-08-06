@@ -5,19 +5,19 @@
 | Information | Single owner |
 |---|---|
 | Direct Python intent and supported ranges | `pyproject.toml` |
-| Exact resolved Python graphs and hashes | generated lock profiles |
-| Lock generation logic/tool versions | repository regeneration script + tooling lock |
-| Container image identity | image registry file/validated Docker and Compose references |
-| GitHub Action identity | each validated workflow `uses:` reference |
-| Final artifact identity | OCI/artifact digest emitted by exact-head build |
-| SBOM identity | SBOM digest linked to final artifact |
+| Exact resolved Python graphs and hashes | five generated lock profiles |
+| Generator/bootstrap identity | supply-chain registry + bootstrap evidence |
+| Lock generation logic | repository regeneration/validation scripts |
+| Container image identity | validated image registry/references |
+| GitHub Action identity | each validated workflow `uses:` |
+| Final artifact identity | exact-head OCI/artifact digest |
+| SBOM identity | deterministic SPDX namespace + SBOM digest |
 | Provenance identity | in-toto/SLSA statement and attestation |
 
-Generated files never become a second intent owner. A direct dependency may be
-added, removed or relaxed only in `pyproject.toml`; every affected lock projection
-must then be regenerated.
+Generated files never become a second direct-intent owner. Direct requirements
+change only in `pyproject.toml`; every affected projection is regenerated.
 
-## 2. Proposed lock profiles
+## 2. Exact profile set
 
 ```text
 requirements/locks/tooling.txt
@@ -27,169 +27,203 @@ requirements/locks/dev.txt
 requirements/locks/browser.txt
 ```
 
-All files are generated with normalized ordering, exact versions and
-`--hash=sha256:` records. Headers record:
+No fourth-profile/five-profile ambiguity is permitted. Every contract and check
+uses exactly `tooling`, `build`, `runtime`, `dev`, `browser`.
 
-- generator and exact generator version;
-- canonical input path(s);
-- target Python minor;
-- target OS/architecture profile;
-- exact regeneration command;
-- no timestamp or machine-specific path.
+All locks use normalized ordering, exact versions and `--hash=sha256:` records.
+Headers record generator identity/version, canonical inputs, target Python minor,
+OS/architecture profile and exact regeneration command. Headers contain no
+wall-clock timestamp or machine path.
 
 ### Tooling
 
-Contains the pinned `pip`, `pip-tools` and supporting packages used to compile
-other locks. Bootstrap installation uses hashes. Tooling cannot update itself
-implicitly.
+Exact `pip`, `pip-tools` and support packages used to compile all profiles.
+Tooling cannot update itself implicitly.
 
 ### Build
 
-Contains exact build frontend/backend requirements needed to create the wheel.
-The build process does not permit PEP 517 isolated environment to contact the
-network and resolve a different `setuptools`.
+Exact frontend/backend requirements used to build the wheel. Unrestricted PEP
+517 build isolation/network resolution is prohibited.
 
 ### Runtime
 
-Contains the complete transitive graph for the production application. Final
-container installation uses this profile and the already-built application
-wheel; it does not resolve `pyproject.toml` ranges.
+Complete production graph. Final container installs this graph and an already
+built application wheel without resolving `pyproject.toml` ranges.
 
 ### Development
 
-Contains runtime plus `[dev]` tooling. It is the owner for CI Ruff/tests and
-approved local development gates, not production runtime.
+Runtime plus `[dev]` tests/quality tooling. It is not production runtime.
 
 ### Browser
 
-Contains runtime plus Python Playwright dependencies. Browser binary/image
-identity is separate and must be compatible with the exact Playwright package.
-No `package.json` is created solely for Playwright.
+Runtime plus Python Playwright dependencies. Browser binary/image identity is a
+separate immutable input. No `package.json` is introduced solely for Playwright.
 
-## 3. Installation rules
+## 3. Tooling bootstrap root of trust
 
-Fail-closed commands conceptually follow:
+The tooling lock is not self-authenticating. Root of trust is the accepted tuple:
 
 ```text
+digest-pinned generator OCI image
+exact Python minor and platform
+exact bootstrap pip/pip-tools versions
+checked-in exact bootstrap distribution hashes
+bootstrap evidence record digest
+exact accepted source commit
+```
+
+### First accepted tooling lock
+
+Before `tooling.txt` is trusted:
+
+1. owner accepts generator image digest and platform;
+2. bootstrap distribution identities/hashes are independently verified and
+   checked in;
+3. bootstrap tooling installs with `--require-hashes`;
+4. generator creates `tooling/build/runtime/dev/browser`;
+5. semantic parser validates versions, hashes, profile ownership and platform;
+6. second regeneration compares byte-for-byte;
+7. clean environments install all applicable profiles;
+8. generator identity and all five locks are accepted atomically.
+
+The trust claim therefore starts at immutable external generator/bootstrap
+evidence, not at the lock produced by that generator.
+
+### Controlled generator upgrade
+
+1. previous accepted generator reproduces previous locks byte-for-byte;
+2. candidate gets a new image digest, exact versions and bootstrap hashes;
+3. previous accepted validator checks candidate evidence and rejects policy
+   weakening;
+4. candidate regenerates all five locks;
+5. semantic/byte comparisons, graph review and clean installs pass;
+6. candidate identity and five locks are accepted atomically.
+
+### Rollback
+
+Rollback restores from the previous accepted commit:
+
+- all five locks;
+- generator image digest;
+- bootstrap manifest/evidence digest;
+- regeneration/validation contract.
+
+The restored generator must reproduce restored locks byte-for-byte and pass
+clean installs before rollback evidence is accepted.
+
+## 4. Installation rules
+
+Conceptual fail-closed sequence:
+
+```text
+install bootstrap tooling from checked exact hashes
 python -m pip install --require-hashes -r requirements/locks/tooling.txt
 python -m pip install --require-hashes -r requirements/locks/build.txt
-build wheel without network/build isolation drift
+build wheel without network/build-isolation drift
 python -m pip install --require-hashes -r requirements/locks/runtime.txt
 python -m pip install --no-deps dist/electronic_operational_docs-<version>.whl
 python -m pip check
 ```
 
-Implementation may refine command shape, but these invariants are mandatory:
+Mandatory invariants:
 
 1. no unbounded `pip install --upgrade pip setuptools wheel`;
 2. no dependency resolution during final image assembly;
 3. no install from `pyproject.toml` alone in CI/runtime;
-4. all downloaded Python distributions covered by accepted hashes;
-5. exact profile and Python/platform metadata recorded;
-6. clean environment and no preinstalled-package reliance.
+4. all downloaded distributions have accepted hashes;
+5. exact profile/Python/platform metadata is recorded;
+6. clean environment does not rely on preinstalled packages.
 
-## 4. Drift contract
+## 5. Drift and source-completeness contract
 
-The permanent validator rejects:
+Permanent validation rejects:
 
-- direct dependency present outside `pyproject.toml`;
-- lock generated from different direct intent;
-- changed direct version/range without all affected lock updates;
-- lock line without exact version;
-- missing/invalid hash;
-- manually reordered, edited or partially regenerated lock;
-- dependency appearing in wrong profile;
-- build-system range not represented in the build profile;
-- runtime graph containing dev-only/browser-only tools without an explicit
-  accepted reason;
-- lock generated for a different Python/platform profile;
-- install command that bypasses `--require-hashes`.
+- direct dependency outside `pyproject.toml`;
+- lock generated from another intent digest;
+- changed range without all affected projections;
+- non-exact lock version or missing hash;
+- manual reorder/edit/truncation;
+- package in wrong profile;
+- build range absent from build lock;
+- dev/browser package in runtime without accepted reason;
+- wrong Python/platform profile;
+- install bypassing `--require-hashes`;
+- new applicable executable/config path absent from inventory source set/digests.
 
-The regeneration command runs in check mode in CI and compares generated files
-byte-for-byte. Semantic validation also parses package/version/hash records so a
-malformed file cannot pass merely by matching a stale checksum manifest.
+Source discovery is directory-independent across workflows, Dockerfiles,
+Compose, shell, deploy/operator Python and Makefile/task/build files. Arbitrary
+Markdown/JSON documentation/generated views are not executable sources. Any
+future exclusion names one exact path and rationale; no broad directory
+exemption is allowed.
 
-## 5. Container reference contract
+## 6. Container reference contract
 
-Every external image record contains:
+Every external image record contains logical owner, source path/line,
+registry/repository, readable version, SHA-256 digest, scope, platform and update
+evidence.
 
-```text
-logical owner
-source path and line
-registry/repository
-human-readable tag/version
-sha256 digest
-scope: build/runtime/test
-architecture/platform
-update evidence reference
-```
+Local output is recognized only by proved owner:
 
-Validation rejects:
+- service `build:`;
+- tracked Dockerfile/build target relationship;
+- exact canonical local-output registry entry.
 
-- tag without digest;
-- digest without readable version metadata;
-- digest change without registry metadata update;
-- same logical image owned by conflicting declarations;
-- architecture mismatch;
-- implicit pull of a build stage not represented in inventory.
+A tagless short name is not local evidence. Identical short name without its own
+build owner remains external.
 
-## 6. GitHub Actions contract
+Validation rejects tag/tagless external reference without digest, digest without
+readable metadata, conflicting owner, architecture mismatch and implicit build
+input outside inventory.
 
-Each external action/reusable workflow uses:
+## 7. GitHub Actions and external downloads
+
+External Action/reusable workflow form:
 
 ```yaml
-uses: owner/action@<40-character-commit-sha> # vX.Y.Z or accepted readable release
+uses: owner/action@<40-character-commit-sha> # readable accepted release
 ```
 
-Validation rejects tags, branches, shortened SHAs and omitted readable version
-metadata. Local actions are bound to exact-head checkout and may not fetch
-unverified executables.
+Tags, branches, shortened SHA and missing readable metadata fail closed. Local
+actions are bound to exact-head checkout.
 
-## 7. External download contract
+`curl`, `wget`, installers and browser downloads require immutable source,
+expected digest, verification before execution/extraction, constrained
+destination and provenance inclusion. Direct pipe-to-interpreter is prohibited.
+Local HTTP health checks are not external downloads.
 
-`curl`, `wget`, installers and browser downloads require all of:
+## 8. Deterministic SPDX identity contract
 
-- HTTPS or another explicitly accepted authenticated transport;
-- immutable source/version;
-- expected SHA-256 or stronger digest stored in canonical metadata;
-- verification before execution/extraction;
-- destination constrained to build workspace;
-- license/source traceability where applicable;
-- inventory/SBOM/provenance inclusion appropriate to the artifact.
+SPDX 2.3 JSON retains mandatory `creationInfo.created`, deterministically rendered
+from verified accepted build epoch (`SOURCE_DATE_EPOCH`, normally exact source
+commit timestamp) as `YYYY-MM-DDTHH:MM:SSZ`. Runner wall clock is prohibited.
 
-Piping a network response directly to a shell/interpreter is prohibited.
+`documentNamespace` is derived from namespace-contract version, final image
+digest, exact source commit and build-definition digest. Identical evidence gives
+byte-identical payload; another image/build gets another namespace. Official
+SPDX schema is pinned by digest and validated before publication.
 
-## 8. Regeneration procedure
+## 9. Regeneration procedure
 
-1. Start from clean exact `main` and a bounded issue/branch/Draft PR.
-2. Change direct intent only in `pyproject.toml` or approved image/action metadata.
-3. Build the digest-pinned lock-generation environment.
-4. Regenerate every affected profile without manual edits.
-5. Review direct and transitive diff; explain removals, additions and downgrades.
-6. Verify hashes and clean-environment installation.
-7. Build final artifact from immutable inputs.
-8. Generate SBOM and compare boundary/completeness.
-9. Run secret-hygiene before artifact publication.
-10. Generate exact-head provenance and applicable attestations.
-11. Run all applicable workflows on one exact head.
-12. Obtain explicit owner acceptance before merge.
+```text
+clean exact-head checkout
+digest-pinned generator environment
+bootstrap tooling from checked-in exact hashes
+regenerate tooling/build/runtime/dev/browser
+semantic validation
+byte-for-byte comparison
+clean installation proof
+build final artifact from immutable inputs
+deterministic SPDX normalization and schema validation
+secret-hygiene before publication
+exact-head in-toto/SLSA provenance
+all workflows on one final exact head
+explicit owner acceptance before merge
+```
 
-## 9. Emergency dependency update
+## 10. Emergency update
 
-Emergency does not mean uncontrolled. The expedited path may shorten review
-latency, but it does not remove:
-
-- issue/branch/Draft PR traceability;
-- exact direct-intent change;
-- deterministic lock regeneration;
-- hashes;
-- clean install/build/test;
-- SBOM/provenance regeneration;
-- secret-hygiene;
-- rollback evidence;
-- explicit merge authority.
-
-The emergency record additionally states advisory/incident ID, affected
-versions, chosen fixed version, residual risk, rollback point and follow-up
-review deadline. Dependabot or another bot may propose a change later, but
-cannot auto-merge or become a second dependency owner.
+Emergency shortens review latency, not controls. It retains issue/branch/Draft PR,
+exact intent change, deterministic five-profile regeneration, hashes, clean
+install/build/test, SBOM/provenance regeneration, secret-hygiene, rollback
+evidence and explicit merge authority. Bots may propose changes later but cannot
+auto-merge or become a second dependency owner.
