@@ -38,7 +38,10 @@ DOWNLOAD_COMMAND_RE = re.compile(
     re.I,
 )
 _core.COMMAND_PATTERNS = tuple(
-    (input_class, DOWNLOAD_COMMAND_RE if input_class == "external-download" else pattern)
+    (
+        input_class,
+        DOWNLOAD_COMMAND_RE if input_class == "external-download" else pattern,
+    )
     for input_class, pattern in _core.COMMAND_PATTERNS
 )
 
@@ -129,7 +132,7 @@ def render_markdown(inventory: dict[str, Any]) -> str:
             "- GitHub Actions: workflows="
             f"`{len(contours['github_actions']['workflow_files'])}`; "
             "temporary="
-            f"{contours['github_actions']['temporary_workflow_files'] or 'NONE']}."
+            f"{contours['github_actions']['temporary_workflow_files'] or 'NONE'}."
         ),
         (
             "- External downloads: "
