@@ -21,7 +21,10 @@ INVENTORY_MD = WORK_ITEM_DIR / "DEPENDENCY_BUILD_INVENTORY.md"
 SCHEMA = 1
 
 ACTION_RE = re.compile(r"^\s*-?\s*uses:\s*([^\s#]+)(?:\s*#\s*(.*))?\s*$")
-DOCKER_FROM_RE = re.compile(r"^\s*FROM\s+([^\s]+)", re.IGNORECASE)
+DOCKER_FROM_RE = re.compile(
+    r"^\s*FROM\s+([^\s#]+)(?:\s+(?:AS\s+[^\s#]+))?(?:\s*#\s*(.*))?\s*$",
+    re.IGNORECASE,
+)
 IMAGE_RE = re.compile(r"^\s*image:\s*([^\s#]+)(?:\s*#\s*(.*))?\s*$")
 IMMUTABLE_ACTION_RE = re.compile(r"^[^@]+@[0-9a-fA-F]{40}$")
 IMMUTABLE_IMAGE_RE = re.compile(r"@sha256:[0-9a-fA-F]{64}$")
@@ -30,40 +33,26 @@ URL_RE = re.compile(r"https?://[^\s\"'<>)}]+")
 TEMP_WORKFLOW_RE = re.compile(
     r"(?:temp|temporary|post[-_]?merge|synchroni[sz]er|coordination)", re.I
 )
-
 LOCK_NAMES = {
-    "uv.lock",
-    "poetry.lock",
-    "pdm.lock",
     "Pipfile.lock",
     "package-lock.json",
     "npm-shrinkwrap.json",
-    "yarn.lock",
+    "pdm.lock",
     "pnpm-lock.yaml",
+    "poetry.lock",
+    "uv.lock",
+    "yarn.lock",
 }
 PACKAGE_NAMES = {
     "package.json",
     "package-lock.json",
     "npm-shrinkwrap.json",
-    "yarn.lock",
     "pnpm-lock.yaml",
+    "yarn.lock",
 }
 TEXT_SUFFIXES = {
-    ".bash",
-    ".css",
-    ".cjs",
-    ".html",
-    ".htm",
-    ".js",
-    ".json",
-    ".md",
-    ".mjs",
-    ".py",
-    ".sh",
-    ".toml",
-    ".txt",
-    ".yaml",
-    ".yml",
+    ".bash", ".cjs", ".css", ".html", ".htm", ".js", ".json", ".md",
+    ".mjs", ".py", ".sh", ".toml", ".txt", ".yaml", ".yml",
 }
 COMMAND_PATTERNS = (
     (
@@ -89,15 +78,10 @@ COMMAND_PATTERNS = (
 
 def tracked_files(root: Path = ROOT) -> list[str]:
     result = subprocess.run(
-        ["git", "ls-files", "-z"],
-        cwd=root,
-        check=True,
-        capture_output=True,
+        ["git", "ls-files", "-z"], cwd=root, check=True, capture_output=True
     )
     return sorted(
-        value.decode("utf-8")
-        for value in result.stdout.split(b"\0")
-        if value
+        item.decode("utf-8") for item in result.stdout.split(b"\0") if item
     )
 
 
@@ -111,9 +95,11 @@ def sha256_text(value: str) -> str:
 
 def requirement_name(value: str) -> str:
     match = REQUIREMENT_RE.match(value)
-    if not match:
-        return value.lower()
-    return match.group(1).lower().replace("_", "-")
+    return (
+        match.group(1).lower().replace("_", "-")
+        if match
+        else value.lower()
+    )
 
 
 def requirement_constraint(value: str) -> str:
@@ -158,13 +144,38 @@ def make_entry(
     }
 
 
+def python_entry(
+    requirement: str,
+    *,
+    input_class: str,
+    purpose: str,
+    scope: str,
+    owner: str,
+) -> dict[str, Any]:
+    return make_entry(
+        input_class=input_class,
+        path="pyproject.toml",
+        line=None,
+        purpose=purpose,
+        scope=scope,
+        canonicality="canonical",
+        directness="direct",
+        declaration=requirement,
+        constraint=requirement_constraint(requirement),
+        immutable=False,
+        hash_coverage="absent",
+        reproducibility="floating-range",
+        risk="HIGH",
+        owner=owner,
+        evidence="Direct intent exists; exact transitive graph is not locked.",
+    )
+
+
 def pyproject_entries(root: Path, files: set[str]) -> list[dict[str, Any]]:
     if "pyproject.toml" not in files:
         return []
-
     data = tomllib.loads(read_text(root, "pyproject.toml"))
     entries: list[dict[str, Any]] = []
-
     python_range = data.get("project", {}).get("requires-python")
     if python_range:
         entries.append(
@@ -186,72 +197,41 @@ def pyproject_entries(root: Path, files: set[str]) -> list[dict[str, Any]]:
                 evidence="Parsed from canonical project metadata.",
             )
         )
-
     for requirement in data.get("build-system", {}).get("requires", []):
         entries.append(
-            make_entry(
+            python_entry(
+                requirement,
                 input_class="python-build",
-                path="pyproject.toml",
-                line=None,
                 purpose="PEP 517 build backend dependency",
                 scope="build",
-                canonicality="canonical",
-                directness="direct",
-                declaration=requirement,
-                constraint=requirement_constraint(requirement),
-                immutable=False,
-                hash_coverage="absent",
-                reproducibility="floating-range",
-                risk="HIGH",
                 owner="pyproject.toml [build-system.requires]",
-                evidence="PEP 517 currently resolves this range dynamically.",
             )
         )
-
     for requirement in data.get("project", {}).get("dependencies", []):
         entries.append(
-            make_entry(
+            python_entry(
+                requirement,
                 input_class="python-runtime",
-                path="pyproject.toml",
-                line=None,
                 purpose="Application runtime dependency",
                 scope="runtime",
-                canonicality="canonical",
-                directness="direct",
-                declaration=requirement,
-                constraint=requirement_constraint(requirement),
-                immutable=False,
-                hash_coverage="absent",
-                reproducibility="floating-range",
-                risk="HIGH",
                 owner="pyproject.toml [project.dependencies]",
-                evidence="Direct intent exists; exact transitive graph is not locked.",
             )
         )
-
     optional = data.get("project", {}).get("optional-dependencies", {})
     for group, requirements in sorted(optional.items()):
         for requirement in requirements:
             entries.append(
-                make_entry(
+                python_entry(
+                    requirement,
                     input_class="python-optional",
-                    path="pyproject.toml",
-                    line=None,
                     purpose=f"Optional dependency group: {group}",
                     scope=group,
-                    canonicality="canonical",
-                    directness="direct",
-                    declaration=requirement,
-                    constraint=requirement_constraint(requirement),
-                    immutable=False,
-                    hash_coverage="absent",
-                    reproducibility="floating-range",
-                    risk="HIGH" if group in {"browser", "dev"} else "MEDIUM",
-                    owner=f"pyproject.toml [project.optional-dependencies.{group}]",
-                    evidence="Direct intent exists; exact transitive graph is not locked.",
+                    owner=(
+                        "pyproject.toml "
+                        f"[project.optional-dependencies.{group}]"
+                    ),
                 )
             )
-
     entries.append(
         make_entry(
             input_class="python-transitive",
@@ -268,7 +248,9 @@ def pyproject_entries(root: Path, files: set[str]) -> list[dict[str, Any]]:
             reproducibility="not-reproducible",
             risk="CRITICAL",
             owner="proposed generated hashed lock profiles",
-            evidence="No accepted transitive lock with integrity hashes is tracked.",
+            evidence=(
+                "No accepted transitive lock with integrity hashes is tracked."
+            ),
         )
     )
     return entries
@@ -281,10 +263,13 @@ def is_dockerfile(path: str) -> bool:
 
 def is_compose(path: str) -> bool:
     name = Path(path).name.lower()
-    return (
-        name.startswith(("compose", "docker-compose"))
-        and path.endswith((".yaml", ".yml"))
+    return name.startswith(("compose", "docker-compose")) and path.endswith(
+        (".yaml", ".yml")
     )
+
+
+def match_comment(match: re.Match[str]) -> str:
+    return (match.group(2) or "Parsed tracked reference.").strip()
 
 
 def scan_images(root: Path, files: list[str]) -> list[dict[str, Any]]:
@@ -297,7 +282,6 @@ def scan_images(root: Path, files: list[str]) -> list[dict[str, Any]]:
     ]
     texts = {path: read_text(root, path) for path in candidates}
     entries: list[dict[str, Any]] = []
-
     for path in candidates:
         for line_number, raw in enumerate(texts[path].splitlines(), start=1):
             match = (
@@ -338,7 +322,7 @@ def scan_images(root: Path, files: list[str]) -> list[dict[str, Any]]:
                     reproducibility="immutable" if immutable else "mutable-tag",
                     risk="LOW" if immutable else "HIGH",
                     owner="canonical container-image registry/reference contract",
-                    evidence=(match.group(2) or "Parsed tracked reference.").strip(),
+                    evidence=match_comment(match),
                 )
             )
     return entries
@@ -352,7 +336,6 @@ def scan_actions(root: Path, files: list[str]) -> list[dict[str, Any]]:
         and path.endswith((".yaml", ".yml"))
     ]
     entries: list[dict[str, Any]] = []
-
     for path in workflows:
         for line_number, raw in enumerate(
             read_text(root, path).splitlines(), start=1
@@ -419,7 +402,7 @@ def executable_source(path: str) -> bool:
 
 def scan_operations(root: Path, files: list[str]) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
-    for path in (value for value in files if executable_source(value)):
+    for path in (item for item in files if executable_source(item)):
         for line_number, raw in enumerate(
             read_text(root, path).splitlines(), start=1
         ):
@@ -436,6 +419,11 @@ def scan_operations(root: Path, files: list[str]) -> list[dict[str, Any]]:
                         re.I,
                     )
                 )
+                high_risk = input_class in {
+                    "browser-binary-install",
+                    "external-download",
+                    "system-package-install",
+                }
                 entries.append(
                     make_entry(
                         input_class=input_class,
@@ -456,17 +444,7 @@ def scan_operations(root: Path, files: list[str]) -> list[dict[str, Any]]:
                         reproducibility=(
                             "integrity-evidenced" if integrity else "not-proven"
                         ),
-                        risk=(
-                            "HIGH"
-                            if input_class
-                            in {
-                                "browser-binary-install",
-                                "external-download",
-                                "system-package-install",
-                            }
-                            and not integrity
-                            else "MEDIUM"
-                        ),
+                        risk="HIGH" if high_risk and not integrity else "MEDIUM",
                         owner="canonical lock/download/image contract",
                         evidence="Parsed from tracked executable source.",
                     )
@@ -479,13 +457,12 @@ def scan_external_assets(root: Path, files: list[str]) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     for path in files:
         normalized = path.replace("\\", "/")
-        if not (
+        asset_source = (
             "/templates/" in f"/{normalized}"
             or "/static/" in f"/{normalized}"
             or normalized.startswith("static/")
-        ):
-            continue
-        if Path(path).suffix.lower() not in TEXT_SUFFIXES:
+        )
+        if not asset_source or Path(path).suffix.lower() not in TEXT_SUFFIXES:
             continue
         for line_number, raw in enumerate(
             read_text(root, path).splitlines(), start=1
@@ -516,7 +493,7 @@ def scan_external_assets(root: Path, files: list[str]) -> list[dict[str, Any]]:
                         ),
                         risk="MEDIUM" if integrity else "HIGH",
                         owner=(
-                            "repository-managed asset or integrity-pinned external registry"
+                            "repository-managed asset or integrity-pinned registry"
                         ),
                         evidence="Parsed from tracked template/static source.",
                     )
@@ -539,7 +516,6 @@ def duplicate_owner_groups(entries: list[dict[str, Any]]) -> list[dict[str, Any]
         else:
             continue
         groups[key].append(item)
-
     result: list[dict[str, Any]] = []
     for (input_class, name), values in sorted(groups.items()):
         if len(values) < 2:
@@ -647,16 +623,12 @@ def build_inventory(root: Path = ROOT) -> dict[str, Any]:
     entries.extend(scan_external_assets(root, files))
     entries.sort(
         key=lambda item: (
-            item["class"],
-            item["path"],
-            item["line"] or 0,
-            item["declaration"],
+            item["class"], item["path"], item["line"] or 0, item["declaration"]
         )
     )
     for ordinal, item in enumerate(entries, start=1):
         item["id"] = f"INP-{ordinal:04d}"
         item["ordinal"] = ordinal
-
     floating = [
         item["id"]
         for item in entries
@@ -676,7 +648,6 @@ def build_inventory(root: Path = ROOT) -> dict[str, Any]:
     duplicates = duplicate_owner_groups(entries)
     contours = contour_summary(root, files, entries)
     source_paths = sorted({item["path"] for item in entries})
-
     return {
         "schema": SCHEMA,
         "work_item": "DEPENDENCY-PROVENANCE-001",
@@ -685,9 +656,7 @@ def build_inventory(root: Path = ROOT) -> dict[str, Any]:
             "tool": "scripts/dependency_provenance_inventory.py",
             "deterministic": True,
             "volatile_fields_excluded": [
-                "network-resolved latest versions",
-                "runner",
-                "timestamp",
+                "network-resolved latest versions", "runner", "timestamp"
             ],
         },
         "accepted_boundary": {
@@ -719,7 +688,7 @@ def build_inventory(root: Path = ROOT) -> dict[str, Any]:
         "entries": entries,
         "limitations": [
             "Network registries are not queried; future tag movement is outside repository evidence.",
-            "No accepted transitive Python lock exists, so clean-environment resolution is not reproducible.",
+            "No accepted transitive Python lock exists; clean resolution is not reproducible.",
             "Hosted-runner software and Docker/BuildKit versions remain external inputs.",
             "SBOM and provenance are specified but not emitted in this inventory-only stage.",
             "An SBOM is an inventory and does not prove absence of vulnerabilities.",
@@ -768,7 +737,6 @@ def render_markdown(inventory: dict[str, Any]) -> str:
     ]
     for input_class, count in totals["by_class"].items():
         lines.append(f"| `{input_class}` | {count} |")
-
     lines.extend(
         [
             "",
@@ -782,25 +750,19 @@ def render_markdown(inventory: dict[str, Any]) -> str:
         location = item["path"] + (
             f":{item['line']}" if item["line"] else ""
         )
-        lines.append(
-            "| "
-            + " | ".join(
-                [
-                    f"`{md_cell(item['id'])}`",
-                    f"`{md_cell(item['class'])}`",
-                    f"`{md_cell(location)}`",
-                    md_cell(item["dependency_scope"]),
-                    f"`{md_cell(item['declaration'])}`",
-                    "yes" if item["immutable"] else "no",
-                    md_cell(item["hash_coverage"]),
-                    md_cell(item["current_reproducibility"]),
-                    md_cell(item["risk"]),
-                    md_cell(item["proposed_owner"]),
-                ]
-            )
-            + " |"
-        )
-
+        cells = [
+            f"`{md_cell(item['id'])}`",
+            f"`{md_cell(item['class'])}`",
+            f"`{md_cell(location)}`",
+            md_cell(item["dependency_scope"]),
+            f"`{md_cell(item['declaration'])}`",
+            "yes" if item["immutable"] else "no",
+            md_cell(item["hash_coverage"]),
+            md_cell(item["current_reproducibility"]),
+            md_cell(item["risk"]),
+            md_cell(item["proposed_owner"]),
+        ]
+        lines.append("| " + " | ".join(cells) + " |")
     lines.extend(["", "## Duplicate owner groups", ""])
     if inventory["duplicate_owner_groups"]:
         for group in inventory["duplicate_owner_groups"]:
@@ -809,7 +771,6 @@ def render_markdown(inventory: dict[str, Any]) -> str:
             )
     else:
         lines.append("- NONE.")
-
     lines.extend(["", "## Ограничения", ""])
     lines.extend(f"- {item}" for item in inventory["limitations"])
     return "\n".join(lines).rstrip() + "\n"
@@ -817,12 +778,7 @@ def render_markdown(inventory: dict[str, Any]) -> str:
 
 def validation_errors(root: Path = ROOT) -> list[str]:
     inventory = build_inventory(root)
-    expected = (
-        (INVENTORY_JSON, render_json(inventory)),
-        (INVENTORY_MD, render_markdown(inventory)),
-    )
     errors: list[str] = []
-
     temporary = inventory["contours"]["github_actions"][
         "temporary_workflow_files"
     ]
@@ -831,7 +787,10 @@ def validation_errors(root: Path = ROOT) -> list[str]:
             ".github/workflows: rule=temporary-workflow-absent; "
             f"expected=[]; actual={temporary!r}"
         )
-
+    expected = (
+        (INVENTORY_JSON, render_json(inventory)),
+        (INVENTORY_MD, render_markdown(inventory)),
+    )
     for relative, expected_content in expected:
         path = root / relative
         if not path.is_file():
@@ -870,21 +829,14 @@ def main() -> int:
         default="check",
     )
     args = parser.parse_args()
-
     if args.command == "write":
         write_views(ROOT)
         print(f"WROTE {INVENTORY_JSON} and {INVENTORY_MD}")
         return 0
-
     inventory = build_inventory(ROOT)
     if args.command == "summary":
-        print(
-            json.dumps(
-                inventory["totals"], ensure_ascii=False, sort_keys=True
-            )
-        )
+        print(json.dumps(inventory["totals"], ensure_ascii=False, sort_keys=True))
         return 0
-
     errors = validation_errors(ROOT)
     if errors:
         print("Dependency provenance inventory: FAILED", file=sys.stderr)
@@ -895,7 +847,6 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
-
     print("Dependency provenance inventory: OK")
     print(json.dumps(inventory["totals"], ensure_ascii=False, sort_keys=True))
     return 0
