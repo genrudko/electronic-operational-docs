@@ -43,12 +43,14 @@ from apps.workplace_docs.models import (
     StorageForm,
     WorkplaceDocumentEntry,
 )
+from tests.credential_fixtures import ephemeral_credential
 
 
 @override_settings(EOD_DATABASE_PROFILE="development")
 class WorkplaceDocumentRegisterImporterTests(TestCase):
     @classmethod
     def setUpTestData(cls):
+        cls.credential = ephemeral_credential("WorkplaceDocumentRegister")
         cls.organization = Organization.objects.create(
             code="WORKDOC-IMPORT-TEST",
             name="Синтетическая организация реестра документации",
@@ -72,7 +74,7 @@ class WorkplaceDocumentRegisterImporterTests(TestCase):
         )
         cls.user = get_user_model().objects.create_user(
             username="workdoc-importer",
-            password="Workdoc-01162-Test!",
+            password=cls.credential,
         )
         cls.employee = Employee.objects.create(
             organization=cls.organization,
@@ -523,7 +525,7 @@ class WorkplaceDocumentRegisterImporterTests(TestCase):
                 "preview_digest": build_workplace_document_publication_preview(revision)[
                     "digest"
                 ],
-                "password": "Workdoc-01162-Test!",
+                "password": self.credential,
                 "confirm": "on",
             },
         )
