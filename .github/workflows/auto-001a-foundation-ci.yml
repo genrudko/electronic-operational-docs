@@ -40,12 +40,15 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-          cache-dependency-path: pyproject.toml
+          cache-dependency-path: requirements/locks/*.txt
 
       - name: Install development dependencies
         run: |
-          python -m pip install --upgrade pip setuptools wheel
-          python -m pip install --editable ".[dev]"
+          python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/tooling.txt
+          python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/build.txt
+          python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/dev.txt
+          python -m build --wheel --no-isolation --outdir dist
+          python -m pip install --disable-pip-version-check --no-deps dist/*.whl
           python -m pip check
 
       - name: Compile AUTO-001A sources and tests
@@ -57,7 +60,7 @@ jobs:
       - name: Ruff AUTO-001A sources and tests
         run: |
           python -m ruff check \
-            scripts/automation/auto_001a_foundation.py \
+            scripts/autmation/auto_001a_foundation.py \
             tests/automation/test_auto_001a_foundation.py
 
       - name: Run AUTO-001A tests with verified sanitised output
