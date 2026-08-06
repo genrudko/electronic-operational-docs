@@ -14,7 +14,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from scripts import dependency_provenance_contract as contract
+import dependency_provenance_contract as contract
 
 
 def compose_config_no_interpolate(path: Path) -> dict[str, Any]:
