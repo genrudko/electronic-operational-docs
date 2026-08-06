@@ -30,14 +30,14 @@ from apps.organizations.models import (
     Role,
     RoleAssignment,
 )
+from tests.credential_fixtures import ephemeral_credential
 
 from .power_system_package import synthetic_power_system_package
 
 
 class PowerSystemAssetImporterTests(TestCase):
-    password = "Power-System-2026!"
-
     def setUp(self):
+        self.credential = ephemeral_credential("PowerSystemAsset")
         self.organization = Organization.objects.create(
             code="PS-ORG",
             name="Синтетическая организация",
@@ -54,7 +54,7 @@ class PowerSystemAssetImporterTests(TestCase):
         )
         self.user = get_user_model().objects.create_user(
             username="power-system-publisher",
-            password=self.password,
+            password=self.credential,
         )
         self.employee = Employee.objects.create(
             organization=self.organization,
@@ -176,12 +176,13 @@ class PowerSystemAssetImporterTests(TestCase):
             revision=revision,
             effective_from=date(2026, 7, 22),
         )
+        invalid_credential = ephemeral_credential("InvalidPowerSystemAsset")
         with self.assertRaises(ValidationError):
             publish_power_system_revision(
                 revision=revision,
                 actor=self.employee,
                 user=self.user,
-                password="wrong-password",
+                password=invalid_credential,
                 effective_from=date(2026, 7, 22),
                 expected_digest=preview.digest,
             )
@@ -189,7 +190,7 @@ class PowerSystemAssetImporterTests(TestCase):
             revision=revision,
             actor=self.employee,
             user=self.user,
-            password=self.password,
+            password=self.credential,
             effective_from=date(2026, 7, 22),
             expected_digest=preview.digest,
         )
@@ -370,7 +371,7 @@ class PowerSystemAssetImporterTests(TestCase):
             revision=revision,
             actor=self.employee,
             user=self.user,
-            password=self.password,
+            password=self.credential,
             effective_from=date(2026, 7, 22),
             expected_digest=preview.digest,
         )
@@ -484,7 +485,6 @@ class PowerSystemAssetImporterTests(TestCase):
             __import__("hashlib").sha256(snapshot_download.content).hexdigest(),
         )
         self.assertContains(publication, snapshot_download["X-Content-SHA256"])
-
 
     def test_views_expose_staging_without_publishing(self):
         self.client.force_login(self.user)
