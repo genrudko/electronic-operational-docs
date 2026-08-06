@@ -10,84 +10,373 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: dependency-provenance-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  contract:
-    name: Validate immutable supply chain contract
+  evidence:
+    name: Build and verify immutable supply-chain evidence
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+
+    services:
+      postgres:
+        image: postgres@sha256:882236b897e39051d2368c5ccc6cda944904723506b2dfc97f2a8f5bc9afa382
+        env:
+          POSTGRES_DB: eod_provenance
+          POSTGRES_USER: eod_provenance
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U eod_provenance -d eod_provenance"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      EOD_DEPLOYMENT_MODE: ci
+      DJANGO_DEBUG: "0"
+      DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost,testserver
+      DB_ENGINE: postgresql
+      POSTGRES_DB: eod_provenance
+      POSTGRES_USER: eod_provenance
+      POSTGRES_PASSWORD: ""
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5432"
+      EOD_DATABASE_PROFILE: gate
+      EOD_ALLOW_SQLITE_PATH_OVERRIDE: "0"
+      TIME_ZONE: Europe/Moscow
+
     steps:
       - name: Checkout exact head
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Verify exact checked-out SHA
         env:
           EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
-          printf 'EXACT_HEAD=%s\n' "$EXPECTED_SHA"
-
-      - name: Detect controlled regeneration request
-        id: mode
-        run: |
-          set -euo pipefail
-          if [[ -f supply-chain/regeneration-request.json ]]; then
-            printf 'regenerate=true\n' >>"$GITHUB_OUTPUT"
-          else
-            printf 'regenerate=false\n' >>"$GITHUB_OUTPUT"
-          fi
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$EXPECTED_SHA"
+          printf 'EXACT_HEAD=%s\n' "$actual_sha"
+          printf 'SOURCE_COMMIT=%s\n' "$actual_sha" >>"$GITHUB_ENV"
+          printf 'SOURCE_DATE_EPOCH=%s\n' "$(git show -s --format=%ct HEAD)" >>"$GITHUB_ENV"
+          printf 'EVIDENCE_DIR=%s\n' "$RUNNER_TEMP/dependency-provenance-evidence" >>"$GITHUB_ENV"
 
       - name: Set up accepted Python minor
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
-          python-version: '3.13'
+          python-version: "3.13"
           check-latest: false
           cache: pip
           cache-dependency-path: requirements/locks/*.txt
 
-      - name: Regenerate registry, locks and immutable references
-        if: steps.mode.outputs.regenerate == 'true'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: Create masked ephemeral Django key
+        shell: bash
         run: |
           set -euo pipefail
-          python scripts/dependency_provenance_implementation.py apply
+          value="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+          printf '::add-mask::%s\n' "$value"
+          printf 'DJANGO_SECRET_KEY=%s\n' "$value" >>"$GITHUB_ENV"
+
+      - name: Install accepted tooling, build and development graphs
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/tooling.txt
+          python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/build.txt
+          python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/dev.txt
+          python -m pip check
+
+      - name: Verify semantic contract and ordinary Ruff
+        run: |
+          set -euo pipefail
           python scripts/dependency_provenance_implementation.py verify-locks
-          python scripts/publish_workflow_blobs.py
-          git diff --check
-          git add --all
-          python scripts/secret_hygiene.py scan
+          python scripts/dependency_provenance_gate.py validate-repository
+          python -m ruff check \
+            scripts/dependency_provenance_*.py \
+            tests/process/test_dependency_provenance*.py
+          python -m compileall -q scripts tests/process
 
-      - name: Commit controlled non-workflow regeneration
-        if: steps.mode.outputs.regenerate == 'true'
+      - name: Regenerate all five locks byte for byte
+        run: python scripts/regenerate_dependency_locks.py
+
+      - name: Prove clean hashed installation of all profiles
+        shell: bash
         run: |
           set -euo pipefail
-          git restore --source=HEAD --staged --worktree .github/workflows
-          rm -f supply-chain/regeneration-request.json
-          git add --all
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'build: publish exact workflow blob manifest'
-          git push origin HEAD:supply-chain/dependency-provenance-001
+          mkdir -p "$RUNNER_TEMP/dependency-profile-venvs"
+          for profile in tooling build runtime dev browser; do
+            target="$RUNNER_TEMP/dependency-profile-venvs/$profile"
+            python -m venv --without-pip "$target"
+            python -m pip --python "$target/bin/python" install \
+              --disable-pip-version-check \
+              --require-hashes \
+              -r "requirements/locks/$profile.txt"
+            python -m pip --python "$target/bin/python" check
+          done
 
-      - name: Verify five semantic hashed locks
-        if: steps.mode.outputs.regenerate == 'false'
-        run: python scripts/dependency_provenance_implementation.py verify-locks
+      - name: Run focused positive and negative contract suites
+        run: |
+          set -euo pipefail
+          python -m unittest -v \
+            tests.process.test_dependency_provenance_inventory \
+            tests.process.test_dependency_provenance_contract
 
-      - name: Validate registry, refs, install paths and source completeness
-        if: steps.mode.outputs.regenerate == 'false'
-        run: python scripts/dependency_provenance_gate.py validate-repository
+      - name: Build locked wheel and install without dependency resolution
+        run: |
+          set -euo pipefail
+          mkdir -p "$EVIDENCE_DIR/dist"
+          python -m build --wheel --no-isolation --outdir "$EVIDENCE_DIR/dist"
+          python -m pip install --disable-pip-version-check --no-deps "$EVIDENCE_DIR"/dist/*.whl
+          python -m pip check
+          wheel="$(find "$EVIDENCE_DIR/dist" -maxdepth 1 -name '*.whl' -type f -print -quit)"
+          test -n "$wheel"
+          printf 'WHEEL_PATH=%s\n' "$wheel" >>"$GITHUB_ENV"
+          printf 'WHEEL_SHA256=%s\n' "$(sha256sum "$wheel" | cut -d' ' -f1)" >>"$GITHUB_ENV"
+
+      - name: Collect static files and generate deterministic manifest
+        run: |
+          set -euo pipefail
+          python manage.py collectstatic --noinput --clear
+          python scripts/dependency_provenance_contract.py static-manifest \
+            --root staticfiles \
+            --output "$EVIDENCE_DIR/static-manifest.json"
+          python scripts/dependency_provenance_contract.py verify-static-manifest \
+            --root staticfiles \
+            --manifest "$EVIDENCE_DIR/static-manifest.json"
+
+      - name: Build production and browser OCI archives from immutable inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker buildx build \
+            --file Dockerfile \
+            --provenance=false \
+            --sbom=false \
+            --output "type=oci,dest=$EVIDENCE_DIR/final-image.oci.tar" \
+            .
+          docker buildx build \
+            --file supply-chain/Dockerfile.browser \
+            --provenance=false \
+            --sbom=false \
+            --output "type=oci,dest=$EVIDENCE_DIR/browser-image.oci.tar" \
+            .
+          python - <<'PY'
+          import json
+          import os
+          import tarfile
+          from pathlib import Path
+
+          evidence = Path(os.environ["EVIDENCE_DIR"])
+          github_env = Path(os.environ["GITHUB_ENV"])
+          pairs = (
+              ("FINAL_IMAGE_DIGEST", evidence / "final-image.oci.tar"),
+              ("BROWSER_IMAGE_DIGEST", evidence / "browser-image.oci.tar"),
+          )
+          values = []
+          for name, archive_path in pairs:
+              with tarfile.open(archive_path) as archive:
+                  member = archive.extractfile("index.json")
+                  if member is None:
+                      raise SystemExit("OCI index.json is missing")
+                  index = json.load(member)
+              manifests = index.get("manifests", [])
+              if len(manifests) != 1:
+                  raise SystemExit(f"unexpected OCI manifest count: {len(manifests)}")
+              digest = manifests[0].get("digest", "")
+              if not digest.startswith("sha256:") or len(digest) != 71:
+                  raise SystemExit(f"invalid OCI digest: {digest}")
+              values.append(f"{name}={digest}\n")
+          with github_env.open("a", encoding="utf-8") as handle:
+              handle.writelines(values)
+          PY
+
+      - name: Resolve pinned evidence tooling from canonical registry
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          registry = json.loads(Path("supply-chain/registry.json").read_text())
+          syft = registry["external_images"]["syft"]
+          postgres = registry["external_images"]["postgres"]
+          workflow_digest = __import__("hashlib").sha256(
+              Path(".github/workflows/dependency-provenance.yml").read_bytes()
+          ).hexdigest()
+          with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as handle:
+              handle.write(f"SYFT_IMAGE={syft['repository']}@{syft['digest']}\n")
+              handle.write(f"POSTGRES_IMAGE={postgres['repository']}@{postgres['digest']}\n")
+              handle.write(f"BUILD_DEFINITION_DIGEST=sha256:{workflow_digest}\n")
+          PY
+
+      - name: Generate production, browser and service SPDX source documents
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v "$EVIDENCE_DIR:/evidence:rw" \
+            "$SYFT_IMAGE" scan oci-archive:/evidence/final-image.oci.tar \
+            -o spdx-json=/evidence/production.raw.spdx.json
+          docker run --rm \
+            -v "$EVIDENCE_DIR:/evidence:rw" \
+            "$SYFT_IMAGE" scan oci-archive:/evidence/browser-image.oci.tar \
+            -o spdx-json=/evidence/browser.raw.spdx.json
+          docker pull "$POSTGRES_IMAGE"
+          docker save "$POSTGRES_IMAGE" -o "$EVIDENCE_DIR/postgres-image.tar"
+          docker run --rm \
+            -v "$EVIDENCE_DIR:/evidence:rw" \
+            "$SYFT_IMAGE" scan docker-archive:/evidence/postgres-image.tar \
+            -o spdx-json=/evidence/postgres.raw.spdx.json
+
+      - name: Normalize and validate deterministic SPDX 2.3 evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/dependency_provenance_contract.py normalize-spdx \
+            --input "$EVIDENCE_DIR/production.raw.spdx.json" \
+            --output "$EVIDENCE_DIR/production.spdx.json" \
+            --image-digest "$FINAL_IMAGE_DIGEST" \
+            --source-commit "$SOURCE_COMMIT" \
+            --build-definition-digest "$BUILD_DEFINITION_DIGEST" \
+            --source-date-epoch "$SOURCE_DATE_EPOCH"
+          python scripts/dependency_provenance_contract.py normalize-spdx \
+            --input "$EVIDENCE_DIR/browser.raw.spdx.json" \
+            --output "$EVIDENCE_DIR/browser.spdx.json" \
+            --image-digest "$BROWSER_IMAGE_DIGEST" \
+            --source-commit "$SOURCE_COMMIT" \
+            --build-definition-digest "$BUILD_DEFINITION_DIGEST" \
+            --source-date-epoch "$SOURCE_DATE_EPOCH"
+          python scripts/dependency_provenance_contract.py normalize-spdx \
+            --input "$EVIDENCE_DIR/postgres.raw.spdx.json" \
+            --output "$EVIDENCE_DIR/postgres.spdx.json" \
+            --image-digest "${POSTGRES_IMAGE##*@}" \
+            --source-commit "$SOURCE_COMMIT" \
+            --build-definition-digest "$BUILD_DEFINITION_DIGEST" \
+            --source-date-epoch "$SOURCE_DATE_EPOCH"
+          python scripts/dependency_provenance_contract.py validate-spdx \
+            --input "$EVIDENCE_DIR/production.spdx.json" \
+            --image-digest "$FINAL_IMAGE_DIGEST" \
+            --source-commit "$SOURCE_COMMIT" \
+            --build-definition-digest "$BUILD_DEFINITION_DIGEST" \
+            --source-date-epoch "$SOURCE_DATE_EPOCH" \
+            --scope runtime
+          python scripts/dependency_provenance_contract.py validate-spdx \
+            --input "$EVIDENCE_DIR/browser.spdx.json" \
+            --image-digest "$BROWSER_IMAGE_DIGEST" \
+            --source-commit "$SOURCE_COMMIT" \
+            --build-definition-digest "$BUILD_DEFINITION_DIGEST" \
+            --source-date-epoch "$SOURCE_DATE_EPOCH" \
+            --scope browser
+          python - <<'PY'
+          import json
+          import jsonschema
+          import os
+          from pathlib import Path
+
+          evidence = Path(os.environ["EVIDENCE_DIR"])
+          schema = json.loads(Path("supply-chain/schema/spdx-2.3.schema.json").read_text())
+          payload = json.loads((evidence / "postgres.spdx.json").read_text())
+          jsonschema.validate(payload, schema)
+          PY
+          rm -f \
+            "$EVIDENCE_DIR"/*.raw.spdx.json \
+            "$EVIDENCE_DIR"/final-image.oci.tar \
+            "$EVIDENCE_DIR"/browser-image.oci.tar \
+            "$EVIDENCE_DIR"/postgres-image.tar
+
+      - name: Link component set and generate in-toto SLSA provenance
+        run: |
+          set -euo pipefail
+          python scripts/dependency_provenance_contract.py component-set \
+            --output "$EVIDENCE_DIR/component-set.json" \
+            --production "$EVIDENCE_DIR/production.spdx.json" \
+            --browser "$EVIDENCE_DIR/browser.spdx.json" \
+            --service "postgres=$EVIDENCE_DIR/postgres.spdx.json"
+          python scripts/dependency_provenance_contract.py provenance \
+            --output "$EVIDENCE_DIR/provenance.intoto.json" \
+            --subject-name electronic-operational-docs \
+            --subject-digest "$FINAL_IMAGE_DIGEST" \
+            --wheel "$WHEEL_PATH" \
+            --static-manifest "$EVIDENCE_DIR/static-manifest.json" \
+            --spdx "$EVIDENCE_DIR/production.spdx.json" \
+            --source-commit "$SOURCE_COMMIT" \
+            --workflow .github/workflows/dependency-provenance.yml \
+            --source-date-epoch "$SOURCE_DATE_EPOCH"
+          python scripts/dependency_provenance_contract.py validate-provenance \
+            --input "$EVIDENCE_DIR/provenance.intoto.json" \
+            --subject-digest "$FINAL_IMAGE_DIGEST" \
+            --source-commit "$SOURCE_COMMIT"
+
+      - name: Verify wheel and evidence are credential-free before publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          wheel_unpack="$RUNNER_TEMP/dependency-wheel-unpacked"
+          mkdir -p "$wheel_unpack"
+          python -m zipfile -e "$WHEEL_PATH" "$wheel_unpack"
+          while IFS= read -r -d '' file; do
+            if grep -Iq . "$file"; then
+              python scripts/secret_hygiene.py verify-sanitized --input "$file"
+            fi
+          done < <(find "$wheel_unpack" -type f -print0)
+          for file in "$EVIDENCE_DIR"/*.json; do
+            python scripts/secret_hygiene.py verify-sanitized \
+              --input "$file" \
+              --env DJANGO_SECRET_KEY
+          done
+          cat >"$EVIDENCE_DIR/publication-order.json" <<'JSON'
+          {
+            "schema": 1,
+            "completed": [
+              "exact-head",
+              "hashed-locks",
+              "clean-install",
+              "wheel-build",
+              "static-manifest",
+              "oci-build",
+              "spdx-schema-and-boundary",
+              "provenance-verification",
+              "secret-hygiene",
+              "publication-ready"
+            ]
+          }
+          JSON
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$EVIDENCE_DIR/publication-order.json"
+
+      - name: Build and verify artifact-content manifest
+        run: |
+          set -euo pipefail
+          cp "$WHEEL_PATH" "$EVIDENCE_DIR/"
+          python scripts/dependency_provenance_contract.py artifact-manifest \
+            --directory "$EVIDENCE_DIR"
+          python scripts/dependency_provenance_contract.py verify-artifact \
+            --directory "$EVIDENCE_DIR"
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$EVIDENCE_DIR/artifact-manifest.json"
+
+      - name: Upload verified exact-head evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dependency-provenance-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/dependency-provenance-evidence
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 7
+          compression-level: 0
 
       - name: Verify repository remains exactly clean
-        if: steps.mode.outputs.regenerate == 'false'
+        if: ${{ always() }}
         run: python scripts/secret_hygiene.py verify-clean-tree
