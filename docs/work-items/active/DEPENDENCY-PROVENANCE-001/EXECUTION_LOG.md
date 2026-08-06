@@ -9,8 +9,6 @@ branch: supply-chain/dependency-provenance-001
 accepted dependency: SECRET-HYGIENE-001
 accepted dependency merge: 95b8dd6017745886f110f052ea0950b3d48173d8
 SAFE-CONTINUATION: 3/8 accepted / NOT ACHIEVED
-runtime impact: NONE
-Preview: UNTOUCHED
 ```
 
 No Preview, development VPS or production runtime operation was performed.
