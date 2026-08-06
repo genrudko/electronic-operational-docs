@@ -28,10 +28,15 @@ DOCKER_FROM_RE = re.compile(
 IMAGE_RE = re.compile(r"^\s*image:\s*([^\s#]+)(?:\s*#\s*(.*))?\s*$")
 IMMUTABLE_ACTION_RE = re.compile(r"^[^@]+@[0-9a-fA-F]{40}$")
 IMMUTABLE_IMAGE_RE = re.compile(r"@sha256:[0-9a-fA-F]{64}$")
+IMMUTABLE_ASSET_URL_RE = re.compile(r"@[0-9a-fA-F]{40}(?:/|$)")
 REQUIREMENT_RE = re.compile(r"^\s*([A-Za-z0-9_.-]+)(.*)$")
 URL_RE = re.compile(r"https?://[^\s\"'<>)}]+")
 TEMP_WORKFLOW_RE = re.compile(
     r"(?:temp|temporary|post[-_]?merge|synchroni[sz]er|coordination)", re.I
+)
+LOCAL_ENDPOINT_RE = re.compile(
+    r"(?:127\.0\.0\.1|localhost|testserver|\$\{(?:PREVIEW|DEVELOPMENT)_PORT\})",
+    re.I,
 )
 LOCK_NAMES = {
     "Pipfile.lock",
@@ -50,10 +55,8 @@ PACKAGE_NAMES = {
     "pnpm-lock.yaml",
     "yarn.lock",
 }
-TEXT_SUFFIXES = {
-    ".bash", ".cjs", ".css", ".html", ".htm", ".js", ".json", ".md",
-    ".mjs", ".py", ".sh", ".toml", ".txt", ".yaml", ".yml",
-}
+ASSET_SUFFIXES = {".cjs", ".css", ".html", ".htm", ".js", ".mjs"}
+DIRECT_PYTHON_CLASSES = {"python-build", "python-optional", "python-runtime"}
 COMMAND_PATTERNS = (
     (
         "python-install",
@@ -272,6 +275,15 @@ def match_comment(match: re.Match[str]) -> str:
     return (match.group(2) or "Parsed tracked reference.").strip()
 
 
+def is_local_image_output(reference: str) -> bool:
+    return (
+        "/" not in reference
+        and ":" not in reference
+        and "@" not in reference
+        and reference != "scratch"
+    )
+
+
 def scan_images(root: Path, files: list[str]) -> list[dict[str, Any]]:
     candidates = [
         path
@@ -292,25 +304,36 @@ def scan_images(root: Path, files: list[str]) -> list[dict[str, Any]]:
             if not match:
                 continue
             reference = match.group(1)
+            local_output = not is_dockerfile(path) and is_local_image_output(reference)
             immutable = reference == "scratch" or bool(
                 IMMUTABLE_IMAGE_RE.search(reference)
             )
             occurrences = sum(reference in text for text in texts.values())
             entries.append(
                 make_entry(
-                    input_class="container-image",
+                    input_class=(
+                        "container-output" if local_output else "container-image"
+                    ),
                     path=path,
                     line=line_number,
-                    purpose="Container base, service, test or local image input/output",
+                    purpose=(
+                        "Locally built application image output"
+                        if local_output
+                        else "External container base/service/test input"
+                    ),
                     scope=(
-                        "build"
+                        "build-output"
+                        if local_output
+                        else "build"
                         if is_dockerfile(path)
                         else "ci"
                         if path.startswith(".github/")
                         else "runtime/test"
                     ),
                     canonicality=(
-                        "duplicate-reference"
+                        "generated-local-output"
+                        if local_output
+                        else "duplicate-reference"
                         if occurrences > 1
                         else "canonical-reference"
                     ),
@@ -319,9 +342,19 @@ def scan_images(root: Path, files: list[str]) -> list[dict[str, Any]]:
                     constraint=reference.split("@", 1)[0],
                     immutable=immutable,
                     hash_coverage="sha256-digest" if immutable else "absent",
-                    reproducibility="immutable" if immutable else "mutable-tag",
-                    risk="LOW" if immutable else "HIGH",
-                    owner="canonical container-image registry/reference contract",
+                    reproducibility=(
+                        "local-build-output"
+                        if local_output
+                        else "immutable"
+                        if immutable
+                        else "mutable-tag"
+                    ),
+                    risk="MEDIUM" if local_output else "LOW" if immutable else "HIGH",
+                    owner=(
+                        "final application image digest/build provenance"
+                        if local_output
+                        else "canonical container-image registry/reference contract"
+                    ),
                     evidence=match_comment(match),
                 )
             )
@@ -400,18 +433,40 @@ def executable_source(path: str) -> bool:
     )
 
 
+def command_blocks(text: str) -> list[tuple[int, str]]:
+    lines = text.splitlines()
+    result: list[tuple[int, str]] = []
+    index = 0
+    while index < len(lines):
+        start = index
+        parts = [lines[index].strip()]
+        while parts[-1].rstrip().endswith("\\") and index + 1 < len(lines):
+            index += 1
+            parts.append(lines[index].strip())
+        result.append((start + 1, " ".join(parts)))
+        index += 1
+    return result
+
+
+def is_local_probe(command: str) -> bool:
+    urls = URL_RE.findall(command)
+    if urls:
+        return all(LOCAL_ENDPOINT_RE.search(url) for url in urls)
+    return bool(LOCAL_ENDPOINT_RE.search(command))
+
+
 def scan_operations(root: Path, files: list[str]) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     for path in (item for item in files if executable_source(item)):
-        for line_number, raw in enumerate(
-            read_text(root, path).splitlines(), start=1
-        ):
-            stripped = raw.strip()
+        for line_number, command in command_blocks(read_text(root, path)):
+            stripped = command.strip()
             if not stripped or stripped.startswith("#"):
                 continue
             for input_class, pattern in COMMAND_PATTERNS:
                 if not pattern.search(stripped):
                     continue
+                if input_class == "external-download" and is_local_probe(stripped):
+                    break
                 integrity = bool(
                     re.search(
                         r"(?:sha256|checksum|integrity|--require-hashes)",
@@ -462,16 +517,15 @@ def scan_external_assets(root: Path, files: list[str]) -> list[dict[str, Any]]:
             or "/static/" in f"/{normalized}"
             or normalized.startswith("static/")
         )
-        if not asset_source or Path(path).suffix.lower() not in TEXT_SUFFIXES:
+        if not asset_source or Path(path).suffix.lower() not in ASSET_SUFFIXES:
             continue
         for line_number, raw in enumerate(
             read_text(root, path).splitlines(), start=1
         ):
             for url in URL_RE.findall(raw):
-                if url.startswith(
-                    ("http://127.0.0.1", "http://localhost", "https://localhost")
-                ):
+                if LOCAL_ENDPOINT_RE.search(url):
                     continue
+                immutable_url = bool(IMMUTABLE_ASSET_URL_RE.search(url))
                 integrity = "integrity=" in raw or "sha256" in raw.lower()
                 entries.append(
                     make_entry(
@@ -483,15 +537,17 @@ def scan_external_assets(root: Path, files: list[str]) -> list[dict[str, Any]]:
                         canonicality="external-reference",
                         directness="direct",
                         declaration=url,
-                        constraint="URL content state",
-                        immutable=False,
+                        constraint="immutable URL revision or mutable URL state",
+                        immutable=immutable_url,
                         hash_coverage="present" if integrity else "absent",
                         reproducibility=(
-                            "integrity-evidenced"
-                            if integrity
+                            "immutable-url-with-integrity"
+                            if immutable_url and integrity
+                            else "immutable-url-no-integrity"
+                            if immutable_url
                             else "mutable-external-content"
                         ),
-                        risk="MEDIUM" if integrity else "HIGH",
+                        risk="MEDIUM" if immutable_url else "HIGH",
                         owner=(
                             "repository-managed asset or integrity-pinned registry"
                         ),
@@ -504,10 +560,7 @@ def scan_external_assets(root: Path, files: list[str]) -> list[dict[str, Any]]:
 def duplicate_owner_groups(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
     groups: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     for item in entries:
-        if (
-            item["class"].startswith("python-")
-            and item["direct_or_transitive"] == "direct"
-        ):
+        if item["class"] in DIRECT_PYTHON_CLASSES:
             key = ("python", requirement_name(item["declaration"]))
         elif item["class"] == "container-image":
             key = ("image", item["declaration"].split("@", 1)[0])
@@ -520,15 +573,15 @@ def duplicate_owner_groups(entries: list[dict[str, Any]]) -> list[dict[str, Any]
     for (input_class, name), values in sorted(groups.items()):
         if len(values) < 2:
             continue
+        declarations = sorted({value["declaration"] for value in values})
         result.append(
             {
                 "class": input_class,
                 "name": name,
                 "occurrences": len(values),
                 "paths": sorted({value["path"] for value in values}),
-                "declarations": sorted(
-                    {value["declaration"] for value in values}
-                ),
+                "declarations": declarations,
+                "conflicting_declarations": len(declarations) > 1,
             }
         )
     return result
@@ -610,6 +663,12 @@ def contour_summary(
                 item["class"] == "external-asset" for item in entries
             ),
         },
+        "external_downloads": {
+            "download_operation_count": sum(
+                item["class"] == "external-download" for item in entries
+            ),
+            "local_runtime_probes_excluded": True,
+        },
     }
 
 
@@ -638,7 +697,9 @@ def build_inventory(root: Path = ROOT) -> dict[str, Any]:
             or item["class"]
             in {
                 "container-image",
+                "container-output",
                 "external-asset",
+                "external-download",
                 "github-action",
                 "python-transitive",
             }
@@ -676,6 +737,9 @@ def build_inventory(root: Path = ROOT) -> dict[str, Any]:
             "floating_inputs": len(floating),
             "immutable_inputs": len(immutable),
             "duplicate_owner_groups": len(duplicates),
+            "conflicting_owner_groups": sum(
+                item["conflicting_declarations"] for item in duplicates
+            ),
             "source_files": len(source_paths),
         },
         "contours": contours,
@@ -719,6 +783,7 @@ def render_markdown(inventory: dict[str, Any]) -> str:
         f"- floating inputs: `{totals['floating_inputs']}`;",
         f"- immutable inputs: `{totals['immutable_inputs']}`;",
         f"- duplicate owner groups: `{totals['duplicate_owner_groups']}`;",
+        f"- conflicting owner groups: `{totals['conflicting_owner_groups']}`;",
         f"- source files with dependency/build evidence: `{totals['source_files']}`.",
         "",
         "## Контуры",
@@ -728,6 +793,7 @@ def render_markdown(inventory: dict[str, Any]) -> str:
         f"- Browser: Playwright declared=`{contours['browser']['python_playwright_declared']}`; binary install operations={contours['browser']['browser_binary_install_operations'] or 'NONE'}; integrity contract=`{contours['browser']['binary_integrity_contract_present']}`.",
         f"- Containers: Dockerfiles={contours['containers']['dockerfiles']}; Compose={contours['containers']['compose_files']}.",
         f"- GitHub Actions: workflows=`{len(contours['github_actions']['workflow_files'])}`; temporary={contours['github_actions']['temporary_workflow_files'] or 'NONE'}.",
+        f"- External downloads: `{contours['external_downloads']['download_operation_count']}`; local runtime probes excluded=`{contours['external_downloads']['local_runtime_probes_excluded']}`.",
         f"- Static assets: tracked=`{contours['assets']['tracked_static_file_count']}`; external references=`{contours['assets']['external_asset_reference_count']}`.",
         "",
         "## Totals by class",
@@ -766,8 +832,9 @@ def render_markdown(inventory: dict[str, Any]) -> str:
     lines.extend(["", "## Duplicate owner groups", ""])
     if inventory["duplicate_owner_groups"]:
         for group in inventory["duplicate_owner_groups"]:
+            conflict = "conflicting" if group["conflicting_declarations"] else "repeated"
             lines.append(
-                f"- `{group['class']}:{group['name']}` — {group['occurrences']} references in {', '.join(group['paths'])}."
+                f"- `{group['class']}:{group['name']}` — {group['occurrences']} {conflict} references in {', '.join(group['paths'])}."
             )
     else:
         lines.append("- NONE.")
