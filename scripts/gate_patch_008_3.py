@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import secrets
 import sys
 from pathlib import Path
 
@@ -146,12 +147,15 @@ if first_preview.digest != second_preview.digest or len(first_preview.digest) !=
     raise SystemExit("Publication preview digest is not deterministic SHA-256.")
 
 employee_count_before = Employee.objects.filter(organization=organization).count()
+invalid_credential = secrets.token_urlsafe(32)
+while invalid_credential == DEMO_PASSWORD:
+    invalid_credential = secrets.token_urlsafe(32)
 try:
     publish_import_batch(
         batch=employee_batch,
         actor=publisher,
         user=publisher.user,
-        password="wrong-password",
+        password=invalid_credential,
         expected_digest=first_preview.digest,
     )
 except ValidationError:
