@@ -67,11 +67,12 @@ jobs:
             --output "$RUNNER_TEMP/auto001b-tests.sanitized.txt"
           python scripts/secret_hygiene.py verify-sanitized \
             --input "$RUNNER_TEMP/auto001b-tests.sanitized.txt"
+          printf 'verified=true\n' >>"$GITHUB_OUTPUT"
           cat "$RUNNER_TEMP/auto001b-tests.sanitized.txt"
           exit "$test_status"
 
       - name: Upload verified sanitised AUTO-001B diagnostics after failure
-        if: ${{ failure() && steps.tests.outcome == 'failure' }}
+        if: ${{ failure() && steps.tests.outcome == 'failure' && steps.tests.outputs.verified == 'true' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: auto001b-controller-tests-${{ github.run_id }}-${{ github.run_attempt }}
