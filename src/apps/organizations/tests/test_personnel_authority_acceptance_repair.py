@@ -21,6 +21,7 @@ from apps.organizations.personnel_management_models import (
     ExternalOperationalContact,
     OrganizationOperationalProfile,
 )
+from tests.credential_fixtures import ephemeral_credential
 
 
 class PersonnelAuthorityAcceptanceRepairTests(TestCase):
@@ -29,7 +30,7 @@ class PersonnelAuthorityAcceptanceRepairTests(TestCase):
         user_model = get_user_model()
         cls.user = user_model.objects.create_user(
             username="authority-repair-reviewer",
-            password="synthetic-password",
+            password=ephemeral_credential("AuthorityRepairReviewer"),
         )
         cls.organization = Organization.objects.create(
             code="REPAIR-HOST",
