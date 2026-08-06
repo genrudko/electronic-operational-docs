@@ -236,7 +236,8 @@ class Plan001AuditToolingTests(SimpleTestCase):
         )
         self.assertNotIn(secret, rendered)
         self.assertIn("POSTGRES_PASSWORD=<redacted>", rendered)
-        self.assertIn("postgresql://user:<redacted>@db/eod", rendered)
+        expected_dsn = f"{scheme}://user:<redacted>@db/eod"
+        self.assertIn(expected_dsn, rendered)
         payload = sanitize(
             {"safe": "value", "api_token": secret, "nested": [secret]},
             (secret,),
