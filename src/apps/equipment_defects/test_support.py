@@ -18,6 +18,7 @@ from apps.organizations.models import (
     Position,
     Workplace,
 )
+from tests.credential_fixtures import ephemeral_credential
 
 from .services import register_defect
 
@@ -101,7 +102,10 @@ class DefectFixtureMixin:
         last_name: str,
         position_key: str,
     ) -> Employee:
-        user = User.objects.create_user(username=username, password="TestOnly!2026")
+        user = User.objects.create_user(
+            username=username,
+            password=ephemeral_credential(personnel_number),
+        )
         return Employee.objects.create(
             organization=fixture["organization"],
             division=fixture["division"],
