@@ -86,7 +86,7 @@ jobs:
 
       - name: Validate registry, refs, install paths and source completeness
         if: steps.mode.outputs.regenerate == 'false'
-        run: python scripts/dependency_provenance_contract.py validate-repository
+        run: python scripts/dependency_provenance_gate.py validate-repository
 
       - name: Verify repository remains exactly clean
         if: steps.mode.outputs.regenerate == 'false'
