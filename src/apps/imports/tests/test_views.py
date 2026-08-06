@@ -13,6 +13,7 @@ from apps.organizations.models import (
     Organization,
     Position,
 )
+from tests.credential_fixtures import ephemeral_credential
 
 
 class ImportViewTests(TestCase):
@@ -29,7 +30,10 @@ class ImportViewTests(TestCase):
             code="POS-A",
             name="Специалист",
         )
-        self.user = user_model.objects.create_user(username="import-view", password="test")
+        self.user = user_model.objects.create_user(
+            username="import-view",
+            password=ephemeral_credential("ImportView"),
+        )
         self.employee = Employee.objects.create(
             organization=self.organization,
             division=division,
