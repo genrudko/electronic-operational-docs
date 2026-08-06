@@ -304,7 +304,7 @@
     "immutable_inputs": 16,
     "inventory_entries": 55,
     "source_files": 16,
-    "tracked_files": 867
+    "tracked_files": 871
   },
   "work_item": "DEPENDENCY-PROVENANCE-001"
 }
