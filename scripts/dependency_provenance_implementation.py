@@ -65,19 +65,19 @@ SPDX_SCHEMA_RELPATH = "schemas/spdx-schema.json"
 
 ACTION_REVISIONS = {
     "actions/checkout": {
-        "version": "v6",
+        "version": "v6.1.0",
         "sha": "d23441a48e516b6c34aea4fa41551a30e30af803",
     },
     "actions/setup-python": {
-        "version": "v6",
+        "version": "v6.1.0",
         "sha": "ece7cb06caefa5fff74198d8649806c4678c61a1",
     },
     "actions/upload-artifact": {
-        "version": "v7",
+        "version": "v7.0.1",
         "sha": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
     },
     "actions/github-script": {
-        "version": "v8",
+        "version": "v9.0.0",
         "sha": "3a2844b7e9c422d3c10d287c895573f7108da1b3",
     },
 }

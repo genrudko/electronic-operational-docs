@@ -124,7 +124,7 @@
       "pip": "25.3",
       "pip_tools": "7.6.0",
       "source": "official PyPI JSON distribution digest plus downloaded wheel SHA-256",
-      "source_commit": "54aaa009526cbcb40549c266ae25cdaee5cf8009"
+      "source_commit": "7ce095f16a8ec02ab3155cd0cda90827f18342c2"
     },
     "kind": "pip-tools",
     "oci": {
@@ -137,19 +137,19 @@
   "github_actions": {
     "actions/checkout": {
       "sha": "d23441a48e516b6c34aea4fa41551a30e30af803",
-      "version": "v6"
+      "version": "v6.1.0"
     },
     "actions/github-script": {
       "sha": "3a2844b7e9c422d3c10d287c895573f7108da1b3",
-      "version": "v8"
+      "version": "v9.0.0"
     },
     "actions/setup-python": {
       "sha": "ece7cb06caefa5fff74198d8649806c4678c61a1",
-      "version": "v6"
+      "version": "v6.1.0"
     },
     "actions/upload-artifact": {
       "sha": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
-      "version": "v7"
+      "version": "v7.0.1"
     }
   },
   "lock_profiles": [
