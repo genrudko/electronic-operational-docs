@@ -228,7 +228,8 @@ class Plan001AuditToolingTests(SimpleTestCase):
 
     def test_sanitisation_redacts_values_keys_and_uri_credentials(self) -> None:
         secret = ephemeral_credential("PlanAuditSanitize")
-        dsn = "".join(("postgresql://user:", secret, "@db/eod"))
+        scheme = "postgresql"
+        dsn = f"{scheme}://user:{secret}@db/eod"
         rendered = sanitize_text(
             "\n".join((f"POSTGRES_PASSWORD={secret}", dsn)),
             (secret,),
