@@ -10,8 +10,8 @@ from scripts.dependency_provenance_inventory import (
     scan_actions,
     scan_images,
     scan_operations,
-    validation_errors,
 )
+from scripts.dependency_provenance_views import validation_errors
 
 
 class DependencyProvenanceInventoryTests(unittest.TestCase):
