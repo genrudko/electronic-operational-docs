@@ -94,7 +94,7 @@ The selected architecture is:
    comments in the implementation stage.
 5. GitHub Actions must move to full commit SHA references with readable version
    comments in the implementation stage.
-6. The final OCI image is the primary CycloneDX JSON SBOM boundary; source and
+6. The final OCI image is the primary SPDX 2.3 JSON SBOM boundary; source and
    build provenance remain separate evidence.
 7. Provenance must link the exact repository head, lock digests, workflow
    identity, final image digest and SBOM digest.
