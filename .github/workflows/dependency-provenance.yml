@@ -1,0 +1,85 @@
+name: EOD Dependency Provenance
+
+on:
+  push:
+    branches:
+      - supply-chain/dependency-provenance-001
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dependency-provenance-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  implement-or-verify:
+    name: Bootstrap and verify immutable supply chain
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Verify exact checked-out SHA
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          printf 'EXACT_HEAD=%s\n' "$EXPECTED_SHA"
+
+      - name: Set up accepted Python minor
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+          check-latest: false
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Materialise registry, five locks and immutable references
+        if: github.event_name == 'push'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python scripts/dependency_provenance_implementation.py apply
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/dependency_provenance_implementation.py')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace('import base64\n', '').replace('import shutil\n', '')
+          path.write_text(text, encoding='utf-8')
+          PY
+          python scripts/dependency_provenance_implementation.py verify-locks
+          git diff --check
+
+      - name: Commit deterministic implementation output
+        if: github.event_name == 'push'
+        run: |
+          set -euo pipefail
+          if [[ -z "$(git status --porcelain=v1)" ]]; then
+            echo 'SUPPLY_CHAIN_GENERATED_CHANGES=NONE'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --all
+          git commit -m 'build: materialise dependency provenance contract'
+          git push origin HEAD:supply-chain/dependency-provenance-001
+
+      - name: Validate committed registry and locks
+        if: github.event_name != 'push'
+        run: |
+          set -euo pipefail
+          python scripts/dependency_provenance_implementation.py verify-locks
+          git diff --check
+          test -z "$(git status --porcelain=v1)"
