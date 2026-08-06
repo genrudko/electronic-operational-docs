@@ -54,10 +54,20 @@ jobs:
       TIME_ZONE: Europe/Moscow
 
     steps:
-      - name: Checkout repository
+      - name: Checkout exact head
         uses: actions/checkout@v6
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+
+      - name: Verify exact checked-out SHA
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$EXPECTED_SHA"
+          printf 'EXACT_HEAD=%s\n' "$actual_sha"
 
       - name: Set up Python 3.13
         uses: actions/setup-python@v6
@@ -131,11 +141,13 @@ jobs:
             --input "$RUNNER_TEMP/django-test.sanitized.txt" \
             --env DJANGO_SECRET_KEY \
             --env EOD_DEMO_USER_PASSWORD
+          printf 'verified=true\n' >>"$GITHUB_OUTPUT"
           cat "$RUNNER_TEMP/django-test.sanitized.txt"
           exit "$test_status"
 
       - name: Build and verify sanitised Django failure report
-        if: ${{ failure() && steps.django-tests.outcome == 'failure' }}
+        id: django-failure-report
+        if: ${{ failure() && steps.django-tests.outcome == 'failure' && steps.django-tests.outputs.verified == 'true' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -208,6 +220,7 @@ jobs:
             --input "$RUNNER_TEMP/django-test-diagnostics.sanitized.txt" \
             --env DJANGO_SECRET_KEY \
             --env EOD_DEMO_USER_PASSWORD
+          printf 'verified=true\n' >>"$GITHUB_OUTPUT"
           cat "$RUNNER_TEMP/django-test-diagnostics.sanitized.txt"
           {
             echo "## Django test failure"
@@ -216,7 +229,7 @@ jobs:
           } >>"$GITHUB_STEP_SUMMARY"
 
       - name: Upload verified sanitised Django failure diagnostics
-        if: ${{ failure() && steps.django-tests.outcome == 'failure' }}
+        if: ${{ failure() && steps.django-tests.outputs.verified == 'true' && steps.django-failure-report.outputs.verified == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: django-test-diagnostics-${{ github.run_id }}
@@ -255,10 +268,20 @@ jobs:
       TIME_ZONE: Europe/Moscow
 
     steps:
-      - name: Checkout repository
+      - name: Checkout exact head
         uses: actions/checkout@v6
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+
+      - name: Verify exact checked-out SHA
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$EXPECTED_SHA"
+          printf 'EXACT_HEAD=%s\n' "$actual_sha"
 
       - name: Create masked ephemeral preview credentials
         shell: bash
@@ -320,6 +343,7 @@ jobs:
           fi
 
       - name: Capture and verify sanitised preview diagnostics after failure
+        id: preview-diagnostics
         if: ${{ failure() }}
         shell: bash
         run: |
@@ -340,10 +364,11 @@ jobs:
             --input "$RUNNER_TEMP/preview-diagnostics.sanitized.txt" \
             --env DJANGO_SECRET_KEY \
             --env POSTGRES_PASSWORD
+          printf 'verified=true\n' >>"$GITHUB_OUTPUT"
           cat "$RUNNER_TEMP/preview-diagnostics.sanitized.txt"
 
       - name: Upload verified sanitised preview diagnostics after failure
-        if: ${{ failure() }}
+        if: ${{ failure() && steps.preview-diagnostics.outputs.verified == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: preview-diagnostics-${{ github.run_id }}
