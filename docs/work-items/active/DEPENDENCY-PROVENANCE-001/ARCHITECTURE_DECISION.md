@@ -2,161 +2,247 @@
 
 ## Status
 
-`PROPOSED FOR PRODUCT-OWNER ACCEPTANCE`.
+`PROPOSED FOR PRODUCT-OWNER ACCEPTANCE AFTER BOUNDED REPAIR`.
 
-Этот ADR завершает inventory/decision-этап. Он не объявляет lock, digest pinning,
-SBOM publication или attestation уже реализованными.
+Этот ADR завершает inventory/architecture-decision этап. Он не объявляет уже
+реализованными production locks, digest migration, SBOM publication,
+provenance publication или attestation.
 
 ## Problem
 
-Фактический проект использует стандартный Python packaging через
-`pyproject.toml`, Docker/Compose и GitHub Actions. Прямой dependency intent
-читаем, но транзитивное разрешение выполняется во время каждой установки.
-Container images и Actions в текущем baseline заданы человекочитаемыми, но
-mutable tags. Отдельного JavaScript package-management contour не обнаружено.
+Фактический проект использует Python packaging через `pyproject.toml`, `pip`,
+Docker/Compose и GitHub Actions. Прямой dependency intent читаем, но
+транзитивное разрешение выполняется во время установки. Внешние container images
+и часть Actions используют mutable refs. Отдельного JavaScript package-management
+contour не обнаружено.
 
-Нужно получить воспроизводимую supply-chain модель без второго владельца
-зависимостей, без искусственного frontend toolchain и без внешнего SaaS.
+Архитектура должна дать воспроизводимый supply-chain contract без второго
+владельца Python intent, без искусственного frontend toolchain, без внешнего
+SaaS и без circular trust для lock generator.
 
 ## Decision
 
-### 1. Python
+### 1. Python ownership and five projections
 
-- `pyproject.toml` остаётся **единственным владельцем читаемого direct intent**:
-  runtime, development/test и browser extras, Python range и build backend.
-- `pip-tools` (`pip-compile`) выбирается как **генератор**, а не второй package
-  manager.
-- Hash-locked files являются deterministic generated projections и вручную не
-  редактируются.
-- Планируемые lock profiles:
-  - `build` — pinned installer/build tooling;
-  - `runtime` — production/runtime graph;
-  - `dev` — runtime + tests/quality tooling;
-  - `browser` — runtime + Python Playwright contour.
-- Installation использует `--require-hashes`; package installation из
-  `pyproject.toml` без соответствующего lock в CI/container запрещается.
-- Build isolation не может молча разрешать новый `setuptools`; build tooling
-  сначала устанавливается из `build` lock, затем wheel строится без сетевого
-  разрешения build dependencies.
+- `pyproject.toml` остаётся **единственным владельцем читаемого direct Python
+  intent**: Python range, build backend, runtime, development/test и browser
+  extras.
+- Python installation сохраняет модель `pip`.
+- `pip-tools` (`pip-compile`) используется как deterministic **generator**, а не
+  второй package manager и не второй intent owner.
+- Канонический список lock projections один во всех документах:
 
-### 2. JavaScript/browser/assets
+```text
+requirements/locks/tooling.txt
+requirements/locks/build.txt
+requirements/locks/runtime.txt
+requirements/locks/dev.txt
+requirements/locks/browser.txt
+```
 
-- Отдельный npm/yarn/pnpm contour **не вводится**, пока в репозитории нет
-  фактического JavaScript manifest/build graph.
-- Python package `playwright` остаётся частью Python browser profile.
-- Browser binaries считаются отдельным build/test input. Рекомендуемый сильный
-  вариант — digest-pinned official browser-test image, согласованный с exact
-  Playwright version. Download-on-run допустим только при доказанном browser
-  revision, cache key, content digest и fail-closed verification.
-- Внешние CSS/JS/font/icon resources должны быть repository-managed либо иметь
-  immutable URL и integrity evidence. Generated static assets получают manifest
-  с file digests и входят в provenance materials.
+- `tooling` — generator/bootstrap tooling;
+- `build` — wheel build frontend/backend;
+- `runtime` — production transitive graph;
+- `dev` — runtime плюс tests/quality tooling;
+- `browser` — runtime плюс Python Playwright contour.
 
-### 3. Containers
+Locks являются generated projections, содержат exact versions и SHA-256 hashes,
+не редактируются вручную и устанавливаются с `--require-hashes`. Build isolation
+не может молча разрешить другой `setuptools` или иной build dependency.
 
-- Каждая внешняя image reference задаётся immutable digest.
-- Читаемая версия сохраняется рядом как tag/comment, например концептуально:
-  `image: vendor/name:18.4-bookworm@sha256:... # 18.4-bookworm`.
-- Digest является исполняемым owner; comment/tag объясняет версию человеку.
+### 2. Non-circular tooling bootstrap root of trust
+
+`tooling.txt` **не считается доверенным только потому, что он сгенерировал сам
+себя**. Root of trust находится вне candidate tooling lock и состоит из
+одновременно принятых evidence:
+
+1. digest-pinned generator OCI environment;
+2. exact Python minor/platform;
+3. exact bootstrap `pip` and `pip-tools` versions;
+4. checked-in bootstrap manifest с exact distribution identities и SHA-256
+   hashes;
+5. digest bootstrap evidence record и exact accepted source commit.
+
+Первый accepted tooling lock создаётся так:
+
+```text
+owner-accepted generator image digest
++ independently verified bootstrap distribution hashes
+→ install bootstrap tooling with --require-hashes
+→ generate tooling/build/runtime/dev/browser
+→ semantic validation
+→ byte-for-byte regeneration comparison
+→ clean installation proof
+→ atomic owner acceptance of generator identity and all five locks
+```
+
+Таким образом первый tooling lock выводится из заранее принятого immutable
+bootstrap evidence, а не из собственного содержимого.
+
+Controlled generator upgrade:
+
+1. прежний accepted generator воспроизводит прежние пять locks и подтверждает
+   byte-identical baseline;
+2. candidate generator получает новый image digest, exact tool versions и
+   independently verified bootstrap hashes;
+3. прежний accepted validator проверяет candidate bootstrap manifest, format,
+   profile set и запрет ослабления hash policy;
+4. candidate generator создаёт все пять candidate locks;
+5. выполняются semantic validation, byte comparison, clean installs и review
+   полного graph diff;
+6. новый generator identity и пять locks принимаются атомарно.
+
+Rollback восстанавливает из предыдущего accepted commit одновременно:
+
+- прежние пять locks;
+- прежний generator image digest;
+- прежний bootstrap manifest/evidence digest;
+- прежний regeneration contract.
+
+После rollback прежний generator обязан снова получить byte-identical locks и
+успешный clean-install proof.
+
+### 3. JavaScript/browser/assets
+
+- npm/yarn/pnpm **не вводятся**, пока нет фактического JavaScript manifest/build
+  graph.
+- Python package `playwright` остаётся в `browser` profile.
+- Browser binaries являются отдельным immutable build/test input. Предпочтителен
+  digest-pinned browser-test image, согласованный с exact Playwright version.
+- External CSS/JS/font/icon resources должны быть repository-managed либо иметь
+  immutable identity и integrity evidence.
+- Generated static assets получают normalized path/size/SHA-256 manifest,
+  связанный provenance.
+
+### 4. Executable/config source completeness
+
+Dependency/build operation discovery выполняется по всем tracked применимым
+sources независимо от каталога:
+
+- `.github/workflows/**/*.yml|yaml`;
+- Dockerfiles;
+- Compose files;
+- `**/*.sh`, `**/*.bash`, применимые PowerShell scripts;
+- Makefile/task/build files;
+- extensionless shell entrypoints по shebang;
+- deploy/operator/build Python sources по пути, executable/shebang, имени или
+  фактическому external-process call.
+
+Произвольные documentation и generated JSON/Markdown files не считаются
+executable sources. Любое исключение допускается только как exact path с
+rationale. Generated inventory хранит полный applicable-path set и digest
+каждого source, поэтому новый применимый tracked path не может исчезнуть молча.
+
+### 5. Containers and local-output ownership
+
+- Каждая внешняя OCI image reference в implementation stage закрепляется
+  immutable digest; readable tag/version сохраняется рядом.
+- Tagless reference не является локальной по форме имени.
+- `image: postgres`, `image: postgres:18.4-bookworm` — external mutable inputs
+  без digest.
+- `image: postgres@sha256:...` — external immutable input.
+- Local build output признаётся только при доказанном owner: service `build:`,
+  tracked Dockerfile/build target или exact canonical local-output registry.
+- Одинаковое short name без собственного build evidence не наследует local
+  classification от другого service.
 - Final application image digest является deployment carrier identity.
-- Build и runtime stages, если они будут разделены, имеют отдельные pinned base
-  images и отражаются в provenance.
 
-### 4. GitHub Actions
+### 6. GitHub Actions and downloads
 
-- Внешние `uses:` разрешаются только по 40-character commit SHA.
-- Рядом обязателен readable release comment (`# v6`, `# v7` и т.п.).
-- Local actions/reusable workflows разрешены только из exact-head checkout.
-- Shell download не считается безопаснее `uses:` и проходит тот же integrity
-  contract.
+- External `uses:` разрешаются только по full 40-character commit SHA.
+- Рядом обязателен readable release comment.
+- Local actions/reusable workflows привязаны к exact-head checkout.
+- Shell downloads проходят тот же immutable source/digest contract.
+- Network response нельзя pipe directly в shell/interpreter.
+- Local HTTP health probe не классифицируется как external download.
 
-### 5. SBOM
+### 7. Deterministic SPDX 2.3 JSON
 
-- Канонический release SBOM: **SPDX 2.3 JSON** для final OCI image.
-- Генератор: локально исполняемый/pinned open-source scanner (рекомендуется
-  Syft в digest-pinned container) без внешнего SaaS.
-- SBOM включает обнаруживаемые OS packages, Python packages, application
-  package и их relationships.
-- Repository source commit, lock digests, image digest и generated-asset
-  manifest связываются через provenance; исходные файлы не маскируются под
-  software packages.
-- SBOM не является vulnerability scan и не доказывает отсутствие уязвимостей.
+Canonical release SBOM — **SPDX 2.3 JSON** для final OCI image digest.
+Обязательное поле `creationInfo.created` сохраняется.
 
-### 6. Build provenance
+Deterministic timestamp contract:
 
-- Формат: in-toto Statement v1 с SLSA Provenance v1 predicate.
+- accepted build epoch задаётся `SOURCE_DATE_EPOCH`;
+- workflow проверяет, что epoch равен exact source commit timestamp, полученному
+  из Git metadata, либо другому явно принятому immutable build epoch;
+- runner wall-clock time запрещён;
+- JSON value нормализуется в UTC RFC 3339 form `YYYY-MM-DDTHH:MM:SSZ`;
+- invalid/non-UTC/fractionally variable timestamp отклоняется.
+
+Deterministic `documentNamespace` создаётся из immutable tuple:
+
+```text
+namespace contract version
++ final image sha256 digest
++ exact source commit
++ build-definition digest
+```
+
+Namespace является canonical absolute URI. Random UUID, runner identity и
+wall-clock time запрещены. Один и тот же build evidence после повторной
+normalization даёт byte-identical payload. Другой image digest, source commit
+или build-definition digest обязан дать другой namespace. SBOM digest не входит
+в namespace input, чтобы не создавать circular hash; provenance связывает уже
+нормализованный namespace с final SBOM digest.
+
+SPDX JSON проходит pinned official SPDX 2.3 schema validation **до** secret scan,
+attestation и publication. Реальная release SBOM на этом repair-этапе не
+генерируется.
+
+Рекомендуемый generator остаётся локально исполняемым digest-pinned open-source
+tool (например, Syft) без внешнего SaaS.
+
+### 8. Build provenance
+
+- Формат: in-toto Statement v1 + SLSA Provenance v1 predicate.
 - Subject: final image/artifact digest.
-- Materials: exact repository commit, workflow identity/digest, all lock files,
-  Dockerfile/Compose inputs, pinned image/action identities, static manifest и
-  SBOM digest.
-- Preferred publication: GitHub artifact attestation after exact-head,
-  secret-hygiene and artifact-content verification. Repository-owned statement
-  остаётся проверяемой частью evidence и не зависит от UI.
+- Materials: exact repository commit, workflow digest, all five lock digests,
+  generator/bootstrap identity, Docker/Compose inputs, image/action identities,
+  static manifest, SBOM digest and non-secret build parameters.
+- Publication разрешена только после exact-head proof, schema/boundary checks,
+  secret-hygiene и artifact-content verification.
 
-### 7. Ordering
+### 9. Ordering
 
 ```text
 exact-head checkout
-→ canonical dependency validation
+→ source/inventory completeness
+→ digest-pinned generator bootstrap from checked exact hashes
+→ regenerate tooling/build/runtime/dev/browser
+→ semantic and byte-for-byte lock validation
+→ clean installation proof
 → secret-hygiene scan
 → build from immutable inputs
 → runtime/static tests
-→ SBOM generation
+→ deterministic SPDX generation and schema validation
 → SBOM boundary validation
 → artifact/SBOM secret scan
-→ provenance statement
+→ in-toto/SLSA provenance
 → attestation/publication
 → clean-tree verification
 ```
 
-Publication до secret-hygiene verification запрещена.
+## Preserved decisions
 
-## Options considered
+- `pyproject.toml` is sole direct Python intent owner;
+- `pip-tools` is generator, not package manager owner;
+- installation remains `pip`;
+- no npm/yarn/pnpm contour;
+- exactly five lock projections;
+- external OCI digest pinning;
+- full Action SHA pinning;
+- SPDX 2.3 JSON;
+- in-toto/SLSA provenance;
+- secret-hygiene-before-publication;
+- no external SaaS.
 
-| Option | Reproducibility | Hash support | Current-project fit | Owner burden | Vendor lock-in | External trust |
-|---|---|---|---|---|---|---|
-| `pip-tools` projections from `pyproject.toml` | High after implementation | Native pip hashes | Highest; keeps pip/setuptools | Moderate and familiar | Low | PyPI plus pinned tooling |
-| `uv.lock` / uv installer | High | Strong lock/integrity model | Good technically, but introduces a new package manager/toolchain | Low after migration, higher migration cost | Moderate tool dependency | PyPI plus uv distribution |
-| Poetry/PDM | High | Ecosystem-specific lock | Low; replaces existing packaging workflow | Higher conceptual burden | Moderate | Additional package-manager ecosystem |
-| Hand-maintained pinned requirements | Superficially high | Possible | Compatible but unsafe operationally | High; drift-prone | Low | PyPI |
+## Consequences and limitations
 
-## Why `pip-tools`
-
-Проще говоря: текущий проект уже говорит на языке `pip` и `pyproject.toml`.
-`pip-tools` добавляет недостающий deterministic lock и hashes, но не заставляет
-владельца системы осваивать второй способ установки и не переносит ownership из
-`pyproject.toml`. Скорость `uv` привлекательна, но сейчас не компенсирует риск
-смены package-management модели.
-
-## Consequences
-
-### Positive
-
-- direct intent остаётся читаемым;
-- transitive graph становится проверяемым;
-- build/runtime/test profiles разделены без второго owner;
-- Docker/Actions identity становится immutable;
-- SBOM и provenance относятся к одному exact head и одному final artifact;
-- решение не требует внешнего SaaS.
-
-### Costs and limitations
-
-- lock regeneration становится контролируемой процедурой, а не обычным
-  `pip install`;
-- Linux/architecture profile должен быть явно указан; новый platform требует
-  отдельного доказанного lock/build profile;
-- hosted-runner base environment остаётся внешней границей доверия, поэтому
-  значимые tools переносятся в pinned containers или фиксируются как provenance
-  inputs;
-- availability registries и upstream compromise нельзя доказать одним lock;
-- vulnerability status требует отдельного security pipeline.
-
-## Rejected assumptions
-
-- «Semver range достаточно для воспроизводимости» — неверно: transitive output
-  меняется без изменения репозитория.
-- «Tag с точной версией immutable» — неверно: registry tag может быть
-  переназначен.
-- «GitHub Action major tag безопасен, потому что официальный» — официальный
-  owner не делает mutable ref immutable.
-- «SBOM подтверждает безопасность» — SBOM только описывает состав.
+- lock regeneration becomes controlled supply-chain work;
+- platform profile is explicit;
+- hosted-runner internals remain an external boundary, so relevant tools are
+  moved to pinned environments or recorded as provenance inputs;
+- registry availability/upstream compromise are not solved by one lock;
+- SBOM is inventory, not vulnerability proof;
+- byte-for-byte build reproducibility is not claimed until independently proven.
