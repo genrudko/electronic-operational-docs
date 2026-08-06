@@ -4,7 +4,7 @@
 визуальную и integration acceptance. Он является историческим ledger и не
 владеет active work item, current main, runtime или Preview state.
 
-## Factual reconciliation ledger — 2026-08-05
+## Factual reconciliation ledger — 2026-08-06
 
 | Work item | PR | Accepted/final exact head | Merge commit | Acceptance |
 |---|---:|---|---|---|
@@ -20,6 +20,7 @@
 | `PROJECT-SUSTAINABILITY-001` | #49 | `cdf3238ca986761dbecc61a60bd28941ff8219ac` | `916a6d708ff4bd8433218068a204547b4a9abf84` | audit and industrialization program accepted |
 | `PROJECT-STATE-RECONCILIATION-001` | #51 | `a6534a5fb2e5ae59bfba6cd36e9e80ebc69801d6` | `9d6d48ad25d45cd79673c7017980a8bd92fa961a` | canonical state reconciliation and fail-closed documentation drift protection accepted |
 | `INDUSTRIALIZATION-PROGRAM-EXECUTION-001` | #53 | `9eec9b94392df45b44e7ad4165e8c76d06d05b36` | `3c02c5c05cdf604bbf230d215b82ddd875ab1421` | executable backlog, gate ownership and residual-risk contract accepted; Phase 0 completed |
+| `SECRET-HYGIENE-001` | #56 | `cd7dc07a9c77a71a5b1166aa7a57ee4d3afa93da` | `95b8dd6017745886f110f052ea0950b3d48173d8` | credential hygiene, CI leak prevention and fail-closed publication contract accepted |
 
 ### Why two heads appear for some historical PRs
 
@@ -34,6 +35,29 @@ The older acceptance document contained a period snapshot where PR #7 was still
 `OPEN / DRAFT / NOT MERGED`. That statement was true at the time of the snapshot
 but became stale after the later accepted merge. It is superseded by the ledger
 above; the existence of the earlier contradiction is explicitly preserved here.
+
+## SECRET-HYGIENE-001 exact-head evidence
+
+```text
+EOD CI:                      31078274329 / SUCCESS
+AUTO-001A Foundation CI:     31078274333 / SUCCESS
+AUTO-001B Controller CI:     31078274321 / SUCCESS
+EOD Documentation Contract: 31078274328 / SUCCESS
+EOD Development Stack:      31078274307 / SUCCESS
+EOD Secret Hygiene:          31078274346 / SUCCESS
+full Django suite:           720 tests / OK
+focused regressions:         17 tests / OK
+tracked scan:                854 files / 0 findings / allowlist 0
+clean tree:                  CLEAN_TREE=PASS porcelain_entries=0
+bounded history:             250 commits / 18 unique findings
+```
+
+Accepted: removal of broad test/fixture exemptions, process-local generated test
+credentials, one canonical scanner engine, exact allowlist semantics,
+post-redaction verification before log/summary/artifact publication, verified
+artifact gating, exact-head checkout checks and fail-closed clean-tree
+verification. Blind VPS/external rotation was not performed and live Preview was
+untouched.
 
 ## INDUSTRIALIZATION-PROGRAM-EXECUTION-001 exact-head evidence
 
