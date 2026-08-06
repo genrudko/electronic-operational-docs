@@ -113,22 +113,28 @@ jobs:
       - name: Collect static files
         run: python manage.py collectstatic --noinput --clear
 
-      - name: Run full Django test suite with sanitised output
+      - name: Run full Django test suite with verified sanitised output
         id: django-tests
         shell: bash
         run: |
           set -euo pipefail
-          raw_file="$(mktemp)"
-          printf 'DJANGO_TEST_RAW_FILE=%s\n' "$raw_file" >>"$GITHUB_ENV"
           set +e
-          python manage.py test apps --verbosity 2 >"$raw_file" 2>&1
+          python manage.py test apps --verbosity 2 >"$RUNNER_TEMP/django-test.raw.txt" 2>&1
           test_status=$?
           set -e
-          python scripts/secret_hygiene.py redact --input "$raw_file" --output django-test.sanitized.txt --env DJANGO_SECRET_KEY
-          cat django-test.sanitized.txt
+          python scripts/secret_hygiene.py redact \
+            --input "$RUNNER_TEMP/django-test.raw.txt" \
+            --output "$RUNNER_TEMP/django-test.sanitized.txt" \
+            --env DJANGO_SECRET_KEY \
+            --env EOD_DEMO_USER_PASSWORD
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$RUNNER_TEMP/django-test.sanitized.txt" \
+            --env DJANGO_SECRET_KEY \
+            --env EOD_DEMO_USER_PASSWORD
+          cat "$RUNNER_TEMP/django-test.sanitized.txt"
           exit "$test_status"
 
-      - name: Build sanitised Django failure report
+      - name: Build and verify sanitised Django failure report
         if: ${{ failure() && steps.django-tests.outcome == 'failure' }}
         shell: bash
         run: |
@@ -140,7 +146,8 @@ jobs:
           import re
           from pathlib import Path
 
-          log_path = Path("django-test.sanitized.txt")
+          runner_temp = Path(os.environ["RUNNER_TEMP"])
+          log_path = runner_temp / "django-test.sanitized.txt"
           lines = log_path.read_text(encoding="utf-8", errors="replace").splitlines()
           failure_headers = [
               line.strip()
@@ -187,47 +194,52 @@ jobs:
               report_lines.extend(f"- {marker}" for marker in summary_markers[-20:])
           report_lines.extend(["", "failure output:", ""])
           report_lines.extend(diagnostic_lines)
-          Path("django-test-failure.pending.txt").write_text(
+          (runner_temp / "django-test-failure.pending.txt").write_text(
               "\n".join(report_lines).rstrip() + "\n",
               encoding="utf-8",
           )
-          summary_path = Path(os.environ["GITHUB_STEP_SUMMARY"])
-          with summary_path.open("a", encoding="utf-8") as summary:
-              summary.write("## Django test failure\n\n")
-              summary.write(
-                  "Sanitised diagnostics are available in the retained workflow artifact.\n"
-              )
           PY
-          python scripts/secret_hygiene.py redact --input django-test-failure.pending.txt --output django-test-diagnostics.sanitized.txt --env DJANGO_SECRET_KEY
-          rm -f django-test-failure.pending.txt
-          cat django-test-diagnostics.sanitized.txt
+          python scripts/secret_hygiene.py redact \
+            --input "$RUNNER_TEMP/django-test-failure.pending.txt" \
+            --output "$RUNNER_TEMP/django-test-diagnostics.sanitized.txt" \
+            --env DJANGO_SECRET_KEY \
+            --env EOD_DEMO_USER_PASSWORD
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$RUNNER_TEMP/django-test-diagnostics.sanitized.txt" \
+            --env DJANGO_SECRET_KEY \
+            --env EOD_DEMO_USER_PASSWORD
+          cat "$RUNNER_TEMP/django-test-diagnostics.sanitized.txt"
+          {
+            echo "## Django test failure"
+            echo
+            echo "Verified sanitised diagnostics are available in the retained workflow artifact."
+          } >>"$GITHUB_STEP_SUMMARY"
 
-      - name: Upload sanitised Django failure diagnostics
+      - name: Upload verified sanitised Django failure diagnostics
         if: ${{ failure() && steps.django-tests.outcome == 'failure' }}
         uses: actions/upload-artifact@v7
         with:
           name: django-test-diagnostics-${{ github.run_id }}
           path: |
-            django-test-diagnostics.sanitized.txt
-            django-test.sanitized.txt
+            ${{ runner.temp }}/django-test-diagnostics.sanitized.txt
+            ${{ runner.temp }}/django-test.sanitized.txt
           if-no-files-found: error
           retention-days: 14
 
-      - name: Remove raw Django test output
+      - name: Remove Django diagnostic transport files
         if: ${{ always() }}
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -n "${DJANGO_TEST_RAW_FILE:-}" ]]; then
-            rm -f "$DJANGO_TEST_RAW_FILE"
-          fi
+          rm -f \
+            "$RUNNER_TEMP/django-test.raw.txt" \
+            "$RUNNER_TEMP/django-test.sanitized.txt" \
+            "$RUNNER_TEMP/django-test-failure.pending.txt" \
+            "$RUNNER_TEMP/django-test-diagnostics.sanitized.txt"
 
-      - name: Verify repository remains unchanged
-        shell: bash
-        run: |
-          set -euo pipefail
-          git diff --check
-          git status --short
+      - name: Verify repository remains exactly clean
+        if: ${{ always() }}
+        run: python scripts/secret_hygiene.py verify-clean-tree
 
   container-preview-smoke:
     name: Container preview smoke
@@ -268,14 +280,23 @@ jobs:
       - name: Start preview stack
         run: docker compose -f compose.preview.yaml up --detach
 
-      - name: Wait for application health
+      - name: Wait for application health with verified output
         shell: bash
         run: |
           set -euo pipefail
           for attempt in $(seq 1 45); do
             if curl --fail --silent --show-error \
-              http://127.0.0.1:8765/_health/ >/tmp/eod-health.json; then
-              cat /tmp/eod-health.json
+              http://127.0.0.1:8765/_health/ >"$RUNNER_TEMP/preview-health.raw.json"; then
+              python scripts/secret_hygiene.py redact \
+                --input "$RUNNER_TEMP/preview-health.raw.json" \
+                --output "$RUNNER_TEMP/preview-health.sanitized.json" \
+                --env DJANGO_SECRET_KEY \
+                --env POSTGRES_PASSWORD
+              python scripts/secret_hygiene.py verify-sanitized \
+                --input "$RUNNER_TEMP/preview-health.sanitized.json" \
+                --env DJANGO_SECRET_KEY \
+                --env POSTGRES_PASSWORD
+              cat "$RUNNER_TEMP/preview-health.sanitized.json"
               exit 0
             fi
             if (( attempt % 10 == 0 )); then
@@ -292,41 +313,63 @@ jobs:
           set -euo pipefail
           app_port="$(docker compose -f compose.preview.yaml port app 8765)"
           test "$app_port" = "127.0.0.1:8765"
-          if docker compose -f compose.preview.yaml port db 5432 >/tmp/eod-db-port.txt 2>&1; then
+          if docker compose -f compose.preview.yaml port db 5432 \
+            >"$RUNNER_TEMP/preview-db-port.raw.txt" 2>&1; then
             echo "PostgreSQL must not publish a host port."
-            cat /tmp/eod-db-port.txt
             exit 1
           fi
 
-      - name: Capture sanitised preview diagnostics after failure
+      - name: Capture and verify sanitised preview diagnostics after failure
         if: ${{ failure() }}
         shell: bash
         run: |
           set -euo pipefail
-          raw_file="$(mktemp)"
           {
             echo "===== docker compose ps --all ====="
             docker compose -f compose.preview.yaml ps --all
             echo
             echo "===== docker compose logs ====="
             docker compose -f compose.preview.yaml logs --no-color
-          } >"$raw_file" 2>&1
-          python scripts/secret_hygiene.py redact --input "$raw_file" --output preview-diagnostics.sanitized.txt --env DJANGO_SECRET_KEY --env POSTGRES_PASSWORD
-          rm -f "$raw_file"
-          cat preview-diagnostics.sanitized.txt
+          } >"$RUNNER_TEMP/preview-diagnostics.raw.txt" 2>&1
+          python scripts/secret_hygiene.py redact \
+            --input "$RUNNER_TEMP/preview-diagnostics.raw.txt" \
+            --output "$RUNNER_TEMP/preview-diagnostics.sanitized.txt" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$RUNNER_TEMP/preview-diagnostics.sanitized.txt" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD
+          cat "$RUNNER_TEMP/preview-diagnostics.sanitized.txt"
 
-      - name: Upload sanitised preview diagnostics after failure
+      - name: Upload verified sanitised preview diagnostics after failure
         if: ${{ failure() }}
         uses: actions/upload-artifact@v7
         with:
           name: preview-diagnostics-${{ github.run_id }}
-          path: preview-diagnostics.sanitized.txt
+          path: ${{ runner.temp }}/preview-diagnostics.sanitized.txt
           if-no-files-found: error
           retention-days: 7
 
       - name: Stop preview stack
         if: ${{ always() }}
         run: docker compose -f compose.preview.yaml down --volumes --remove-orphans
+
+      - name: Remove preview diagnostic transport files
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            "$RUNNER_TEMP/preview-health.raw.json" \
+            "$RUNNER_TEMP/preview-health.sanitized.json" \
+            "$RUNNER_TEMP/preview-db-port.raw.txt" \
+            "$RUNNER_TEMP/preview-diagnostics.raw.txt" \
+            "$RUNNER_TEMP/preview-diagnostics.sanitized.txt"
+
+      - name: Verify preview-smoke checkout remains exactly clean
+        if: ${{ always() }}
+        run: python scripts/secret_hygiene.py verify-clean-tree
 
   notify-telegram:
     name: Telegram CI notification
