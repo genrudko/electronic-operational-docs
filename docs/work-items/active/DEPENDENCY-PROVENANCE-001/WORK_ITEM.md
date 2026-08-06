@@ -3,7 +3,7 @@
 ## Статус
 
 `IN_PROGRESS` в issue #57, ветке
-`supply-chain/dependency-provenance-001` и создаваемом Draft PR.
+`supply-chain/dependency-provenance-001` и Draft PR #58.
 
 Финальная пользовательская приёмка, Ready for Review и merge требуют отдельной
 явной команды владельца продукта.

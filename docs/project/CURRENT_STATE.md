@@ -1,36 +1,60 @@
 # ЭОД — текущее состояние
 
-**Дата factual check:** 05.08.2026
+**Дата factual check:** 06.08.2026
 
 **Единственный владелец:** accepted main baseline, active work item/issue/PR/branch
 и runtime state.
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted main baseline: main / 3c02c5c05cdf604bbf230d215b82ddd875ab1421
-active work item: SECRET-HYGIENE-001
-active issue: #54
-active PR: #56 / OPEN / DRAFT / NOT MERGED
-active branch: security/secret-hygiene-001
-runtime impact: DEVELOPMENT
+accepted main baseline: main / 95b8dd6017745886f110f052ea0950b3d48173d8
+active work item: DEPENDENCY-PROVENANCE-001
+active issue: #57
+active PR: #58 / OPEN / DRAFT / NOT MERGED
+active branch: supply-chain/dependency-provenance-001
+runtime impact: NONE
 preview: UNTOUCHED
 ```
 
-## Active SECRET-HYGIENE-001 execution
+## Active DEPENDENCY-PROVENANCE-001 execution
 
-`SECRET-HYGIENE-001` выполняется только в issue #54, ветке
-`security/secret-hygiene-001` и Draft PR #56.
+`DEPENDENCY-PROVENANCE-001` выполняется только в issue #57, ветке
+`supply-chain/dependency-provenance-001` и Draft PR #58.
 
-Runtime impact классифицирован как `DEVELOPMENT`: work item изменяет
-development/demo bootstrap и credential-injection contract, но не разрешает
-автоматическое изменение действующего VPS. Любая доказанно необходимая rotation
-действующего development runtime должна выполняться отдельно, контролируемо и
-только после inventory фактически используемых значений. Preview остаётся
-`UNTOUCHED`.
+Work item ограничен supply-chain/build tooling: dependency lock,
+immutable image/action references, SBOM, build provenance и постоянные
+fail-closed gates. Runtime impact на coordination start — `NONE`.
+Live VPS и Preview не изменяются.
 
 Предметная очередь сохраняется в состоянии
 `PAUSED_PENDING_SAFE_CONTINUATION_AND_EXPLICIT_OWNER_DECISION`.
 `SHIFT-HANDOVER-001` не стартовал.
+
+## Accepted SECRET-HYGIENE-001 baseline
+
+`SECRET-HYGIENE-001` принят пользователем и merged обычным merge commit:
+
+```text
+accepted PR: #56 / CLOSED / MERGED
+accepted exact head: cd7dc07a9c77a71a5b1166aa7a57ee4d3afa93da
+merge commit / accepted main: 95b8dd6017745886f110f052ea0950b3d48173d8
+issue: #54 / CLOSED / COMPLETED
+user acceptance: PASSED
+merge method: ORDINARY MERGE COMMIT
+squash / rebase: NOT USED
+```
+
+Принятый baseline включает единый canonical scanner, отсутствие broad
+test/fixture exemptions, process-local test credentials, exact allowlist,
+post-redaction verification, verified artifact publication, exact-head
+checkout gates и фактический clean-tree check.
+
+Все шесть обязательных exact-head workflows завершились успешно;
+полный suite — `720 tests / OK`, focused regressions — `17 / OK`,
+current scan — `854 files / 0 findings / allowlist 0`.
+
+`SAFE-CONTINUATION` после merge достигнут на 3 из 8 обязательных work
+items. Следующий зависимый элемент — `DEPENDENCY-PROVENANCE-001`.
 
 ## Accepted INDUSTRIALIZATION-PROGRAM-EXECUTION-001 baseline
 
