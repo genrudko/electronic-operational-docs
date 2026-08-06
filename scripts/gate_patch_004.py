@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import os
+import secrets
 import sys
 from pathlib import Path
 from uuid import UUID
@@ -94,12 +95,15 @@ if wrong.status == Document.Status.DRAFT:
         document_type=document_type,
     ).first()
     before = sequence.last_value if sequence else 0
+    invalid_value = secrets.token_urlsafe(32)
+    while invalid_value == DEMO_ACCESS_VALUE:
+        invalid_value = secrets.token_urlsafe(32)
     try:
         register_document_with_password(
             document=wrong,
             actor=actor,
             user=actor.user,
-            password="wrong-password",
+            password=invalid_value,
         )
     except ValidationError:
         pass
