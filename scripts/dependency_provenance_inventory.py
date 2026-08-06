@@ -5,49 +5,31 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from pathlib import Path
 from typing import Any
 
-from scripts import dependency_provenance_core as _core
-from scripts.dependency_provenance_core import (
-    EXACT_SOURCE_EXCLUSIONS,
-    ExecutableSource,
-    TrackedFile,
-    build_inventory as _build_inventory,
-    discover_executable_sources,
-    scan_actions,
-    scan_images,
-    scan_operations,
-    sha256_text,
-    tracked_file_records,
-    tracked_files,
-)
+from scripts import dependency_provenance_core as core
 
 ROOT = Path(__file__).resolve().parents[1]
 WORK_ITEM_DIR = Path("docs/work-items/active/DEPENDENCY-PROVENANCE-001")
 INVENTORY_JSON = WORK_ITEM_DIR / "DEPENDENCY_BUILD_INVENTORY.json"
 INVENTORY_MD = WORK_ITEM_DIR / "DEPENDENCY_BUILD_INVENTORY.md"
 
-# A mere mention such as `for command in ... curl ...` is not a download.
-# Match curl/wget only where it occupies an executable command position.
-DOWNLOAD_COMMAND_RE = re.compile(
-    r"(?:^|(?:run:|RUN|&&|\|\||;|then|do)\s+)"
-    r"(?:sudo\s+)?(?:[A-Za-z0-9_./-]+/)?(?:curl|wget)\b",
-    re.I,
-)
-_core.COMMAND_PATTERNS = tuple(
-    (
-        input_class,
-        DOWNLOAD_COMMAND_RE if input_class == "external-download" else pattern,
-    )
-    for input_class, pattern in _core.COMMAND_PATTERNS
-)
+EXACT_SOURCE_EXCLUSIONS = core.EXACT_SOURCE_EXCLUSIONS
+ExecutableSource = core.ExecutableSource
+TrackedFile = core.TrackedFile
+discover_executable_sources = core.discover_executable_sources
+scan_actions = core.scan_actions
+scan_images = core.scan_images
+scan_operations = core.scan_operations
+sha256_text = core.sha256_text
+tracked_file_records = core.tracked_file_records
+tracked_files = core.tracked_files
 
 
 def build_inventory(root: Path = ROOT) -> dict[str, Any]:
-    return _build_inventory(root)
+    return core.build_inventory(root)
 
 
 def render_json(inventory: dict[str, Any]) -> str:
