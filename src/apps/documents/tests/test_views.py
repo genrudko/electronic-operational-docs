@@ -5,6 +5,7 @@ from django.urls import reverse
 
 from apps.documents.models import Document
 from apps.documents.services import create_document_draft, register_demo_document
+from tests.credential_fixtures import ephemeral_credential
 
 from .factories import document_context
 
@@ -12,7 +13,11 @@ from .factories import document_context
 @override_settings(DEBUG=True)
 class DocumentViewTests(TestCase):
     def setUp(self) -> None:
-        self.employee, self.user, self.document_type = document_context(code="VIEW")
+        self.credential = ephemeral_credential("DocumentView")
+        self.employee, self.user, self.document_type = document_context(
+            code="VIEW",
+            credential=self.credential,
+        )
 
     def _draft(self) -> Document:
         return create_document_draft(
@@ -81,7 +86,7 @@ class DocumentViewTests(TestCase):
 
         register_response = self.client.post(
             reverse("documents:register", kwargs={"public_id": document.public_id}),
-            {"password": "TestPass!2026", "confirm": "on"},
+            {"password": self.credential, "confirm": "on"},
         )
         self.assertRedirects(
             register_response,
