@@ -28,6 +28,7 @@ from apps.system.plan_001_audit.source_evidence import (
     classify_runtime_data,
     domain_hits,
 )
+from tests.credential_fixtures import ephemeral_credential
 
 
 def _commands() -> dict[str, dict[str, object]]:
@@ -226,9 +227,10 @@ class Plan001AuditToolingTests(SimpleTestCase):
         self.assertIsNone(executed_tests("no Django test summary"))
 
     def test_sanitisation_redacts_values_keys_and_uri_credentials(self) -> None:
-        secret = "PLAN001_TEST_SECRET_123456"
+        secret = ephemeral_credential("PlanAuditSanitize")
+        dsn = "".join(("postgresql://user:", secret, "@db/eod"))
         rendered = sanitize_text(
-            f"POSTGRES_PASSWORD={secret}\npostgresql://user:{secret}@db/eod",
+            "\n".join((f"POSTGRES_PASSWORD={secret}", dsn)),
             (secret,),
         )
         self.assertNotIn(secret, rendered)
@@ -259,7 +261,7 @@ class Plan001AuditToolingTests(SimpleTestCase):
                 verify_manifest(root, manifest)
 
     def test_secret_leak_scan_fails_closed(self) -> None:
-        secret = "PLAN001_TEST_SECRET_123456"
+        secret = ephemeral_credential("PlanAuditLeak")
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             report = root / "REPORT.md"
