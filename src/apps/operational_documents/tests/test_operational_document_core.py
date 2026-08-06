@@ -19,6 +19,7 @@ from apps.organizations.models import (
     RoleAssignment,
     Workplace,
 )
+from tests.credential_fixtures import ephemeral_credential
 
 from ..forms import OperationalFieldDefinitionFormSet, field_definitions_from_formset
 from ..models import (
@@ -38,10 +39,9 @@ from ..services import (
 
 
 class OperationalDocumentCoreTests(TestCase):
-    password = "StrongPass!2026"
-
     @classmethod
     def setUpTestData(cls) -> None:
+        cls.credential = ephemeral_credential("OperationalDocumentCore")
         cls.organization = Organization.objects.create(code="ORG", name="Тестовая ВЭС")
         cls.division = Division.objects.create(
             organization=cls.organization,
@@ -62,7 +62,7 @@ class OperationalDocumentCoreTests(TestCase):
         )
         cls.user = get_user_model().objects.create_user(
             username="shift.supervisor",
-            password=cls.password,
+            password=cls.credential,
             is_superuser=True,
             is_staff=True,
         )
@@ -80,7 +80,7 @@ class OperationalDocumentCoreTests(TestCase):
         )
         cls.performer_user = get_user_model().objects.create_user(
             username="operator",
-            password=cls.password,
+            password=cls.credential,
         )
         cls.performer = Employee.objects.create(
             organization=cls.organization,
@@ -164,7 +164,7 @@ class OperationalDocumentCoreTests(TestCase):
         )
         cls.foreign_user = get_user_model().objects.create_user(
             username="foreign.operator",
-            password=cls.password,
+            password=cls.credential,
         )
         cls.foreign_employee = Employee.objects.create(
             organization=cls.foreign_organization,
