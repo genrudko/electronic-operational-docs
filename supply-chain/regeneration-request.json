@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "work_item": "DEPENDENCY-PROVENANCE-001",
+  "reason": "normalize generator paths and add pinned SPDX schema validator tooling",
+  "requested_profiles": [
+    "tooling",
+    "build",
+    "runtime",
+    "dev",
+    "browser"
+  ],
+  "expected_generator": {
+    "pip": "25.3",
+    "pip_tools": "7.6.0",
+    "jsonschema": "4.26.0"
+  }
+}
