@@ -64,7 +64,7 @@ jobs:
           scripts/release_plan_compat_validation.py
           scripts/module_contract_status_projection.py
           scripts/industrialization_execution.py
-          scripts/dependency_provenance_inventory.py
+          scripts/dependency_provenance_inventory.py scripts/dependency_provenance_views.py
           scripts/secret_hygiene.py
           tests/process/test_project_state_contract.py
           tests/process/test_release_plan_compatibility.py
@@ -73,7 +73,7 @@ jobs:
           tests/process/test_dependency_provenance_inventory.py
 
       - name: Regenerate dependency inventory views
-        run: python scripts/dependency_provenance_inventory.py write
+        run: python scripts/dependency_provenance_views.py write
 
       - name: Prepare verified sanitised inventory drift evidence
         id: inventory_evidence
@@ -82,8 +82,8 @@ jobs:
           set -euo pipefail
           evidence_dir="$RUNNER_TEMP/dependency-inventory-generated-views"
           mkdir -p "$evidence_dir"
-          for name in DEPENDENCY_BUILD_INVENTORY.json DEPENDENCY_BUILD_INVENTORY.md; do
-            source="docs/work-items/active/DEPENDENCY-PROVENANCE-001/$name"
+          for source in docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY*; do
+            name="${source##*/}"
             target="$evidence_dir/$name"
             python scripts/secret_hygiene.py redact \
               --input "$source" \
@@ -106,7 +106,7 @@ jobs:
         run: >-
           git diff --exit-code --
           docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.json
-          docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.md
+          docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.md docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.*.json
 
       - name: Upload verified inventory drift evidence after failure
         if: ${{ failure() && steps.inventory_evidence.outputs.verified == 'true' }}
@@ -119,7 +119,7 @@ jobs:
           compression-level: 0
 
       - name: Validate dependency inventory contract
-        run: python scripts/dependency_provenance_inventory.py check
+        run: python scripts/dependency_provenance_views.py check
 
       - name: Validate documentation contract
         run: python scripts/check_documentation_contract.py
