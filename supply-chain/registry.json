@@ -64,62 +64,14 @@
   "generator": {
     "bootstrap_root": {
       "distributions": [
-        {
-          "filename": "build-1.5.0-py3-none-any.whl",
-          "name": "build",
-          "sha256": "13f3eecb844759ab66efec90ca17639bbf14dc06cb2fdf37a9010322d9c50a6f",
-          "url": "https://files.pythonhosted.org/packages/0d/fe/6bea5c9162869c5beba5d9c8abbed835ec85bf1ec1fba05a3822325c45f3/build-1.5.0-py3-none-any.whl",
-          "version": "1.5.0"
-        },
-        {
-          "filename": "click-8.4.2-py3-none-any.whl",
-          "name": "click",
-          "sha256": "e6f9f66136c816745b9d65817da91d61d957fb16e02e4dcd0552553c5a197b76",
-          "url": "https://files.pythonhosted.org/packages/fb/e2/79c688af8b210d232694e31e59da9f6ec747bae31c3f5946e4e9b98860d5/click-8.4.2-py3-none-any.whl",
-          "version": "8.4.2"
-        },
-        {
-          "filename": "packaging-26.3-py3-none-any.whl",
-          "name": "packaging",
-          "sha256": "d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c",
-          "url": "https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl",
-          "version": "26.3"
-        },
-        {
-          "filename": "pip-25.3-py3-none-any.whl",
-          "name": "pip",
-          "sha256": "9655943313a94722b7774661c21049070f6bbb0a1516bf02f7c8d5d9201514cd",
-          "url": "https://files.pythonhosted.org/packages/44/3c/d717024885424591d5376220b5e836c2d5293ce2011523c9de23ff7bf068/pip-25.3-py3-none-any.whl",
-          "version": "25.3"
-        },
-        {
-          "filename": "pip_tools-7.6.0-py3-none-any.whl",
-          "name": "pip-tools",
-          "sha256": "4bd99155b6d8de358a214b0865e1a2855a453570c1a83d40f7b564870b8657be",
-          "url": "https://files.pythonhosted.org/packages/60/2f/5f434153d2bf85ae8f85826228707e694276b9e73d6d8040433a03ceeea9/pip_tools-7.6.0-py3-none-any.whl",
-          "version": "7.6.0"
-        },
-        {
-          "filename": "pyproject_hooks-1.2.0-py3-none-any.whl",
-          "name": "pyproject-hooks",
-          "sha256": "9e5c6bfa8dcc30091c74b0cf803c81fdd29d94f01992a7707bc97babb1141913",
-          "url": "https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl",
-          "version": "1.2.0"
-        },
-        {
-          "filename": "setuptools-83.0.0-py3-none-any.whl",
-          "name": "setuptools",
-          "sha256": "29b23c360f22f414dc7336bb39178cc7bcbf6021ed2733cde173f09dba19abb3",
-          "url": "https://files.pythonhosted.org/packages/5d/40/e1e72872c6354b306daef1703549e8e83b4d43cfea356311bf722a043752/setuptools-83.0.0-py3-none-any.whl",
-          "version": "83.0.0"
-        },
-        {
-          "filename": "wheel-0.47.0-py3-none-any.whl",
-          "name": "wheel",
-          "sha256": "212281cab4dff978f6cedd499cd893e1f620791ca6ff7107cf270781e587eced",
-          "url": "https://files.pythonhosted.org/packages/87/1b/9e33c09813d65e248f7f773119148a612516a4bea93e9c6f545f78455b7c/wheel-0.47.0-py3-none-any.whl",
-          "version": "0.47.0"
-        }
+        {"filename":"build-1.5.0-py3-none-any.whl","name":"build","sha256":"13f3eecb844759ab66efec90ca17639bbf14dc06cb2fdf37a9010322d9c50a6f","url":"https://files.pythonhosted.org/packages/0d/fe/6bea5c9162869c5beba5d9c8abbed835ec85bf1ec1fba05a3822325c45f3/build-1.5.0-py3-none-any.whl","version":"1.5.0"},
+        {"filename":"click-8.4.2-py3-none-any.whl","name":"click","sha256":"e6f9f66136c816745b9d65817da91d61d957fb16e02e4dcd0552553c5a197b76","url":"https://files.pythonhosted.org/packages/fb/e2/79c688af8b210d232694e31e59da9f6ec747bae31c3f5946e4e9b98860d5/click-8.4.2-py3-none-any.whl","version":"8.4.2"},
+        {"filename":"packaging-26.3-py3-none-any.whl","name":"packaging","sha256":"d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c","url":"https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl","version":"26.3"},
+        {"filename":"pip-25.3-py3-none-any.whl","name":"pip","sha256":"9655943313a94722b7774661c21049070f6bbb0a1516bf02f7c8d5d9201514cd","url":"https://files.pythonhosted.org/packages/44/3c/d717024885424591d5376220b5e836c2d5293ce2011523c9de23ff7bf068/pip-25.3-py3-none-any.whl","version":"25.3"},
+        {"filename":"pip_tools-7.6.0-py3-none-any.whl","name":"pip-tools","sha256":"4bd99155b6d8de358a214b0865e1a2855a453570c1a83d40f7b564870b8657be","url":"https://files.pythonhosted.org/packages/60/2f/5f434153d2bf85ae8f85826228707e694276b9e73d6d8040433a03ceeea9/pip_tools-7.6.0-py3-none-any.whl","version":"7.6.0"},
+        {"filename":"pyproject_hooks-1.2.0-py3-none-any.whl","name":"pyproject-hooks","sha256":"9e5c6bfa8dcc30091c74b0cf803c81fdd29d94f01992a7707bc97babb1141913","url":"https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl","version":"1.2.0"},
+        {"filename":"setuptools-83.0.0-py3-none-any.whl","name":"setuptools","sha256":"29b23c360f22f414dc7336bb39178cc7bcbf6021ed2733cde173f09dba19abb3","url":"https://files.pythonhosted.org/packages/5d/40/e1e72872c6354b306daef1703549e8e83b4d43cfea356311bf722a043752/setuptools-83.0.0-py3-none-any.whl","version":"83.0.0"},
+        {"filename":"wheel-0.47.0-py3-none-any.whl","name":"wheel","sha256":"212281cab4dff978f6cedd499cd893e1f620791ca6ff7107cf270781e587eced","url":"https://files.pythonhosted.org/packages/87/1b/9e33c09813d65e248f7f773119148a612516a4bea93e9c6f545f78455b7c/wheel-0.47.0-py3-none-any.whl","version":"0.47.0"}
       ],
       "pip": "25.3",
       "pip_tools": "7.6.0",
@@ -127,169 +79,49 @@
       "source_commit": "cfdfc02cc6ae28de83bafd8e2c7e4e5a5222ad5d"
     },
     "kind": "pip-tools",
-    "oci": {
-      "digest": "sha256:67a1e1f215ccda113cfc024e8639049257e88f273898f595b61476d128d387e8",
-      "repository": "python",
-      "tag": "python:3.13-slim-bookworm"
-    },
+    "oci": {"digest":"sha256:67a1e1f215ccda113cfc024e8639049257e88f273898f595b61476d128d387e8","repository":"python","tag":"python:3.13-slim-bookworm"},
     "version": "7.6.0"
   },
   "github_actions": {
-    "actions/attest": {
-      "sha": "508db95dd578ae2727ebd6217d5ba78e4fbda05d",
-      "version": "v4.2.1"
-    },
-    "actions/checkout": {
-      "sha": "d23441a48e516b6c34aea4fa41551a30e30af803",
-      "version": "v6.1.0"
-    },
-    "actions/github-script": {
-      "sha": "3a2844b7e9c422d3c10d287c895573f7108da1b3",
-      "version": "v9.0.0"
-    },
-    "actions/setup-python": {
-      "sha": "ece7cb06caefa5fff74198d8649806c4678c61a1",
-      "version": "v6.3.0"
-    },
-    "actions/upload-artifact": {
-      "sha": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
-      "version": "v7.0.1"
-    }
+    "actions/attest": {"sha":"508db95dd578ae2727ebd6217d5ba78e4fbda05d","version":"v4.2.1"},
+    "actions/checkout": {"sha":"d23441a48e516b6c34aea4fa41551a30e30af803","version":"v6.1.0"},
+    "actions/github-script": {"sha":"3a2844b7e9c422d3c10d287c895573f7108da1b3","version":"v9.0.0"},
+    "actions/setup-python": {"sha":"ece7cb06caefa5fff74198d8649806c4678c61a1","version":"v6.3.0"},
+    "actions/upload-artifact": {"sha":"043fb46d1a93c77aae656e7c1c64a875d1fc6a0a","version":"v7.0.1"}
   },
   "lock_profiles": [
-    {
-      "name": "tooling",
-      "path": "requirements/locks/tooling.txt"
-    },
-    {
-      "name": "build",
-      "path": "requirements/locks/build.txt"
-    },
-    {
-      "name": "runtime",
-      "path": "requirements/locks/runtime.txt"
-    },
-    {
-      "name": "dev",
-      "path": "requirements/locks/dev.txt"
-    },
-    {
-      "name": "browser",
-      "path": "requirements/locks/browser.txt"
-    }
+    {"name":"tooling","path":"requirements/locks/tooling.txt"},
+    {"name":"build","path":"requirements/locks/build.txt"},
+    {"name":"runtime","path":"requirements/locks/runtime.txt"},
+    {"name":"dev","path":"requirements/locks/dev.txt"},
+    {"name":"browser","path":"requirements/locks/browser.txt"}
   ],
   "opaque_process_allowlist": [
-    {
-      "call": "subprocess.run",
-      "line": 493,
-      "path": "scripts/dependency_provenance_contract.py",
-      "rationale": "Local structural docker compose config validation over a tracked Compose path; no dependency installation, download, or remote execution."
-    },
-    {
-      "call": "subprocess.run",
-      "line": 33,
-      "path": "scripts/dependency_provenance_gate.py",
-      "rationale": "Local structural docker compose config rendering over a tracked Compose path; no dependency installation, download, or remote execution."
-    },
-    {
-      "call": "subprocess.run",
-      "line": 134,
-      "path": "scripts/dependency_provenance_implementation.py",
-      "rationale": "Single repository supply-chain command wrapper; all current call sites provide an explicit bounded argv and the exact source is covered by independent inventory digest evidence."
-    },
-    {
-      "call": "subprocess.run",
-      "line": 484,
-      "path": "scripts/dependency_provenance_implementation.py",
-      "rationale": "Deterministic pip-tools compile invocation assembled from the fixed generator interpreter, fixed compile flags, accepted lock profile names and temporary repository-controlled paths."
-    },
-    {
-      "call": "subprocess.run",
-      "line": 67,
-      "path": "scripts/eod_context_manager.py",
-      "rationale": "Context snapshot helper executes only repository-constructed local Git, Python/Django diagnostic, git archive and git bundle argv; it performs no dependency installation or external download."
-    },
-    {
-      "call": "subprocess.run",
-      "line": 63,
-      "path": "scripts/gate_patch_003_1.py",
-      "rationale": "Windows-only launcher validation executes the tracked run_dev.ps1 in CheckOnly mode through locally discovered PowerShell; no dependency install, download or remote command is involved."
-    },
-    {
-      "call": "subprocess.run",
-      "line": 45,
-      "path": "scripts/gate_patch_006_2_repository_security.py",
-      "rationale": "Repository security gate wrapper is limited to local git log and git ls-files history/tracked-path inspection before repository-security assertions; no dependency or external artifact acquisition occurs."
-    },
-    {
-      "call": "subprocess.run",
-      "line": 83,
-      "path": "scripts/git_finalize_patch.py",
-      "rationale": "Repository finalization helper executes bounded Git and GitHub CLI repository-state/finalization operations only; it is not a dependency installer or external artifact download path."
-    },
-    {
-      "call": "subprocess.run",
-      "line": 109,
-      "path": "scripts/snapshot_presentation_database.py",
-      "rationale": "Presentation snapshot helper executes the local project interpreter with fixed Django dumpdata arguments against a locally selected snapshot database; no package or external artifact acquisition occurs."
-    },
-    {
-      "call": "subprocess.run",
-      "line": 38,
-      "path": "scripts/theme_css_audit.py",
-      "rationale": "Theme audit reads historical tracked CSS paths through local git ls-tree only; it performs no install, download or remote execution."
-    },
-    {
-      "call": "subprocess.run",
-      "line": 51,
-      "path": "scripts/theme_css_audit.py",
-      "rationale": "Theme audit reads a tracked CSS blob from a supplied Git ref through local git show only; it performs no install, download or remote execution."
-    },
-    {
-      "call": "subprocess.run",
-      "line": 13,
-      "path": "tests/automation/test_auto_001b_request_entrypoint.py",
-      "rationale": "Regression test invokes the repository AUTO-001B request module with fixed --help arguments using the current Python interpreter; no dependency or network acquisition occurs."
-    },
-    {
-      "call": "subprocess.run",
-      "line": 149,
-      "path": "src/apps/system/plan_001_audit/core.py",
-      "rationale": "PLAN-001 evidence runner receives commands only from the bounded audit command set: Django check/migration/test and the tracked architecture gate; no dependency installation or external artifact acquisition is exposed."
-    }
+    {"call":"subprocess.run","line":493,"path":"scripts/dependency_provenance_contract.py","rationale":"Local structural docker compose config validation over a tracked Compose path; no dependency installation, download, or remote execution."},
+    {"call":"subprocess.run","line":33,"path":"scripts/dependency_provenance_gate.py","rationale":"Local structural docker compose config rendering over a tracked Compose path; no dependency installation, download, or remote execution."},
+    {"call":"subprocess.run","line":134,"path":"scripts/dependency_provenance_implementation.py","rationale":"Single repository supply-chain command wrapper; all current call sites provide an explicit bounded argv and the exact source is covered by independent inventory digest evidence."},
+    {"call":"subprocess.run","line":484,"path":"scripts/dependency_provenance_implementation.py","rationale":"Deterministic pip-tools compile invocation assembled from the fixed generator interpreter, fixed compile flags, accepted lock profile names and temporary repository-controlled paths."},
+    {"call":"subprocess.run","line":67,"path":"scripts/eod_context_manager.py","rationale":"Context snapshot helper executes only repository-constructed local Git, Python/Django diagnostic, git archive and git bundle argv; it performs no dependency installation or external download."},
+    {"call":"subprocess.run","line":63,"path":"scripts/gate_patch_003_1.py","rationale":"Windows-only launcher validation executes the tracked run_dev.ps1 in CheckOnly mode through locally discovered PowerShell; no dependency install, download or remote command is involved."},
+    {"call":"subprocess.run","line":45,"path":"scripts/gate_patch_006_2_repository_security.py","rationale":"Repository security gate wrapper is limited to local git log and git ls-files history/tracked-path inspection before repository-security assertions; no dependency or external artifact acquisition occurs."},
+    {"call":"subprocess.run","line":83,"path":"scripts/git_finalize_patch.py","rationale":"Repository finalization helper executes bounded Git and GitHub CLI repository-state/finalization operations only; it is not a dependency installer or external artifact download path."},
+    {"call":"subprocess.run","line":109,"path":"scripts/snapshot_presentation_database.py","rationale":"Presentation snapshot helper executes the local project interpreter with fixed Django dumpdata arguments against a locally selected snapshot database; no package or external artifact acquisition occurs."},
+    {"call":"subprocess.run","line":38,"path":"scripts/theme_css_audit.py","rationale":"Theme audit reads historical tracked CSS paths through local git ls-tree only; it performs no install, download or remote execution."},
+    {"call":"subprocess.run","line":51,"path":"scripts/theme_css_audit.py","rationale":"Theme audit reads a tracked CSS blob from a supplied Git ref through local git show only; it performs no install, download or remote execution."},
+    {"call":"subprocess.run","line":13,"path":"tests/automation/test_auto_001b_request_entrypoint.py","rationale":"Regression test invokes the repository AUTO-001B request module with fixed --help arguments using the current Python interpreter; no dependency or network acquisition occurs."},
+    {"call":"subprocess.run","line":149,"path":"src/apps/system/plan_001_audit/core.py","rationale":"PLAN-001 evidence runner receives commands only from the bounded audit command set: Django check/migration/test and the tracked architecture gate; no dependency installation or external artifact acquisition is exposed."},
+    {"call":"subprocess.run","line":540,"path":"scripts/secret_hygiene.py","rationale":"Secret-hygiene tracked-path discovery runs local git ls-files only; it does not install dependencies or acquire external artifacts."},
+    {"call":"subprocess.run","line":765,"path":"scripts/secret_hygiene.py","rationale":"Secret-hygiene bounded history inventory runs local git rev-list against HEAD only; it does not install dependencies or acquire external artifacts."},
+    {"call":"subprocess.run","line":774,"path":"scripts/secret_hygiene.py","rationale":"Secret-hygiene history classification runs local git grep over the bounded commit list only; it does not install dependencies or acquire external artifacts."},
+    {"call":"subprocess.run","line":828,"path":"scripts/secret_hygiene.py","rationale":"Secret-hygiene clean-tree check runs local git status only; it does not install dependencies or acquire external artifacts."},
+    {"call":"subprocess.run","line":949,"path":"scripts/secret_hygiene.py","rationale":"Secret-hygiene whitespace/clean-tree validation runs local git diff --check only; it does not install dependencies or acquire external artifacts."}
   ],
-  "policy": {
-    "byte_reproducibility_claimed": false,
-    "external_saas": false,
-    "publication_requires_secret_hygiene": true
-  },
-  "python": {
-    "implementation": "CPython",
-    "minor": "3.13",
-    "platform": "linux_x86_64"
-  },
+  "policy": {"byte_reproducibility_claimed":false,"external_saas":false,"publication_requires_secret_hygiene":true},
+  "python": {"implementation":"CPython","minor":"3.13","platform":"linux_x86_64"},
   "schema": 1,
-  "spdx_schema": {
-    "commit": "aadf3b0b8dbbabdb4d880b0fc714255fea436ff7",
-    "path": "schemas/spdx-schema.json",
-    "repository": "spdx/spdx-spec",
-    "sha256": "239208b7ac287b3cf5d9a9af23f9d69863971102a5e1587a27a398b43490b89b",
-    "url": "https://raw.githubusercontent.com/spdx/spdx-spec/aadf3b0b8dbbabdb4d880b0fc714255fea436ff7/schemas/spdx-schema.json",
-    "version": "2.3"
-  },
+  "spdx_schema": {"commit":"aadf3b0b8dbbabdb4d880b0fc714255fea436ff7","path":"schemas/spdx-schema.json","repository":"spdx/spdx-spec","sha256":"239208b7ac287b3cf5d9a9af23f9d69863971102a5e1587a27a398b43490b89b","url":"https://raw.githubusercontent.com/spdx/spdx-spec/aadf3b0b8dbbabdb4d880b0fc714255fea436ff7/schemas/spdx-schema.json","version":"2.3"},
   "tooling": {
-    "provenance": {
-      "name": "repository-python-generator",
-      "script": "scripts/dependency_provenance_contract.py"
-    },
-    "sbom": {
-      "image": {
-        "digest": "sha256:86fde6445b483d902fe011dd9f68c4987dd94e07da1e9edc004e3c2422650de6",
-        "repository": "anchore/syft",
-        "tag": "anchore/syft:v1.44.0"
-      },
-      "name": "anchore/syft",
-      "version": "1.44.0"
-    }
+    "provenance": {"name":"repository-python-generator","script":"scripts/dependency_provenance_contract.py"},
+    "sbom": {"image":{"digest":"sha256:86fde6445b483d902fe011dd9f68c4987dd94e07da1e9edc004e3c2422650de6","repository":"anchore/syft","tag":"anchore/syft:v1.44.0"},"name":"anchore/syft","version":"1.44.0"}
   }
 }
