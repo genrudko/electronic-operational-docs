@@ -184,6 +184,12 @@
       "line": 493,
       "path": "scripts/dependency_provenance_contract.py",
       "rationale": "Local structural docker compose config validation over a tracked Compose path; no dependency installation, download, or remote execution."
+    },
+    {
+      "call": "subprocess.run",
+      "line": 33,
+      "path": "scripts/dependency_provenance_gate.py",
+      "rationale": "Local structural docker compose config rendering over a tracked Compose path; no dependency installation, download, or remote execution."
     }
   ],
   "policy": {
