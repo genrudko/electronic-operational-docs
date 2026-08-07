@@ -36,6 +36,7 @@ line-length = 110
 extend-exclude = [
     ".venv",
     "backups",
+    "build",
     "data",
     "logs",
     "media",
