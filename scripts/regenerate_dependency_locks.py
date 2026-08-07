@@ -21,7 +21,11 @@ PROFILES = ("tooling", "build", "runtime", "dev", "browser")
 
 
 def main() -> int:
-    with tempfile.TemporaryDirectory(prefix="eod-lock-regeneration-") as directory:
+    # Keep the verifier work-root inside the canonical generator namespace so
+    # normalize_lock_header() removes the ephemeral path exactly as it does for
+    # the accepted apply path. A distinct random prefix would leak into
+    # pip-compile "via" comments and make byte-exact regeneration impossible.
+    with tempfile.TemporaryDirectory(prefix="eod-supply-") as directory:
         work = Path(directory)
         distributions = implementation.verified_bootstrap_wheelhouse(work)
         rendered_bootstrap = implementation.render_bootstrap(distributions)
