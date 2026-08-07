@@ -427,7 +427,7 @@
     "scripts/plan_001_evidence_audit.py": "845cc3d7b0c9b1128def6c4f812b3768d6399337cbc7c3334ff5abb6b5a7824b",
     "scripts/project_state_contract.py": "69804ce9dec046994b249ee2badc3946771b65f426f28c5473266cd7416e525e",
     "scripts/publish_workflow_blobs.py": "441db1b9fc16606ac2b3a721ae35e4df3cf163b05fc4e5fca3394427a04e8b01",
-    "scripts/regenerate_dependency_locks.py": "dabe9688b6c55eea5abe3710aca9244c472be7a79c99201414bb6e7555b2f6cd",
+    "scripts/regenerate_dependency_locks.py": "0c4fe4a560b2ea3c08490f9d7eadebf03ba333bfc581259dfc81697a20094a7f",
     "scripts/release_plan_compat_validation.py": "5846e1c11f457fcc8ce5613b43da2832cd812407a7242cebc26bb8baa8ce9ec8",
     "scripts/release_plan_model.py": "e0acfdf300bf94a6b30d2d90c5b555bc014b839496b4f81945a9a0a0f1418c32",
     "scripts/release_plan_validation.py": "fd540028b2e8e6edf30b61631dd8028741fcc8fcfbdb68a3772472acd5aee732",
