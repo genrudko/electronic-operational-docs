@@ -411,7 +411,7 @@
     "scripts/demo_release_plan.py": "b7862a65b0e725c0678058ac2e0dcd6667db2a60b86da6888233f7a1fb198089",
     "scripts/dependency_provenance_contract.py": "db9465b2d5b939606d989f6c30bfaefcc6560840252a29ef3c75a8f42b287d43",
     "scripts/dependency_provenance_core.py": "aa8045db8abb15896bcec63bda733c2ebd7b121f02f4558137b72b922b79f554",
-    "scripts/dependency_provenance_fixture_gates.py": "c667f2e9a44d0dfbdb88fdbd605db46d1e459c2ac912d95508f60b3b102b8f66",
+    "scripts/dependency_provenance_fixture_gates.py": "e06f9b0bf060e0b6823975662ed7006a763a713965321bb2e77cd2637f3b3a57",
     "scripts/dependency_provenance_gate.py": "107e2446252fb35700e1a7bb9a433020fc05ded6226dac7b2b3f1f63375d6056",
     "scripts/dependency_provenance_implementation.py": "2c3ffd32478b0c24b86f200c61f6b5399a846274b8828921dcb346bea254f501",
     "scripts/dependency_provenance_inventory.py": "870f9bbd4b5ced0585a330c180b6e738378f201125b6a346ee1823a86da60980",
@@ -445,7 +445,7 @@
     "supply-chain/Dockerfile.browser": "0060a0d1dde4afeea1b37db6eb2c079c30bf2e38e12c71e1fcb5910e1e9d54fa",
     "tests/automation/test_auto_001b_request_entrypoint.py": "3a5c0fbb38c047de125bb892ddbf74f74c9cfb25e2472b99e5edab8d1919f9f8",
     "tests/browser_theme/run.py": "560e719f18ba2456896be68844683e11727e2cdbd26b6a50449e6c50a80a3936",
-    "tests/process/test_dependency_provenance_contract.py": "4ea668f2a0725c2f99b27fa50341f4961df1f1f2bac377bfddb737f706d882cb",
+    "tests/process/test_dependency_provenance_contract.py": "e3931ac15a043429e44f2272b60f21b83a4ab2768ae26c4afe231d0ea90e6295",
     "tests/process/test_dependency_provenance_inventory.py": "e446166e56b002bd0a2a2efc8ed32b486702a8d3c92f8796992bc967c2ca1a6b",
     "tests/process/test_release_plan_compatibility.py": "591c9185f3770e64476cbf7f750011c6c5af0db0be4fd469f6d5748480ce0f42",
     "tests/security/test_secret_hygiene.py": "39f42a287c1f0c5c8a91f8c24af5202b53d56da848e7321f38e0808ca7f72754"
