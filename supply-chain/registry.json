@@ -202,6 +202,12 @@
       "line": 484,
       "path": "scripts/dependency_provenance_implementation.py",
       "rationale": "Deterministic pip-tools compile invocation assembled from the fixed generator interpreter, fixed compile flags, accepted lock profile names and temporary repository-controlled paths."
+    },
+    {
+      "call": "subprocess.run",
+      "line": 67,
+      "path": "scripts/eod_context_manager.py",
+      "rationale": "Context snapshot helper executes only repository-constructed local Git, Python/Django diagnostic, git archive and git bundle argv; it performs no dependency installation or external download."
     }
   ],
   "policy": {
