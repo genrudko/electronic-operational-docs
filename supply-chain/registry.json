@@ -33,7 +33,7 @@
   "contract": "DEPENDENCY-PROVENANCE-001",
   "external_assets": {
     "onest_variable_woff2": {
-      "repository_path": "src/static/system/fonts/Onest[wght].woff2",
+      "repository_path": "supply-chain/assets/Onest[wght].woff2",
       "sha256": "e117f6aee7c97fbc2f7e6514fa08a31ad43e7bd116105aeac15c8c1b8427f7db",
       "source_url": "https://cdn.jsdelivr.net/gh/simpals/onest@f18c06a14512e43a6191849278d6f07fdaf347d6/fonts/webfonts/Onest%5Bwght%5D.woff2",
       "upstream_commit": "f18c06a14512e43a6191849278d6f07fdaf347d6"
@@ -135,6 +135,10 @@
     "version": "7.6.0"
   },
   "github_actions": {
+    "actions/attest": {
+      "sha": "508db95dd578ae2727ebd6217d5ba78e4fbda05d",
+      "version": "v4.2.1"
+    },
     "actions/checkout": {
       "sha": "d23441a48e516b6c34aea4fa41551a30e30af803",
       "version": "v6.1.0"
