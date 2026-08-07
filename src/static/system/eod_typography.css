@@ -2,12 +2,13 @@
  * EOD canonical typography.
  *
  * Onest is the corporate family for every user-facing screen, including the
- * operational journal. The exact accepted variable WOFF2 is repository-managed and verified
- * by the canonical supply-chain registry before build/publication.
+ * operational journal. The acceptance candidate loads the exact variable WOFF2
+ * from an immutable upstream revision; production/offline packaging must host
+ * the same licensed asset locally.
  */
 @font-face {
     font-family: "Onest";
-    src: url("fonts/Onest%5Bwght%5D.woff2") format("woff2-variations");
+    src: url("https://cdn.jsdelivr.net/gh/simpals/onest@f18c06a14512e43a6191849278d6f07fdaf347d6/fonts/webfonts/Onest%5Bwght%5D.woff2") format("woff2-variations");
     font-style: normal;
     font-weight: 100 900;
     font-display: swap;
