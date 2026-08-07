@@ -139,11 +139,11 @@ jobs:
       - name: Build locked wheel and install without dependency resolution
         run: |
           set -euo pipefail
-          mkdir -p "$EVIDENCE_DIR/dist"
-          python -m build --wheel --no-isolation --outdir "$EVIDENCE_DIR/dist"
-          wheel="$EVIDENCE_DIR/dist/electronic_operational_docs-0.1.0-py3-none-any.whl"
+          rm -rf build dist
+          python -m build --wheel --no-isolation --outdir dist
+          wheel="dist/electronic_operational_docs-0.1.0-py3-none-any.whl"
           test -f "$wheel"
-          python -m pip install --disable-pip-version-check --no-deps "$wheel"
+          python -m pip install --disable-pip-version-check --no-deps dist/electronic_operational_docs-0.1.0-py3-none-any.whl
           python -m pip check
           printf 'WHEEL_PATH=%s\n' "$wheel" >>"$GITHUB_ENV"
           printf 'WHEEL_SHA256=%s\n' "$(sha256sum "$wheel" | cut -d' ' -f1)" >>"$GITHUB_ENV"
