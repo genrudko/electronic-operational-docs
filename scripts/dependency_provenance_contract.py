@@ -14,15 +14,14 @@ import ast
 import datetime as dt
 import hashlib
 import json
-import os
 import re
 import subprocess
 import sys
 import tomllib
-from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = ROOT / "supply-chain/registry.json"
@@ -196,7 +195,11 @@ def validate_registry(registry: dict[str, Any]) -> None:
         raise ContractViolation("five-lock-profiles", repr(profiles))
     root = registry.get("generator", {}).get("bootstrap_root", {})
     distributions = root.get("distributions", [])
-    if not distributions or any(not re.fullmatch(r"[0-9a-f]{64}", item.get("sha256", "")) for item in distributions):
+    invalid_distribution_digests = any(
+        not re.fullmatch(r"[0-9a-f]{64}", item.get("sha256", ""))
+        for item in distributions
+    )
+    if not distributions or invalid_distribution_digests:
         raise ContractViolation("tooling-bootstrap-root", "distribution-digests")
     generator_image = registry.get("generator", {}).get("oci", {})
     if not re.fullmatch(r"sha256:[0-9a-f]{64}", generator_image.get("digest", "")):
