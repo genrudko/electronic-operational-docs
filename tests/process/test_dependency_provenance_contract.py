@@ -182,7 +182,12 @@ class DependencyProvenanceContractFixtureTests(unittest.TestCase):
         elif rule == "lock-integrity-hashes":
             contract.parse_lock(self.temporary_lock("demo==1.0\n"))
         elif rule == "exact-generated-lock":
-            contract.parse_lock(self.temporary_lock("not-a-lock-record\n"))
+            contract.parse_lock(
+                self.temporary_lock(
+                    f"demo==1.0 --hash=sha256:{HASH}\n"
+                    f"demo==1.0 --hash=sha256:{HASH}\n"
+                )
+            )
         elif rule == "version-lock-hash-coherence":
             locks = {
                 profile: {} for profile in contract.LOCK_PROFILES
@@ -288,21 +293,9 @@ class DependencyProvenanceContractFixtureTests(unittest.TestCase):
         elif rule == "javascript-contour-owner":
             fixture_gates.validate_javascript_contour(["ui/package.json"])
         elif rule == "browser-binary-provenance":
-            locks = {
-                profile: {} for profile in contract.LOCK_PROFILES
-            }
-            locks["browser"] = {"playwright": record("playwright", "0.0")}
-            with mock.patch.object(
-                contract,
-                "direct_intent",
-                return_value={
-                    "build": set(),
-                    "runtime": set(),
-                    "dev": set(),
-                    "browser": set(),
-                },
-            ):
-                contract.validate_lock_intent(current_registry, locks)
+            candidate = json.loads(json.dumps(current_registry))
+            candidate["browser"]["package"]["version"] = "0.0"
+            contract.validate_registry(candidate)
         elif rule == "static-manifest-exact":
             with tempfile.TemporaryDirectory() as directory:
                 root = Path(directory) / "staticfiles"
