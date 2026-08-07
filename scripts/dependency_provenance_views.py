@@ -15,7 +15,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 if str(REPOSITORY_ROOT) not in sys.path:
     sys.path.insert(0, str(REPOSITORY_ROOT))
 
-from scripts import dependency_provenance_contract as provenance_contract  # noqa: E402
+from scripts import dependency_provenance_source_gate as source_gate  # noqa: E402
 from scripts.dependency_provenance_inventory import (  # noqa: E402
     INVENTORY_JSON,
     INVENTORY_MD,
@@ -48,21 +48,14 @@ def recompute_source_completeness(
 ) -> None:
     executable = inventory["contours"]["executable_sources"]
     recorded = set(executable["applicable_paths"])
-    original_root = provenance_contract.ROOT
-    provenance_contract.ROOT = root
-    try:
-        independent = provenance_contract.independently_applicable_paths(
-            provenance_contract.tracked_paths()
-        )
-    finally:
-        provenance_contract.ROOT = original_root
+    independent = source_gate.independently_applicable_paths(root)
     executable["uncovered_paths"] = sorted(independent - recorded)
     executable["stale_paths"] = sorted(recorded - independent)
     executable["independent_complete"] = not (
         executable["uncovered_paths"] or executable["stale_paths"]
     )
     executable["independent_checker"] = (
-        "scripts/dependency_provenance_contract.py::"
+        "scripts/dependency_provenance_source_gate.py::"
         "independently_applicable_paths"
     )
 
