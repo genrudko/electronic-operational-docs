@@ -62,7 +62,11 @@ def validate_exact_head_workflow(text: str) -> None:
 def validate_publication_order_workflow(text: str) -> None:
     secret = text.find("Verify wheel and evidence are credential-free before publication")
     manifest = text.find("Build and verify artifact-content manifest")
-    upload = text.find("Upload verified exact-head evidence")
+    upload_match = re.search(
+        r"Upload verified (?:deterministic )?exact-head evidence",
+        text,
+    )
+    upload = upload_match.start() if upload_match else -1
     if min(secret, manifest, upload) < 0 or not secret < manifest < upload:
         raise ContractViolation("secret-scan-before-publication", "workflow-order")
 
