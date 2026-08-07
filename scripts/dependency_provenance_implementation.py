@@ -63,6 +63,15 @@ SPDX_REF = "v2.3"
 SPDX_REPOSITORY = "spdx/spdx-spec"
 SPDX_SCHEMA_RELPATH = "schemas/spdx-schema.json"
 
+PRODUCTION_GUNICORN_CMD = (
+    'CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8765", '
+    '"--workers", "2", "--access-logfile", "-", "--error-logfile", "-"]'
+)
+DEVELOPMENT_GUNICORN_CMD = (
+    'CMD ["gunicorn", "config.wsgi:application", "--reload", "--bind", '
+    '"0.0.0.0:8000", "--workers", "2", "--access-logfile", "-", "--error-logfile", "-"]'
+)
+
 ACTION_REVISIONS = {
     "actions/checkout": {
         "version": "v6.1.0",
@@ -343,7 +352,10 @@ def write_registry(
                 "source_commit": source_commit,
                 "pip": PIP_VERSION,
                 "pip_tools": PIP_TOOLS_VERSION,
-                "distributions": [item.__dict__ for item in sorted(distributions, key=lambda value: value.name)],
+                "distributions": [
+                    item.__dict__
+                    for item in sorted(distributions, key=lambda value: value.name)
+                ],
             },
         },
         "lock_profiles": [
@@ -360,8 +372,15 @@ def write_registry(
         },
         "spdx_schema": schema,
         "tooling": {
-            "sbom": {"name": "anchore/syft", "version": SYFT_VERSION, "image": images["syft"]},
-            "provenance": {"name": "repository-python-generator", "script": "scripts/dependency_provenance_contract.py"},
+            "sbom": {
+                "name": "anchore/syft",
+                "version": SYFT_VERSION,
+                "image": images["syft"],
+            },
+            "provenance": {
+                "name": "repository-python-generator",
+                "script": "scripts/dependency_provenance_contract.py",
+            },
         },
         "external_assets": {
             "onest_variable_woff2": {
@@ -615,7 +634,7 @@ RUN chmod +x /app/scripts/container-entrypoint.sh \\
 USER 10001:10001
 EXPOSE 8765
 ENTRYPOINT ["/app/scripts/container-entrypoint.sh"]
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8765", "--workers", "2", "--access-logfile", "-", "--error-logfile", "-"]
+{PRODUCTION_GUNICORN_CMD}
 '''
     (ROOT / "Dockerfile").write_text(production, encoding="utf-8")
 
@@ -637,7 +656,7 @@ COPY deploy/automation/app-entrypoint.sh /usr/local/bin/eod-development-app-entr
 RUN chmod +x /usr/local/bin/eod-development-app-entrypoint
 EXPOSE 8000
 ENTRYPOINT ["/usr/local/bin/eod-development-app-entrypoint"]
-CMD ["gunicorn", "config.wsgi:application", "--reload", "--bind", "0.0.0.0:8000", "--workers", "2", "--access-logfile", "-", "--error-logfile", "-"]
+{DEVELOPMENT_GUNICORN_CMD}
 '''
     (ROOT / "deploy/automation/Dockerfile.development").write_text(
         development, encoding="utf-8"
@@ -671,7 +690,10 @@ def migrate_install_commands() -> None:
         text = workflow.read_text(encoding="utf-8")
         for old, new in replacements.items():
             text = text.replace(old, new)
-        text = text.replace("cache-dependency-path: pyproject.toml", "cache-dependency-path: requirements/locks/*.txt")
+        text = text.replace(
+            "cache-dependency-path: pyproject.toml",
+            "cache-dependency-path: requirements/locks/*.txt",
+        )
         workflow.write_text(text, encoding="utf-8")
 
 
@@ -684,10 +706,16 @@ def vendor_font(content: bytes) -> None:
         "fonts/Onest%5Bwght%5D.woff2",
         css,
     )
-    css = css.replace(
-        "The acceptance candidate loads the exact variable WOFF2\n * from an immutable upstream revision; production/offline packaging must host\n * the same licensed asset locally.",
-        "The exact accepted variable WOFF2 is repository-managed and verified\n * by the canonical supply-chain registry before build/publication.",
+    old_comment = (
+        "The acceptance candidate loads the exact variable WOFF2\n"
+        " * from an immutable upstream revision; production/offline packaging must host\n"
+        " * the same licensed asset locally."
     )
+    new_comment = (
+        "The exact accepted variable WOFF2 is repository-managed and verified\n"
+        " * by the canonical supply-chain registry before build/publication."
+    )
+    css = css.replace(old_comment, new_comment)
     TYPOGRAPHY_PATH.write_text(css, encoding="utf-8")
 
 
