@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 
 import dependency_provenance_contract as contract
+import dependency_provenance_source_gate as source_gate
 
 LOCAL_CARRIER_REFERENCE = "${EOD_RELEASE_IMAGE:?EOD_RELEASE_IMAGE is required}"
 LOCAL_CARRIER_EVIDENCE = "deploy/automation/compose.development.yaml:app"
@@ -95,8 +96,14 @@ def validate_one_command_with_exact_download_detection(
     contract._original_validate_one_command(path, line, candidate)
 
 
+def independently_applicable_paths(paths: object) -> set[str]:
+    del paths
+    return source_gate.independently_applicable_paths(contract.ROOT)
+
+
 def main() -> int:
     contract.compose_config = compose_config_no_interpolate
+    contract.independently_applicable_paths = independently_applicable_paths
     contract._original_validate_image_reference = contract.validate_image_reference
     contract.validate_image_reference = validate_image_reference_with_local_carrier
     contract._original_validate_one_command = contract.validate_one_command
