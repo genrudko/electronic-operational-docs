@@ -11,6 +11,9 @@ on:
 
 permissions:
   contents: read
+  id-token: write
+  attestations: write
+  artifact-metadata: write
 
 concurrency:
   group: dependency-provenance-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -72,6 +75,7 @@ jobs:
           printf 'SOURCE_COMMIT=%s\n' "$actual_sha" >>"$GITHUB_ENV"
           printf 'SOURCE_DATE_EPOCH=%s\n' "$(git show -s --format=%ct HEAD)" >>"$GITHUB_ENV"
           printf 'EVIDENCE_DIR=%s\n' "$RUNNER_TEMP/dependency-provenance-evidence" >>"$GITHUB_ENV"
+          printf 'ATTESTATION_DIR=%s\n' "$RUNNER_TEMP/dependency-provenance-attestation" >>"$GITHUB_ENV"
 
       - name: Set up accepted Python minor
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
@@ -137,10 +141,10 @@ jobs:
           set -euo pipefail
           mkdir -p "$EVIDENCE_DIR/dist"
           python -m build --wheel --no-isolation --outdir "$EVIDENCE_DIR/dist"
-          python -m pip install --disable-pip-version-check --no-deps "$EVIDENCE_DIR"/dist/*.whl
+          wheel="$EVIDENCE_DIR/dist/electronic_operational_docs-0.1.0-py3-none-any.whl"
+          test -f "$wheel"
+          python -m pip install --disable-pip-version-check --no-deps "$wheel"
           python -m pip check
-          wheel="$(find "$EVIDENCE_DIR/dist" -maxdepth 1 -name '*.whl' -type f -print -quit)"
-          test -n "$wheel"
           printf 'WHEEL_PATH=%s\n' "$wheel" >>"$GITHUB_ENV"
           printf 'WHEEL_SHA256=%s\n' "$(sha256sum "$wheel" | cut -d' ' -f1)" >>"$GITHUB_ENV"
 
@@ -367,11 +371,136 @@ jobs:
           python scripts/secret_hygiene.py verify-sanitized \
             --input "$EVIDENCE_DIR/artifact-manifest.json"
 
-      - name: Upload verified exact-head evidence
+      - name: Create external GitHub OIDC/Sigstore attestation
+        id: external_attestation
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: ${{ runner.temp }}/dependency-provenance-evidence/artifact-manifest.json
+
+      - name: Verify external attestation identity and fail-closed policy
+        shell: bash
+        env:
+          ATTEST_BUNDLE: ${{ steps.external_attestation.outputs.bundle-path }}
+          EXPECTED_SOURCE_DIGEST: ${{ github.sha }}
+          EXPECTED_SOURCE_REF: ${{ github.ref }}
+          EXPECTED_SIGNER_DIGEST: ${{ github.workflow_sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$ATTESTATION_DIR"
+          subject="$EVIDENCE_DIR/artifact-manifest.json"
+          signer_workflow="$GITHUB_REPOSITORY/.github/workflows/dependency-provenance.yml"
+          issuer="https://token.actions.githubusercontent.com"
+
+          test -s "$ATTEST_BUNDLE"
+          cp "$ATTEST_BUNDLE" "$ATTESTATION_DIR/sigstore-bundle.json"
+
+          gh attestation verify "$subject" \
+            --repo "$GITHUB_REPOSITORY" \
+            --bundle "$ATTEST_BUNDLE" \
+            --cert-oidc-issuer "$issuer" \
+            --signer-workflow "$signer_workflow" \
+            --signer-digest "$EXPECTED_SIGNER_DIGEST" \
+            --source-digest "$EXPECTED_SOURCE_DIGEST" \
+            --source-ref "$EXPECTED_SOURCE_REF" \
+            --format json >"$ATTESTATION_DIR/verification.json"
+
+          expect_rejected() {
+            label="$1"
+            shift
+            if "$@" >"$ATTESTATION_DIR/negative-$label.log" 2>&1; then
+              printf 'negative attestation case unexpectedly accepted: %s\n' "$label" >&2
+              exit 1
+            fi
+          }
+
+          tampered="$ATTESTATION_DIR/tampered-artifact-manifest.json"
+          cp "$subject" "$tampered"
+          printf '\n' >>"$tampered"
+          expect_rejected digest gh attestation verify "$tampered" \
+            --repo "$GITHUB_REPOSITORY" --bundle "$ATTEST_BUNDLE" \
+            --cert-oidc-issuer "$issuer" --signer-workflow "$signer_workflow" \
+            --signer-digest "$EXPECTED_SIGNER_DIGEST" \
+            --source-digest "$EXPECTED_SOURCE_DIGEST" --source-ref "$EXPECTED_SOURCE_REF"
+          expect_rejected repository gh attestation verify "$subject" \
+            --repo "genrudko/electronic-operational-docs-invalid" --bundle "$ATTEST_BUNDLE" \
+            --cert-oidc-issuer "$issuer" --signer-workflow "$signer_workflow" \
+            --signer-digest "$EXPECTED_SIGNER_DIGEST" \
+            --source-digest "$EXPECTED_SOURCE_DIGEST" --source-ref "$EXPECTED_SOURCE_REF"
+          expect_rejected workflow gh attestation verify "$subject" \
+            --repo "$GITHUB_REPOSITORY" --bundle "$ATTEST_BUNDLE" \
+            --cert-oidc-issuer "$issuer" \
+            --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/not-dependency-provenance.yml" \
+            --signer-digest "$EXPECTED_SIGNER_DIGEST" \
+            --source-digest "$EXPECTED_SOURCE_DIGEST" --source-ref "$EXPECTED_SOURCE_REF"
+          expect_rejected issuer gh attestation verify "$subject" \
+            --repo "$GITHUB_REPOSITORY" --bundle "$ATTEST_BUNDLE" \
+            --cert-oidc-issuer "https://invalid.example.invalid" \
+            --signer-workflow "$signer_workflow" --signer-digest "$EXPECTED_SIGNER_DIGEST" \
+            --source-digest "$EXPECTED_SOURCE_DIGEST" --source-ref "$EXPECTED_SOURCE_REF"
+          expect_rejected source-digest gh attestation verify "$subject" \
+            --repo "$GITHUB_REPOSITORY" --bundle "$ATTEST_BUNDLE" \
+            --cert-oidc-issuer "$issuer" --signer-workflow "$signer_workflow" \
+            --signer-digest "$EXPECTED_SIGNER_DIGEST" \
+            --source-digest "0000000000000000000000000000000000000000" \
+            --source-ref "$EXPECTED_SOURCE_REF"
+          expect_rejected source-ref gh attestation verify "$subject" \
+            --repo "$GITHUB_REPOSITORY" --bundle "$ATTEST_BUNDLE" \
+            --cert-oidc-issuer "$issuer" --signer-workflow "$signer_workflow" \
+            --signer-digest "$EXPECTED_SIGNER_DIGEST" \
+            --source-digest "$EXPECTED_SOURCE_DIGEST" \
+            --source-ref "refs/heads/not-the-source-ref"
+
+          rm -f "$tampered"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          target = Path(os.environ["ATTESTATION_DIR"]) / "policy-results.json"
+          target.write_text(
+              json.dumps(
+                  {
+                      "schema": 1,
+                      "positive_verification": True,
+                      "issuer": "https://token.actions.githubusercontent.com",
+                      "repository": os.environ["GITHUB_REPOSITORY"],
+                      "workflow": f"{os.environ['GITHUB_REPOSITORY']}/.github/workflows/dependency-provenance.yml",
+                      "source_digest": os.environ["EXPECTED_SOURCE_DIGEST"],
+                      "source_ref": os.environ["EXPECTED_SOURCE_REF"],
+                      "negative_cases_rejected": [
+                          "digest",
+                          "repository",
+                          "workflow",
+                          "issuer",
+                          "source-digest",
+                          "source-ref",
+                      ],
+                  },
+                  indent=2,
+                  sort_keys=True,
+              )
+              + "\n",
+              encoding="utf-8",
+          )
+          PY
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$ATTESTATION_DIR/policy-results.json"
+
+      - name: Upload verified deterministic exact-head evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dependency-provenance-evidence-${{ github.event.pull_request.head.sha || github.sha }}
           path: ${{ runner.temp }}/dependency-provenance-evidence
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 7
+          compression-level: 0
+
+      - name: Upload external attestation evidence separately
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dependency-provenance-attestation-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/dependency-provenance-attestation
           if-no-files-found: error
           include-hidden-files: true
           retention-days: 7
