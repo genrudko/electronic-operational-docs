@@ -190,6 +190,18 @@
       "line": 33,
       "path": "scripts/dependency_provenance_gate.py",
       "rationale": "Local structural docker compose config rendering over a tracked Compose path; no dependency installation, download, or remote execution."
+    },
+    {
+      "call": "subprocess.run",
+      "line": 134,
+      "path": "scripts/dependency_provenance_implementation.py",
+      "rationale": "Single repository supply-chain command wrapper; all current call sites provide an explicit bounded argv and the exact source is covered by independent inventory digest evidence."
+    },
+    {
+      "call": "subprocess.run",
+      "line": 484,
+      "path": "scripts/dependency_provenance_implementation.py",
+      "rationale": "Deterministic pip-tools compile invocation assembled from the fixed generator interpreter, fixed compile flags, accepted lock profile names and temporary repository-controlled paths."
     }
   ],
   "policy": {
