@@ -208,6 +208,12 @@
       "line": 67,
       "path": "scripts/eod_context_manager.py",
       "rationale": "Context snapshot helper executes only repository-constructed local Git, Python/Django diagnostic, git archive and git bundle argv; it performs no dependency installation or external download."
+    },
+    {
+      "call": "subprocess.run",
+      "line": 63,
+      "path": "scripts/gate_patch_003_1.py",
+      "rationale": "Windows-only launcher validation executes the tracked run_dev.ps1 in CheckOnly mode through locally discovered PowerShell; no dependency install, download or remote command is involved."
     }
   ],
   "policy": {
