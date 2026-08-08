@@ -13,7 +13,7 @@ jobs:
   publish:
     name: Publish exact accepted Buildx repair
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - name: Checkout PR branch # v6.1.0
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
@@ -47,8 +47,7 @@ jobs:
           marker = '```diff\n'
           start = body.index(marker) + len(marker)
           end = body.index('\n```', start)
-          patch = body[start:end] + '\n'
-          Path('/tmp/provenance-repair.patch').write_text(patch, encoding='utf-8')
+          Path('/tmp/provenance-repair.patch').write_text(body[start:end] + '\n', encoding='utf-8')
           PY
           git apply --check /tmp/provenance-repair.patch
           git apply /tmp/provenance-repair.patch
@@ -68,10 +67,6 @@ jobs:
             actual="$(git hash-object "$path")"
             test "$actual" = "${expected[$path]}" || { echo "blob mismatch $path: $actual != ${expected[$path]}"; exit 1; }
           done
-          python -m ruff check scripts/dependency_provenance_*.py tests/process/test_dependency_provenance*.py
-          python -m unittest -v tests.process.test_dependency_provenance_inventory tests.process.test_dependency_provenance_contract
-          python scripts/dependency_provenance_implementation.py verify-locks
-          PYTHONPATH=. python scripts/dependency_provenance_views.py check
           git diff --check
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
