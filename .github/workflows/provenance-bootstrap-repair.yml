@@ -18,6 +18,11 @@ jobs:
         with:
           ref: supply-chain/dependency-provenance-001
           fetch-depth: 0
+      - name: Set up canonical Python # v6.3.0
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.13'
+          cache: pip
       - name: Apply, regenerate, validate, and materialize repair blobs
         shell: bash
         env:
