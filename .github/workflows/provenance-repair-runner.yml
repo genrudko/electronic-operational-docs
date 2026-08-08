@@ -1,0 +1,66 @@
+name: Run verified provenance repair
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish exact accepted Buildx repair
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout PR branch # v6.1.0
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: supply-chain/dependency-provenance-001
+          fetch-depth: 0
+
+      - name: Extract accepted patch, verify exact blobs, and publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor b399e9bde252a805ee514b4459620437f86bf89c HEAD
+          python - <<'PY'
+          from pathlib import Path
+          source = Path('.github/workflows/provenance-repair-publication.yml').read_text(encoding='utf-8')
+          marker = 'cat >"$RUNNER_TEMP/provenance-repair.patch" <<\'PATCH\'\n'
+          start = source.index(marker) + len(marker)
+          end = source.index('\n          PATCH\n', start)
+          lines = source[start:end].splitlines()
+          prefix = '          '
+          patch = '\n'.join(line[len(prefix):] if line.startswith(prefix) else line for line in lines) + '\n'
+          Path('/tmp/provenance-repair.patch').write_text(patch, encoding='utf-8')
+          PY
+          git apply --check /tmp/provenance-repair.patch
+          git apply /tmp/provenance-repair.patch
+          rm .github/workflows/provenance-repair-publication.yml
+          rm .github/workflows/provenance-repair-runner.yml
+          declare -A expected=(
+            [".github/workflows/dependency-provenance.yml"]="3d762706343e84b34fb2670e57708a8933a959e4"
+            ["docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.02.json"]="53224a57dda9e42de8cd7030b50ea91437b50b38"
+            ["docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.json"]="15f627dcaf30fdc0e44026952c7b1bff6bb95a15"
+            ["docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.md"]="e5bdae88d8aeb6bf2af38ee65c25ca59d3510381"
+            ["scripts/dependency_provenance_contract.py"]="912a3f955a1040230ee49769e26b563ea5da820a"
+            ["scripts/dependency_provenance_implementation.py"]="753c3ae98006daf19fd6f458c63f9106b3bffef1"
+            ["supply-chain/registry.json"]="46760708dfd37e7ab5ffc6dbe55679d0352ff7dd"
+            ["tests/process/test_dependency_provenance_contract.py"]="3be99357b0e5d9231011828d04270a8e2ea33d92"
+          )
+          for path in "${!expected[@]}"; do
+            actual="$(git hash-object "$path")"
+            test "$actual" = "${expected[$path]}" || { echo "blob mismatch $path: $actual != ${expected[$path]}"; exit 1; }
+          done
+          python -m ruff check scripts/dependency_provenance_*.py tests/process/test_dependency_provenance*.py
+          python -m unittest -v tests.process.test_dependency_provenance_inventory tests.process.test_dependency_provenance_contract
+          python scripts/dependency_provenance_implementation.py verify-locks
+          PYTHONPATH=. python scripts/dependency_provenance_views.py check
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix(supply-chain): use pinned Buildx OCI builder"
+          git push origin HEAD:supply-chain/dependency-provenance-001
