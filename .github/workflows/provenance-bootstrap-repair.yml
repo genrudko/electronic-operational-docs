@@ -43,11 +43,11 @@ jobs:
           PY
           python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/tooling.txt
           python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/dev.txt
-          python scripts/dependency_provenance_inventory.py write
+          python scripts/dependency_provenance_views.py write
           python scripts/dependency_provenance_implementation.py verify-locks
           python scripts/dependency_provenance_gate.py validate-repository
           python scripts/regenerate_dependency_locks.py
-          python scripts/dependency_provenance_inventory.py write
+          python scripts/dependency_provenance_views.py write
           python -m ruff check scripts/dependency_provenance_*.py tests/process/test_dependency_provenance*.py
           python -m unittest -v tests.process.test_dependency_provenance_inventory tests.process.test_dependency_provenance_contract
           python scripts/dependency_provenance_views.py check
