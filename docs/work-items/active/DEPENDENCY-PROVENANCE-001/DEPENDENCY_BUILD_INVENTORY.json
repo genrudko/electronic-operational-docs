@@ -281,7 +281,7 @@
       "first_id": "INP-0061",
       "last_id": "INP-0077",
       "path": "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.04.json",
-      "sha256": "fbc53bc588692a16cd90a6622ffcec27c3ee63f4795a920173eb42620babcd1d"
+      "sha256": "aa1052bb385c1ae51d20b475bb35661d0efaf594974feaf5839edc7fe1f1dffa"
     }
   ],
   "floating_input_ids": [
@@ -394,7 +394,7 @@
     ".github/workflows/secret-hygiene.yml": "93a89ee3912a5c12b28a3acf865342cc5ece13841421ee7de4fd9470d9374bb5",
     ".github/workflows/telegram-workflow-notifications.yml": "eff2979fc7b957f16cfbc798154f9f9d641e4f53d93d64441c4e4470b89eda03",
     ".github/workflows/vps-development.yml": "ebd78c3f9dc00b5a5a1a07e91abc3e9cbe7a796e408363e6e60878cbf8aa3263",
-    "Dockerfile": "4b12bb83ad530ffce4ba45a61564515b6d36164e358e9240d0f4c43b9809c9c2",
+    "Dockerfile": "1286ad6ae8649e7d48b68346f2d0ed52e693aeff813676a7346f8c4248d49309",
     "compose.development.yaml": "5537ce2e1ddb2712de4cacd475097fa5d017b4362324e843337ecf876a27cdbe",
     "compose.preview.yaml": "fd254e30a06b235f088fb8cafaeb25312e868dc1c290d5521e283ae5fd966773",
     "compose.yaml": "0386c733679ddc25bf26f7a7f2e3af4a8573ab63e782f6e385758041944b86a0",
