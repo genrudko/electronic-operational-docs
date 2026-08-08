@@ -10,7 +10,7 @@
 *.yml text eol=lf
 *.md text eol=lf
 *.txt text eol=lf
-*.ps1 text eol=crlf
+*.ps1 text eol=lf
 
 # UX-001 v0.3 is an integrity-checked source package. Preserve its intentional
 # Markdown hard-break markers while keeping trailing-space checks everywhere else.

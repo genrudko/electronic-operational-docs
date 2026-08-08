@@ -38,6 +38,8 @@ Thumbs.db
 desktop.ini
 # Packaging artifacts
 *.egg-info/
+/build/
+/dist/
 
 # Patch delivery files belong outside the project repository
 /patch_*.py

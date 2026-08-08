@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "work_item": "DEPENDENCY-PROVENANCE-001",
+  "purpose": "Future fail-closed SPDX 2.3 normalization and validation fixtures; no release SBOM is generated in the inventory repair stage.",
+  "cases": [
+    {
+      "id": "DP-SPDX-001",
+      "mutation": "Remove mandatory creationInfo.created from an otherwise valid SPDX 2.3 JSON document.",
+      "expected_rule": "spdx-creation-info-created-required",
+      "stage": "NEXT-IMPLEMENTATION"
+    },
+    {
+      "id": "DP-SPDX-002",
+      "mutation": "Set creationInfo.created from the runner wall clock instead of the accepted build epoch.",
+      "expected_rule": "spdx-created-build-epoch",
+      "stage": "NEXT-IMPLEMENTATION"
+    },
+    {
+      "id": "DP-SPDX-003",
+      "mutation": "Use a non-UTC or non-RFC3339 timestamp in creationInfo.created.",
+      "expected_rule": "spdx-created-rfc3339-utc",
+      "stage": "NEXT-IMPLEMENTATION"
+    },
+    {
+      "id": "DP-SPDX-004",
+      "mutation": "Generate documentNamespace with a random UUID or another volatile value for identical build evidence.",
+      "expected_rule": "spdx-document-namespace-deterministic",
+      "stage": "NEXT-IMPLEMENTATION"
+    },
+    {
+      "id": "DP-SPDX-005",
+      "mutation": "Reuse the same documentNamespace for a different image digest or exact source/build-definition identity.",
+      "expected_rule": "spdx-document-namespace-unique-subject",
+      "stage": "NEXT-IMPLEMENTATION"
+    },
+    {
+      "id": "DP-SPDX-006",
+      "mutation": "Provide an SPDX 2.3 JSON document that fails the pinned official schema before publication.",
+      "expected_rule": "spdx-schema-valid",
+      "stage": "NEXT-IMPLEMENTATION"
+    }
+  ]
+}

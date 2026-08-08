@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout exact head
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
@@ -37,7 +37,7 @@ jobs:
           printf 'EXACT_HEAD=%s\n' "$actual_sha"
 
       - name: Set up Python 3.13
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: "3.13"
 
@@ -64,21 +64,71 @@ jobs:
           scripts/release_plan_compat_validation.py
           scripts/module_contract_status_projection.py
           scripts/industrialization_execution.py
+          scripts/dependency_provenance_inventory.py scripts/dependency_provenance_views.py
+          scripts/secret_hygiene.py
           tests/process/test_project_state_contract.py
           tests/process/test_release_plan_compatibility.py
           tests/process/test_module_contract_status_projection.py
           tests/process/test_industrialization_execution.py
+          tests/process/test_dependency_provenance_inventory.py
 
-      - name: Run project-state contract regressions
+      - name: Regenerate dependency inventory views
+        run: python scripts/dependency_provenance_views.py write
+
+      - name: Prepare verified sanitised inventory drift evidence
+        id: inventory_evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_dir="$RUNNER_TEMP/dependency-inventory-generated-views"
+          mkdir -p "$evidence_dir"
+          for source in docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY*; do
+            name="${source##*/}"
+            target="$evidence_dir/$name"
+            python scripts/secret_hygiene.py redact \
+              --input "$source" \
+              --output "$target"
+            python scripts/secret_hygiene.py verify-sanitized --input "$target"
+            cmp --silent "$source" "$target"
+          done
+          printf 'verified=true\n' >>"$GITHUB_OUTPUT"
+
+      - name: Run project-state and dependency-contract regressions
         run: >-
           python -m unittest -v
           tests.process.test_project_state_contract
           tests.process.test_release_plan_compatibility
           tests.process.test_module_contract_status_projection
           tests.process.test_industrialization_execution
+          tests.process.test_dependency_provenance_inventory
+
+      - name: Verify generated dependency inventory is exact
+        run: >-
+          git diff --exit-code --
+          docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.json
+          docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.md docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.*.json
+
+      - name: Upload verified inventory drift evidence after failure
+        if: ${{ failure() && steps.inventory_evidence.outputs.verified == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dependency-inventory-generated-views
+          path: ${{ runner.temp }}/dependency-inventory-generated-views
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+      - name: Validate dependency inventory contract
+        run: python scripts/dependency_provenance_views.py check
 
       - name: Validate documentation contract
         run: python scripts/check_documentation_contract.py
 
+      - name: Remove dependency inventory diagnostic transport files
+        if: ${{ always() }}
+        shell: bash
+        run: rm -rf "$RUNNER_TEMP/dependency-inventory-generated-views"
+
       - name: Confirm clean checkout
+        if: ${{ always() }}
         run: python scripts/secret_hygiene.py verify-clean-tree
