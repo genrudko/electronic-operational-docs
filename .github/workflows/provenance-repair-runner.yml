@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   publish:
-    name: Publish exact accepted Buildx repair
+    name: Materialize exact accepted Buildx repair blobs
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -21,7 +21,7 @@ jobs:
           ref: supply-chain/dependency-provenance-001
           fetch-depth: 0
 
-      - name: Fetch accepted patch, verify exact blobs, and publish
+      - name: Fetch accepted patch and materialize exact Git blobs
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -34,11 +34,13 @@ jobs:
           import urllib.request
           from pathlib import Path
 
+          token = os.environ['GH_TOKEN']
+          repo = 'genrudko/electronic-operational-docs'
           request = urllib.request.Request(
-              'https://api.github.com/repos/genrudko/electronic-operational-docs/issues/comments/5225456462',
+              f'https://api.github.com/repos/{repo}/issues/comments/5225456462',
               headers={
                   'Accept': 'application/vnd.github+json',
-                  'Authorization': f"Bearer {os.environ['GH_TOKEN']}",
+                  'Authorization': f'Bearer {token}',
                   'X-GitHub-Api-Version': '2022-11-28',
               },
           )
@@ -51,8 +53,6 @@ jobs:
           PY
           git apply --check /tmp/provenance-repair.patch
           git apply /tmp/provenance-repair.patch
-          rm .github/workflows/provenance-repair-publication.yml
-          rm .github/workflows/provenance-repair-runner.yml
           declare -A expected=(
             [".github/workflows/dependency-provenance.yml"]="3d762706343e84b34fb2670e57708a8933a959e4"
             ["docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.02.json"]="53224a57dda9e42de8cd7030b50ea91437b50b38"
@@ -68,8 +68,43 @@ jobs:
             test "$actual" = "${expected[$path]}" || { echo "blob mismatch $path: $actual != ${expected[$path]}"; exit 1; }
           done
           git diff --check
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "fix(supply-chain): use pinned Buildx OCI builder"
-          git push origin HEAD:supply-chain/dependency-provenance-001
+          python - <<'PY'
+          import base64
+          import json
+          import os
+          import subprocess
+          import urllib.request
+          from pathlib import Path
+
+          token = os.environ['GH_TOKEN']
+          repo = 'genrudko/electronic-operational-docs'
+          expected = {
+              '.github/workflows/dependency-provenance.yml': '3d762706343e84b34fb2670e57708a8933a959e4',
+              'docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.02.json': '53224a57dda9e42de8cd7030b50ea91437b50b38',
+              'docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.json': '15f627dcaf30fdc0e44026952c7b1bff6bb95a15',
+              'docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.md': 'e5bdae88d8aeb6bf2af38ee65c25ca59d3510381',
+              'scripts/dependency_provenance_contract.py': '912a3f955a1040230ee49769e26b563ea5da820a',
+              'scripts/dependency_provenance_implementation.py': '753c3ae98006daf19fd6f458c63f9106b3bffef1',
+              'supply-chain/registry.json': '46760708dfd37e7ab5ffc6dbe55679d0352ff7dd',
+              'tests/process/test_dependency_provenance_contract.py': '3be99357b0e5d9231011828d04270a8e2ea33d92',
+          }
+          for path, target in expected.items():
+              raw = Path(path).read_bytes()
+              payload = json.dumps({'content': base64.b64encode(raw).decode('ascii'), 'encoding': 'base64'}).encode()
+              req = urllib.request.Request(
+                  f'https://api.github.com/repos/{repo}/git/blobs',
+                  data=payload,
+                  method='POST',
+                  headers={
+                      'Accept': 'application/vnd.github+json',
+                      'Authorization': f'Bearer {token}',
+                      'Content-Type': 'application/json',
+                      'X-GitHub-Api-Version': '2022-11-28',
+                  },
+              )
+              with urllib.request.urlopen(req) as response:
+                  created = json.load(response)['sha']
+              if created != target:
+                  raise SystemExit(f'created blob mismatch {path}: {created} != {target}')
+              print(f'BLOB_OK {path} {created}')
+          PY
