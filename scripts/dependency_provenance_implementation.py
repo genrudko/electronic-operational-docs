@@ -229,8 +229,8 @@ def verified_bootstrap_wheelhouse(work: Path) -> list[Distribution]:
         "--only-binary=:all:",
         "--dest",
         str(wheelhouse),
-        f"pip=={PIP_VERSION}",
-        f"pip-tools=={PIP_TOOLS_VERSION}",
+        f"pip=={PIP_VERSION}", f"pip-tools=={PIP_TOOLS_VERSION}", "build==1.5.0", "click==8.4.2",
+        "packaging==26.3", "pyproject-hooks==1.2.0", "setuptools==83.0.0", "wheel==0.47.0",
     )
 
     distributions: list[Distribution] = []
