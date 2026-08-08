@@ -163,13 +163,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          docker buildx create \
+            --name eod-provenance \
+            --driver docker-container \
+            --driver-opt image=moby/buildkit@sha256:2f5adac4ecd194d9f8c10b7b5d7bceb5186853db1b26e5abd3a657af0b7e26ec \
+            --use \
+            --bootstrap
           docker buildx build \
+            --builder eod-provenance \
             --file Dockerfile \
             --provenance=false \
             --sbom=false \
             --output "type=oci,dest=$EVIDENCE_DIR/final-image.oci.tar" \
             .
           docker buildx build \
+            --builder eod-provenance \
             --file supply-chain/Dockerfile.browser \
             --provenance=false \
             --sbom=false \

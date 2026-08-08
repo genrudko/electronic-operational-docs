@@ -528,6 +528,7 @@ class DependencyProvenanceContractFixtureTests(unittest.TestCase):
 
     def test_current_positive_workflow_policy(self) -> None:
         text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        contract.validate_buildx_workflow(text, registry())
         fixture_gates.validate_clean_install_workflow(text)
         fixture_gates.validate_build_workflow(text)
         fixture_gates.validate_runtime_install_workflow(text)
@@ -535,6 +536,26 @@ class DependencyProvenanceContractFixtureTests(unittest.TestCase):
         fixture_gates.validate_publication_order_workflow(text)
         fixture_gates.validate_emergency_update_workflow(text)
         fixture_gates.validate_javascript_contour([])
+
+    def test_buildx_oci_exporter_fails_closed(self) -> None:
+        text = WORKFLOW_PATH.read_text(encoding="utf-8")
+        current_registry = registry()
+        cases = (
+            text.replace("--driver docker-container", "--driver docker"),
+            text.replace(
+                "moby/buildkit@sha256:"
+                "2f5adac4ecd194d9f8c10b7b5d7bceb5186853db1b26e5abd3a657af0b7e26ec",
+                "moby/buildkit:buildx-stable-1",
+            ),
+            text.replace("--builder eod-provenance \\\n", "", 1),
+        )
+        for candidate in cases:
+            with self.subTest(candidate=candidate):
+                with self.assertRaisesRegex(
+                    contract.ContractViolation,
+                    "rule=buildx-oci-exporter",
+                ):
+                    contract.validate_buildx_workflow(candidate, current_registry)
 
     def test_current_five_locks_are_semantic_and_hashed(self) -> None:
         locks = contract.load_locks()

@@ -225,6 +225,35 @@ def validate_registry(registry: dict[str, Any]) -> None:
         raise ContractViolation("external-asset-integrity", "Onest")
 
 
+def validate_buildx_workflow(text: str, registry: dict[str, Any]) -> None:
+    create_commands = re.findall(r"docker buildx create(?:\\\n|[^\n])*", text)
+    if len(create_commands) != 1:
+        raise ContractViolation("buildx-oci-exporter", "builder-count")
+    command = create_commands[0]
+    buildkit = registry.get("external_images", {}).get("buildkit", {})
+    reference = f"{buildkit.get('repository', '')}@{buildkit.get('digest', '')}"
+    required = (
+        "--driver docker-container",
+        f"--driver-opt image={reference}",
+        "--use",
+        "--bootstrap",
+    )
+    if not all(item in command for item in required):
+        raise ContractViolation("buildx-oci-exporter", "builder-contract")
+    builder_match = re.search(r"--name\s+([^\s\\]+)", command)
+    if builder_match is None:
+        raise ContractViolation("buildx-oci-exporter", "builder-name")
+    builder = builder_match.group(1)
+    builds = re.findall(r"docker buildx build(?:\\\n|[^\n])*", text)
+    oci_builds = [item for item in builds if "type=oci" in item]
+    if len(oci_builds) != 2 or any(
+        f"--builder {builder}" not in item for item in oci_builds
+    ):
+        raise ContractViolation("buildx-oci-exporter", "explicit-builder")
+    if text.find("docker buildx create") > min(text.find(item) for item in oci_builds):
+        raise ContractViolation("buildx-oci-exporter", "builder-order")
+
+
 def validate_lock_intent(registry: dict[str, Any], locks: dict[str, dict[str, LockRecord]]) -> None:
     intent = direct_intent()
     for profile, names in intent.items():

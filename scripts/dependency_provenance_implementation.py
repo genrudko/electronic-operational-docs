@@ -53,6 +53,11 @@ PYTHON_IMAGE = "python:3.13-slim-bookworm"
 POSTGRES_IMAGE = "postgres:18.4-bookworm"
 PLAYWRIGHT_IMAGE = f"mcr.microsoft.com/playwright/python:v{PLAYWRIGHT_VERSION}-noble"
 SYFT_IMAGE = f"anchore/syft:v{SYFT_VERSION}"
+BUILDKIT_IMAGE = {
+    "digest": "sha256:2f5adac4ecd194d9f8c10b7b5d7bceb5186853db1b26e5abd3a657af0b7e26ec",
+    "repository": "moby/buildkit",
+    "tag": "moby/buildkit:buildx-stable-1",
+}
 
 ONEST_URL = (
     "https://cdn.jsdelivr.net/gh/simpals/onest@"
@@ -363,7 +368,7 @@ def write_registry(
             for name in LOCK_PROFILES
         ],
         "accepted_resolution": ACCEPTED_RESOLUTION,
-        "external_images": images,
+        "external_images": {**images, "buildkit": BUILDKIT_IMAGE},
         "github_actions": ACTION_REVISIONS,
         "browser": {
             "package": {"name": "playwright", "version": PLAYWRIGHT_VERSION},
