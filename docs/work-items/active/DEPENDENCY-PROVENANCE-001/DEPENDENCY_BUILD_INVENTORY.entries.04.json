@@ -61,7 +61,7 @@
       "canonical_or_duplicate": "operational-declaration",
       "class": "python-install",
       "current_reproducibility": "not-proven",
-      "declaration": "RUN python -m pip install --disable-pip-version-check --no-deps /tmp/eod/*.whl \\ && rm -rf /tmp/eod",
+      "declaration": "RUN mkdir -p /app/src \\ && python -m pip install --disable-pip-version-check --no-deps --target /app/src /tmp/eod/*.whl \\ && rm -rf /tmp/eod",
       "dependency_scope": "ci/build/runtime tooling",
       "direct_or_transitive": "direct",
       "evidence": "Parsed from dockerfile; discovery=tracked Dockerfile.",
