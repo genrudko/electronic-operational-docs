@@ -1,0 +1,80 @@
+name: Validate hermetic bootstrap repair
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: supply-chain/dependency-provenance-001
+          fetch-depth: 0
+      - name: Apply, regenerate, validate, and materialize repair blobs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/provenance-bootstrap-repair.yml
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/dependency_provenance_implementation.py')
+          text = path.read_text(encoding='utf-8')
+          old = '        f"pip=={PIP_VERSION}",\n        f"pip-tools=={PIP_TOOLS_VERSION}",\n'
+          new = '        f"pip=={PIP_VERSION}",\n        f"pip-tools=={PIP_TOOLS_VERSION}", "build==1.5.0", "click==8.4.2", "packaging==26.3", "pyproject-hooks==1.2.0", "setuptools==83.0.0", "wheel==0.47.0",\n'
+          if text.count(old) != 1:
+              raise SystemExit('unexpected bootstrap download source state')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+          python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/tooling.txt
+          python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/dev.txt
+          python scripts/dependency_provenance_inventory.py write
+          python scripts/dependency_provenance_implementation.py verify-locks
+          python scripts/dependency_provenance_gate.py validate-repository
+          python scripts/regenerate_dependency_locks.py
+          python -m ruff check scripts/dependency_provenance_*.py tests/process/test_dependency_provenance*.py
+          python -m unittest -v tests.process.test_dependency_provenance_inventory tests.process.test_dependency_provenance_contract
+          PYTHONPATH=. python scripts/dependency_provenance_views.py check
+          git diff --check
+          python - <<'PY'
+          import base64, json, os, subprocess, urllib.request
+          from pathlib import Path
+
+          changed = subprocess.check_output(['git','diff','--name-only','HEAD'], text=True).splitlines()
+          allowed = {
+              '.github/workflows/provenance-bootstrap-repair.yml',
+              'scripts/dependency_provenance_implementation.py',
+              'docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.json',
+              'docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.md',
+              'docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.01.json',
+              'docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.02.json',
+              'docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.03.json',
+              'docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.04.json',
+          }
+          unexpected = set(changed) - allowed
+          if unexpected:
+              raise SystemExit(f'unexpected changed paths: {sorted(unexpected)}')
+          required = {'scripts/dependency_provenance_implementation.py','docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.json'}
+          if not required.issubset(changed):
+              raise SystemExit(f'missing expected generated changes: {sorted(required-set(changed))}')
+          token = os.environ['GH_TOKEN']
+          for name in changed:
+              if name.startswith('.github/workflows/provenance-bootstrap-repair.yml'):
+                  continue
+              raw = Path(name).read_bytes()
+              payload = json.dumps({'content':base64.b64encode(raw).decode(),'encoding':'base64'}).encode()
+              req = urllib.request.Request('https://api.github.com/repos/genrudko/electronic-operational-docs/git/blobs', data=payload, method='POST', headers={'Accept':'application/vnd.github+json','Authorization':f'Bearer {token}','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'})
+              with urllib.request.urlopen(req) as response:
+                  sha = json.load(response)['sha']
+              print(f'REPAIR_BLOB {name} {sha}')
+          print('CHANGED_PATHS=' + ','.join(changed))
+          PY
