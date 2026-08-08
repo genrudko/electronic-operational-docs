@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  issues: read
 
 jobs:
   publish:
@@ -20,20 +21,33 @@ jobs:
           ref: supply-chain/dependency-provenance-001
           fetch-depth: 0
 
-      - name: Extract accepted patch, verify exact blobs, and publish
+      - name: Fetch accepted patch, verify exact blobs, and publish
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           git merge-base --is-ancestor b399e9bde252a805ee514b4459620437f86bf89c HEAD
           python - <<'PY'
+          import json
+          import os
+          import urllib.request
           from pathlib import Path
-          source = Path('.github/workflows/provenance-repair-publication.yml').read_text(encoding='utf-8')
-          marker = 'cat >"$RUNNER_TEMP/provenance-repair.patch" <<\'PATCH\'\n'
-          start = source.index(marker) + len(marker)
-          end = source.index('\n          PATCH\n', start)
-          lines = source[start:end].splitlines()
-          prefix = '          '
-          patch = '\n'.join(line[len(prefix):] if line.startswith(prefix) else line for line in lines) + '\n'
+
+          request = urllib.request.Request(
+              'https://api.github.com/repos/genrudko/electronic-operational-docs/issues/comments/5225456462',
+              headers={
+                  'Accept': 'application/vnd.github+json',
+                  'Authorization': f"Bearer {os.environ['GH_TOKEN']}",
+                  'X-GitHub-Api-Version': '2022-11-28',
+              },
+          )
+          with urllib.request.urlopen(request) as response:
+              body = json.load(response)['body']
+          marker = '```diff\n'
+          start = body.index(marker) + len(marker)
+          end = body.index('\n```', start)
+          patch = body[start:end] + '\n'
           Path('/tmp/provenance-repair.patch').write_text(patch, encoding='utf-8')
           PY
           git apply --check /tmp/provenance-repair.patch
