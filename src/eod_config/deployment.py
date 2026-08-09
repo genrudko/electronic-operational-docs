@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Mapping
 from urllib.parse import urlsplit
 
 SUPPORTED_DEPLOYMENT_MODES = frozenset({"development", "ci", "preview", "production"})
@@ -37,7 +37,8 @@ def _bool(env: Mapping[str, str], name: str, default: bool = False) -> bool:
 
 
 def _csv(env: Mapping[str, str], name: str, default: str = "") -> tuple[str, ...]:
-    return tuple(value.strip() for value in _text(env, name, default).split(",") if value.strip())
+    values = _text(env, name, default).split(",")
+    return tuple(value.strip() for value in values if value.strip())
 
 
 def _valid_https_origin(value: str) -> bool:
@@ -115,7 +116,8 @@ def validate_deployment_environment(env: Mapping[str, str]) -> DeploymentContrac
         errors.append("EOD_TRUST_PROXY_HEADERS=1 обязателен для production reverse proxy")
     if _bool(env, "EOD_TRUST_X_FORWARDED_HOST", False):
         errors.append(
-            "EOD_TRUST_X_FORWARDED_HOST должен быть отключён; proxy обязан сохранять canonical Host"
+            "EOD_TRUST_X_FORWARDED_HOST должен быть отключён; "
+            "proxy обязан сохранять canonical Host"
         )
 
     raw_hsts = _text(env, "DJANGO_SECURE_HSTS_SECONDS")
