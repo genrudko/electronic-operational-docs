@@ -324,7 +324,7 @@ jobs:
             --static-manifest "$EVIDENCE_DIR/static-manifest.json" \
             --spdx "$EVIDENCE_DIR/production.spdx.json" \
             --source-commit "$SOURCE_COMMIT" \
-            --workflow .github/workflows/dependency-provenance.yml \
+            --workflow "$GITHUB_WORKSPACE/.github/workflows/dependency-provenance.yml" \
             --source-date-epoch "$SOURCE_DATE_EPOCH"
           python scripts/dependency_provenance_contract.py validate-provenance \
             --input "$EVIDENCE_DIR/provenance.intoto.json" \
