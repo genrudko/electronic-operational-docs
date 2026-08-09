@@ -4,6 +4,8 @@ import os
 import sys
 from pathlib import Path
 
+from .deployment import validate_deployment_environment
+
 BASE_DIR = Path(__file__).resolve().parents[2]
 
 
@@ -35,13 +37,8 @@ def env_bool(name: str, default: bool = False) -> bool:
 
 
 TESTING = "test" in sys.argv or env_bool("EOD_TESTING", False)
-
-EOD_DEPLOYMENT_MODE = os.getenv("EOD_DEPLOYMENT_MODE", "development").strip().lower()
-if EOD_DEPLOYMENT_MODE not in {"development", "ci", "preview"}:
-    raise RuntimeError(
-        "Неподдерживаемый EOD_DEPLOYMENT_MODE. "
-        "Допустимы development, ci и preview."
-    )
+DEPLOYMENT_CONTRACT = validate_deployment_environment(os.environ)
+EOD_DEPLOYMENT_MODE = DEPLOYMENT_CONTRACT.mode
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "development-only-change-me").strip()
 DEBUG = env_bool("DJANGO_DEBUG", True)
@@ -50,6 +47,7 @@ ALLOWED_HOSTS = [
     for value in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
     if value.strip()
 ]
+CSRF_TRUSTED_ORIGINS = list(DEPLOYMENT_CONTRACT.csrf_trusted_origins)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -149,26 +147,6 @@ else:
         f"Неподдерживаемый DB_ENGINE={DB_ENGINE!r}. Допустимы sqlite и postgresql."
     )
 
-if EOD_DEPLOYMENT_MODE == "preview":
-    preview_errors: list[str] = []
-    if SECRET_KEY in {"", "development-only-change-me"}:
-        preview_errors.append("DJANGO_SECRET_KEY должен быть задан явно")
-    if DEBUG:
-        preview_errors.append("DJANGO_DEBUG должен быть отключён")
-    if not ALLOWED_HOSTS:
-        preview_errors.append("DJANGO_ALLOWED_HOSTS не должен быть пустым")
-    if DB_ENGINE not in {"postgres", "postgresql"}:
-        preview_errors.append("preview допускает только PostgreSQL")
-    postgres_password = os.getenv("POSTGRES_PASSWORD", "").strip()
-    if postgres_password in {"", "eod_local_password"}:
-        preview_errors.append("POSTGRES_PASSWORD должен быть задан явно")
-    postgres_host = os.getenv("POSTGRES_HOST", "").strip()
-    if not postgres_host:
-        preview_errors.append("POSTGRES_HOST должен быть задан явно")
-    if preview_errors:
-        details = "; ".join(preview_errors)
-        raise RuntimeError(f"Небезопасная конфигурация preview: {details}.")
-
 LANGUAGE_CODE = "ru"
 TIME_ZONE = os.getenv("TIME_ZONE", "Europe/Moscow")
 USE_I18N = True
@@ -196,6 +174,26 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
+
+if DEPLOYMENT_CONTRACT.production_capable:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = DEPLOYMENT_CONTRACT.hsts_seconds
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", False)
+    SECURE_HSTS_PRELOAD = env_bool("DJANGO_SECURE_HSTS_PRELOAD", False)
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    USE_X_FORWARDED_HOST = False
+else:
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_HSTS_SECONDS = 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
+    SECURE_PROXY_SSL_HEADER = None
+    USE_X_FORWARDED_HOST = False
+
 LOGIN_URL = "organizations:login"
 LOGIN_REDIRECT_URL = "system:home"
 LOGOUT_REDIRECT_URL = "system:home"
