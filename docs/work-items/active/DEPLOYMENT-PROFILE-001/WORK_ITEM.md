@@ -8,11 +8,9 @@ Issue: `#59`
 
 Branch: `deployment/deployment-profile-001`
 
-Draft PR: to be created against `main`.
+Draft PR: `#60` against `main`.
 
-Runtime impact at coordination start: `NONE`.
-
-Preview: `UNTOUCHED`.
+At coordination start this contract itself changes no live runtime, and the protected Preview environment remains untouched.
 
 ## PURPOSE
 
@@ -29,11 +27,9 @@ accepted PR: #58 / CLOSED / MERGED
 accepted exact head: 0f0e92522e7a2c5d43dd635ed661c65ed5021422
 merge commit / main: 5b54446d632ef1839d530dc2945255b3033359fe
 issue: #57 / CLOSED / COMPLETED
-runtime impact: NONE
-preview: UNTOUCHED
 ```
 
-Live GitHub is authoritative. The repository canonical planning/state files still contain the pre-merge `DEPENDENCY-PROVENANCE-001` execution state and must be reconciled in the first atomic transition of this work item before implementation evidence is claimed.
+PR #58 had no live runtime or Preview impact. Live GitHub is authoritative. The repository canonical planning/state files still contain the pre-merge `DEPENDENCY-PROVENANCE-001` execution state and must be reconciled in the first atomic transition of this work item before implementation evidence is claimed.
 
 ## FIRST ATOMIC COORDINATION TRANSITION
 
@@ -178,7 +174,7 @@ At final acceptance report provide:
 - readiness/liveness evidence;
 - exact-head workflow names/run IDs/results;
 - explicit residual gaps handed to `BACKUP-RESTORE-DRILL-001`, `SECURITY-BASELINE-001` and `OBSERVABILITY-001`;
-- confirmation that Preview/VPS and product/domain/schema/data scope were not changed unless separately authorized.
+- confirmation that live Preview/VPS and product/domain/schema/data scope were not changed unless separately authorized.
 
 ## OUT OF SCOPE
 
