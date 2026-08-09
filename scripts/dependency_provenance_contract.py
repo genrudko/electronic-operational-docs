@@ -882,8 +882,8 @@ def generate_provenance(
         digest_material(workflow),
         digest_material(ROOT / "Dockerfile"),
         digest_material(wheel, "wheel:" + wheel.name),
-        digest_material(static_manifest),
-        digest_material(spdx),
+        digest_material(static_manifest, "generated:static-manifest.json"),
+        digest_material(spdx, "generated:production.spdx.json"),
     ]
     for profile in LOCK_PROFILES:
         materials.append(digest_material(LOCK_DIR / f"{profile}.txt"))
