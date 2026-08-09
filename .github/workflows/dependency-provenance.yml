@@ -316,18 +316,13 @@ jobs:
             --production "$EVIDENCE_DIR/production.spdx.json" \
             --browser "$EVIDENCE_DIR/browser.spdx.json" \
             --service "postgres=$EVIDENCE_DIR/postgres.spdx.json"
-          material_dir="dist/dependency-provenance-materials"
-          rm -rf "$material_dir"
-          mkdir -p "$material_dir"
-          cp "$EVIDENCE_DIR/static-manifest.json" "$material_dir/static-manifest.json"
-          cp "$EVIDENCE_DIR/production.spdx.json" "$material_dir/production.spdx.json"
           python scripts/dependency_provenance_contract.py provenance \
             --output "$EVIDENCE_DIR/provenance.intoto.json" \
             --subject-name electronic-operational-docs \
             --subject-digest "$FINAL_IMAGE_DIGEST" \
             --wheel "$WHEEL_PATH" \
-            --static-manifest "$material_dir/static-manifest.json" \
-            --spdx "$material_dir/production.spdx.json" \
+            --static-manifest "$EVIDENCE_DIR/static-manifest.json" \
+            --spdx "$EVIDENCE_DIR/production.spdx.json" \
             --source-commit "$SOURCE_COMMIT" \
             --workflow .github/workflows/dependency-provenance.yml \
             --source-date-epoch "$SOURCE_DATE_EPOCH"
@@ -335,7 +330,6 @@ jobs:
             --input "$EVIDENCE_DIR/provenance.intoto.json" \
             --subject-digest "$FINAL_IMAGE_DIGEST" \
             --source-commit "$SOURCE_COMMIT"
-          rm -rf "$material_dir"
 
       - name: Verify wheel and evidence are credential-free before publication
         shell: bash
