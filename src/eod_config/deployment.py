@@ -6,8 +6,8 @@ from urllib.parse import urlsplit
 
 SUPPORTED_DEPLOYMENT_MODES = frozenset({"development", "ci", "preview", "production"})
 PRODUCTION_CAPABLE_MODE = "production"
-DEFAULT_DEVELOPMENT_SECRET = "development-only-change-me"
-DEFAULT_LOCAL_POSTGRES_PASSWORD = "eod_local_password"
+MINIMUM_PREVIEW_SECRET_LENGTH = 32
+MINIMUM_DATABASE_PASSWORD_LENGTH = 20
 MINIMUM_PRODUCTION_SECRET_LENGTH = 50
 MINIMUM_HSTS_SECONDS = 3600
 
@@ -64,7 +64,7 @@ def validate_deployment_environment(env: Mapping[str, str]) -> DeploymentContrac
             f"Неподдерживаемый EOD_DEPLOYMENT_MODE. Допустимы: {allowed}."
         )
 
-    secret_key = _text(env, "DJANGO_SECRET_KEY", DEFAULT_DEVELOPMENT_SECRET)
+    secret_key = _text(env, "DJANGO_SECRET_KEY")
     debug = _bool(env, "DJANGO_DEBUG", True)
     allowed_hosts = _csv(env, "DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost")
     db_engine = _text(env, "DB_ENGINE", "sqlite").lower()
@@ -73,16 +73,20 @@ def validate_deployment_environment(env: Mapping[str, str]) -> DeploymentContrac
 
     if mode == "preview":
         errors: list[str] = []
-        if secret_key in {"", DEFAULT_DEVELOPMENT_SECRET}:
-            errors.append("DJANGO_SECRET_KEY должен быть задан явно")
+        if len(secret_key) < MINIMUM_PREVIEW_SECRET_LENGTH:
+            errors.append(
+                f"DJANGO_SECRET_KEY должен быть задан явно и иметь длину не менее {MINIMUM_PREVIEW_SECRET_LENGTH} символов"
+            )
         if debug:
             errors.append("DJANGO_DEBUG должен быть отключён")
         if not allowed_hosts:
             errors.append("DJANGO_ALLOWED_HOSTS не должен быть пустым")
         if db_engine not in {"postgres", "postgresql"}:
             errors.append("preview допускает только PostgreSQL")
-        if postgres_password in {"", DEFAULT_LOCAL_POSTGRES_PASSWORD}:
-            errors.append("POSTGRES_PASSWORD должен быть задан явно")
+        if len(postgres_password) < MINIMUM_DATABASE_PASSWORD_LENGTH:
+            errors.append(
+                f"POSTGRES_PASSWORD должен быть задан явно и иметь длину не менее {MINIMUM_DATABASE_PASSWORD_LENGTH} символов"
+            )
         if not postgres_host:
             errors.append("POSTGRES_HOST должен быть задан явно")
         if errors:
@@ -105,7 +109,7 @@ def validate_deployment_environment(env: Mapping[str, str]) -> DeploymentContrac
         )
 
     errors = []
-    if secret_key in {"", DEFAULT_DEVELOPMENT_SECRET} or len(secret_key) < MINIMUM_PRODUCTION_SECRET_LENGTH:
+    if len(secret_key) < MINIMUM_PRODUCTION_SECRET_LENGTH:
         errors.append(
             f"DJANGO_SECRET_KEY должен быть явно задан и иметь длину не менее {MINIMUM_PRODUCTION_SECRET_LENGTH} символов"
         )
@@ -127,8 +131,10 @@ def validate_deployment_environment(env: Mapping[str, str]) -> DeploymentContrac
     for name in ("POSTGRES_DB", "POSTGRES_USER", "POSTGRES_HOST", "POSTGRES_PORT"):
         if not _text(env, name):
             errors.append(f"{name} должен быть задан явно")
-    if postgres_password in {"", DEFAULT_LOCAL_POSTGRES_PASSWORD}:
-        errors.append("POSTGRES_PASSWORD должен быть задан явно и не быть development default")
+    if len(postgres_password) < MINIMUM_DATABASE_PASSWORD_LENGTH:
+        errors.append(
+            f"POSTGRES_PASSWORD должен быть задан явно и иметь длину не менее {MINIMUM_DATABASE_PASSWORD_LENGTH} символов"
+        )
     if _bool(env, "EOD_ALLOW_SQLITE_PATH_OVERRIDE", False):
         errors.append("EOD_ALLOW_SQLITE_PATH_OVERRIDE должен быть отключён")
 
