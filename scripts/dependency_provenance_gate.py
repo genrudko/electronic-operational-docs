@@ -26,11 +26,6 @@ DOWNLOAD_COMMAND_RE = re.compile(
     r"(?:!\s+)?(?:sudo\s+)?(?:[A-Za-z0-9_./-]+/)?(?:curl|wget)\b",
     re.I,
 )
-DIAGNOSTIC_DIGEST_PATHS = (
-    ".github/workflows/dependency-provenance.yml",
-    "scripts/dependency_provenance_contract.py",
-    "scripts/dependency_provenance_gate.py",
-)
 
 
 def compose_config_no_interpolate(path: Path) -> dict[str, Any]:
@@ -106,12 +101,6 @@ def independently_applicable_paths(paths: object) -> set[str]:
     return source_gate.independently_applicable_paths(contract.ROOT)
 
 
-def emit_source_digest_diagnostics() -> None:
-    for relative in DIAGNOSTIC_DIGEST_PATHS:
-        digest = contract.sha256_file(contract.ROOT / relative)
-        print(f"DEPENDENCY_PROVENANCE_SOURCE_DIGEST path={relative} sha256={digest}")
-
-
 def main() -> int:
     contract.compose_config = compose_config_no_interpolate
     contract.independently_applicable_paths = independently_applicable_paths
@@ -119,7 +108,6 @@ def main() -> int:
     contract.validate_image_reference = validate_image_reference_with_local_carrier
     contract._original_validate_one_command = contract.validate_one_command
     contract.validate_one_command = validate_one_command_with_exact_download_detection
-    emit_source_digest_diagnostics()
     return contract.main()
 
 
