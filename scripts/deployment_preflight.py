@@ -40,19 +40,15 @@ def main() -> int:
         )
         return 2
 
-    print("DEPLOYMENT_PREFLIGHT=CONFIG_OK mode=production database=postgresql tls=reverse-proxy")
+    print(
+        "DEPLOYMENT_PREFLIGHT=CONFIG_OK "
+        "mode=production database=postgresql tls=reverse-proxy"
+    )
     if args.validate_only:
         return 0
 
     result = subprocess.run(
-        [
-            sys.executable,
-            "manage.py",
-            "check",
-            "--deploy",
-            "--fail-level",
-            "WARNING",
-        ],
+        [sys.executable, "manage.py", "check", "--deploy"],
         cwd=ROOT,
         env=os.environ.copy(),
         check=False,

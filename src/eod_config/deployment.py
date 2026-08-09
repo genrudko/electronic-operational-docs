@@ -6,7 +6,6 @@ from urllib.parse import urlsplit
 
 SUPPORTED_DEPLOYMENT_MODES = frozenset({"development", "ci", "preview", "production"})
 PRODUCTION_CAPABLE_MODE = "production"
-MINIMUM_PREVIEW_SECRET_LENGTH = 32
 MINIMUM_DATABASE_PASSWORD_LENGTH = 20
 MINIMUM_PRODUCTION_SECRET_LENGTH = 50
 MINIMUM_HSTS_SECONDS = 3600
@@ -55,49 +54,13 @@ def _valid_https_origin(value: str) -> bool:
 
 
 def validate_deployment_environment(env: Mapping[str, str]) -> DeploymentContract:
-    """Validate deployment-mode invariants without reading or printing secret values."""
+    """Validate deployment-mode invariants without printing secret values."""
 
     mode = _text(env, "EOD_DEPLOYMENT_MODE", "development").lower()
     if mode not in SUPPORTED_DEPLOYMENT_MODES:
         allowed = ", ".join(sorted(SUPPORTED_DEPLOYMENT_MODES))
         raise DeploymentConfigurationError(
             f"Неподдерживаемый EOD_DEPLOYMENT_MODE. Допустимы: {allowed}."
-        )
-
-    secret_key = _text(env, "DJANGO_SECRET_KEY")
-    debug = _bool(env, "DJANGO_DEBUG", True)
-    allowed_hosts = _csv(env, "DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost")
-    db_engine = _text(env, "DB_ENGINE", "sqlite").lower()
-    postgres_password = _text(env, "POSTGRES_PASSWORD")
-    postgres_host = _text(env, "POSTGRES_HOST")
-
-    if mode == "preview":
-        errors: list[str] = []
-        if len(secret_key) < MINIMUM_PREVIEW_SECRET_LENGTH:
-            errors.append(
-                f"DJANGO_SECRET_KEY должен быть задан явно и иметь длину не менее {MINIMUM_PREVIEW_SECRET_LENGTH} символов"
-            )
-        if debug:
-            errors.append("DJANGO_DEBUG должен быть отключён")
-        if not allowed_hosts:
-            errors.append("DJANGO_ALLOWED_HOSTS не должен быть пустым")
-        if db_engine not in {"postgres", "postgresql"}:
-            errors.append("preview допускает только PostgreSQL")
-        if len(postgres_password) < MINIMUM_DATABASE_PASSWORD_LENGTH:
-            errors.append(
-                f"POSTGRES_PASSWORD должен быть задан явно и иметь длину не менее {MINIMUM_DATABASE_PASSWORD_LENGTH} символов"
-            )
-        if not postgres_host:
-            errors.append("POSTGRES_HOST должен быть задан явно")
-        if errors:
-            raise DeploymentConfigurationError(
-                "Небезопасная конфигурация preview: " + "; ".join(errors) + "."
-            )
-        return DeploymentContract(
-            mode=mode,
-            production_capable=False,
-            csrf_trusted_origins=(),
-            hsts_seconds=0,
         )
 
     if mode != PRODUCTION_CAPABLE_MODE:
@@ -108,13 +71,17 @@ def validate_deployment_environment(env: Mapping[str, str]) -> DeploymentContrac
             hsts_seconds=0,
         )
 
-    errors = []
+    errors: list[str] = []
+    secret_key = _text(env, "DJANGO_SECRET_KEY")
     if len(secret_key) < MINIMUM_PRODUCTION_SECRET_LENGTH:
         errors.append(
-            f"DJANGO_SECRET_KEY должен быть явно задан и иметь длину не менее {MINIMUM_PRODUCTION_SECRET_LENGTH} символов"
+            "DJANGO_SECRET_KEY должен быть явно задан и иметь длину "
+            f"не менее {MINIMUM_PRODUCTION_SECRET_LENGTH} символов"
         )
-    if debug:
+    if _bool(env, "DJANGO_DEBUG", True):
         errors.append("DJANGO_DEBUG должен быть отключён")
+
+    allowed_hosts = _csv(env, "DJANGO_ALLOWED_HOSTS")
     if not allowed_hosts:
         errors.append("DJANGO_ALLOWED_HOSTS должен содержать явные host values")
     elif any(host == "*" or "*" in host for host in allowed_hosts):
@@ -124,16 +91,20 @@ def validate_deployment_environment(env: Mapping[str, str]) -> DeploymentContrac
     if not csrf_origins:
         errors.append("DJANGO_CSRF_TRUSTED_ORIGINS должен содержать HTTPS origin")
     elif any(not _valid_https_origin(origin) for origin in csrf_origins):
-        errors.append("DJANGO_CSRF_TRUSTED_ORIGINS допускает только явные HTTPS origins без wildcard")
+        errors.append(
+            "DJANGO_CSRF_TRUSTED_ORIGINS допускает только явные HTTPS origins без wildcard"
+        )
 
+    db_engine = _text(env, "DB_ENGINE").lower()
     if db_engine not in {"postgres", "postgresql"}:
         errors.append("production допускает только PostgreSQL; SQLite fallback запрещён")
     for name in ("POSTGRES_DB", "POSTGRES_USER", "POSTGRES_HOST", "POSTGRES_PORT"):
         if not _text(env, name):
             errors.append(f"{name} должен быть задан явно")
-    if len(postgres_password) < MINIMUM_DATABASE_PASSWORD_LENGTH:
+    if len(_text(env, "POSTGRES_PASSWORD")) < MINIMUM_DATABASE_PASSWORD_LENGTH:
         errors.append(
-            f"POSTGRES_PASSWORD должен быть задан явно и иметь длину не менее {MINIMUM_DATABASE_PASSWORD_LENGTH} символов"
+            "POSTGRES_PASSWORD должен быть задан явно и иметь длину "
+            f"не менее {MINIMUM_DATABASE_PASSWORD_LENGTH} символов"
         )
     if _bool(env, "EOD_ALLOW_SQLITE_PATH_OVERRIDE", False):
         errors.append("EOD_ALLOW_SQLITE_PATH_OVERRIDE должен быть отключён")
@@ -143,7 +114,9 @@ def validate_deployment_environment(env: Mapping[str, str]) -> DeploymentContrac
     if not _bool(env, "EOD_TRUST_PROXY_HEADERS", False):
         errors.append("EOD_TRUST_PROXY_HEADERS=1 обязателен для production reverse proxy")
     if _bool(env, "EOD_TRUST_X_FORWARDED_HOST", False):
-        errors.append("EOD_TRUST_X_FORWARDED_HOST должен быть отключён; proxy обязан сохранять canonical Host")
+        errors.append(
+            "EOD_TRUST_X_FORWARDED_HOST должен быть отключён; proxy обязан сохранять canonical Host"
+        )
 
     raw_hsts = _text(env, "DJANGO_SECURE_HSTS_SECONDS")
     try:

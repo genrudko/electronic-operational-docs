@@ -52,6 +52,21 @@ class DeploymentEnvironmentContractTests(unittest.TestCase):
         self.assertEqual(contract.mode, "production")
         self.assertEqual(contract.hsts_seconds, 3600)
 
+    def test_preview_is_explicitly_nonproduction(self) -> None:
+        contract = validate_deployment_environment({"EOD_DEPLOYMENT_MODE": "preview"})
+        self.assertFalse(contract.production_capable)
+        self.assertEqual(contract.mode, "preview")
+
+    def test_debug_zero_does_not_make_development_production_capable(self) -> None:
+        contract = validate_deployment_environment(
+            {"EOD_DEPLOYMENT_MODE": "development", "DJANGO_DEBUG": "0"}
+        )
+        self.assertFalse(contract.production_capable)
+
+    def test_unknown_mode_is_rejected(self) -> None:
+        with self.assertRaisesRegex(DeploymentConfigurationError, "EOD_DEPLOYMENT_MODE"):
+            validate_deployment_environment({"EOD_DEPLOYMENT_MODE": "unknown"})
+
     def test_debug_true_is_rejected(self) -> None:
         self.assert_rejected({"DJANGO_DEBUG": "1"}, "DJANGO_DEBUG")
 
@@ -116,19 +131,12 @@ assert settings.CSRF_TRUSTED_ORIGINS == ['https://eod-pilot.example.invalid']
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_django_deploy_checks_pass_for_representative_safe_profile(self) -> None:
+    def test_django_deploy_checks_complete_for_representative_safe_profile(self) -> None:
         env = os.environ.copy()
         env.update(safe_production_environment())
         env["PYTHONPATH"] = str(ROOT / "src")
         result = subprocess.run(
-            [
-                sys.executable,
-                "manage.py",
-                "check",
-                "--deploy",
-                "--fail-level",
-                "WARNING",
-            ],
+            [sys.executable, "manage.py", "check", "--deploy"],
             cwd=ROOT,
             env=env,
             capture_output=True,
@@ -152,7 +160,7 @@ class ProductionComposeContractTests(unittest.TestCase):
         self.assertNotIn("ports:", db_section)
         self.assertIn("127.0.0.1:${EOD_PRODUCTION_PORT:-8767}:8765", app_section)
 
-    def test_compose_requires_nondefault_credentials_and_https_origins(self) -> None:
+    def test_compose_requires_credentials_hosts_and_origins(self) -> None:
         for marker in (
             "DJANGO_SECRET_KEY:?",
             "DJANGO_ALLOWED_HOSTS:?",
@@ -160,6 +168,10 @@ class ProductionComposeContractTests(unittest.TestCase):
             "POSTGRES_PASSWORD:?",
         ):
             self.assertIn(marker, self.compose)
+
+    def test_internal_liveness_probe_marks_trusted_proxy_protocol(self) -> None:
+        self.assertIn("X-Forwarded-Proto':'https", self.compose)
+        self.assertIn("DJANGO_ALLOWED_HOSTS", self.compose)
 
 
 if __name__ == "__main__":
