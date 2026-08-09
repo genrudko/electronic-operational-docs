@@ -40,13 +40,17 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-          cache-dependency-path: pyproject.toml
+          cache-dependency-path: requirements/locks/*.txt
 
       - name: Install development dependencies
         run: |
-          python -m pip install --upgrade pip setuptools wheel
-          python -m pip install --editable ".[dev]"
+          python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/tooling.txt
+          python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/build.txt
+          python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/dev.txt
+          python -m build --wheel --no-isolation --outdir dist
+          python -m pip install --disable-pip-version-check --no-deps dist/*.whl
           python -m pip check
+          rm -rf build
 
       - name: Compile AUTO-001A sources and tests
         run: |
