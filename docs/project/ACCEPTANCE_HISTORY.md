@@ -4,7 +4,7 @@
 визуальную и integration acceptance. Он является историческим ledger и не
 владеет active work item, current main, runtime или Preview state.
 
-## Factual reconciliation ledger — 2026-08-06
+## Factual reconciliation ledger — 2026-08-10
 
 | Work item | PR | Accepted/final exact head | Merge commit | Acceptance |
 |---|---:|---|---|---|
@@ -21,6 +21,7 @@
 | `PROJECT-STATE-RECONCILIATION-001` | #51 | `a6534a5fb2e5ae59bfba6cd36e9e80ebc69801d6` | `9d6d48ad25d45cd79673c7017980a8bd92fa961a` | canonical state reconciliation and fail-closed documentation drift protection accepted |
 | `INDUSTRIALIZATION-PROGRAM-EXECUTION-001` | #53 | `9eec9b94392df45b44e7ad4165e8c76d06d05b36` | `3c02c5c05cdf604bbf230d215b82ddd875ab1421` | executable backlog, gate ownership and residual-risk contract accepted; Phase 0 completed |
 | `SECRET-HYGIENE-001` | #56 | `cd7dc07a9c77a71a5b1166aa7a57ee4d3afa93da` | `95b8dd6017745886f110f052ea0950b3d48173d8` | credential hygiene, CI leak prevention and fail-closed publication contract accepted |
+| `DEPENDENCY-PROVENANCE-001` | #58 | `0f0e92522e7a2c5d43dd635ed661c65ed5021422` | `5b54446d632ef1839d530dc2945255b3033359fe` | reproducible dependency/build provenance and exact-head Sigstore/OIDC evidence accepted |
 
 ### Why two heads appear for some historical PRs
 
@@ -35,6 +36,25 @@ The older acceptance document contained a period snapshot where PR #7 was still
 `OPEN / DRAFT / NOT MERGED`. That statement was true at the time of the snapshot
 but became stale after the later accepted merge. It is superseded by the ledger
 above; the existence of the earlier contradiction is explicitly preserved here.
+
+## DEPENDENCY-PROVENANCE-001 exact-head evidence
+
+```text
+EOD CI:                      31338914564 / SUCCESS
+AUTO-001A Foundation CI:     31338914521 / SUCCESS
+AUTO-001B Controller CI:     31338914515 / SUCCESS
+EOD Documentation Contract: 31338914511 / SUCCESS
+EOD Development Stack:      31338914549 / SUCCESS
+EOD Secret Hygiene:          31338914517 / SUCCESS
+EOD Dependency Provenance:   31338914527 / SUCCESS
+```
+
+Accepted exact head `0f0e92522e7a2c5d43dd635ed661c65ed5021422` was merged as
+`5b54446d632ef1839d530dc2945255b3033359fe`. Accepted scope: five hashed lock
+projections, pinned OCI/action inputs, SPDX 2.3 JSON SBOM, in-toto/SLSA
+provenance and GitHub OIDC/Sigstore identity evidence. Runtime and Preview were
+untouched. This ledger records immutable acceptance evidence and does not
+re-audit the accepted supply-chain architecture.
 
 ## SECRET-HYGIENE-001 exact-head evidence
 

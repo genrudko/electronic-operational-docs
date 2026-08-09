@@ -2,7 +2,7 @@
 
 ## STATUS
 
-`PREPARED / NOT YET CANONICALLY IN_PROGRESS`
+`IN_PROGRESS / CANONICALLY ACTIVE`
 
 Issue: `#59`
 
@@ -10,13 +10,13 @@ Branch: `deployment/deployment-profile-001`
 
 Draft PR: `#60` against `main`.
 
-At coordination start this contract itself changes no live runtime, and the protected Preview environment remains untouched.
+The canonical coordination transition was performed without live runtime changes; the protected Preview environment remains untouched.
 
 ## PURPOSE
 
 Create the accepted fail-closed deployment/configuration boundary for EOD pilot and production operation without changing accepted domain behaviour or treating Preview as production.
 
-This is a Phase 1 P0 `SAFE-CONTINUATION` work item. It closes the deployment boundary of `PSR-003`, `PSR-022` and `PSR-018` and unblocks `BACKUP-RESTORE-DRILL-001` and `SECURITY-BASELINE-001`.
+This is a Phase 1 P0 `SAFE-CONTINUATION` work item. It closes the deployment boundary of `PSR-003`, `PSR-022` and `PSR-018` and unblocks `BACKUP-RESTORE-DRILL-001` and `SECURITY-BASELINE-001` after acceptance.
 
 ## FACTUAL BASELINE
 
@@ -29,22 +29,22 @@ merge commit / main: 5b54446d632ef1839d530dc2945255b3033359fe
 issue: #57 / CLOSED / COMPLETED
 ```
 
-PR #58 had no live runtime or Preview impact. Live GitHub is authoritative. The repository canonical planning/state files still contain the pre-merge `DEPENDENCY-PROVENANCE-001` execution state and must be reconciled in the first atomic transition of this work item before implementation evidence is claimed.
+PR #58 had no live runtime or Preview impact. Live GitHub is authoritative. The first atomic transition of this work item reconciled the canonical planning/state files with this accepted baseline before deployment implementation evidence is claimed.
 
 ## FIRST ATOMIC COORDINATION TRANSITION
 
-The first implementation session must perform one consistent state transition, not a sequence of contradictory partial edits:
+Completed as one consistent state transition:
 
-1. Verify current `main`, PR #58 and issue #57 from GitHub.
-2. Record `DEPENDENCY-PROVENANCE-001` as `ACCEPTED` in the canonical planning owner with exact evidence.
-3. Record PR #58 acceptance in applicable acceptance/baseline history without rewriting older history.
+1. Verified current `main`, PR #58 and issue #57 from GitHub.
+2. Recorded `DEPENDENCY-PROVENANCE-001` as `ACCEPTED` in the canonical planning owner with exact evidence.
+3. Recorded PR #58 acceptance in applicable acceptance/baseline history without rewriting older history.
 4. Set the accepted main baseline to merge commit `5b54446d632ef1839d530dc2945255b3033359fe`.
-5. Transition `DEPLOYMENT-PROFILE-001` from `NOT_STARTED` to `IN_PROGRESS`.
+5. Transitioned `DEPLOYMENT-PROFILE-001` from `NOT_STARTED` to `IN_PROGRESS`.
 6. Set `CURRENT_STATE.md` active issue/PR/branch to this work item.
-7. Regenerate every deterministic planning/progress view from canonical owners.
-8. Run the documentation/state contract and repair only factual projection drift exposed by that transition.
+7. Regenerated every changed deterministic planning/progress view from canonical owners; unchanged deterministic views remain byte-identical.
+8. Preserved the permanent documentation/state contract; no rule was suppressed or weakened.
 
-No product/runtime claim may be made while canonical owners disagree.
+After transition: `SAFE-CONTINUATION` is `4/8 ACCEPTED`; the domain queue remains paused and `SHIFT-HANDOVER-001` has not started.
 
 ## RISKS
 

@@ -30,6 +30,16 @@ Baseline фиксируется после применимых technical gates,
 | 2026-08-05 | `9d6d48ad25d45cd79673c7017980a8bd92fa961a` | PROJECT-STATE-RECONCILIATION-001 merge | accepted canonical-state and documentation-drift protection baseline |
 | 2026-08-05 | `3c02c5c05cdf604bbf230d215b82ddd875ab1421` | INDUSTRIALIZATION-PROGRAM-EXECUTION-001 merge | accepted executable backlog and Phase 0 completion baseline |
 | 2026-08-06 | `95b8dd6017745886f110f052ea0950b3d48173d8` | SECRET-HYGIENE-001 merge | accepted credential-hygiene and CI leak-prevention baseline |
+| 2026-08-10 | `5b54446d632ef1839d530dc2945255b3033359fe` | DEPENDENCY-PROVENANCE-001 merge | accepted reproducible dependency/build provenance baseline |
+
+## Reconciliation note — 2026-08-10
+
+`DEPENDENCY-PROVENANCE-001` принят по exact head
+`0f0e92522e7a2c5d43dd635ed661c65ed5021422` и merged в
+`5b54446d632ef1839d530dc2945255b3033359fe`. Canonical planning state переведён
+в `ACCEPTED` атомарно со стартом `DEPLOYMENT-PROFILE-001`; история не
+переписывалась. После этого `SAFE-CONTINUATION` имеет 4 из 8 принятых элементов,
+а предметная очередь остаётся paused.
 
 ## Reconciliation note — 2026-08-06
 

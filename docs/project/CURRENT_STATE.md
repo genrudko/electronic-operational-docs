@@ -1,34 +1,71 @@
 # ЭОД — текущее состояние
 
-**Дата factual check:** 06.08.2026
+**Дата factual check:** 10.08.2026
 
 **Единственный владелец:** accepted main baseline, active work item/issue/PR/branch
 и runtime state.
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted main baseline: main / 95b8dd6017745886f110f052ea0950b3d48173d8
-active work item: DEPENDENCY-PROVENANCE-001
-active issue: #57
-active PR: #58 / OPEN / DRAFT / NOT MERGED
-active branch: supply-chain/dependency-provenance-001
+accepted main baseline: main / 5b54446d632ef1839d530dc2945255b3033359fe
+active work item: DEPLOYMENT-PROFILE-001
+active issue: #59
+active PR: #60 / OPEN / DRAFT / NOT MERGED
+active branch: deployment/deployment-profile-001
 runtime impact: NONE
 preview: UNTOUCHED
 ```
 
-## Active DEPENDENCY-PROVENANCE-001 execution
+## Active DEPLOYMENT-PROFILE-001 execution
 
-`DEPENDENCY-PROVENANCE-001` выполняется только в issue #57, ветке
-`supply-chain/dependency-provenance-001` и Draft PR #58.
+`DEPLOYMENT-PROFILE-001` выполняется только в issue #59, ветке
+`deployment/deployment-profile-001` и Draft PR #60.
 
-Work item ограничен supply-chain/build tooling: dependency lock,
-immutable image/action references, SBOM, build provenance и постоянные
-fail-closed gates. Runtime impact на coordination start — `NONE`.
-Live VPS и Preview не изменяются.
+Work item ограничен deployment/configuration boundary: отдельный
+pilot/production-capable режим, fail-closed configuration, PostgreSQL-only
+production semantics, application-side TLS/reverse-proxy contract,
+ограниченные liveness/readiness checks и operator preflight. Runtime impact на
+coordination start — `NONE`. Live VPS и Preview не изменяются.
 
 Предметная очередь сохраняется в состоянии
 `PAUSED_PENDING_SAFE_CONTINUATION_AND_EXPLICIT_OWNER_DECISION`.
 `SHIFT-HANDOVER-001` не стартовал.
+
+## Accepted DEPENDENCY-PROVENANCE-001 baseline
+
+`DEPENDENCY-PROVENANCE-001` принят пользователем и merged обычным merge commit:
+
+```text
+accepted PR: #58 / CLOSED / MERGED
+accepted exact head: 0f0e92522e7a2c5d43dd635ed661c65ed5021422
+merge commit / accepted main: 5b54446d632ef1839d530dc2945255b3033359fe
+issue: #57 / CLOSED / COMPLETED
+user acceptance: PASSED
+merge method: ORDINARY MERGE COMMIT
+squash / rebase: NOT USED
+runtime impact: NONE
+preview: UNTOUCHED
+```
+
+Принятый baseline включает пять hashed lock projections, immutable OCI/action
+inputs, SPDX 2.3 JSON SBOM, in-toto Statement v1 / SLSA Provenance v1,
+Sigstore/GitHub OIDC signing identity evidence и fail-closed dependency
+provenance gates. Все применимые exact-head workflows завершились успешно:
+
+```text
+EOD CI:                      31338914564 / SUCCESS
+AUTO-001A Foundation CI:     31338914521 / SUCCESS
+AUTO-001B Controller CI:     31338914515 / SUCCESS
+EOD Documentation Contract: 31338914511 / SUCCESS
+EOD Development Stack:      31338914549 / SUCCESS
+EOD Secret Hygiene:          31338914517 / SUCCESS
+EOD Dependency Provenance:   31338914527 / SUCCESS
+```
+
+`SAFE-CONTINUATION` после merge достигнут на 4 из 8 обязательных work items.
+`DEPLOYMENT-PROFILE-001` больше не заблокирован `DEPENDENCY-PROVENANCE-001` и
+канонически переведён в `IN_PROGRESS`. Это не означает достижения
+`SAFE-CONTINUATION` или готовности к пилоту.
 
 ## Accepted SECRET-HYGIENE-001 baseline
 
