@@ -102,11 +102,6 @@ def independently_applicable_paths(paths: object) -> set[str]:
 
 
 def main() -> int:
-    for relative in (
-        ".github/workflows/dependency-provenance.yml",
-        "scripts/dependency_provenance_contract.py",
-    ):
-        print(f"SOURCE_SHA256 {relative}={contract.sha256_file(contract.ROOT / relative)}")
     contract.compose_config = compose_config_no_interpolate
     contract.independently_applicable_paths = independently_applicable_paths
     contract._original_validate_image_reference = contract.validate_image_reference
