@@ -297,7 +297,6 @@
     gap: 6px;
     padding: 4px 6px;
 }
-
 .opj-workspace-page .opj-toolbar-search {
     display: grid;
     min-width: 225px;
@@ -1098,6 +1097,20 @@
 
     .opj-workspace-page .opj-editor-toolbar-context {
         display: none;
+    }
+
+    .opj-workspace[data-view-mode="single"] {
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .opj-workspace[data-view-mode="single"] .opj-editor-container {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
     }
 
     .opj-workspace[data-view-mode="spread"] .opj-editor-container {
