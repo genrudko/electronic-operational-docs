@@ -214,7 +214,7 @@ def main():
 
         page.goto(BASE + ROUTES["defect_registry"])
         theme(page, "dark")
-        defect_row = need(page, ".defect-da-work-table tbody tr")
+        defect_row = need(page, "[data-defect-row-link]")
         defect_row.hover()
         report["open_states"]["defect_hover"] = style(defect_row)
         screenshot(page, shots, "transient__defect_hover__dark__1440x900")
