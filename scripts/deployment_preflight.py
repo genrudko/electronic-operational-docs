@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import os
-import subprocess
 import sys
 from pathlib import Path
 
@@ -10,6 +9,10 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
+
+import django  # noqa: E402
+from django.core.management import call_command  # noqa: E402
+from django.core.management.base import SystemCheckError  # noqa: E402
 
 from eod_config.deployment import (  # noqa: E402
     PRODUCTION_CAPABLE_MODE,
@@ -47,15 +50,14 @@ def main() -> int:
     if args.validate_only:
         return 0
 
-    result = subprocess.run(
-        [sys.executable, "manage.py", "check", "--deploy"],
-        cwd=ROOT,
-        env=os.environ.copy(),
-        check=False,
-    )
-    if result.returncode:
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "eod_config.settings")
+    try:
+        django.setup()
+        call_command("check", deploy=True)
+    except SystemCheckError:
         print("DEPLOYMENT_PREFLIGHT=FAIL django_deploy_checks", file=sys.stderr)
-        return result.returncode
+        return 1
+
     print("DEPLOYMENT_PREFLIGHT=PASS")
     return 0
 
