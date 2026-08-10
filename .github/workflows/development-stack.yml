@@ -169,13 +169,25 @@ jobs:
         run: python scripts/secret_hygiene.py verify-clean-tree
 
   visual-evidence:
-    name: UX visual evidence container validation
+    name: UX visual evidence service validation
     if: contains(github.event.pull_request.labels.*.name, 'vps-development-refresh')
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     container:
       image: mcr.microsoft.com/playwright/python@sha256:678457c4c323b981d8b4befc57b95366bb1bb6aa30057b1269f6b171e8d9975a
       options: --user 0
+    services:
+      postgres:
+        image: postgres@sha256:882236b897e39051d2368c5ccc6cda944904723506b2dfc97f2a8f5bc9afa382
+        env:
+          POSTGRES_DB: eod_browser_ci
+          POSTGRES_USER: eod_browser_ci
+          POSTGRES_HOST_AUTH_METHOD: trust
+        options: >-
+          --health-cmd "pg_isready -U eod_browser_ci -d eod_browser_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     steps:
-      - name: Confirm browser container starts
+      - name: Confirm browser service starts
         run: python --version
