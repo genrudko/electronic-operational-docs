@@ -48,6 +48,8 @@ def _valid_https_origin(value: str) -> bool:
     return (
         parsed.scheme == "https"
         and bool(parsed.netloc)
+        and parsed.username is None
+        and parsed.password is None
         and parsed.path in {"", "/"}
         and not parsed.query
         and not parsed.fragment
@@ -81,11 +83,13 @@ def validate_deployment_environment(env: Mapping[str, str]) -> DeploymentContrac
         )
     if _bool(env, "DJANGO_DEBUG", True):
         errors.append("DJANGO_DEBUG должен быть отключён")
+    if _bool(env, "EOD_TESTING", False):
+        errors.append("EOD_TESTING должен быть отключён в production")
 
     allowed_hosts = _csv(env, "DJANGO_ALLOWED_HOSTS")
     if not allowed_hosts:
         errors.append("DJANGO_ALLOWED_HOSTS должен содержать явные host values")
-    elif any(host == "*" or "*" in host for host in allowed_hosts):
+    elif any("*" in host or host.startswith(".") for host in allowed_hosts):
         errors.append("DJANGO_ALLOWED_HOSTS не должен содержать wildcard")
 
     csrf_origins = _csv(env, "DJANGO_CSRF_TRUSTED_ORIGINS")
