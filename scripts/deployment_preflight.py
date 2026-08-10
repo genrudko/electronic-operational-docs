@@ -10,10 +10,6 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-import django  # noqa: E402
-from django.core.management import call_command  # noqa: E402
-from django.core.management.base import SystemCheckError  # noqa: E402
-
 from eod_config.deployment import (  # noqa: E402
     PRODUCTION_CAPABLE_MODE,
     DeploymentConfigurationError,
@@ -49,6 +45,14 @@ def main() -> int:
     )
     if args.validate_only:
         return 0
+
+    try:
+        import django
+        from django.core.management import call_command
+        from django.core.management.base import SystemCheckError
+    except ImportError:
+        print("DEPLOYMENT_PREFLIGHT=FAIL django_runtime_unavailable", file=sys.stderr)
+        return 1
 
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "eod_config.settings")
     try:
