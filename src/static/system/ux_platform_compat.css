@@ -1,0 +1,13 @@
+/* UX-PLATFORM-FOUNDATION-001 migration aliases.
+ * Values are owned by theme.css; this file only preserves accepted legacy names
+ * for specialised surfaces until LEGACY-UX-MIGRATION-001 removes them.
+ */
+body.ux-platform {
+    --da-sidebar-width: var(--theme-sidebar-width);
+    --da-topbar-height: var(--theme-topbar-height);
+    --da-page-inline: var(--theme-page-gutter);
+    --da-page-max: var(--theme-page-max);
+    --da-radius-sm: var(--theme-radius-sm);
+    --da-radius: var(--theme-radius-md);
+    --da-radius-lg: var(--theme-radius-lg);
+}
