@@ -237,7 +237,9 @@ class PresentationUxTests(TestCase):
         response = self.client.get(reverse("system:home"))
         self.assertContains(response, "icons.svg#icon-home")
         self.assertContains(response, "Справочники")
-        self.assertContains(response, "user-menu")
+        self.assertContains(response, "da-topbar-tools")
+        self.assertContains(response, "icons.svg#icon-user")
+        self.assertContains(response, "icons.svg#icon-logout")
 
     def test_dispatching_registry_uses_semantic_cards(self):
         response = self.client.get(reverse("dispatching:registry"))
