@@ -56,7 +56,11 @@ MUTATING_OPERATIONS: Final[frozenset[ModuleOperation]] = frozenset(
     }
 )
 READ_OPERATIONS: Final[frozenset[ModuleOperation]] = frozenset(
-    {ModuleOperation.READ, ModuleOperation.HISTORY, ModuleOperation.EXPORT}
+    {
+        ModuleOperation.READ,
+        ModuleOperation.HISTORY,
+        ModuleOperation.EXPORT,
+    }
 )
 
 
@@ -90,6 +94,7 @@ def _manifest(
     dependencies: tuple[str, ...] = (),
     optional_integrations: tuple[str, ...] = (),
 ) -> ModuleManifest:
+    prerequisites = () if policy is ActivationPolicy.ALWAYS_ON else ("CONFIGURATION_READY",)
     return ModuleManifest(
         module_id=module_id,
         human_name=human_name,
@@ -99,13 +104,13 @@ def _manifest(
         optional_integrations=optional_integrations,
         capabilities=frozenset(capabilities),
         operations=ALL_OPERATIONS,
-        activation_prerequisites=() if policy is ActivationPolicy.ALWAYS_ON else ("CONFIGURATION_READY",),
+        activation_prerequisites=prerequisites,
     )
 
 
-# Runtime manifests cover the canonical module identities that already have product
-# code in the repository. Planned-only catalogue modules are intentionally not made
-# activatable merely by appearing in planning documentation.
+# Only canonical identities backed by current product code are runtime manifests.
+# Planned-only catalogue entries do not become activatable merely because they exist
+# in planning documentation.
 _MANIFESTS: Final[dict[str, ModuleManifest]] = {
     item.module_id: item
     for item in (
@@ -268,20 +273,67 @@ def normalize_context(
     )
 
 
-def _candidate_rules(module_id: str, context: ModuleScopeContext) -> list[ModuleActivationRule]:
-    keys = [(ModuleScopeType.ORGANIZATION, context.organization_id)]
-    if context.energy_site_id is not None:
-        keys.append((ModuleScopeType.ENERGY_SITE, context.energy_site_id))
-    if context.workplace_id is not None:
-        keys.append((ModuleScopeType.WORKPLACE, context.workplace_id))
-    rules = list(
-        ModuleActivationRule.objects.filter(
-            module_id=module_id,
+def _context_for_scope(
+    context: ModuleScopeContext,
+    scope_type: str,
+) -> ModuleScopeContext:
+    if scope_type == ModuleScopeType.ORGANIZATION:
+        return ModuleScopeContext(organization_id=context.organization_id)
+    if scope_type == ModuleScopeType.ENERGY_SITE and context.energy_site_id is not None:
+        return ModuleScopeContext(
             organization_id=context.organization_id,
+            energy_site_id=context.energy_site_id,
         )
+    if scope_type == ModuleScopeType.WORKPLACE and context.workplace_id is not None:
+        return ModuleScopeContext(
+            organization_id=context.organization_id,
+            workplace_id=context.workplace_id,
+        )
+    raise ValidationError("Запрошенная область отсутствует в нормализованном контексте.")
+
+
+def _scope_id(context: ModuleScopeContext, scope_type: str) -> int:
+    if scope_type == ModuleScopeType.ORGANIZATION:
+        return context.organization_id
+    if scope_type == ModuleScopeType.ENERGY_SITE and context.energy_site_id is not None:
+        return context.energy_site_id
+    if scope_type == ModuleScopeType.WORKPLACE and context.workplace_id is not None:
+        return context.workplace_id
+    raise ValidationError("Запрошенная область отсутствует в нормализованном контексте.")
+
+
+def _scope_rank(scope_type: str) -> int:
+    return {
+        ModuleScopeType.ORGANIZATION: 1,
+        ModuleScopeType.ENERGY_SITE: 2,
+        ModuleScopeType.WORKPLACE: 3,
+    }[scope_type]
+
+
+def _candidate_rules(
+    module_id: str,
+    context: ModuleScopeContext,
+) -> list[ModuleActivationRule]:
+    keys = {(ModuleScopeType.ORGANIZATION, context.organization_id)}
+    if context.energy_site_id is not None:
+        keys.add((ModuleScopeType.ENERGY_SITE, context.energy_site_id))
+    if context.workplace_id is not None:
+        keys.add((ModuleScopeType.WORKPLACE, context.workplace_id))
+    rules = ModuleActivationRule.objects.filter(
+        module_id=module_id,
+        organization_id=context.organization_id,
     )
-    allowed_keys = set(keys)
-    return [rule for rule in rules if (rule.scope_type, rule.scope_id) in allowed_keys]
+    return [rule for rule in rules if (rule.scope_type, rule.scope_id) in keys]
+
+
+def _strongest_cap(
+    rules: list[ModuleActivationRule],
+) -> ModuleActivationRule | None:
+    for state in (ModuleLifecycleState.RETIRED, ModuleLifecycleState.READ_ONLY):
+        matches = [rule for rule in rules if rule.state == state]
+        if matches:
+            return max(matches, key=lambda rule: _scope_rank(rule.scope_type))
+    return None
 
 
 def resolve_effective_state(
@@ -300,34 +352,19 @@ def resolve_effective_state(
         )
 
     rules = _candidate_rules(manifest.module_id, context)
-    retired = next((rule for rule in rules if rule.state == ModuleLifecycleState.RETIRED), None)
-    if retired is not None:
+    restrictive_cap = _strongest_cap(rules)
+    if restrictive_cap is not None:
         return EffectiveModuleState(
             module_id=manifest.module_id,
-            state=ModuleLifecycleState.RETIRED,
-            matched_scope_type=retired.scope_type,
-            matched_scope_id=retired.scope_id,
-            explicit_rule_id=retired.pk,
-            applied_restrictive_cap=ModuleLifecycleState.RETIRED,
-        )
-    read_only = next((rule for rule in rules if rule.state == ModuleLifecycleState.READ_ONLY), None)
-    if read_only is not None:
-        return EffectiveModuleState(
-            module_id=manifest.module_id,
-            state=ModuleLifecycleState.READ_ONLY,
-            matched_scope_type=read_only.scope_type,
-            matched_scope_id=read_only.scope_id,
-            explicit_rule_id=read_only.pk,
-            applied_restrictive_cap=ModuleLifecycleState.READ_ONLY,
+            state=restrictive_cap.state,
+            matched_scope_type=restrictive_cap.scope_type,
+            matched_scope_id=restrictive_cap.scope_id,
+            explicit_rule_id=restrictive_cap.pk,
+            applied_restrictive_cap=restrictive_cap.state,
         )
 
-    precedence = {
-        ModuleScopeType.ORGANIZATION: 1,
-        ModuleScopeType.ENERGY_SITE: 2,
-        ModuleScopeType.WORKPLACE: 3,
-    }
     if rules:
-        selected = max(rules, key=lambda rule: precedence[rule.scope_type])
+        selected = max(rules, key=lambda rule: _scope_rank(rule.scope_type))
         return EffectiveModuleState(
             module_id=manifest.module_id,
             state=selected.state,
@@ -347,13 +384,25 @@ def resolve_effective_state(
 _ALLOWED_TRANSITIONS: Final[dict[str, frozenset[str]]] = {
     ModuleLifecycleState.AVAILABLE: frozenset({ModuleLifecycleState.CONFIGURED}),
     ModuleLifecycleState.CONFIGURED: frozenset(
-        {ModuleLifecycleState.ACTIVE, ModuleLifecycleState.INACTIVE, ModuleLifecycleState.RETIRED}
+        {
+            ModuleLifecycleState.ACTIVE,
+            ModuleLifecycleState.INACTIVE,
+            ModuleLifecycleState.RETIRED,
+        }
     ),
     ModuleLifecycleState.ACTIVE: frozenset(
-        {ModuleLifecycleState.READ_ONLY, ModuleLifecycleState.INACTIVE, ModuleLifecycleState.RETIRED}
+        {
+            ModuleLifecycleState.READ_ONLY,
+            ModuleLifecycleState.INACTIVE,
+            ModuleLifecycleState.RETIRED,
+        }
     ),
     ModuleLifecycleState.READ_ONLY: frozenset(
-        {ModuleLifecycleState.ACTIVE, ModuleLifecycleState.INACTIVE, ModuleLifecycleState.RETIRED}
+        {
+            ModuleLifecycleState.ACTIVE,
+            ModuleLifecycleState.INACTIVE,
+            ModuleLifecycleState.RETIRED,
+        }
     ),
     ModuleLifecycleState.INACTIVE: frozenset(
         {ModuleLifecycleState.CONFIGURED, ModuleLifecycleState.RETIRED}
@@ -362,20 +411,18 @@ _ALLOWED_TRANSITIONS: Final[dict[str, frozenset[str]]] = {
 }
 
 
-def _rule_scope_context(rule: ModuleActivationRule) -> ModuleScopeContext:
-    return ModuleScopeContext(
-        organization_id=rule.organization_id,
-        energy_site_id=(rule.scope_id if rule.scope_type == ModuleScopeType.ENERGY_SITE else None),
-        workplace_id=(rule.scope_id if rule.scope_type == ModuleScopeType.WORKPLACE else None),
-    )
-
-
-def _dependency_validation(manifest: ModuleManifest, context: ModuleScopeContext) -> tuple[bool, str]:
+def _dependency_validation(
+    manifest: ModuleManifest,
+    context: ModuleScopeContext,
+) -> tuple[bool, str]:
     failures: list[str] = []
     for dependency_id in manifest.required_dependencies:
-        dependency_state = resolve_effective_state(module_id=dependency_id, context=context)
-        if dependency_state.state != ModuleLifecycleState.ACTIVE:
-            failures.append(f"{dependency_id}:{dependency_state.state}")
+        dependency = resolve_effective_state(
+            module_id=dependency_id,
+            context=context,
+        )
+        if dependency.state != ModuleLifecycleState.ACTIVE:
+            failures.append(f"{dependency_id}:{dependency.state}")
     if failures:
         return False, "required dependencies not ACTIVE: " + ", ".join(failures)
     return True, "required dependencies ACTIVE"
@@ -418,6 +465,39 @@ def _write_audit(
     )
 
 
+def _audit_denial(
+    *,
+    manifest: ModuleManifest,
+    scope_type: str,
+    scope_id: int,
+    context: ModuleScopeContext,
+    previous_explicit_state: str,
+    previous_effective_state: str,
+    requested_new_state: str,
+    actor_identity: str,
+    reason: str,
+    configuration_validation: str,
+    dependency_validation: str,
+    denial_reason_code: str,
+) -> None:
+    _write_audit(
+        module_id=manifest.module_id,
+        scope_type=scope_type,
+        scope_id=scope_id,
+        organization_id=context.organization_id,
+        previous_explicit_state=previous_explicit_state,
+        previous_effective_state=previous_effective_state,
+        requested_new_state=requested_new_state,
+        resulting_effective_state=previous_effective_state,
+        actor_identity=actor_identity,
+        reason=reason,
+        configuration_validation=configuration_validation,
+        dependency_validation=dependency_validation,
+        result=ModuleActivationAuditEvent.Result.DENIED,
+        denial_reason_code=denial_reason_code,
+    )
+
+
 def transition_module_state(
     *,
     module_id: str,
@@ -436,78 +516,76 @@ def transition_module_state(
         raise ValidationError("Модуль не поддерживает указанную область активации.")
     if new_state not in ModuleLifecycleState.values:
         raise ValidationError("Неизвестное lifecycle state модуля.")
-    normalized_actor = actor_identity.strip()
-    normalized_reason = reason.strip()
-    if not normalized_actor or not normalized_reason:
+
+    actor = actor_identity.strip()
+    transition_reason = reason.strip()
+    if not actor or not transition_reason:
         raise ValidationError("Для lifecycle transition требуются actor и reason.")
 
-    if scope_type == ModuleScopeType.ORGANIZATION:
-        scope_id = context.organization_id
-    elif scope_type == ModuleScopeType.ENERGY_SITE and context.energy_site_id is not None:
-        scope_id = context.energy_site_id
-    elif scope_type == ModuleScopeType.WORKPLACE and context.workplace_id is not None:
-        scope_id = context.workplace_id
-    else:
-        raise ValidationError("Запрошенная область отсутствует в нормализованном контексте.")
-
-    previous_effective = resolve_effective_state(module_id=manifest.module_id, context=context)
+    scoped_context = _context_for_scope(context, scope_type)
+    scope_id = _scope_id(scoped_context, scope_type)
+    previous_effective = resolve_effective_state(
+        module_id=manifest.module_id,
+        context=scoped_context,
+    )
     rule = ModuleActivationRule.objects.filter(
         module_id=manifest.module_id,
         scope_type=scope_type,
         scope_id=scope_id,
     ).first()
-    previous_explicit = rule.state if rule is not None else ModuleLifecycleState.AVAILABLE
+    previous_state = rule.state if rule is not None else ModuleLifecycleState.AVAILABLE
+    audit_explicit_state = rule.state if rule is not None else ""
 
-    allowed = _ALLOWED_TRANSITIONS.get(previous_explicit, frozenset())
-    if new_state not in allowed:
-        _write_audit(
-            module_id=manifest.module_id,
+    if new_state not in _ALLOWED_TRANSITIONS.get(previous_state, frozenset()):
+        _audit_denial(
+            manifest=manifest,
             scope_type=scope_type,
             scope_id=scope_id,
-            organization_id=context.organization_id,
-            previous_explicit_state=previous_explicit if rule is not None else "",
+            context=scoped_context,
+            previous_explicit_state=audit_explicit_state,
             previous_effective_state=previous_effective.state,
             requested_new_state=new_state,
-            resulting_effective_state=previous_effective.state,
-            actor_identity=normalized_actor,
-            reason=normalized_reason,
+            actor_identity=actor,
+            reason=transition_reason,
             configuration_validation="not evaluated",
             dependency_validation="not evaluated",
-            result=ModuleActivationAuditEvent.Result.DENIED,
             denial_reason_code="FORBIDDEN_TRANSITION",
         )
-        raise ValidationError(
-            f"Запрещён переход {previous_explicit} -> {new_state}."
-        )
+        raise ValidationError(f"Запрещён переход {previous_state} -> {new_state}.")
 
-    prospective_ready = (
+    ready = (
         configuration_ready
         if configuration_ready is not None
         else (rule.configuration_ready if rule is not None else False)
     )
-    config_validation = "ready" if prospective_ready else "not ready"
-    dependency_ok, dependency_validation = _dependency_validation(manifest, context)
-    if new_state == ModuleLifecycleState.ACTIVE and (
-        not prospective_ready or not dependency_ok
-    ):
-        reason_code = "CONFIGURATION_NOT_READY" if not prospective_ready else "REQUIRED_DEPENDENCY_INACTIVE"
-        _write_audit(
-            module_id=manifest.module_id,
+    configuration_validation = "ready" if ready else "not ready"
+    dependency_ok, dependency_validation = _dependency_validation(
+        manifest,
+        scoped_context,
+    )
+    if new_state == ModuleLifecycleState.ACTIVE and (not ready or not dependency_ok):
+        denial_code = (
+            "CONFIGURATION_NOT_READY"
+            if not ready
+            else "REQUIRED_DEPENDENCY_INACTIVE"
+        )
+        _audit_denial(
+            manifest=manifest,
             scope_type=scope_type,
             scope_id=scope_id,
-            organization_id=context.organization_id,
-            previous_explicit_state=previous_explicit if rule is not None else "",
+            context=scoped_context,
+            previous_explicit_state=audit_explicit_state,
             previous_effective_state=previous_effective.state,
             requested_new_state=new_state,
-            resulting_effective_state=previous_effective.state,
-            actor_identity=normalized_actor,
-            reason=normalized_reason,
-            configuration_validation=config_validation,
+            actor_identity=actor,
+            reason=transition_reason,
+            configuration_validation=configuration_validation,
             dependency_validation=dependency_validation,
-            result=ModuleActivationAuditEvent.Result.DENIED,
-            denial_reason_code=reason_code,
+            denial_reason_code=denial_code,
         )
-        raise ValidationError("Модуль нельзя активировать до успешной проверки конфигурации и зависимостей.")
+        raise ValidationError(
+            "Модуль нельзя активировать до успешной проверки конфигурации и зависимостей."
+        )
 
     try:
         with transaction.atomic():
@@ -516,9 +594,9 @@ def transition_module_state(
                     module_id=manifest.module_id,
                     scope_type=scope_type,
                     scope_id=scope_id,
-                    organization_id=context.organization_id,
+                    organization_id=scoped_context.organization_id,
                     state=new_state,
-                    configuration_ready=prospective_ready,
+                    configuration_ready=ready,
                     configuration=dict(configuration or {}),
                 )
             else:
@@ -528,41 +606,69 @@ def transition_module_state(
                 if configuration is not None:
                     rule.configuration = dict(configuration)
             rule.save()
-            resulting = resolve_effective_state(module_id=manifest.module_id, context=context)
+            resulting = resolve_effective_state(
+                module_id=manifest.module_id,
+                context=scoped_context,
+            )
             _write_audit(
                 module_id=manifest.module_id,
                 scope_type=scope_type,
                 scope_id=scope_id,
-                organization_id=context.organization_id,
-                previous_explicit_state=previous_explicit if rule.pk is not None else "",
+                organization_id=scoped_context.organization_id,
+                previous_explicit_state=audit_explicit_state,
                 previous_effective_state=previous_effective.state,
                 requested_new_state=new_state,
                 resulting_effective_state=resulting.state,
-                actor_identity=normalized_actor,
-                reason=normalized_reason,
-                configuration_validation=config_validation,
+                actor_identity=actor,
+                reason=transition_reason,
+                configuration_validation=configuration_validation,
                 dependency_validation=dependency_validation,
                 result=ModuleActivationAuditEvent.Result.ALLOWED,
             )
     except IntegrityError as error:
-        _write_audit(
-            module_id=manifest.module_id,
+        _audit_denial(
+            manifest=manifest,
             scope_type=scope_type,
             scope_id=scope_id,
-            organization_id=context.organization_id,
-            previous_explicit_state=previous_explicit if rule is not None else "",
+            context=scoped_context,
+            previous_explicit_state=audit_explicit_state,
             previous_effective_state=previous_effective.state,
             requested_new_state=new_state,
-            resulting_effective_state=previous_effective.state,
-            actor_identity=normalized_actor,
-            reason=normalized_reason,
-            configuration_validation=config_validation,
+            actor_identity=actor,
+            reason=transition_reason,
+            configuration_validation=configuration_validation,
             dependency_validation=dependency_validation,
-            result=ModuleActivationAuditEvent.Result.DENIED,
             denial_reason_code="DUPLICATE_SCOPE_RULE",
         )
-        raise ValidationError("Для этого модуля и области уже существует правило.") from error
+        raise ValidationError(
+            "Для этого модуля и области уже существует правило."
+        ) from error
     return rule
+
+
+def _value(value: str | StrEnum) -> str:
+    return value.value if isinstance(value, StrEnum) else str(value)
+
+
+def _decision(
+    *,
+    allowed: bool,
+    module_id: str,
+    capability_id: str,
+    operation: str | StrEnum,
+    entry_point_class: str | StrEnum,
+    effective_state: str,
+    reason_code: str,
+) -> ModuleAccessDecision:
+    return ModuleAccessDecision(
+        allowed=allowed,
+        module_id=module_id,
+        capability_id=capability_id,
+        operation=_value(operation),
+        entry_point_class=_value(entry_point_class),
+        effective_state=effective_state,
+        reason_code=reason_code,
+    )
 
 
 def decide_module_access(
@@ -578,41 +684,127 @@ def decide_module_access(
     try:
         manifest = manifest_for(normalized_module)
     except KeyError:
-        return ModuleAccessDecision(
+        return _decision(
             allowed=False,
             module_id=normalized_module,
             capability_id=normalized_capability,
-            operation=str(operation),
-            entry_point_class=str(entry_point_class),
+            operation=operation,
+            entry_point_class=entry_point_class,
             effective_state="UNKNOWN",
             reason_code="UNKNOWN_MODULE",
         )
-    if normalized_capability not in manifest.capabilities:
-        return ModuleAccessDecision(False, manifest.module_id, normalized_capability, str(operation), str(entry_point_class), "UNKNOWN", "UNKNOWN_CAPABILITY")
-    try:
-        normalized_operation = ModuleOperation(str(operation))
-    except ValueError:
-        return ModuleAccessDecision(False, manifest.module_id, normalized_capability, str(operation), str(entry_point_class), "UNKNOWN", "UNKNOWN_OPERATION")
-    try:
-        normalized_entry_point = EntryPointClass(str(entry_point_class))
-    except ValueError:
-        return ModuleAccessDecision(False, manifest.module_id, normalized_capability, normalized_operation.value, str(entry_point_class), "UNKNOWN", "UNKNOWN_ENTRY_POINT")
-    if normalized_operation not in manifest.operations:
-        return ModuleAccessDecision(False, manifest.module_id, normalized_capability, normalized_operation.value, normalized_entry_point.value, "UNKNOWN", "OPERATION_NOT_DECLARED")
 
-    effective = resolve_effective_state(module_id=manifest.module_id, context=context)
+    if normalized_capability not in manifest.capabilities:
+        return _decision(
+            allowed=False,
+            module_id=manifest.module_id,
+            capability_id=normalized_capability,
+            operation=operation,
+            entry_point_class=entry_point_class,
+            effective_state="UNKNOWN",
+            reason_code="UNKNOWN_CAPABILITY",
+        )
+    try:
+        normalized_operation = ModuleOperation(_value(operation))
+    except ValueError:
+        return _decision(
+            allowed=False,
+            module_id=manifest.module_id,
+            capability_id=normalized_capability,
+            operation=operation,
+            entry_point_class=entry_point_class,
+            effective_state="UNKNOWN",
+            reason_code="UNKNOWN_OPERATION",
+        )
+    try:
+        normalized_entry_point = EntryPointClass(_value(entry_point_class))
+    except ValueError:
+        return _decision(
+            allowed=False,
+            module_id=manifest.module_id,
+            capability_id=normalized_capability,
+            operation=normalized_operation,
+            entry_point_class=entry_point_class,
+            effective_state="UNKNOWN",
+            reason_code="UNKNOWN_ENTRY_POINT",
+        )
+    if normalized_operation not in manifest.operations:
+        return _decision(
+            allowed=False,
+            module_id=manifest.module_id,
+            capability_id=normalized_capability,
+            operation=normalized_operation,
+            entry_point_class=normalized_entry_point,
+            effective_state="UNKNOWN",
+            reason_code="OPERATION_NOT_DECLARED",
+        )
+
+    effective = resolve_effective_state(
+        module_id=manifest.module_id,
+        context=context,
+    )
     if effective.state == ModuleLifecycleState.ACTIVE:
-        dependency_ok, _ = _dependency_validation(manifest, context)
-        if normalized_operation in MUTATING_OPERATIONS and not dependency_ok:
-            return ModuleAccessDecision(False, manifest.module_id, normalized_capability, normalized_operation.value, normalized_entry_point.value, effective.state, "REQUIRED_DEPENDENCY_INACTIVE")
-        return ModuleAccessDecision(True, manifest.module_id, normalized_capability, normalized_operation.value, normalized_entry_point.value, effective.state, "ALLOW_ACTIVE")
+        dependencies_ok, _ = _dependency_validation(manifest, context)
+        if normalized_operation in MUTATING_OPERATIONS and not dependencies_ok:
+            return _decision(
+                allowed=False,
+                module_id=manifest.module_id,
+                capability_id=normalized_capability,
+                operation=normalized_operation,
+                entry_point_class=normalized_entry_point,
+                effective_state=effective.state,
+                reason_code="REQUIRED_DEPENDENCY_INACTIVE",
+            )
+        return _decision(
+            allowed=True,
+            module_id=manifest.module_id,
+            capability_id=normalized_capability,
+            operation=normalized_operation,
+            entry_point_class=normalized_entry_point,
+            effective_state=effective.state,
+            reason_code="ALLOW_ACTIVE",
+        )
+
     if effective.state == ModuleLifecycleState.READ_ONLY:
         if normalized_operation in READ_OPERATIONS:
-            return ModuleAccessDecision(True, manifest.module_id, normalized_capability, normalized_operation.value, normalized_entry_point.value, effective.state, "ALLOW_READ_ONLY")
-        return ModuleAccessDecision(False, manifest.module_id, normalized_capability, normalized_operation.value, normalized_entry_point.value, effective.state, "READ_ONLY_MUTATION_DENIED")
+            return _decision(
+                allowed=True,
+                module_id=manifest.module_id,
+                capability_id=normalized_capability,
+                operation=normalized_operation,
+                entry_point_class=normalized_entry_point,
+                effective_state=effective.state,
+                reason_code="ALLOW_READ_ONLY",
+            )
+        return _decision(
+            allowed=False,
+            module_id=manifest.module_id,
+            capability_id=normalized_capability,
+            operation=normalized_operation,
+            entry_point_class=normalized_entry_point,
+            effective_state=effective.state,
+            reason_code="READ_ONLY_MUTATION_DENIED",
+        )
+
     if normalized_operation in READ_OPERATIONS and manifest.history_policy == "PRESERVE":
-        return ModuleAccessDecision(True, manifest.module_id, normalized_capability, normalized_operation.value, normalized_entry_point.value, effective.state, "ALLOW_RETAINED_HISTORY")
-    return ModuleAccessDecision(False, manifest.module_id, normalized_capability, normalized_operation.value, normalized_entry_point.value, effective.state, "MODULE_NOT_ACTIVE")
+        return _decision(
+            allowed=True,
+            module_id=manifest.module_id,
+            capability_id=normalized_capability,
+            operation=normalized_operation,
+            entry_point_class=normalized_entry_point,
+            effective_state=effective.state,
+            reason_code="ALLOW_RETAINED_HISTORY",
+        )
+    return _decision(
+        allowed=False,
+        module_id=manifest.module_id,
+        capability_id=normalized_capability,
+        operation=normalized_operation,
+        entry_point_class=normalized_entry_point,
+        effective_state=effective.state,
+        reason_code="MODULE_NOT_ACTIVE",
+    )
 
 
 def require_module_access(**kwargs: object) -> ModuleAccessDecision:
