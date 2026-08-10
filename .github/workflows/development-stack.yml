@@ -211,6 +211,10 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Trust checked-out workspace in job container
+        shell: bash
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Verify exact checked-out SHA
         env:
           EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
