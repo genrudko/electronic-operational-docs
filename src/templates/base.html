@@ -42,12 +42,18 @@
     <link rel="stylesheet" href="{% static 'system/eod_iconography.css' %}?v=eodidentity002">
     <link rel="stylesheet" href="{% static 'system/app.css' %}?v=011702">
     <link rel="stylesheet" href="{% static 'system/direction_a.css' %}?v=uxplatform001">
+    {% if request.resolver_match.namespace == 'operational_log' %}
+    <link rel="stylesheet" href="{% static 'operational_log/opj_ux_001.css' %}?v=uxplatform001">
+    {% endif %}
     {% block extra_head %}{% endblock %}
     <link rel="stylesheet" href="{% static 'system/theme.css' %}?v=uxplatform001">
     <link rel="stylesheet" href="{% static 'system/ux_platform.css' %}?v=uxplatform001">
     <script src="{% static 'system/theme.js' %}?v=uxtheme00101" defer></script>
     <script src="{% static 'system/app.js' %}?v=011364" defer></script>
     <script src="{% static 'system/direction_a.js' %}?v=uxplatform001" defer></script>
+    {% if request.resolver_match.namespace == 'operational_log' %}
+    <script src="{% static 'operational_log/opj_ux_001.js' %}?v=uxplatform001" defer></script>
+    {% endif %}
     {% if request.resolver_match.namespace == 'organizations' %}
     <script src="{% static 'organizations/personnel_authority_followup.js' %}?v=pa001r6" defer></script>
     {% endif %}
