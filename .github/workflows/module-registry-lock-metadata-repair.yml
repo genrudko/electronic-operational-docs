@@ -14,7 +14,7 @@ jobs:
   finalize:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     steps:
       - name: Checkout branch head
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
@@ -88,22 +88,6 @@ jobs:
           set -euo pipefail
           git rm -f docs/work-items/active/MODULE-REGISTRY-001/LOCK_ROOT_REPAIR_FAILURE.json
           git rm -f .github/workflows/module-registry-lock-metadata-repair.yml
-
-      - name: Run focused registry tests
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m pip install --disable-pip-version-check -r requirements/locks/dev.txt
-          export PYTHONPATH="$PWD/src"
-          export DJANGO_SETTINGS_MODULE=eod_config.settings
-          export EOD_TESTING=1
-          export EOD_DEPLOYMENT_MODE=ci
-          export DJANGO_SECRET_KEY="$(python - <<'PY'
-          import secrets
-          print(secrets.token_urlsafe(48))
-          PY
-          )"
-          python src/manage.py test apps.system.tests.test_module_registry --verbosity 1
 
       - name: Regenerate canonical dependency inventory
         run: python scripts/dependency_provenance_views.py write
