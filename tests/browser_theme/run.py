@@ -232,7 +232,7 @@ def main():
 
         page.goto(BASE + ROUTES["registered_opj"])
         theme(page, "dark")
-        need(page, ".journal-settings-trigger").click()
+        need(page, "[data-open-journal-settings]").click()
         report["open_states"]["opj_settings"] = style(
             need(page, ".journal-settings-dialog")
         )
