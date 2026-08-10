@@ -250,7 +250,9 @@ jobs:
           printf 'EOD_BROWSER_PASSWORD=%s\n' "$demo_password" >>"$GITHUB_ENV"
 
       - name: Prepare deterministic presentation database
+        shell: bash
         run: |
+          set -euo pipefail
           python manage.py migrate --noinput
           python manage.py seed_demo_organization --reset-passwords
           python manage.py seed_demo_equipment
@@ -258,6 +260,39 @@ jobs:
           python manage.py seed_demo_normatives
           python manage.py seed_demo_documents
           python manage.py seed_demo_operational_log
+          python manage.py shell <<'PY'
+          from apps.organizations.models import Employee
+          from apps.system.models import ModuleLifecycleState, ModuleScopeType
+          from apps.system.module_registry import normalize_context, transition_module_state
+
+          operator = Employee.objects.select_related("organization", "workplace").get(
+              user__username="operator.demo"
+          )
+          context = normalize_context(
+              organization=operator.organization,
+              workplace=operator.workplace,
+          )
+          for module_id in ("OPJ", "DEFECT"):
+              transition_module_state(
+                  module_id=module_id,
+                  context=context,
+                  scope_type=ModuleScopeType.WORKPLACE,
+                  new_state=ModuleLifecycleState.CONFIGURED,
+                  actor_identity="ux-visual-evidence",
+                  reason="Prepare deterministic visual acceptance fixture.",
+                  configuration_ready=True,
+                  configuration={"fixture": "UX-PLATFORM-FOUNDATION-001"},
+              )
+              transition_module_state(
+                  module_id=module_id,
+                  context=context,
+                  scope_type=ModuleScopeType.WORKPLACE,
+                  new_state=ModuleLifecycleState.ACTIVE,
+                  actor_identity="ux-visual-evidence",
+                  reason="Activate deterministic visual acceptance fixture.",
+                  configuration_ready=True,
+              )
+          PY
           python manage.py seed_equipment_defects
 
       - name: Run browser visual evidence
