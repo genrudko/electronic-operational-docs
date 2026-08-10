@@ -55,6 +55,10 @@ def style(node):
     )
 
 
+def screenshot(page, shots: Path, name: str) -> None:
+    page.screenshot(path=shots / f"{name}.png", full_page=True)
+
+
 def resolved_background(page, token):
     return page.locator("html").evaluate(
         """(root, token) => {
@@ -126,23 +130,34 @@ def discover(page):
     hrefs = page.locator('a[href*="/operations/journal/"]').evaluate_all(
         "ns=>ns.map(n=>new URL(n.href).pathname)"
     )
-    ROUTES["registered_opj"] = next(h for h in hrefs if re.fullmatch(r"/operations/journal/\d+/", h))
+    ROUTES["registered_opj"] = next(
+        h for h in hrefs if re.fullmatch(r"/operations/journal/\d+/", h)
+    )
     page.goto(BASE + ROUTES["registered_opj"])
-    ROUTES["draft_workspace"] = need(page, 'a[href*="/shift/"]').evaluate("n=>new URL(n.href).pathname")
+    ROUTES["draft_workspace"] = need(page, 'a[href*="/shift/"]').evaluate(
+        "n=>new URL(n.href).pathname"
+    )
 
 
 def main():
     shots = OUT / "screenshots"
     shots.mkdir(parents=True, exist_ok=True)
     report = {"baseline": {}, "open_states": {}}
+    password = os.getenv("EOD_BROWSER_PASSWORD", "").strip()
+    if not password:
+        raise AssertionError("EOD_BROWSER_PASSWORD must be an ephemeral test credential")
+
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
         page = browser.new_page(viewport={"width": 1440, "height": 900})
         page.goto(BASE + "/accounts/login/")
-        need(page, "input[name=username]").fill(os.getenv("EOD_BROWSER_USERNAME", "operator.demo"))
-        need(page, "input[name=password]").fill(os.getenv("EOD_BROWSER_PASSWORD", "EodDemo!2026"))
+        need(page, "input[name=username]").fill(
+            os.getenv("EOD_BROWSER_USERNAME", "operator.demo")
+        )
+        need(page, "input[name=password]").fill(password)
         need(page, "button[type=submit]").click()
         discover(page)
+
         for route, path in ROUTES.items():
             for mode in THEMES:
                 for width, height in VIEWPORTS:
@@ -153,51 +168,85 @@ def main():
                     actual = style(node)
                     expected = resolved_background(page, TOKENS[route])
                     key = f"{route}__{mode}__{width}x{height}"
-                    report["baseline"][key] = {**actual, "expected_background": expected}
-                    page.screenshot(path=shots / f"{key}.png", full_page=True)
+                    report["baseline"][key] = {
+                        **actual,
+                        "expected_background": expected,
+                    }
+                    screenshot(page, shots, key)
                     if (
-                        actual["background"].replace(" ", "") != expected.replace(" ", "")
+                        actual["background"].replace(" ", "")
+                        != expected.replace(" ", "")
                         or mode not in style(page.locator("html"))["scheme"].split()
                     ):
-                        raise AssertionError(f"theme mismatch {route} {mode}: {actual} {expected}")
+                        raise AssertionError(
+                            f"theme mismatch {route} {mode}: {actual} {expected}"
+                        )
+
         if len(report["baseline"]) != 42:
-            raise AssertionError("must contain exactly 42 files")
+            raise AssertionError("must contain exactly 42 baseline states")
+
         page.set_viewport_size({"width": 1440, "height": 900})
         page.goto(BASE + ROUTES["defect_registry"])
         theme(page, "dark")
         need(page, ".defect-filter-drawer > summary").click()
-        report["open_states"]["defect_filters"] = style(need(page, ".defect-filter-grid"))
+        report["open_states"]["defect_filters"] = style(
+            need(page, ".defect-filter-grid")
+        )
+        screenshot(page, shots, "transient__defect_filters__dark__1440x900")
+
         page.goto(BASE + "/operations/defects/new/")
         theme(page, "dark")
         need(page, ".defect-picker-trigger").click()
         picker = need(page, ".defect-picker-panel")
         report["open_states"]["defect_datetime"] = style(picker)
+        screenshot(page, shots, "transient__defect_datetime__dark__1440x900")
         page.keyboard.press("Escape")
         picker.wait_for(state="hidden")
+
         for kind in ("equipment", "personnel", "workplace"):
             field = need(page, f".defect-tree-selector--{kind} .defect-tree-input")
             field.click()
             report["open_states"][kind] = style(
                 need(page, f".defect-tree-selector--{kind} .defect-tree-panel")
             )
+            screenshot(page, shots, f"transient__defect_{kind}__dark__1440x900")
             field.press("Escape")
+
+        page.goto(BASE + ROUTES["defect_registry"])
+        theme(page, "dark")
+        defect_row = need(page, ".defect-da-work-table tbody tr")
+        defect_row.hover()
+        report["open_states"]["defect_hover"] = style(defect_row)
+        screenshot(page, shots, "transient__defect_hover__dark__1440x900")
+
         page.goto(BASE + ROUTES["registered_opj"])
         theme(page, "dark")
         need(page, ".journal-settings-trigger").click()
-        report["open_states"]["opj_settings"] = style(need(page, ".journal-settings-dialog"))
+        report["open_states"]["opj_settings"] = style(
+            need(page, ".journal-settings-dialog")
+        )
+        screenshot(page, shots, "transient__opj_settings__dark__1440x900")
+
         page.goto(BASE + ROUTES["draft_workspace"])
         theme(page, "dark")
         need(page, "[data-open-view-drawer]").click()
         report["open_states"]["opj_drawer"] = style(need(page, "[data-view-drawer]"))
+        screenshot(page, shots, "transient__opj_drawer__dark__1440x900")
         need(page, "[data-close-view-drawer]").click()
         activate_editor_caret(page)
         need(page, "[data-reference-trigger]:not([disabled])").click()
-        report["open_states"]["opj_reference"] = style(need(page, "[data-reference-picker]"))
+        report["open_states"]["opj_reference"] = style(
+            need(page, "[data-reference-picker]")
+        )
+        screenshot(page, shots, "transient__opj_reference__dark__1440x900")
+
         page.goto(BASE + ROUTES["account_settings"])
         theme(page, "dark")
         select = need(page, '.interface-settings-form select[name="theme"]')
         select.focus()
         report["open_states"]["account_theme"] = style(select)
+        screenshot(page, shots, "transient__account_focus__dark__1440x900")
+
         page.goto(BASE + ROUTES["registered_opj"])
         theme(page, "dark")
         page.emulate_media(media="print")
@@ -205,9 +254,13 @@ def main():
         report["print"] = printed
         if "light" not in printed["scheme"]:
             raise AssertionError("print isolation failed")
+        screenshot(page, shots, "registered_opj__print__light__1440x900")
+
         browser.close()
+
     (OUT / "computed-styles.json").write_text(
-        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
     )
 
 
