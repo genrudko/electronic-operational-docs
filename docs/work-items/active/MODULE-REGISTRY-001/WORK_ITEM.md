@@ -2,7 +2,7 @@
 
 ## STATUS
 
-`STARTED / CANONICAL TRANSITION PENDING`
+`IN_PROGRESS / CORE IMPLEMENTATION UNDER EXACT-HEAD VALIDATION`
 
 Issue: `#67`
 
@@ -24,11 +24,9 @@ Accepted SECURITY-BASELINE-001 exact head:
 
 `SECURITY-BASELINE-001` is accepted and merged in PR #66; issue #65 is CLOSED / COMPLETED.
 
-Therefore factual `SAFE-CONTINUATION = 8/8 ACCEPTED`.
+Canonical `SAFE-CONTINUATION = 8/8 ACCEPTED` and `MODULE-REGISTRY-001 = IN_PROGRESS` are now recorded in the release plan, current-state owner, immutable histories and deterministic planning views.
 
-The first substantive commit in this contour must atomically record that acceptance in canonical planning/history, record the explicit product-owner strategy decision, and move `MODULE-REGISTRY-001` to `IN_PROGRESS`.
-
-No separate reconciliation work item is required.
+No separate reconciliation work item was created.
 
 ## APPROVED PRODUCT ROUTE AFTER SAFE
 
@@ -101,22 +99,44 @@ If wiring every existing endpoint would become a risky big-bang rewrite, impleme
 
 ## EXISTING SPECIALIZED GUARDS
 
-Inventory `EquipmentDefectRouteGuardMiddleware` and other current permission/route mechanisms. They are not the module registry. Adapt only as required to avoid contradictory semantics and preserve accepted domain authority behavior.
+Repository inventory confirmed that `EquipmentDefectRouteGuardMiddleware` is a specialized canonical-route redirect helper, not an activation or security authorization layer. It is not rebranded as the registry.
+
+Current models also confirm that `Workplace` and `EnergySite` each belong independently to `Organization`; no `Workplace -> EnergySite` hierarchy is invented.
 
 Current DEFECT <-> OPJ remains an optional integration unless factual domain evidence proves a hard dependency.
 
-## FIRST ATOMIC CANONICAL TRANSITION
+## COMPLETED CANONICAL TRANSITION
 
-Before implementation evidence:
+The first transition is complete:
 
-1. re-check live main, merged PR #66 and closed issue #65;
-2. record `SECURITY-BASELINE-001: ACCEPTED` with exact head `b59a9485187dbd588c7b9f35bfd634c89344ea9d`, merge `862b682ba19b6747ea6f4d41fd31322808140b82`, issue #65 CLOSED/COMPLETED and owner acceptance PASSED;
-3. record `SAFE-CONTINUATION = 8/8 ACCEPTED`;
-4. record the explicit approved post-SAFE route above;
-5. set `MODULE-REGISTRY-001 = IN_PROGRESS`;
-6. update `CURRENT_STATE.md` to issue #67 / this branch / Draft PR #68;
-7. append immutable histories and regenerate existing deterministic planning views/checks;
-8. do not start UX implementation in this PR.
+1. live accepted main remained `862b682ba19b6747ea6f4d41fd31322808140b82`;
+2. `SECURITY-BASELINE-001` is `ACCEPTED` with PR #66, exact head `b59a9485187dbd588c7b9f35bfd634c89344ea9d`, merge `862b682ba19b6747ea6f4d41fd31322808140b82`, issue #65 CLOSED/COMPLETED and owner acceptance PASSED;
+3. `SAFE-CONTINUATION = 8/8 ACCEPTED`;
+4. the explicit approved post-SAFE route above is recorded;
+5. `MODULE-REGISTRY-001 = IN_PROGRESS`;
+6. `CURRENT_STATE.md` owns issue #67 / branch `platform/module-registry-001` / Draft PR #68;
+7. acceptance/baseline histories and deterministic planning views were updated;
+8. post-SAFE generators were corrected so they no longer render a completed 8/8 SAFE gate as `NOT ACHIEVED`;
+9. UX implementation was not started;
+10. live Preview/VPS remains untouched.
+
+## CURRENT IMPLEMENTATION EVIDENCE
+
+The branch now contains the first coherent runtime control-plane slice in existing `apps.system` rather than a new infrastructure Django app:
+
+- deterministic manifests for current repository-backed canonical module IDs;
+- persistent exact-scope activation rules;
+- append-only lifecycle audit events;
+- Organization / EnergySite / Workplace context membership validation;
+- accepted lifecycle transition graph;
+- same-scope hard-dependency validation;
+- optional-integration semantics (`DEFECT -> OPJ` remains optional);
+- precedence and restrictive caps;
+- central `ModuleAccessDecision` and `require_module_access` service seam;
+- product-version migration with no activation-data seeding;
+- focused mixed-scope, fail-closed, history-preservation and audit tests.
+
+Compatibility remains bounded: existing OPJ/DEFECT behavior is not globally disabled merely because registry tables now exist. Representative product/service wiring is still required before acceptance; remaining module-by-module migration must be stated explicitly rather than falsely claimed universal.
 
 ## NEGATIVE / FAIL-CLOSED EVIDENCE
 
