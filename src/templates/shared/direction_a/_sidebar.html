@@ -1,4 +1,7 @@
-{% load static %}
+{% load static module_navigation %}
+{% module_navigation_allowed "OPJ" "CAP-OPJ-DEMO" as opj_navigation_allowed %}
+{% module_navigation_allowed "DEFECT" "CAP-DEFECT-DEMO" as defect_navigation_allowed %}
+{% module_navigation_allowed "WORKPLACE-DOCS" "CAP-WORKPLACE-DOCS-DEMO" as workplace_docs_navigation_allowed %}
 <aside
     class="da-sidebar"
     id="direction-a-sidebar"
@@ -30,6 +33,7 @@
             <span>Рабочий стол</span>
         </a>
 
+        {% if opj_navigation_allowed %}
         <section class="da-nav-group is-open">
             <div class="da-nav-group-title">
                 <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg>
@@ -41,29 +45,32 @@
                 {% if request.resolver_match.namespace == 'operational_log' %}aria-current="page"{% endif %}
             >Оперативный журнал</a>
         </section>
+        {% endif %}
 
         <section class="da-nav-group is-open">
             <div class="da-nav-group-title">
                 <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-journal"></use></svg>
                 <span>Журналы</span>
             </div>
+            {% if defect_navigation_allowed %}
             <a
                 class="da-nav-child{% if request.resolver_match.namespace == 'equipment_defects' %} is-active{% endif %}"
                 href="{% url 'equipment_defects:registry' %}"
                 {% if request.resolver_match.namespace == 'equipment_defects' %}aria-current="page"{% endif %}
             >Журнал дефектов</a>
-            <a class="da-nav-child" href="{% url 'operational_documents:registry' %}">Оперативные документы</a>
+            {% endif %}
+            <a class="da-nav-child{% if request.resolver_match.namespace == 'operational_documents' %} is-active{% endif %}" href="{% url 'operational_documents:registry' %}"{% if request.resolver_match.namespace == 'operational_documents' %} aria-current="page"{% endif %}>Оперативные документы</a>
         </section>
 
-        <a href="{% url 'documents:list' %}">
+        <a href="{% url 'documents:list' %}"{% if request.resolver_match.namespace == 'documents' %} class="is-active" aria-current="page"{% endif %}>
             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg>
             <span>Документы</span>
         </a>
-        <a href="{% url 'equipment:registry' %}">
+        <a href="{% url 'equipment:registry' %}"{% if request.resolver_match.namespace == 'equipment' %} class="is-active" aria-current="page"{% endif %}>
             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-equipment"></use></svg>
             <span>Оборудование</span>
         </a>
-        <a href="{% url 'dispatching:registry' %}">
+        <a href="{% url 'dispatching:registry' %}"{% if request.resolver_match.namespace == 'dispatching' %} class="is-active" aria-current="page"{% endif %}>
             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-management"></use></svg>
             <span>Управление и ведение</span>
         </a>
@@ -87,8 +94,10 @@
                 class="da-nav-child{% if request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'personnel_import_upload' or request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'personnel_import_detail' or request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'employee_create' or request.resolver_match.namespace == 'organizations' and request.resolver_match.url_name == 'employee_edit' %} is-active{% endif %}"
                 href="{% url 'organizations:personnel_import_upload' %}"
             >Ведение и импорт персонала</a>
-            <a class="da-nav-child" href="{% url 'workplace_docs:registry' %}">Перечни документации</a>
-            <a class="da-nav-child" href="{% url 'imports:list' %}">Импорт данных</a>
+            {% if workplace_docs_navigation_allowed %}
+            <a class="da-nav-child{% if request.resolver_match.namespace == 'workplace_docs' %} is-active{% endif %}" href="{% url 'workplace_docs:registry' %}"{% if request.resolver_match.namespace == 'workplace_docs' %} aria-current="page"{% endif %}>Перечни документации</a>
+            {% endif %}
+            <a class="da-nav-child{% if request.resolver_match.namespace == 'imports' %} is-active{% endif %}" href="{% url 'imports:list' %}"{% if request.resolver_match.namespace == 'imports' %} aria-current="page"{% endif %}>Импорт данных</a>
         </section>
     </nav>
 
@@ -101,8 +110,3 @@
         <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-settings"></use></svg>
     </a>
 </aside>
-<div
-    class="da-sidebar-scrim"
-    data-direction-a-scrim
-    hidden
-></div>
