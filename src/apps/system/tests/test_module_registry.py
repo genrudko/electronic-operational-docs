@@ -316,12 +316,55 @@ class ModuleRegistryTests(TestCase):
         with self.assertRaises(ValidationError):
             direct.save()
 
+        direct._module_registry_lifecycle_write = True
+        with self.assertRaises(ValidationError):
+            direct.save()
+        self.assertFalse(hasattr(ModuleActivationRule, "save_lifecycle_transition"))
+
         rule = self.configure("OPJ", ModuleScopeType.ORGANIZATION)
         rule.state = ModuleLifecycleState.ACTIVE
         with self.assertRaises(ValidationError):
             rule.save()
         rule.refresh_from_db()
         self.assertEqual(rule.state, ModuleLifecycleState.CONFIGURED)
+
+    def test_bulk_create_rule_bypass_is_rejected(self) -> None:
+        direct = ModuleActivationRule(
+            module_id="OPJ",
+            scope_type=ModuleScopeType.ORGANIZATION,
+            scope_id=self.org.pk,
+            organization_id=self.org.pk,
+            state=ModuleLifecycleState.CONFIGURED,
+            configuration_ready=True,
+        )
+        with self.assertRaises(ValidationError):
+            ModuleActivationRule.objects.bulk_create([direct])
+        self.assertFalse(ModuleActivationRule.objects.exists())
+        self.assertFalse(ModuleActivationAuditEvent.objects.exists())
+
+    def test_transition_service_persists_rule_and_audits_success(self) -> None:
+        rule = self.configure("OPJ", ModuleScopeType.ORGANIZATION)
+        self.assertIsNotNone(rule.pk)
+        self.assertEqual(rule.state, ModuleLifecycleState.CONFIGURED)
+        configured_audit = ModuleActivationAuditEvent.objects.get()
+        self.assertEqual(
+            configured_audit.result,
+            ModuleActivationAuditEvent.Result.ALLOWED,
+        )
+
+        transitioned = self.transition(
+            "OPJ",
+            ModuleScopeType.ORGANIZATION,
+            ModuleLifecycleState.INACTIVE,
+        )
+        self.assertEqual(transitioned.pk, rule.pk)
+        self.assertEqual(transitioned.state, ModuleLifecycleState.INACTIVE)
+        self.assertEqual(
+            ModuleActivationAuditEvent.objects.filter(
+                result=ModuleActivationAuditEvent.Result.ALLOWED
+            ).count(),
+            2,
+        )
 
     def test_mixed_scope_module_sets_are_deterministic(self) -> None:
         self.configure("OPJ", ModuleScopeType.ORGANIZATION)
