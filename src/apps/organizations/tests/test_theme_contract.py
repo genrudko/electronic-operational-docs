@@ -63,10 +63,15 @@ class GlobalThemeContractTests(SimpleTestCase):
     def test_shared_asset_is_loaded_after_feature_layers(self):
         template = self.source("src/templates/base.html")
 
-        self.assertGreater(
-            template.index("system/theme.css"),
-            template.index("system/direction_a_shell_final.css"),
-        )
+        theme = template.index("system/theme.css")
+        compat = template.index("system/ux_platform_compat.css")
+        platform = template.index("system/ux_platform.css")
+        opj = template.index("operational_log/opj_ux_001.css")
+        extra_head = template.index("{% block extra_head %}")
+        self.assertLess(theme, compat)
+        self.assertLess(compat, platform)
+        self.assertLess(platform, opj)
+        self.assertLess(platform, extra_head)
         self.assertEqual(template.count("system/theme.css"), 1)
         self.assertEqual(template.count("system/theme.js"), 1)
 
@@ -78,7 +83,7 @@ class GlobalThemeContractTests(SimpleTestCase):
             "src/static/equipment_defects/ux_foundation_repair5.css",
             "src/static/operational_log/opj_ux_001.css",
             "src/static/operational_log/opj_workspace_controls.css",
-            "src/static/system/direction_a.css",
+            "src/static/system/ux_platform.css",
         ):
             css = self.source(relative_path)
             screen_css = css.split("@media print", maxsplit=1)[0]
@@ -111,9 +116,11 @@ class GlobalThemeContractTests(SimpleTestCase):
         self.assertIn("color: #000 !important", print_rules)
 
     def test_repair_two_removes_local_theme_owners(self):
-        direction = self.source("src/static/system/direction_a.css").split("@media print", 1)[0]
+        platform = self.source("src/static/system/ux_platform.css").split(
+            "@media print", 1
+        )[0]
         workspace = self.source("src/static/operational_log/opj_workspace_controls.css")
-        self.assertNotRegex(direction, r"color-scheme\s*:\s*light")
+        self.assertNotRegex(platform, r"color-scheme\s*:\s*light")
         self.assertNotIn('html[data-theme="dark"] body.opj-workspace-page', workspace)
         self.assertIn("--theme-placeholder", self.source("src/static/system/theme.css"))
 
@@ -126,7 +133,7 @@ class GlobalThemeContractTests(SimpleTestCase):
         runner = runner_path.read_text(encoding="utf-8")
         self.assertIn("VIEWPORTS = ((1440, 900), (1024, 768), (390, 844))", runner)
         self.assertIn('THEMES = ("light", "dark")', runner)
-        self.assertIn("must contain exactly 42 files", runner)
+        self.assertIn("must contain exactly 42 baseline states", runner)
         self.assertIn('page.emulate_media(media="print")', runner)
         for selector in (
             ".defect-filter-grid",
@@ -141,7 +148,7 @@ class GlobalThemeContractTests(SimpleTestCase):
         declaration = re.compile(r"(?:background(?:-color)?|color)\s*:\s*([^;{}]+)", re.I)
         legacy = re.compile(r"#fff(?:fff)?\b|rgba?\(\s*255\s*,\s*255\s*,\s*255", re.I)
         for path in (
-            "src/static/system/direction_a.css",
+            "src/static/system/ux_platform.css",
             "src/static/operational_log/opj_ux_001.css",
             "src/static/operational_log/opj_workspace_controls.css",
         ):
