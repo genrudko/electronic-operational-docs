@@ -14,11 +14,11 @@ from apps.system.models import (
     ModuleScopeType,
 )
 from apps.system.module_registry import (
+    _MANIFESTS,
     ActivationPolicy,
     EntryPointClass,
     ModuleManifest,
     ModuleOperation,
-    _MANIFESTS,
     decide_module_access,
     manifest_for,
     normalize_context,
@@ -72,7 +72,7 @@ class ModuleRegistryTests(TestCase):
         )
 
     def activate(self, module_id: str, scope_type: str) -> ModuleActivationRule:
-        rule = self.configure(module_id, scope_type)
+        self.configure(module_id, scope_type)
         return transition_module_state(
             module_id=module_id,
             context=self.context,
@@ -210,7 +210,11 @@ class ModuleRegistryTests(TestCase):
         )
         with patch.dict(_MANIFESTS, {"OPJ": strict_manifest}):
             with self.assertRaises(ValidationError):
-                self.transition("OPJ", ModuleScopeType.ORGANIZATION, ModuleLifecycleState.ACTIVE)
+                self.transition(
+                    "OPJ",
+                    ModuleScopeType.ORGANIZATION,
+                    ModuleLifecycleState.ACTIVE,
+                )
         audit = ModuleActivationAuditEvent.objects.filter(result="DENIED").latest("pk")
         self.assertEqual(audit.denial_reason_code, "REQUIRED_DEPENDENCY_INACTIVE")
 
@@ -262,7 +266,9 @@ class ModuleRegistryTests(TestCase):
             "UNKNOWN_OPERATION",
         )
         self.assertEqual(
-            decide_module_access(**{**common, "entry_point_class": "UNKNOWN"}).reason_code,
+            decide_module_access(
+                **{**common, "entry_point_class": "UNKNOWN"}
+            ).reason_code,
             "UNKNOWN_ENTRY_POINT",
         )
 
@@ -271,7 +277,11 @@ class ModuleRegistryTests(TestCase):
         original_pk = rule.pk
         self.transition("OPJ", ModuleScopeType.ORGANIZATION, ModuleLifecycleState.INACTIVE)
         self.transition("OPJ", ModuleScopeType.ORGANIZATION, ModuleLifecycleState.CONFIGURED)
-        reactivated = self.transition("OPJ", ModuleScopeType.ORGANIZATION, ModuleLifecycleState.ACTIVE)
+        reactivated = self.transition(
+            "OPJ",
+            ModuleScopeType.ORGANIZATION,
+            ModuleLifecycleState.ACTIVE,
+        )
         self.assertEqual(reactivated.pk, original_pk)
         self.assertEqual(ModuleActivationRule.objects.count(), 1)
         self.assertEqual(ModuleActivationAuditEvent.objects.count(), 5)
