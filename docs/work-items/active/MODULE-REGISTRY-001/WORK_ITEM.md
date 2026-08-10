@@ -2,7 +2,7 @@
 
 ## STATUS
 
-`IN_PROGRESS / CORE IMPLEMENTATION UNDER EXACT-HEAD VALIDATION`
+`IN_PROGRESS / REPRESENTATIVE INTEGRATION UNDER EXACT-HEAD VALIDATION`
 
 Issue: `#67`
 
@@ -116,7 +116,7 @@ The first transition is complete:
 5. `MODULE-REGISTRY-001 = IN_PROGRESS`;
 6. `CURRENT_STATE.md` owns issue #67 / branch `platform/module-registry-001` / Draft PR #68;
 7. acceptance/baseline histories and deterministic planning views were updated;
-8. post-SAFE generators were corrected so they no longer render a completed 8/8 SAFE gate as `NOT ACHIEVED`;
+8. post-SAFE generators and queue validation were corrected so completed SAFE and the explicit owner route are represented fail closed rather than by stale pre-SAFE constants;
 9. UX implementation was not started;
 10. live Preview/VPS remains untouched.
 
@@ -136,11 +136,22 @@ The branch now contains the first coherent runtime control-plane slice in existi
 - product-version migration with no activation-data seeding;
 - focused mixed-scope, fail-closed, history-preservation and audit tests.
 
-Compatibility remains bounded: existing OPJ/DEFECT behavior is not globally disabled merely because registry tables now exist. Representative product/service wiring is still required before acceptance; remaining module-by-module migration must be stated explicitly rather than falsely claimed universal.
+## REPRESENTATIVE REAL PRODUCT INTEGRATION
+
+The first migrated real product seam is the existing registered-OPJ-entry -> DEFECT creation action:
+
+- `CAP-DEFECT-OPJ-LINK` remains an optional integration; inactive DEFECT does not block OPJ itself;
+- navigation generation omits the new-action row/button when DEFECT is unavailable for that Organization/Workplace;
+- an existing historical OPJ<->DEFECT link remains visible while DEFECT is inactive;
+- the direct `create_from_operational_log` HTTP entry point is guarded and returns a permission denial when the module decision denies creation;
+- the public `register_defect(... operational_log_entry=...)` service boundary independently enforces the same module capability, so bypassing navigation/HTTP does not permit the mutation;
+- defect test fixtures explicitly configure and activate DEFECT as test data; no product migration auto-activates it.
+
+This is intentionally representative, not a false claim of universal endpoint coverage. Existing OPJ and DEFECT route/service surfaces outside this cross-module creation seam remain under their current accepted domain controls until controlled module-by-module migration. Broad migration is deferred rather than hidden inside this PR.
 
 ## NEGATIVE / FAIL-CLOSED EVIDENCE
 
-Cover material cases such as unknown module/capability/operation/entry point, unsupported or foreign scope, duplicate rule, missing hard dependency, forbidden lifecycle transition, activation without readiness, precedence/restrictive caps, hidden UI with direct mutation, route denial with direct service mutation, READ_ONLY/INACTIVE/RETIRED new mutation, deactivation preserving history, migration not auto-activating, optional integration absent, and activation audit on allowed/denied attempts.
+Focused evidence covers unknown module/capability/operation/entry point, unsupported or foreign scope, duplicate rule, missing hard dependency, forbidden lifecycle transition, activation without readiness, precedence/restrictive caps, navigation-hidden/direct-HTTP/direct-service mutation, READ_ONLY mutation denial, INACTIVE new-action denial, deactivation preserving history, migration not auto-activating, optional integration absent, reactivation identity preservation, and append-only activation audit.
 
 Prefer table-driven/mutation tests over repetitive one-off tests.
 
