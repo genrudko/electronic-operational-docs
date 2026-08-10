@@ -1,0 +1,413 @@
+{
+  "schema_version": 1,
+  "contract_id": "MODULE-ACTIVATION-CONTRACT-001",
+  "architecture": {
+    "style": "MODULAR_DJANGO_MONOLITH",
+    "deployable_products": 1,
+    "application_versions_per_release": 1,
+    "database_model": "ONE_SHARED_DATABASE",
+    "separate_module_deployments": false,
+    "activation_changes_product_version": false
+  },
+  "manifest": {
+    "contract_version": 1,
+    "required_fields": [
+      "module_id",
+      "human_name",
+      "manifest_contract_version",
+      "activation_policy",
+      "supported_scopes",
+      "required_dependencies",
+      "optional_integrations",
+      "capabilities",
+      "activation_prerequisites",
+      "history_policy",
+      "migration_policy",
+      "lifecycle_contract_version"
+    ],
+    "forbidden_status_fields": [
+      "release_status",
+      "work_item_status",
+      "current_main",
+      "active_pr",
+      "accepted_head"
+    ],
+    "activation_policies": [
+      "ALWAYS_ON",
+      "SCOPED_OPTIONAL"
+    ],
+    "stable_identity": true,
+    "supported_scope_types_v1": [
+      "ORGANIZATION",
+      "ENERGY_SITE",
+      "WORKPLACE"
+    ],
+    "default_scoped_optional_state": "AVAILABLE",
+    "history_policy_required": "PRESERVE",
+    "migration_policy_required": "ALWAYS_WITH_PRODUCT"
+  },
+  "lifecycle": {
+    "states": [
+      "AVAILABLE",
+      "CONFIGURED",
+      "ACTIVE",
+      "READ_ONLY",
+      "INACTIVE",
+      "RETIRED"
+    ],
+    "state_meanings": {
+      "AVAILABLE": "Module code/manifest is part of the product but no valid explicit scope configuration is ready; operational use is denied.",
+      "CONFIGURED": "Scope configuration and prerequisites are valid, but normal operational use is not active.",
+      "ACTIVE": "Normal operational use is enabled subject to capability, authorization, dependency and domain rules.",
+      "READ_ONLY": "Operational mutation is frozen; retained records and history remain readable/exportable.",
+      "INACTIVE": "Module is explicitly disabled for the scope; retained records and history remain readable/exportable.",
+      "RETIRED": "Module is deliberately retired for the scope; identity and retained history remain durable."
+    },
+    "allowed_transitions": {
+      "AVAILABLE": [
+        "CONFIGURED"
+      ],
+      "CONFIGURED": [
+        "ACTIVE",
+        "INACTIVE",
+        "RETIRED"
+      ],
+      "ACTIVE": [
+        "READ_ONLY",
+        "INACTIVE",
+        "RETIRED"
+      ],
+      "READ_ONLY": [
+        "ACTIVE",
+        "INACTIVE",
+        "RETIRED"
+      ],
+      "INACTIVE": [
+        "CONFIGURED",
+        "RETIRED"
+      ],
+      "RETIRED": [
+        "CONFIGURED"
+      ]
+    },
+    "forbidden_direct_transitions": [
+      "AVAILABLE->ACTIVE",
+      "INACTIVE->ACTIVE",
+      "RETIRED->ACTIVE"
+    ],
+    "reactivation_paths": {
+      "INACTIVE": [
+        "INACTIVE",
+        "CONFIGURED",
+        "ACTIVE"
+      ],
+      "RETIRED": [
+        "RETIRED",
+        "CONFIGURED",
+        "ACTIVE"
+      ]
+    },
+    "transition_requires": [
+      "actor_authorized",
+      "reason_recorded",
+      "scope_valid",
+      "configuration_valid_for_target",
+      "required_dependencies_valid_for_target",
+      "audit_event_written"
+    ],
+    "disable_is_delete": false,
+    "retire_is_delete": false
+  },
+  "scope_resolution": {
+    "required_context": [
+      "organization"
+    ],
+    "optional_context": [
+      "energy_site",
+      "workplace"
+    ],
+    "membership_rules": [
+      "energy_site.organization_id == organization.id when energy_site is present",
+      "workplace.organization_id == organization.id when workplace is present"
+    ],
+    "non_scope_models_v1": [
+      "DIVISION",
+      "OPERATIONAL_AREA"
+    ],
+    "workplace_is_child_of_energy_site": false,
+    "ordinary_precedence": [
+      "WORKPLACE",
+      "ENERGY_SITE",
+      "ORGANIZATION"
+    ],
+    "inherit_when_no_more_specific_rule": true,
+    "default_when_no_rule": "AVAILABLE",
+    "same_scope_duplicate_result": "DENY",
+    "invalid_or_missing_required_scope_result": "DENY",
+    "unsupported_scope_result": "DENY",
+    "restrictive_caps": [
+      "READ_ONLY",
+      "RETIRED"
+    ],
+    "restrictive_cap_precedence": [
+      "RETIRED",
+      "READ_ONLY"
+    ],
+    "inactive_is_restrictive_cap": false,
+    "child_may_override_parent_inactive_to_active": true,
+    "resolution_steps": [
+      "Validate module manifest, requested organization and optional scope memberships.",
+      "Reject unsupported scope types and duplicate records for the same module/scope key.",
+      "Collect explicit rules for ORGANIZATION and for requested ENERGY_SITE/WORKPLACE scopes.",
+      "Select the most specific ordinary rule using WORKPLACE > ENERGY_SITE > ORGANIZATION; otherwise AVAILABLE.",
+      "Apply any matching READ_ONLY/RETIRED restrictive cap; RETIRED dominates READ_ONLY.",
+      "Evaluate configuration readiness and required dependencies without silently changing stored lifecycle state.",
+      "Return one deterministic effective lifecycle state plus access decision and reasons."
+    ],
+    "hierarchy_change_rules": [
+      "Rules bind stable scope identifiers, never names or mutable path strings.",
+      "Division movement inside one organization does not alter v1 activation because DIVISION is not an activation scope.",
+      "If a scope no longer belongs to the requested organization, resolution fails closed until reconciled.",
+      "Changing supported scope topology requires a versioned contract change and audited reconciliation."
+    ]
+  },
+  "dependencies": {
+    "required_dependency": {
+      "declared_in_manifest": true,
+      "checked_before_active_transition": true,
+      "checked_on_guarded_operations": true,
+      "activation_failure_result": "DENY",
+      "fail_closed": true,
+      "same_requested_context_by_default": true,
+      "must_not_be_inferred_from_cross_link": true,
+      "historical_reads_survive_dependency_loss": true,
+      "cycles_forbidden": true
+    },
+    "optional_integration": {
+      "declared_separately": true,
+      "blocks_primary_module_activation": false,
+      "missing_provider_result": "INTEGRATION_CAPABILITY_DENY_ONLY",
+      "historical_links_preserved": true,
+      "must_not_be_promoted_without_domain_evidence": true
+    },
+    "current_example": {
+      "consumer": "DEFECT",
+      "provider": "OPJ",
+      "classification": "OPTIONAL_INTEGRATION_UNLESS_FUTURE_DOMAIN_EVIDENCE_PROVES_REQUIRED",
+      "basis": "Accepted DEFECT contract requires MASTER-DATA; the accepted OPJ link capability alone is not hard-dependency evidence."
+    }
+  },
+  "access_decision": {
+    "predicate_name": "decide_module_access",
+    "entry_point_classes": [
+      "NAVIGATION_UI",
+      "HTTP_ROUTE",
+      "SERVICE",
+      "API",
+      "ADMIN",
+      "MANAGEMENT_COMMAND",
+      "EXPORT",
+      "BACKGROUND_JOB",
+      "CROSS_MODULE_ACTION"
+    ],
+    "operation_classes": [
+      "NAVIGATE",
+      "LIST",
+      "READ_DETAIL",
+      "READ_HISTORY",
+      "CREATE",
+      "EDIT",
+      "TRANSITION",
+      "DELETE",
+      "EXPORT",
+      "BACKGROUND_READ",
+      "BACKGROUND_MUTATE",
+      "CROSS_MODULE_READ",
+      "CROSS_MODULE_MUTATE",
+      "ADMIN_MUTATE",
+      "MANAGEMENT_MUTATE"
+    ],
+    "required_inputs": [
+      "normalized_context",
+      "module_id",
+      "capability_id",
+      "operation",
+      "entry_point_class"
+    ],
+    "required_outputs": [
+      "module_id",
+      "capability_id",
+      "normalized_context",
+      "requested_operation",
+      "entry_point_class",
+      "selected_scope_rule",
+      "effective_lifecycle_state",
+      "configuration_result",
+      "dependency_results",
+      "optional_integration_results",
+      "access_result",
+      "denial_reason_code",
+      "contract_version"
+    ],
+    "results": [
+      "ALLOW",
+      "DENY"
+    ],
+    "module_decision_replaces_domain_authorization": false,
+    "final_permission_rule": "module_decision == ALLOW AND identity_authorization == ALLOW AND domain_invariants == ALLOW",
+    "ui_visibility_is_security_boundary": false,
+    "route_only_guard_is_complete": false,
+    "mutation_service_guard_required": true,
+    "denial_reason_must_be_audit_safe": true
+  },
+  "behavior_matrix": {
+    "ACTIVE": {
+      "list_read": "ALLOW",
+      "detail_history": "ALLOW",
+      "create": "ALLOW",
+      "edit_transition": "ALLOW",
+      "delete": "ALLOW_ONLY_IF_CAPABILITY_AND_DOMAIN_POLICY_ALLOW",
+      "export": "ALLOW",
+      "background_read": "ALLOW",
+      "background_mutate": "ALLOW",
+      "cross_links": "ALLOW_SUBJECT_TO_TARGET_DECISION",
+      "admin_management_mutate": "ALLOW_SUBJECT_TO_SAME_PREDICATE_AND_DOMAIN_POLICY"
+    },
+    "READ_ONLY": {
+      "list_read": "ALLOW",
+      "detail_history": "ALLOW",
+      "create": "DENY",
+      "edit_transition": "DENY",
+      "delete": "DENY",
+      "export": "ALLOW_READ_ONLY",
+      "background_read": "ALLOW_READ_ONLY",
+      "background_mutate": "DENY",
+      "cross_links": "ALLOW_READ_ONLY",
+      "admin_management_mutate": "DENY"
+    },
+    "INACTIVE": {
+      "list_read": "HISTORY_ONLY",
+      "detail_history": "ALLOW_RETAINED_HISTORY",
+      "create": "DENY",
+      "edit_transition": "DENY",
+      "delete": "DENY",
+      "export": "ALLOW_RETAINED_HISTORY",
+      "background_read": "ALLOW_HISTORY_SAFE_ONLY",
+      "background_mutate": "DENY",
+      "cross_links": "ALLOW_RETAINED_HISTORY",
+      "admin_management_mutate": "DENY"
+    },
+    "RETIRED": {
+      "list_read": "HISTORY_ONLY",
+      "detail_history": "ALLOW_RETAINED_HISTORY",
+      "create": "DENY",
+      "edit_transition": "DENY",
+      "delete": "DENY",
+      "export": "ALLOW_RETAINED_HISTORY",
+      "background_read": "ALLOW_HISTORY_SAFE_ONLY",
+      "background_mutate": "DENY",
+      "cross_links": "ALLOW_RETAINED_HISTORY_WITH_RETIRED_MARKER",
+      "admin_management_mutate": "DENY"
+    },
+    "CONFIGURED": {
+      "list_read": "HISTORY_ONLY",
+      "detail_history": "ALLOW_RETAINED_HISTORY",
+      "create": "DENY",
+      "edit_transition": "DENY",
+      "delete": "DENY",
+      "export": "ALLOW_RETAINED_HISTORY",
+      "background_read": "ALLOW_HISTORY_SAFE_ONLY",
+      "background_mutate": "DENY",
+      "cross_links": "ALLOW_RETAINED_HISTORY",
+      "admin_management_mutate": "DENY"
+    },
+    "AVAILABLE": {
+      "list_read": "HISTORY_ONLY_IF_RETAINED_DATA_EXISTS",
+      "detail_history": "ALLOW_RETAINED_HISTORY_IF_GENERIC_HISTORY_PATH_AVAILABLE",
+      "create": "DENY",
+      "edit_transition": "DENY",
+      "delete": "DENY",
+      "export": "ALLOW_RETAINED_HISTORY_IF_SUPPORTED",
+      "background_read": "ALLOW_HISTORY_SAFE_ONLY_IF_SUPPORTED",
+      "background_mutate": "DENY",
+      "cross_links": "PRESERVE_REFERENCE_AND_DENY_OPERATIONAL_ACTION",
+      "admin_management_mutate": "DENY"
+    }
+  },
+  "history_and_reactivation": {
+    "deactivation_deletes_records": false,
+    "deactivation_deletes_snapshots": false,
+    "deactivation_deletes_audit": false,
+    "deactivation_breaks_relations": false,
+    "module_id_changes_on_reactivation": false,
+    "reactivation_creates_new_module_identity": false,
+    "reactivation_uses_retained_history": true,
+    "stale_configuration_revalidated_before_active": true,
+    "direct_inactive_or_retired_to_active": false
+  },
+  "migrations": {
+    "owned_by_product_version": true,
+    "conditioned_on_module_activation": false,
+    "inactive_module_migrations_apply": true,
+    "same_product_version_requires_compatible_schema": true,
+    "upgrade_activates_module": false,
+    "upgrade_preserves_explicit_activation_state": true,
+    "inactive_data_migrates_safely": true,
+    "full_active_inactive_n1_n_matrix_deferred_to": "MODULE-MIGRATION-COMPATIBILITY-001"
+  },
+  "activation_audit": {
+    "append_only_required": true,
+    "required_fields": [
+      "module_id",
+      "scope_type",
+      "scope_id",
+      "organization_id",
+      "previous_explicit_state",
+      "previous_effective_state",
+      "requested_new_state",
+      "resulting_effective_state",
+      "actor_identity",
+      "occurred_at",
+      "reason",
+      "configuration_validation",
+      "dependency_validation",
+      "result",
+      "denial_reason_code",
+      "correlation_id",
+      "manifest_contract_version"
+    ]
+  },
+  "negative_architecture_invariants": [
+    "N01_UI_HIDDEN_DIRECT_URL_MUST_DENY",
+    "N02_ROUTE_DENIED_SERVICE_WRITE_MUST_DENY",
+    "N03_OPTIONAL_INTEGRATION_MUST_NOT_BECOME_REQUIRED_WITHOUT_EVIDENCE",
+    "N04_REQUIRED_DEPENDENCY_MISSING_MUST_BLOCK_ACTIVATION",
+    "N05_DISABLE_MUST_NOT_DELETE_RECORDS",
+    "N06_READ_ONLY_MUST_DENY_WRITE_TRANSITION",
+    "N07_UPGRADE_MUST_NOT_AUTO_ACTIVATE",
+    "N08_INACTIVE_MODULE_MUST_NOT_SKIP_SCHEMA_MIGRATIONS",
+    "N09_SCOPE_CONFLICT_MUST_NOT_RESOLVE_RANDOMLY",
+    "N10_REACTIVATION_MUST_PRESERVE_MODULE_IDENTITY"
+  ],
+  "implementation_boundary": {
+    "implemented_now": [
+      "architecture decision",
+      "machine-readable contract",
+      "fail-closed contract checker",
+      "negative architecture fixtures"
+    ],
+    "deferred_to_module_registry": [
+      "registry database tables",
+      "activation control plane",
+      "runtime scope records",
+      "universal runtime guards",
+      "navigation integration",
+      "admin and management integration",
+      "background-job integration",
+      "mixed-scope runtime evidence"
+    ],
+    "product_models_changed": false,
+    "domain_migrations_changed": false,
+    "runtime_preview_changed": false
+  }
+}
