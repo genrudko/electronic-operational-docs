@@ -209,8 +209,6 @@ jobs:
           path: |
             ${{ runner.temp }}/eod-backup-restore-evidence/restore-certificate.json
             ${{ runner.temp }}/eod-backup-restore-evidence/restore-certificate.sha256
-            ${{ runner.temp }}/backup-restore-negative.sanitized.txt
-            ${{ runner.temp }}/backup-restore-drill.sanitized.txt
           if-no-files-found: error
           retention-days: 14
 
