@@ -32,6 +32,20 @@ Baseline фиксируется после применимых technical gates,
 | 2026-08-06 | `95b8dd6017745886f110f052ea0950b3d48173d8` | SECRET-HYGIENE-001 merge | accepted credential-hygiene and CI leak-prevention baseline |
 | 2026-08-10 | `5b54446d632ef1839d530dc2945255b3033359fe` | DEPENDENCY-PROVENANCE-001 merge | accepted reproducible dependency/build provenance baseline |
 | 2026-08-10 | `1f3296bcf3d0f57bd088241c81691c7f54b2ac25` | DEPLOYMENT-PROFILE-001 merge | accepted fail-closed pilot/production deployment-profile baseline |
+| 2026-08-10 | `3e43422ba6000c2aa5f4bdc6abe0f95c7774454f` | MODULE-ACTIVATION-CONTRACT-001 merge | accepted module-activation architecture baseline |
+
+## Reconciliation note — 2026-08-10 / Module Activation
+
+`MODULE-ACTIVATION-CONTRACT-001` принят по exact head
+`6025d7b405bc1d88543dc341757e5685bcf05b98` и merged в
+`3e43422ba6000c2aa5f4bdc6abe0f95c7774454f`; issue #61 закрыт как `COMPLETED`,
+owner acceptance — `PASSED`. Canonical planning state переведён в `ACCEPTED`
+согласованно со стартом `BACKUP-RESTORE-DRILL-001`. Два последующих
+документационных cleanup-коммита довели live `main` до
+`071ac654ba6c10f5846052551024e8d24941e9e9`, при этом content diff относительно
+accepted merge commit равен нулю. После перехода `SAFE-CONTINUATION` имеет 6 из
+8 принятых элементов; предметная очередь остаётся paused, `SHIFT-HANDOVER-001`
+не стартовал.
 
 ## Reconciliation note — 2026-08-10 / Deployment Profile
 
