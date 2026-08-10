@@ -1,0 +1,45 @@
+name: EOD Module Registry Queue Contract
+
+on:
+  push:
+    branches:
+      - platform/module-registry-001
+    paths:
+      - .github/workflows/module-registry-queue-contract.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update-contract:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: platform/module-registry-001
+          fetch-depth: 0
+
+      - name: Update post-SAFE queue validator
+        run: python scripts/_module_registry_queue_contract.py
+
+      - name: Remove one-shot mechanism before provenance generation
+        run: |
+          git rm scripts/_module_registry_queue_contract.py
+          git rm .github/workflows/module-registry-queue-contract.yml
+
+      - name: Regenerate canonical dependency inventory
+        run: python scripts/dependency_provenance_views.py write
+
+      - name: Commit queue contract and inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Update post-SAFE domain queue contract"
+          git push origin HEAD:platform/module-registry-001
