@@ -7,29 +7,68 @@
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted main baseline: main / 5b54446d632ef1839d530dc2945255b3033359fe
-active work item: DEPLOYMENT-PROFILE-001
-active issue: #59
-active PR: #60 / OPEN / DRAFT / NOT MERGED
-active branch: deployment/deployment-profile-001
+accepted main baseline: main / 1f3296bcf3d0f57bd088241c81691c7f54b2ac25
+active work item: MODULE-ACTIVATION-CONTRACT-001
+active issue: #61
+active PR: #62 / OPEN / DRAFT / NOT MERGED
+active branch: architecture/module-activation-contract-001
 runtime impact: NONE
 preview: UNTOUCHED
 ```
 
-## Active DEPLOYMENT-PROFILE-001 execution
+## Active MODULE-ACTIVATION-CONTRACT-001 execution
 
-`DEPLOYMENT-PROFILE-001` выполняется только в issue #59, ветке
-`deployment/deployment-profile-001` и Draft PR #60.
+`MODULE-ACTIVATION-CONTRACT-001` выполняется только в issue #61, ветке
+`architecture/module-activation-contract-001` и Draft PR #62.
 
-Work item ограничен deployment/configuration boundary: отдельный
-pilot/production-capable режим, fail-closed configuration, PostgreSQL-only
-production semantics, application-side TLS/reverse-proxy contract,
-ограниченные liveness/readiness checks и operator preflight. Runtime impact на
-coordination start — `NONE`. Live VPS и Preview не изменяются.
+Work item является архитектурным: он фиксирует canonical manifest, lifecycle,
+scope-resolution, dependency/integration semantics, universal access-decision
+contract, history/reactivation, migration boundary и activation audit до
+реализации `MODULE-REGISTRY-001`. Registry/control-plane tables, product/domain
+migrations, массовая wiring runtime guards, UX и новые журналы в этот PR не входят.
+Runtime impact — `NONE`; live VPS и Preview не изменяются.
 
-Предметная очередь сохраняется в состоянии
+`SAFE-CONTINUATION` после принятия Deployment Profile имеет 5 из 8 обязательных
+work items со статусом `ACCEPTED`; сам `MODULE-ACTIVATION-CONTRACT-001` имеет
+`IN_PROGRESS`. Предметная очередь сохраняется в состоянии
 `PAUSED_PENDING_SAFE_CONTINUATION_AND_EXPLICIT_OWNER_DECISION`.
 `SHIFT-HANDOVER-001` не стартовал.
+
+## Accepted DEPLOYMENT-PROFILE-001 baseline
+
+`DEPLOYMENT-PROFILE-001` принят пользователем и merged обычным merge commit:
+
+```text
+accepted PR: #60 / CLOSED / MERGED
+accepted exact head: 323f4fb9162e84ca25a49556340078de81af2424
+merge commit / accepted main: 1f3296bcf3d0f57bd088241c81691c7f54b2ac25
+issue: #59 / CLOSED / COMPLETED
+user acceptance: PASSED
+merge method: ORDINARY MERGE COMMIT
+squash / rebase: NOT USED
+runtime impact: NONE
+preview: UNTOUCHED
+```
+
+Принятый baseline включает fail-closed pilot/production configuration contract,
+PostgreSQL-only production/pilot semantics, operator preflight, secure
+TLS/reverse-proxy/session settings и разделённые liveness/readiness checks.
+Все применимые exact-head workflows завершились успешно:
+
+```text
+EOD CI:                      31362143450 / SUCCESS
+AUTO-001A Foundation CI:     31362143473 / SUCCESS
+AUTO-001B Controller CI:     31362143425 / SUCCESS
+EOD Documentation Contract: 31362143445 / SUCCESS
+EOD Development Stack:      31362143454 / SUCCESS
+EOD Dependency Provenance:   31362143446 / SUCCESS
+EOD Deployment Profile:      31362143422 / SUCCESS
+EOD Secret Hygiene:          31362143415 / SUCCESS
+```
+
+`SAFE-CONTINUATION` после merge достигнут на 5 из 8 обязательных work items.
+`MODULE-ACTIVATION-CONTRACT-001` канонически переведён в `IN_PROGRESS`.
+Это не означает достижения `SAFE-CONTINUATION` или готовности к пилоту.
 
 ## Accepted DEPENDENCY-PROVENANCE-001 baseline
 
