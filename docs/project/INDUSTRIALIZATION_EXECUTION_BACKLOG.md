@@ -5,8 +5,8 @@
 ## 1. Product-owner / operator summary
 
 - Phase 0: `COMPLETE`.
-- `SAFE-CONTINUATION`: `5/8` accepted; **NOT ACHIEVED**.
-- `PILOT-READY` mandatory core: `5/21` accepted; **NOT ACHIEVED**.
+- `SAFE-CONTINUATION`: `6/8` accepted; **NOT ACHIEVED**.
+- `PILOT-READY` mandatory core: `6/21` accepted; **NOT ACHIEVED**.
 - Предметная очередь: `PAUSED_PENDING_SAFE_CONTINUATION_AND_EXPLICIT_OWNER_DECISION`.
 - `SHIFT-HANDOVER-001`: `NOT STARTED`; automatic start forbidden.
 - Достижение всех checklist items не заменяет отдельное решение владельца.
@@ -26,14 +26,14 @@
 |---:|---|---|---|---|---|---|---|---|---|---|---|---|
 | 0 | `PROJECT-STATE-RECONCILIATION-001` | `P0` | `DOCUMENTATION_AUTOMATION` | `ACCEPTED` | `PSR-001`, `PSR-002`, `PSR-034` | — | `PROJECT_GOVERNANCE_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `deterministic_views`, `regression_tests` | `SAFE-CONTINUATION` | `P0-SEQUENTIAL` | `PHASE_0_ORDER` | — |
 | 0 | `INDUSTRIALIZATION-PROGRAM-EXECUTION-001` | `P0` | `GOVERNANCE` | `ACCEPTED` | `PSR-034` | `PROJECT-STATE-RECONCILIATION-001` | `PROJECT_GOVERNANCE_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `executable_backlog_validation` | `SAFE-CONTINUATION` | `P0-SEQUENTIAL` | `PHASE_0_ORDER` | — |
-| 1 | `MODULE-ACTIVATION-CONTRACT-001` | `P0` | `ARCHITECTURE` | `IN_PROGRESS` | `PSR-004`, `PSR-005`, `PSR-014` | `PROJECT-STATE-RECONCILIATION-001` | `SOFTWARE_ARCHITECT` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `accepted_architecture_decision` | `SAFE-CONTINUATION` | `P1-FOUNDATION-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | — |
+| 1 | `MODULE-ACTIVATION-CONTRACT-001` | `P0` | `ARCHITECTURE` | `ACCEPTED` | `PSR-004`, `PSR-005`, `PSR-014` | `PROJECT-STATE-RECONCILIATION-001` | `SOFTWARE_ARCHITECT` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `accepted_architecture_decision` | `SAFE-CONTINUATION` | `P1-FOUNDATION-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | — |
 | 1 | `SECRET-HYGIENE-001` | `P0` | `SECURITY` | `ACCEPTED` | `PSR-021` | — | `SECURITY_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `secret_scan_and_rotation_evidence` | `SAFE-CONTINUATION` | `P1-FOUNDATION-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | — |
 | 1 | `DEPENDENCY-PROVENANCE-001` | `P0` | `SUPPLY_CHAIN` | `ACCEPTED` | `PSR-017`, `PSR-023`, `PSR-016` | `SECRET-HYGIENE-001` | `SUPPLY_CHAIN_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `dependency_lock_and_provenance` | `SAFE-CONTINUATION` | `P1-SUPPLY-SEQUENTIAL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | — |
 | 1 | `DEPLOYMENT-PROFILE-001` | `P0` | `DEPLOYMENT` | `ACCEPTED` | `PSR-003`, `PSR-022`, `PSR-018` | `DEPENDENCY-PROVENANCE-001` | `DEPLOYMENT_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `fail_closed_configuration_test` | `SAFE-CONTINUATION` | `P1-DEPLOYMENT-SEQUENTIAL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | — |
-| 1 | `BACKUP-RESTORE-DRILL-001` | `P0` | `DISASTER_RECOVERY` | `NOT_STARTED` | `PSR-015`, `PSR-013` | `DEPLOYMENT-PROFILE-001` | `DISASTER_RECOVERY_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `restore_certificate` | `SAFE-CONTINUATION` | `P1-POSTDEPLOY-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | — |
+| 1 | `BACKUP-RESTORE-DRILL-001` | `P0` | `DISASTER_RECOVERY` | `IN_PROGRESS` | `PSR-015`, `PSR-013` | `DEPLOYMENT-PROFILE-001` | `DISASTER_RECOVERY_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `restore_certificate` | `SAFE-CONTINUATION` | `P1-POSTDEPLOY-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | — |
 | 1 | `SECURITY-BASELINE-001` | `P0` | `SECURITY_ARCHITECTURE` | `NOT_STARTED` | `PSR-022`, `PSR-023`, `PSR-024`, `PSR-033` | `DEPLOYMENT-PROFILE-001` | `SECURITY_ARCHITECT` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `threat_model_and_negative_tests` | `SAFE-CONTINUATION` | `P1-POSTDEPLOY-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | — |
-| 2 | `MODULE-REGISTRY-001` | `P0` | `PRODUCT_PLATFORM` | `NOT_STARTED` | `PSR-004`, `PSR-005` | `MODULE-ACTIVATION-CONTRACT-001`, `SECURITY-BASELINE-001` | `PLATFORM_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `mixed_scope_activation_evidence` | `PILOT-READY-MANDATORY-CORE` | `P2-PLATFORM-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | DEPENDENCY_NOT_ACCEPTED:MODULE-ACTIVATION-CONTRACT-001; DEPENDENCY_NOT_ACCEPTED:SECURITY-BASELINE-001 |
-| 2 | `MODULE-BOUNDARY-GATES-001` | `P1` | `ARCHITECTURE_AUTOMATION` | `NOT_STARTED` | `PSR-006`, `PSR-007` | `MODULE-ACTIVATION-CONTRACT-001` | `SOFTWARE_ARCHITECT` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `boundary_gate_tests` | `FULL-PROGRAM-ONLY` | `P2-PLATFORM-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | DEPENDENCY_NOT_ACCEPTED:MODULE-ACTIVATION-CONTRACT-001 |
+| 2 | `MODULE-REGISTRY-001` | `P0` | `PRODUCT_PLATFORM` | `NOT_STARTED` | `PSR-004`, `PSR-005` | `MODULE-ACTIVATION-CONTRACT-001`, `SECURITY-BASELINE-001` | `PLATFORM_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `mixed_scope_activation_evidence` | `PILOT-READY-MANDATORY-CORE` | `P2-PLATFORM-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | DEPENDENCY_NOT_ACCEPTED:SECURITY-BASELINE-001 |
+| 2 | `MODULE-BOUNDARY-GATES-001` | `P1` | `ARCHITECTURE_AUTOMATION` | `NOT_STARTED` | `PSR-006`, `PSR-007` | `MODULE-ACTIVATION-CONTRACT-001` | `SOFTWARE_ARCHITECT` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `boundary_gate_tests` | `FULL-PROGRAM-ONLY` | `P2-PLATFORM-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | — |
 | 3 | `DATA-INTEGRITY-HARDENING-001` | `P0` | `DATA_RELIABILITY` | `NOT_STARTED` | `PSR-011`, `PSR-012` | `DEPLOYMENT-PROFILE-001` | `DATA_INTEGRITY_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `integrity_and_concurrency_tests` | `PILOT-READY-MANDATORY-CORE` | `P3-DATA-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | — |
 | 3 | `MIGRATION-SAFETY-001` | `P0` | `MIGRATION_ENGINEERING` | `NOT_STARTED` | `PSR-013` | `BACKUP-RESTORE-DRILL-001` | `MIGRATION_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `migration_rehearsal_evidence` | `PILOT-READY-MANDATORY-CORE` | `P3-DATA-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | DEPENDENCY_NOT_ACCEPTED:BACKUP-RESTORE-DRILL-001 |
 | 3 | `MODULE-MIGRATION-COMPATIBILITY-001` | `P0` | `MIGRATION_TESTING` | `NOT_STARTED` | `PSR-013`, `PSR-014` | `MODULE-REGISTRY-001`, `MIGRATION-SAFETY-001` | `PLATFORM_MIGRATION_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `module_set_migration_matrix` | `PILOT-READY-MANDATORY-CORE` | `P3-DATA-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | DEPENDENCY_NOT_ACCEPTED:MODULE-REGISTRY-001; DEPENDENCY_NOT_ACCEPTED:MIGRATION-SAFETY-001 |
@@ -45,7 +45,7 @@
 | 4 | `AUTH-RBAC-HARDENING-001` | `P0` | `IDENTITY_SECURITY` | `NOT_STARTED` | `PSR-024`, `PSR-033` | `SECURITY-BASELINE-001`, `MODULE-REGISTRY-001` | `IDENTITY_SECURITY_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `permission_matrix_and_denial_tests` | `PILOT-READY-MANDATORY-CORE` | `P4-OPS-SECURITY-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | DEPENDENCY_NOT_ACCEPTED:SECURITY-BASELINE-001; DEPENDENCY_NOT_ACCEPTED:MODULE-REGISTRY-001 |
 | 4 | `SECURITY-PIPELINE-001` | `P0` | `SECURITY_AUTOMATION` | `NOT_STARTED` | `PSR-023` | `DEPENDENCY-PROVENANCE-001`, `SECURITY-BASELINE-001` | `SECURITY_AUTOMATION_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `security_pipeline_run` | `PILOT-READY-MANDATORY-CORE` | `P4-OPS-SECURITY-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | DEPENDENCY_NOT_ACCEPTED:SECURITY-BASELINE-001 |
 | 4 | `UPLOAD-HARDENING-001` | `P1` | `APPLICATION_SECURITY` | `NOT_STARTED` | `PSR-025` | `SECURITY-BASELINE-001` | `APPLICATION_SECURITY_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `upload_negative_tests` | `PILOT-SCOPE-DEPENDENT` | `P4-OPS-SECURITY-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | DEPENDENCY_NOT_ACCEPTED:SECURITY-BASELINE-001 |
-| 5 | `UX-PLATFORM-FOUNDATION-001` | `P1` | `UX_PLATFORM` | `NOT_STARTED` | `PSR-008`, `PSR-009`, `PSR-010` | `MODULE-ACTIVATION-CONTRACT-001` | `UX_PLATFORM_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `shared_ux_contract_evidence` | `PILOT-SCOPE-DEPENDENT` | `P5-UX-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | DEPENDENCY_NOT_ACCEPTED:MODULE-ACTIVATION-CONTRACT-001 |
+| 5 | `UX-PLATFORM-FOUNDATION-001` | `P1` | `UX_PLATFORM` | `NOT_STARTED` | `PSR-008`, `PSR-009`, `PSR-010` | `MODULE-ACTIVATION-CONTRACT-001` | `UX_PLATFORM_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `shared_ux_contract_evidence` | `PILOT-SCOPE-DEPENDENT` | `P5-UX-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | — |
 | 5 | `LEGACY-UX-MIGRATION-001` | `P1` | `UX_MIGRATION` | `NOT_STARTED` | `PSR-008` | `UX-PLATFORM-FOUNDATION-001` | `UX_PLATFORM_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `route_migration_acceptance` | `PILOT-SCOPE-DEPENDENT` | `P5-UX-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | DEPENDENCY_NOT_ACCEPTED:UX-PLATFORM-FOUNDATION-001 |
 | 5 | `UX-BROWSER-GATES-001` | `P1` | `UX_TESTING` | `NOT_STARTED` | `PSR-009` | `DEPLOYMENT-PROFILE-001`, `MODULE-REGISTRY-001` | `UX_QUALITY_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `browser_viewport_print_evidence` | `PILOT-READY-MANDATORY-CORE` | `P5-UX-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | DEPENDENCY_NOT_ACCEPTED:MODULE-REGISTRY-001 |
 | 5 | `PAGE-TEMPLATE-LIBRARY-001` | `P1` | `UX_PLATFORM` | `NOT_STARTED` | `PSR-010` | `UX-PLATFORM-FOUNDATION-001` | `UX_PLATFORM_OWNER` | `pr`, `exact_head`, `merge_commit`, `workflow_runs`, `owner_acceptance`, `shared_ux_contract_evidence` | `PILOT-SCOPE-DEPENDENT` | `P5-UX-PARALLEL` | `DEPENDENCY_ORDER_AND_GROUP_LIMIT` | DEPENDENCY_NOT_ACCEPTED:UX-PLATFORM-FOUNDATION-001 |
@@ -60,7 +60,7 @@
 | Phase | Accepted | Active | Blocked | Not started/ready |
 |---:|---:|---:|---:|---:|
 | 0 | 2/2 | 0 | 0 | 0 |
-| 1 | 3/6 | 1 | 0 | 2 |
+| 1 | 4/6 | 1 | 0 | 1 |
 | 2 | 0/2 | 0 | 0 | 2 |
 | 3 | 0/6 | 0 | 0 | 6 |
 | 4 | 0/5 | 0 | 0 | 5 |
@@ -72,11 +72,11 @@
 
 - [x] `PROJECT-STATE-RECONCILIATION-001` — `ACCEPTED`.
 - [x] `INDUSTRIALIZATION-PROGRAM-EXECUTION-001` — `ACCEPTED`.
-- [ ] `MODULE-ACTIVATION-CONTRACT-001` — `IN_PROGRESS`.
+- [x] `MODULE-ACTIVATION-CONTRACT-001` — `ACCEPTED`.
 - [x] `SECRET-HYGIENE-001` — `ACCEPTED`.
 - [x] `DEPENDENCY-PROVENANCE-001` — `ACCEPTED`.
 - [x] `DEPLOYMENT-PROFILE-001` — `ACCEPTED`.
-- [ ] `BACKUP-RESTORE-DRILL-001` — `NOT_STARTED`.
+- [ ] `BACKUP-RESTORE-DRILL-001` — `IN_PROGRESS`.
 - [ ] `SECURITY-BASELINE-001` — `NOT_STARTED`.
 
 Completion of all eight items still requires an explicit product-owner decision before any limited domain continuation.
@@ -85,11 +85,11 @@ Completion of all eight items still requires an explicit product-owner decision 
 
 - [x] `PROJECT-STATE-RECONCILIATION-001` — `ACCEPTED`.
 - [x] `INDUSTRIALIZATION-PROGRAM-EXECUTION-001` — `ACCEPTED`.
-- [ ] `MODULE-ACTIVATION-CONTRACT-001` — `IN_PROGRESS`.
+- [x] `MODULE-ACTIVATION-CONTRACT-001` — `ACCEPTED`.
 - [x] `SECRET-HYGIENE-001` — `ACCEPTED`.
 - [x] `DEPENDENCY-PROVENANCE-001` — `ACCEPTED`.
 - [x] `DEPLOYMENT-PROFILE-001` — `ACCEPTED`.
-- [ ] `BACKUP-RESTORE-DRILL-001` — `NOT_STARTED`.
+- [ ] `BACKUP-RESTORE-DRILL-001` — `IN_PROGRESS`.
 - [ ] `SECURITY-BASELINE-001` — `NOT_STARTED`.
 - [ ] `MODULE-REGISTRY-001` — `NOT_STARTED`.
 - [ ] `DATA-INTEGRITY-HARDENING-001` — `NOT_STARTED`.
