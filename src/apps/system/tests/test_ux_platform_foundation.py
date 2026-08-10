@@ -122,9 +122,9 @@ class UxPlatformFoundationSourceContractTests(SimpleTestCase):
         self.assertIn("@media (max-width: 980px)", platform)
         self.assertIn("@media (max-width: 700px)", platform)
         self.assertIn("prefers-reduced-motion", platform)
-        self.assertIn(
-            ':where(\n    body.ux-platform input:not([type="checkbox"])',
+        self.assertRegex(
             platform,
+            r':where\(\s*body\.ux-platform input:not\(\[type="checkbox"\]\)',
         )
         self.assertIn(":where(body.ux-platform textarea)", platform)
         self.assertNotIn(".ux-textarea,\nbody.ux-platform textarea", platform)
