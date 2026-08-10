@@ -167,12 +167,23 @@ def main():
                     node = need(page, SELECTORS[route])
                     actual = style(node)
                     expected = resolved_background(page, TOKENS[route])
+                    document_width = page.evaluate(
+                        """() => ({
+                            scroll: document.documentElement.scrollWidth,
+                            client: document.documentElement.clientWidth,
+                        })"""
+                    )
                     key = f"{route}__{mode}__{width}x{height}"
                     report["baseline"][key] = {
                         **actual,
                         "expected_background": expected,
+                        "document_width": document_width,
                     }
                     screenshot(page, shots, key)
+                    if document_width["scroll"] > document_width["client"] + 2:
+                        raise AssertionError(
+                            f"document overflow {route} {mode} {width}px: {document_width}"
+                        )
                     if (
                         actual["background"].replace(" ", "")
                         != expected.replace(" ", "")
