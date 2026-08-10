@@ -1,8 +1,13 @@
 {% extends "shared/direction_a/base.html" %}
+{% load static %}
 
 {% block title %}Оперативные журналы · ЭОД{% endblock %}
 {% block body_class %}direction-a-body da-active opj-direction-a{% endblock %}
 {% block main_class %}opj-main opj-registry-main{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'operational_log/opj_ux_001.css' %}?v=uxplatform001">
+<script src="{% static 'operational_log/opj_ux_001.js' %}?v=uxplatform001" defer></script>
+{% endblock %}
 
 {% block content %}
 <section class="page-heading da-page-header">
