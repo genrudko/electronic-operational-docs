@@ -30,6 +30,7 @@ jobs:
     timeout-minutes: 30
     env:
       EOD_DEPLOYMENT_MODE: production
+      EOD_DJANGO_ADMIN_ENABLED: "1"
       DJANGO_DEBUG: "0"
       DJANGO_ALLOWED_HOSTS: eod-pilot.example.invalid
       DJANGO_CSRF_TRUSTED_ORIGINS: https://eod-pilot.example.invalid
