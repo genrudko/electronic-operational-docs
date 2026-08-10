@@ -11,12 +11,12 @@ class VisualIdentityContractTests(SimpleTestCase):
         self.source_root = Path(settings.BASE_DIR) / "src"
 
     def test_direction_a_shell_loads_shared_identity_layers(self) -> None:
-        template = (
-            self.source_root / "templates/shared/direction_a/base.html"
-        ).read_text(encoding="utf-8")
-        base_template = (self.source_root / "templates/base.html").read_text(
+        template = (self.source_root / "templates/base.html").read_text(
             encoding="utf-8"
         )
+        wrapper = (
+            self.source_root / "templates/shared/direction_a/base.html"
+        ).read_text(encoding="utf-8")
         sidebar = (
             self.source_root / "templates/shared/direction_a/_sidebar.html"
         ).read_text(encoding="utf-8")
@@ -24,10 +24,11 @@ class VisualIdentityContractTests(SimpleTestCase):
         self.assertIn("system/eod_typography.css", template)
         self.assertIn("system/eod_iconography.css", template)
         self.assertIn("eodidentity002", template)
+        self.assertIn('{% extends "base.html" %}', wrapper)
         self.assertIn("system/brand-mark.svg", sidebar)
         self.assertIn("eodbrand002", sidebar)
         self.assertNotIn("system/favicon.svg", sidebar)
-        self.assertIn("system/favicon.svg", base_template)
+        self.assertIn("system/favicon.svg", template)
         self.assertIn("Электронная оперативная документация", sidebar)
         self.assertNotIn('class="da-brand-mark"', sidebar)
 
