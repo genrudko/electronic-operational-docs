@@ -321,16 +321,44 @@ def _validate_queue(
                     "present",
                 )
             )
-    expected_status = (
-        "PAUSED_PENDING_SAFE_CONTINUATION_AND_EXPLICIT_OWNER_DECISION"
+    safe_required = (
+        "PROJECT-STATE-RECONCILIATION-001",
+        "INDUSTRIALIZATION-PROGRAM-EXECUTION-001",
+        "MODULE-ACTIVATION-CONTRACT-001",
+        "SECRET-HYGIENE-001",
+        "DEPENDENCY-PROVENANCE-001",
+        "DEPLOYMENT-PROFILE-001",
+        "BACKUP-RESTORE-DRILL-001",
+        "SECURITY-BASELINE-001",
     )
+    post_safe_foundations = (
+        "MODULE-REGISTRY-001",
+        "UX-PLATFORM-FOUNDATION-001",
+        "PAGE-TEMPLATE-LIBRARY-001",
+    )
+    safe_complete = all(
+        work_by_id.get(item_id, {}).get("status") == "ACCEPTED"
+        for item_id in safe_required
+    )
+    foundations_complete = all(
+        work_by_id.get(item_id, {}).get("status") == "ACCEPTED"
+        for item_id in post_safe_foundations
+    )
+    if not safe_complete:
+        expected_status = (
+            "PAUSED_PENDING_SAFE_CONTINUATION_AND_EXPLICIT_OWNER_DECISION"
+        )
+    elif not foundations_complete:
+        expected_status = "PAUSED_PENDING_MODULE_REGISTRY_AND_UX_FOUNDATIONS"
+    else:
+        expected_status = "READY_FOR_PRODUCT_MODULE_DEVELOPMENT"
     actual_status = plan.get("execution", {}).get("domain_queue_status")
     if actual_status != expected_status:
         errors.append(
             diagnostic(
                 PLAN_PATH,
                 "domain_queue",
-                "safe-continuation-pause",
+                "domain-queue-state",
                 expected_status,
                 actual_status,
             )
