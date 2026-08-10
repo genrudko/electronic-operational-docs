@@ -2,7 +2,7 @@
 
 ## STATUS
 
-`IN_PROGRESS / FINAL EXACT-HEAD VALIDATION`
+`IN_PROGRESS / TECHNICALLY READY FOR OWNER ACCEPTANCE`
 
 Issue: `#67`
 
@@ -109,11 +109,11 @@ Current DEFECT <-> OPJ remains an optional integration unless factual domain evi
 
 The first transition is complete:
 
-1. live accepted main remained `862b682ba19b6747ea6f4d41fd31322808140b82`;
+1. live accepted main remained `862b682ba19b6747ea6f4d41fd31322808140b82` through the validated implementation candidate;
 2. `SECURITY-BASELINE-001` is `ACCEPTED` with PR #66, exact head `b59a9485187dbd588c7b9f35bfd634c89344ea9d`, merge `862b682ba19b6747ea6f4d41fd31322808140b82`, issue #65 CLOSED/COMPLETED and owner acceptance PASSED;
 3. `SAFE-CONTINUATION = 8/8 ACCEPTED`;
 4. the explicit approved post-SAFE route above is recorded;
-5. `MODULE-REGISTRY-001 = IN_PROGRESS`;
+5. `MODULE-REGISTRY-001 = IN_PROGRESS` pending owner acceptance;
 6. `CURRENT_STATE.md` owns issue #67 / branch `platform/module-registry-001` / Draft PR #68;
 7. acceptance/baseline histories and deterministic planning views were updated;
 8. post-SAFE generators and queue validation were corrected so completed SAFE and the explicit owner route are represented fail closed rather than by stale pre-SAFE constants;
@@ -122,7 +122,7 @@ The first transition is complete:
 
 ## CURRENT IMPLEMENTATION EVIDENCE
 
-The branch now contains the first coherent runtime control-plane slice in existing `apps.system` rather than a new infrastructure Django app:
+The branch contains the first coherent runtime control-plane slice in existing `apps.system` rather than a new infrastructure Django app:
 
 - deterministic manifests for current repository-backed canonical module IDs;
 - persistent exact-scope activation rules;
@@ -138,7 +138,9 @@ The branch now contains the first coherent runtime control-plane slice in existi
 - product-version migration with no activation-data seeding;
 - focused fail-closed, history-preservation and audit tests.
 
-The existing browser dependency lock was also made deterministic without changing its accepted package version: the previously implicit Playwright transitive `greenlet==3.5.4` is now part of accepted resolution, and the browser lock records the corresponding constraint provenance metadata. The final exact-head Dependency Provenance workflow is the independent byte-for-byte proof.
+The existing browser dependency lock was also made deterministic without changing its accepted Playwright package version: the previously implicit Playwright transitive `greenlet==3.5.4` is now part of accepted resolution, and the browser lock records the corresponding constraint provenance metadata.
+
+The source-gate failure caused by that one-line insertion was repaired without weakening the gate: the two pre-existing approved `subprocess.run` evidence locations in `supply-chain/registry.json` were synchronized from lines `139 -> 140` and `489 -> 490`. No new opaque-process allowlist item, exclusion, suppression or dependency upgrade was introduced.
 
 ## REPRESENTATIVE REAL PRODUCT INTEGRATION
 
@@ -159,14 +161,66 @@ Focused evidence covers unknown module/capability/operation/entry point, unsuppo
 
 Prefer table-driven/mutation tests over repetitive one-off tests.
 
+## VALIDATED IMPLEMENTATION EXACT-HEAD EVIDENCE
+
+Validated implementation candidate:
+
+`1d389290d441841d42b861208a8601be774f7878`
+
+At this exact head all nine workflows automatically applicable to the branch completed `SUCCESS`:
+
+| Workflow | Run | Result |
+|---|---:|---|
+| EOD CI | `31412906593` | `SUCCESS` |
+| AUTO-001A Foundation CI | `31412904240` | `SUCCESS` |
+| AUTO-001B Controller CI | `31412904278` | `SUCCESS` |
+| EOD Documentation Contract | `31412904903` | `SUCCESS` |
+| EOD Development Stack | `31412905740` | `SUCCESS` |
+| EOD Secret Hygiene | `31412905759` | `SUCCESS` |
+| EOD Dependency Provenance | `31412904897` | `SUCCESS` |
+| EOD Backup Restore Drill | `31412907327` | `SUCCESS` |
+| EOD Deployment Profile | `31412905797` | `SUCCESS` |
+
+`EOD CI` on Python 3.13 / PostgreSQL 18 proved on that common exact head:
+
+- locked dependency installation;
+- Ruff;
+- `compileall`;
+- Django system check;
+- `makemigrations --check`;
+- PostgreSQL migrations;
+- architecture gate;
+- full Django test suite, which includes the focused module-registry and representative OPJ -> DEFECT integration tests;
+- clean repository tree after CI.
+
+The focused registry/integration tests included in the suite cover mixed scopes, direct-save lifecycle bypass denial, append-only audit, history preservation on deactivation, dependency/optional-integration semantics, HTTP and service mutation fail-closed behavior, reactivation identity preservation and explicit DEFECT activation in fixtures. The module-registry migration contains schema operations only and no activation seed.
+
+`EOD Dependency Provenance` independently proved on the same exact head:
+
+- semantic/source contract and ordinary Ruff;
+- byte-for-byte regeneration of all five lock projections (`tooling`, `build`, `runtime`, `dev`, `browser`);
+- clean hashed installation of all five profiles;
+- focused positive/negative supply-chain tests;
+- locked wheel installation and static artifact manifest;
+- production and browser OCI archive construction;
+- normalized SPDX 2.3 SBOM;
+- in-toto / SLSA provenance;
+- credential-free security evidence;
+- GitHub OIDC / Sigstore external attestation;
+- external attestation identity / fail-closed policy;
+- final evidence verification and clean tree.
+
+This evidence head is recorded as implementation proof. The documentation-only closure commit that records this evidence must itself pass the automatically applicable exact-head workflows before owner handoff; no acceptance or merge is implied by this status.
+
 ## RISK-BASED TEST POLICY
 
 Use focused registry tests during implementation. Do not manually rerun every heavy workflow after each edit. Existing workflows stay enabled.
 
 Final candidate requires one common exact head, clean tree, `behind_by: 0` and all applicable workflows green. Diagnose exact failed job/step/log; do not weaken gates blindly.
 
-## OUT OF SCOPE
+## OUT OF SCOPE / INTENTIONALLY DEFERRED
 
+- migration of every pre-existing module endpoint/service to registry enforcement; this remains controlled module-by-module work, not a hidden big-bang claim in PR #68;
 - UX platform/page-template implementation or broad UI redesign;
 - new journals/product modules;
 - `SHIFT-HANDOVER-001` implementation;
