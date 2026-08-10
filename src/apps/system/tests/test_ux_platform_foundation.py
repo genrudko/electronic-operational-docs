@@ -24,7 +24,9 @@ class UxPlatformFoundationSourceContractTests(SimpleTestCase):
         self.assertIn('{% include "shared/direction_a/_topbar.html" %}', base)
         self.assertNotIn("equipment_defect_tags", base)
         self.assertNotIn("direction_a_shell_final.css", base)
-        self.assertFalse((ROOT / "src/static/system/direction_a_shell_final.css").exists())
+        self.assertFalse(
+            (ROOT / "src/static/system/direction_a_shell_final.css").exists()
+        )
 
     def test_specialised_opj_assets_are_scoped_to_opj_namespace(self) -> None:
         base = read("src/templates/base.html")
@@ -33,8 +35,18 @@ class UxPlatformFoundationSourceContractTests(SimpleTestCase):
         self.assertGreaterEqual(base.count(marker), 2)
         self.assertEqual(base.count("operational_log/opj_ux_001.css"), 1)
         self.assertEqual(base.count("operational_log/opj_ux_001.js"), 1)
-        self.assertTrue((ROOT / "src/static/operational_log/opj_workspace_controls.css").exists())
-        self.assertTrue((ROOT / "src/static/operational_log/opj_workspace_controls.js").exists())
+        self.assertTrue(
+            (
+                ROOT
+                / "src/static/operational_log/opj_workspace_controls.css"
+            ).exists()
+        )
+        self.assertTrue(
+            (
+                ROOT
+                / "src/static/operational_log/opj_workspace_controls.js"
+            ).exists()
+        )
 
     def test_defect_forms_consume_shared_shell(self) -> None:
         for path in (
@@ -60,7 +72,10 @@ class UxPlatformFoundationSourceContractTests(SimpleTestCase):
         first_stylesheet = base.index('rel="stylesheet"')
 
         self.assertLess(theme_resolution, first_stylesheet)
-        self.assertIn('data-theme-preference="{{ ui_preferences.theme|lower }}"', base)
+        self.assertIn(
+            'data-theme-preference="{{ ui_preferences.theme|lower }}"',
+            base,
+        )
         self.assertIn('<meta name="color-scheme" content="light dark">', base)
 
     def test_theme_is_single_semantic_token_owner(self) -> None:
