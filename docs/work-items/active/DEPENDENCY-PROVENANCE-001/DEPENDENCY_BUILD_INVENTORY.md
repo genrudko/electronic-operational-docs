@@ -4,20 +4,20 @@
 
 ## Итог
 
-- tracked files: `925`;
+- tracked files: `924`;
 - inventory entries: `90`;
 - floating inputs: `17`;
 - immutable inputs: `72`;
 - duplicate owner groups: `7`;
 - conflicting owner groups: `0`;
-- source files with dependency/build evidence: `22`;
-- applicable executable/config sources: `72`;
-- source completeness digests: `74`.
+- source files with dependency/build evidence: `21`;
+- applicable executable/config sources: `71`;
+- source completeness digests: `73`.
 
 ## Executable/config source completeness
 
-- applicable paths: `72`;
-- source kinds: `{'compose': 5, 'dockerfile': 3, 'github-workflow': 13, 'powershell': 3, 'python-operator': 39, 'shell': 8, 'shell-shebang': 1}`;
+- applicable paths: `71`;
+- source kinds: `{'compose': 5, 'dockerfile': 3, 'github-workflow': 12, 'powershell': 3, 'python-operator': 39, 'shell': 8, 'shell-shebang': 1}`;
 - uncovered paths: `NONE`;
 - exact exclusions: `NONE`.
 
@@ -27,7 +27,7 @@
 - JavaScript: package/lock files=NONE; separate frontend contour=`False`.
 - Browser: Playwright declared=`True`; binary install operations=NONE; integrity contract=`False`.
 - Containers: Dockerfiles=['Dockerfile', 'deploy/automation/Dockerfile.development', 'supply-chain/Dockerfile.browser']; Compose=['compose.development.yaml', 'compose.preview.yaml', 'compose.production.yaml', 'compose.yaml', 'deploy/automation/compose.development.yaml'].
-- GitHub Actions: workflows=`13`; temporary=NONE.
+- GitHub Actions: workflows=`12`; temporary=NONE.
 - External downloads: `0`; local runtime probes excluded=`True`.
 - Static assets: tracked=`66`; external references=`1`.
 
@@ -52,8 +52,8 @@
 | `INP-0001` | `container-image` | `.github/workflows/backup-restore-drill.yml:48` | ci | `postgres@sha256:882236b897e39051d2368c5ccc6cda944904723506b2dfc97f2a8f5bc9afa382` | yes | sha256-digest | immutable | LOW | canonical container-image registry/reference contract |
 | `INP-0002` | `container-image` | `.github/workflows/ci.yml:27` | ci | `postgres@sha256:882236b897e39051d2368c5ccc6cda944904723506b2dfc97f2a8f5bc9afa382` | yes | sha256-digest | immutable | LOW | canonical container-image registry/reference contract |
 | `INP-0003` | `container-image` | `.github/workflows/dependency-provenance.yml:30` | ci | `postgres@sha256:882236b897e39051d2368c5ccc6cda944904723506b2dfc97f2a8f5bc9afa382` | yes | sha256-digest | immutable | LOW | canonical container-image registry/reference contract |
-| `INP-0004` | `container-image` | `.github/workflows/ux-visual-evidence.yml:25` | ci | `mcr.microsoft.com/playwright/python@sha256:678457c4c323b981d8b4befc57b95366bb1bb6aa30057b1269f6b171e8d9975a` | yes | sha256-digest | immutable | LOW | canonical container-image registry/reference contract |
-| `INP-0005` | `container-image` | `.github/workflows/ux-visual-evidence.yml:29` | ci | `postgres@sha256:882236b897e39051d2368c5ccc6cda944904723506b2dfc97f2a8f5bc9afa382` | yes | sha256-digest | immutable | LOW | canonical container-image registry/reference contract |
+| `INP-0004` | `container-image` | `.github/workflows/development-stack.yml:177` | ci | `mcr.microsoft.com/playwright/python@sha256:678457c4c323b981d8b4befc57b95366bb1bb6aa30057b1269f6b171e8d9975a` | yes | sha256-digest | immutable | LOW | canonical container-image registry/reference contract |
+| `INP-0005` | `container-image` | `.github/workflows/development-stack.yml:181` | ci | `postgres@sha256:882236b897e39051d2368c5ccc6cda944904723506b2dfc97f2a8f5bc9afa382` | yes | sha256-digest | immutable | LOW | canonical container-image registry/reference contract |
 | `INP-0006` | `container-image` | `Dockerfile:1` | build | `python@sha256:67a1e1f215ccda113cfc024e8639049257e88f273898f595b61476d128d387e8` | yes | sha256-digest | immutable | LOW | canonical container-image registry/reference contract |
 | `INP-0007` | `container-image` | `Dockerfile:12` | build | `python@sha256:67a1e1f215ccda113cfc024e8639049257e88f273898f595b61476d128d387e8` | yes | sha256-digest | immutable | LOW | canonical container-image registry/reference contract |
 | `INP-0008` | `container-image` | `compose.development.yaml:5` | runtime/test | `postgres@sha256:882236b897e39051d2368c5ccc6cda944904723506b2dfc97f2a8f5bc9afa382` | yes | sha256-digest | immutable | LOW | canonical container-image registry/reference contract |
@@ -88,17 +88,17 @@
 | `INP-0037` | `github-action` | `.github/workflows/deployment-profile.yml:219` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
 | `INP-0038` | `github-action` | `.github/workflows/development-stack.yml:30` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
 | `INP-0039` | `github-action` | `.github/workflows/development-stack.yml:144` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0040` | `github-action` | `.github/workflows/documentation-contract.yml:24` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0041` | `github-action` | `.github/workflows/documentation-contract.yml:40` | ci/deployment | `actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0042` | `github-action` | `.github/workflows/documentation-contract.yml:113` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0043` | `github-action` | `.github/workflows/eod-hot-refresh.yml:32` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0044` | `github-action` | `.github/workflows/eod-hot-refresh.yml:46` | ci/deployment | `actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0045` | `github-action` | `.github/workflows/eod-hot-refresh.yml:51` | ci/deployment | `actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0046` | `github-action` | `.github/workflows/eod-hot-refresh.yml:216` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0047` | `github-action` | `.github/workflows/secret-hygiene.yml:31` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0048` | `github-action` | `.github/workflows/secret-hygiene.yml:47` | ci/deployment | `actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0049` | `github-action` | `.github/workflows/ux-visual-evidence.yml:57` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0050` | `github-action` | `.github/workflows/ux-visual-evidence.yml:157` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0040` | `github-action` | `.github/workflows/development-stack.yml:208` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0041` | `github-action` | `.github/workflows/development-stack.yml:353` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0042` | `github-action` | `.github/workflows/documentation-contract.yml:24` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0043` | `github-action` | `.github/workflows/documentation-contract.yml:40` | ci/deployment | `actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0044` | `github-action` | `.github/workflows/documentation-contract.yml:113` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0045` | `github-action` | `.github/workflows/eod-hot-refresh.yml:32` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0046` | `github-action` | `.github/workflows/eod-hot-refresh.yml:46` | ci/deployment | `actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0047` | `github-action` | `.github/workflows/eod-hot-refresh.yml:51` | ci/deployment | `actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0048` | `github-action` | `.github/workflows/eod-hot-refresh.yml:216` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0049` | `github-action` | `.github/workflows/secret-hygiene.yml:31` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0050` | `github-action` | `.github/workflows/secret-hygiene.yml:47` | ci/deployment | `actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
 | `INP-0051` | `github-action` | `.github/workflows/vps-development.yml:33` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
 | `INP-0052` | `github-action` | `.github/workflows/vps-development.yml:48` | ci/deployment | `actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
 | `INP-0053` | `github-action` | `.github/workflows/vps-development.yml:53` | ci/deployment | `actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
@@ -118,11 +118,11 @@
 | `INP-0067` | `python-install` | `.github/workflows/dependency-provenance.yml:100` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/build.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
 | `INP-0068` | `python-install` | `.github/workflows/dependency-provenance.yml:101` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/dev.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
 | `INP-0069` | `python-install` | `.github/workflows/dependency-provenance.yml:146` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --no-deps dist/electronic_operational_docs-0.1.0-py3-none-any.whl` | no | absent | not-proven | MEDIUM | canonical lock/download/image contract |
-| `INP-0070` | `python-install` | `.github/workflows/secret-hygiene.yml:63` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/tooling.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0071` | `python-install` | `.github/workflows/secret-hygiene.yml:64` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/build.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0072` | `python-install` | `.github/workflows/secret-hygiene.yml:65` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/dev.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0073` | `python-install` | `.github/workflows/secret-hygiene.yml:67` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --no-deps dist/*.whl` | no | absent | not-proven | MEDIUM | canonical lock/download/image contract |
-| `INP-0074` | `python-install` | `.github/workflows/ux-visual-evidence.yml:75` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes \ -r requirements/locks/browser.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0070` | `python-install` | `.github/workflows/development-stack.yml:236` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes \ -r requirements/locks/browser.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0071` | `python-install` | `.github/workflows/secret-hygiene.yml:63` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/tooling.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0072` | `python-install` | `.github/workflows/secret-hygiene.yml:64` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/build.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0073` | `python-install` | `.github/workflows/secret-hygiene.yml:65` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/dev.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0074` | `python-install` | `.github/workflows/secret-hygiene.yml:67` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --no-deps dist/*.whl` | no | absent | not-proven | MEDIUM | canonical lock/download/image contract |
 | `INP-0075` | `python-install` | `Dockerfile:6` | ci/build/runtime tooling | `RUN python -m pip install --disable-pip-version-check --require-hashes \ -r requirements/locks/build.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
 | `INP-0076` | `python-install` | `Dockerfile:17` | ci/build/runtime tooling | `RUN python -m pip install --disable-pip-version-check --require-hashes \ -r requirements/locks/runtime.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
 | `INP-0077` | `python-install` | `Dockerfile:20` | ci/build/runtime tooling | `RUN mkdir -p /app/src \ && python -m pip install --disable-pip-version-check --no-deps --target /app/src /tmp/eod/*.whl \ && rm -rf /tmp/eod` | no | absent | not-proven | MEDIUM | canonical lock/download/image contract |
@@ -142,12 +142,12 @@
 
 ## Duplicate owner groups
 
-- `action:actions/checkout` — 14 repeated references in .github/workflows/auto-001a-foundation-ci.yml, .github/workflows/auto-001b-controller-ci.yml, .github/workflows/backup-restore-drill.yml, .github/workflows/ci.yml, .github/workflows/dependency-provenance.yml, .github/workflows/deployment-profile.yml, .github/workflows/development-stack.yml, .github/workflows/documentation-contract.yml, .github/workflows/eod-hot-refresh.yml, .github/workflows/secret-hygiene.yml, .github/workflows/ux-visual-evidence.yml, .github/workflows/vps-development.yml.
+- `action:actions/checkout` — 14 repeated references in .github/workflows/auto-001a-foundation-ci.yml, .github/workflows/auto-001b-controller-ci.yml, .github/workflows/backup-restore-drill.yml, .github/workflows/ci.yml, .github/workflows/dependency-provenance.yml, .github/workflows/deployment-profile.yml, .github/workflows/development-stack.yml, .github/workflows/documentation-contract.yml, .github/workflows/eod-hot-refresh.yml, .github/workflows/secret-hygiene.yml, .github/workflows/vps-development.yml.
 - `action:actions/github-script` — 3 repeated references in .github/workflows/eod-hot-refresh.yml, .github/workflows/vps-development.yml.
 - `action:actions/setup-python` — 9 repeated references in .github/workflows/auto-001a-foundation-ci.yml, .github/workflows/auto-001b-controller-ci.yml, .github/workflows/backup-restore-drill.yml, .github/workflows/ci.yml, .github/workflows/dependency-provenance.yml, .github/workflows/documentation-contract.yml, .github/workflows/eod-hot-refresh.yml, .github/workflows/secret-hygiene.yml, .github/workflows/vps-development.yml.
-- `action:actions/upload-artifact` — 12 repeated references in .github/workflows/auto-001a-foundation-ci.yml, .github/workflows/auto-001b-controller-ci.yml, .github/workflows/backup-restore-drill.yml, .github/workflows/ci.yml, .github/workflows/dependency-provenance.yml, .github/workflows/deployment-profile.yml, .github/workflows/development-stack.yml, .github/workflows/documentation-contract.yml, .github/workflows/eod-hot-refresh.yml, .github/workflows/ux-visual-evidence.yml.
-- `image:mcr.microsoft.com/playwright/python` — 2 repeated references in .github/workflows/ux-visual-evidence.yml, supply-chain/Dockerfile.browser.
-- `image:postgres` — 9 repeated references in .github/workflows/backup-restore-drill.yml, .github/workflows/ci.yml, .github/workflows/dependency-provenance.yml, .github/workflows/ux-visual-evidence.yml, compose.development.yaml, compose.preview.yaml, compose.production.yaml, compose.yaml, deploy/automation/compose.development.yaml.
+- `action:actions/upload-artifact` — 12 repeated references in .github/workflows/auto-001a-foundation-ci.yml, .github/workflows/auto-001b-controller-ci.yml, .github/workflows/backup-restore-drill.yml, .github/workflows/ci.yml, .github/workflows/dependency-provenance.yml, .github/workflows/deployment-profile.yml, .github/workflows/development-stack.yml, .github/workflows/documentation-contract.yml, .github/workflows/eod-hot-refresh.yml.
+- `image:mcr.microsoft.com/playwright/python` — 2 repeated references in .github/workflows/development-stack.yml, supply-chain/Dockerfile.browser.
+- `image:postgres` — 9 repeated references in .github/workflows/backup-restore-drill.yml, .github/workflows/ci.yml, .github/workflows/dependency-provenance.yml, .github/workflows/development-stack.yml, compose.development.yaml, compose.preview.yaml, compose.production.yaml, compose.yaml, deploy/automation/compose.development.yaml.
 - `image:python` — 3 repeated references in Dockerfile, deploy/automation/Dockerfile.development.
 
 ## Ограничения
