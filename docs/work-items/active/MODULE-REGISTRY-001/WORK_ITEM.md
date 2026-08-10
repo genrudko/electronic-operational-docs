@@ -2,7 +2,7 @@
 
 ## STATUS
 
-`IN_PROGRESS / REPRESENTATIVE INTEGRATION UNDER EXACT-HEAD VALIDATION`
+`IN_PROGRESS / FINAL EXACT-HEAD VALIDATION`
 
 Issue: `#67`
 
@@ -126,15 +126,19 @@ The branch now contains the first coherent runtime control-plane slice in existi
 
 - deterministic manifests for current repository-backed canonical module IDs;
 - persistent exact-scope activation rules;
+- direct ordinary model `save()` bypass is rejected; lifecycle persistence is routed through the transition service;
 - append-only lifecycle audit events;
 - Organization / EnergySite / Workplace context membership validation;
 - accepted lifecycle transition graph;
 - same-scope hard-dependency validation;
 - optional-integration semantics (`DEFECT -> OPJ` remains optional);
 - precedence and restrictive caps;
+- explicit mixed-scope evidence across two Organizations plus EnergySite and Workplace scopes;
 - central `ModuleAccessDecision` and `require_module_access` service seam;
 - product-version migration with no activation-data seeding;
-- focused mixed-scope, fail-closed, history-preservation and audit tests.
+- focused fail-closed, history-preservation and audit tests.
+
+The existing browser dependency lock was also made deterministic without changing its accepted package version: the previously implicit Playwright transitive `greenlet==3.5.4` is now part of accepted resolution, and the browser lock records the corresponding constraint provenance metadata. The final exact-head Dependency Provenance workflow is the independent byte-for-byte proof.
 
 ## REPRESENTATIVE REAL PRODUCT INTEGRATION
 
@@ -151,7 +155,7 @@ This is intentionally representative, not a false claim of universal endpoint co
 
 ## NEGATIVE / FAIL-CLOSED EVIDENCE
 
-Focused evidence covers unknown module/capability/operation/entry point, unsupported or foreign scope, duplicate rule, missing hard dependency, forbidden lifecycle transition, activation without readiness, precedence/restrictive caps, navigation-hidden/direct-HTTP/direct-service mutation, READ_ONLY mutation denial, INACTIVE new-action denial, deactivation preserving history, migration not auto-activating, optional integration absent, reactivation identity preservation, and append-only activation audit.
+Focused evidence covers unknown module/capability/operation/entry point, unsupported or foreign scope, duplicate rule, direct model-state mutation bypass, missing hard dependency, forbidden lifecycle transition, activation without readiness, precedence/restrictive caps, navigation-hidden/direct-HTTP/direct-service mutation, READ_ONLY mutation denial, INACTIVE new-action denial, deactivation preserving history, migration not auto-activating, optional integration absent, reactivation identity preservation, and append-only activation audit.
 
 Prefer table-driven/mutation tests over repetitive one-off tests.
 
