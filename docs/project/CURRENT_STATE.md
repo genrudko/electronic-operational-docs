@@ -7,31 +7,60 @@
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted main baseline: main / 860e189bbb5bc05a6da4a7680acd5f719b4874af
-active work item: SECURITY-BASELINE-001
-active issue: #65
-active PR: #66 / OPEN / DRAFT / NOT MERGED
-active branch: security/security-baseline-001
+accepted main baseline: main / 862b682ba19b6747ea6f4d41fd31322808140b82
+active work item: MODULE-REGISTRY-001
+active issue: #67
+active PR: #68 / OPEN / DRAFT / NOT MERGED
+active branch: platform/module-registry-001
+runtime impact: REPOSITORY / DATABASE SCHEMA ONLY; LIVE RUNTIME UNTOUCHED
+preview: UNTOUCHED
+```
+
+## Active MODULE-REGISTRY-001 execution
+
+`MODULE-REGISTRY-001` выполняется только в issue #67, ветке
+`platform/module-registry-001` и Draft PR #68. Accepted architecture из PR #62
+реализуется как runtime control plane без dynamic Django app loading, per-site builds
+или отдельной module database. Live Preview/VPS не изменяются.
+
+`SAFE-CONTINUATION` фактически и канонически достигнут: **8/8 ACCEPTED**.
+После SAFE владелец отдельно утвердил маршрут:
+
+`SAFE closure -> MODULE-REGISTRY-001 -> UX-PLATFORM-FOUNDATION-001 + PAGE-TEMPLATE-LIBRARY-001 with controlled existing-UI migration -> new product/module development -> PILOT-READY hardening in risk-based portions`.
+
+Предметная очередь остаётся приостановленной на время `MODULE-REGISTRY-001` и
+следующего UX foundation/page-template этапа; `SHIFT-HANDOVER-001` не стартовал.
+
+## Accepted SECURITY-BASELINE-001 baseline
+
+`SECURITY-BASELINE-001` принят владельцем и merged обычным merge commit:
+
+```text
+accepted PR: #66 / CLOSED / MERGED
+accepted exact head: b59a9485187dbd588c7b9f35bfd634c89344ea9d
+merge commit / accepted main: 862b682ba19b6747ea6f4d41fd31322808140b82
+issue: #65 / CLOSED / COMPLETED
+owner acceptance: PASSED
 runtime impact: NONE
 preview: UNTOUCHED
 ```
 
-## Active SECURITY-BASELINE-001 execution
+Accepted baseline включает repository-grounded threat model, fail-closed production
+security settings, production `/admin/` unrouted by default, real CSRF negative
+evidence и явные residual handoffs без ложных PASS для MFA/SAST/upload/module
+registry. Все девять применимых exact-head workflows завершились `SUCCESS`:
 
-`SECURITY-BASELINE-001` выполняется только в issue #65, ветке
-`security/security-baseline-001` и Draft PR #66.
-
-Work item является последним обязательным элементом `SAFE-CONTINUATION` и закрывает
-только bounded threat-model / production-security baseline для `PSR-022`,
-`PSR-023`, `PSR-024` и `PSR-033`. Full `SECURITY-PIPELINE-001`,
-`AUTH-RBAC-HARDENING-001`, `UPLOAD-HARDENING-001` и `MODULE-REGISTRY-001`
-остаются отдельными будущими work items. Live VPS и Preview не изменяются.
-
-После принятия `BACKUP-RESTORE-DRILL-001` в `SAFE-CONTINUATION` принято 7 из 8
-обязательных work items. `SECURITY-BASELINE-001` имеет `IN_PROGRESS`.
-Предметная очередь сохраняется в состоянии
-`PAUSED_PENDING_SAFE_CONTINUATION_AND_EXPLICIT_OWNER_DECISION`.
-`SHIFT-HANDOVER-001` не стартовал.
+```text
+AUTO-001A Foundation CI:     31392880243 / SUCCESS
+AUTO-001B Controller CI:     31392880203 / SUCCESS
+EOD CI:                      31392880182 / SUCCESS
+EOD Documentation Contract: 31392880153 / SUCCESS
+EOD Development Stack:      31392880249 / SUCCESS
+EOD Secret Hygiene:          31392880240 / SUCCESS
+EOD Dependency Provenance:   31392880171 / SUCCESS
+EOD Backup Restore Drill:    31392880341 / SUCCESS
+EOD Deployment Profile:      31392880255 / SUCCESS
+```
 
 ## Accepted BACKUP-RESTORE-DRILL-001 baseline
 

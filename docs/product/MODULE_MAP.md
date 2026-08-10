@@ -37,4 +37,4 @@
 - `Release` — готовность заявленного Demo-depth, а не наличие отдельных моделей.
 - `Code` — доказанное состояние реализации.
 - Принятый work item не остаётся в execution queue.
-- `READY` у `SHIFT` не означает старт работы: domain queue приостановлена до `SAFE-CONTINUATION` и отдельного решения владельца.
+- `READY` у `SHIFT` не означает старт работы: после SAFE владелец выбрал сначала module registry и общую UX-платформу/page templates.
