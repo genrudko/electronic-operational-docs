@@ -70,6 +70,12 @@ class DeploymentEnvironmentContractTests(unittest.TestCase):
     def test_testing_mode_is_rejected(self) -> None:
         self.assert_rejected({"EOD_TESTING": "1"}, "EOD_TESTING")
 
+    def test_missing_secret_is_rejected(self) -> None:
+        env = safe_production_environment()
+        del env["DJANGO_SECRET_KEY"]
+        with self.assertRaisesRegex(DeploymentConfigurationError, "DJANGO_SECRET_KEY"):
+            validate_deployment_environment(env)
+
     def test_short_secret_is_rejected_without_echoing_value(self) -> None:
         env = safe_production_environment()
         value = "short-value"
@@ -104,6 +110,9 @@ class DeploymentEnvironmentContractTests(unittest.TestCase):
 
     def test_missing_reverse_proxy_contract_is_rejected(self) -> None:
         self.assert_rejected({"EOD_TLS_TERMINATION": ""}, "EOD_TLS_TERMINATION")
+
+    def test_invalid_tls_termination_mode_is_rejected(self) -> None:
+        self.assert_rejected({"EOD_TLS_TERMINATION": "direct"}, "EOD_TLS_TERMINATION")
 
     def test_missing_proxy_header_trust_is_rejected(self) -> None:
         self.assert_rejected({"EOD_TRUST_PROXY_HEADERS": "0"}, "EOD_TRUST_PROXY_HEADERS")

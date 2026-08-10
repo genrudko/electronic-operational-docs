@@ -24,6 +24,7 @@
 | `DEPENDENCY-PROVENANCE-001` | #58 | `0f0e92522e7a2c5d43dd635ed661c65ed5021422` | `5b54446d632ef1839d530dc2945255b3033359fe` | reproducible dependency/build provenance and exact-head Sigstore/OIDC evidence accepted |
 | `DEPLOYMENT-PROFILE-001` | #60 | `323f4fb9162e84ca25a49556340078de81af2424` | `1f3296bcf3d0f57bd088241c81691c7f54b2ac25` | fail-closed pilot/production deployment profile accepted; Preview untouched |
 | `MODULE-ACTIVATION-CONTRACT-001` | #62 | `6025d7b405bc1d88543dc341757e5685bcf05b98` | `3e43422ba6000c2aa5f4bdc6abe0f95c7774454f` | modular-monolith activation architecture contract accepted; Preview untouched |
+| `BACKUP-RESTORE-DRILL-001` | #64 | `9f9b650f637af7b9bbeb2c63cb3995763b0854e0` | `860e189bbb5bc05a6da4a7680acd5f719b4874af` | verified PostgreSQL restore and non-secret restore certificate accepted; Preview untouched |
 
 ### Why two heads appear for some historical PRs
 
@@ -38,6 +39,29 @@ The older acceptance document contained a period snapshot where PR #7 was still
 `OPEN / DRAFT / NOT MERGED`. That statement was true at the time of the snapshot
 but became stale after the later accepted merge. It is superseded by the ledger
 above; the existence of the earlier contradiction is explicitly preserved here.
+
+## BACKUP-RESTORE-DRILL-001 exact-head evidence
+
+```text
+AUTO-001A Foundation CI:     31386371816 / SUCCESS
+AUTO-001B Controller CI:     31386371838 / SUCCESS
+EOD CI:                      31386371846 / SUCCESS
+EOD Documentation Contract: 31386371860 / SUCCESS
+EOD Development Stack:      31386371839 / SUCCESS
+EOD Secret Hygiene:          31386371954 / SUCCESS
+EOD Dependency Provenance:   31386371897 / SUCCESS
+EOD Backup Restore Drill:    31386371849 / SUCCESS
+```
+
+Accepted exact head `9f9b650f637af7b9bbeb2c63cb3995763b0854e0` was merged as
+`860e189bbb5bc05a6da4a7680acd5f719b4874af`; issue #63 is `CLOSED / COMPLETED`
+and owner acceptance is `PASSED`. Restore evidence: PostgreSQL 18.4; backup
+`767106` bytes with SHA-256
+`8fccc071b5b4303d057108c969c8985fba4d77101202f07fd8545bfc34139285`; restore
+certificate SHA-256
+`6750218e2fd21bc18c634dafacd6d86c93962805350b3f0e9de57b556fe1de36`; measured
+restore `0.922 s`; complete CI drill `7.903 s`. Raw dump was not published and
+live Preview/VPS was untouched.
 
 ## MODULE-ACTIVATION-CONTRACT-001 exact-head evidence
 

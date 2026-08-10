@@ -33,6 +33,19 @@ Baseline фиксируется после применимых technical gates,
 | 2026-08-10 | `5b54446d632ef1839d530dc2945255b3033359fe` | DEPENDENCY-PROVENANCE-001 merge | accepted reproducible dependency/build provenance baseline |
 | 2026-08-10 | `1f3296bcf3d0f57bd088241c81691c7f54b2ac25` | DEPLOYMENT-PROFILE-001 merge | accepted fail-closed pilot/production deployment-profile baseline |
 | 2026-08-10 | `3e43422ba6000c2aa5f4bdc6abe0f95c7774454f` | MODULE-ACTIVATION-CONTRACT-001 merge | accepted module-activation architecture baseline |
+| 2026-08-10 | `860e189bbb5bc05a6da4a7680acd5f719b4874af` | BACKUP-RESTORE-DRILL-001 merge | accepted verified PostgreSQL restore / DR certificate baseline |
+
+## Reconciliation note — 2026-08-10 / Backup Restore Drill
+
+`BACKUP-RESTORE-DRILL-001` принят по exact head
+`9f9b650f637af7b9bbeb2c63cb3995763b0854e0` и merged в
+`860e189bbb5bc05a6da4a7680acd5f719b4874af`; issue #63 закрыт как `COMPLETED`,
+owner acceptance — `PASSED`. Canonical planning state переведён в `ACCEPTED`
+согласованно со стартом `SECURITY-BASELINE-001`. Restore certificate и final
+exact-head workflow IDs зафиксированы в acceptance evidence; raw dump не
+публиковался, live Preview/VPS остался untouched. После перехода
+`SAFE-CONTINUATION` имеет 7 из 8 принятых элементов; предметная очередь остаётся
+paused, `SHIFT-HANDOVER-001` не стартовал.
 
 ## Reconciliation note — 2026-08-10 / Module Activation
 
