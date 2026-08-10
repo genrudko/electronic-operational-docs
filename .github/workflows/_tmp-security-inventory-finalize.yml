@@ -34,7 +34,6 @@ jobs:
           git status --short
           printf '%s\n' \
             '.github/workflows/_tmp-security-inventory-finalize.yml' \
-            'docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.02.json' \
             'docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.json' \
             'docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.md' \
             | sort >"$RUNNER_TEMP/expected.txt"
