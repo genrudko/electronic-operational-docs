@@ -303,3 +303,82 @@ class ModuleRegistryTests(TestCase):
         self.assertEqual(rule.state, ModuleLifecycleState.INACTIVE)
         self.assertEqual(ModuleActivationRule.objects.count(), 1)
         self.assertGreaterEqual(ModuleActivationAuditEvent.objects.count(), 3)
+
+
+    def test_direct_rule_save_bypass_is_rejected(self) -> None:
+        direct = ModuleActivationRule(
+            module_id="OPJ",
+            scope_type=ModuleScopeType.ORGANIZATION,
+            scope_id=self.org.pk,
+            organization_id=self.org.pk,
+            state=ModuleLifecycleState.CONFIGURED,
+            configuration_ready=True,
+        )
+        with self.assertRaises(ValidationError):
+            direct.save()
+
+        rule = self.configure("OPJ", ModuleScopeType.ORGANIZATION)
+        rule.state = ModuleLifecycleState.ACTIVE
+        with self.assertRaises(ValidationError):
+            rule.save()
+        rule.refresh_from_db()
+        self.assertEqual(rule.state, ModuleLifecycleState.CONFIGURED)
+
+    def test_mixed_scope_module_sets_are_deterministic(self) -> None:
+        self.configure("OPJ", ModuleScopeType.ORGANIZATION)
+        self.transition(
+            "OPJ",
+            ModuleScopeType.ORGANIZATION,
+            ModuleLifecycleState.INACTIVE,
+        )
+        self.activate("OPJ", ModuleScopeType.ENERGY_SITE)
+        self.activate("DEFECT", ModuleScopeType.WORKPLACE)
+
+        organization_context = normalize_context(organization=self.org)
+        site_context = normalize_context(
+            organization=self.org,
+            energy_site=self.site,
+        )
+        workplace_context = normalize_context(
+            organization=self.org,
+            energy_site=self.site,
+            workplace=self.workplace,
+        )
+        other_context = normalize_context(
+            organization=self.other_org,
+            energy_site=self.other_site,
+            workplace=self.other_workplace,
+        )
+
+        self.assertEqual(
+            resolve_effective_state(
+                module_id="OPJ", context=organization_context
+            ).state,
+            ModuleLifecycleState.INACTIVE,
+        )
+        self.assertEqual(
+            resolve_effective_state(module_id="OPJ", context=site_context).state,
+            ModuleLifecycleState.ACTIVE,
+        )
+        self.assertEqual(
+            resolve_effective_state(
+                module_id="DEFECT", context=site_context
+            ).state,
+            ModuleLifecycleState.AVAILABLE,
+        )
+        self.assertEqual(
+            resolve_effective_state(
+                module_id="DEFECT", context=workplace_context
+            ).state,
+            ModuleLifecycleState.ACTIVE,
+        )
+        self.assertEqual(
+            resolve_effective_state(module_id="OPJ", context=other_context).state,
+            ModuleLifecycleState.AVAILABLE,
+        )
+        self.assertEqual(
+            resolve_effective_state(
+                module_id="DEFECT", context=other_context
+            ).state,
+            ModuleLifecycleState.AVAILABLE,
+        )

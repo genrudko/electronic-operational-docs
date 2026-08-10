@@ -87,7 +87,18 @@ class ModuleActivationRule(models.Model):
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         self.full_clean()
+        if not getattr(self, "_module_registry_lifecycle_write", False):
+            raise ValidationError(
+                "Прямое изменение правила активации запрещено; используйте lifecycle service."
+            )
         super().save(*args, **kwargs)
+
+    def save_lifecycle_transition(self) -> None:
+        self._module_registry_lifecycle_write = True
+        try:
+            self.save()
+        finally:
+            del self._module_registry_lifecycle_write
 
     def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
         del args, kwargs

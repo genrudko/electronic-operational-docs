@@ -605,7 +605,7 @@ def transition_module_state(
                     rule.configuration_ready = configuration_ready
                 if configuration is not None:
                     rule.configuration = dict(configuration)
-            rule.save()
+            rule.save_lifecycle_transition()
             resulting = resolve_effective_state(
                 module_id=manifest.module_id,
                 context=scoped_context,
