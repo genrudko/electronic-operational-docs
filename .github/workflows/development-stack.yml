@@ -170,7 +170,7 @@ jobs:
 
   visual-evidence:
     name: Direction A / DEFECT / OPJ visual evidence
-    if: ${{ github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'vps-development-refresh') }}
+    if: contains(github.event.pull_request.labels.*.name, 'vps-development-refresh')
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     container:
