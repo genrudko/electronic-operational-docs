@@ -4,7 +4,7 @@
 
 ## Итог
 
-- tracked files: `908`;
+- tracked files: `911`;
 - inventory entries: `85`;
 - floating inputs: `17`;
 - immutable inputs: `67`;
@@ -82,8 +82,8 @@
 | `INP-0031` | `github-action` | `.github/workflows/dependency-provenance.yml:384` | ci/deployment | `actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
 | `INP-0032` | `github-action` | `.github/workflows/dependency-provenance.yml:498` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
 | `INP-0033` | `github-action` | `.github/workflows/dependency-provenance.yml:508` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0034` | `github-action` | `.github/workflows/deployment-profile.yml:54` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0035` | `github-action` | `.github/workflows/deployment-profile.yml:207` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0034` | `github-action` | `.github/workflows/deployment-profile.yml:55` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0035` | `github-action` | `.github/workflows/deployment-profile.yml:219` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
 | `INP-0036` | `github-action` | `.github/workflows/development-stack.yml:30` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
 | `INP-0037` | `github-action` | `.github/workflows/development-stack.yml:144` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
 | `INP-0038` | `github-action` | `.github/workflows/documentation-contract.yml:24` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
