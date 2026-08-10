@@ -170,10 +170,21 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Security-sensitive HTTP/session semantics are explicit project decisions rather
+# than implicit Django defaults, so framework upgrades cannot silently weaken them.
 SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
 SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = "Lax"
+
+# Django admin is a privileged mutation surface. It remains available to the
+# development/CI profiles, but the production-capable SAFE baseline does not
+# route it at all. No environment opt-in exists here: any exceptional future
+# production exposure requires an explicit, separately assured design.
+EOD_DJANGO_ADMIN_ENABLED = not DEPLOYMENT_CONTRACT.production_capable
 
 if DEPLOYMENT_CONTRACT.production_capable:
     SECURE_SSL_REDIRECT = True
