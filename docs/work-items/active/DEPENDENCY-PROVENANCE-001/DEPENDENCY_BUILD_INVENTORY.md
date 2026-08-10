@@ -4,7 +4,7 @@
 
 ## Итог
 
-- tracked files: `903`;
+- tracked files: `904`;
 - inventory entries: `80`;
 - floating inputs: `17`;
 - immutable inputs: `62`;

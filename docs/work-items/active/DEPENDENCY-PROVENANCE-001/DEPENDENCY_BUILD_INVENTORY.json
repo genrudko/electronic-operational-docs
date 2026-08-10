@@ -490,7 +490,7 @@
     "inventory_entries": 80,
     "source_completeness_digests": 71,
     "source_files": 20,
-    "tracked_files": 903
+    "tracked_files": 904
   },
   "work_item": "DEPENDENCY-PROVENANCE-001"
 }
