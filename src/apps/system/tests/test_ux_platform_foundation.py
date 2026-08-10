@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path
 import re
+from pathlib import Path
 
 from django.test import SimpleTestCase
-
 
 ROOT = Path(__file__).resolve().parents[4]
 
@@ -70,8 +69,17 @@ class UxPlatformFoundationSourceContractTests(SimpleTestCase):
         base = read("src/templates/base.html")
         theme_resolution = base.index("root.dataset.theme = dark ? \"dark\" : \"light\"")
         first_stylesheet = base.index('rel="stylesheet"')
+        theme_stylesheet = base.index("system/theme.css")
+        compat_stylesheet = base.index("system/ux_platform_compat.css")
+        platform_stylesheet = base.index("system/ux_platform.css")
+        opj_stylesheet = base.index("operational_log/opj_ux_001.css")
+        extra_head = base.index("{% block extra_head %}")
 
         self.assertLess(theme_resolution, first_stylesheet)
+        self.assertLess(theme_stylesheet, compat_stylesheet)
+        self.assertLess(compat_stylesheet, platform_stylesheet)
+        self.assertLess(platform_stylesheet, opj_stylesheet)
+        self.assertLess(platform_stylesheet, extra_head)
         self.assertIn(
             'data-theme-preference="{{ ui_preferences.theme|lower }}"',
             base,
@@ -114,6 +122,12 @@ class UxPlatformFoundationSourceContractTests(SimpleTestCase):
         self.assertIn("@media (max-width: 980px)", platform)
         self.assertIn("@media (max-width: 700px)", platform)
         self.assertIn("prefers-reduced-motion", platform)
+        self.assertIn(
+            ':where(\n    body.ux-platform input:not([type="checkbox"])',
+            platform,
+        )
+        self.assertIn(":where(body.ux-platform textarea)", platform)
+        self.assertNotIn(".ux-textarea,\nbody.ux-platform textarea", platform)
 
     def test_shared_interaction_owner_covers_keyboard_and_focus_return(self) -> None:
         script = read("src/static/system/direction_a.js")

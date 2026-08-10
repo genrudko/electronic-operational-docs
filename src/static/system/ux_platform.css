@@ -576,9 +576,11 @@ textarea.da-field,
 .ux-input,
 .ux-select,
 .ux-textarea,
-body.ux-platform input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
-body.ux-platform select,
-body.ux-platform textarea {
+:where(
+    body.ux-platform input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+    body.ux-platform select,
+    body.ux-platform textarea
+) {
     width: 100%;
     min-height: var(--theme-control-height-md);
     padding: var(--theme-space-2) var(--theme-space-3);
@@ -589,17 +591,20 @@ body.ux-platform textarea {
 }
 
 .ux-textarea,
-body.ux-platform textarea {
+:where(body.ux-platform textarea) {
     min-height: 7rem;
     resize: vertical;
 }
 
-body.ux-platform input::placeholder,
-body.ux-platform textarea::placeholder {
+:where(body.ux-platform input, body.ux-platform textarea)::placeholder {
     color: var(--theme-placeholder);
 }
 
-body.ux-platform :where(input, select, textarea):hover:not(:disabled):not([readonly]) {
+:where(
+    body.ux-platform input:hover:not(:disabled):not([readonly]),
+    body.ux-platform select:hover:not(:disabled):not([readonly]),
+    body.ux-platform textarea:hover:not(:disabled):not([readonly])
+) {
     border-color: var(--theme-primary);
 }
 
