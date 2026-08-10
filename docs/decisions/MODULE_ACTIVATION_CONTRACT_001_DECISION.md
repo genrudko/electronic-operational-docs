@@ -19,9 +19,9 @@ Machine-readable contract:
 
 `docs/work-items/active/MODULE-ACTIVATION-CONTRACT-001/MODULE_ACTIVATION_CONTRACT.json`
 
-Fail-closed checker:
+Fail-closed checker integrated into the existing Documentation Contract entry point:
 
-`scripts/module_activation_contract.py`
+`scripts/check_documentation_contract.py`
 
 ## 2. Factual current-gap inventory
 
@@ -351,7 +351,7 @@ Machine checker/fixtures reject:
 9. Scope conflict/duplicates use random/first-match resolution.
 10. Reactivation creates a new module identity.
 
-Additional fixtures protect manifest minimum, `SERVICE` entry-point coverage, no direct `RETIRED -> ACTIVE`, and exact scope precedence.
+Additional fixtures protect manifest minimum, `SERVICE` entry-point coverage, no direct `RETIRED -> ACTIVE`, and exact scope precedence. Positive and negative module-contract validation is executed by the existing `scripts/check_documentation_contract.py` gate; no new executable supply-chain contour is introduced.
 
 ## 15. Current implementation-gap mapping
 
@@ -406,4 +406,4 @@ This PR does not change:
 - `SHIFT-HANDOVER-001`;
 - runtime `MODULE-REGISTRY-001`.
 
-The architecture is technically ready for owner acceptance only when this decision, machine contract, checker, negative fixtures, canonical transition and all applicable exact-head gates agree on one final head.
+The architecture is technically ready for owner acceptance only when this decision, machine contract, integrated Documentation Contract checker, negative fixtures, canonical transition and all applicable exact-head gates agree on one final head.
