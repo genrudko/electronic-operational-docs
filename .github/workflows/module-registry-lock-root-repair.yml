@@ -1,0 +1,107 @@
+name: EOD Module Registry Lock Root Repair
+
+on:
+  push:
+    branches:
+      - platform/module-registry-001
+    paths:
+      - .github/workflows/module-registry-lock-root-repair.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair-lock-root:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout branch head
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: platform/module-registry-001
+          fetch-depth: 0
+
+      - name: Set up accepted Python minor
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.13"
+          check-latest: false
+
+      - name: Pin accepted greenlet resolution and add regression evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          implementation = Path('scripts/dependency_provenance_implementation.py')
+          text = implementation.read_text(encoding='utf-8')
+          old = '    "gunicorn": "26.0.0",\n    "jsonschema": JSONSCHEMA_VERSION,'
+          new = '    "gunicorn": "26.0.0",\n    "greenlet": "3.5.4",\n    "jsonschema": JSONSCHEMA_VERSION,'
+          if old not in text and '    "greenlet": "3.5.4",' not in text:
+              raise SystemExit('accepted resolution insertion point changed')
+          implementation.write_text(text.replace(old, new, 1), encoding='utf-8')
+
+          registry_path = Path('supply-chain/registry.json')
+          registry = json.loads(registry_path.read_text(encoding='utf-8'))
+          registry['accepted_resolution']['greenlet'] = '3.5.4'
+          # Preserve the established compact canonical registry layout: only replace
+          # the accepted_resolution object, leaving historical generator evidence intact.
+          original = registry_path.read_text(encoding='utf-8')
+          start = original.index('"accepted_resolution": {')
+          object_start = original.index('{', start)
+          depth = 0
+          object_end = None
+          for index in range(object_start, len(original)):
+              char = original[index]
+              if char == '{':
+                  depth += 1
+              elif char == '}':
+                  depth -= 1
+                  if depth == 0:
+                      object_end = index + 1
+                      break
+          if object_end is None:
+              raise SystemExit('accepted_resolution object is malformed')
+          rendered = json.dumps(
+              dict(sorted(registry['accepted_resolution'].items())),
+              ensure_ascii=False,
+              separators=(',', ':'),
+          )
+          registry_path.write_text(
+              original[:object_start] + rendered + original[object_end:],
+              encoding='utf-8',
+          )
+
+          test_path = Path('tests/process/test_dependency_lock_constraints.py')
+          test_path.write_text('''from __future__ import annotations\n\nimport json\nimport unittest\nfrom pathlib import Path\n\nfrom scripts import dependency_provenance_implementation as implementation\n\nROOT = Path(__file__).resolve().parents[2]\n\n\nclass DependencyLockConstraintTests(unittest.TestCase):\n    def test_browser_greenlet_transitive_is_part_of_accepted_resolution(self) -> None:\n        browser = implementation.parse_lock(ROOT / "requirements/locks/browser.txt")\n        registry = json.loads((ROOT / "supply-chain/registry.json").read_text(encoding="utf-8"))\n\n        self.assertEqual(browser["greenlet"]["version"], "3.5.4")\n        self.assertEqual(implementation.ACCEPTED_RESOLUTION["greenlet"], "3.5.4")\n        self.assertEqual(registry["accepted_resolution"]["greenlet"], "3.5.4")\n\n\nif __name__ == "__main__":\n    unittest.main()\n''', encoding='utf-8')
+          PY
+
+      - name: Remove temporary diagnosis and self-remove workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm docs/work-items/active/MODULE-REGISTRY-001/LOCK_REGENERATION_DIAG.json
+          git rm .github/workflows/module-registry-lock-root-repair.yml
+
+      - name: Prove five-lock byte-for-byte regeneration
+        run: python scripts/regenerate_dependency_locks.py
+
+      - name: Run focused accepted-resolution regression
+        run: python -m unittest -v tests.process.test_dependency_lock_constraints
+
+      - name: Regenerate canonical dependency inventory
+        run: python scripts/dependency_provenance_views.py write
+
+      - name: Commit deterministic lock-root repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Pin browser transitive in accepted lock resolution"
+          git push origin HEAD:platform/module-registry-001
