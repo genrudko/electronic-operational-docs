@@ -10,10 +10,6 @@ Branch: `architecture/module-activation-contract-001`
 
 Draft PR: `#62 / OPEN / DRAFT / NOT MERGED`
 
-Runtime impact: `NONE`
-
-Preview: `UNTOUCHED`
-
 ## EXACT BASELINE SHA
 
 Accepted-main baseline at contour start:
