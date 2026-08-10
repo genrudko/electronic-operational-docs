@@ -4,7 +4,6 @@ from .actions import (
     confirm_deadline,
     confirm_resolution,
     extend_deadline,
-    register_defect,
 )
 from .helpers import (
     assert_terminal_lock,
@@ -13,6 +12,11 @@ from .helpers import (
     participant_for_role,
     participant_map,
     raw_field_values,
+)
+from .module_guarded import (
+    defect_opj_link_access_decision,
+    register_defect,
+    require_defect_opj_link_access,
 )
 from .schema import (
     ensure_defect_document_type,
@@ -37,6 +41,7 @@ __all__ = [
     "current_defect_volume",
     "defect_field_display",
     "defect_field_value",
+    "defect_opj_link_access_decision",
     "ensure_defect_document_type",
     "expected_contract",
     "extend_deadline",
@@ -46,6 +51,7 @@ __all__ = [
     "participant_map",
     "raw_field_values",
     "register_defect",
+    "require_defect_opj_link_access",
     "try_close_volume",
     "validate_installed_revision",
 ]
