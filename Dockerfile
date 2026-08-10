@@ -24,6 +24,7 @@ COPY src/static /app/src/static
 COPY src/templates /app/src/templates
 COPY manage.py /app/manage.py
 COPY scripts/container-entrypoint.sh /app/scripts/container-entrypoint.sh
+COPY scripts/deployment_preflight.py /app/scripts/deployment_preflight.py
 RUN chmod +x /app/scripts/container-entrypoint.sh \
     && mkdir -p /app/data /app/media /app/staticfiles /app/logs \
     && chown -R 10001:10001 /app

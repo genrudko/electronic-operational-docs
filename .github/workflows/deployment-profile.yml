@@ -1,0 +1,236 @@
+name: EOD Deployment Profile
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "Dockerfile"
+      - "compose.production.yaml"
+      - ".env.example"
+      - "src/eod_config/**"
+      - "scripts/container-entrypoint.sh"
+      - "scripts/deployment_preflight.py"
+      - "requirements/locks/**"
+      - "pyproject.toml"
+      - ".github/workflows/deployment-profile.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eod-deployment-profile-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  production-profile-smoke:
+    name: Production-capable profile smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      EOD_DEPLOYMENT_MODE: production
+      DJANGO_DEBUG: "0"
+      DJANGO_ALLOWED_HOSTS: eod-pilot.example.invalid
+      DJANGO_CSRF_TRUSTED_ORIGINS: https://eod-pilot.example.invalid
+      DJANGO_SECURE_HSTS_SECONDS: "3600"
+      DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS: "0"
+      DJANGO_SECURE_HSTS_PRELOAD: "0"
+      EOD_TLS_TERMINATION: reverse-proxy
+      EOD_TRUST_PROXY_HEADERS: "1"
+      EOD_TRUST_X_FORWARDED_HOST: "0"
+      DB_ENGINE: postgresql
+      POSTGRES_DB: eod_production_ci
+      POSTGRES_USER: eod_production_ci
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      EOD_DATABASE_PROFILE: production
+      EOD_ALLOW_SQLITE_PATH_OVERRIDE: "0"
+      EOD_PRODUCTION_PORT: "8767"
+      TIME_ZONE: Europe/Moscow
+
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Verify exact checked-out SHA
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$EXPECTED_SHA"
+          printf 'EXACT_HEAD=%s\n' "$actual_sha"
+
+      - name: Create masked ephemeral production credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          django_value="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+          postgres_value="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+          printf '::add-mask::%s\n' "$django_value"
+          printf '::add-mask::%s\n' "$postgres_value"
+          printf 'DJANGO_SECRET_KEY=%s\n' "$django_value" >>"$GITHUB_ENV"
+          printf 'POSTGRES_PASSWORD=%s\n' "$postgres_value" >>"$GITHUB_ENV"
+
+      - name: Validate positive production contract
+        run: python scripts/deployment_preflight.py --validate-only
+
+      - name: Prove SQLite production fallback is rejected
+        shell: bash
+        run: |
+          set -euo pipefail
+          if env DB_ENGINE=sqlite python scripts/deployment_preflight.py --validate-only \
+            >"$RUNNER_TEMP/negative-preflight.txt" 2>&1; then
+            echo "Unsafe SQLite production profile unexpectedly passed."
+            exit 1
+          fi
+          grep -F "SQLite fallback" "$RUNNER_TEMP/negative-preflight.txt" >/dev/null
+          echo "NEGATIVE_PREFLIGHT_SQLITE=PASS"
+
+      - name: Validate production Compose configuration
+        run: docker compose -f compose.production.yaml config --quiet
+
+      - name: Build production image
+        run: docker compose -f compose.production.yaml build --pull
+
+      - name: Start isolated production-capable stack
+        run: docker compose -f compose.production.yaml up --detach
+
+      - name: Wait for liveness and readiness
+        shell: bash
+        run: |
+          set -euo pipefail
+          probe() {
+            endpoint="$1"
+            output="$2"
+            curl --fail --silent --show-error \
+              --header 'Host: eod-pilot.example.invalid' \
+              --header 'X-Forwarded-Proto: https' \
+              "http://127.0.0.1:8767${endpoint}" >"$output"
+          }
+          for attempt in $(seq 1 45); do
+            if probe "/_health/live/" "$RUNNER_TEMP/production-live.raw.json" \
+              && probe "/_health/ready/" "$RUNNER_TEMP/production-ready.raw.json"; then
+              for name in live ready; do
+                python scripts/secret_hygiene.py redact \
+                  --input "$RUNNER_TEMP/production-${name}.raw.json" \
+                  --output "$RUNNER_TEMP/production-${name}.sanitized.json" \
+                  --env DJANGO_SECRET_KEY \
+                  --env POSTGRES_PASSWORD
+                python scripts/secret_hygiene.py verify-sanitized \
+                  --input "$RUNNER_TEMP/production-${name}.sanitized.json" \
+                  --env DJANGO_SECRET_KEY \
+                  --env POSTGRES_PASSWORD
+                cat "$RUNNER_TEMP/production-${name}.sanitized.json"
+              done
+              exit 0
+            fi
+            if (( attempt % 10 == 0 )); then
+              echo "Health attempt ${attempt}/45"
+              docker compose -f compose.production.yaml ps --all
+            fi
+            sleep 2
+          done
+          exit 1
+
+      - name: Verify PostgreSQL-only runtime identity
+        run: |
+          docker compose -f compose.production.yaml exec -T app \
+            python manage.py shell -c \
+            'from django.db import connection; assert connection.vendor == "postgresql"; assert connection.settings_dict["NAME"] == "eod_production_ci"; print("Production database identity: PostgreSQL / ok")'
+
+      - name: Verify production Django security settings
+        run: |
+          docker compose -f compose.production.yaml exec -T app \
+            python manage.py shell -c \
+            'from django.conf import settings; assert settings.DEBUG is False; assert settings.SECURE_SSL_REDIRECT is True; assert settings.SESSION_COOKIE_SECURE is True; assert settings.CSRF_COOKIE_SECURE is True; assert settings.SECURE_HSTS_SECONDS >= 3600; assert settings.SECURE_PROXY_SSL_HEADER == ("HTTP_X_FORWARDED_PROTO", "https"); assert settings.USE_X_FORWARDED_HOST is False; print("Production Django deployment settings: ok")'
+
+      - name: Run Django deployment checks with sanitised output
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -f compose.production.yaml exec -T app \
+            python manage.py check --deploy \
+            >"$RUNNER_TEMP/django-deploy-check.raw.txt" 2>&1
+          python scripts/secret_hygiene.py redact \
+            --input "$RUNNER_TEMP/django-deploy-check.raw.txt" \
+            --output "$RUNNER_TEMP/django-deploy-check.sanitized.txt" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$RUNNER_TEMP/django-deploy-check.sanitized.txt" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD
+          cat "$RUNNER_TEMP/django-deploy-check.sanitized.txt"
+
+      - name: Verify private port exposure
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_port="$(docker compose -f compose.production.yaml port app 8765)"
+          test "$app_port" = "127.0.0.1:8767"
+          db_port="$(docker compose -f compose.production.yaml port db 5432 2>/dev/null || true)"
+          test -z "$db_port"
+          echo "PRIVATE_PORT_BOUNDARY=PASS"
+
+      - name: Capture and verify sanitised production diagnostics after failure
+        id: diagnostics
+        if: ${{ failure() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "===== docker compose ps --all ====="
+            docker compose -f compose.production.yaml ps --all
+            echo
+            echo "===== docker compose logs ====="
+            docker compose -f compose.production.yaml logs --no-color
+          } >"$RUNNER_TEMP/production-diagnostics.raw.txt" 2>&1
+          python scripts/secret_hygiene.py redact \
+            --input "$RUNNER_TEMP/production-diagnostics.raw.txt" \
+            --output "$RUNNER_TEMP/production-diagnostics.sanitized.txt" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$RUNNER_TEMP/production-diagnostics.sanitized.txt" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD
+          printf 'verified=true\n' >>"$GITHUB_OUTPUT"
+          cat "$RUNNER_TEMP/production-diagnostics.sanitized.txt"
+
+      - name: Upload verified sanitised production diagnostics after failure
+        if: ${{ failure() && steps.diagnostics.outputs.verified == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: production-diagnostics-${{ github.run_id }}
+          path: ${{ runner.temp }}/production-diagnostics.sanitized.txt
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Stop isolated production-capable stack
+        if: ${{ always() }}
+        run: docker compose -f compose.production.yaml down --volumes --remove-orphans
+
+      - name: Remove production diagnostic transport files
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f \
+            "$RUNNER_TEMP/negative-preflight.txt" \
+            "$RUNNER_TEMP/production-live.raw.json" \
+            "$RUNNER_TEMP/production-live.sanitized.json" \
+            "$RUNNER_TEMP/production-ready.raw.json" \
+            "$RUNNER_TEMP/production-ready.sanitized.json" \
+            "$RUNNER_TEMP/django-deploy-check.raw.txt" \
+            "$RUNNER_TEMP/django-deploy-check.sanitized.txt" \
+            "$RUNNER_TEMP/production-diagnostics.raw.txt" \
+            "$RUNNER_TEMP/production-diagnostics.sanitized.txt"
+
+      - name: Verify production checkout remains exactly clean
+        if: ${{ always() }}
+        run: python scripts/secret_hygiene.py verify-clean-tree
