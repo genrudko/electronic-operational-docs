@@ -428,6 +428,13 @@ def _dependency_validation(
     return True, "required dependencies ACTIVE"
 
 
+def _persist_activation_rule(rule: ModuleActivationRule) -> None:
+    """Persist lifecycle state only after transition service validation."""
+
+    rule.full_clean()
+    super(ModuleActivationRule, rule).save()
+
+
 def _write_audit(
     *,
     module_id: str,
@@ -605,7 +612,7 @@ def transition_module_state(
                     rule.configuration_ready = configuration_ready
                 if configuration is not None:
                     rule.configuration = dict(configuration)
-            rule.save_lifecycle_transition()
+            _persist_activation_rule(rule)
             resulting = resolve_effective_state(
                 module_id=manifest.module_id,
                 context=scoped_context,
