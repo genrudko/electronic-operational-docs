@@ -33,6 +33,7 @@ services:
         condition: service_healthy
     environment:
       EOD_DEPLOYMENT_MODE: production
+      EOD_TESTING: "0"
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?DJANGO_SECRET_KEY is required}
       DJANGO_DEBUG: "0"
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:?DJANGO_ALLOWED_HOSTS is required}
