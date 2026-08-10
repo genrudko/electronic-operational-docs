@@ -23,8 +23,7 @@ class SecurityBaselineRouteTests(TestCase):
 
     def test_real_logout_mutation_rejects_missing_csrf_token(self) -> None:
         user = get_user_model().objects.create_user(
-            username="security-baseline-csrf-user",
-            password="temporary-test-password-only",
+            username="security-baseline-csrf-user"
         )
         client = Client(enforce_csrf_checks=True)
         client.force_login(user)
