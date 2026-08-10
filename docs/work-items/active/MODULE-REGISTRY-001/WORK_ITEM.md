@@ -8,7 +8,7 @@ Issue: `#67`
 
 Branch: `platform/module-registry-001`
 
-Draft PR: `PENDING`
+Draft PR: `#68 / OPEN / DRAFT / NOT MERGED`
 
 ## EXACT BASELINE SHA
 
@@ -114,7 +114,7 @@ Before implementation evidence:
 3. record `SAFE-CONTINUATION = 8/8 ACCEPTED`;
 4. record the explicit approved post-SAFE route above;
 5. set `MODULE-REGISTRY-001 = IN_PROGRESS`;
-6. update `CURRENT_STATE.md` to issue #67 / this branch / Draft PR;
+6. update `CURRENT_STATE.md` to issue #67 / this branch / Draft PR #68;
 7. append immutable histories and regenerate existing deterministic planning views/checks;
 8. do not start UX implementation in this PR.
 
