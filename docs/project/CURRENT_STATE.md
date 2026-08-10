@@ -7,32 +7,71 @@
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted main baseline: main / 1f3296bcf3d0f57bd088241c81691c7f54b2ac25
-active work item: MODULE-ACTIVATION-CONTRACT-001
-active issue: #61
-active PR: #62 / OPEN / DRAFT / NOT MERGED
-active branch: architecture/module-activation-contract-001
+accepted main baseline: main / 071ac654ba6c10f5846052551024e8d24941e9e9
+active work item: BACKUP-RESTORE-DRILL-001
+active issue: #63
+active PR: #64 / OPEN / DRAFT / NOT MERGED
+active branch: disaster-recovery/backup-restore-drill-001
 runtime impact: NONE
 preview: UNTOUCHED
 ```
 
-## Active MODULE-ACTIVATION-CONTRACT-001 execution
+## Active BACKUP-RESTORE-DRILL-001 execution
 
-`MODULE-ACTIVATION-CONTRACT-001` выполняется только в issue #61, ветке
-`architecture/module-activation-contract-001` и Draft PR #62.
+`BACKUP-RESTORE-DRILL-001` выполняется только в issue #63, ветке
+`disaster-recovery/backup-restore-drill-001` и Draft PR #64.
 
-Work item является архитектурным: он фиксирует canonical manifest, lifecycle,
-scope-resolution, dependency/integration semantics, universal access-decision
-contract, history/reactivation, migration boundary и activation audit до
-реализации `MODULE-REGISTRY-001`. Registry/control-plane tables, product/domain
-migrations, массовая wiring runtime guards, UX и новые журналы в этот PR не входят.
-Runtime impact — `NONE`; live VPS и Preview не изменяются.
+Work item закрывает `PSR-015 / CRITICAL`: требуется доказать пригодность реального
+PostgreSQL custom-format recovery point через checksum verification, явно
+идентифицированный clean/disposable restore target, успешный restore,
+application/data/integrity verification и fail-closed non-secret restore
+certificate. `PSR-013` является только границей для будущего
+`MIGRATION-SAFETY-001`; N-1/N/N-2 migration rehearsal в этот work item не входит.
+Live VPS и Preview не изменяются.
 
-`SAFE-CONTINUATION` после принятия Deployment Profile имеет 5 из 8 обязательных
-work items со статусом `ACCEPTED`; сам `MODULE-ACTIVATION-CONTRACT-001` имеет
-`IN_PROGRESS`. Предметная очередь сохраняется в состоянии
+После принятия `MODULE-ACTIVATION-CONTRACT-001` в `SAFE-CONTINUATION` принято
+6 из 8 обязательных work items. `BACKUP-RESTORE-DRILL-001` имеет `IN_PROGRESS`.
+Предметная очередь сохраняется в состоянии
 `PAUSED_PENDING_SAFE_CONTINUATION_AND_EXPLICIT_OWNER_DECISION`.
 `SHIFT-HANDOVER-001` не стартовал.
+
+## Accepted MODULE-ACTIVATION-CONTRACT-001 baseline
+
+`MODULE-ACTIVATION-CONTRACT-001` принят пользователем и merged обычным merge
+commit:
+
+```text
+accepted PR: #62 / CLOSED / MERGED
+accepted exact head: 6025d7b405bc1d88543dc341757e5685bcf05b98
+merge commit: 3e43422ba6000c2aa5f4bdc6abe0f95c7774454f
+issue: #61 / CLOSED / COMPLETED
+user acceptance: PASSED
+merge method: ORDINARY MERGE COMMIT
+squash / rebase: NOT USED
+runtime impact: NONE
+preview: UNTOUCHED
+```
+
+Принятый baseline фиксирует modular-monolith module activation contract:
+manifest, lifecycle, scoped precedence, dependency semantics, universal access
+decision, retained history/reactivation, migration boundary и activation audit.
+Registry/control-plane implementation в эту архитектурную приёмку не входила.
+Все применимые exact-head workflows завершились успешно:
+
+```text
+EOD CI:                      31374071063 / SUCCESS
+AUTO-001A Foundation CI:     31374071062 / SUCCESS
+AUTO-001B Controller CI:     31374071036 / SUCCESS
+EOD Documentation Contract: 31374071030 / SUCCESS
+EOD Development Stack:      31374071025 / SUCCESS
+EOD Secret Hygiene:          31374071050 / SUCCESS
+EOD Dependency Provenance:   31374071027 / SUCCESS
+```
+
+После merge в `main` были два документационных cleanup-коммита, которые взаимно
+обнулили content diff относительно accepted merge commit. Live `main`
+`071ac654ba6c10f5846052551024e8d24941e9e9` используется как factual accepted-main
+baseline для текущего work item без отката или расследования cleanup history.
 
 ## Accepted DEPLOYMENT-PROFILE-001 baseline
 
@@ -67,7 +106,7 @@ EOD Secret Hygiene:          31362143415 / SUCCESS
 ```
 
 `SAFE-CONTINUATION` после merge достигнут на 5 из 8 обязательных work items.
-`MODULE-ACTIVATION-CONTRACT-001` канонически переведён в `IN_PROGRESS`.
+`MODULE-ACTIVATION-CONTRACT-001` был канонически переведён в `IN_PROGRESS`.
 Это не означает достижения `SAFE-CONTINUATION` или готовности к пилоту.
 
 ## Accepted DEPENDENCY-PROVENANCE-001 baseline
