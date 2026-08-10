@@ -12,8 +12,8 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from eod_config.deployment import (  # noqa: E402
-    DeploymentConfigurationError,
     PRODUCTION_CAPABLE_MODE,
+    DeploymentConfigurationError,
     validate_deployment_environment,
 )
 
