@@ -188,8 +188,8 @@ jobs:
           python scripts/backup_restore_drill.py verify-certificate \
             --certificate "$evidence_dir/restore-certificate.json" \
             --certificate-checksum "$evidence_dir/restore-certificate.sha256"
-          python scripts/secret_hygiene.py verify-sanitized --input "$evidence_dir/restore-certificate.json" --env DJANGO_SECRET_KEY --env EOD_DEMO_USER_PASSWORD
-          python scripts/secret_hygiene.py verify-sanitized --input "$evidence_dir/restore-certificate.sha256" --env DJANGO_SECRET_KEY --env EOD_DEMO_USER_PASSWORD
+          python scripts/secret_hygiene.py verify-sanitized --input "$RUNNER_TEMP/eod-backup-restore-evidence/restore-certificate.json" --env DJANGO_SECRET_KEY --env EOD_DEMO_USER_PASSWORD
+          python scripts/secret_hygiene.py verify-sanitized --input "$RUNNER_TEMP/eod-backup-restore-evidence/restore-certificate.sha256" --env DJANGO_SECRET_KEY --env EOD_DEMO_USER_PASSWORD
           if find "$RUNNER_TEMP/eod-backup-restore-evidence" -type f -name '*.dump' -print -quit | grep -q .; then
             echo "Raw database dump entered publication evidence."
             exit 1
