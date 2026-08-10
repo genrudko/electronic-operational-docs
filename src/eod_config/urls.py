@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
@@ -7,7 +8,6 @@ urlpatterns = [
     path("_health/", health, name="health"),
     path("_health/live/", liveness, name="liveness"),
     path("_health/ready/", readiness, name="readiness"),
-    path("admin/", admin.site.urls),
     path("", include("apps.organizations.urls")),
     path("", include("apps.documents.urls")),
     path("", include("apps.normatives.urls")),
@@ -20,3 +20,6 @@ urlpatterns = [
     path("", include("apps.operational_log.urls")),
     path("", include("apps.system.urls")),
 ]
+
+if settings.EOD_DJANGO_ADMIN_ENABLED:
+    urlpatterns.insert(3, path("admin/", admin.site.urls))
