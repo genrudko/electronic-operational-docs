@@ -5,34 +5,34 @@ import json
 import unittest
 from pathlib import Path
 
-from scripts.module_activation_contract import (
-    apply_fixture_mutation,
-    load_contract,
-    validate_contract,
+from scripts.check_documentation_contract import (
+    apply_module_fixture_mutation,
+    load_module_activation_contract,
+    validate_module_activation_contract,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
-FIXTURE_PATH = (
-    ROOT / "tests/process/fixtures/module_activation_contract_cases.json"
-)
+FIXTURE_PATH = ROOT / "tests/process/fixtures/module_activation_contract_cases.json"
 
 
 class ModuleActivationContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.contract = load_contract(ROOT)
+        cls.contract = load_module_activation_contract(ROOT)
         cls.catalog = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
 
     def test_canonical_contract_is_valid(self) -> None:
-        self.assertEqual(validate_contract(self.contract), [])
+        self.assertEqual(validate_module_activation_contract(self.contract), [])
 
     def test_positive_and_fail_closed_negative_fixtures(self) -> None:
         for case in self.catalog["cases"]:
             with self.subTest(case=case["id"]):
                 candidate = copy.deepcopy(self.contract)
                 if case["mutation"] is not None:
-                    candidate = apply_fixture_mutation(candidate, case["mutation"])
-                errors = validate_contract(candidate)
+                    candidate = apply_module_fixture_mutation(
+                        candidate, case["mutation"]
+                    )
+                errors = validate_module_activation_contract(candidate)
                 expected_rule = case["expected_rule"]
                 if expected_rule is None:
                     self.assertEqual(errors, [])
@@ -54,7 +54,9 @@ class ModuleActivationContractTests(unittest.TestCase):
     def test_behavior_matrix_preserves_history_outside_active(self) -> None:
         matrix = self.contract["behavior_matrix"]
         for state in ("CONFIGURED", "INACTIVE", "RETIRED"):
-            self.assertIn("ALLOW_RETAINED_HISTORY", matrix[state]["detail_history"])
+            self.assertIn(
+                "ALLOW_RETAINED_HISTORY", matrix[state]["detail_history"]
+            )
             self.assertEqual(matrix[state]["create"], "DENY")
             self.assertEqual(matrix[state]["edit_transition"], "DENY")
 
