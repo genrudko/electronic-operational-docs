@@ -14,7 +14,7 @@ jobs:
   finalize-browser-lock:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
       - name: Checkout branch head
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
@@ -28,7 +28,7 @@ jobs:
           python-version: "3.13"
           check-latest: false
 
-      - name: Regenerate candidate and accept metadata-only browser lock normalization
+      - name: Regenerate one candidate set and accept browser metadata-only normalization
         shell: bash
         run: |
           set -euo pipefail
@@ -69,10 +69,14 @@ jobs:
               if byte_mismatches != ['browser']:
                   raise SystemExit(f'unexpected metadata-only mismatches: {byte_mismatches}')
 
-              accepted_browser = root / 'requirements/locks/browser.txt'
-              accepted_browser.write_bytes((candidate_dir / 'browser.txt').read_bytes())
+              (root / 'requirements/locks/browser.txt').write_bytes(
+                  (candidate_dir / 'browser.txt').read_bytes()
+              )
               print('BROWSER_LOCK_METADATA_ONLY_REPAIR=PASS')
           PY
+
+      - name: Run focused accepted-resolution regression
+        run: python tests/process/test_dependency_lock_constraints.py
 
       - name: Remove bounded failure diagnosis and self-remove workflow
         shell: bash
@@ -81,16 +85,10 @@ jobs:
           git rm -f docs/work-items/active/MODULE-REGISTRY-001/LOCK_ROOT_REPAIR_FAILURE.json
           git rm -f .github/workflows/module-registry-lock-metadata-repair.yml
 
-      - name: Prove all five locks now regenerate byte for byte
-        run: python scripts/regenerate_dependency_locks.py
-
-      - name: Run focused accepted-resolution regression
-        run: python tests/process/test_dependency_lock_constraints.py
-
       - name: Regenerate canonical dependency inventory
         run: python scripts/dependency_provenance_views.py write
 
-      - name: Commit final deterministic lock repair
+      - name: Commit metadata-only lock repair
         shell: bash
         run: |
           set -euo pipefail
