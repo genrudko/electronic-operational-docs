@@ -28,6 +28,7 @@ deployment secret store/environment and must never be committed.
 
 ```text
 EOD_DEPLOYMENT_MODE=production
+EOD_TESTING=0
 DJANGO_DEBUG=0
 DJANGO_SECRET_KEY=<strong unique value, >= 50 characters>
 DJANGO_ALLOWED_HOSTS=<explicit host list; no wildcard>
@@ -46,6 +47,10 @@ EOD_DATABASE_PROFILE=production
 EOD_ALLOW_SQLITE_PATH_OVERRIDE=0
 ```
 
+`compose.production.yaml` hard-codes `EOD_DEPLOYMENT_MODE=production`,
+`EOD_TESTING=0`, PostgreSQL and the repository-owned proxy safety switches so
+those boundaries cannot be inherited from a development, CI or Preview shell.
+
 `DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS` and `DJANGO_SECURE_HSTS_PRELOAD` default
 to `0`. Enable them only after the DNS/certificate scope is explicitly verified;
 this work item does not infer that every subdomain is ready for HSTS or preload.
@@ -58,8 +63,9 @@ Production startup/preflight rejects at least these states:
 |---|---|
 | missing/short Django secret | reject |
 | `DJANGO_DEBUG=1` | reject |
+| `EOD_TESTING=1` | reject |
 | empty or wildcard `DJANGO_ALLOWED_HOSTS` | reject |
-| missing, HTTP or wildcard CSRF trusted origin | reject |
+| missing, HTTP, credential-bearing or wildcard CSRF trusted origin | reject |
 | SQLite / unknown database engine | reject |
 | missing PostgreSQL DB/user/password/host/port | reject |
 | PostgreSQL password shorter than the repository minimum | reject |
@@ -112,17 +118,19 @@ exported:
 python scripts/deployment_preflight.py
 ```
 
-The command first validates the repository deployment contract and then runs:
+The command first validates the repository deployment contract and then invokes
+Django's management API in-process with the same deployment-check semantics as:
 
 ```bash
 python manage.py check --deploy
 ```
 
-A repository deployment-contract failure or Django deploy **error** prevents
-startup. Django deployment warnings remain visible for operator review. Some
-warnings can represent intentionally external decisions — for example HSTS
-subdomain/preload scope — and therefore are not silently converted into a
-repository claim about DNS/certificate coverage.
+No opaque child process is used by the operator preflight. A repository
+deployment-contract failure or Django deploy **error** prevents startup. Django
+deployment warnings remain visible for operator review. Some warnings can
+represent intentionally external decisions — for example HSTS subdomain/preload
+scope — and therefore are not silently converted into a repository claim about
+DNS/certificate coverage.
 
 For the Compose profile:
 
