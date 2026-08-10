@@ -34,7 +34,7 @@
 
 ## 2. Текущая программа исполнения
 
-`SAFE-CONTINUATION`: **ещё не достигнут**.
+`SAFE-CONTINUATION`: **достигнут**.
 
 | Фаза | Work item | Статус | Зависимости |
 |---:|---|---|---|
@@ -45,9 +45,9 @@
 | 1 | `DEPLOYMENT-PROFILE-001` | `ACCEPTED` | `DEPENDENCY-PROVENANCE-001` |
 | 1 | `MODULE-ACTIVATION-CONTRACT-001` | `ACCEPTED` | `PROJECT-STATE-RECONCILIATION-001` |
 | 1 | `SECRET-HYGIENE-001` | `ACCEPTED` | — |
-| 1 | `SECURITY-BASELINE-001` | `IN_PROGRESS` | `DEPLOYMENT-PROFILE-001` |
+| 1 | `SECURITY-BASELINE-001` | `ACCEPTED` | `DEPLOYMENT-PROFILE-001` |
 | 2 | `MODULE-BOUNDARY-GATES-001` | `NOT_STARTED` | `MODULE-ACTIVATION-CONTRACT-001` |
-| 2 | `MODULE-REGISTRY-001` | `NOT_STARTED` | `MODULE-ACTIVATION-CONTRACT-001`, `SECURITY-BASELINE-001` |
+| 2 | `MODULE-REGISTRY-001` | `IN_PROGRESS` | `MODULE-ACTIVATION-CONTRACT-001`, `SECURITY-BASELINE-001` |
 | 3 | `DATA-GOVERNANCE-001` | `NOT_STARTED` | `DATA-INTEGRITY-HARDENING-001` |
 | 3 | `DATA-INTEGRITY-HARDENING-001` | `NOT_STARTED` | `DEPLOYMENT-PROFILE-001` |
 | 3 | `DATA-PORTABILITY-001` | `NOT_STARTED` | `DATA-GOVERNANCE-001` |
@@ -71,9 +71,9 @@
 
 ## 3. Предметная очередь Demo
 
-Статус очереди: `PAUSED_PENDING_SAFE_CONTINUATION_AND_EXPLICIT_OWNER_DECISION`.
+Статус очереди: `PAUSED_PENDING_MODULE_REGISTRY_AND_UX_FOUNDATIONS`.
 
-Работа `SHIFT-HANDOVER-001` и следующие предметные work items не стартуют автоматически. После достижения `SAFE-CONTINUATION` требуется отдельное явное решение владельца.
+Предметная очередь не стартует автоматически. После SAFE владелец явно выбрал MODULE-REGISTRY -> UX foundation/page templates -> product/module development; SHIFT-HANDOVER-001 пока не стартовал.
 
 | # | Work item | Модуль | Цель |
 |---:|---|---|---|

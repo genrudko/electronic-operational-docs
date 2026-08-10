@@ -849,13 +849,14 @@ def render_execution_backlog(
         "## 1. Product-owner / operator summary",
         "",
         f"- Phase 0: `{'COMPLETE' if _phase_zero_complete(plan_items) else 'IN PROGRESS'}`.",
-        f"- `SAFE-CONTINUATION`: `{safe_done}/{safe_total}` accepted; **NOT ACHIEVED**.",
+        f"- `SAFE-CONTINUATION`: `{safe_done}/{safe_total}` accepted; "
+        f"**{'ACHIEVED' if safe_done == safe_total else 'NOT ACHIEVED'}**.",
         (
             "- `PILOT-READY` mandatory core: "
             f"`{pilot_done}/{pilot_total}` accepted; **NOT ACHIEVED**."
         ),
         "- Предметная очередь: "
-        "`PAUSED_PENDING_SAFE_CONTINUATION_AND_EXPLICIT_OWNER_DECISION`.",
+        f"`{plan.get('execution', {}).get('domain_queue_status', 'UNKNOWN')}`.",
         "- `SHIFT-HANDOVER-001`: `NOT STARTED`; automatic start forbidden.",
         "- Достижение всех checklist items не заменяет отдельное решение владельца.",
         "",
@@ -931,8 +932,9 @@ def render_execution_backlog(
     lines.extend(
         [
             "",
-            "Completion of all eight items still requires an explicit "
-            "product-owner decision before any limited domain continuation.",
+            "SAFE-CONTINUATION is complete. The product owner explicitly selected "
+            "MODULE-REGISTRY -> UX foundation/page templates -> product/module "
+            "development before remaining risk-based PILOT-READY hardening.",
             "",
             "## 6. PILOT-READY mandatory core",
             "",

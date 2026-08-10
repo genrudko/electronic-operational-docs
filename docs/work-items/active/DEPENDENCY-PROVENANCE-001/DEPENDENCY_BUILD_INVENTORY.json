@@ -443,7 +443,7 @@
     "scripts/dependency_provenance_core.py": "aa8045db8abb15896bcec63bda733c2ebd7b121f02f4558137b72b922b79f554",
     "scripts/dependency_provenance_fixture_gates.py": "e06f9b0bf060e0b6823975662ed7006a763a713965321bb2e77cd2637f3b3a57",
     "scripts/dependency_provenance_gate.py": "107e2446252fb35700e1a7bb9a433020fc05ded6226dac7b2b3f1f63375d6056",
-    "scripts/dependency_provenance_implementation.py": "56e2880c235d497eae73063c3486762ace2246ac11774a18a694ff4f7ac060dc",
+    "scripts/dependency_provenance_implementation.py": "978d22bf311a3aacfedc4843b3b7b2ff5d2dabf00ea840d0d2230e2f02a0f62b",
     "scripts/dependency_provenance_inventory.py": "870f9bbd4b5ced0585a330c180b6e738378f201125b6a346ee1823a86da60980",
     "scripts/dependency_provenance_source_gate.py": "57ec597d4c7749bd595e4aee43e2ae6881edd667b8b2ad2b84a6ea4c6953fd2e",
     "scripts/dependency_provenance_views.py": "853f0dff3d24ac05b6d99478b1e6ef03933a3f4e90fde1df669cd3189591c355",
@@ -461,8 +461,8 @@
     "scripts/regenerate_dependency_locks.py": "0c4fe4a560b2ea3c08490f9d7eadebf03ba333bfc581259dfc81697a20094a7f",
     "scripts/release_plan_compat_validation.py": "5846e1c11f457fcc8ce5613b43da2832cd812407a7242cebc26bb8baa8ce9ec8",
     "scripts/release_plan_model.py": "e0acfdf300bf94a6b30d2d90c5b555bc014b839496b4f81945a9a0a0f1418c32",
-    "scripts/release_plan_validation.py": "fd540028b2e8e6edf30b61631dd8028741fcc8fcfbdb68a3772472acd5aee732",
-    "scripts/release_plan_views.py": "67d69f83cf0c67332c68398ddd3daf86f9710828a91b53f3dbc7b9528c08d019",
+    "scripts/release_plan_validation.py": "977a30ab241819a439c1e86023674092903ee9cde71efccb6b8dff2ce93cfa4e",
+    "scripts/release_plan_views.py": "d9295e99c2993e895a4d3a8e936bc159ca7286f169d5285ac7e1f0cee48e8b20",
     "scripts/reset_development_database.sh": "c2162288146fdad508b1791e13f7e08403b08c77bca4beb5da45b04c80d730da",
     "scripts/run_dev.ps1": "87d226cae1b8721246845926ac6131eb396dc5d07f23d0460fdc40103575dc9a",
     "scripts/run_plan_001_audit.sh": "6a682fac647a3585f200872436fad447081aadea9db4ff6efdb7c2fd3f3cf35a",
@@ -504,7 +504,7 @@
     "inventory_entries": 85,
     "source_completeness_digests": 73,
     "source_files": 21,
-    "tracked_files": 911
+    "tracked_files": 921
   },
   "work_item": "DEPENDENCY-PROVENANCE-001"
 }

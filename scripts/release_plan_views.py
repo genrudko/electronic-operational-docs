@@ -39,8 +39,8 @@ def render_module_map(plan: dict[str, Any]) -> str:
             "отдельных моделей.",
             "- `Code` — доказанное состояние реализации.",
             "- Принятый work item не остаётся в execution queue.",
-            "- `READY` у `SHIFT` не означает старт работы: domain queue "
-            "приостановлена до `SAFE-CONTINUATION` и отдельного решения владельца.",
+            "- `READY` у `SHIFT` не означает старт работы: после SAFE владелец "
+            "выбрал сначала module registry и общую UX-платформу/page templates.",
             "",
         ]
     )
@@ -50,6 +50,8 @@ def render_module_map(plan: dict[str, Any]) -> str:
 def render_sequence(plan: dict[str, Any], program: Program) -> str:
     modules = {item["id"]: item for item in plan["modules"]}
     statuses = {item["id"]: item["status"] for item in plan["work_items"]}
+    safe_required = program.gates["SAFE-CONTINUATION"].required
+    safe_achieved = all(statuses.get(item_id) == "ACCEPTED" for item_id in safe_required)
     lines = [
         "# Последовательность реализации",
         "",
@@ -74,7 +76,7 @@ def render_sequence(plan: dict[str, Any], program: Program) -> str:
             "",
             "## 2. Текущая программа исполнения",
             "",
-            "`SAFE-CONTINUATION`: **ещё не достигнут**.",
+            f"`SAFE-CONTINUATION`: **{'достигнут' if safe_achieved else 'ещё не достигнут'}**.",
             "",
             "| Фаза | Work item | Статус | Зависимости |",
             "|---:|---|---|---|",
@@ -99,9 +101,9 @@ def render_sequence(plan: dict[str, Any], program: Program) -> str:
             "",
             f"Статус очереди: `{plan['execution']['domain_queue_status']}`.",
             "",
-            "Работа `SHIFT-HANDOVER-001` и следующие предметные work items не "
-            "стартуют автоматически. После достижения `SAFE-CONTINUATION` "
-            "требуется отдельное явное решение владельца.",
+            "Предметная очередь не стартует автоматически. После SAFE владелец "
+            "явно выбрал MODULE-REGISTRY -> UX foundation/page templates -> "
+            "product/module development; SHIFT-HANDOVER-001 пока не стартовал.",
             "",
             "| # | Work item | Модуль | Цель |",
             "|---:|---|---|---|",

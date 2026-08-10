@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import module_guarded_views, views
 
 app_name = "equipment_defects"
 
@@ -9,7 +9,7 @@ urlpatterns = [
     path("operations/defects/new/", views.create, name="create"),
     path(
         "operations/defects/new/from-operational-log/<int:entry_id>/",
-        views.create_from_operational_log,
+        module_guarded_views.create_from_operational_log,
         name="create_from_operational_log",
     ),
     path("operations/defects/print/", views.print_view, name="print"),

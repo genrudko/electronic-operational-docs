@@ -34,6 +34,7 @@ Baseline фиксируется после применимых technical gates,
 | 2026-08-10 | `1f3296bcf3d0f57bd088241c81691c7f54b2ac25` | DEPLOYMENT-PROFILE-001 merge | accepted fail-closed pilot/production deployment-profile baseline |
 | 2026-08-10 | `3e43422ba6000c2aa5f4bdc6abe0f95c7774454f` | MODULE-ACTIVATION-CONTRACT-001 merge | accepted module-activation architecture baseline |
 | 2026-08-10 | `860e189bbb5bc05a6da4a7680acd5f719b4874af` | BACKUP-RESTORE-DRILL-001 merge | accepted verified PostgreSQL restore / DR certificate baseline |
+| 2026-08-10 | `862b682ba19b6747ea6f4d41fd31322808140b82` | SECURITY-BASELINE-001 merge | accepted threat model / fail-closed production-security baseline; SAFE-CONTINUATION 8/8 |
 
 ## Reconciliation note — 2026-08-10 / Backup Restore Drill
 
@@ -100,3 +101,16 @@ repository/CI/artifact контура, canonical scanner и post-redaction verif
 Canonical current state не выводится из последней строки таблицы: его всегда
 нужно читать в `CURRENT_STATE.md`. Planning status и accepted work-item evidence
 принадлежат `DEMO_RELEASE_PLAN.yaml`.
+
+## Strategy decision — 2026-08-10 / post SAFE-CONTINUATION
+
+`SECURITY-BASELINE-001` принят по exact head `b59a9485187dbd588c7b9f35bfd634c89344ea9d` и merged в
+`862b682ba19b6747ea6f4d41fd31322808140b82`. `SAFE-CONTINUATION = 8/8 ACCEPTED`.
+
+Владелец отдельно утвердил дальнейший маршрут:
+
+`SAFE closure -> MODULE-REGISTRY-001 -> UX-PLATFORM-FOUNDATION-001 + PAGE-TEMPLATE-LIBRARY-001 with controlled existing-UI migration -> new product/module development -> PILOT-READY hardening in risk-based portions`.
+
+Это решение прекращает автоматическое наращивание hardening после SAFE. Текущий
+активный work item — `MODULE-REGISTRY-001`; предметная очередь не стартует до
+завершения registry и утверждённого UX foundation/page-template этапа.

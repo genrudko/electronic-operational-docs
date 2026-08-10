@@ -105,6 +105,7 @@ ACCEPTED_RESOLUTION = {
     "django": "5.2.17",
     "et-xmlfile": "2.0.0",
     "gunicorn": "26.0.0",
+    "greenlet": "3.5.4",
     "jsonschema": JSONSCHEMA_VERSION,
     "openpyxl": "3.1.5",
     "packaging": "26.3",

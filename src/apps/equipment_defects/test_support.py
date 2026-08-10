@@ -18,6 +18,8 @@ from apps.organizations.models import (
     Position,
     Workplace,
 )
+from apps.system.models import ModuleLifecycleState, ModuleScopeType
+from apps.system.module_registry import normalize_context, transition_module_state
 from tests.credential_fixtures import ephemeral_credential
 
 from .services import register_defect
@@ -164,6 +166,31 @@ class EquipmentDefectSourceBoundBase(DefectFixtureMixin):
             event_at=timezone.now() - timedelta(hours=3),
             content="При осмотре выявлено замечание по демонстрационному выключателю.",
             equipment=[cls.fixture["equipment"]],
+        )
+
+        # Module state is test data, not a migration default. Existing defect tests
+        # explicitly activate the representative module instead of relying on an
+        # upgrade-time auto-activation shortcut.
+        context = normalize_context(
+            organization=cls.fixture["organization"],
+            workplace=cls.fixture["workplace"],
+        )
+        transition_module_state(
+            module_id="DEFECT",
+            context=context,
+            scope_type=ModuleScopeType.ORGANIZATION,
+            new_state=ModuleLifecycleState.CONFIGURED,
+            actor_identity="tests/equipment-defects",
+            reason="configure defect module for defect fixture",
+            configuration_ready=True,
+        )
+        transition_module_state(
+            module_id="DEFECT",
+            context=context,
+            scope_type=ModuleScopeType.ORGANIZATION,
+            new_state=ModuleLifecycleState.ACTIVE,
+            actor_identity="tests/equipment-defects",
+            reason="activate defect module for defect fixture",
         )
 
     def register(self, *, link_to_log: bool = False) -> OperationalDocumentRecord:
