@@ -21,6 +21,7 @@
       "compose_files": [
         "compose.development.yaml",
         "compose.preview.yaml",
+        "compose.production.yaml",
         "compose.yaml",
         "deploy/automation/compose.development.yaml"
       ],
@@ -31,12 +32,13 @@
       ]
     },
     "executable_sources": {
-      "applicable_count": 63,
+      "applicable_count": 69,
       "applicable_paths": [
         ".github/workflows/auto-001a-foundation-ci.yml",
         ".github/workflows/auto-001b-controller-ci.yml",
         ".github/workflows/ci.yml",
         ".github/workflows/dependency-provenance.yml",
+        ".github/workflows/deployment-profile.yml",
         ".github/workflows/development-stack.yml",
         ".github/workflows/documentation-contract.yml",
         ".github/workflows/eod-hot-refresh.yml",
@@ -46,6 +48,7 @@
         "Dockerfile",
         "compose.development.yaml",
         "compose.preview.yaml",
+        "compose.production.yaml",
         "compose.yaml",
         "deploy/automation/Dockerfile.development",
         "deploy/automation/app-entrypoint.sh",
@@ -65,6 +68,7 @@
         "scripts/dependency_provenance_inventory.py",
         "scripts/dependency_provenance_source_gate.py",
         "scripts/dependency_provenance_views.py",
+        "scripts/deployment_preflight.py",
         "scripts/development-entrypoint.sh",
         "scripts/development_stack.sh",
         "scripts/eod_context_manager.py",
@@ -89,6 +93,9 @@
         "scripts/snapshot_presentation_database.py",
         "scripts/theme_css_audit.py",
         "src/apps/system/plan_001_audit/core.py",
+        "src/apps/system/tests/test_deployment_health.py",
+        "src/apps/system/tests/test_deployment_profile.py",
+        "src/eod_config/deployment.py",
         "supply-chain/Dockerfile.browser",
         "tests/automation/test_auto_001b_request_entrypoint.py",
         "tests/browser_theme/run.py",
@@ -102,11 +109,11 @@
       "independent_checker": "scripts/dependency_provenance_source_gate.py::independently_applicable_paths",
       "independent_complete": true,
       "source_kinds": {
-        "compose": 4,
+        "compose": 5,
         "dockerfile": 3,
-        "github-workflow": 10,
+        "github-workflow": 11,
         "powershell": 3,
-        "python-operator": 34,
+        "python-operator": 38,
         "shell": 8,
         "shell-shebang": 1
       },
@@ -124,6 +131,7 @@
         ".github/workflows/auto-001b-controller-ci.yml",
         ".github/workflows/ci.yml",
         ".github/workflows/dependency-provenance.yml",
+        ".github/workflows/deployment-profile.yml",
         ".github/workflows/development-stack.yml",
         ".github/workflows/documentation-contract.yml",
         ".github/workflows/eod-hot-refresh.yml",
@@ -158,12 +166,13 @@
         "actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803"
       ],
       "name": "actions/checkout",
-      "occurrences": 11,
+      "occurrences": 12,
       "paths": [
         ".github/workflows/auto-001a-foundation-ci.yml",
         ".github/workflows/auto-001b-controller-ci.yml",
         ".github/workflows/ci.yml",
         ".github/workflows/dependency-provenance.yml",
+        ".github/workflows/deployment-profile.yml",
         ".github/workflows/development-stack.yml",
         ".github/workflows/documentation-contract.yml",
         ".github/workflows/eod-hot-refresh.yml",
@@ -210,12 +219,13 @@
         "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
       ],
       "name": "actions/upload-artifact",
-      "occurrences": 9,
+      "occurrences": 10,
       "paths": [
         ".github/workflows/auto-001a-foundation-ci.yml",
         ".github/workflows/auto-001b-controller-ci.yml",
         ".github/workflows/ci.yml",
         ".github/workflows/dependency-provenance.yml",
+        ".github/workflows/deployment-profile.yml",
         ".github/workflows/development-stack.yml",
         ".github/workflows/documentation-contract.yml",
         ".github/workflows/eod-hot-refresh.yml"
@@ -228,12 +238,13 @@
         "postgres@sha256:882236b897e39051d2368c5ccc6cda944904723506b2dfc97f2a8f5bc9afa382"
       ],
       "name": "postgres",
-      "occurrences": 6,
+      "occurrences": 7,
       "paths": [
         ".github/workflows/ci.yml",
         ".github/workflows/dependency-provenance.yml",
         "compose.development.yaml",
         "compose.preview.yaml",
+        "compose.production.yaml",
         "compose.yaml",
         "deploy/automation/compose.development.yaml"
       ]
@@ -252,7 +263,7 @@
       ]
     }
   ],
-  "entries_total": 77,
+  "entries_total": 80,
   "entry_format": "full records in deterministic JSON shards",
   "entry_shards": [
     {
@@ -260,48 +271,48 @@
       "first_id": "INP-0001",
       "last_id": "INP-0020",
       "path": "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.01.json",
-      "sha256": "09020ae7addd7d33a66efeaf29033feafdd2efb9cf124f08ac1add09d53792ba"
+      "sha256": "12c6be1370821e24a59a6fe789c0c511a6f243661568e83274d715a575aaa30f"
     },
     {
       "entry_count": 20,
       "first_id": "INP-0021",
       "last_id": "INP-0040",
       "path": "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.02.json",
-      "sha256": "4134cbed9b232c2321da530bbd1e01bc92c2e23ac0c7d266d338ab2e4a8b8946"
+      "sha256": "7bbc48ed6df69a113daf3b8b4ab6635ad07bde92f40d162bacbd5c5dc9e8b041"
     },
     {
       "entry_count": 20,
       "first_id": "INP-0041",
       "last_id": "INP-0060",
       "path": "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.03.json",
-      "sha256": "272563f563607006b3140fa8ef0934e8ebcfbcaf5ba4ef01e3e710b44f71d840"
+      "sha256": "f9c8a08988ff7794aafed4c9e8b4762f2c41759c175f5fb993f077ef8a36e780"
     },
     {
-      "entry_count": 17,
+      "entry_count": 20,
       "first_id": "INP-0061",
-      "last_id": "INP-0077",
+      "last_id": "INP-0080",
       "path": "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.04.json",
-      "sha256": "aa1052bb385c1ae51d20b475bb35661d0efaf594974feaf5839edc7fe1f1dffa"
+      "sha256": "722921b4f1ce47db473d82226fbe9f6c5658027aea92bd92b8d28a3e4808c947"
     }
   ],
   "floating_input_ids": [
-    "INP-0011",
-    "INP-0045",
-    "INP-0049",
-    "INP-0053",
-    "INP-0057",
-    "INP-0061",
+    "INP-0012",
+    "INP-0048",
+    "INP-0052",
+    "INP-0056",
+    "INP-0060",
     "INP-0064",
-    "INP-0066",
-    "INP-0068",
+    "INP-0067",
     "INP-0069",
-    "INP-0070",
     "INP-0071",
     "INP-0072",
     "INP-0073",
     "INP-0074",
+    "INP-0075",
     "INP-0076",
-    "INP-0077"
+    "INP-0077",
+    "INP-0079",
+    "INP-0080"
   ],
   "generation": {
     "deterministic": true,
@@ -325,7 +336,7 @@
     "INP-0008",
     "INP-0009",
     "INP-0010",
-    "INP-0012",
+    "INP-0011",
     "INP-0013",
     "INP-0014",
     "INP-0015",
@@ -358,22 +369,25 @@
     "INP-0042",
     "INP-0043",
     "INP-0044",
+    "INP-0045",
     "INP-0046",
     "INP-0047",
-    "INP-0048",
+    "INP-0049",
     "INP-0050",
     "INP-0051",
-    "INP-0052",
+    "INP-0053",
     "INP-0054",
     "INP-0055",
-    "INP-0056",
+    "INP-0057",
     "INP-0058",
     "INP-0059",
-    "INP-0060",
+    "INP-0061",
     "INP-0062",
     "INP-0063",
     "INP-0065",
-    "INP-0067"
+    "INP-0066",
+    "INP-0068",
+    "INP-0070"
   ],
   "limitations": [
     "Network registries are not queried; future tag movement is outside repository evidence.",
@@ -388,15 +402,17 @@
     ".github/workflows/auto-001b-controller-ci.yml": "340dce479c9db549fe236a0f8f2f36ce8428b3f3c9c4b4dd1eca67688694bf5a",
     ".github/workflows/ci.yml": "8c5de32f8e1232804de2dd1d5ff47a4716f5bc47966def46eaeebe410557ae5e",
     ".github/workflows/dependency-provenance.yml": "d13c3c12660a2f4633ea2e22506674e70337dda4fab6c9d60d63b9a74eb62cab",
+    ".github/workflows/deployment-profile.yml": "f1ea8924b38d70cf886468b7d9ed627173fb2554bb976e3128a122829e96eb3b",
     ".github/workflows/development-stack.yml": "ae97a01a1f46b61d8a98eb556821c9dbfa07434de232b223023c110cec62fe67",
     ".github/workflows/documentation-contract.yml": "5f35d6a9a21f57ce6b14ffe72f655a4cd18661fe664173da4a7e0fd5a8919bff",
     ".github/workflows/eod-hot-refresh.yml": "8e60fdc3a4992eefee0a852fbb5ddca2862a6d3545807f8e31a8923540b4c609",
     ".github/workflows/secret-hygiene.yml": "93a89ee3912a5c12b28a3acf865342cc5ece13841421ee7de4fd9470d9374bb5",
     ".github/workflows/telegram-workflow-notifications.yml": "eff2979fc7b957f16cfbc798154f9f9d641e4f53d93d64441c4e4470b89eda03",
     ".github/workflows/vps-development.yml": "ebd78c3f9dc00b5a5a1a07e91abc3e9cbe7a796e408363e6e60878cbf8aa3263",
-    "Dockerfile": "1286ad6ae8649e7d48b68346f2d0ed52e693aeff813676a7346f8c4248d49309",
+    "Dockerfile": "3f057c146ca67e221a559a67ba6e24983f4a44a24eb64e3991f43363daf2f1b5",
     "compose.development.yaml": "5537ce2e1ddb2712de4cacd475097fa5d017b4362324e843337ecf876a27cdbe",
     "compose.preview.yaml": "fd254e30a06b235f088fb8cafaeb25312e868dc1c290d5521e283ae5fd966773",
+    "compose.production.yaml": "263180968dc91406cdc2216145b9654a1a2028e550124fe55a0aed6bf641f383",
     "compose.yaml": "0386c733679ddc25bf26f7a7f2e3af4a8573ab63e782f6e385758041944b86a0",
     "deploy/automation/Dockerfile.development": "247fde6d3869c94ff333389a4db4856fd759bd70785c4e39f857ea8aebefa44a",
     "deploy/automation/app-entrypoint.sh": "9c895bf50e7c75619d01ca950e20cfd7226b74c763da5c641af6b73ec47192d1",
@@ -407,7 +423,7 @@
     "pyproject.toml": "f9ce4d39068a7646d34fe999f7e47fd072695be4486582fc5022b24f77c2e4fb",
     "scripts/check_demo_release_plan.py": "4171effe34e2ebebe5fbade8a0d5918b6f67d39ca1d0443de8bdd2f02246d115",
     "scripts/check_documentation_contract_core.py": "0217f833d4fa01adba3e0f9c160b0db46cffd50833cfd2aa30564b73a9f2425c",
-    "scripts/container-entrypoint.sh": "4c267b91042708b34626196626cdd34edfd34cb1216b7663680d699808778aeb",
+    "scripts/container-entrypoint.sh": "4722a110250dd0f0182f4d00ad8415dcbd70bb10169d3dcb54481eb315727b26",
     "scripts/demo_release_plan.py": "b7862a65b0e725c0678058ac2e0dcd6667db2a60b86da6888233f7a1fb198089",
     "scripts/dependency_provenance_contract.py": "210296c357ace2efdf0c0c38573eb202b839d8482abdcc247ee9ffe208ccf6f9",
     "scripts/dependency_provenance_core.py": "aa8045db8abb15896bcec63bda733c2ebd7b121f02f4558137b72b922b79f554",
@@ -417,6 +433,7 @@
     "scripts/dependency_provenance_inventory.py": "870f9bbd4b5ced0585a330c180b6e738378f201125b6a346ee1823a86da60980",
     "scripts/dependency_provenance_source_gate.py": "57ec597d4c7749bd595e4aee43e2ae6881edd667b8b2ad2b84a6ea4c6953fd2e",
     "scripts/dependency_provenance_views.py": "853f0dff3d24ac05b6d99478b1e6ef03933a3f4e90fde1df669cd3189591c355",
+    "scripts/deployment_preflight.py": "8897c79263594c7998164a50c259c23166016e7c20c430167c75330749b3d4e7",
     "scripts/development-entrypoint.sh": "56bb59150836f927b915c12f79b689ee4f45ebc50c9e0ebd02f57557bc48d978",
     "scripts/development_stack.sh": "3a509b71a6b0a7d6fa5af77661bb596b25eee3d9971a88e3c94a8b983896e646",
     "scripts/eod_context_manager.py": "ab16e2f12e51e00c452753ba9c47312d2a93742d1254c30b2b645488b5298036",
@@ -441,6 +458,9 @@
     "scripts/snapshot_presentation_database.py": "31b9544113a6284e6a68841084954d7aa1830819c3513168d07271bb6b7e8100",
     "scripts/theme_css_audit.py": "4fc3a02688008151f321cf2e3dae87eb381654d25a289d9488d8e416a5ea361d",
     "src/apps/system/plan_001_audit/core.py": "7c0c63efe1ae0ac92a685f1b9561be486d9be692cecbf4ecb69f4ecefeb2e0c0",
+    "src/apps/system/tests/test_deployment_health.py": "e0443706071d08fb212f471f9747ca0fb24ed5f2a168feb88d993856e04084ec",
+    "src/apps/system/tests/test_deployment_profile.py": "4570c9b54398c628368343341027a36a848bae85700e1d694581bcb7bfc0d793",
+    "src/eod_config/deployment.py": "1f07e17f3e014aa0d8f1a2b6717c6b1bd401355900bfe6ecd7c91a0159edfe75",
     "src/static/system/eod_typography.css": "6ed237e0b6221fd57ae32888ecfe77ce8f02afc933ca8da56cc19ffd20c7bfdc",
     "supply-chain/Dockerfile.browser": "0060a0d1dde4afeea1b37db6eb2c079c30bf2e38e12c71e1fcb5910e1e9d54fa",
     "tests/automation/test_auto_001b_request_entrypoint.py": "3a5c0fbb38c047de125bb892ddbf74f74c9cfb25e2472b99e5edab8d1919f9f8",
@@ -451,12 +471,12 @@
     "tests/security/test_secret_hygiene.py": "39f42a287c1f0c5c8a91f8c24af5202b53d56da848e7321f38e0808ca7f72754"
   },
   "totals": {
-    "applicable_executable_sources": 63,
+    "applicable_executable_sources": 69,
     "by_class": {
-      "container-image": 10,
+      "container-image": 11,
       "container-output": 1,
       "external-asset": 1,
-      "github-action": 32,
+      "github-action": 34,
       "python-build": 1,
       "python-install": 22,
       "python-optional": 3,
@@ -466,11 +486,11 @@
     "conflicting_owner_groups": 0,
     "duplicate_owner_groups": 6,
     "floating_inputs": 17,
-    "immutable_inputs": 59,
-    "inventory_entries": 77,
-    "source_completeness_digests": 65,
-    "source_files": 18,
-    "tracked_files": 895
+    "immutable_inputs": 62,
+    "inventory_entries": 80,
+    "source_completeness_digests": 71,
+    "source_files": 20,
+    "tracked_files": 903
   },
   "work_item": "DEPENDENCY-PROVENANCE-001"
 }
