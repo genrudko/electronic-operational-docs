@@ -304,7 +304,6 @@ class ModuleRegistryTests(TestCase):
         self.assertEqual(ModuleActivationRule.objects.count(), 1)
         self.assertGreaterEqual(ModuleActivationAuditEvent.objects.count(), 3)
 
-
     def test_direct_rule_save_bypass_is_rejected(self) -> None:
         direct = ModuleActivationRule(
             module_id="OPJ",
