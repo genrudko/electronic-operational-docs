@@ -23,6 +23,7 @@
 | `SECRET-HYGIENE-001` | #56 | `cd7dc07a9c77a71a5b1166aa7a57ee4d3afa93da` | `95b8dd6017745886f110f052ea0950b3d48173d8` | credential hygiene, CI leak prevention and fail-closed publication contract accepted |
 | `DEPENDENCY-PROVENANCE-001` | #58 | `0f0e92522e7a2c5d43dd635ed661c65ed5021422` | `5b54446d632ef1839d530dc2945255b3033359fe` | reproducible dependency/build provenance and exact-head Sigstore/OIDC evidence accepted |
 | `DEPLOYMENT-PROFILE-001` | #60 | `323f4fb9162e84ca25a49556340078de81af2424` | `1f3296bcf3d0f57bd088241c81691c7f54b2ac25` | fail-closed pilot/production deployment profile accepted; Preview untouched |
+| `MODULE-ACTIVATION-CONTRACT-001` | #62 | `6025d7b405bc1d88543dc341757e5685bcf05b98` | `3e43422ba6000c2aa5f4bdc6abe0f95c7774454f` | modular-monolith activation architecture contract accepted; Preview untouched |
 
 ### Why two heads appear for some historical PRs
 
@@ -37,6 +38,26 @@ The older acceptance document contained a period snapshot where PR #7 was still
 `OPEN / DRAFT / NOT MERGED`. That statement was true at the time of the snapshot
 but became stale after the later accepted merge. It is superseded by the ledger
 above; the existence of the earlier contradiction is explicitly preserved here.
+
+## MODULE-ACTIVATION-CONTRACT-001 exact-head evidence
+
+```text
+EOD CI:                      31374071063 / SUCCESS
+AUTO-001A Foundation CI:     31374071062 / SUCCESS
+AUTO-001B Controller CI:     31374071036 / SUCCESS
+EOD Documentation Contract: 31374071030 / SUCCESS
+EOD Development Stack:      31374071025 / SUCCESS
+EOD Secret Hygiene:          31374071050 / SUCCESS
+EOD Dependency Provenance:   31374071027 / SUCCESS
+```
+
+Accepted exact head `6025d7b405bc1d88543dc341757e5685bcf05b98` was merged as
+`3e43422ba6000c2aa5f4bdc6abe0f95c7774454f`; issue #61 is `CLOSED / COMPLETED`
+and owner acceptance is `PASSED`. Accepted scope: canonical module manifest,
+lifecycle, scoped precedence, dependency/integration semantics, universal access
+decision, retained history/reactivation, migration boundary and activation audit.
+Runtime and Preview were untouched. Two later main cleanup commits have zero
+content diff relative to the accepted merge tree and are not reinterpreted here.
 
 ## DEPLOYMENT-PROFILE-001 exact-head evidence
 
