@@ -2,7 +2,7 @@
 
 ## STATUS
 
-`IN_PROGRESS / TECHNICALLY READY FOR OWNER ACCEPTANCE`
+`IN_PROGRESS / FINAL EXACT-HEAD VALIDATION`
 
 Issue: `#67`
 
@@ -142,6 +142,29 @@ The existing browser dependency lock was also made deterministic without changin
 
 The source-gate failure caused by that one-line insertion was repaired without weakening the gate: the two pre-existing approved `subprocess.run` evidence locations in `supply-chain/registry.json` were synchronized from lines `139 -> 140` and `489 -> 490`. No new opaque-process allowlist item, exclusion, suppression or dependency upgrade was introduced.
 
+## ACCEPTANCE-REVIEW LIFECYCLE BYPASS REPAIR
+
+Owner-side content review after the previous green candidate identified one acceptance-blocking persistence bypass: public `ModuleActivationRule.save_lifecycle_transition()` could persist arbitrary lifecycle fields after setting an internal marker, and `QuerySet.bulk_create()` could insert rules without model `save()` / `full_clean()` / lifecycle audit.
+
+The repair is intentionally narrow:
+
+- `ModuleActivationRule.save()` now always rejects ordinary direct persistence; the old marker no longer grants write access;
+- public `save_lifecycle_transition()` was removed from the model;
+- lifecycle persistence is a private service-local implementation detail used by `transition_module_state()` only after its transition/prerequisite/dependency validation, and it runs `full_clean()` before the base Django persistence operation;
+- `_ProtectedRegistryQuerySet.bulk_create()` now fails closed for activation rules;
+- no lifecycle graph, prerequisite check, dependency rule, audit contract, migration, product seam or scope semantics were weakened.
+
+Focused regression evidence in `apps.system.tests.test_module_registry` now covers:
+
+1. direct `.save()` remains denied, including an attempted reuse of the old marker;
+2. the public `save_lifecycle_transition` escape hatch is absent;
+3. `ModuleActivationRule.objects.bulk_create(...)` is denied and creates neither a rule nor audit event;
+4. `transition_module_state()` still creates and updates the same activation rule through the intended path;
+5. successful lifecycle persistence creates `ALLOWED` audit evidence;
+6. forbidden lifecycle transition remains denied and creates `DENIED` audit evidence.
+
+The exact final workflow run IDs are recorded in Draft PR #68 after the common final head completes its automatically applicable workflows; this file intentionally does not create a second docs-only evidence head after that cycle.
+
 ## REPRESENTATIVE REAL PRODUCT INTEGRATION
 
 The first migrated real product seam is the existing registered-OPJ-entry -> DEFECT creation action:
@@ -157,60 +180,15 @@ This is intentionally representative, not a false claim of universal endpoint co
 
 ## NEGATIVE / FAIL-CLOSED EVIDENCE
 
-Focused evidence covers unknown module/capability/operation/entry point, unsupported or foreign scope, duplicate rule, direct model-state mutation bypass, missing hard dependency, forbidden lifecycle transition, activation without readiness, precedence/restrictive caps, navigation-hidden/direct-HTTP/direct-service mutation, READ_ONLY mutation denial, INACTIVE new-action denial, deactivation preserving history, migration not auto-activating, optional integration absent, reactivation identity preservation, and append-only activation audit.
+Focused evidence covers unknown module/capability/operation/entry point, unsupported or foreign scope, duplicate rule, direct model-state mutation bypass, missing hard dependency, forbidden lifecycle transition, activation without readiness, precedence/restrictive caps, navigation-hidden/direct-HTTP/direct-service mutation, READ_ONLY mutation denial, INACTIVE new-action denial, deactivation preserving history, migration not auto-activating, optional integration absent, reactivation identity preservation, append-only activation audit, direct lifecycle-persistence bypass denial and bulk-create denial.
 
 Prefer table-driven/mutation tests over repetitive one-off tests.
 
-## VALIDATED IMPLEMENTATION EXACT-HEAD EVIDENCE
+## PRE-REVIEW VALIDATED IMPLEMENTATION EVIDENCE
 
-Validated implementation candidate:
+The earlier implementation candidate `1d389290d441841d42b861208a8601be774f7878` completed all nine automatically applicable workflows successfully, including EOD CI and Dependency Provenance. That evidence remains valid for the architecture already present there, but it is not the final acceptance evidence after the lifecycle-bypass repair described above.
 
-`1d389290d441841d42b861208a8601be774f7878`
-
-At this exact head all nine workflows automatically applicable to the branch completed `SUCCESS`:
-
-| Workflow | Run | Result |
-|---|---:|---|
-| EOD CI | `31412906593` | `SUCCESS` |
-| AUTO-001A Foundation CI | `31412904240` | `SUCCESS` |
-| AUTO-001B Controller CI | `31412904278` | `SUCCESS` |
-| EOD Documentation Contract | `31412904903` | `SUCCESS` |
-| EOD Development Stack | `31412905740` | `SUCCESS` |
-| EOD Secret Hygiene | `31412905759` | `SUCCESS` |
-| EOD Dependency Provenance | `31412904897` | `SUCCESS` |
-| EOD Backup Restore Drill | `31412907327` | `SUCCESS` |
-| EOD Deployment Profile | `31412905797` | `SUCCESS` |
-
-`EOD CI` on Python 3.13 / PostgreSQL 18 proved on that common exact head:
-
-- locked dependency installation;
-- Ruff;
-- `compileall`;
-- Django system check;
-- `makemigrations --check`;
-- PostgreSQL migrations;
-- architecture gate;
-- full Django test suite, which includes the focused module-registry and representative OPJ -> DEFECT integration tests;
-- clean repository tree after CI.
-
-The focused registry/integration tests included in the suite cover mixed scopes, direct-save lifecycle bypass denial, append-only audit, history preservation on deactivation, dependency/optional-integration semantics, HTTP and service mutation fail-closed behavior, reactivation identity preservation and explicit DEFECT activation in fixtures. The module-registry migration contains schema operations only and no activation seed.
-
-`EOD Dependency Provenance` independently proved on the same exact head:
-
-- semantic/source contract and ordinary Ruff;
-- byte-for-byte regeneration of all five lock projections (`tooling`, `build`, `runtime`, `dev`, `browser`);
-- clean hashed installation of all five profiles;
-- focused positive/negative supply-chain tests;
-- locked wheel installation and static artifact manifest;
-- production and browser OCI archive construction;
-- normalized SPDX 2.3 SBOM;
-- in-toto / SLSA provenance;
-- credential-free security evidence;
-- GitHub OIDC / Sigstore external attestation;
-- external attestation identity / fail-closed policy;
-- final evidence verification and clean tree.
-
-This evidence head is recorded as implementation proof. The documentation-only closure commit that records this evidence must itself pass the automatically applicable exact-head workflows before owner handoff; no acceptance or merge is implied by this status.
+The final acceptance candidate must independently re-prove the same applicable workflow set on one common exact head. Immutable final run IDs and results are recorded in Draft PR #68 after completion.
 
 ## RISK-BASED TEST POLICY
 
@@ -232,4 +210,4 @@ Final candidate requires one common exact head, clean tree, `behind_by: 0` and a
 
 ## STOP CONDITION
 
-Stop at a technically complete Draft PR ready for owner acceptance with mixed-scope activation evidence, preserved history, fail-closed service-boundary decisions, exact-head green workflows and `behind_by: 0`.
+Stop at a technically complete Draft PR ready for owner acceptance with mixed-scope activation evidence, preserved history, fail-closed service-boundary decisions, lifecycle persistence constrained to the transition service, exact-head green workflows and `behind_by: 0`.
