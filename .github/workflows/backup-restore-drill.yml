@@ -1,0 +1,225 @@
+name: EOD Backup Restore Drill
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/backup-restore-drill.yml"
+      - "scripts/backup_restore_drill.py"
+      - "tests/process/test_backup_restore_drill.py"
+      - "docs/runbooks/DATABASE_BACKUP_AND_RESTORE.md"
+      - "docs/work-items/active/BACKUP-RESTORE-DRILL-001/**"
+      - "src/apps/organizations/**"
+      - "src/apps/equipment/**"
+      - "src/eod_config/health.py"
+      - "src/eod_config/settings.py"
+      - "requirements/locks/**"
+      - "pyproject.toml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eod-backup-restore-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  disposable-restore-drill:
+    name: PostgreSQL disposable restore drill
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      EOD_DEPLOYMENT_MODE: ci
+      DJANGO_DEBUG: "0"
+      DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost,testserver
+      DB_ENGINE: postgresql
+      POSTGRES_DB: eod_dr_source
+      POSTGRES_USER: eod_dr
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5432"
+      EOD_DATABASE_PROFILE: gate
+      EOD_ALLOW_SQLITE_PATH_OVERRIDE: "0"
+      TIME_ZONE: Europe/Moscow
+
+    services:
+      postgres:
+        image: postgres@sha256:882236b897e39051d2368c5ccc6cda944904723506b2dfc97f2a8f5bc9afa382 # postgres:18.4-bookworm
+        env:
+          POSTGRES_DB: eod_dr_source
+          POSTGRES_USER: eod_dr
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U eod_dr -d eod_dr_source"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Verify exact checked-out SHA
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$EXPECTED_SHA"
+          printf 'EOD_EXACT_HEAD=%s\n' "$actual_sha" >>"$GITHUB_ENV"
+          printf 'EXACT_HEAD=%s\n' "$actual_sha"
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements/locks/*.txt
+
+      - name: Install locked dependencies
+        run: python -m pip install --require-hashes -r requirements/locks/tooling.txt -r requirements/locks/build.txt -r requirements/locks/dev.txt
+
+      - name: Create masked ephemeral application credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          django_value="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
+          demo_value="$(python -c 'import secrets; print("DrA1!" + secrets.token_urlsafe(32))')"
+          printf '::add-mask::%s\n' "$django_value"
+          printf '::add-mask::%s\n' "$demo_value"
+          printf 'DJANGO_SECRET_KEY=%s\n' "$django_value" >>"$GITHUB_ENV"
+          printf 'EOD_DEMO_USER_PASSWORD=%s\n' "$demo_value" >>"$GITHUB_ENV"
+
+      - name: Identify pinned disposable PostgreSQL service
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t containers < <(docker ps --filter publish=5432 --format '{{.ID}}')
+          test "${#containers[@]}" -eq 1
+          test -n "${containers[0]}"
+          printf 'EOD_DR_PG_CONTAINER=%s\n' "${containers[0]}" >>"$GITHUB_ENV"
+          printf 'POSTGRES_TOOL_CONTAINER=BOUND_EXACTLY_ONE\n'
+
+      - name: Migrate source recovery-point database
+        run: python manage.py migrate --noinput
+
+      - name: Seed deterministic representative EOD organization data
+        run: python manage.py seed_demo_organization
+
+      - name: Seed deterministic representative EOD equipment data
+        shell: bash
+        run: |
+          set -euo pipefail
+          python manage.py shell -c '
+          from apps.organizations.models import Organization
+          from apps.equipment.models import EnergySite, EquipmentType, EquipmentAsset
+          org = Organization.objects.get(code="DEMO")
+          site, _ = EnergySite.objects.update_or_create(
+              organization=org, code="dr-site",
+              defaults={"name": "DR acceptance energy site", "short_name": "DR-SITE", "site_type": EnergySite.SiteType.WIND_POWER_PLANT, "is_external": False, "is_active": True},
+          )
+          equipment_type, _ = EquipmentType.objects.update_or_create(
+              code="dr-wtg",
+              defaults={"name": "DR acceptance WTG", "category": EquipmentType.Category.WTG, "description": "Deterministic non-production restore-drill fixture", "is_active": True},
+          )
+          for index in (1, 2, 3):
+              EquipmentAsset.objects.get_or_create(
+                  organization=org, code=f"DR-WTG-{index:03d}",
+                  defaults={"site": site, "equipment_type": equipment_type, "technical_name": f"DR acceptance WTG {index:03d}", "status": EquipmentAsset.Status.ACTIVE, "voltage_level": "0.69 kV", "attributes": {"fixture": "BACKUP-RESTORE-DRILL-001", "index": index}, "is_external": False},
+              )
+          print("REPRESENTATIVE_EQUIPMENT=3")
+          '
+
+      - name: Run fail-closed negative regression scenarios
+        id: negative_tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          raw="$RUNNER_TEMP/backup-restore-negative.raw.txt"
+          safe="$RUNNER_TEMP/backup-restore-negative.sanitized.txt"
+          status=0
+          python -m unittest -v tests.process.test_backup_restore_drill >"$raw" 2>&1 || status=$?
+          python scripts/secret_hygiene.py redact --input "$raw" --output "$safe" --env DJANGO_SECRET_KEY --env EOD_DEMO_USER_PASSWORD
+          python scripts/secret_hygiene.py verify-sanitized --input "$safe" --env DJANGO_SECRET_KEY --env EOD_DEMO_USER_PASSWORD
+          cat "$safe"
+          test "$status" -eq 0
+          printf 'verified=true\n' >>"$GITHUB_OUTPUT"
+
+      - name: Run real custom-format backup and disposable restore drill
+        id: drill
+        shell: bash
+        run: |
+          set -euo pipefail
+          work_dir="$RUNNER_TEMP/eod-backup-restore-work"
+          evidence_dir="$RUNNER_TEMP/eod-backup-restore-evidence"
+          mkdir -p "$work_dir" "$evidence_dir"
+          target="eod_restore_drill_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          raw="$RUNNER_TEMP/backup-restore-drill.raw.txt"
+          safe="$RUNNER_TEMP/backup-restore-drill.sanitized.txt"
+          status=0
+          python scripts/backup_restore_drill.py run \
+            --work-dir "$work_dir" \
+            --certificate "$evidence_dir/restore-certificate.json" \
+            --certificate-checksum "$evidence_dir/restore-certificate.sha256" \
+            --source-class ci-representative \
+            --target-database "$target" \
+            --target-class ci-disposable \
+            --disposable-sentinel EOD-DISPOSABLE-RESTORE-ONLY \
+            >"$raw" 2>&1 || status=$?
+          python scripts/secret_hygiene.py redact --input "$raw" --output "$safe" --env DJANGO_SECRET_KEY --env EOD_DEMO_USER_PASSWORD
+          python scripts/secret_hygiene.py verify-sanitized --input "$safe" --env DJANGO_SECRET_KEY --env EOD_DEMO_USER_PASSWORD
+          cat "$safe"
+          test "$status" -eq 0
+          printf 'verified=true\n' >>"$GITHUB_OUTPUT"
+
+      - name: Verify non-secret restore certificate and raw-dump boundary
+        id: certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_dir="$RUNNER_TEMP/eod-backup-restore-evidence"
+          python scripts/backup_restore_drill.py verify-certificate \
+            --certificate "$evidence_dir/restore-certificate.json" \
+            --certificate-checksum "$evidence_dir/restore-certificate.sha256"
+          python scripts/secret_hygiene.py verify-sanitized --input "$RUNNER_TEMP/eod-backup-restore-evidence/restore-certificate.json" --env DJANGO_SECRET_KEY --env EOD_DEMO_USER_PASSWORD
+          python scripts/secret_hygiene.py verify-sanitized --input "$RUNNER_TEMP/eod-backup-restore-evidence/restore-certificate.sha256" --env DJANGO_SECRET_KEY --env EOD_DEMO_USER_PASSWORD
+          if find "$RUNNER_TEMP/eod-backup-restore-evidence" -type f -name '*.dump' -print -quit | grep -q .; then
+            echo "Raw database dump entered publication evidence."
+            exit 1
+          fi
+          if find "$RUNNER_TEMP/eod-backup-restore-work" -type f -name '*.dump' -print -quit | grep -q .; then
+            echo "Raw database dump survived drill cleanup."
+            exit 1
+          fi
+          printf 'RAW_DUMP_PUBLICATION=ABSENT\n'
+          printf 'verified=true\n' >>"$GITHUB_OUTPUT"
+
+      - name: Upload verified non-secret restore evidence
+        if: ${{ steps.negative_tests.outputs.verified == 'true' && steps.drill.outputs.verified == 'true' && steps.certificate.outputs.verified == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: backup-restore-drill-evidence-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/eod-backup-restore-evidence/restore-certificate.json
+            ${{ runner.temp }}/eod-backup-restore-evidence/restore-certificate.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Remove DR transport files
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf "$RUNNER_TEMP/eod-backup-restore-work" "$RUNNER_TEMP/eod-backup-restore-evidence"
+          rm -f "$RUNNER_TEMP/backup-restore-negative.raw.txt" "$RUNNER_TEMP/backup-restore-negative.sanitized.txt" "$RUNNER_TEMP/backup-restore-drill.raw.txt" "$RUNNER_TEMP/backup-restore-drill.sanitized.txt"
+
+      - name: Verify checkout remains exactly clean
+        if: ${{ always() }}
+        run: python scripts/secret_hygiene.py verify-clean-tree
