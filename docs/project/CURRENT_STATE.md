@@ -7,33 +7,64 @@
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted main baseline: main / 071ac654ba6c10f5846052551024e8d24941e9e9
-active work item: BACKUP-RESTORE-DRILL-001
-active issue: #63
-active PR: #64 / OPEN / DRAFT / NOT MERGED
-active branch: disaster-recovery/backup-restore-drill-001
+accepted main baseline: main / 860e189bbb5bc05a6da4a7680acd5f719b4874af
+active work item: SECURITY-BASELINE-001
+active issue: #65
+active PR: #66 / OPEN / DRAFT / NOT MERGED
+active branch: security/security-baseline-001
 runtime impact: NONE
 preview: UNTOUCHED
 ```
 
-## Active BACKUP-RESTORE-DRILL-001 execution
+## Active SECURITY-BASELINE-001 execution
 
-`BACKUP-RESTORE-DRILL-001` выполняется только в issue #63, ветке
-`disaster-recovery/backup-restore-drill-001` и Draft PR #64.
+`SECURITY-BASELINE-001` выполняется только в issue #65, ветке
+`security/security-baseline-001` и Draft PR #66.
 
-Work item закрывает `PSR-015 / CRITICAL`: требуется доказать пригодность реального
-PostgreSQL custom-format recovery point через checksum verification, явно
-идентифицированный clean/disposable restore target, успешный restore,
-application/data/integrity verification и fail-closed non-secret restore
-certificate. `PSR-013` является только границей для будущего
-`MIGRATION-SAFETY-001`; N-1/N/N-2 migration rehearsal в этот work item не входит.
-Live VPS и Preview не изменяются.
+Work item является последним обязательным элементом `SAFE-CONTINUATION` и закрывает
+только bounded threat-model / production-security baseline для `PSR-022`,
+`PSR-023`, `PSR-024` и `PSR-033`. Full `SECURITY-PIPELINE-001`,
+`AUTH-RBAC-HARDENING-001`, `UPLOAD-HARDENING-001` и `MODULE-REGISTRY-001`
+остаются отдельными будущими work items. Live VPS и Preview не изменяются.
 
-После принятия `MODULE-ACTIVATION-CONTRACT-001` в `SAFE-CONTINUATION` принято
-6 из 8 обязательных work items. `BACKUP-RESTORE-DRILL-001` имеет `IN_PROGRESS`.
+После принятия `BACKUP-RESTORE-DRILL-001` в `SAFE-CONTINUATION` принято 7 из 8
+обязательных work items. `SECURITY-BASELINE-001` имеет `IN_PROGRESS`.
 Предметная очередь сохраняется в состоянии
 `PAUSED_PENDING_SAFE_CONTINUATION_AND_EXPLICIT_OWNER_DECISION`.
 `SHIFT-HANDOVER-001` не стартовал.
+
+## Accepted BACKUP-RESTORE-DRILL-001 baseline
+
+`BACKUP-RESTORE-DRILL-001` принят владельцем и merged обычным merge commit:
+
+```text
+accepted PR: #64 / CLOSED / MERGED
+accepted exact head: 9f9b650f637af7b9bbeb2c63cb3995763b0854e0
+merge commit: 860e189bbb5bc05a6da4a7680acd5f719b4874af
+issue: #63 / CLOSED / COMPLETED
+owner acceptance: PASSED
+runtime impact: NONE
+preview: UNTOUCHED
+```
+
+Принятый DR baseline доказал PostgreSQL 18.4 custom-format recovery point:
+backup `767106` bytes / SHA-256
+`8fccc071b5b4303d057108c969c8985fba4d77101202f07fd8545bfc34139285`,
+restore certificate SHA-256
+`6750218e2fd21bc18c634dafacd6d86c93962805350b3f0e9de57b556fe1de36`,
+measured restore `0.922 s`, full CI drill `7.903 s`. Raw dump не публиковался.
+Все применимые exact-head workflows завершились успешно:
+
+```text
+AUTO-001A Foundation CI:     31386371816 / SUCCESS
+AUTO-001B Controller CI:     31386371838 / SUCCESS
+EOD CI:                      31386371846 / SUCCESS
+EOD Documentation Contract: 31386371860 / SUCCESS
+EOD Development Stack:      31386371839 / SUCCESS
+EOD Secret Hygiene:          31386371954 / SUCCESS
+EOD Dependency Provenance:   31386371897 / SUCCESS
+EOD Backup Restore Drill:    31386371849 / SUCCESS
+```
 
 ## Accepted MODULE-ACTIVATION-CONTRACT-001 baseline
 
