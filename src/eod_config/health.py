@@ -33,6 +33,13 @@ def readiness(_request):
     return JsonResponse({"status": "ready"})
 
 
-# Backward-compatible deployment health endpoint: historically this was DB-backed,
-# therefore it remains a readiness alias rather than silently becoming liveness.
-health = readiness
+def health(_request):
+    """Backward-compatible DB-backed health endpoint with the historic success payload."""
+
+    try:
+        ready = _deployment_dependencies_ready()
+    except Exception:  # noqa: BLE001 - health response must not disclose backend details.
+        ready = False
+    if not ready:
+        return JsonResponse({"status": "unavailable"}, status=503)
+    return JsonResponse({"status": "ok"})
