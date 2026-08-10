@@ -1,7 +1,7 @@
 # SECURITY-BASELINE-001 — repository-grounded threat model
 
-**Статус:** `IN_PROGRESS / OWNER ACCEPTANCE PENDING`  
-**Контур:** issue #65 / Draft PR #66 / `security/security-baseline-001`  
+**Статус:** `IN_PROGRESS / OWNER ACCEPTANCE PENDING`
+**Контур:** issue #65 / Draft PR #66 / `security/security-baseline-001`
 **Граница:** SAFE-CONTINUATION baseline, а не полный security programme.
 
 ## 1. Правила disposition
