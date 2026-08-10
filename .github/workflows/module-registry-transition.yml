@@ -1,0 +1,48 @@
+name: EOD Module Registry Transition
+
+on:
+  push:
+    branches:
+      - platform/module-registry-001
+    paths:
+      - .github/workflows/module-registry-transition.yml
+
+permissions:
+  contents: write
+
+jobs:
+  canonical-transition:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+        with:
+          ref: platform/module-registry-001
+          fetch-depth: 0
+
+      - name: Apply deterministic SAFE closure transition
+        run: python scripts/_module_registry_transition.py
+
+      - name: Commit generated canonical transition
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            docs/project/DEMO_RELEASE_PLAN.yaml \
+            docs/project/CURRENT_STATE.md \
+            docs/project/ACCEPTANCE_HISTORY.md \
+            docs/project/BASELINE_HISTORY.md \
+            docs/product/MODULE_MAP.md \
+            docs/product/IMPLEMENTATION_SEQUENCE.md \
+            docs/project/DEMO_RELEASE_MASTER_CHECKLIST.md \
+            docs/project/INDUSTRIALIZATION_EXECUTION_BACKLOG.md \
+            scripts/release_plan_views.py \
+            scripts/industrialization_execution.py
+          git diff --cached --check
+          git diff --cached --quiet && { echo "No transition changes to commit"; exit 0; }
+          git commit -m "Canonicalize SAFE 8/8 and start module registry"
+          git push origin HEAD:platform/module-registry-001
