@@ -1,7 +1,9 @@
 # UX-PLATFORM-FOUNDATION-001 — factual inventory и ownership map
 
-**Статус:** `IN_PROGRESS / IMPLEMENTATION`  
-**Контур:** issue #69 / Draft PR #70 / `ux/ux-platform-foundation-001`  
+**Статус:** `IN_PROGRESS / IMPLEMENTATION`
+
+**Контур:** issue #69 / Draft PR #70 / `ux/ux-platform-foundation-001`
+
 **Visual DNA:** Direction A, accepted DEFECT, accepted OPJ, UX-THEME-001, Onest, Consolas, first-party SVG iconography.
 
 Этот документ фиксирует factual ownership текущего work item. Он не является `PAGE-TEMPLATE-LIBRARY-001` и не объявляет broad legacy migration выполненной.
@@ -13,6 +15,7 @@
 | Application shell | `src/templates/base.html` + `shared/direction_a/_sidebar.html` + `_topbar.html` | один sidebar/topbar/page-stage; feature shell copies запрещены |
 | Responsive shell geometry | `src/static/system/ux_platform.css` | desktop/tablet/mobile без `zoom`/`transform: scale` |
 | Semantic theme/tokens | `src/static/system/theme.css` | единственный owner colours/surfaces/text/borders/status/focus/spacing/radii/heights/typography/z-layers |
+| Legacy geometry aliases | `src/static/system/ux_platform_compat.css` | только имена старых `--da-*`, значения всегда принадлежат `--theme-*`; временная migration boundary |
 | Shared visual primitives | `src/static/system/ux_platform.css` | Direction A controls/composition; feature CSS не создаёт вторую систему |
 | Shared interactions | `src/static/system/direction_a.js` | shell nav, menu, tabs, dialog, drawer, keyboard/focus return |
 | Theme preference | inline first-paint resolver + `theme.js` | `light/dark/system` до первого theme-dependent stylesheet paint |
@@ -28,6 +31,7 @@
 | historical horizontal presentation shell in `base.html` | `LEGACY / REMOVE` | removed from active authenticated shell |
 | `shared/direction_a/base.html` second body/shell | `LEGACY / REMOVE` | collapsed to compatibility inheritance wrapper |
 | `direction_a_shell_final.css` late shell repair | `LEGACY / REMOVE` | removed; geometry owned by `ux_platform.css` |
+| `direction_a.css` raw palette + duplicate shared shell/primitives | `LEGACY / REMOVE` | accepted Direction A contracts consolidated into semantic `ux_platform.css`, old owner deleted |
 | DEFECT `_direction_a_sidebar.html` / `_direction_a_topbar.html` | `LEGACY / REMOVE` | deleted; forms consume shared shell |
 | DEFECT registry/detail/forms | `ADAPT` | shared shell/tokens/controls; domain lifecycle/table/form semantics retained |
 | DEFECT `--ux-*` / `--defect-*` aliases | `COMPATIBILITY` | aliases resolve through `--theme-*`; broad selector cleanup deferred |
