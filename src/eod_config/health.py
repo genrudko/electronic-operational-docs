@@ -1,8 +1,19 @@
 from __future__ import annotations
 
-from django.db import connection
+from django.db import connection as django_connection
 from django.db.migrations.executor import MigrationExecutor
 from django.http import JsonResponse
+
+
+class _DatabaseHealthConnection:
+    """Narrow database seam for deployment health probes."""
+
+    def cursor(self):
+        return django_connection.cursor()
+
+
+# Keep health-probe patching isolated from Django's global connection wrapper.
+connection = _DatabaseHealthConnection()
 
 
 def liveness(_request):
@@ -16,7 +27,7 @@ def _deployment_dependencies_ready() -> bool:
         cursor.execute("SELECT 1")
         cursor.fetchone()
 
-    executor = MigrationExecutor(connection)
+    executor = MigrationExecutor(django_connection)
     targets = executor.loader.graph.leaf_nodes()
     return not executor.migration_plan(targets)
 
