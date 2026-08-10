@@ -85,9 +85,9 @@ Standard Django `manage.py` is a privileged operator entry point. Repository sea
 | weak/missing Django secret | `ACCEPTED_PRIOR_BASELINE` | Deployment Profile fails closed; Secret Hygiene is already accepted. Current focused tests additionally cover a missing key. |
 | `DEBUG` or testing semantics in production | `ACCEPTED_PRIOR_BASELINE` | Deployment Profile rejects both. |
 | SQLite production fallback | `ACCEPTED_PRIOR_BASELINE` | production is PostgreSQL-only; negative preflight/test evidence rejects SQLite. |
-| insecure session/cookie/header default drift | `PASS` | current candidate makes HttpOnly, SameSite, secure-cookie production semantics, referrer policy, nosniff and frame denial explicit; production subprocess/runtime assertions cover them. |
+| insecure session/cookie/header default drift | `PASS` | current candidate makes HttpOnly, SameSite, secure-cookie production semantics, referrer policy, nosniff and frame denial explicit; focused tests and production runtime assertions cover them. |
 | CSRF bypass on current session mutation | `PASS` | real POST logout endpoint is covered by `Client(enforce_csrf_checks=True)` negative test and rejects a missing token with HTTP 403. |
-| Django admin bypass of product workflows in production | `PASS` | `EOD_DJANGO_ADMIN_ENABLED=False` is derived from the production-capable deployment contract; `/admin/` is absent from URL resolver and deployment smoke requires HTTP 404. No environment opt-in exists. |
+| Django admin bypass of product workflows in production | `PASS` | `EOD_DJANGO_ADMIN_ENABLED=False` is derived from the production-capable deployment contract; focused route-builder evidence omits `/admin/`, and deployment smoke requires HTTP 404. No environment opt-in exists. |
 | future exceptional production admin exposure | `DEFERRED` | `AUTH-RBAC-HARDENING-001`: privileged assurance, network restriction decision, re-authentication and privileged/admin audit. This PR does not claim such exposure pilot-safe. |
 | compromised legitimate account / privileged session abuse | `DEFERRED` | `AUTH-RBAC-HARDENING-001`: MFA, privileged re-auth, rate limiting/lockout where required, access review, stale-access revocation, break-glass and pilot assurance levels. |
 | SAST/dependency/container vulnerability detection and release severity policy | `DEFERRED` | `SECURITY-PIPELINE-001`: blocking scanners, severity threshold, exception/waiver expiry and release security evidence. Accepted Secret Hygiene/Dependency Provenance are reused, not duplicated. |
@@ -117,7 +117,7 @@ The production-capable profile retains the accepted Deployment Profile and adds 
 - production Django admin is unrouted by construction;
 - no production admin environment toggle is introduced.
 
-The production deployment gate continues to execute `python manage.py check --deploy` under the isolated production-capable PostgreSQL profile.
+The production deployment gate deliberately supplies a stray `EOD_DJANGO_ADMIN_ENABLED=1` value and still requires the loaded production setting to be false plus `/admin/` to return HTTP 404. It also continues to execute `python manage.py check --deploy` under the isolated production-capable PostgreSQL profile.
 
 ## 8. Negative-test matrix
 
@@ -134,9 +134,9 @@ The production deployment gate continues to execute `python manage.py check --de
 | untrusted proxy configuration | existing Deployment Profile test | rejected |
 | forwarded Host trust | existing Deployment Profile test | rejected |
 | insufficient HSTS | existing Deployment Profile test | rejected |
-| insecure session/cookie/header drift | `test_security_baseline.py` + deployment runtime assertions | rejected by exact-value assertions |
-| production admin exposed by default | production resolver test + deployment HTTP smoke | `/admin/` does not resolve / HTTP 404 |
-| stray `EOD_DJANGO_ADMIN_ENABLED=1` environment value | production subprocess test | ignored; admin remains disabled |
+| insecure session/cookie/header drift | focused settings tests + deployment runtime assertions | rejected by exact-value assertions |
+| production admin exposed by default | focused route-builder test + deployment HTTP smoke | `/admin/` omitted / HTTP 404 |
+| stray `EOD_DJANGO_ADMIN_ENABLED=1` environment value | deployment production smoke | ignored; loaded setting remains false and admin remains unrouted |
 | CSRF-less real logout mutation | `test_security_baseline.py` | HTTP 403 |
 | invalid machine-readable security evidence claim | no artifact introduced | `NOT_APPLICABLE` |
 
