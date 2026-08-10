@@ -40,16 +40,16 @@ jobs:
           text = implementation.read_text(encoding='utf-8')
           old = '    "gunicorn": "26.0.0",\n    "jsonschema": JSONSCHEMA_VERSION,'
           new = '    "gunicorn": "26.0.0",\n    "greenlet": "3.5.4",\n    "jsonschema": JSONSCHEMA_VERSION,'
-          if old not in text and '    "greenlet": "3.5.4",' not in text:
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif '    "greenlet": "3.5.4",' not in text:
               raise SystemExit('accepted resolution insertion point changed')
-          implementation.write_text(text.replace(old, new, 1), encoding='utf-8')
+          implementation.write_text(text, encoding='utf-8')
 
           registry_path = Path('supply-chain/registry.json')
-          registry = json.loads(registry_path.read_text(encoding='utf-8'))
-          registry['accepted_resolution']['greenlet'] = '3.5.4'
-          # Preserve the established compact canonical registry layout: only replace
-          # the accepted_resolution object, leaving historical generator evidence intact.
           original = registry_path.read_text(encoding='utf-8')
+          registry = json.loads(original)
+          registry['accepted_resolution']['greenlet'] = '3.5.4'
           start = original.index('"accepted_resolution": {')
           object_start = original.index('{', start)
           depth = 0
@@ -75,27 +75,58 @@ jobs:
               encoding='utf-8',
           )
 
-          test_path = Path('tests/process/test_dependency_lock_constraints.py')
-          test_path.write_text('''from __future__ import annotations\n\nimport json\nimport unittest\nfrom pathlib import Path\n\nfrom scripts import dependency_provenance_implementation as implementation\n\nROOT = Path(__file__).resolve().parents[2]\n\n\nclass DependencyLockConstraintTests(unittest.TestCase):\n    def test_browser_greenlet_transitive_is_part_of_accepted_resolution(self) -> None:\n        browser = implementation.parse_lock(ROOT / "requirements/locks/browser.txt")\n        registry = json.loads((ROOT / "supply-chain/registry.json").read_text(encoding="utf-8"))\n\n        self.assertEqual(browser["greenlet"]["version"], "3.5.4")\n        self.assertEqual(implementation.ACCEPTED_RESOLUTION["greenlet"], "3.5.4")\n        self.assertEqual(registry["accepted_resolution"]["greenlet"], "3.5.4")\n\n\nif __name__ == "__main__":\n    unittest.main()\n''', encoding='utf-8')
+          Path('tests/process/test_dependency_lock_constraints.py').write_text(
+              '''from __future__ import annotations\n\nimport json\nimport unittest\nfrom pathlib import Path\n\nfrom scripts import dependency_provenance_implementation as implementation\n\nROOT = Path(__file__).resolve().parents[2]\n\n\nclass DependencyLockConstraintTests(unittest.TestCase):\n    def test_browser_greenlet_transitive_is_part_of_accepted_resolution(self) -> None:\n        browser = implementation.parse_lock(ROOT / "requirements/locks/browser.txt")\n        registry = json.loads((ROOT / "supply-chain/registry.json").read_text(encoding="utf-8"))\n\n        self.assertEqual(browser["greenlet"]["version"], "3.5.4")\n        self.assertEqual(implementation.ACCEPTED_RESOLUTION["greenlet"], "3.5.4")\n        self.assertEqual(registry["accepted_resolution"]["greenlet"], "3.5.4")\n\n\nif __name__ == "__main__":\n    unittest.main()\n''',
+              encoding='utf-8',
+          )
           PY
 
-      - name: Remove temporary diagnosis and self-remove workflow
+      - name: Remove temporary diagnosis and self-remove workflow in working tree
         shell: bash
         run: |
           set -euo pipefail
-          git rm docs/work-items/active/MODULE-REGISTRY-001/LOCK_REGENERATION_DIAG.json
-          git rm .github/workflows/module-registry-lock-root-repair.yml
+          git rm -f docs/work-items/active/MODULE-REGISTRY-001/LOCK_REGENERATION_DIAG.json
+          git rm -f .github/workflows/module-registry-lock-root-repair.yml
 
-      - name: Prove five-lock byte-for-byte regeneration
-        run: python scripts/regenerate_dependency_locks.py
+      - name: Prove five-lock byte-for-byte regeneration or record exact failure
+        id: lock_check
+        shell: bash
+        run: |
+          set +e
+          python scripts/regenerate_dependency_locks.py >"$RUNNER_TEMP/lock-root-repair.log" 2>&1
+          rc=$?
+          set -e
+          if [ "$rc" -ne 0 ]; then
+            python - "$RUNNER_TEMP/lock-root-repair.log" "$rc" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          log_path = Path(sys.argv[1])
+          rc = int(sys.argv[2])
+          lines = log_path.read_text(encoding='utf-8', errors='replace').splitlines()
+          payload = {
+              'schema': 1,
+              'exit_code': rc,
+              'tail': lines[-80:],
+          }
+          target = Path('docs/work-items/active/MODULE-REGISTRY-001/LOCK_ROOT_REPAIR_FAILURE.json')
+          target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PY
+            echo "verified=false" >>"$GITHUB_OUTPUT"
+          else
+            echo "FIVE_LOCK_REGENERATION=PASS"
+            echo "verified=true" >>"$GITHUB_OUTPUT"
+          fi
 
       - name: Run focused accepted-resolution regression
-        run: python -m unittest -v tests.process.test_dependency_lock_constraints
+        if: steps.lock_check.outputs.verified == 'true'
+        run: python tests/process/test_dependency_lock_constraints.py
 
       - name: Regenerate canonical dependency inventory
         run: python scripts/dependency_provenance_views.py write
 
-      - name: Commit deterministic lock-root repair
+      - name: Commit repair or bounded failure diagnosis
         shell: bash
         run: |
           set -euo pipefail
@@ -103,5 +134,9 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --check
-          git commit -m "Pin browser transitive in accepted lock resolution"
+          if [ "${{ steps.lock_check.outputs.verified }}" = "true" ]; then
+            git commit -m "Pin browser transitive in accepted lock resolution"
+          else
+            git commit -m "Record exact browser lock-root repair failure"
+          fi
           git push origin HEAD:platform/module-registry-001
