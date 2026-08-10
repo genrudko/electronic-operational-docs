@@ -29,6 +29,12 @@ class _ProtectedRegistryQuerySet(models.QuerySet):
             "Массовое изменение состояния модулей запрещено; используйте lifecycle service."
         )
 
+    def bulk_create(self, objs: Any, *args: Any, **kwargs: Any) -> list[Any]:
+        del objs, args, kwargs
+        raise ValidationError(
+            "Массовое создание правил активации запрещено; используйте lifecycle service."
+        )
+
     def delete(self) -> tuple[int, dict[str, int]]:
         raise ValidationError(
             "Физическое удаление состояния модулей запрещено; история должна сохраняться."
@@ -86,19 +92,10 @@ class ModuleActivationRule(models.Model):
         return f"{self.module_id}:{self.scope_type}:{self.scope_id}={self.state}"
 
     def save(self, *args: Any, **kwargs: Any) -> None:
-        self.full_clean()
-        if not getattr(self, "_module_registry_lifecycle_write", False):
-            raise ValidationError(
-                "Прямое изменение правила активации запрещено; используйте lifecycle service."
-            )
-        super().save(*args, **kwargs)
-
-    def save_lifecycle_transition(self) -> None:
-        self._module_registry_lifecycle_write = True
-        try:
-            self.save()
-        finally:
-            del self._module_registry_lifecycle_write
+        del args, kwargs
+        raise ValidationError(
+            "Прямое изменение правила активации запрещено; используйте lifecycle service."
+        )
 
     def delete(self, *args: Any, **kwargs: Any) -> tuple[int, dict[str, int]]:
         del args, kwargs
