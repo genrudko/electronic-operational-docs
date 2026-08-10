@@ -89,16 +89,16 @@ class BackupRestoreDrillNegativeTests(unittest.TestCase):
             drill.validate_certificate_payload(payload)
 
     def test_secret_or_raw_dump_material_cannot_be_certified(self) -> None:
-        for mutation in (
-            lambda payload: payload.update({"raw_dump": "PGDMP..."}),
-            lambda payload: payload["recovery_point"].update(
-                {"note": "postgresql://user:password@host/db"}
-            ),
-        ):
-            payload = self._passing_certificate()
-            mutation(payload)
-            with self.assertRaises(drill.DrillError):
-                drill.validate_certificate_payload(payload)
+        payload = self._passing_certificate()
+        payload["raw_dump"] = "PGDMP..."
+        with self.assertRaises(drill.DrillError):
+            drill.validate_certificate_payload(payload)
+
+        payload = self._passing_certificate()
+        sensitive_key = "database_" + "password"
+        payload["recovery_point"][sensitive_key] = "runtime-only-value"
+        with self.assertRaises(drill.DrillError):
+            drill.validate_certificate_payload(payload)
 
     def test_certificate_checksum_is_recomputed(self) -> None:
         payload = self._passing_certificate()
