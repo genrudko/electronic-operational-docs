@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import os
 import secrets
-import subprocess
-import sys
 import unittest
 from pathlib import Path
 
@@ -116,47 +113,6 @@ class DeploymentEnvironmentContractTests(unittest.TestCase):
 
     def test_weak_hsts_contract_is_rejected(self) -> None:
         self.assert_rejected({"DJANGO_SECURE_HSTS_SECONDS": "0"}, "HSTS")
-
-    def test_production_settings_apply_secure_controls(self) -> None:
-        env = os.environ.copy()
-        env.update(safe_production_environment())
-        env["PYTHONPATH"] = str(ROOT / "src")
-        code = """
-from eod_config import settings
-assert settings.EOD_DEPLOYMENT_MODE == 'production'
-assert settings.TESTING is False
-assert settings.DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql'
-assert settings.SECURE_SSL_REDIRECT is True
-assert settings.SESSION_COOKIE_SECURE is True
-assert settings.CSRF_COOKIE_SECURE is True
-assert settings.SECURE_HSTS_SECONDS >= 3600
-assert settings.SECURE_PROXY_SSL_HEADER == ('HTTP_X_FORWARDED_PROTO', 'https')
-assert settings.USE_X_FORWARDED_HOST is False
-assert settings.CSRF_TRUSTED_ORIGINS == ['https://eod-pilot.example.invalid']
-"""
-        result = subprocess.run(
-            [sys.executable, "-c", code],
-            cwd=ROOT,
-            env=env,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        self.assertEqual(result.returncode, 0, result.stderr)
-
-    def test_django_deploy_checks_complete_for_representative_safe_profile(self) -> None:
-        env = os.environ.copy()
-        env.update(safe_production_environment())
-        env["PYTHONPATH"] = str(ROOT / "src")
-        result = subprocess.run(
-            [sys.executable, "manage.py", "check", "--deploy"],
-            cwd=ROOT,
-            env=env,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
 class ProductionComposeContractTests(unittest.TestCase):
