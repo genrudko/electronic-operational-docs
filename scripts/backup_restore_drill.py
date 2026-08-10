@@ -10,8 +10,9 @@ import re
 import subprocess
 import sys
 import time
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CERTIFICATE_SCHEMA = "eod.backup_restore_drill.certificate"
@@ -58,7 +59,9 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _run(argv: Sequence[str], *, env: Mapping[str, str] | None = None) -> subprocess.CompletedProcess[str]:
+def _run(
+    argv: Sequence[str], *, env: Mapping[str, str] | None = None
+) -> subprocess.CompletedProcess[str]:
     """Run one bounded local PostgreSQL/Django/docker command without a shell."""
     try:
         return subprocess.run(
@@ -107,7 +110,13 @@ def psql_scalar(database: str, sql: str) -> str:
     return lines[0]
 
 
-def validate_target_identity(*, source_database: str, target_database: str, target_class: str, sentinel: str) -> None:
+def validate_target_identity(
+    *,
+    source_database: str,
+    target_database: str,
+    target_class: str,
+    sentinel: str,
+) -> None:
     if not all((source_database, target_database, target_class, sentinel)):
         raise DrillError("ambiguous restore target identity")
     if target_class != DISPOSABLE_TARGET_CLASS or sentinel != DISPOSABLE_SENTINEL:
@@ -216,7 +225,8 @@ def representative_counts(database: str) -> dict[str, int]:
     raw = django_json(database, (
         "import json; from django.apps import apps; "
         f"labels={labels}; "
-        "print(json.dumps({label: apps.get_model(label).objects.count() for label in labels}, sort_keys=True))"
+        "print(json.dumps({label: apps.get_model(label).objects.count() "
+        "for label in labels}, sort_keys=True))"
     ))
     counts: dict[str, int] = {}
     for label in REPRESENTATIVE_MODELS:
@@ -280,29 +290,57 @@ def validate_certificate_payload(payload: Mapping[str, Any]) -> None:
         raise DrillError("restore certificate schema/version mismatch")
     if payload.get("work_item") != WORK_ITEM or payload.get("overall") != "PASS":
         raise DrillError("restore certificate is not passing")
-    repo, backup, target = payload.get("repository"), payload.get("backup"), payload.get("restore_target")
-    verification, objectives, timing = payload.get("verification"), payload.get("objectives"), payload.get("timing")
-    if not all(isinstance(item, dict) for item in (repo, backup, target, verification, objectives, timing)):
+    repo = payload.get("repository")
+    backup = payload.get("backup")
+    target = payload.get("restore_target")
+    verification = payload.get("verification")
+    objectives = payload.get("objectives")
+    timing = payload.get("timing")
+    sections = (repo, backup, target, verification, objectives, timing)
+    if not all(isinstance(item, dict) for item in sections):
         raise DrillError("restore certificate sections are incomplete")
     if not re.fullmatch(r"[0-9a-f]{40}", str(repo.get("exact_head", ""))):
         raise DrillError("restore certificate exact head is invalid")
-    if backup.get("format") != "postgresql-custom" or backup.get("pg_restore_list") != "PASS" or backup.get("checksum_verification") != "PASS":
+    if (
+        backup.get("format") != "postgresql-custom"
+        or backup.get("pg_restore_list") != "PASS"
+        or backup.get("checksum_verification") != "PASS"
+    ):
         raise DrillError("backup verification did not pass")
-    if not isinstance(backup.get("size_bytes"), int) or backup["size_bytes"] <= 0 or not SHA256_RE.fullmatch(str(backup.get("sha256", ""))):
+    size_bytes = backup.get("size_bytes")
+    backup_sha256 = str(backup.get("sha256", ""))
+    if (
+        not isinstance(size_bytes, int)
+        or size_bytes <= 0
+        or not SHA256_RE.fullmatch(backup_sha256)
+    ):
         raise DrillError("backup evidence is invalid")
     if target.get("class") != DISPOSABLE_TARGET_CLASS:
         raise DrillError("restore target class is invalid")
     for field in ("identity_guard", "clean_target", "cleanup"):
         if target.get(field) != "PASS":
             raise DrillError(f"restore target {field} did not pass")
-    for field in ("restore", "migrations", "system_check", "database_identity", "readiness", "counts", "integrity"):
+    verification_fields = (
+        "restore",
+        "migrations",
+        "system_check",
+        "database_identity",
+        "readiness",
+        "counts",
+        "integrity",
+    )
+    for field in verification_fields:
         if verification.get(field) != "PASS":
             raise DrillError(f"verification {field} did not pass")
-    before, after = payload.get("pre_restore_counts"), payload.get("post_restore_counts")
+    before = payload.get("pre_restore_counts")
+    after = payload.get("post_restore_counts")
     if not isinstance(before, dict) or not isinstance(after, dict):
         raise DrillError("representative counts are missing")
     validate_representative_counts(before, after)
-    if objectives.get("rpo_target_hours") != RPO_TARGET_HOURS or objectives.get("rto_target_hours") != RTO_TARGET_HOURS:
+    if (
+        objectives.get("rpo_target_hours") != RPO_TARGET_HOURS
+        or objectives.get("rto_target_hours") != RTO_TARGET_HOURS
+    ):
         raise DrillError("RPO/RTO target drift")
     if objectives.get("production_rto_status") != "TARGET_SLO_NOT_PROVEN_BY_CI":
         raise DrillError("CI restore time must not be claimed as production RTO")
@@ -324,7 +362,11 @@ def write_certificate(payload: Mapping[str, Any], path: Path, checksum_path: Pat
 def verify_certificate_files(path: Path, checksum_path: Path) -> str:
     if not path.is_file() or not checksum_path.is_file():
         raise DrillError("certificate or certificate checksum is missing")
-    lines = [line.strip() for line in checksum_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    lines = [
+        line.strip()
+        for line in checksum_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
     if len(lines) != 1:
         raise DrillError("certificate checksum evidence is ambiguous")
     match = re.fullmatch(r"([0-9a-f]{64})  ([^/\\]+)", lines[0])
@@ -417,7 +459,10 @@ def run_restore_drill(args: argparse.Namespace) -> int:
                 "rpo_target_hours": RPO_TARGET_HOURS, "rto_target_hours": RTO_TARGET_HOURS,
                 "production_rto_status": "TARGET_SLO_NOT_PROVEN_BY_CI",
             },
-            "timing": {"restore_seconds": round(restore_seconds, 3), "drill_seconds": round(drill_seconds, 3)},
+            "timing": {
+                "restore_seconds": round(restore_seconds, 3),
+                "drill_seconds": round(drill_seconds, 3),
+            },
             "overall": "PASS",
         }
         cert_sha = write_certificate(payload, certificate, certificate_checksum)
