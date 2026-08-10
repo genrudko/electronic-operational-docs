@@ -8,7 +8,7 @@ Issue: `#69`
 
 Branch: `ux/ux-platform-foundation-001`
 
-Draft PR: `PENDING CONTOUR BOOTSTRAP`
+Draft PR: `#70 / OPEN / DRAFT / NOT MERGED`
 
 ## EXACT BASELINE SHA
 
@@ -24,14 +24,14 @@ Accepted `MODULE-REGISTRY-001` exact head:
 
 Turn the accepted Direction A / DEFECT / OPJ / UX-THEME visual language into one shared EOD UX platform: shared application shell, semantic design tokens, reusable visual/interaction primitives and stable UX contracts, proven on both DEFECT and OPJ without a big-bang rewrite.
 
-## REQUIRED FIRST CANONICAL TRANSITION
+## CANONICAL TRANSITION
 
-After the Draft PR number exists, atomically record:
+Started with the bounded post-merge transition:
 
 1. `MODULE-REGISTRY-001 = ACCEPTED` with PR #68, accepted exact head `f00d99b6434477c7bcefceff5253d6ccbe4a5fca`, merge commit `1befcb73a8a6f7cc03c2e18d292cbb2c85ef6594`, issue #67 CLOSED / COMPLETED and owner acceptance PASSED;
 2. `UX-PLATFORM-FOUNDATION-001 = IN_PROGRESS`;
-3. `CURRENT_STATE.md` ownership of issue #69 / this branch / the Draft PR;
-4. immutable acceptance/baseline history and deterministic planning views required by the canonical contract.
+3. active contour moved to issue #69 / branch `ux/ux-platform-foundation-001` / Draft PR #70;
+4. immutable acceptance/baseline history and deterministic planning views remain part of the same canonical transition boundary.
 
 No separate reconciliation work item is created.
 
