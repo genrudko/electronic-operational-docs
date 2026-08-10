@@ -34,7 +34,7 @@ def safe_production_environment() -> dict[str, str]:
         "POSTGRES_PORT": "5432",
         "EOD_DATABASE_PROFILE": "production",
         "EOD_ALLOW_SQLITE_PATH_OVERRIDE": "0",
-        "EOD_TESTING": "1",
+        "EOD_TESTING": "0",
         "TIME_ZONE": "Europe/Moscow",
     }
 
@@ -70,6 +70,9 @@ class DeploymentEnvironmentContractTests(unittest.TestCase):
     def test_debug_true_is_rejected(self) -> None:
         self.assert_rejected({"DJANGO_DEBUG": "1"}, "DJANGO_DEBUG")
 
+    def test_testing_mode_is_rejected(self) -> None:
+        self.assert_rejected({"EOD_TESTING": "1"}, "EOD_TESTING")
+
     def test_short_secret_is_rejected_without_echoing_value(self) -> None:
         env = safe_production_environment()
         value = "short-value"
@@ -81,9 +84,18 @@ class DeploymentEnvironmentContractTests(unittest.TestCase):
     def test_wildcard_host_is_rejected(self) -> None:
         self.assert_rejected({"DJANGO_ALLOWED_HOSTS": "*"}, "wildcard")
 
+    def test_subdomain_wildcard_host_is_rejected(self) -> None:
+        self.assert_rejected({"DJANGO_ALLOWED_HOSTS": ".example.invalid"}, "wildcard")
+
     def test_http_csrf_origin_is_rejected(self) -> None:
         self.assert_rejected(
             {"DJANGO_CSRF_TRUSTED_ORIGINS": "http://eod-pilot.example.invalid"},
+            "HTTPS origins",
+        )
+
+    def test_credentialed_csrf_origin_is_rejected(self) -> None:
+        self.assert_rejected(
+            {"DJANGO_CSRF_TRUSTED_ORIGINS": "https://user@eod-pilot.example.invalid"},
             "HTTPS origins",
         )
 
@@ -112,6 +124,7 @@ class DeploymentEnvironmentContractTests(unittest.TestCase):
         code = """
 from eod_config import settings
 assert settings.EOD_DEPLOYMENT_MODE == 'production'
+assert settings.TESTING is False
 assert settings.DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql'
 assert settings.SECURE_SSL_REDIRECT is True
 assert settings.SESSION_COOKIE_SECURE is True
@@ -154,6 +167,7 @@ class ProductionComposeContractTests(unittest.TestCase):
     def test_production_mode_cannot_be_replaced_by_environment(self) -> None:
         self.assertIn("EOD_DEPLOYMENT_MODE: production", self.compose)
         self.assertNotIn("EOD_DEPLOYMENT_MODE: ${", self.compose)
+        self.assertIn('EOD_TESTING: "0"', self.compose)
 
     def test_database_has_no_host_port(self) -> None:
         db_section, app_section = self.compose.split("  app:", 1)
