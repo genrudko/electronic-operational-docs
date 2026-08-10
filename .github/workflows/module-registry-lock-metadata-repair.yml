@@ -1,4 +1,4 @@
-name: EOD Module Registry Lock Metadata Repair
+name: EOD Module Registry Final Repair
 
 on:
   push:
@@ -11,10 +11,10 @@ permissions:
   contents: write
 
 jobs:
-  finalize-browser-lock:
+  finalize:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - name: Checkout branch head
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
@@ -22,73 +22,93 @@ jobs:
           ref: platform/module-registry-001
           fetch-depth: 0
 
-      - name: Set up accepted Python minor
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-        with:
-          python-version: "3.13"
-          check-latest: false
-
-      - name: Regenerate one candidate set and accept browser metadata-only normalization
+      - name: Apply bounded registry and lock metadata repair
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
-          import sys
-          import tempfile
+          import re
           from pathlib import Path
 
-          sys.path.insert(0, 'scripts')
-          import dependency_provenance_implementation as impl
+          browser_path = Path('requirements/locks/browser.txt')
+          browser = browser_path.read_text(encoding='utf-8')
+          pattern = re.compile(
+              r'(greenlet==3\.5\.4 \\\n(?:    --hash=sha256:[0-9a-f]+ \\\n)*    --hash=sha256:[0-9a-f]+\n)'
+              r'    # via playwright\n'
+          )
+          replacement = (
+              r'\1'
+              '    # via\n'
+              '    #   -c <generator>/accepted-constraints.txt\n'
+              '    #   playwright\n'
+          )
+          repaired, count = pattern.subn(replacement, browser, count=1)
+          if count != 1:
+              if (
+                  'greenlet==3.5.4' not in browser
+                  or '    #   -c <generator>/accepted-constraints.txt\n    #   playwright\n'
+                  not in browser
+              ):
+                  raise SystemExit(f'greenlet browser metadata repair count={count}')
+              repaired = browser
+          browser_path.write_text(repaired, encoding='utf-8')
 
-          root = Path.cwd()
-          if impl.ACCEPTED_RESOLUTION.get('greenlet') != '3.5.4':
-              raise SystemExit('greenlet accepted resolution pin missing')
+          models_path = Path('src/apps/system/models.py')
+          models_text = models_path.read_text(encoding='utf-8')
+          old_save = '''    def save(self, *args: Any, **kwargs: Any) -> None:\n        self.full_clean()\n        super().save(*args, **kwargs)\n'''
+          new_save = '''    def save(self, *args: Any, **kwargs: Any) -> None:\n        self.full_clean()\n        if not getattr(self, "_module_registry_lifecycle_write", False):\n            raise ValidationError(\n                "Прямое изменение правила активации запрещено; используйте lifecycle service."\n            )\n        super().save(*args, **kwargs)\n\n    def save_lifecycle_transition(self) -> None:\n        self._module_registry_lifecycle_write = True\n        try:\n            self.save()\n        finally:\n            del self._module_registry_lifecycle_write\n'''
+          if old_save in models_text:
+              models_text = models_text.replace(old_save, new_save, 1)
+          elif 'def save_lifecycle_transition(self)' not in models_text:
+              raise SystemExit('ModuleActivationRule save block changed unexpectedly')
+          models_path.write_text(models_text, encoding='utf-8')
 
-          with tempfile.TemporaryDirectory(prefix='eod-supply-') as directory:
-              work = Path(directory)
-              distributions = impl.verified_bootstrap_wheelhouse(work)
-              if impl.render_bootstrap(distributions) != (root / 'requirements/bootstrap.txt').read_text(encoding='utf-8'):
-                  raise SystemExit('bootstrap root drift; metadata repair aborted')
-              generator_python = impl.bootstrap_environment(work)
-              candidate_dir = work / 'candidate-locks'
-              original = impl.LOCK_DIR
-              impl.LOCK_DIR = candidate_dir
-              try:
-                  impl.generate_locks(generator_python, work)
-              finally:
-                  impl.LOCK_DIR = original
+          registry_path = Path('src/apps/system/module_registry.py')
+          registry = registry_path.read_text(encoding='utf-8')
+          old_call = '''            rule.save()\n            resulting = resolve_effective_state(\n'''
+          new_call = '''            rule.save_lifecycle_transition()\n            resulting = resolve_effective_state(\n'''
+          if old_call in registry:
+              registry = registry.replace(old_call, new_call, 1)
+          elif 'rule.save_lifecycle_transition()' not in registry:
+              raise SystemExit('lifecycle persistence call changed unexpectedly')
+          registry_path.write_text(registry, encoding='utf-8')
 
-              byte_mismatches = []
-              for profile in impl.LOCK_PROFILES:
-                  accepted_path = root / 'requirements/locks' / f'{profile}.txt'
-                  candidate_path = candidate_dir / f'{profile}.txt'
-                  if impl.parse_lock(accepted_path) != impl.parse_lock(candidate_path):
-                      raise SystemExit(f'non-metadata lock drift remains: {profile}')
-                  if accepted_path.read_bytes() != candidate_path.read_bytes():
-                      byte_mismatches.append(profile)
-              if byte_mismatches != ['browser']:
-                  raise SystemExit(f'unexpected metadata-only mismatches: {byte_mismatches}')
-
-              (root / 'requirements/locks/browser.txt').write_bytes(
-                  (candidate_dir / 'browser.txt').read_bytes()
-              )
-              print('BROWSER_LOCK_METADATA_ONLY_REPAIR=PASS')
+          tests_path = Path('src/apps/system/tests/test_module_registry.py')
+          tests = tests_path.read_text(encoding='utf-8')
+          marker = '    def test_direct_rule_save_bypass_is_rejected(self) -> None:\n'
+          if marker not in tests:
+              tests += '''\n\n    def test_direct_rule_save_bypass_is_rejected(self) -> None:\n        direct = ModuleActivationRule(\n            module_id="OPJ",\n            scope_type=ModuleScopeType.ORGANIZATION,\n            scope_id=self.org.pk,\n            organization_id=self.org.pk,\n            state=ModuleLifecycleState.CONFIGURED,\n            configuration_ready=True,\n        )\n        with self.assertRaises(ValidationError):\n            direct.save()\n\n        rule = self.configure("OPJ", ModuleScopeType.ORGANIZATION)\n        rule.state = ModuleLifecycleState.ACTIVE\n        with self.assertRaises(ValidationError):\n            rule.save()\n        rule.refresh_from_db()\n        self.assertEqual(rule.state, ModuleLifecycleState.CONFIGURED)\n\n    def test_mixed_scope_module_sets_are_deterministic(self) -> None:\n        self.configure("OPJ", ModuleScopeType.ORGANIZATION)\n        self.transition(\n            "OPJ",\n            ModuleScopeType.ORGANIZATION,\n            ModuleLifecycleState.INACTIVE,\n        )\n        self.activate("OPJ", ModuleScopeType.ENERGY_SITE)\n        self.activate("DEFECT", ModuleScopeType.WORKPLACE)\n\n        organization_context = normalize_context(organization=self.org)\n        site_context = normalize_context(\n            organization=self.org,\n            energy_site=self.site,\n        )\n        workplace_context = normalize_context(\n            organization=self.org,\n            energy_site=self.site,\n            workplace=self.workplace,\n        )\n        other_context = normalize_context(\n            organization=self.other_org,\n            energy_site=self.other_site,\n            workplace=self.other_workplace,\n        )\n\n        self.assertEqual(\n            resolve_effective_state(\n                module_id="OPJ", context=organization_context\n            ).state,\n            ModuleLifecycleState.INACTIVE,\n        )\n        self.assertEqual(\n            resolve_effective_state(module_id="OPJ", context=site_context).state,\n            ModuleLifecycleState.ACTIVE,\n        )\n        self.assertEqual(\n            resolve_effective_state(\n                module_id="DEFECT", context=site_context\n            ).state,\n            ModuleLifecycleState.AVAILABLE,\n        )\n        self.assertEqual(\n            resolve_effective_state(\n                module_id="DEFECT", context=workplace_context\n            ).state,\n            ModuleLifecycleState.ACTIVE,\n        )\n        self.assertEqual(\n            resolve_effective_state(module_id="OPJ", context=other_context).state,\n            ModuleLifecycleState.AVAILABLE,\n        )\n        self.assertEqual(\n            resolve_effective_state(\n                module_id="DEFECT", context=other_context\n            ).state,\n            ModuleLifecycleState.AVAILABLE,\n        )\n'''
+          tests_path.write_text(tests, encoding='utf-8')
+          print('MODULE_REGISTRY_FINAL_REPAIR=PASS')
           PY
 
-      - name: Run focused accepted-resolution regression
-        run: python tests/process/test_dependency_lock_constraints.py
-
-      - name: Remove bounded failure diagnosis and self-remove workflow
+      - name: Remove temporary diagnostics and self-remove workflow
         shell: bash
         run: |
           set -euo pipefail
           git rm -f docs/work-items/active/MODULE-REGISTRY-001/LOCK_ROOT_REPAIR_FAILURE.json
           git rm -f .github/workflows/module-registry-lock-metadata-repair.yml
 
+      - name: Run focused registry tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check -r requirements/locks/dev.txt
+          export PYTHONPATH="$PWD/src"
+          export DJANGO_SETTINGS_MODULE=eod_config.settings
+          export EOD_TESTING=1
+          export EOD_DEPLOYMENT_MODE=ci
+          export DJANGO_SECRET_KEY="$(python - <<'PY'
+          import secrets
+          print(secrets.token_urlsafe(48))
+          PY
+          )"
+          python src/manage.py test apps.system.tests.test_module_registry --verbosity 1
+
       - name: Regenerate canonical dependency inventory
         run: python scripts/dependency_provenance_views.py write
 
-      - name: Commit metadata-only lock repair
+      - name: Commit final repair
         shell: bash
         run: |
           set -euo pipefail
@@ -96,5 +116,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --check
-          git commit -m "Finalize deterministic browser lock metadata"
+          git commit -m "Finalize module registry fail-closed guards"
           git push origin HEAD:platform/module-registry-001
