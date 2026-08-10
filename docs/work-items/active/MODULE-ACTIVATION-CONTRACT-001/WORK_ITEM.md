@@ -14,134 +14,110 @@ Runtime impact: `NONE`
 
 Preview: `UNTOUCHED`
 
-## WORK ITEM ID
-
-`MODULE-ACTIVATION-CONTRACT-001`
-
-## PARENT RELEASE
-
-Industrialization Phase 1 / `SAFE-CONTINUATION`.
-
-## PARENT MODULE
-
-Platform architecture / cross-module activation contract. This work item does not create a new end-user module.
-
-## CAPABILITY IDS
-
-- `AC-MODULE-ACTIVATION-MANIFEST`;
-- `AC-MODULE-ACTIVATION-LIFECYCLE`;
-- `AC-MODULE-ACTIVATION-SCOPE`;
-- `AC-MODULE-ACTIVATION-DEPENDENCIES`;
-- `AC-MODULE-ACTIVATION-GUARDS`;
-- `AC-MODULE-ACTIVATION-HISTORY`;
-- `AC-MODULE-ACTIVATION-MIGRATION-BOUNDARY`;
-- `AC-MODULE-ACTIVATION-AUDIT`.
-
 ## EXACT BASELINE SHA
 
-Contour creation and accepted-main baseline:
+Accepted-main baseline at contour start:
 
 `1f3296bcf3d0f57bd088241c81691c7f54b2ac25`
 
-Live GitHub remains authoritative; final acceptance report records final exact head and re-checks `main` / `behind_by`.
+Final acceptance report must re-check live `main`, exact head and `behind_by`.
 
 ## GOAL
 
-Accept one deterministic architecture contract for optional EOD modules before implementing `MODULE-REGISTRY-001`.
+Accept one deterministic architecture contract for optional EOD modules before implementation of `MODULE-REGISTRY-001`.
 
-EOD remains one modular Django monolith, one deployable application version and one shared database. Different Organization / EnergySite / Workplace contexts may have different effective module sets without separate builds, forks or loss of historical data.
-
-## USER SCENARIO
-
-A product owner/administrator can eventually activate an approved module for one operational scope, keep another scope inactive, freeze or retire it later, and reactivate it without deleting history or creating a new module identity.
-
-Every future entry point must deterministically resolve module/capability, effective lifecycle state, configuration readiness, hard-dependency result, requested operation access and an audit-safe denial reason.
-
-## BUSINESS RESULT
-
-New journals and functional contours can be added to one EOD product and enabled gradually per organization/object/workplace instead of creating separate product variants. Deactivation remains reversible and history-preserving.
+EOD remains one modular Django monolith, one deployable application version and one shared compatible database. Different Organization / EnergySite / Workplace contexts may have different effective module sets without separate builds, forks, deployments or loss of historical data.
 
 ## IN SCOPE
 
-1. Canonical module manifest semantics and stable identity.
-2. Supported activation scopes and deterministic precedence/override.
-3. Lifecycle states and transitions.
+1. Canonical module manifest and stable identity.
+2. Lifecycle states and transitions.
+3. Activation scopes, inheritance, precedence and explicit overrides.
 4. Required dependencies versus optional integrations.
-5. Universal access-decision contract across UI/HTTP/service/API/admin/commands/exports/jobs/cross-module actions.
-6. Read/write/history/export/background behaviour by lifecycle state.
-7. Historical-data retention and reactivation.
+5. Universal access-decision semantics across UI/HTTP/service/API/admin/commands/exports/jobs/cross-module actions.
+6. Read/write/history/export/background behaviour matrix.
+7. Historical retention and reactivation.
 8. Product-version migration boundary for inactive modules.
-9. Activation audit semantics.
+9. Activation audit requirements.
 10. Current implementation-gap mapping.
-11. Machine-readable contract, fail-closed validation and negative fixtures.
-12. Canonical post-merge transition from accepted `DEPLOYMENT-PROFILE-001`.
+11. Machine-readable architecture representation and fail-closed negative fixtures.
+12. Canonical transition from accepted `DEPLOYMENT-PROFILE-001` to this active work item.
 
 ## OUT OF SCOPE
 
-- `MODULE-REGISTRY-001` runtime implementation;
+- runtime `MODULE-REGISTRY-001` implementation;
 - registry/control-plane DB tables;
 - universal runtime guard wiring;
-- product/domain models and migrations;
-- mixed-module N-1/N migration matrix;
+- product/domain models or migrations;
+- executable `active/inactive × N-1/N` module migration matrix;
 - UX/page templates;
 - new journals/modules;
 - `SHIFT-HANDOVER-001`;
 - live Preview/VPS;
 - Ready for Review or merge.
 
-## DEPENDENCIES
+## COMPLETED CANONICAL TRANSITION
 
-Canonical program dependency:
+GitHub factual state was independently verified before transition:
 
-- `PROJECT-STATE-RECONCILIATION-001` — `ACCEPTED`.
+- PR #60: `CLOSED / MERGED`;
+- issue #59: `CLOSED / COMPLETED`;
+- accepted Deployment Profile exact head: `323f4fb9162e84ca25a49556340078de81af2424`;
+- merge/current accepted baseline: `1f3296bcf3d0f57bd088241c81691c7f54b2ac25`;
+- all eight applicable final exact-head PR #60 workflows: `SUCCESS`.
 
-Downstream consumers:
+Canonical state is now:
 
-- `MODULE-REGISTRY-001`;
-- `MODULE-BOUNDARY-GATES-001`;
-- `UX-PLATFORM-FOUNDATION-001`;
-- `MODULE-MIGRATION-COMPATIBILITY-001`.
+```text
+DEPLOYMENT-PROFILE-001:       ACCEPTED
+MODULE-ACTIVATION-CONTRACT:   IN_PROGRESS
+SAFE-CONTINUATION:            5/8 ACCEPTED
+domain queue:                 PAUSED_PENDING_SAFE_CONTINUATION_AND_EXPLICIT_OWNER_DECISION
+SHIFT-HANDOVER-001:           NOT STARTED
+```
 
-## DOMAIN CONTRACT
+`CURRENT_STATE.md`, `DEMO_RELEASE_PLAN.yaml`, immutable acceptance/baseline history and deterministic progress/planning views were updated. No second runtime/Preview state owner was created.
 
-This is platform architecture and does not invent new OPJ/DEFECT/SHIFT domain rules.
+## CANONICAL ARCHITECTURE DECISION
 
-A hard dependency exists only when a module cannot preserve its own invariants without the provider. Cross-module links do not automatically create hard dependencies. The accepted DEFECT contract names `MASTER-DATA` as dependency; the accepted OPJ link therefore remains optional integration unless future domain evidence proves otherwise.
+The ADR and its machine-readable fenced JSON block are stored in the existing architecture owner:
 
-## LEGAL MODE / VERIFY OWNER
+`docs/project/SYSTEM_ARCHITECTURE.md` section `13. ADR: MODULE-ACTIVATION-CONTRACT-001`.
 
-No new legal mode. Module-specific legal/evidence rules remain owned by canonical module contracts. Activation state may restrict access but must never erase legally/operationally significant records, snapshots, relations or audit evidence.
+The existing permanent Documentation Contract entry point parses and validates this block fail closed:
 
-## SOURCE IDS
+`scripts/check_documentation_contract.py`.
 
-Primary repository evidence:
+Negative module-activation mutations are stored in the existing process-fixture catalog:
 
-- `docs/project/INDUSTRIALIZATION_PROGRAM.yaml` and `.md`;
-- `docs/audits/PROJECT_SUSTAINABILITY_RISK_REGISTER_20260805.csv`;
-- `docs/project/SYSTEM_ARCHITECTURE.md`;
-- `docs/product/MODULE_MAP.md`;
-- relevant `docs/modules/*/MODULE_CONTRACT.md`;
-- current `INSTALLED_APPS`, URL wiring and middleware;
-- `EquipmentDefectRouteGuardMiddleware`;
-- current Organization / EnergySite / Workplace models;
-- current DEFECT service layer;
-- existing architecture/process gates.
+`tests/process/fixtures/industrialization_execution_cases.json` under `module_activation_cases`.
 
-No external research was required.
+No additional executable checker/workflow or second architecture/status owner is introduced.
 
-## COMPETITOR BENCHMARK
+## MANIFEST CONTRACT
 
-Not required. This architecture contract derives from accepted EOD architecture and factual current-code gaps, not market-product behaviour.
+Minimum canonical fields:
 
-## UX REFERENCES / LOCATORS
+- stable `module_id`;
+- human name;
+- manifest contract version;
+- activation policy (`ALWAYS_ON` / `SCOPED_OPTIONAL`);
+- supported scopes;
+- required dependencies;
+- optional integrations;
+- capabilities / operations;
+- activation prerequisites/configuration readiness;
+- history policy (`PRESERVE` for optional modules);
+- migration policy (`ALWAYS_WITH_PRODUCT`);
+- lifecycle contract version.
 
-No UI redesign. Future navigation visibility is presentation/defence in depth only; hidden UI is never a substitute for HTTP/service/API/admin/command/task enforcement.
+Manifest must not own release/work-item status, current main, active PR or accepted SHA.
 
-## VIEWPORTS / STATES
+No explicit rule for a `SCOPED_OPTIONAL` module means fail-closed `AVAILABLE`, not implicit `ACTIVE`.
 
-No viewport acceptance.
+## LIFECYCLE CONTRACT
 
-Canonical lifecycle:
+Canonical states:
 
 ```text
 AVAILABLE
@@ -152,162 +128,194 @@ INACTIVE
 RETIRED
 ```
 
-`INACTIVE` is intentionally distinct from `CONFIGURED` and `RETIRED`.
-
-## ALLOWED FILES
-
-- `docs/decisions/**`;
-- canonical `docs/project/**` transition/history/generated views;
-- this work-item directory;
-- existing Documentation Contract entry point;
-- focused architecture test/fixture files.
-
-## PROTECTED FILES
-
-No changes to product/domain models, migrations, runtime configuration, UX templates/static, accepted OPJ/DEFECT lifecycle behaviour, accepted Deployment Profile semantics or accepted Dependency Provenance architecture.
-
-## FORBIDDEN CHANGES
-
-- microservices/separate module deployments;
-- separate product versions/builds per object;
-- DB-per-module;
-- history deletion on disable/retire;
-- optional integration silently promoted to required dependency;
-- UI-only or route-only enforcement presented as complete;
-- inactive-module migration skipping;
-- upgrade-triggered automatic activation;
-- random first-match scope conflict resolution;
-- new module identity on reactivation;
-- weakening existing gates.
-
-## DATA / FIXTURES
-
-No live data changes.
-
-Machine-readable positive contract:
-
-`docs/work-items/active/MODULE-ACTIVATION-CONTRACT-001/MODULE_ACTIVATION_CONTRACT.json`
-
-Fail-closed validation is integrated into the existing Documentation Contract entry point:
-
-`scripts/check_documentation_contract.py`
-
-Negative fixtures:
-
-`tests/process/fixtures/module_activation_contract_cases.json`
-
-Focused regressions:
-
-`tests/process/test_module_activation_contract.py`
-
-The catalog contains all ten required negative architecture scenarios plus focused manifest/entry-point/reactivation/precedence drift cases. No separate executable checker was retained, avoiding unnecessary expansion of the accepted Dependency Provenance source contour.
-
-## ACCEPTANCE IDS
-
-- `AC-MODULE-ACTIVATION-MANIFEST`
-- `AC-MODULE-ACTIVATION-LIFECYCLE`
-- `AC-MODULE-ACTIVATION-SCOPE`
-- `AC-MODULE-ACTIVATION-DEPENDENCIES`
-- `AC-MODULE-ACTIVATION-GUARDS`
-- `AC-MODULE-ACTIVATION-HISTORY`
-- `AC-MODULE-ACTIVATION-MIGRATION-BOUNDARY`
-- `AC-MODULE-ACTIVATION-AUDIT`
-
-## REQUIRED CHECKS
-
-Focused contract checks are covered by:
+Allowed transitions:
 
 ```text
-python scripts/check_documentation_contract.py
-python -m unittest -v tests.process.test_module_activation_contract
+AVAILABLE  -> CONFIGURED
+CONFIGURED -> ACTIVE | INACTIVE | RETIRED
+ACTIVE     -> READ_ONLY | INACTIVE | RETIRED
+READ_ONLY  -> ACTIVE | INACTIVE | RETIRED
+INACTIVE   -> CONFIGURED | RETIRED
+RETIRED    -> CONFIGURED
 ```
 
-The canonical positive and negative machine contract is executed by the existing `EOD Documentation Contract` entry point; full exact-head workflows remain unchanged.
+Direct `AVAILABLE -> ACTIVE`, `INACTIVE -> ACTIVE` and `RETIRED -> ACTIVE` are forbidden.
 
-Final candidate additionally requires deterministic project-state/planning views exact, one applicable final exact-head workflow set, current `main` re-check and `behind_by: 0`.
-
-## DELIVERY PROFILE
-
-Architecture-only acceptance candidate. No runtime deployment.
-
-## COMMIT / PR RULES
-
-- issue #61 / existing branch / Draft PR #62 only;
-- no new issue/branch/PR;
-- no Ready for Review or merge;
-- exact-head evidence only;
-- canonical owners remain singular;
-- generated views must match generators.
-
-## COMPLETED CANONICAL TRANSITION
-
-GitHub factual state was re-verified before transition:
-
-- PR #60: `CLOSED / MERGED`;
-- issue #59: `CLOSED / COMPLETED`;
-- accepted Deployment Profile exact head: `323f4fb9162e84ca25a49556340078de81af2424`;
-- merge/current accepted baseline: `1f3296bcf3d0f57bd088241c81691c7f54b2ac25`;
-- all eight applicable final exact-head PR #60 workflows: `SUCCESS`.
-
-Canonical transition performed:
+Reactivation:
 
 ```text
-DEPLOYMENT-PROFILE-001:       IN_PROGRESS -> ACCEPTED
-MODULE-ACTIVATION-CONTRACT:   NOT_STARTED -> IN_PROGRESS
-SAFE-CONTINUATION:            5/8 ACCEPTED
-domain queue:                 PAUSED_PENDING_SAFE_CONTINUATION_AND_EXPLICIT_OWNER_DECISION
-SHIFT-HANDOVER-001:           NOT STARTED
+INACTIVE -> CONFIGURED -> ACTIVE
+RETIRED  -> CONFIGURED -> ACTIVE
 ```
 
-`CURRENT_STATE.md`, `DEMO_RELEASE_PLAN.yaml`, acceptance/baseline history and deterministic progress/planning views were updated. No second runtime/Preview state owner was created.
+Configuration and hard dependencies are revalidated before `ACTIVE`.
 
-## ARCHITECTURE OUTPUTS
+`disable`, `READ_ONLY` and `retire` never mean delete.
 
-Canonical decision:
+## ACTIVATION SCOPE CONTRACT
 
-`docs/decisions/MODULE_ACTIVATION_CONTRACT_001_DECISION.md`
+Supported v1 scopes:
 
-Machine contract:
+```text
+ORGANIZATION
+ENERGY_SITE
+WORKPLACE
+```
 
-`docs/work-items/active/MODULE-ACTIVATION-CONTRACT-001/MODULE_ACTIVATION_CONTRACT.json`
+`DIVISION` and `OPERATIONAL_AREA` are not v1 activation scopes.
 
-### Final scope decision
+Factual current models do **not** contain `Workplace -> EnergySite`; the contract does not invent such a hierarchy. Requested Organization is mandatory; optional Site/Workplace must each belong to that Organization.
 
-Activation v1 supports `ORGANIZATION`, `ENERGY_SITE`, `WORKPLACE`.
-
-`Workplace` is not modelled as a child of `EnergySite`, because the current Django model contains no such relation. Requested context requires Organization and may contain Site/Workplace if each belongs to the same Organization.
-
-Ordinary precedence:
+Ordinary decision precedence:
 
 ```text
 WORKPLACE > ENERGY_SITE > ORGANIZATION
 ```
 
-`READ_ONLY` and `RETIRED` are restrictive caps. `INACTIVE` is not an ancestor cap: a more-specific scope may explicitly become `ACTIVE` when configuration and hard dependencies validate. This enables staged activation.
+Rules:
 
-### Final lifecycle decision
+- exact `(module_id, scope_type, scope_id)` uniqueness; duplicate = `DENY`;
+- no rule = `AVAILABLE`;
+- `READ_ONLY` and `RETIRED` are restrictive caps; `RETIRED` dominates `READ_ONLY`;
+- broader `INACTIVE` is not an ancestor safety cap and may be explicitly overridden by a more-specific `ACTIVE` after config/dependency validation, enabling phased rollout;
+- invalid organization membership or unsupported scope fails closed;
+- rules bind stable IDs, not mutable names/path strings.
+
+## DEPENDENCIES AND INTEGRATIONS
+
+### Required dependency
+
+Hard dependency exists only when the consumer cannot preserve its own invariants without the provider.
+
+It is:
+
+- declared in manifest;
+- checked before activation and guarded operations;
+- fail closed;
+- evaluated in the requested context by default;
+- impossible to bypass via direct route/service/API/admin/command;
+- acyclic.
+
+Historical reads are not erased when the provider becomes unavailable.
+
+### Optional integration
+
+Missing/inactive provider does not block primary-module activation. It disables/degrades only the integration capability and preserves historical links/snapshots.
+
+Current `DEFECT ↔ OPJ` classification remains optional integration unless future domain evidence proves a hard invariant dependency. The accepted DEFECT contract names `MASTER-DATA` as dependency; the existence of an OPJ link capability alone is insufficient evidence for a hard OPJ dependency.
+
+## UNIVERSAL ACCESS DECISION
+
+Future canonical predicate:
 
 ```text
-AVAILABLE -> CONFIGURED -> ACTIVE
-                       \-> INACTIVE
-                       \-> RETIRED
-
-ACTIVE -> READ_ONLY / INACTIVE / RETIRED
-READ_ONLY -> ACTIVE / INACTIVE / RETIRED
-INACTIVE -> CONFIGURED -> ACTIVE
-RETIRED  -> CONFIGURED -> ACTIVE
+decide_module_access(
+    normalized_context,
+    module_id,
+    capability_id,
+    operation,
+    entry_point_class,
+) -> ModuleAccessDecision
 ```
 
-Direct `AVAILABLE|INACTIVE|RETIRED -> ACTIVE` is forbidden where defined by the machine contract; stale configuration/dependencies must be revalidated.
+Mandatory entry-point classes:
 
-### Final migration decision
+- `NAVIGATION_UI`;
+- `HTTP_ROUTE`;
+- `SERVICE`;
+- `API`;
+- `ADMIN`;
+- `MANAGEMENT_COMMAND`;
+- `EXPORT`;
+- `BACKGROUND_JOB`;
+- `CROSS_MODULE_ACTION`.
 
-Django/software migrations are a property of the product version, never of activation state. Inactive-module migrations apply and retained data migrate; upgrade never auto-activates the module.
+Hidden UI is not protection. Route-only protection is incomplete. Mutation enforcement belongs at the service/capability boundary. Admin, management commands and background jobs have no implicit module-activation bypass.
 
-## REPORT FORMAT
+Final permission is:
 
-Final report records exact head, current main / `behind_by`, changed files, canonical transition, SAFE status, manifest/lifecycle/scope/dependency/guard/behaviour/migration/reactivation/audit contracts, current-gap mapping, negative evidence, exact-head workflow IDs/results, residual work handed to `MODULE-REGISTRY-001`, and confirmation of no runtime/Preview/domain/schema/data/UX changes.
+```text
+module decision ALLOW
+AND identity/RBAC/authority ALLOW
+AND domain invariants ALLOW
+```
 
-## STOP CONDITIONS
+## BEHAVIOUR SUMMARY
 
-Stop only when future `MODULE-REGISTRY-001` has no fundamental lifecycle/scope/dependency question left to invent, current implementation gaps are described as gaps, canonical state/views are consistent, applicable exact-head gates are green, and PR #62 remains `OPEN / DRAFT / NOT MERGED`.
+| State | Read/history | Create/edit/transition | Delete | Export | Background mutation |
+|---|---|---|---|---|---|
+| `ACTIVE` | ALLOW | ALLOW subject to normal policy | capability/domain only | ALLOW | declared operations only |
+| `READ_ONLY` | ALLOW | DENY | DENY | read-only ALLOW | DENY |
+| `INACTIVE` | retained history | DENY | DENY | retained-history ALLOW | DENY |
+| `RETIRED` | retained history | DENY | DENY | retained-history ALLOW | DENY |
+| `CONFIGURED` | retained history | DENY | DENY | retained-history ALLOW | DENY |
+| `AVAILABLE` | retained history if supported | DENY | DENY | retained export if supported | DENY |
+
+Historical operational/legal records, snapshots, audit and relations are preserved.
+
+## MIGRATION CONTRACT
+
+Software/database migrations belong to product version, never activation state.
+
+Inactive-module migrations are applied; retained inactive data migrate safely; upgrade never auto-activates a module and preserves explicit activation state. One product version must not produce different DB schemas because of module set.
+
+Full executable `active/inactive × N-1/N` compatibility belongs to `MODULE-MIGRATION-COMPATIBILITY-001`.
+
+## ACTIVATION AUDIT
+
+Every attempted activation-state transition requires append-only evidence containing module ID, scope, Organization, previous explicit/effective state, requested/resulting state, actor, timestamp, reason, configuration/dependency validation, result, denial reason, correlation identity and manifest contract version.
+
+## CURRENT IMPLEMENTATION GAP
+
+Current code is intentionally **not** presented as a registry implementation:
+
+- Django apps and URL namespaces are globally wired;
+- `EquipmentDefectRouteGuardMiddleware` is only a specialized redirect guard;
+- current service paths do not have a universal module predicate;
+- universal UI/HTTP/service/API/admin/command/export/job guards do not exist;
+- scoped activation records and activation audit do not exist.
+
+These are explicit deliverables for `MODULE-REGISTRY-001`.
+
+## NEGATIVE ARCHITECTURE EVIDENCE
+
+The machine contract and mutations reject all required scenarios:
+
+1. UI hidden, direct URL operationally works.
+2. Route denied, direct service write works.
+3. Optional integration becomes hard dependency without evidence.
+4. Required dependency missing, activation succeeds.
+5. Disable deletes records/history.
+6. `READ_ONLY` allows write/transition.
+7. Upgrade auto-activates inactive module.
+8. Inactive module skips schema migrations.
+9. Scope conflict/duplicates use random/first-match resolution.
+10. Reactivation creates a new module identity.
+
+Additional mutations protect manifest minimum, mandatory `SERVICE` entry-point coverage, no direct `RETIRED -> ACTIVE` and exact scope precedence.
+
+## REQUIRED CHECKS
+
+Focused architecture validation is executed by the existing Documentation Contract:
+
+```text
+python scripts/check_documentation_contract.py
+```
+
+Final candidate additionally requires the full applicable exact-head workflow set, deterministic planning views, live current-main re-check and `behind_by: 0`.
+
+## DELIVERY / PROTECTED BOUNDARY
+
+No changes to:
+
+- product/domain models;
+- migrations;
+- working data;
+- runtime configuration;
+- live VPS/Preview;
+- UX/templates/static;
+- new journals/modules;
+- `SHIFT-HANDOVER-001`;
+- runtime `MODULE-REGISTRY-001`.
+
+PR #62 stays `OPEN / DRAFT / NOT MERGED` until an explicit product-owner decision.
