@@ -114,6 +114,24 @@ During implementation run focused security/deployment tests. Do not manually run
 - live Preview/VPS mutation without explicit owner authorization;
 - Ready for Review or merge before owner acceptance.
 
+## Implemented candidate boundary
+
+The current Draft candidate remains `IN_PROGRESS` and intentionally stops at the SAFE baseline boundary:
+
+- the required DR acceptance / Security start transition is recorded canonically, with `SAFE-CONTINUATION` at 7/8 and the domain queue still paused;
+- `THREAT_MODEL.md` records repository-grounded assets, actors, trust boundaries, entry points and material threat dispositions;
+- production-capable settings explicitly pin material cookie/session/header decisions instead of relying on framework defaults;
+- production derives `EOD_DJANGO_ADMIN_ENABLED=False` from the deployment contract, and the URL configuration omits the privileged `/admin/` route when disabled;
+- development/CI keep Django admin available;
+- a real POST logout route supplies focused CSRF-negative evidence without creating a synthetic product endpoint;
+- the production deployment workflow deliberately supplies a stray `EOD_DJANGO_ADMIN_ENABLED=1` environment value but still requires the loaded production setting to remain false and `/admin/` to return HTTP 404;
+- the production deployment workflow retains PostgreSQL-only identity checks and `python manage.py check --deploy`;
+- existing Secret Hygiene and Dependency Provenance gates were kept fail closed; detected test credential/process-provenance violations were repaired at source rather than allowlisted or excluded;
+- generated dependency inventory views were regenerated with the accepted repository generator after source stabilization;
+- no machine-readable security governance platform was introduced.
+
+Residual MFA/privileged assurance, SAST/dependency/container vulnerability scanning and severity policy, full upload hardening, and universal module/capability authorization remain explicitly deferred to their named future work items. They are not claimed as implemented by this candidate.
+
 ## Acceptance boundary
 
 Stop at a technically complete Draft PR with a repository-grounded threat model, focused fail-closed security controls, production-safe admin default, executable negative tests, explicit residual handoffs, `SAFE-CONTINUATION` still 7/8 while this item is IN_PROGRESS, `behind_by: 0`, all applicable exact-head workflows green and live Preview/VPS untouched.
