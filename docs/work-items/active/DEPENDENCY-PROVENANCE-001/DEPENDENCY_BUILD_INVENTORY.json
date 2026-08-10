@@ -459,7 +459,7 @@
     "scripts/theme_css_audit.py": "4fc3a02688008151f321cf2e3dae87eb381654d25a289d9488d8e416a5ea361d",
     "src/apps/system/plan_001_audit/core.py": "7c0c63efe1ae0ac92a685f1b9561be486d9be692cecbf4ecb69f4ecefeb2e0c0",
     "src/apps/system/tests/test_deployment_health.py": "e0443706071d08fb212f471f9747ca0fb24ed5f2a168feb88d993856e04084ec",
-    "src/apps/system/tests/test_deployment_profile.py": "4570c9b54398c628368343341027a36a848bae85700e1d694581bcb7bfc0d793",
+    "src/apps/system/tests/test_deployment_profile.py": "a83dda8814945827efc558fd2ebc6b75d4fddf20728bda26041bc522e173ad6c",
     "src/eod_config/deployment.py": "1f07e17f3e014aa0d8f1a2b6717c6b1bd401355900bfe6ecd7c91a0159edfe75",
     "src/static/system/eod_typography.css": "6ed237e0b6221fd57ae32888ecfe77ce8f02afc933ca8da56cc19ffd20c7bfdc",
     "supply-chain/Dockerfile.browser": "0060a0d1dde4afeea1b37db6eb2c079c30bf2e38e12c71e1fcb5910e1e9d54fa",
