@@ -21,43 +21,355 @@
     }
   },
   "cases": [
-    {"id": "positive", "mutation": {"type": "none"}, "expected_rule": null},
-    {"id": "missing-owner", "mutation": {"type": "program_remove_item_field", "work_item_id": "MODULE-ACTIVATION-CONTRACT-001", "field": "owner_role"}, "expected_rule": "owner-role"},
-    {"id": "missing-acceptance-evidence-contract", "mutation": {"type": "program_remove_item_field", "work_item_id": "MODULE-ACTIVATION-CONTRACT-001", "field": "acceptance_evidence_requirements"}, "expected_rule": "acceptance-evidence-contract"},
-    {"id": "invalid-transition", "mutation": {"type": "plan_set_transition", "work_item_id": "INDUSTRIALIZATION-PROGRAM-EXECUTION-001", "from": "ACCEPTED", "to": "IN_PROGRESS"}, "expected_rule": "state-transition"},
-    {"id": "accepted-without-evidence", "mutation": {"type": "plan_set_status", "work_item_id": "INDUSTRIALIZATION-PROGRAM-EXECUTION-001", "status": "ACCEPTED", "remove_evidence": true}, "expected_rule": "accepted-execution-evidence"},
-    {"id": "in-progress-with-blocked-dependency", "mutation": {"type": "plan_set_status", "work_item_id": "MODULE-REGISTRY-001", "status": "IN_PROGRESS"}, "expected_rule": "in-progress-dependency-closure"},
-    {"id": "dependency-bypass", "mutation": {"type": "plan_set_status", "work_item_id": "MODULE-REGISTRY-001", "status": "READY"}, "expected_rule": "dependency-bypass"},
-    {"id": "illegal-parallel-start", "mutation": {"type": "batch", "mutations": [{"type": "plan_set_status", "work_item_id": "SECRET-HYGIENE-001", "status": "IN_PROGRESS"}, {"type": "plan_set_status", "work_item_id": "MODULE-ACTIVATION-CONTRACT-001", "status": "IN_PROGRESS"}, {"type": "program_set_parallel_max_active", "group_id": "P1-FOUNDATION-PARALLEL", "value": 1}]}, "expected_rule": "parallelization-limit"},
-    {"id": "missing-risk", "mutation": {"type": "program_set_item_field", "work_item_id": "MODULE-ACTIVATION-CONTRACT-001", "field": "risks", "value": []}, "expected_rule": "risk-classification"},
-    {"id": "unknown-risk", "mutation": {"type": "program_set_item_field", "work_item_id": "MODULE-ACTIVATION-CONTRACT-001", "field": "risks", "value": ["PSR-999"]}, "expected_rule": "risk-reference"},
-    {"id": "missing-gate-impact", "mutation": {"type": "program_remove_item_field", "work_item_id": "MODULE-ACTIVATION-CONTRACT-001", "field": "gate_impact"}, "expected_rule": "gate-classification"},
-    {"id": "changed-gate-membership", "mutation": {"type": "program_remove_gate_item", "gate_id": "SAFE-CONTINUATION", "work_item_id": "SECRET-HYGIENE-001"}, "expected_rule": "gate-membership-contract"},
-    {"id": "phase-zero-completion-drift", "mutation": {"type": "program_set_contract_field", "field": "phase_zero_work_items", "value": ["PROJECT-STATE-RECONCILIATION-001"]}, "expected_rule": "phase-zero-membership-contract"},
-    {"id": "unowned-residual-risk", "mutation": {"type": "append_residual_risk", "overrides": {"accountable_owner": ""}}, "expected_rule": "residual-risk-owner"},
-    {"id": "residual-risk-without-due-date", "mutation": {"type": "append_residual_risk", "overrides": {"due_date": ""}}, "expected_rule": "residual-risk-due-date"},
-    {"id": "residual-risk-without-controls", "mutation": {"type": "append_residual_risk", "overrides": {"compensating_controls": []}}, "expected_rule": "residual-risk-controls"},
-    {"id": "residual-risk-without-review-condition", "mutation": {"type": "append_residual_risk", "overrides": {"review_condition": ""}}, "expected_rule": "residual-risk-review-condition"},
-    {"id": "github-canonical-status-mismatch", "mutation": {"type": "github_evidence_set", "work_item_id": "SECRET-HYGIENE-001", "field": "canonical_status", "value": "NOT_STARTED"}, "expected_rule": "github-canonical-status"},
-    {"id": "stale-generated-progress-view", "mutation": {"type": "append_view_text", "text": "\nSTALE\n"}, "expected_rule": "exact-generated-projection"},
-    {"id": "duplicate-planning-owner", "mutation": {"type": "program_set_item_field", "work_item_id": "MODULE-ACTIVATION-CONTRACT-001", "field": "execution_state", "value": "NOT_STARTED"}, "expected_rule": "single-planning-state-owner"},
-    {"id": "accepted-left-in-active-queue", "mutation": {"type": "plan_add_active_queue", "work_item_id": "PROJECT-STATE-RECONCILIATION-001"}, "expected_rule": "accepted-work-item-not-queued"}
+    {
+      "id": "positive",
+      "mutation": {
+        "type": "none"
+      },
+      "expected_rule": null
+    },
+    {
+      "id": "missing-owner",
+      "mutation": {
+        "type": "program_remove_item_field",
+        "work_item_id": "MODULE-ACTIVATION-CONTRACT-001",
+        "field": "owner_role"
+      },
+      "expected_rule": "owner-role"
+    },
+    {
+      "id": "missing-acceptance-evidence-contract",
+      "mutation": {
+        "type": "program_remove_item_field",
+        "work_item_id": "MODULE-ACTIVATION-CONTRACT-001",
+        "field": "acceptance_evidence_requirements"
+      },
+      "expected_rule": "acceptance-evidence-contract"
+    },
+    {
+      "id": "invalid-transition",
+      "mutation": {
+        "type": "plan_set_transition",
+        "work_item_id": "INDUSTRIALIZATION-PROGRAM-EXECUTION-001",
+        "from": "ACCEPTED",
+        "to": "IN_PROGRESS"
+      },
+      "expected_rule": "state-transition"
+    },
+    {
+      "id": "accepted-without-evidence",
+      "mutation": {
+        "type": "plan_set_status",
+        "work_item_id": "INDUSTRIALIZATION-PROGRAM-EXECUTION-001",
+        "status": "ACCEPTED",
+        "remove_evidence": true
+      },
+      "expected_rule": "accepted-execution-evidence"
+    },
+    {
+      "id": "in-progress-with-blocked-dependency",
+      "mutation": {
+        "type": "plan_set_status",
+        "work_item_id": "MODULE-MIGRATION-COMPATIBILITY-001",
+        "status": "IN_PROGRESS"
+      },
+      "expected_rule": "in-progress-dependency-closure"
+    },
+    {
+      "id": "dependency-bypass",
+      "mutation": {
+        "type": "plan_set_status",
+        "work_item_id": "OBSERVABILITY-001",
+        "status": "READY"
+      },
+      "expected_rule": "dependency-bypass"
+    },
+    {
+      "id": "illegal-parallel-start",
+      "mutation": {
+        "type": "batch",
+        "mutations": [
+          {
+            "type": "plan_set_status",
+            "work_item_id": "SECRET-HYGIENE-001",
+            "status": "IN_PROGRESS"
+          },
+          {
+            "type": "plan_set_status",
+            "work_item_id": "MODULE-ACTIVATION-CONTRACT-001",
+            "status": "IN_PROGRESS"
+          },
+          {
+            "type": "program_set_parallel_max_active",
+            "group_id": "P1-FOUNDATION-PARALLEL",
+            "value": 1
+          }
+        ]
+      },
+      "expected_rule": "parallelization-limit"
+    },
+    {
+      "id": "missing-risk",
+      "mutation": {
+        "type": "program_set_item_field",
+        "work_item_id": "MODULE-ACTIVATION-CONTRACT-001",
+        "field": "risks",
+        "value": []
+      },
+      "expected_rule": "risk-classification"
+    },
+    {
+      "id": "unknown-risk",
+      "mutation": {
+        "type": "program_set_item_field",
+        "work_item_id": "MODULE-ACTIVATION-CONTRACT-001",
+        "field": "risks",
+        "value": [
+          "PSR-999"
+        ]
+      },
+      "expected_rule": "risk-reference"
+    },
+    {
+      "id": "missing-gate-impact",
+      "mutation": {
+        "type": "program_remove_item_field",
+        "work_item_id": "MODULE-ACTIVATION-CONTRACT-001",
+        "field": "gate_impact"
+      },
+      "expected_rule": "gate-classification"
+    },
+    {
+      "id": "changed-gate-membership",
+      "mutation": {
+        "type": "program_remove_gate_item",
+        "gate_id": "SAFE-CONTINUATION",
+        "work_item_id": "SECRET-HYGIENE-001"
+      },
+      "expected_rule": "gate-membership-contract"
+    },
+    {
+      "id": "phase-zero-completion-drift",
+      "mutation": {
+        "type": "program_set_contract_field",
+        "field": "phase_zero_work_items",
+        "value": [
+          "PROJECT-STATE-RECONCILIATION-001"
+        ]
+      },
+      "expected_rule": "phase-zero-membership-contract"
+    },
+    {
+      "id": "unowned-residual-risk",
+      "mutation": {
+        "type": "append_residual_risk",
+        "overrides": {
+          "accountable_owner": ""
+        }
+      },
+      "expected_rule": "residual-risk-owner"
+    },
+    {
+      "id": "residual-risk-without-due-date",
+      "mutation": {
+        "type": "append_residual_risk",
+        "overrides": {
+          "due_date": ""
+        }
+      },
+      "expected_rule": "residual-risk-due-date"
+    },
+    {
+      "id": "residual-risk-without-controls",
+      "mutation": {
+        "type": "append_residual_risk",
+        "overrides": {
+          "compensating_controls": []
+        }
+      },
+      "expected_rule": "residual-risk-controls"
+    },
+    {
+      "id": "residual-risk-without-review-condition",
+      "mutation": {
+        "type": "append_residual_risk",
+        "overrides": {
+          "review_condition": ""
+        }
+      },
+      "expected_rule": "residual-risk-review-condition"
+    },
+    {
+      "id": "github-canonical-status-mismatch",
+      "mutation": {
+        "type": "github_evidence_set",
+        "work_item_id": "SECRET-HYGIENE-001",
+        "field": "canonical_status",
+        "value": "NOT_STARTED"
+      },
+      "expected_rule": "github-canonical-status"
+    },
+    {
+      "id": "stale-generated-progress-view",
+      "mutation": {
+        "type": "append_view_text",
+        "text": "\nSTALE\n"
+      },
+      "expected_rule": "exact-generated-projection"
+    },
+    {
+      "id": "duplicate-planning-owner",
+      "mutation": {
+        "type": "program_set_item_field",
+        "work_item_id": "MODULE-ACTIVATION-CONTRACT-001",
+        "field": "execution_state",
+        "value": "NOT_STARTED"
+      },
+      "expected_rule": "single-planning-state-owner"
+    },
+    {
+      "id": "accepted-left-in-active-queue",
+      "mutation": {
+        "type": "plan_add_active_queue",
+        "work_item_id": "PROJECT-STATE-RECONCILIATION-001"
+      },
+      "expected_rule": "accepted-work-item-not-queued"
+    }
   ],
   "module_activation_cases": [
-    {"id": "positive-module-activation", "mutation": null, "expected_rule": null},
-    {"id": "N01_UI_HIDDEN_DIRECT_URL_MUST_DENY", "mutation": {"op": "set", "path": "access_decision.ui_visibility_is_security_boundary", "value": true}, "expected_rule": "ui-not-security-boundary"},
-    {"id": "N02_ROUTE_DENIED_SERVICE_WRITE_MUST_DENY", "mutation": {"op": "set", "path": "access_decision.mutation_service_guard_required", "value": false}, "expected_rule": "service-mutation-guard"},
-    {"id": "N03_OPTIONAL_INTEGRATION_MUST_NOT_BECOME_REQUIRED_WITHOUT_EVIDENCE", "mutation": {"op": "set", "path": "dependencies.optional_integration.blocks_primary_module_activation", "value": true}, "expected_rule": "optional-integration-non-blocking"},
-    {"id": "N04_REQUIRED_DEPENDENCY_MISSING_MUST_BLOCK_ACTIVATION", "mutation": {"op": "set", "path": "dependencies.required_dependency.fail_closed", "value": false}, "expected_rule": "required-dependency-fail-closed"},
-    {"id": "N05_DISABLE_MUST_NOT_DELETE_RECORDS", "mutation": {"op": "set", "path": "history_and_reactivation.deactivation_deletes_records", "value": true}, "expected_rule": "history-deactivation_deletes_records"},
-    {"id": "N06_READ_ONLY_MUST_DENY_WRITE_TRANSITION", "mutation": {"op": "set", "path": "behavior_matrix.READ_ONLY.edit_transition", "value": "ALLOW"}, "expected_rule": "read_only-edit_transition-denied"},
-    {"id": "N07_UPGRADE_MUST_NOT_AUTO_ACTIVATE", "mutation": {"op": "set", "path": "migrations.upgrade_activates_module", "value": true}, "expected_rule": "migration-upgrade_activates_module"},
-    {"id": "N08_INACTIVE_MODULE_MUST_NOT_SKIP_SCHEMA_MIGRATIONS", "mutation": {"op": "set", "path": "migrations.inactive_module_migrations_apply", "value": false}, "expected_rule": "migration-inactive_module_migrations_apply"},
-    {"id": "N09_SCOPE_CONFLICT_MUST_NOT_RESOLVE_RANDOMLY", "mutation": {"op": "set", "path": "scope_resolution.same_scope_duplicate_result", "value": "FIRST_MATCH"}, "expected_rule": "ambiguous-scope-fail-closed"},
-    {"id": "N10_REACTIVATION_MUST_PRESERVE_MODULE_IDENTITY", "mutation": {"op": "set", "path": "history_and_reactivation.reactivation_creates_new_module_identity", "value": true}, "expected_rule": "history-reactivation_creates_new_module_identity"},
-    {"id": "manifest-missing-migration-policy", "mutation": {"op": "remove", "path": "manifest.required_fields.10"}, "expected_rule": "manifest-required-fields"},
-    {"id": "missing-service-entrypoint", "mutation": {"op": "set", "path": "access_decision.entry_point_classes.2", "value": "UNGUARDED_SERVICE"}, "expected_rule": "entry-point-coverage"},
-    {"id": "direct-retired-active", "mutation": {"op": "append", "path": "lifecycle.allowed_transitions.RETIRED", "value": "ACTIVE"}, "expected_rule": "retired-reactivation-path"},
-    {"id": "scope-precedence-drift", "mutation": {"op": "set", "path": "scope_resolution.ordinary_precedence", "value": ["ENERGY_SITE", "WORKPLACE", "ORGANIZATION"]}, "expected_rule": "scope-precedence"}
+    {
+      "id": "positive-module-activation",
+      "mutation": null,
+      "expected_rule": null
+    },
+    {
+      "id": "N01_UI_HIDDEN_DIRECT_URL_MUST_DENY",
+      "mutation": {
+        "op": "set",
+        "path": "access_decision.ui_visibility_is_security_boundary",
+        "value": true
+      },
+      "expected_rule": "ui-not-security-boundary"
+    },
+    {
+      "id": "N02_ROUTE_DENIED_SERVICE_WRITE_MUST_DENY",
+      "mutation": {
+        "op": "set",
+        "path": "access_decision.mutation_service_guard_required",
+        "value": false
+      },
+      "expected_rule": "service-mutation-guard"
+    },
+    {
+      "id": "N03_OPTIONAL_INTEGRATION_MUST_NOT_BECOME_REQUIRED_WITHOUT_EVIDENCE",
+      "mutation": {
+        "op": "set",
+        "path": "dependencies.optional_integration.blocks_primary_module_activation",
+        "value": true
+      },
+      "expected_rule": "optional-integration-non-blocking"
+    },
+    {
+      "id": "N04_REQUIRED_DEPENDENCY_MISSING_MUST_BLOCK_ACTIVATION",
+      "mutation": {
+        "op": "set",
+        "path": "dependencies.required_dependency.fail_closed",
+        "value": false
+      },
+      "expected_rule": "required-dependency-fail-closed"
+    },
+    {
+      "id": "N05_DISABLE_MUST_NOT_DELETE_RECORDS",
+      "mutation": {
+        "op": "set",
+        "path": "history_and_reactivation.deactivation_deletes_records",
+        "value": true
+      },
+      "expected_rule": "history-deactivation_deletes_records"
+    },
+    {
+      "id": "N06_READ_ONLY_MUST_DENY_WRITE_TRANSITION",
+      "mutation": {
+        "op": "set",
+        "path": "behavior_matrix.READ_ONLY.edit_transition",
+        "value": "ALLOW"
+      },
+      "expected_rule": "read_only-edit_transition-denied"
+    },
+    {
+      "id": "N07_UPGRADE_MUST_NOT_AUTO_ACTIVATE",
+      "mutation": {
+        "op": "set",
+        "path": "migrations.upgrade_activates_module",
+        "value": true
+      },
+      "expected_rule": "migration-upgrade_activates_module"
+    },
+    {
+      "id": "N08_INACTIVE_MODULE_MUST_NOT_SKIP_SCHEMA_MIGRATIONS",
+      "mutation": {
+        "op": "set",
+        "path": "migrations.inactive_module_migrations_apply",
+        "value": false
+      },
+      "expected_rule": "migration-inactive_module_migrations_apply"
+    },
+    {
+      "id": "N09_SCOPE_CONFLICT_MUST_NOT_RESOLVE_RANDOMLY",
+      "mutation": {
+        "op": "set",
+        "path": "scope_resolution.same_scope_duplicate_result",
+        "value": "FIRST_MATCH"
+      },
+      "expected_rule": "ambiguous-scope-fail-closed"
+    },
+    {
+      "id": "N10_REACTIVATION_MUST_PRESERVE_MODULE_IDENTITY",
+      "mutation": {
+        "op": "set",
+        "path": "history_and_reactivation.reactivation_creates_new_module_identity",
+        "value": true
+      },
+      "expected_rule": "history-reactivation_creates_new_module_identity"
+    },
+    {
+      "id": "manifest-missing-migration-policy",
+      "mutation": {
+        "op": "remove",
+        "path": "manifest.required_fields.10"
+      },
+      "expected_rule": "manifest-required-fields"
+    },
+    {
+      "id": "missing-service-entrypoint",
+      "mutation": {
+        "op": "set",
+        "path": "access_decision.entry_point_classes.2",
+        "value": "UNGUARDED_SERVICE"
+      },
+      "expected_rule": "entry-point-coverage"
+    },
+    {
+      "id": "direct-retired-active",
+      "mutation": {
+        "op": "append",
+        "path": "lifecycle.allowed_transitions.RETIRED",
+        "value": "ACTIVE"
+      },
+      "expected_rule": "retired-reactivation-path"
+    },
+    {
+      "id": "scope-precedence-drift",
+      "mutation": {
+        "op": "set",
+        "path": "scope_resolution.ordinary_precedence",
+        "value": [
+          "ENERGY_SITE",
+          "WORKPLACE",
+          "ORGANIZATION"
+        ]
+      },
+      "expected_rule": "scope-precedence"
+    }
   ]
 }

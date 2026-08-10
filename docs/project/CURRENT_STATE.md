@@ -12,7 +12,7 @@ active work item: MODULE-REGISTRY-001
 active issue: #67
 active PR: #68 / OPEN / DRAFT / NOT MERGED
 active branch: platform/module-registry-001
-runtime impact: REPOSITORY / DATABASE SCHEMA ONLY; LIVE RUNTIME UNTOUCHED
+runtime impact: NONE
 preview: UNTOUCHED
 ```
 
