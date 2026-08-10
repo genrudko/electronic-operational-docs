@@ -84,11 +84,7 @@ jobs:
           cache-dependency-path: requirements/locks/*.txt
 
       - name: Install locked dependencies
-        run: >-
-          python -m pip install --require-hashes
-          -r requirements/locks/tooling.txt
-          -r requirements/locks/build.txt
-          -r requirements/locks/dev.txt
+        run: python -m pip install --require-hashes -r requirements/locks/tooling.txt -r requirements/locks/build.txt -r requirements/locks/dev.txt
 
       - name: Create masked ephemeral application credentials
         shell: bash
