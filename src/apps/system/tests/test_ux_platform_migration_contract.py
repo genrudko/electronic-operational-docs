@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 from pathlib import Path
 
 from django.conf import settings
@@ -43,6 +44,19 @@ LEGACY_GENERIC_CLASS_TOKENS = frozenset(
     }
 )
 
+# These five declarations are legacy OPJ micro-interactions, not viewport/layout
+# scaling. Keep the allowance exact: any additional scale declaration, another
+# value, or use in another file must fail the contract.
+_ALLOWED_SCALE_ANIMATIONS = {
+    "src/static/system/app.css": Counter(
+        {
+            "transform: scale(.84);": 1,
+            "transform: scale(.99);": 1,
+            "transform: scale(1);": 3,
+        }
+    )
+}
+
 _CLASS_RE = re.compile(r'class=["\']([^"\']+)["\']')
 
 
@@ -82,19 +96,32 @@ class UXPlatformMigrationContractTests(SimpleTestCase):
             Path(settings.BASE_DIR) / "src" / "templates",
             Path(settings.BASE_DIR) / "src" / "static",
         ]
-        forbidden = ("user-scalable=no", "maximum-scale=1", "zoom:", "transform: scale(")
+        forbidden = ("user-scalable=no", "maximum-scale=1", "zoom:")
         offenders: list[str] = []
+        scale_declarations: dict[str, Counter[str]] = {}
         for root in roots:
             for path in root.rglob("*"):
                 if path.suffix not in {".html", ".css"}:
                     continue
+                relative = path.relative_to(Path(settings.BASE_DIR)).as_posix()
                 source = path.read_text(encoding="utf-8").lower()
                 for line_number, line in enumerate(source.splitlines(), start=1):
+                    stripped = line.strip()
                     for marker in forbidden:
                         if marker in line:
-                            offenders.append(
-                                f"{path.relative_to(Path(settings.BASE_DIR)).as_posix()}:{line_number}: {marker}"
-                            )
+                            offenders.append(f"{relative}:{line_number}: {marker}")
+                    if "transform: scale(" in line:
+                        scale_declarations.setdefault(relative, Counter())[stripped] += 1
+
+        all_scale_paths = set(scale_declarations) | set(_ALLOWED_SCALE_ANIMATIONS)
+        for relative in sorted(all_scale_paths):
+            actual = scale_declarations.get(relative, Counter())
+            expected = _ALLOWED_SCALE_ANIMATIONS.get(relative, Counter())
+            if actual != expected:
+                offenders.append(
+                    f"{relative}: scale declarations actual={dict(actual)} expected={dict(expected)}"
+                )
+
         self.assertEqual(
             offenders,
             [],
