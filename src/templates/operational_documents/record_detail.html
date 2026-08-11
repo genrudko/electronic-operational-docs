@@ -3,170 +3,32 @@
 {% block title %}{{ record.registration_number }} · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading">
-    <div>
-        <div class="section-kicker">{{ record.document_type.name }}</div>
-        <h1>{{ record.registration_number }}</h1>
-        <p>{{ record.title }}</p>
-    </div>
-    <div class="document-actions">
-        <a class="button secondary" href="{% url 'operational_documents:registry' %}">К журналам</a>
-        {% if is_source_bound and not record.status_is_terminal %}<a class="button" href="{% url 'operational_documents:record_edit' record.public_id %}">Изменить</a>{% endif %}
-    </div>
+<section class="da-page-header da-page-header-compact"><div><span class="ux-kicker">{{ record.document_type.name }}</span><h1>{{ record.registration_number }}</h1><p>{{ record.title }}</p></div><div class="da-actions"><a class="da-button is-tertiary" href="{% url 'operational_documents:registry' %}">К журналам</a>{% if is_source_bound and not record.status_is_terminal %}<a class="da-button" href="{% url 'operational_documents:record_edit' record.public_id %}">Изменить</a>{% endif %}</div></section>
+
+{% if source_form %}<section class="da-alert"><div><strong>{{ source_form.source_document }}</strong><p>Раздел {{ source_form.source_section }}, приложение № {{ source_form.source_appendix }}.</p></div></section>{% else %}<section class="da-alert is-warning"><div><strong>Техническая запись общего ядра</strong><p>Источник формы не привязан. Запись доступна только для просмотра; изменение и переходы состояния заблокированы.</p></div></section>{% endif %}
+
+<section class="da-alert {% if record.status_is_terminal %}is-success{% else %}is-warning{% endif %}"><div><strong>{{ record.status_name_snapshot }}</strong><p>Редакция {{ record.version }} · {{ record.event_at|date:"d.m.Y H:i" }} · {{ record.workplace_name_snapshot|default:"рабочее место не указано" }}</p></div></section>
+
+<section class="ux-detail-grid">
+<article class="da-card"><h2>Основные сведения</h2><dl class="ux-key-value"><dt>Журнал</dt><dd>{{ record.document_type.name }}</dd><dt>Краткое содержание</dt><dd>{{ record.summary|default:"—"|linebreaksbr }}</dd><dt>Создал</dt><dd>{{ record.created_by_full_name_snapshot }}, {{ record.created_by_position_snapshot }}</dd><dt>Создана</dt><dd>{{ record.created_at|date:"d.m.Y H:i:s" }}</dd><dt>Изменена</dt><dd>{{ record.updated_at|date:"d.m.Y H:i:s" }}</dd></dl></article>
+<article class="da-card"><h2>Данные формы</h2><dl class="ux-key-value">{% for row in field_rows %}<dt>{{ row.label }}</dt><dd>{% if row.is_empty %}<span class="ux-muted">не указано</span>{% else %}{{ row.display|linebreaksbr }}{% endif %}</dd>{% endfor %}</dl></article>
 </section>
 
-{% if source_form %}
-<section class="source-boundary-notice compact">
-    <strong>{{ source_form.source_document }}</strong>
-    <p>Раздел {{ source_form.source_section }}, приложение № {{ source_form.source_appendix }}.</p>
-</section>
-{% else %}
-<section class="source-boundary-notice warning">
-    <strong>Техническая запись общего ядра</strong>
-    <p>Источник формы не привязан. Запись доступна только для просмотра; изменение и переходы состояния заблокированы.</p>
-</section>
-{% endif %}
-
-<div class="document-state {% if record.status_is_terminal %}registered{% else %}draft{% endif %}">
-    <strong>{{ record.status_name_snapshot }}</strong>
-    <span>Редакция записи {{ record.version }}</span>
-    <span>Дата и время: {{ record.event_at|date:"d.m.Y H:i" }}</span>
-    <span>Рабочее место: {{ record.workplace_name_snapshot|default:"не указано" }}</span>
-</div>
-
-<section class="profile-grid">
-    <article class="profile-card">
-        <h2>Основные сведения</h2>
-        <dl>
-            <dt>Журнал</dt><dd>{{ record.document_type.name }}</dd>
-            <dt>Краткое содержание</dt><dd>{{ record.summary|default:"—"|linebreaksbr }}</dd>
-            <dt>Создал</dt><dd>{{ record.created_by_full_name_snapshot }}, {{ record.created_by_position_snapshot }}</dd>
-            <dt>Создана</dt><dd>{{ record.created_at|date:"d.m.Y H:i:s" }}</dd>
-            <dt>Изменена</dt><dd>{{ record.updated_at|date:"d.m.Y H:i:s" }}</dd>
-        </dl>
-    </article>
-    <article class="profile-card">
-        <h2>Данные формы</h2>
-        <dl>
-            {% for row in field_rows %}
-            <dt>{{ row.label }}</dt><dd>{% if row.is_empty %}<span class="muted">не указано</span>{% else %}{{ row.display|linebreaksbr }}{% endif %}</dd>
-            {% endfor %}
-        </dl>
-    </article>
+<section class="ux-detail-grid">
+<article class="da-card"><h2>Участники</h2><ul class="ux-list-reset ux-stack is-compact">{% for item in participants %}<li class="da-panel-flat"><strong>{{ item.role_name_snapshot }}</strong><span class="ux-muted">{{ item.employee_full_name_snapshot }} · {{ item.employee_position_snapshot }}</span></li>{% empty %}<li class="ux-muted">Участники не указаны</li>{% endfor %}</ul></article>
+<article class="da-card"><h2>Оборудование</h2><ul class="ux-list-reset ux-stack is-compact">{% for item in equipment_links %}<li class="da-panel-flat"><strong>{{ item.dispatcher_name_snapshot }}</strong><span class="ux-muted">{{ item.site_name_snapshot }} · {{ item.equipment_type_snapshot }}</span></li>{% empty %}<li class="ux-muted">Оборудование не связано</li>{% endfor %}</ul></article>
 </section>
 
-<section class="profile-grid">
-    <article class="profile-card">
-        <h2>Участники</h2>
-        <ul class="role-list">
-            {% for item in participants %}
-            <li><strong>{{ item.role_name_snapshot }}</strong><span>{{ item.employee_full_name_snapshot }} · {{ item.employee_position_snapshot }}</span></li>
-            {% empty %}<li><span>Участники не указаны</span></li>{% endfor %}
-        </ul>
-    </article>
-    <article class="profile-card">
-        <h2>Оборудование</h2>
-        <ul class="role-list">
-            {% for item in equipment_links %}
-            <li><strong>{{ item.dispatcher_name_snapshot }}</strong><span>{{ item.site_name_snapshot }} · {{ item.equipment_type_snapshot }}</span></li>
-            {% empty %}<li><span>Оборудование не связано</span></li>{% endfor %}
-        </ul>
-    </article>
+<section class="ux-detail-grid">
+<article class="da-card"><h2>Документы-основания</h2><ul class="ux-list-reset ux-stack is-compact">{% for item in document_links %}<li class="da-panel-flat"><strong>{{ item.registration_number_snapshot|default:"Без номера" }}</strong><span class="ux-muted">{{ item.title_snapshot }}</span></li>{% empty %}<li class="ux-muted">Документы не связаны</li>{% endfor %}</ul></article>
+<article class="da-card"><h2>Связанные записи</h2><ul class="ux-list-reset ux-stack is-compact">{% for item in outgoing_relations %}<li class="da-panel-flat"><strong>{{ item.relation_name_snapshot }}</strong><a href="{% url 'operational_documents:record_detail' item.target_record.public_id %}">{{ item.target_record.registration_number }} · {{ item.target_record.title }}</a></li>{% endfor %}{% for item in incoming_relations %}<li class="da-panel-flat"><strong>Обратная связь</strong><a href="{% url 'operational_documents:record_detail' item.source_record.public_id %}">{{ item.source_record.registration_number }} · {{ item.source_record.title }}</a></li>{% empty %}{% if not outgoing_relations %}<li class="ux-muted">Связей нет</li>{% endif %}{% endfor %}</ul></article>
 </section>
 
-<section class="profile-grid">
-    <article class="profile-card">
-        <h2>Документы-основания</h2>
-        <ul class="role-list">
-            {% for item in document_links %}
-            <li><strong>{{ item.registration_number_snapshot|default:"Без номера" }}</strong><span>{{ item.title_snapshot }}</span></li>
-            {% empty %}<li><span>Документы не связаны</span></li>{% endfor %}
-        </ul>
-    </article>
-    <article class="profile-card">
-        <h2>Связанные записи</h2>
-        <ul class="role-list">
-            {% for item in outgoing_relations %}
-            <li><strong>{{ item.relation_name_snapshot }}</strong><span><a href="{% url 'operational_documents:record_detail' item.target_record.public_id %}">{{ item.target_record.registration_number }} · {{ item.target_record.title }}</a></span></li>
-            {% endfor %}
-            {% for item in incoming_relations %}
-            <li><strong>Обратная связь</strong><span><a href="{% url 'operational_documents:record_detail' item.source_record.public_id %}">{{ item.source_record.registration_number }} · {{ item.source_record.title }}</a></span></li>
-            {% empty %}{% if not outgoing_relations %}<li><span>Связей нет</span></li>{% endif %}{% endfor %}
-        </ul>
-    </article>
-</section>
+{% if transitions %}<section class="da-card ux-stack"><h2>Доступные действия</h2><div class="opdoc-transition-grid">{% for transition in transitions %}<form method="post" action="{% url 'operational_documents:record_transition' record.public_id %}" class="opdoc-transition-card da-panel-flat ux-stack is-compact" data-transition-form>{% csrf_token %}<input type="hidden" name="transition_code" value="{{ transition.code }}"><strong>{{ transition.name }}</strong><span class="ux-muted">{{ record.status_name_snapshot }} → {{ transition.target.name }}</span><div class="da-field"><label for="transition-comment-{{ transition.code }}">Комментарий{% if transition.requires_comment %} <span class="required-mark">обязательно</span>{% endif %}</label><textarea id="transition-comment-{{ transition.code }}" name="comment" rows="3" {% if transition.requires_comment %}required data-required-message="Укажите комментарий для действия «{{ transition.name }}»."{% endif %}></textarea>{% if transition.requires_comment %}<small class="ux-muted">Без комментария действие не будет выполнено.</small>{% endif %}</div><button class="da-button" type="submit">{{ transition.name }}</button></form>{% endfor %}</div></section>{% endif %}
 
-{% if transitions %}
-<section class="directory-card">
-    <h2>Доступные действия</h2>
-    <div class="opdoc-transition-grid">
-        {% for transition in transitions %}
-        <form method="post" action="{% url 'operational_documents:record_transition' record.public_id %}" class="opdoc-transition-card" data-transition-form>
-            {% csrf_token %}
-            <input type="hidden" name="transition_code" value="{{ transition.code }}">
-            <strong>{{ transition.name }}</strong>
-            <span class="muted">{{ record.status_name_snapshot }} → {{ transition.target.name }}</span>
-            <label for="transition-comment-{{ transition.code }}">Комментарий{% if transition.requires_comment %} <span class="required-mark">обязательно</span>{% endif %}</label>
-            <textarea id="transition-comment-{{ transition.code }}" name="comment" rows="3" {% if transition.requires_comment %}required data-required-message="Укажите комментарий для действия «{{ transition.name }}»."{% endif %}></textarea>
-            {% if transition.requires_comment %}<small class="transition-comment-hint">Без комментария действие не будет выполнено.</small>{% endif %}
-            <button class="button" type="submit">{{ transition.name }}</button>
-        </form>
-        {% endfor %}
-    </div>
-</section>
-{% endif %}
+<section class="da-card ux-stack"><h2>История редакций</h2><div class="da-table-wrap"><table class="da-table"><thead><tr><th>Редакция</th><th>Действие</th><th>Состояние</th><th>Автор и время</th><th>Комментарий</th></tr></thead><tbody>{% for revision in revisions %}<tr><td>{{ revision.revision_number }}</td><td>{{ revision.get_action_display }}</td><td>{{ revision.status_name_snapshot }}</td><td>{{ revision.actor.full_name }}<br><span class="ux-muted">{{ revision.created_at|date:"d.m.Y H:i:s" }}</span></td><td>{{ revision.comment|default:"—" }}</td></tr>{% endfor %}</tbody></table></div></section>
 
-<section class="directory-card">
-    <h2>История редакций</h2>
-    <div class="table-wrap">
-        <table>
-            <thead><tr><th>Редакция</th><th>Действие</th><th>Состояние</th><th>Автор и время</th><th>Комментарий</th></tr></thead>
-            <tbody>
-                {% for revision in revisions %}
-                <tr>
-                    <td>{{ revision.revision_number }}</td>
-                    <td>{{ revision.get_action_display }}</td>
-                    <td>{{ revision.status_name_snapshot }}</td>
-                    <td>{{ revision.actor.full_name }}<br><span class="muted">{{ revision.created_at|date:"d.m.Y H:i:s" }}</span></td>
-                    <td>{{ revision.comment|default:"—" }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</section>
+{% if ui_preferences.show_technical_details %}<details class="da-card technical-only"><summary>Технические сведения и неизменяемый журнал аудита</summary><dl class="ux-key-value"><dt>Редакция структуры</dt><dd>{{ record.schema_revision.revision_number }}</dd><dt>SHA-256 структуры</dt><dd><code class="hash-value">{{ record.schema_revision.sha256 }}</code></dd></dl><h3>SHA-256 редакций записи</h3><ul class="ux-list-reset">{% for revision in revisions %}<li><strong>Редакция {{ revision.revision_number }}</strong> <code class="hash-value">{{ revision.sha256 }}</code></li>{% endfor %}</ul><h3>Аудит</h3><div class="da-table-wrap"><table class="da-table"><thead><tr><th>Время</th><th>Событие</th><th>Инициатор</th><th>Данные</th></tr></thead><tbody>{% for event in audit_events %}<tr><td>{{ event.occurred_at|date:"d.m.Y H:i:s" }}</td><td>{{ event.event_type }}</td><td>{{ event.actor.full_name }}</td><td><code class="hash-value">{{ event.payload }}</code></td></tr>{% endfor %}</tbody></table></div></details>{% endif %}
 
-{% if ui_preferences.show_technical_details %}
-<details class="technical-panel technical-only">
-    <summary>Технические сведения и неизменяемый журнал аудита</summary>
-    <dl>
-        <dt>Редакция структуры</dt><dd>{{ record.schema_revision.revision_number }}</dd>
-        <dt>SHA-256 структуры</dt><dd><code class="hash-value">{{ record.schema_revision.sha256 }}</code></dd>
-    </dl>
-    <h3>SHA-256 редакций записи</h3>
-    <ul class="role-list">
-        {% for revision in revisions %}<li><strong>Редакция {{ revision.revision_number }}</strong><span><code class="hash-value">{{ revision.sha256 }}</code></span></li>{% endfor %}
-    </ul>
-    <h3>Аудит</h3>
-    <div class="table-wrap">
-        <table>
-            <thead><tr><th>Время</th><th>Событие</th><th>Инициатор</th><th>Данные</th></tr></thead>
-            <tbody>
-                {% for event in audit_events %}
-                <tr><td>{{ event.occurred_at|date:"d.m.Y H:i:s" }}</td><td>{{ event.event_type }}</td><td>{{ event.actor.full_name }}</td><td><code class="hash-value">{{ event.payload }}</code></td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</details>
-{% endif %}
-
-<script>
-(() => {
-    for (const textarea of document.querySelectorAll("textarea[data-required-message]")) {
-        textarea.addEventListener("invalid", () => textarea.setCustomValidity(textarea.dataset.requiredMessage));
-        textarea.addEventListener("input", () => textarea.setCustomValidity(""));
-    }
-})();
-</script>
+<script>(() => { for (const textarea of document.querySelectorAll("textarea[data-required-message]")) { textarea.addEventListener("invalid", () => textarea.setCustomValidity(textarea.dataset.requiredMessage)); textarea.addEventListener("input", () => textarea.setCustomValidity("")); } })();</script>
 {% endblock %}
