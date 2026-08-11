@@ -1,8 +1,8 @@
-/* PERSONNEL-AUTHORITY-001 operational organization/personnel workspace. */
+/* PERSONNEL-AUTHORITY-001 specialised workspace on the shared UX Platform. */
 .personnel-directory-page {
     display: grid;
     gap: 14px;
-    font-family: Inter, "Segoe UI Variable Text", "Segoe UI", Arial, sans-serif;
+    font-family: inherit;
 }
 
 .personnel-directory-summary {
@@ -15,18 +15,18 @@
     display: grid;
     gap: 4px;
     padding: 12px 14px;
-    border: 1px solid var(--da-border);
-    border-radius: var(--da-radius);
-    background: var(--da-surface);
+    border: 1px solid var(--theme-border);
+    border-radius: var(--theme-radius-md);
+    background: var(--theme-surface);
 }
 
 .personnel-directory-summary span {
-    color: var(--da-muted);
+    color: var(--theme-text-muted);
     font-size: 0.66rem;
 }
 
 .personnel-directory-summary strong {
-    color: var(--da-text);
+    color: var(--theme-text);
     font-size: 1.25rem;
 }
 
@@ -41,16 +41,16 @@
     min-width: 0;
     gap: 9px;
     padding: 13px;
-    border: 1px solid var(--da-border);
-    border-radius: var(--da-radius);
-    background: var(--da-surface);
-    color: var(--da-text);
+    border: 1px solid var(--theme-border);
+    border-radius: var(--theme-radius-md);
+    background: var(--theme-surface);
+    color: var(--theme-text);
     text-decoration: none;
 }
 
 .personnel-contour-card:hover {
-    border-color: var(--da-blue);
-    background: var(--da-blue-soft);
+    border-color: var(--theme-primary);
+    background: var(--theme-primary-soft);
 }
 
 .personnel-contour-card header {
@@ -66,8 +66,8 @@
     flex: 0 0 34px;
     place-items: center;
     border-radius: 9px;
-    background: var(--da-blue-soft);
-    color: var(--da-blue-dark);
+    background: var(--theme-primary-soft);
+    color: var(--theme-primary);
 }
 
 .personnel-contour-icon svg {
@@ -90,7 +90,7 @@
 }
 
 .personnel-contour-card p {
-    color: var(--da-muted);
+    color: var(--theme-text-muted);
     font-size: 0.63rem;
     line-height: 1.4;
 }
@@ -104,8 +104,8 @@
 .personnel-contour-organizations span {
     padding: 3px 6px;
     border-radius: 999px;
-    background: var(--da-surface-soft);
-    color: var(--da-muted);
+    background: var(--theme-surface-soft);
+    color: var(--theme-text-muted);
     font-size: 0.58rem;
 }
 
@@ -119,9 +119,9 @@
 .personnel-directory-sidebar,
 .personnel-directory-panel {
     overflow: hidden;
-    border: 1px solid var(--da-border);
-    border-radius: var(--da-radius);
-    background: var(--da-surface);
+    border: 1px solid var(--theme-border);
+    border-radius: var(--theme-radius-md);
+    background: var(--theme-surface);
 }
 
 .personnel-directory-sidebar {
@@ -136,8 +136,8 @@
     justify-content: space-between;
     gap: 12px;
     padding: 12px 13px;
-    border-bottom: 1px solid var(--da-border);
-    background: var(--da-surface-soft);
+    border-bottom: 1px solid var(--theme-border);
+    background: var(--theme-surface-soft);
 }
 
 .personnel-directory-panel h2,
@@ -149,7 +149,7 @@
 .personnel-directory-panel header p,
 .personnel-directory-sidebar header p {
     margin: 3px 0 0;
-    color: var(--da-muted);
+    color: var(--theme-text-muted);
     font-size: 0.64rem;
 }
 
@@ -157,11 +157,11 @@
     display: grid;
     gap: 5px;
     padding: 12px;
-    border-bottom: 1px solid var(--da-border);
+    border-bottom: 1px solid var(--theme-border);
 }
 
 .personnel-organization-select label {
-    color: var(--da-muted);
+    color: var(--theme-text-muted);
     font-size: 0.62rem;
     font-weight: 750;
 }
@@ -170,10 +170,10 @@
     width: 100%;
     min-height: 38px;
     padding: 7px 30px 7px 9px;
-    border: 1px solid var(--da-border-strong);
-    border-radius: 8px;
-    background: var(--da-surface);
-    color: var(--da-text);
+    border: 1px solid var(--theme-border-strong);
+    border-radius: var(--theme-radius-sm);
+    background: var(--theme-surface);
+    color: var(--theme-text);
 }
 
 .personnel-division-tree {
@@ -189,14 +189,14 @@
     gap: 8px;
     min-height: 42px;
     padding: 7px 10px 7px calc(10px + var(--depth, 0) * 13px);
-    border-bottom: 1px solid var(--da-border);
+    border-bottom: 1px solid var(--theme-border);
 }
 
 .personnel-division-row svg {
     width: 17px;
     height: 17px;
     fill: none;
-    stroke: var(--da-blue-dark);
+    stroke: var(--theme-primary);
     stroke-width: 1.7;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -211,8 +211,8 @@
     min-width: 24px;
     padding: 3px 6px;
     border-radius: 999px;
-    background: var(--da-surface-soft);
-    color: var(--da-muted);
+    background: var(--theme-surface-soft);
+    color: var(--theme-text-muted);
     font-size: 0.59rem;
     text-align: center;
 }
@@ -236,14 +236,14 @@
 .personnel-employee-table th,
 .personnel-employee-table td {
     padding: 9px 10px;
-    border-bottom: 1px solid var(--da-border);
+    border-bottom: 1px solid var(--theme-border);
     vertical-align: middle;
     text-align: left;
 }
 
 .personnel-employee-table th {
-    background: var(--da-surface-soft);
-    color: var(--da-muted);
+    background: var(--theme-surface-soft);
+    color: var(--theme-text-muted);
     font-size: 0.59rem;
     font-weight: 850;
     letter-spacing: 0.035em;
@@ -251,7 +251,7 @@
 }
 
 .personnel-employee-table td {
-    color: var(--da-text);
+    color: var(--theme-text);
     font-size: 0.67rem;
 }
 
@@ -264,12 +264,12 @@
 .personnel-employee-table small,
 .personnel-employee-table span {
     margin-top: 3px;
-    color: var(--da-muted);
+    color: var(--theme-text-muted);
     font-size: 0.61rem;
 }
 
 .personnel-qualification-inline {
-    display: flex !important;
+    display: flex;
     flex-wrap: wrap;
     gap: 4px;
 }
@@ -277,8 +277,8 @@
 .personnel-qualification-inline i {
     padding: 3px 6px;
     border-radius: 999px;
-    background: var(--da-blue-soft);
-    color: var(--da-blue-dark);
+    background: var(--theme-primary-soft);
+    color: var(--theme-primary);
     font-size: 0.58rem;
     font-style: normal;
     font-weight: 800;
@@ -286,7 +286,7 @@
 
 .personnel-directory-empty {
     padding: 26px 14px;
-    color: var(--da-muted);
+    color: var(--theme-text-muted);
     font-size: 0.7rem;
     text-align: center;
 }
@@ -306,7 +306,7 @@
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 8px;
     padding: 9px 12px;
-    border-bottom: 1px solid var(--da-border);
+    border-bottom: 1px solid var(--theme-border);
 }
 
 .personnel-recent-row strong,
@@ -322,7 +322,7 @@
 .personnel-recent-row span,
 .personnel-recent-row time {
     margin-top: 3px;
-    color: var(--da-muted);
+    color: var(--theme-text-muted);
     font-size: 0.59rem;
 }
 
