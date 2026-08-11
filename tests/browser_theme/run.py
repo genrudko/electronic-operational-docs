@@ -598,7 +598,7 @@ def main():
         report["open_states"]["opj_drawer"] = style(need(page, "[data-view-drawer]"))
         screenshots(page, shots, "transient__opj_drawer__dark__1440x900")
         need(page, "[data-close-view-drawer]").click()
-        editor = activate_editor_reference_selection(page)
+        activate_editor_reference_selection(page)
         reference_trigger = need(
             page,
             "[data-reference-trigger]:not([disabled])",
