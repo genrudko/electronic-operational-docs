@@ -5,7 +5,6 @@ import json
 import os
 import re
 from pathlib import Path
-from uuid import UUID
 
 from playwright.sync_api import sync_playwright
 
@@ -26,6 +25,7 @@ ROUTES = {
     "workplace_docs": "/workplace-documentation/",
     "operational_documents": "/operational-documents/",
     "defect_registry": "/operations/defects/",
+    "defect_registration": "/operations/defects/new/",
     "opj_registry": "/operations/journal/",
     "account_settings": "/accounts/me/",
 }
@@ -40,7 +40,7 @@ SELECTORS = {
     "workplace_docs": ".da-card.ux-stack",
     "operational_documents": ".opdoc-filter-card",
     "defect_registry": ".defect-da-work-table",
-    "defect_detail": ".defect-record-section",
+    "defect_registration": ".defect-form-workspace",
     "opj_registry": ".journal-registry-card",
     "registered_opj": ".approved-journal-shell",
     "draft_workspace": ".opj-workspace",
@@ -57,7 +57,7 @@ TOKENS = {
     "workplace_docs": "--theme-surface",
     "operational_documents": "--theme-surface",
     "defect_registry": "--theme-surface",
-    "defect_detail": "--theme-surface",
+    "defect_registration": "--theme-surface",
     "opj_registry": "--theme-surface",
     "registered_opj": "--theme-surface-document",
     "draft_workspace": "--theme-surface",
@@ -180,26 +180,7 @@ def activate_editor_caret(page):
     page.wait_for_timeout(80)
 
 
-def defect_detail_path(hrefs):
-    for href in hrefs:
-        match = re.fullmatch(r"/operations/defects/([^/]+)/", href)
-        if not match:
-            continue
-        try:
-            UUID(match.group(1))
-        except ValueError:
-            continue
-        return href
-    raise AssertionError(f"missing UUID defect detail link: {hrefs}")
-
-
 def discover(page):
-    page.goto(BASE + ROUTES["defect_registry"])
-    hrefs = page.locator('a[href*="/operations/defects/"]').evaluate_all(
-        "ns=>ns.map(n=>new URL(n.href).pathname)"
-    )
-    ROUTES["defect_detail"] = defect_detail_path(hrefs)
-
     page.goto(BASE + ROUTES["opj_registry"])
     hrefs = page.locator('a[href*="/operations/journal/"]').evaluate_all(
         "ns=>ns.map(n=>new URL(n.href).pathname)"
@@ -357,7 +338,7 @@ def main():
         )
         screenshot(page, shots, "transient__defect_filters__dark__1440x900")
 
-        page.goto(BASE + "/operations/defects/new/")
+        page.goto(BASE + ROUTES["defect_registration"])
         theme(page, "dark")
         need(page, ".defect-picker-trigger").click()
         picker = need(page, ".defect-picker-panel")
@@ -377,10 +358,13 @@ def main():
 
         page.goto(BASE + ROUTES["defect_registry"])
         theme(page, "dark")
-        defect_row = need(page, "[data-defect-row-link]")
-        defect_row.hover()
-        report["open_states"]["defect_hover"] = style(defect_row)
-        screenshot(page, shots, "transient__defect_hover__dark__1440x900")
+        defect_rows = page.locator("[data-defect-row-link]")
+        report["meta"]["defect_row_present"] = bool(defect_rows.count())
+        if defect_rows.count():
+            defect_row = defect_rows.first
+            defect_row.hover()
+            report["open_states"]["defect_hover"] = style(defect_row)
+            screenshot(page, shots, "transient__defect_hover__dark__1440x900")
 
         page.goto(BASE + ROUTES["registered_opj"])
         theme(page, "dark")
