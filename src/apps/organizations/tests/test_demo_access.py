@@ -22,12 +22,14 @@ class DemoAccessPolicyTests(TestCase):
     def setUp(self) -> None:
         user_model = get_user_model()
         initial = strong_candidate("Initial")
-        self.operator = user_model.objects.create(username="operator.demo")
+        self.operator, _ = user_model.objects.get_or_create(username="operator.demo")
+        self.operator.is_active = True
         self.operator.set_password(initial)
-        self.operator.save(update_fields=["password"])
-        self.supervisor = user_model.objects.create(username="supervisor.demo")
+        self.operator.save(update_fields=["is_active", "password"])
+        self.supervisor, _ = user_model.objects.get_or_create(username="supervisor.demo")
+        self.supervisor.is_active = True
         self.supervisor.set_password(initial)
-        self.supervisor.save(update_fields=["password"])
+        self.supervisor.save(update_fields=["is_active", "password"])
 
     @mock.patch.dict("os.environ", {}, clear=True)
     def test_missing_injection_disables_existing_demo_access(self) -> None:
