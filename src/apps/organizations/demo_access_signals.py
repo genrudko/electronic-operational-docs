@@ -34,11 +34,30 @@ def enforce_demo_access_policy(sender, **kwargs) -> None:
         return
     try:
         created = 0
-        if settings.EOD_DEPLOYMENT_MODE == "development" and injected_demo_password():
+        if settings.EOD_DEPLOYMENT_MODE == "development":
+            demo_password = injected_demo_password()
+            if not demo_password:
+                # Trusted deployment maintenance commands intentionally run
+                # without the Development demo credential. They may migrate or
+                # inspect the persistent database, but they must neither disable
+                # existing demo principals nor fail merely because the secret is
+                # outside that maintenance process. The real Development app
+                # receives the credential and its health/login smoke verifies the
+                # resulting authentication state before deployment acceptance.
+                logger.info(
+                    "Demo access automatic policy deferred for Development "
+                    "maintenance process without local injection."
+                )
+                return
             created = ensure_development_demo_accounts()
-        result = reconcile_demo_access(
-            require_injection=settings.EOD_DEPLOYMENT_MODE == "development"
-        )
+            result = reconcile_demo_access(
+                password=demo_password,
+                require_injection=True,
+            )
+        else:
+            # Outside Development any persistent demo accounts fail closed when
+            # there is no explicit local injection.
+            result = reconcile_demo_access(require_injection=False)
     except DemoAccessPolicyError as exc:
         raise RuntimeError(
             "Demo access policy rejected the configured local injection."
