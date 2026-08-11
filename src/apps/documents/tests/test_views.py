@@ -42,8 +42,9 @@ class DocumentViewTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("documents:list"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "ДОКУМЕНТАРНОЕ ЯДРО")
+        self.assertContains(response, "Документарное ядро")
         self.assertContains(response, "Новый черновик")
+        self.assertContains(response, "ux-stat-grid")
 
     def test_create_edit_and_register_flow(self):
         self.client.force_login(self.user)
