@@ -38,10 +38,10 @@ def _development_authentication_ready() -> bool:
         return True
     try:
         from apps.organizations.development_auth_smoke import (
-            verify_development_demo_login_path,
+            verify_development_demo_authentication_state,
         )
 
-        return verify_development_demo_login_path()
+        return verify_development_demo_authentication_state()
     except Exception:  # noqa: BLE001 - never disclose credential/auth details via health.
         return False
 
@@ -59,7 +59,7 @@ def readiness(_request):
 
 
 def health(_request):
-    """Trusted deployment health, including real demo auth in Development only."""
+    """Trusted deployment health including Development demo auth state."""
 
     try:
         ready = _deployment_dependencies_ready()
