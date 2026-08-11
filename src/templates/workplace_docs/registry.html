@@ -3,100 +3,35 @@
 {% block title %}Перечни документации рабочих мест · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading">
+<section class="da-page-header da-page-header-compact">
     <div>
-        <div class="eyebrow">ДОКУМЕНТАЦИЯ РАБОЧЕГО МЕСТА</div>
+        <span class="ux-kicker">Документация рабочего места</span>
         <h1>Перечни документации</h1>
-        <p>
-            Утверждённые составы типовой и локальной документации для рабочих мест.
-            Редакции фиксируют обязательность, применимость, форму хранения и нормативное основание.
-        </p>
+        <p>Утверждённые составы типовой и локальной документации для рабочих мест. Редакции фиксируют обязательность, применимость, форму хранения и нормативное основание.</p>
     </div>
-    <div class="document-actions">
-        <a class="button secondary" href="{% url 'imports:workplace_document_list' %}">Источники импорта</a>
-    </div>
+    <a class="da-button is-secondary" href="{% url 'imports:workplace_document_list' %}">Источники импорта</a>
 </section>
 
-<section class="notice-card success-notice">
-    <strong>Показаны только утверждённые редакции вашей организации</strong>
-    <p>
-        Утверждённая редакция неизменяема. Новое содержание оформляется следующей редакцией,
-        а прежний состав остаётся доступным в истории.
-    </p>
+<section class="da-alert is-success"><div><strong>Показаны только утверждённые редакции вашей организации</strong><p>Утверждённая редакция неизменяема. Новое содержание оформляется следующей редакцией, а прежний состав остаётся доступным в истории.</p></div></section>
+
+<section class="ux-stat-grid" aria-label="Сводка документации рабочих мест">
+    <article class="ux-stat"><span>Действующих перечней</span><strong>{{ summary.lists }}</strong></article>
+    <article class="ux-stat"><span>Утверждённых редакций</span><strong>{{ summary.approved }}</strong></article>
+    <article class="ux-stat"><span>Позиций документации</span><strong>{{ summary.entries }}</strong></article>
+    <article class="ux-stat"><span>Требуют пересмотра</span><strong>{{ summary.due }}</strong></article>
 </section>
 
-<section class="summary-grid">
-    <article class="metric"><span>Действующих перечней</span><strong>{{ summary.lists }}</strong></article>
-    <article class="metric"><span>Утверждённых редакций</span><strong>{{ summary.approved }}</strong></article>
-    <article class="metric"><span>Позиций документации</span><strong>{{ summary.entries }}</strong></article>
-    <article class="metric"><span>Требуют пересмотра</span><strong>{{ summary.due }}</strong></article>
-</section>
-
-<section class="profile-card">
-    <div class="section-heading">
-        <div>
-            <div class="eyebrow">РАБОЧИЕ МЕСТА</div>
-            <h2>Действующие перечни</h2>
-        </div>
-        {% if storage_forms %}<span class="count-badge">Формы хранения: {{ storage_forms|join:", " }}</span>{% endif %}
-    </div>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Рабочее место</th>
-                    <th>Перечень</th>
-                    <th>Редакция</th>
-                    <th>Действует</th>
-                    <th>Следующий пересмотр</th>
-                    <th>Состояние</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for row in rows %}
-                <tr>
-                    <td>
-                        <strong>{{ row.document_list.workplace.name }}</strong>
-                        {% if row.document_list.workplace.division %}
-                            <small>{{ row.document_list.workplace.division.name }}</small>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if row.revision %}
-                            <a href="{% url 'workplace_docs:detail' row.document_list.pk %}">
-                                {{ row.document_list.title }}
-                            </a>
-                        {% else %}
-                            {{ row.document_list.title }}
-                        {% endif %}
-                    </td>
-                    <td>{% if row.revision %}№ {{ row.revision.revision_number }}{% else %}—{% endif %}</td>
-                    <td>
-                        {% if row.revision %}
-                            с {{ row.revision.effective_from|date:"d.m.Y" }}
-                            {% if row.revision.effective_until %}по {{ row.revision.effective_until|date:"d.m.Y" }}{% endif %}
-                        {% else %}—{% endif %}
-                    </td>
-                    <td>{% if row.revision %}{{ row.revision.next_review_date|date:"d.m.Y" }}{% else %}—{% endif %}</td>
-                    <td>
-                        {% if row.review_state == 'OVERDUE' %}
-                            <span class="import-status status-conflict">Пересмотр просрочен</span>
-                        {% elif row.review_state == 'DUE_SOON' %}
-                            <span class="import-status status-review">Скоро пересмотр</span>
-                        {% elif row.review_state == 'CURRENT' %}
-                            <span class="import-status status-ready">Действует</span>
-                        {% else %}
-                            <span class="import-status status-review">Нет действующей редакции</span>
-                        {% endif %}
-                    </td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="6" class="muted">Для организации пока не утверждены перечни документации.</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
+<section class="da-card ux-stack">
+    <div class="da-panel-heading"><div><span class="ux-kicker">Рабочие места</span><h2>Действующие перечни</h2></div>{% if storage_forms %}<span class="ux-counter">Формы хранения: {{ storage_forms|join:", " }}</span>{% endif %}</div>
+    <div class="da-table-wrap"><table class="da-table"><thead><tr><th>Рабочее место</th><th>Перечень</th><th>Редакция</th><th>Действует</th><th>Следующий пересмотр</th><th>Состояние</th></tr></thead><tbody>
+    {% for row in rows %}<tr>
+        <td><strong>{{ row.document_list.workplace.name }}</strong>{% if row.document_list.workplace.division %}<small class="ux-muted">{{ row.document_list.workplace.division.name }}</small>{% endif %}</td>
+        <td>{% if row.revision %}<a href="{% url 'workplace_docs:detail' row.document_list.pk %}">{{ row.document_list.title }}</a>{% else %}{{ row.document_list.title }}{% endif %}</td>
+        <td>{% if row.revision %}№ {{ row.revision.revision_number }}{% else %}—{% endif %}</td>
+        <td>{% if row.revision %}с {{ row.revision.effective_from|date:"d.m.Y" }} {% if row.revision.effective_until %}по {{ row.revision.effective_until|date:"d.m.Y" }}{% endif %}{% else %}—{% endif %}</td>
+        <td>{% if row.revision %}{{ row.revision.next_review_date|date:"d.m.Y" }}{% else %}—{% endif %}</td>
+        <td>{% if row.review_state == 'OVERDUE' %}<span class="da-status-chip is-danger">Пересмотр просрочен</span>{% elif row.review_state == 'DUE_SOON' %}<span class="da-status-chip is-warning">Скоро пересмотр</span>{% elif row.review_state == 'CURRENT' %}<span class="da-status-chip is-success">Действует</span>{% else %}<span class="da-status-chip is-warning">Нет действующей редакции</span>{% endif %}</td>
+    </tr>{% empty %}<tr><td colspan="6"><div class="ux-empty-state">Для организации пока не утверждены перечни документации.</div></td></tr>{% endfor %}
+    </tbody></table></div>
 </section>
 {% endblock %}
