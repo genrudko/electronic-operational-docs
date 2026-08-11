@@ -44,6 +44,7 @@
     <link rel="stylesheet" href="{% static 'system/theme.css' %}?v=uxplatform001">
     <link rel="stylesheet" href="{% static 'system/ux_platform_compat.css' %}?v=uxplatform001">
     <link rel="stylesheet" href="{% static 'system/ux_platform.css' %}?v=uxplatform001">
+    <link rel="stylesheet" href="{% static 'system/ux_platform_public.css' %}?v=uxplatformauth001">
     {% if request.resolver_match.namespace == 'operational_log' %}
     <link rel="stylesheet" href="{% static 'operational_log/opj_ux_001.css' %}?v=uxplatform001">
     {% endif %}
@@ -74,20 +75,32 @@
 
         <div class="da-page">
 {% else %}
-<div class="ux-public-stage">
-    <header class="ux-public-topbar">
-        <a class="brand" href="{% url 'system:home' %}">
-            <span class="brand-mark">ЭОД</span>
-            <span class="brand-copy">
-                <span class="prototype-label">Демонстрационный прототип</span>
-                <strong>Электронная оперативная документация</strong>
+<div class="ux-public-stage" data-ux-public-shell>
+    <header class="ux-public-topbar" data-ux-public-topbar>
+        <a class="ux-public-brand" href="{% url 'system:home' %}" aria-label="ЭОД — Электронная оперативная документация">
+            <img
+                src="{% static 'system/brand-mark.svg' %}?v=eodbrand002"
+                width="40"
+                height="40"
+                alt=""
+                aria-hidden="true"
+            >
+            <span class="ux-public-brand-copy">
+                <strong>ЭОД</strong>
+                <small>Электронная оперативная документация</small>
             </span>
         </a>
-        <a class="da-button is-secondary" href="{% url 'organizations:login' %}">Персональный вход</a>
+        <div class="ux-public-actions">
+            {% if request.resolver_match.url_name != 'login' %}
+            <a class="da-button is-secondary" href="{% url 'organizations:login' %}">Персональный вход</a>
+            {% else %}
+            <a class="da-button is-tertiary" href="{% url 'system:home' %}">На главную</a>
+            {% endif %}
+        </div>
     </header>
     {% if messages %}
-    <section class="messages" aria-label="Системные сообщения">
-        {% for message in messages %}<div class="message">{{ message }}</div>{% endfor %}
+    <section class="da-messages" aria-label="Системные сообщения">
+        {% for message in messages %}<div class="da-alert">{{ message }}</div>{% endfor %}
     </section>
     {% endif %}
     <div class="ux-public-main">
