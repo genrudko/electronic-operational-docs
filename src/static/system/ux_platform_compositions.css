@@ -176,6 +176,15 @@
     color: var(--theme-text-muted);
 }
 
+/* app.css still contains the pre-platform Dispatching card gradient with
+ * !important.  Once the template opts into da-card, the platform surface is
+ * authoritative and the legacy composition must not leak through. */
+body.ux-platform .dispatching-object-card.da-card {
+    border-color: var(--theme-border) !important;
+    background: var(--theme-surface) !important;
+    color: var(--theme-text) !important;
+}
+
 @media (max-width: 52rem) {
     .ux-detail-grid,
     .ux-form-grid {
