@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import re
 from pathlib import Path
+import re
 
 from django.conf import settings
 from django.test import SimpleTestCase
@@ -95,4 +95,8 @@ class UXPlatformMigrationContractTests(SimpleTestCase):
                         offenders.append(
                             f"{path.relative_to(Path(settings.BASE_DIR)).as_posix()}: {marker}"
                         )
-        self.assertEqual(offenders, [], "Unsafe mobile scaling contract found:\n" + "\n".join(offenders))
+        self.assertEqual(
+            offenders,
+            [],
+            "Unsafe mobile scaling contract found:\n" + "\n".join(offenders),
+        )
