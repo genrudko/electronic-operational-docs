@@ -72,29 +72,29 @@ jobs:
       - name: Start development stack
         run: docker compose -f compose.development.yaml up --detach
 
-      - name: Wait for development application health with verified output
+      - name: Wait for development application readiness
         shell: bash
         run: |
           set -euo pipefail
           for attempt in $(seq 1 45); do
             if curl --fail --silent --show-error \
-              http://127.0.0.1:8766/_health/ >"$RUNNER_TEMP/development-health.raw.json"; then
+              http://127.0.0.1:8766/_ready/ >"$RUNNER_TEMP/development-ready.raw.json"; then
               python scripts/secret_hygiene.py redact \
-                --input "$RUNNER_TEMP/development-health.raw.json" \
-                --output "$RUNNER_TEMP/development-health.sanitized.json" \
+                --input "$RUNNER_TEMP/development-ready.raw.json" \
+                --output "$RUNNER_TEMP/development-ready.sanitized.json" \
                 --env DJANGO_SECRET_KEY \
                 --env POSTGRES_PASSWORD \
                 --env EOD_DEMO_USER_PASSWORD
               python scripts/secret_hygiene.py verify-sanitized \
-                --input "$RUNNER_TEMP/development-health.sanitized.json" \
+                --input "$RUNNER_TEMP/development-ready.sanitized.json" \
                 --env DJANGO_SECRET_KEY \
                 --env POSTGRES_PASSWORD \
                 --env EOD_DEMO_USER_PASSWORD
-              cat "$RUNNER_TEMP/development-health.sanitized.json"
+              cat "$RUNNER_TEMP/development-ready.sanitized.json"
               exit 0
             fi
             if (( attempt % 10 == 0 )); then
-              echo "Health attempt ${attempt}/45"
+              echo "Readiness attempt ${attempt}/45"
               docker compose -f compose.development.yaml ps --all
             fi
             sleep 2
@@ -107,6 +107,25 @@ jobs:
             python manage.py verify_development_demo_login \
             --base-url http://127.0.0.1:8766 \
             --wait-seconds 5
+
+      - name: Verify trusted Development health after login smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            http://127.0.0.1:8766/_health/ >"$RUNNER_TEMP/development-health.raw.json"
+          python scripts/secret_hygiene.py redact \
+            --input "$RUNNER_TEMP/development-health.raw.json" \
+            --output "$RUNNER_TEMP/development-health.sanitized.json" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD \
+            --env EOD_DEMO_USER_PASSWORD
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$RUNNER_TEMP/development-health.sanitized.json" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD \
+            --env EOD_DEMO_USER_PASSWORD
+          cat "$RUNNER_TEMP/development-health.sanitized.json"
 
       - name: Verify isolated database identity
         run: |
@@ -172,6 +191,8 @@ jobs:
         run: |
           set -euo pipefail
           rm -f \
+            "$RUNNER_TEMP/development-ready.raw.json" \
+            "$RUNNER_TEMP/development-ready.sanitized.json" \
             "$RUNNER_TEMP/development-health.raw.json" \
             "$RUNNER_TEMP/development-health.sanitized.json" \
             "$RUNNER_TEMP/development-db-port.raw.txt" \
