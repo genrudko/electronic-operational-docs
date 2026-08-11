@@ -37,18 +37,14 @@ def _development_authentication_ready() -> bool:
     if settings.EOD_DEPLOYMENT_MODE != "development":
         return True
     try:
-        from apps.organizations.demo_access import injected_demo_password
         from apps.organizations.development_auth_smoke import (
             verify_development_demo_authentication_state,
         )
 
-        # The trusted pre-merge controller on main predates Repair v3 and its
-        # isolated smoke intentionally has no demo credential. Keep that
-        # runner compatible without weakening real Development deployments:
-        # whenever an injected credential exists, the full auth-state proof is
-        # still mandatory.
-        if not injected_demo_password():
-            return True
+        # Development readiness is an acceptance contract, not a compatibility
+        # shortcut.  A missing/invalid local credential or demo principal must
+        # fail closed so a trusted deployment cannot report SUCCESS while the
+        # owner is unable to authenticate through the real login path.
         return verify_development_demo_authentication_state()
     except Exception:  # noqa: BLE001 - never disclose credential/auth details via health.
         return False
