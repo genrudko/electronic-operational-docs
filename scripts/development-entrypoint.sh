@@ -31,6 +31,7 @@ require_equal EOD_DATABASE_PROFILE development
 require_equal EOD_ALLOW_SQLITE_PATH_OVERRIDE 0
 require_nonempty POSTGRES_PASSWORD
 require_nonempty DJANGO_SECRET_KEY
+require_nonempty EOD_DEMO_USER_PASSWORD
 
 if [ "$POSTGRES_PASSWORD" = "eod_local_password" ]; then
     echo "Unsafe development configuration: default PostgreSQL password is forbidden." >&2
@@ -44,5 +45,6 @@ fi
 
 python manage.py check
 python manage.py migrate --noinput
+python manage.py bootstrap_development_demo_access
 
 exec "$@"
