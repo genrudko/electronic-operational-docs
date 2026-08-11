@@ -18,21 +18,16 @@ _CSRF_PATTERN = re.compile(
 _verified_fingerprint: str | None = None
 
 
-def verify_development_demo_login_path() -> bool:
-    """Verify the published Development credential through the real login view.
+def verify_development_demo_authentication_state() -> bool:
+    """Verify persistent Development principals and the configured auth backend.
 
-    The credential never leaves process memory.  A successful result covers the
-    persistent user state, Django authentication backend, rendered login page,
-    CSRF-protected POST, session creation and authenticated account route.
+    This bounded readiness check deliberately does not instantiate Django's test
+    client or perform an HTTP request. The live published login path is proved
+    separately by ``verify_development_demo_login`` against the running server.
     """
-
-    global _verified_fingerprint
 
     password = injected_demo_password()
     validate_demo_password(password)
-    fingerprint = hashlib.sha256(password.encode("utf-8")).hexdigest()
-    if _verified_fingerprint == fingerprint:
-        return True
 
     user_model = get_user_model()
     users = {
@@ -52,6 +47,30 @@ def verify_development_demo_login_path() -> bool:
         if authenticated is None or authenticated.pk != user.pk:
             return False
 
+    return True
+
+
+def verify_development_demo_login_path() -> bool:
+    """Verify the rendered Development credential through the Django login view.
+
+    This in-process acceptance helper is retained for focused Django tests. The
+    trusted deployment smoke uses the management command that performs the same
+    flow through the live HTTP endpoint. The credential never leaves process
+    memory in either path.
+    """
+
+    global _verified_fingerprint
+
+    password = injected_demo_password()
+    validate_demo_password(password)
+    fingerprint = hashlib.sha256(password.encode("utf-8")).hexdigest()
+    if _verified_fingerprint == fingerprint:
+        return True
+
+    if not verify_development_demo_authentication_state():
+        return False
+
+    for username in DEMO_USERNAMES:
         client = Client(enforce_csrf_checks=True)
         login_response = client.get("/accounts/login/", HTTP_HOST="127.0.0.1")
         if login_response.status_code != 200:
