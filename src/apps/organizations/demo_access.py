@@ -31,6 +31,12 @@ class DemoAccessResult:
     changed: int
 
 
+@dataclass(frozen=True)
+class DemoAccessPresentation:
+    usernames: tuple[str, ...]
+    password: str
+
+
 def injected_demo_password() -> str:
     return os.environ.get(DEMO_ACCESS_ENV, "")
 
@@ -62,6 +68,27 @@ def validate_demo_password(password: str) -> None:
         )
 
 
+def development_demo_access_presentation(
+    *,
+    deployment_mode: str,
+) -> DemoAccessPresentation | None:
+    """Return the Development-only credential that the login page may publish.
+
+    The source never contains the credential.  A value is exposed only when the
+    live process is explicitly in the Development deployment mode and the same
+    injected secret passes the demo-access security policy used for authentication.
+    """
+
+    if deployment_mode.strip().lower() != "development":
+        return None
+    candidate = injected_demo_password()
+    try:
+        validate_demo_password(candidate)
+    except DemoAccessPolicyError:
+        return None
+    return DemoAccessPresentation(usernames=DEMO_USERNAMES, password=candidate)
+
+
 @transaction.atomic
 def reconcile_demo_access(
     *,
@@ -83,9 +110,15 @@ def reconcile_demo_access(
             )
         changed = 0
         for user in users:
+            update_fields: list[str] = []
             if user.has_usable_password():
                 user.set_unusable_password()
-                user.save(update_fields=["password"])
+                update_fields.append("password")
+            if user.is_active:
+                user.is_active = False
+                update_fields.append("is_active")
+            if update_fields:
+                user.save(update_fields=update_fields)
                 changed += 1
         return DemoAccessResult(
             status="DISABLED_MISSING_INJECTION",
@@ -96,9 +129,15 @@ def reconcile_demo_access(
     validate_demo_password(candidate)
     changed = 0
     for user in users:
+        update_fields = []
         if not user.check_password(candidate):
             user.set_password(candidate)
-            user.save(update_fields=["password"])
+            update_fields.append("password")
+        if not user.is_active:
+            user.is_active = True
+            update_fields.append("is_active")
+        if update_fields:
+            user.save(update_fields=update_fields)
             changed += 1
     return DemoAccessResult(
         status="ENABLED_LOCAL_INJECTION",
