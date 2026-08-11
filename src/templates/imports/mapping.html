@@ -3,13 +3,13 @@
 {% block title %}Сопоставление колонок · {{ batch.original_filename }} · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading">
+<section class="da-page-header">
     <div>
-        <div class="eyebrow">ИМПОРТ СПРАВОЧНИКОВ</div>
+        <span class="ux-kicker">Импорт справочников</span>
         <h1>Сопоставление колонок</h1>
         <p>{{ batch.original_filename }} · {{ batch.get_target_registry_display }}</p>
     </div>
-    <a href="{% url 'imports:detail' batch.public_id %}">К предварительному просмотру</a>
+    <a class="da-button is-tertiary" href="{% url 'imports:detail' batch.public_id %}">К предварительному просмотру</a>
 </section>
 
 <section class="notice-card import-safety-notice">
@@ -21,23 +21,23 @@
 </section>
 
 <div class="content-grid import-mapping-layout">
-    <section class="profile-card">
+    <section class="da-card">
         <div class="section-heading">
             <div>
-                <div class="eyebrow">КОЛОНКИ ФАЙЛА</div>
+                <span class="ux-kicker">Колонки файла</span>
                 <h2>Назначьте поля</h2>
             </div>
             <span class="count-badge">{{ batch.column_count }}</span>
         </div>
 
-        <form method="post" class="stack-form import-mapping-form">
+        <form method="post" class="stack-form import-mapping-form ux-form-grid">
             {% csrf_token %}
             {% if form.non_field_errors %}
-                <div class="form-errors">{{ form.non_field_errors }}</div>
+                <div class="da-alert is-danger">{{ form.non_field_errors }}</div>
             {% endif %}
             <div class="mapping-table">
             {% for field in form %}
-                <label class="mapping-row">
+                <label class="mapping-row da-field">
                     <span class="mapping-source">
                         <strong>{{ field.label }}</strong>
                         <small>{{ field.help_text }}</small>
@@ -50,17 +50,17 @@
                 </label>
             {% endfor %}
             </div>
-            <div class="form-actions">
-                <button class="button" type="submit">Подтвердить сопоставление и пересчитать строки</button>
-                <a class="button secondary" href="{% url 'imports:detail' batch.public_id %}">Отмена</a>
+            <div class="ux-form-actions">
+                <button class="da-button" type="submit">Подтвердить сопоставление и пересчитать строки</button>
+                <a class="da-button is-secondary" href="{% url 'imports:detail' batch.public_id %}">Отмена</a>
             </div>
         </form>
     </section>
 
-    <aside class="profile-card import-field-catalog">
-        <div class="eyebrow">ПОЛЯ НАЗНАЧЕНИЯ</div>
+    <aside class="da-card import-field-catalog">
+        <span class="ux-kicker">Поля назначения</span>
         <h2>{{ batch.get_target_registry_display }}</h2>
-        <p class="muted">Звёздочкой отмечены обязательные поля.</p>
+        <p class="ux-muted">Звёздочкой отмечены обязательные поля.</p>
         <dl class="field-catalog-list">
         {% for spec in field_specs %}
             <dt>{{ spec.label }}{% if spec.required %} *{% endif %}</dt>
