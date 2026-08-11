@@ -3,48 +3,30 @@
 {% block title %}{{ site }} · Реестр оборудования{% endblock %}
 
 {% block content %}
-<section class="page-heading compact">
-    <div>
-        <div class="eyebrow">ЭНЕРГООБЪЕКТ</div>
-        <h1>{{ site }}</h1>
-        <p>{{ site.name }}</p>
-    </div>
-    <a href="{% url 'equipment:registry' %}">К реестру</a>
+<section class="da-page-header da-page-header-compact">
+    <div><span class="ux-kicker">Энергообъект</span><h1>{{ site }}</h1><p>{{ site.name }}</p></div>
+    <a class="da-button is-tertiary" href="{% url 'equipment:registry' %}">К реестру</a>
 </section>
 
-<section class="profile-card">
+<section class="da-card ux-stack">
     <h2>Реквизиты энергообъекта</h2>
-    <dl>
+    <dl class="ux-key-value">
         <dt class="technical-only">Системный код</dt><dd class="technical-only"><code>{{ site.code }}</code></dd>
         <dt>Вид объекта</dt><dd>{{ site.get_site_type_display }}</dd>
         <dt>Организация</dt><dd>{{ site.organization }}</dd>
-        <dt>Принадлежность</dt>
-        <dd>{% if site.is_external %}Смежный или внешний энергообъект{% else %}Энергообъект организации{% endif %}</dd>
-        <dt>Состояние</dt><dd>{% if site.is_active %}Действующий{% else %}Недействующий{% endif %}</dd>
+        <dt>Принадлежность</dt><dd>{% if site.is_external %}Смежный или внешний энергообъект{% else %}Энергообъект организации{% endif %}</dd>
+        <dt>Состояние</dt><dd><span class="da-status-chip {% if site.is_active %}is-success{% endif %}">{% if site.is_active %}Действующий{% else %}Недействующий{% endif %}</span></dd>
     </dl>
 </section>
 
-<section class="profile-card">
-    <h2>Иерархия оборудования</h2>
-    <p class="muted">
-        Отступ показывает вложенность: например, распределительное устройство →
-        секция → ячейка → комплект РЗА.
-    </p>
+<section class="da-card ux-stack">
+    <div><h2>Иерархия оборудования</h2><p class="ux-muted">Отступ показывает вложенность: например, распределительное устройство → секция → ячейка → комплект РЗА.</p></div>
     <div class="equipment-tree">
     {% for row in tree_rows %}
-        <a
-            class="equipment-tree-row"
-            style="--tree-level: {{ row.level }}"
-            href="{% url 'equipment:detail' row.equipment.public_id %}"
-        >
-            <span class="tree-branch" aria-hidden="true">└</span>
-            <strong>{{ row.display_name }}</strong>
-            <code class="technical-only">{{ row.equipment.code }}</code>
-            <span>{{ row.equipment.equipment_type.name }}</span>
+        <a class="equipment-tree-row" style="--tree-level: {{ row.level }}" href="{% url 'equipment:detail' row.equipment.public_id %}">
+            <span class="tree-branch" aria-hidden="true">└</span><strong>{{ row.display_name }}</strong><code class="technical-only">{{ row.equipment.code }}</code><span>{{ row.equipment.equipment_type.name }}</span>
         </a>
-    {% empty %}
-        <p class="muted">Оборудование на энергообъекте пока не заведено.</p>
-    {% endfor %}
+    {% empty %}<div class="ux-empty-state">Оборудование на энергообъекте пока не заведено.</div>{% endfor %}
     </div>
 </section>
 {% endblock %}
