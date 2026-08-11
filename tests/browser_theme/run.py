@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Blocking browser evidence for seven theme routes."""
+"""Blocking browser evidence for the representative UX Platform surface matrix."""
 
 import json
 import os
@@ -13,14 +13,32 @@ BASE = os.getenv("EOD_BROWSER_BASE_URL", "http://127.0.0.1:8766").rstrip("/")
 OUT = Path(os.getenv("EOD_BROWSER_EVIDENCE", "artifacts/browser-theme"))
 VIEWPORTS = ((1440, 900), (1024, 768), (390, 844))
 THEMES = ("light", "dark")
+PUBLIC_ROUTES = {
+    "login": "/accounts/login/",
+}
 ROUTES = {
     "home": "/",
+    "documents": "/documents/",
+    "equipment": "/equipment/",
+    "dispatching": "/dispatching/",
+    "normatives": "/normatives/",
+    "imports": "/imports/",
+    "workplace_docs": "/workplace-documentation/",
+    "operational_documents": "/operational-documents/",
     "defect_registry": "/operations/defects/",
     "opj_registry": "/operations/journal/",
     "account_settings": "/accounts/me/",
 }
 SELECTORS = {
-    "home": ".metric.da-card",
+    "login": ".ux-auth-card",
+    "home": ".ux-launcher-card",
+    "documents": ".document-list-card",
+    "equipment": ".equipment-filter-card",
+    "dispatching": ".dispatching-object-card",
+    "normatives": ".da-card.ux-stack",
+    "imports": "section.da-card",
+    "workplace_docs": ".da-card.ux-stack",
+    "operational_documents": ".opdoc-filter-card",
     "defect_registry": ".defect-da-work-table",
     "defect_detail": ".defect-record-section",
     "opj_registry": ".journal-registry-card",
@@ -29,7 +47,15 @@ SELECTORS = {
     "account_settings": ".account-setting-card",
 }
 TOKENS = {
+    "login": "--theme-surface",
     "home": "--theme-surface",
+    "documents": "--theme-surface",
+    "equipment": "--theme-surface",
+    "dispatching": "--theme-surface",
+    "normatives": "--theme-surface",
+    "imports": "--theme-surface",
+    "workplace_docs": "--theme-surface",
+    "operational_documents": "--theme-surface",
     "defect_registry": "--theme-surface",
     "defect_detail": "--theme-surface",
     "opj_registry": "--theme-surface",
@@ -84,6 +110,53 @@ def theme(page, value):
     page.wait_for_function("v=>document.documentElement.dataset.theme===v", arg=value)
 
 
+def document_width(page):
+    return page.evaluate(
+        """() => ({
+            scroll: document.documentElement.scrollWidth,
+            client: document.documentElement.clientWidth,
+        })"""
+    )
+
+
+def mask_public_demo_password(page):
+    password_node = page.locator("[data-development-demo-password]")
+    if password_node.count():
+        password_node.evaluate("node => { node.textContent = '••••••••'; }")
+
+
+def capture_surface(page, shots, report, route, path, mode, width, height):
+    page.set_viewport_size({"width": width, "height": height})
+    page.goto(BASE + path)
+    if route == "login":
+        mask_public_demo_password(page)
+    theme(page, mode)
+    node = need(page, SELECTORS[route])
+    actual = style(node)
+    expected = resolved_background(page, TOKENS[route])
+    width_state = document_width(page)
+    key = f"{route}__{mode}__{width}x{height}"
+    report["baseline"][key] = {
+        **actual,
+        "expected_background": expected,
+        "document_width": width_state,
+    }
+    screenshot(page, shots, key)
+    if width_state["scroll"] > width_state["client"] + 2:
+        raise AssertionError(
+            f"document overflow {route} {mode} {width}px: {width_state}"
+        )
+    html_scheme = style(page.locator("html"))["scheme"].split()
+    if (
+        actual["background"].replace(" ", "")
+        != expected.replace(" ", "")
+        or mode not in html_scheme
+    ):
+        raise AssertionError(
+            f"theme mismatch {route} {mode}: {actual} {expected} {html_scheme}"
+        )
+
+
 def activate_editor_caret(page):
     editor = need(page, '.draft-rich-editor-host [contenteditable="true"]')
     editor.click()
@@ -126,6 +199,7 @@ def discover(page):
         "ns=>ns.map(n=>new URL(n.href).pathname)"
     )
     ROUTES["defect_detail"] = defect_detail_path(hrefs)
+
     page.goto(BASE + ROUTES["opj_registry"])
     hrefs = page.locator('a[href*="/operations/journal/"]').evaluate_all(
         "ns=>ns.map(n=>new URL(n.href).pathname)"
@@ -142,7 +216,16 @@ def discover(page):
 def main():
     shots = OUT / "screenshots"
     shots.mkdir(parents=True, exist_ok=True)
-    report = {"baseline": {}, "open_states": {}}
+    report = {
+        "meta": {
+            "base_url": BASE,
+            "themes": THEMES,
+            "viewports": VIEWPORTS,
+            "public_routes": PUBLIC_ROUTES,
+        },
+        "baseline": {},
+        "open_states": {},
+    }
     password = os.getenv("EOD_BROWSER_PASSWORD", "").strip()
     if not password:
         raise AssertionError("EOD_BROWSER_PASSWORD must be an ephemeral test credential")
@@ -150,53 +233,122 @@ def main():
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
         page = browser.new_page(viewport={"width": 1440, "height": 900})
-        page.goto(BASE + "/accounts/login/")
+
+        for route, path in PUBLIC_ROUTES.items():
+            for mode in THEMES:
+                for width, height in VIEWPORTS:
+                    capture_surface(
+                        page,
+                        shots,
+                        report,
+                        route,
+                        path,
+                        mode,
+                        width,
+                        height,
+                    )
+
+        page.set_viewport_size({"width": 390, "height": 844})
+        page.goto(BASE + PUBLIC_ROUTES["login"])
+        mask_public_demo_password(page)
+        theme(page, "dark")
+        username_input = need(page, "input[name=username]")
+        username_input.focus()
+        font_size = float(
+            username_input.evaluate("node => parseFloat(getComputedStyle(node).fontSize)")
+        )
+        if font_size < 16:
+            raise AssertionError(f"mobile login input font too small: {font_size}px")
+        login_width = document_width(page)
+        if login_width["scroll"] > login_width["client"] + 2:
+            raise AssertionError(f"mobile login focus overflow: {login_width}")
+        report["open_states"]["login_mobile_focus"] = {
+            **style(username_input),
+            "font_size": font_size,
+            "document_width": login_width,
+        }
+        screenshot(page, shots, "transient__login_focus__dark__390x844")
+
+        page.set_viewport_size({"width": 1440, "height": 900})
+        page.goto(BASE + PUBLIC_ROUTES["login"])
         need(page, "input[name=username]").fill(
             os.getenv("EOD_BROWSER_USERNAME", "operator.demo")
         )
         need(page, "input[name=password]").fill(password)
         need(page, "button[type=submit]").click()
+        need(page, "[data-direction-a-shell]")
         discover(page)
+        report["meta"]["authenticated_routes"] = dict(ROUTES)
 
         for route, path in ROUTES.items():
             for mode in THEMES:
                 for width, height in VIEWPORTS:
-                    page.set_viewport_size({"width": width, "height": height})
-                    page.goto(BASE + path)
-                    theme(page, mode)
-                    node = need(page, SELECTORS[route])
-                    actual = style(node)
-                    expected = resolved_background(page, TOKENS[route])
-                    document_width = page.evaluate(
-                        """() => ({
-                            scroll: document.documentElement.scrollWidth,
-                            client: document.documentElement.clientWidth,
-                        })"""
+                    capture_surface(
+                        page,
+                        shots,
+                        report,
+                        route,
+                        path,
+                        mode,
+                        width,
+                        height,
                     )
-                    key = f"{route}__{mode}__{width}x{height}"
-                    report["baseline"][key] = {
-                        **actual,
-                        "expected_background": expected,
-                        "document_width": document_width,
-                    }
-                    screenshot(page, shots, key)
-                    if document_width["scroll"] > document_width["client"] + 2:
-                        raise AssertionError(
-                            f"document overflow {route} {mode} {width}px: {document_width}"
-                        )
-                    if (
-                        actual["background"].replace(" ", "")
-                        != expected.replace(" ", "")
-                        or mode not in style(page.locator("html"))["scheme"].split()
-                    ):
-                        raise AssertionError(
-                            f"theme mismatch {route} {mode}: {actual} {expected}"
-                        )
 
-        if len(report["baseline"]) != 42:
-            raise AssertionError("must contain exactly 42 baseline states")
+        expected_baselines = (
+            len(PUBLIC_ROUTES) + len(ROUTES)
+        ) * len(THEMES) * len(VIEWPORTS)
+        if len(report["baseline"]) != expected_baselines:
+            raise AssertionError(
+                f"must contain exactly {expected_baselines} baseline states, "
+                f"got {len(report['baseline'])}"
+            )
+        report["meta"]["baseline_state_count"] = expected_baselines
+
+        page.set_viewport_size({"width": 390, "height": 844})
+        page.goto(BASE + ROUTES["home"])
+        theme(page, "dark")
+        toggle = need(page, "[data-direction-a-toggle]")
+        toggle.click()
+        page.wait_for_function("()=>document.body.classList.contains('da-nav-open')")
+        sidebar = need(page, "[data-direction-a-sidebar]")
+        if toggle.get_attribute("aria-expanded") != "true":
+            raise AssertionError("mobile shell toggle did not publish expanded state")
+        report["open_states"]["mobile_navigation"] = style(sidebar)
+        screenshot(page, shots, "transient__mobile_navigation__dark__390x844")
+        page.keyboard.press("Escape")
+        page.wait_for_function("()=>!document.body.classList.contains('da-nav-open')")
 
         page.set_viewport_size({"width": 1440, "height": 900})
+        page.goto(BASE + ROUTES["documents"])
+        theme(page, "dark")
+        create_path = need(page, 'a[href*="/documents/"]').evaluate(
+            """node => {
+                const links = Array.from(document.querySelectorAll('a[href]'));
+                const found = links.find(link => link.textContent.trim() === 'Новый черновик');
+                return found ? new URL(found.href).pathname : '';
+            }"""
+        )
+        if not create_path:
+            raise AssertionError("missing document create route")
+        page.goto(BASE + create_path)
+        theme(page, "dark")
+        need(page, "[data-equipment-selector-open]").click()
+        equipment_dialog = need(page, ".equipment-selector-dialog")
+        if not equipment_dialog.evaluate("dialog => dialog.open"):
+            raise AssertionError("equipment selector dialog did not open")
+        report["open_states"]["document_equipment_dialog"] = style(equipment_dialog)
+        screenshot(page, shots, "transient__document_equipment_dialog__dark__1440x900")
+        page.keyboard.press("Escape")
+
+        page.goto(BASE + ROUTES["dispatching"])
+        theme(page, "dark")
+        dispatching_filter = need(page, ".filter-disclosure")
+        need(page, ".filter-disclosure > summary").click()
+        if not dispatching_filter.evaluate("details => details.open"):
+            raise AssertionError("dispatching filter disclosure did not open")
+        report["open_states"]["dispatching_filters"] = style(dispatching_filter)
+        screenshot(page, shots, "transient__dispatching_filters__dark__1440x900")
+
         page.goto(BASE + ROUTES["defect_registry"])
         theme(page, "dark")
         need(page, ".defect-filter-drawer > summary").click()
@@ -217,7 +369,7 @@ def main():
         for kind in ("equipment", "personnel", "workplace"):
             field = need(page, f".defect-tree-selector--{kind} .defect-tree-input")
             field.click()
-            report["open_states"][kind] = style(
+            report["open_states"][f"defect_{kind}"] = style(
                 need(page, f".defect-tree-selector--{kind} .defect-tree-panel")
             )
             screenshot(page, shots, f"transient__defect_{kind}__dark__1440x900")
