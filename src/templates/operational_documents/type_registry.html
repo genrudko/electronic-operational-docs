@@ -3,70 +3,48 @@
 {% block title %}Формы структурированных журналов · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading">
+<section class="da-page-header da-page-header-compact">
     <div>
-        <div class="section-kicker">Источник → форма → запись</div>
+        <span class="ux-kicker">Источник → форма → запись</span>
         <h1>Формы структурированных журналов</h1>
         <p>Система устанавливает формы только по утверждённым инструкциям. Ручное создание произвольных журналов отключено.</p>
     </div>
-    <div class="document-actions">
-        <a class="button secondary" href="{% url 'operational_documents:registry' %}">К журналам</a>
-    </div>
+    <div class="da-actions"><a class="da-button is-tertiary" href="{% url 'operational_documents:registry' %}">К журналам</a></div>
 </section>
 
-<section class="source-boundary-notice">
-    <strong>Базовый источник</strong>
-    <p>И-00-007-ОР-2025 версия 2. Поля, порядок граф и специальные действия будут устанавливаться отдельным source-bound патчем без ручного конструирования оператором.</p>
-</section>
+<section class="da-alert"><div><strong>Базовый источник</strong><p>И-00-007-ОР-2025 версия 2. Поля, порядок граф и специальные действия устанавливаются source-bound патчами без ручного конструирования оператором.</p></div></section>
 
-<section class="approved-form-catalog">
+<section class="approved-form-catalog ux-stack">
     {% for row in catalog_rows %}
-    <article class="approved-form-card{% if row.installed %} installed{% endif %}">
-        <div class="approved-form-card-head">
-            <div>
-                <span class="section-kicker">Раздел {{ row.form.source_section }} · Приложение № {{ row.form.source_appendix }}</span>
-                <h2>{{ row.form.name }}</h2>
-            </div>
-            {% if row.installed %}
-                <span class="status-chip status-registered">Установлена</span>
-            {% else %}
-                <span class="status-chip status-draft">Ожидает установки</span>
-            {% endif %}
+    <article class="approved-form-card da-card{% if row.installed %} installed{% endif %}">
+        <div class="da-panel-heading approved-form-card-head">
+            <div><span class="ux-kicker">Раздел {{ row.form.source_section }} · Приложение № {{ row.form.source_appendix }}</span><h2>{{ row.form.name }}</h2></div>
+            {% if row.installed %}<span class="da-status-chip is-success">Установлена</span>{% else %}<span class="da-status-chip is-warning">Ожидает установки</span>{% endif %}
         </div>
         <p>{{ row.form.purpose }}</p>
-        <dl>
-            <dt>Источник</dt><dd>{{ row.form.source_document }}</dd>
-            <dt>Форма</dt><dd>Приложение № {{ row.form.source_appendix }}</dd>
-        </dl>
-        {% if row.installed %}
-            <a class="button secondary" href="{% url 'operational_documents:type_detail' row.document_type.public_id %}">Открыть форму</a>
-        {% endif %}
+        <dl class="ux-key-value"><dt>Источник</dt><dd>{{ row.form.source_document }}</dd><dt>Форма</dt><dd>Приложение № {{ row.form.source_appendix }}</dd></dl>
+        {% if row.installed %}<div class="ux-form-actions"><a class="da-button is-secondary" href="{% url 'operational_documents:type_detail' row.document_type.public_id %}">Открыть форму</a></div>{% endif %}
     </article>
     {% endfor %}
 </section>
 
-<section class="source-boundary-notice neutral">
-    <strong>Формы из других источников</strong>
-    <p>Журнал выдачи и возврата ключей и журнал учёта работ по нарядам и распоряжениям будут добавлены только после отдельной привязки к их утверждённым формам. Состав граф по памяти не создаётся.</p>
-</section>
+<section class="da-alert"><div><strong>Формы из других источников</strong><p>Журнал выдачи и возврата ключей и журнал учёта работ по нарядам и распоряжениям будут добавлены только после отдельной привязки к утверждённым формам. Состав граф по памяти не создаётся.</p></div></section>
 
 {% if can_administer and ui_preferences.show_technical_details %}
-<details class="technical-panel technical-only">
+<details class="da-card technical-only">
     <summary>Технические схемы ядра</summary>
-    <p>Эти схемы использовались для проверки механизма. Они не считаются установленными формами журналов.</p>
+    <p class="ux-muted">Эти схемы использовались для проверки механизма и не считаются установленными формами журналов.</p>
     {% if technical_types %}
-    <div class="grid module-grid opdoc-type-grid">
+    <div class="ux-launcher-grid opdoc-type-grid">
         {% for item in technical_types %}
-        <article class="card active">
-            <div class="number">{{ item.code }}</div>
+        <article class="da-card">
+            <span class="ux-kicker">{{ item.code }}</span>
             <h2><a href="{% url 'operational_documents:type_detail' item.public_id %}">{{ item.name }}</a></h2>
-            {% if item.current_published_revision %}<span class="badge">Редакция {{ item.current_published_revision.revision_number }}</span>{% endif %}
+            {% if item.current_published_revision %}<span class="da-status-chip is-info">Редакция {{ item.current_published_revision.revision_number }}</span>{% endif %}
         </article>
         {% endfor %}
     </div>
-    {% else %}
-    <p class="muted">Технических схем нет.</p>
-    {% endif %}
+    {% else %}<div class="ux-empty-state">Технических схем нет.</div>{% endif %}
 </details>
 {% endif %}
 {% endblock %}
