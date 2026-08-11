@@ -134,17 +134,34 @@ def document_width(page):
 
 def rendered_regions(page, surface):
     surface_box = surface.bounding_box()
-    heading = page.locator(
-        "main h1, h1, main [role='heading'], [role='heading'], main h2"
-    ).first
-    heading_state = None
-    if heading.count() and heading.is_visible():
-        heading_box = heading.bounding_box()
-        heading_state = {
-            "text": heading.inner_text().strip(),
-            "tag": heading.evaluate("node => node.tagName.toLowerCase()"),
-            "box": heading_box,
-        }
+    heading_state = page.evaluate(
+        """() => {
+            const main = document.querySelector("main");
+            const candidates = [
+                ...(main ? main.querySelectorAll("h1, [role='heading'], h2") : []),
+                ...document.querySelectorAll("h1, [role='heading'], h2"),
+            ];
+            const seen = new Set();
+            for (const node of candidates) {
+                if (seen.has(node)) continue;
+                seen.add(node);
+                const rect = node.getBoundingClientRect();
+                const style = getComputedStyle(node);
+                const visible = rect.width > 0 && rect.height > 0
+                    && style.display !== "none"
+                    && style.visibility !== "hidden";
+                if (!visible) continue;
+                return {
+                    text: (node.innerText || node.textContent || "").trim(),
+                    tag: node.tagName.toLowerCase(),
+                    box: {
+                        x: rect.x, y: rect.y, width: rect.width, height: rect.height,
+                    },
+                };
+            }
+            return null;
+        }"""
+    )
     main = page.locator("main").first
     main_box = main.bounding_box() if main.count() and main.is_visible() else None
     return {
