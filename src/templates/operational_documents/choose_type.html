@@ -3,29 +3,18 @@
 {% block title %}Выбор журнала · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading">
-    <div>
-        <div class="section-kicker">Новая запись</div>
-        <h1>Выберите журнал</h1>
-        <p>В списке отображаются только формы, установленные по утверждённым источникам.</p>
-    </div>
+<section class="da-page-header da-page-header-compact">
+    <div><span class="ux-kicker">Новая запись</span><h1>Выберите журнал</h1><p>В списке отображаются только формы, установленные по утверждённым источникам.</p></div>
 </section>
 {% if has_forms %}
-<section class="directory-card document-form-card narrow-form-card">
-    <form method="post" class="document-form">
+<section class="da-card document-form-card narrow-form-card">
+    <form method="post" class="ux-stack document-form">
         {% csrf_token %}
-        {{ form.as_p }}
-        <div class="form-actions">
-            <button class="button" type="submit">Продолжить</button>
-            <a class="button secondary" href="{% url 'operational_documents:registry' %}">Отмена</a>
-        </div>
+        {% for field in form %}<div class="da-field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.help_text %}<small class="ux-muted">{{ field.help_text }}</small>{% endif %}{% if field.errors %}<div class="ux-field-errors">{{ field.errors }}</div>{% endif %}</div>{% endfor %}
+        <div class="ux-form-actions"><button class="da-button" type="submit">Продолжить</button><a class="da-button is-tertiary" href="{% url 'operational_documents:registry' %}">Отмена</a></div>
     </form>
 </section>
 {% else %}
-<section class="empty-state warning">
-    <h2>Утверждённые формы ещё не установлены</h2>
-    <p>Ручное создание произвольной формы отключено. Откройте каталог, чтобы увидеть подтверждённые источники.</p>
-    <a class="button" href="{% url 'operational_documents:type_registry' %}">Открыть формы журналов</a>
-</section>
+<section class="ux-empty-state"><h2>Утверждённые формы ещё не установлены</h2><p>Ручное создание произвольной формы отключено. Откройте каталог, чтобы увидеть подтверждённые источники.</p><a class="da-button" href="{% url 'operational_documents:type_registry' %}">Открыть формы журналов</a></section>
 {% endif %}
 {% endblock %}
