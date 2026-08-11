@@ -108,10 +108,12 @@ jobs:
             --base-url http://127.0.0.1:8766 \
             --wait-seconds 5
 
-      - name: Prepare isolated OPJ browser evidence fixture
+      - name: Prepare isolated representative browser evidence data
         shell: bash
         run: |
           set -euo pipefail
+          docker compose -f compose.development.yaml exec -T app \
+            python manage.py seed_demo_dispatching --verbosity 0
           docker compose -f compose.development.yaml exec -T app \
             python manage.py shell <<'PY'
           from datetime import timedelta
@@ -125,21 +127,20 @@ jobs:
               open_shift,
               register_entry,
           )
-          from apps.organizations.models import Employee, Workplace
+          from apps.organizations.models import Employee
 
           employee = Employee.objects.select_related(
-              "organization", "position"
+              "organization", "position", "workplace"
           ).get(user__username="operator.demo")
-          workplace = Workplace.objects.filter(
-              organization=employee.organization
-          ).order_by("pk").first()
-          assert workplace is not None, "Development demo requires a workplace for browser evidence"
+          assert employee.workplace_id is not None, (
+              "Presentation seed must provide operator.demo workplace"
+          )
 
           journal, _ = OperationalJournal.objects.get_or_create(
               organization=employee.organization,
               code="browser-evidence-opj",
               defaults={
-                  "workplace": workplace,
+                  "workplace": employee.workplace,
                   "title": "Оперативный журнал · browser evidence",
               },
           )
