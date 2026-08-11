@@ -417,9 +417,28 @@
       "purpose": "GitHub Actions executable dependency",
       "risk": "LOW",
       "version_constraint": "ece7cb06caefa5fff74198d8649806c4678c61a1"
+    },
+    {
+      "canonical_or_duplicate": "reference",
+      "class": "github-action",
+      "current_reproducibility": "immutable",
+      "declaration": "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+      "dependency_scope": "ci/deployment",
+      "direct_or_transitive": "direct",
+      "evidence": "v7.0.1",
+      "hash_coverage": "commit-sha",
+      "id": "INP-0023",
+      "immutable": true,
+      "line": 206,
+      "ordinal": 23,
+      "path": ".github/workflows/backup-restore-drill.yml",
+      "proposed_owner": "each validated .github/workflows uses reference",
+      "purpose": "GitHub Actions executable dependency",
+      "risk": "LOW",
+      "version_constraint": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
     }
   ],
-  "entry_count": 22,
+  "entry_count": 23,
   "schema": 2,
   "shard": 1,
   "work_item": "DEPENDENCY-PROVENANCE-001"
