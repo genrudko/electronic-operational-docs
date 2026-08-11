@@ -133,8 +133,21 @@ class GlobalThemeContractTests(SimpleTestCase):
         runner = runner_path.read_text(encoding="utf-8")
         self.assertIn("VIEWPORTS = ((1440, 900), (1024, 768), (390, 844))", runner)
         self.assertIn('THEMES = ("light", "dark")', runner)
-        self.assertIn("must contain exactly 42 baseline states", runner)
+        self.assertIn("len(PUBLIC_ROUTES) + len(ROUTES)", runner)
+        self.assertIn("* len(THEMES) * len(VIEWPORTS)", runner)
+        self.assertIn('report["meta"]["baseline_state_count"] = expected_baselines', runner)
         self.assertIn('page.emulate_media(media="print")', runner)
+        for route in (
+            '"documents": "/documents/"',
+            '"equipment": "/equipment/"',
+            '"dispatching": "/dispatching/"',
+            '"normatives": "/normatives/"',
+            '"imports": "/imports/"',
+            '"workplace_docs": "/workplace-documentation/"',
+            '"operational_documents": "/operational-documents/"',
+            '"defect_registration": "/operations/defects/new/"',
+        ):
+            self.assertIn(route, runner)
         for selector in (
             ".defect-filter-grid",
             ".defect-picker-panel",
