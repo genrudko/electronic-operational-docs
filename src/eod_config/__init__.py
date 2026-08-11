@@ -22,13 +22,13 @@ def _install_packaged_test_compatibility() -> None:
     tests_package = sys.modules.get("tests")
     if tests_package is None:
         tests_package = types.ModuleType("tests")
-        setattr(tests_package, "__path__", [])
+        tests_package.__path__ = []
         sys.modules["tests"] = tests_package
 
     fixture_module = types.ModuleType("tests.credential_fixtures")
-    setattr(fixture_module, "ephemeral_credential", ephemeral_credential)
+    fixture_module.ephemeral_credential = ephemeral_credential
     sys.modules["tests.credential_fixtures"] = fixture_module
-    setattr(tests_package, "credential_fixtures", fixture_module)
+    tests_package.credential_fixtures = fixture_module
 
 
 _install_packaged_test_compatibility()
