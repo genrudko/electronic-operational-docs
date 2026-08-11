@@ -4,20 +4,20 @@
 
 ## Итог
 
-- tracked files: `933`;
-- inventory entries: `91`;
+- tracked files: `932`;
+- inventory entries: `85`;
 - floating inputs: `17`;
-- immutable inputs: `73`;
+- immutable inputs: `67`;
 - duplicate owner groups: `6`;
 - conflicting owner groups: `0`;
-- source files with dependency/build evidence: `22`;
-- applicable executable/config sources: `73`;
-- source completeness digests: `75`.
+- source files with dependency/build evidence: `21`;
+- applicable executable/config sources: `72`;
+- source completeness digests: `74`.
 
 ## Executable/config source completeness
 
-- applicable paths: `73`;
-- source kinds: `{'compose': 5, 'dockerfile': 3, 'github-workflow': 13, 'powershell': 3, 'python-operator': 40, 'shell': 8, 'shell-shebang': 1}`;
+- applicable paths: `72`;
+- source kinds: `{'compose': 5, 'dockerfile': 3, 'github-workflow': 12, 'powershell': 3, 'python-operator': 40, 'shell': 8, 'shell-shebang': 1}`;
 - uncovered paths: `NONE`;
 - exact exclusions: `NONE`.
 
@@ -27,7 +27,7 @@
 - JavaScript: package/lock files=NONE; separate frontend contour=`False`.
 - Browser: Playwright declared=`True`; binary install operations=NONE; integrity contract=`False`.
 - Containers: Dockerfiles=['Dockerfile', 'deploy/automation/Dockerfile.development', 'supply-chain/Dockerfile.browser']; Compose=['compose.development.yaml', 'compose.preview.yaml', 'compose.production.yaml', 'compose.yaml', 'deploy/automation/compose.development.yaml'].
-- GitHub Actions: workflows=`13`; temporary=NONE.
+- GitHub Actions: workflows=`12`; temporary=NONE.
 - External downloads: `0`; local runtime probes excluded=`True`.
 - Static assets: tracked=`68`; external references=`1`.
 
@@ -38,9 +38,9 @@
 | `container-image` | 12 |
 | `container-output` | 1 |
 | `external-asset` | 1 |
-| `github-action` | 41 |
+| `github-action` | 37 |
 | `python-build` | 1 |
-| `python-install` | 25 |
+| `python-install` | 23 |
 | `python-optional` | 3 |
 | `python-runtime` | 6 |
 | `python-transitive` | 1 |
@@ -85,68 +85,62 @@
 | `INP-0034` | `github-action` | `.github/workflows/deployment-profile.yml:55` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
 | `INP-0035` | `github-action` | `.github/workflows/deployment-profile.yml:219` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
 | `INP-0036` | `github-action` | `.github/workflows/development-stack.yml:30` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0037` | `github-action` | `.github/workflows/development-stack.yml:235` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0038` | `github-action` | `.github/workflows/development-stack.yml:244` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0039` | `github-action` | `.github/workflows/development-stack.yml:317` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0040` | `github-action` | `.github/workflows/documentation-contract.yml:24` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0041` | `github-action` | `.github/workflows/documentation-contract.yml:40` | ci/deployment | `actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0042` | `github-action` | `.github/workflows/documentation-contract.yml:113` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0043` | `github-action` | `.github/workflows/eod-hot-refresh.yml:32` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0044` | `github-action` | `.github/workflows/eod-hot-refresh.yml:46` | ci/deployment | `actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0045` | `github-action` | `.github/workflows/eod-hot-refresh.yml:51` | ci/deployment | `actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0046` | `github-action` | `.github/workflows/eod-hot-refresh.yml:216` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0047` | `github-action` | `.github/workflows/secret-hygiene.yml:31` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0048` | `github-action` | `.github/workflows/secret-hygiene.yml:47` | ci/deployment | `actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0049` | `github-action` | `.github/workflows/ux-platform-source-contract.yml:37` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0050` | `github-action` | `.github/workflows/ux-platform-source-contract.yml:52` | ci/deployment | `actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0051` | `github-action` | `.github/workflows/vps-development.yml:33` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0052` | `github-action` | `.github/workflows/vps-development.yml:48` | ci/deployment | `actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0053` | `github-action` | `.github/workflows/vps-development.yml:53` | ci/deployment | `actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0054` | `github-action` | `.github/workflows/vps-development.yml:195` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0055` | `github-action` | `.github/workflows/vps-development.yml:273` | ci/deployment | `actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
-| `INP-0056` | `python-build` | `pyproject.toml` | build | `setuptools>=75` | no | absent | floating-range | HIGH | pyproject.toml [build-system.requires] |
-| `INP-0057` | `python-install` | `.github/workflows/auto-001a-foundation-ci.yml:47` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/tooling.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0058` | `python-install` | `.github/workflows/auto-001a-foundation-ci.yml:48` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/build.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0059` | `python-install` | `.github/workflows/auto-001a-foundation-ci.yml:49` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/dev.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0060` | `python-install` | `.github/workflows/auto-001a-foundation-ci.yml:51` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --no-deps dist/*.whl` | no | absent | not-proven | MEDIUM | canonical lock/download/image contract |
-| `INP-0061` | `python-install` | `.github/workflows/backup-restore-drill.yml:87` | ci/build/runtime tooling | `run: python -m pip install --require-hashes -r requirements/locks/tooling.txt -r requirements/locks/build.txt -r requirements/locks/dev.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0062` | `python-install` | `.github/workflows/ci.yml:89` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/tooling.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0063` | `python-install` | `.github/workflows/ci.yml:90` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/build.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0064` | `python-install` | `.github/workflows/ci.yml:91` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/dev.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0065` | `python-install` | `.github/workflows/ci.yml:93` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --no-deps dist/*.whl` | no | absent | not-proven | MEDIUM | canonical lock/download/image contract |
-| `INP-0066` | `python-install` | `.github/workflows/dependency-provenance.yml:99` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/tooling.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0067` | `python-install` | `.github/workflows/dependency-provenance.yml:100` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/build.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0068` | `python-install` | `.github/workflows/dependency-provenance.yml:101` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/dev.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0069` | `python-install` | `.github/workflows/dependency-provenance.yml:146` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --no-deps dist/electronic_operational_docs-0.1.0-py3-none-any.whl` | no | absent | not-proven | MEDIUM | canonical lock/download/image contract |
-| `INP-0070` | `python-install` | `.github/workflows/secret-hygiene.yml:63` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/tooling.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0071` | `python-install` | `.github/workflows/secret-hygiene.yml:64` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/build.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0072` | `python-install` | `.github/workflows/secret-hygiene.yml:65` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/dev.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0073` | `python-install` | `.github/workflows/secret-hygiene.yml:67` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --no-deps dist/*.whl` | no | absent | not-proven | MEDIUM | canonical lock/download/image contract |
-| `INP-0074` | `python-install` | `.github/workflows/ux-platform-source-contract.yml:68` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/dev.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0075` | `python-install` | `.github/workflows/ux-platform-source-contract.yml:69` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/runtime.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0076` | `python-install` | `Dockerfile:6` | ci/build/runtime tooling | `RUN python -m pip install --disable-pip-version-check --require-hashes \ -r requirements/locks/build.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0077` | `python-install` | `Dockerfile:17` | ci/build/runtime tooling | `RUN python -m pip install --disable-pip-version-check --require-hashes \ -r requirements/locks/runtime.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0078` | `python-install` | `Dockerfile:20` | ci/build/runtime tooling | `RUN mkdir -p /app/src \ && python -m pip install --disable-pip-version-check --no-deps --target /app/src /tmp/eod/*.whl \ && rm -rf /tmp/eod` | no | absent | not-proven | MEDIUM | canonical lock/download/image contract |
-| `INP-0079` | `python-install` | `deploy/automation/Dockerfile.development:6` | ci/build/runtime tooling | `RUN python -m pip install --disable-pip-version-check --require-hashes \ -r requirements/locks/build.txt \ && python -m pip install --disable-pip-version-check --require-hashes \ -r requirements/locks/dev.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0080` | `python-install` | `deploy/automation/Dockerfile.development:12` | ci/build/runtime tooling | `RUN python -m build --wheel --no-isolation --outdir /tmp/eod-wheel \ && python -m pip install --disable-pip-version-check --no-deps /tmp/eod-wheel/*.whl \ && rm -rf /tmp/eod-wheel` | no | absent | not-proven | MEDIUM | canonical lock/download/image contract |
-| `INP-0081` | `python-install` | `supply-chain/Dockerfile.browser:10` | ci/build/runtime tooling | `RUN python -m pip install --disable-pip-version-check --require-hashes \ -r /evidence/requirements/locks/browser.txt \ && python -m pip check` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
-| `INP-0082` | `python-optional` | `pyproject.toml` | dev | `coverage>=7.9,<8` | no | absent | floating-range | HIGH | pyproject.toml [project.optional-dependencies.dev] |
-| `INP-0083` | `python-optional` | `pyproject.toml` | browser | `playwright>=1.54,<2` | no | absent | floating-range | HIGH | pyproject.toml [project.optional-dependencies.browser] |
-| `INP-0084` | `python-optional` | `pyproject.toml` | dev | `ruff>=0.12,<1` | no | absent | floating-range | HIGH | pyproject.toml [project.optional-dependencies.dev] |
-| `INP-0085` | `python-runtime` | `pyproject.toml` | runtime | `Django>=5.2,<5.3` | no | absent | floating-range | HIGH | pyproject.toml [project.dependencies] |
-| `INP-0086` | `python-runtime` | `pyproject.toml` | runtime | `gunicorn>=26,<27` | no | absent | floating-range | HIGH | pyproject.toml [project.dependencies] |
-| `INP-0087` | `python-runtime` | `pyproject.toml` | runtime | `openpyxl>=3.1,<4` | no | absent | floating-range | HIGH | pyproject.toml [project.dependencies] |
-| `INP-0088` | `python-runtime` | `pyproject.toml` | runtime | `psycopg[binary]>=3.2,<4` | no | absent | floating-range | HIGH | pyproject.toml [project.dependencies] |
-| `INP-0089` | `python-runtime` | `pyproject.toml` | runtime/build/test | `python` | no | not-applicable | partial-range-only | MEDIUM | pyproject.toml [project.requires-python] |
-| `INP-0090` | `python-runtime` | `pyproject.toml` | runtime | `whitenoise>=6.12,<7` | no | absent | floating-range | HIGH | pyproject.toml [project.dependencies] |
-| `INP-0091` | `python-transitive` | `pyproject.toml` | tooling/build/runtime/dev/browser | `pip dynamic resolver output` | no | absent | not-reproducible | CRITICAL | proposed generated hashed lock profiles |
+| `INP-0037` | `github-action` | `.github/workflows/development-stack.yml:144` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0038` | `github-action` | `.github/workflows/documentation-contract.yml:24` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0039` | `github-action` | `.github/workflows/documentation-contract.yml:40` | ci/deployment | `actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0040` | `github-action` | `.github/workflows/documentation-contract.yml:113` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0041` | `github-action` | `.github/workflows/eod-hot-refresh.yml:32` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0042` | `github-action` | `.github/workflows/eod-hot-refresh.yml:46` | ci/deployment | `actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0043` | `github-action` | `.github/workflows/eod-hot-refresh.yml:51` | ci/deployment | `actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0044` | `github-action` | `.github/workflows/eod-hot-refresh.yml:216` | ci/deployment | `actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0045` | `github-action` | `.github/workflows/secret-hygiene.yml:31` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0046` | `github-action` | `.github/workflows/secret-hygiene.yml:47` | ci/deployment | `actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0047` | `github-action` | `.github/workflows/vps-development.yml:33` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0048` | `github-action` | `.github/workflows/vps-development.yml:48` | ci/deployment | `actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0049` | `github-action` | `.github/workflows/vps-development.yml:53` | ci/deployment | `actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0050` | `github-action` | `.github/workflows/vps-development.yml:195` | ci/deployment | `actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0051` | `github-action` | `.github/workflows/vps-development.yml:273` | ci/deployment | `actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3` | yes | commit-sha | immutable | LOW | each validated .github/workflows uses reference |
+| `INP-0052` | `python-build` | `pyproject.toml` | build | `setuptools>=75` | no | absent | floating-range | HIGH | pyproject.toml [build-system.requires] |
+| `INP-0053` | `python-install` | `.github/workflows/auto-001a-foundation-ci.yml:47` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/tooling.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0054` | `python-install` | `.github/workflows/auto-001a-foundation-ci.yml:48` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/build.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0055` | `python-install` | `.github/workflows/auto-001a-foundation-ci.yml:49` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/dev.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0056` | `python-install` | `.github/workflows/auto-001a-foundation-ci.yml:51` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --no-deps dist/*.whl` | no | absent | not-proven | MEDIUM | canonical lock/download/image contract |
+| `INP-0057` | `python-install` | `.github/workflows/backup-restore-drill.yml:87` | ci/build/runtime tooling | `run: python -m pip install --require-hashes -r requirements/locks/tooling.txt -r requirements/locks/build.txt -r requirements/locks/dev.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0058` | `python-install` | `.github/workflows/ci.yml:89` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/tooling.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0059` | `python-install` | `.github/workflows/ci.yml:90` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/build.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0060` | `python-install` | `.github/workflows/ci.yml:91` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/dev.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0061` | `python-install` | `.github/workflows/ci.yml:93` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --no-deps dist/*.whl` | no | absent | not-proven | MEDIUM | canonical lock/download/image contract |
+| `INP-0062` | `python-install` | `.github/workflows/dependency-provenance.yml:99` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/tooling.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0063` | `python-install` | `.github/workflows/dependency-provenance.yml:100` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/build.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0064` | `python-install` | `.github/workflows/dependency-provenance.yml:101` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/dev.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0065` | `python-install` | `.github/workflows/dependency-provenance.yml:146` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --no-deps dist/electronic_operational_docs-0.1.0-py3-none-any.whl` | no | absent | not-proven | MEDIUM | canonical lock/download/image contract |
+| `INP-0066` | `python-install` | `.github/workflows/secret-hygiene.yml:63` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/tooling.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0067` | `python-install` | `.github/workflows/secret-hygiene.yml:64` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/build.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0068` | `python-install` | `.github/workflows/secret-hygiene.yml:65` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --require-hashes -r requirements/locks/dev.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0069` | `python-install` | `.github/workflows/secret-hygiene.yml:67` | ci/build/runtime tooling | `python -m pip install --disable-pip-version-check --no-deps dist/*.whl` | no | absent | not-proven | MEDIUM | canonical lock/download/image contract |
+| `INP-0070` | `python-install` | `Dockerfile:6` | ci/build/runtime tooling | `RUN python -m pip install --disable-pip-version-check --require-hashes \ -r requirements/locks/build.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0071` | `python-install` | `Dockerfile:17` | ci/build/runtime tooling | `RUN python -m pip install --disable-pip-version-check --require-hashes \ -r requirements/locks/runtime.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0072` | `python-install` | `Dockerfile:20` | ci/build/runtime tooling | `RUN mkdir -p /app/src \ && python -m pip install --disable-pip-version-check --no-deps --target /app/src /tmp/eod/*.whl \ && rm -rf /tmp/eod` | no | absent | not-proven | MEDIUM | canonical lock/download/image contract |
+| `INP-0073` | `python-install` | `deploy/automation/Dockerfile.development:6` | ci/build/runtime tooling | `RUN python -m pip install --disable-pip-version-check --require-hashes \ -r requirements/locks/build.txt \ && python -m pip install --disable-pip-version-check --require-hashes \ -r requirements/locks/dev.txt` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0074` | `python-install` | `deploy/automation/Dockerfile.development:12` | ci/build/runtime tooling | `RUN python -m build --wheel --no-isolation --outdir /tmp/eod-wheel \ && python -m pip install --disable-pip-version-check --no-deps /tmp/eod-wheel/*.whl \ && rm -rf /tmp/eod-wheel` | no | absent | not-proven | MEDIUM | canonical lock/download/image contract |
+| `INP-0075` | `python-install` | `supply-chain/Dockerfile.browser:10` | ci/build/runtime tooling | `RUN python -m pip install --disable-pip-version-check --require-hashes \ -r /evidence/requirements/locks/browser.txt \ && python -m pip check` | yes | inline-or-associated-evidence | integrity-evidenced | MEDIUM | canonical lock/download/image contract |
+| `INP-0076` | `python-optional` | `pyproject.toml` | dev | `coverage>=7.9,<8` | no | absent | floating-range | HIGH | pyproject.toml [project.optional-dependencies.dev] |
+| `INP-0077` | `python-optional` | `pyproject.toml` | browser | `playwright>=1.54,<2` | no | absent | floating-range | HIGH | pyproject.toml [project.optional-dependencies.browser] |
+| `INP-0078` | `python-optional` | `pyproject.toml` | dev | `ruff>=0.12,<1` | no | absent | floating-range | HIGH | pyproject.toml [project.optional-dependencies.dev] |
+| `INP-0079` | `python-runtime` | `pyproject.toml` | runtime | `Django>=5.2,<5.3` | no | absent | floating-range | HIGH | pyproject.toml [project.dependencies] |
+| `INP-0080` | `python-runtime` | `pyproject.toml` | runtime | `gunicorn>=26,<27` | no | absent | floating-range | HIGH | pyproject.toml [project.dependencies] |
+| `INP-0081` | `python-runtime` | `pyproject.toml` | runtime | `openpyxl>=3.1,<4` | no | absent | floating-range | HIGH | pyproject.toml [project.dependencies] |
+| `INP-0082` | `python-runtime` | `pyproject.toml` | runtime | `psycopg[binary]>=3.2,<4` | no | absent | floating-range | HIGH | pyproject.toml [project.dependencies] |
+| `INP-0083` | `python-runtime` | `pyproject.toml` | runtime/build/test | `python` | no | not-applicable | partial-range-only | MEDIUM | pyproject.toml [project.requires-python] |
+| `INP-0084` | `python-runtime` | `pyproject.toml` | runtime | `whitenoise>=6.12,<7` | no | absent | floating-range | HIGH | pyproject.toml [project.dependencies] |
+| `INP-0085` | `python-transitive` | `pyproject.toml` | tooling/build/runtime/dev/browser | `pip dynamic resolver output` | no | absent | not-reproducible | CRITICAL | proposed generated hashed lock profiles |
 
 ## Duplicate owner groups
 
-- `action:actions/checkout` — 14 repeated references in .github/workflows/auto-001a-foundation-ci.yml, .github/workflows/auto-001b-controller-ci.yml, .github/workflows/backup-restore-drill.yml, .github/workflows/ci.yml, .github/workflows/dependency-provenance.yml, .github/workflows/deployment-profile.yml, .github/workflows/development-stack.yml, .github/workflows/documentation-contract.yml, .github/workflows/eod-hot-refresh.yml, .github/workflows/secret-hygiene.yml, .github/workflows/ux-platform-source-contract.yml, .github/workflows/vps-development.yml.
+- `action:actions/checkout` — 13 repeated references in .github/workflows/auto-001a-foundation-ci.yml, .github/workflows/auto-001b-controller-ci.yml, .github/workflows/backup-restore-drill.yml, .github/workflows/ci.yml, .github/workflows/dependency-provenance.yml, .github/workflows/deployment-profile.yml, .github/workflows/development-stack.yml, .github/workflows/documentation-contract.yml, .github/workflows/eod-hot-refresh.yml, .github/workflows/secret-hygiene.yml, .github/workflows/vps-development.yml.
 - `action:actions/github-script` — 3 repeated references in .github/workflows/eod-hot-refresh.yml, .github/workflows/vps-development.yml.
-- `action:actions/setup-python` — 10 repeated references in .github/workflows/auto-001a-foundation-ci.yml, .github/workflows/auto-001b-controller-ci.yml, .github/workflows/backup-restore-drill.yml, .github/workflows/ci.yml, .github/workflows/dependency-provenance.yml, .github/workflows/documentation-contract.yml, .github/workflows/eod-hot-refresh.yml, .github/workflows/secret-hygiene.yml, .github/workflows/ux-platform-source-contract.yml, .github/workflows/vps-development.yml.
-- `action:actions/upload-artifact` — 13 repeated references in .github/workflows/auto-001a-foundation-ci.yml, .github/workflows/auto-001b-controller-ci.yml, .github/workflows/backup-restore-drill.yml, .github/workflows/ci.yml, .github/workflows/dependency-provenance.yml, .github/workflows/deployment-profile.yml, .github/workflows/development-stack.yml, .github/workflows/documentation-contract.yml, .github/workflows/eod-hot-refresh.yml.
+- `action:actions/setup-python` — 9 repeated references in .github/workflows/auto-001a-foundation-ci.yml, .github/workflows/auto-001b-controller-ci.yml, .github/workflows/backup-restore-drill.yml, .github/workflows/ci.yml, .github/workflows/dependency-provenance.yml, .github/workflows/documentation-contract.yml, .github/workflows/eod-hot-refresh.yml, .github/workflows/secret-hygiene.yml, .github/workflows/vps-development.yml.
+- `action:actions/upload-artifact` — 11 repeated references in .github/workflows/auto-001a-foundation-ci.yml, .github/workflows/auto-001b-controller-ci.yml, .github/workflows/backup-restore-drill.yml, .github/workflows/ci.yml, .github/workflows/dependency-provenance.yml, .github/workflows/deployment-profile.yml, .github/workflows/development-stack.yml, .github/workflows/documentation-contract.yml, .github/workflows/eod-hot-refresh.yml.
 - `image:postgres` — 8 repeated references in .github/workflows/backup-restore-drill.yml, .github/workflows/ci.yml, .github/workflows/dependency-provenance.yml, compose.development.yaml, compose.preview.yaml, compose.production.yaml, compose.yaml, deploy/automation/compose.development.yaml.
 - `image:python` — 3 repeated references in Dockerfile, deploy/automation/Dockerfile.development.
 
