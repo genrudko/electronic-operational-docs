@@ -128,9 +128,9 @@ jobs:
           from apps.organizations.models import Employee, Workplace
 
           employee = Employee.objects.select_related(
-              "organization", "workplace", "position"
+              "organization", "position"
           ).get(user__username="operator.demo")
-          workplace = employee.workplace or Workplace.objects.filter(
+          workplace = Workplace.objects.filter(
               organization=employee.organization
           ).order_by("pk").first()
           assert workplace is not None, "Development demo requires a workplace for browser evidence"
