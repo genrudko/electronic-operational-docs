@@ -25,7 +25,7 @@
     <div class="da-panel-heading"><div><span class="ux-kicker">Рабочие места</span><h2>Действующие перечни</h2></div>{% if storage_forms %}<span class="ux-counter">Формы хранения: {{ storage_forms|join:", " }}</span>{% endif %}</div>
     <div class="da-table-wrap"><table class="da-table"><thead><tr><th>Рабочее место</th><th>Перечень</th><th>Редакция</th><th>Действует</th><th>Следующий пересмотр</th><th>Состояние</th></tr></thead><tbody>
     {% for row in rows %}<tr>
-        <td><strong>{{ row.document_list.workplace.name }}</strong>{% if row.document_list.workplace.division %}<small class="ux-muted">{{ row.document_list.workplace.division.name }}</small>{% endif %}</td>
+        <td><div class="ux-cell-stack"><strong class="ux-cell-primary">{{ row.document_list.workplace.name }}</strong>{% if row.document_list.workplace.division %}<small class="ux-cell-secondary">{{ row.document_list.workplace.division.name }}</small>{% endif %}</div></td>
         <td>{% if row.revision %}<a href="{% url 'workplace_docs:detail' row.document_list.pk %}">{{ row.document_list.title }}</a>{% else %}{{ row.document_list.title }}{% endif %}</td>
         <td>{% if row.revision %}№ {{ row.revision.revision_number }}{% else %}—{% endif %}</td>
         <td>{% if row.revision %}с {{ row.revision.effective_from|date:"d.m.Y" }} {% if row.revision.effective_until %}по {{ row.revision.effective_until|date:"d.m.Y" }}{% endif %}{% else %}—{% endif %}</td>

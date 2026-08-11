@@ -101,7 +101,12 @@
         </section>
     </nav>
 
-    <a class="da-user" href="{% url 'organizations:account' %}">
+    <a
+        class="da-user"
+        href="{% url 'organizations:account' %}"
+        title="{{ user_display_name }} — {{ user_display_role|default:'Пользователь' }}"
+        aria-label="Настройки интерфейса: {{ user_display_name }}, {{ user_display_role|default:'Пользователь' }}"
+    >
         <span class="da-user-avatar">{{ user_initial }}</span>
         <span class="da-user-copy">
             <strong>{{ user_display_name }}</strong>

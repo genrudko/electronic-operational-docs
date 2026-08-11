@@ -1,6 +1,6 @@
 /* UX-PLATFORM-FOUNDATION-001
  * Small shared compositions needed to migrate existing surfaces onto the
- * platform.  Page-family templates remain explicitly out of scope.
+ * platform. Page-family templates remain explicitly out of scope.
  */
 
 .ux-kicker {
@@ -27,10 +27,13 @@
     gap: var(--theme-space-2);
 }
 
+/* Summary metrics use a deterministic wide-to-narrow progression. Auto-fit
+ * previously produced a visually unbalanced 3+1 layout on ordinary wide
+ * desktops. */
 .ux-stat-grid {
     min-width: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--theme-space-3);
     margin-block: var(--theme-space-4);
 }
@@ -90,6 +93,125 @@
     min-width: 0;
     margin: 0;
     overflow-wrap: anywhere;
+}
+
+/* Primary/secondary values are different semantic values, not adjacent text.
+ * This composition is shared by table cells, list rows and operational
+ * context labels that need predictable wrapping. */
+.ux-cell-stack {
+    min-width: 0;
+    display: grid;
+    gap: var(--theme-space-1);
+    align-content: start;
+}
+
+.ux-cell-primary {
+    min-width: 0;
+    color: var(--theme-text);
+    font-weight: var(--theme-font-weight-semibold);
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.ux-cell-secondary {
+    min-width: 0;
+    color: var(--theme-text-muted);
+    font-size: var(--theme-font-size-xs);
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.ux-technical-chip {
+    display: inline-flex;
+    width: fit-content;
+    max-width: 100%;
+    padding: .125rem .375rem;
+    border: 1px solid var(--theme-border);
+    border-radius: var(--theme-radius-sm);
+    background: var(--theme-surface-soft);
+    color: var(--theme-text-muted);
+    font-family: var(--theme-font-mono);
+    font-size: var(--theme-font-size-xs);
+    font-weight: var(--theme-font-weight-medium);
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+
+.ux-context-value {
+    min-width: 0;
+    display: block;
+    padding: var(--theme-space-2) var(--theme-space-3);
+    border: 1px solid var(--theme-border);
+    border-radius: var(--theme-radius-sm);
+    background: var(--theme-surface-soft);
+    color: var(--theme-text);
+    font-size: var(--theme-font-size-xs);
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.ux-heading-count {
+    display: inline-flex;
+    min-width: 1.75rem;
+    min-height: 1.75rem;
+    align-items: center;
+    justify-content: center;
+    margin-inline-start: var(--theme-space-2);
+    padding-inline: var(--theme-space-2);
+    border: 1px solid var(--theme-border);
+    border-radius: var(--theme-radius-pill);
+    background: var(--theme-surface-soft);
+    color: var(--theme-text-muted);
+    font-size: var(--theme-font-size-xs);
+    font-weight: var(--theme-font-weight-semibold);
+    vertical-align: middle;
+}
+
+/* Important summary/profile values are allowed to wrap rather than silently
+ * losing their meaning through fixed-width ellipsis. */
+.ux-profile-strip {
+    grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
+}
+
+.ux-profile-strip .data-profile-chip {
+    min-width: 0;
+}
+
+.ux-profile-strip .data-profile-chip strong,
+.ux-readable-value {
+    max-width: 100%;
+    overflow: visible;
+    color: var(--theme-text);
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+}
+
+/* A route with many owner-visible actions may wrap the actions without
+ * squeezing the page title/description into a pseudo-mobile column. */
+.da-page-header.ux-page-header-balanced {
+    grid-template-columns: minmax(min(30rem, 100%), 1fr) minmax(0, min(44rem, 48vw));
+    align-items: start;
+}
+
+.ux-page-header-balanced > div:first-child {
+    min-width: 0;
+    max-width: 48rem;
+}
+
+.ux-page-header-balanced .da-actions {
+    width: 100%;
+    max-width: 44rem;
+    justify-self: end;
+    justify-content: flex-end;
+    align-content: start;
+}
+
+.ux-page-header-balanced .da-actions .da-button {
+    min-width: 0;
+    text-align: center;
+    white-space: normal;
 }
 
 .ux-form-grid {
@@ -177,12 +299,30 @@
 }
 
 /* app.css still contains the pre-platform Dispatching card gradient with
- * !important.  Once the template opts into da-card, the platform surface is
+ * !important. Once the template opts into da-card, the platform surface is
  * authoritative and the legacy composition must not leak through. */
 body.ux-platform .dispatching-object-card.da-card {
     border-color: var(--theme-border) !important;
     background: var(--theme-surface) !important;
     color: var(--theme-text) !important;
+}
+
+@media (max-width: 80rem) {
+    .da-page-header.ux-page-header-balanced {
+        grid-template-columns: 1fr;
+    }
+
+    .ux-page-header-balanced .da-actions {
+        max-width: none;
+        justify-self: start;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 70rem) {
+    .ux-stat-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 52rem) {
@@ -193,6 +333,10 @@ body.ux-platform .dispatching-object-card.da-card {
 }
 
 @media (max-width: 42rem) {
+    .ux-stat-grid {
+        grid-template-columns: 1fr;
+    }
+
     .ux-key-value {
         grid-template-columns: 1fr;
         gap: var(--theme-space-1);

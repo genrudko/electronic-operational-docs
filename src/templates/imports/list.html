@@ -3,7 +3,7 @@
 {% block title %}Импорт справочников · ЭОД{% endblock %}
 
 {% block content %}
-<section class="da-page-header">
+<section class="da-page-header ux-page-header-balanced">
     <div>
         <span class="ux-kicker">Безопасная промежуточная зона</span>
         <h1>Импорт справочников</h1>
@@ -18,19 +18,19 @@
     </div>
 </section>
 
-<section class="data-profile-strip" aria-label="Профили данных организации">
+<section class="data-profile-strip ux-profile-strip" aria-label="Профили данных организации">
     {% for profile in profiles %}
     <article class="data-profile-chip profile-kind-{{ profile.kind|lower }}">
         <div>
-            <strong>{{ profile.name }}</strong>
+            <strong class="ux-readable-value">{{ profile.name }}</strong>
             <span>{{ profile.get_sensitivity_level_display }}</span>
         </div>
-        <small>{{ profile.get_export_policy_display }}</small>
+        <small class="ux-readable-value">{{ profile.get_export_policy_display }}</small>
     </article>
     {% endfor %}
     <a class="data-profile-chip mapping-chip" href="{% url 'imports:data_profiles' %}">
-        <div><strong>Схемы сопоставления</strong><span>Повторное использование структуры файлов</span></div>
-        <small>{{ mapping_template_count }} действующих</small>
+        <div><strong class="ux-readable-value">Схемы сопоставления</strong><span class="ux-readable-value">Повторное использование структуры файлов</span></div>
+        <small class="ux-readable-value">{{ mapping_template_count }} действующих</small>
     </a>
 </section>
 
