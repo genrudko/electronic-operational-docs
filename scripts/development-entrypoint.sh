@@ -42,6 +42,19 @@ if [ "$DJANGO_SECRET_KEY" = "development-only-change-me" ]; then
     exit 1
 fi
 
+# The repository-local Development stack is intentionally disposable.  CI and
+# a fresh local checkout may start it without a pre-provisioned demo credential.
+# Generate a process-scoped random value in that case so post_migrate can create
+# and reconcile the two Development demo principals and /_health/ can prove the
+# real authentication path.  The value is never printed or persisted by this
+# entrypoint; the Development-only login page is the deliberate presentation
+# surface.  Trusted persistent VPS deployment uses a different host-owned
+# entrypoint and must still receive EOD_DEMO_USER_PASSWORD from its host secret.
+if [ -z "${EOD_DEMO_USER_PASSWORD:-}" ]; then
+    EOD_DEMO_USER_PASSWORD="$(python -c 'import secrets; print("Dev-Aa1!" + secrets.token_urlsafe(32))')"
+    export EOD_DEMO_USER_PASSWORD
+fi
+
 python manage.py check
 python manage.py migrate --noinput
 
