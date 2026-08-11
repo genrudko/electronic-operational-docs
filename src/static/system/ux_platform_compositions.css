@@ -1,0 +1,140 @@
+/* UX-PLATFORM-FOUNDATION-001
+ * Small shared compositions needed to migrate existing surfaces onto the
+ * platform.  Page-family templates remain explicitly out of scope.
+ */
+
+.ux-kicker {
+    display: block;
+    margin-block-end: var(--theme-space-2);
+    color: var(--theme-primary);
+    font-size: var(--theme-font-size-xs);
+    font-weight: var(--theme-font-weight-bold);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.ux-muted {
+    color: var(--theme-text-muted);
+}
+
+.ux-stack {
+    min-width: 0;
+    display: grid;
+    gap: var(--theme-space-4);
+}
+
+.ux-stack.is-compact {
+    gap: var(--theme-space-2);
+}
+
+.ux-stat-grid {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
+    gap: var(--theme-space-3);
+    margin-block: var(--theme-space-4);
+}
+
+.ux-stat {
+    min-width: 0;
+    display: grid;
+    gap: var(--theme-space-2);
+    padding: var(--theme-space-4);
+    border: 1px solid var(--theme-border);
+    border-radius: var(--theme-radius-lg);
+    background: var(--theme-surface);
+    color: var(--theme-text);
+    box-shadow: var(--theme-shadow-sm);
+}
+
+.ux-stat > span,
+.ux-stat > small {
+    color: var(--theme-text-muted);
+    font-size: var(--theme-font-size-sm);
+}
+
+.ux-stat > strong {
+    color: var(--theme-text);
+    font-size: var(--theme-font-size-2xl);
+    line-height: 1.1;
+}
+
+.ux-detail-grid {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--theme-space-4);
+    margin-block-end: var(--theme-space-4);
+}
+
+.ux-list-reset {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ux-empty-state {
+    min-width: 0;
+    display: grid;
+    place-items: center;
+    gap: var(--theme-space-2);
+    padding: var(--theme-space-6);
+    border: 1px dashed var(--theme-border-strong);
+    border-radius: var(--theme-radius-lg);
+    background: var(--theme-surface-soft);
+    color: var(--theme-text-muted);
+    text-align: center;
+}
+
+.ux-key-value {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(8rem, .45fr) minmax(0, 1fr);
+    gap: var(--theme-space-2) var(--theme-space-4);
+    margin: 0;
+}
+
+.ux-key-value dt {
+    color: var(--theme-text-muted);
+    font-size: var(--theme-font-size-sm);
+}
+
+.ux-key-value dd {
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.ux-form-grid {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--theme-space-4);
+}
+
+.ux-form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--theme-space-2);
+    margin-block-start: var(--theme-space-4);
+}
+
+@media (max-width: 52rem) {
+    .ux-detail-grid,
+    .ux-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 42rem) {
+    .ux-key-value {
+        grid-template-columns: 1fr;
+        gap: var(--theme-space-1);
+    }
+
+    .ux-key-value dd + dt {
+        margin-block-start: var(--theme-space-2);
+    }
+}
