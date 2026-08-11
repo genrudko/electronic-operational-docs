@@ -3,7 +3,7 @@
 {% block title %}{{ batch.original_filename }} · Импорт · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading">
+<section class="da-page-header">
     <div>
         <div class="eyebrow">ПРЕДВАРИТЕЛЬНЫЙ ПРОСМОТР</div>
         <h1>{{ batch.original_filename }}</h1>
@@ -12,18 +12,18 @@
     <div class="document-actions">
         <a href="{% url 'imports:list' %}">К журналу</a>
         {% if batch.status == 'READY' %}
-            <a class="button secondary" href="{% url 'imports:mapping' batch.public_id %}">
+            <a class="da-button is-secondary" href="{% url 'imports:mapping' batch.public_id %}">
                 Сопоставить колонки
             </a>
         {% endif %}
         {% if batch.status == 'PUBLISHED' %}
-            <a class="button" href="{% url 'imports:publication_result' batch.public_id %}">
+            <a class="da-button" href="{% url 'imports:publication_result' batch.public_id %}">
                 Итог публикации
             </a>
         {% elif batch.status != 'DISCARDED' %}
             <form method="post" action="{% url 'imports:discard' batch.public_id %}">
                 {% csrf_token %}
-                <button class="button secondary" type="submit">Убрать из рабочего списка</button>
+                <button class="da-button is-secondary" type="submit">Убрать из рабочего списка</button>
             </form>
         {% endif %}
     </div>
@@ -68,7 +68,7 @@
 </section>
 {% endif %}
 
-<section class="profile-card import-metadata-card">
+<section class="da-card import-metadata-card">
     <div class="section-heading">
         <div>
             <div class="eyebrow">ИСХОДНЫЙ ФАЙЛ</div>
@@ -116,7 +116,7 @@
 </section>
 
 {% if batch.status == 'READY' or batch.status == 'DISCARDED' or batch.status == 'PUBLISHED' %}
-<section class="profile-card import-mapping-card">
+<section class="da-card import-mapping-card">
     <div class="section-heading">
         <div>
             <div class="eyebrow">СОПОСТАВЛЕНИЕ КОЛОНОК</div>
@@ -150,21 +150,21 @@
         </p>
     {% endif %}
     {% if batch.status == 'READY' %}
-        <a class="button" href="{% url 'imports:mapping' batch.public_id %}">
+        <a class="da-button" href="{% url 'imports:mapping' batch.public_id %}">
             {% if batch.mapping_completed_at %}Изменить сопоставление{% else %}Настроить сопоставление{% endif %}
         </a>
     {% endif %}
 </section>
 
-<section class="summary-grid import-source-summary">
+<section class="ux-stat-grid import-source-summary">
     {% for label, value, kind in source_metrics %}
-        <article class="metric import-metric metric-{{ kind }}">
+        <article class="ux-stat import-metric metric-{{ kind }}">
             <span>{{ label }}</span><strong>{{ value }}</strong>
         </article>
     {% endfor %}
 </section>
 
-<section class="profile-card">
+<section class="da-card">
     <div class="section-heading">
         <div>
             <div class="eyebrow">СТРУКТУРА ФАЙЛА</div>
@@ -172,7 +172,7 @@
         </div>
         <span class="count-badge">{{ batch.column_count }}</span>
     </div>
-    <div class="table-wrap">
+    <div class="da-table-wrap">
         <table>
             <thead>
                 <tr>
@@ -209,15 +209,15 @@
 </section>
 
 {% if batch.mapping_completed_at %}
-<section class="summary-grid import-review-summary">
+<section class="ux-stat-grid import-review-summary">
     {% for label, value, kind in review_metrics %}
-        <article class="metric import-metric metric-{{ kind }}">
+        <article class="ux-stat import-metric metric-{{ kind }}">
             <span>{{ label }}</span><strong>{{ value }}</strong>
         </article>
     {% endfor %}
 </section>
 
-<section class="profile-card">
+<section class="da-card">
     <div class="section-heading">
         <div>
             <div class="eyebrow">КОНТРОЛИРУЕМАЯ ПУБЛИКАЦИЯ</div>
@@ -236,7 +236,7 @@
             Создано записей: {{ batch.publication_counts.accepted }}.
             Отклонено и не опубликовано: {{ batch.publication_counts.rejected }}.
         </p>
-        <a class="button" href="{% url 'imports:publication_result' batch.public_id %}">
+        <a class="da-button" href="{% url 'imports:publication_result' batch.public_id %}">
             Открыть неизменяемый итог
         </a>
     {% elif batch.target_registry == 'OTHER' %}
@@ -250,7 +250,7 @@
             записью система заново проверит ссылки и конфликты, покажет точный итог,
             сверит SHA-256 и запросит текущий пароль.
         </p>
-        <a class="button" href="{% url 'imports:publication' batch.public_id %}">
+        <a class="da-button" href="{% url 'imports:publication' batch.public_id %}">
             Проверить итог перед публикацией
         </a>
         {% if not can_publish %}
@@ -267,7 +267,7 @@
     {% endif %}
 </section>
 
-<section class="profile-card">
+<section class="da-card">
     <div class="section-heading import-preview-heading">
         <div>
             <div class="eyebrow">ИСХОДНЫЕ ЗНАЧЕНИЯ И РЕШЕНИЯ</div>
@@ -292,7 +292,7 @@
                     {% endfor %}
                 </select>
             </label>
-            <button class="button secondary" type="submit">Показать</button>
+            <button class="da-button is-secondary" type="submit">Показать</button>
         </form>
     </div>
 
@@ -300,13 +300,13 @@
     <form id="bulk-review-form" method="post" action="{% url 'imports:bulk_decide' batch.public_id %}" class="bulk-review-toolbar">
         {% csrf_token %}
         <strong>Массовое решение для отмеченных строк</strong>
-        <button class="button secondary" type="submit" name="action" value="ACCEPT">Принять допустимые</button>
-        <button class="button secondary" type="submit" name="action" value="REJECT">Отклонить</button>
-        <button class="button secondary" type="submit" name="action" value="RESET">Сбросить решение</button>
+        <button class="da-button is-secondary" type="submit" name="action" value="ACCEPT">Принять допустимые</button>
+        <button class="da-button is-secondary" type="submit" name="action" value="REJECT">Отклонить</button>
+        <button class="da-button is-secondary" type="submit" name="action" value="RESET">Сбросить решение</button>
     </form>
     {% endif %}
 
-    <div class="table-wrap import-preview-table import-review-table">
+    <div class="da-table-wrap import-preview-table import-review-table">
         <table>
             <thead>
                 <tr>
@@ -432,7 +432,7 @@
     {% endif %}
 </section>
 {% else %}
-<section class="profile-card">
+<section class="da-card">
     <div class="section-heading import-preview-heading">
         <div>
             <div class="eyebrow">ИСХОДНЫЕ ЗНАЧЕНИЯ</div>
@@ -444,7 +444,7 @@
         Подтвердите сопоставление колонок, чтобы система проверила обязательные поля,
         ссылки и дубли. Исходный и нормализованный варианты уже доступны для просмотра.
     </p>
-    <div class="table-wrap import-preview-table">
+    <div class="da-table-wrap import-preview-table">
         <table>
             <thead>
                 <tr>
@@ -501,7 +501,7 @@
 </section>
 {% endif %}
 
-<section class="profile-card">
+<section class="da-card">
     <div class="section-heading">
         <div>
             <div class="eyebrow">АУДИТ</div>
