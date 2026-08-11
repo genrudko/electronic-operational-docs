@@ -124,7 +124,6 @@ jobs:
           set -euo pipefail
           evidence_dir="$RUNNER_TEMP/browser-theme"
           raw_log="$RUNNER_TEMP/browser-evidence-diagnostics.raw.txt"
-          sanitized_log="$RUNNER_TEMP/browser-evidence-diagnostics.sanitized.txt"
           mkdir -p "$evidence_dir"
 
           set +e
@@ -145,17 +144,17 @@ jobs:
 
           python scripts/secret_hygiene.py redact \
             --input "$raw_log" \
-            --output "$sanitized_log" \
+            --output "$RUNNER_TEMP/browser-evidence-diagnostics.sanitized.txt" \
             --env DJANGO_SECRET_KEY \
             --env POSTGRES_PASSWORD \
             --env EOD_DEMO_USER_PASSWORD
           python scripts/secret_hygiene.py verify-sanitized \
-            --input "$sanitized_log" \
+            --input "$RUNNER_TEMP/browser-evidence-diagnostics.sanitized.txt" \
             --env DJANGO_SECRET_KEY \
             --env POSTGRES_PASSWORD \
             --env EOD_DEMO_USER_PASSWORD
           printf 'diagnostics_verified=true\n' >>"$GITHUB_OUTPUT"
-          cat "$sanitized_log"
+          cat "$RUNNER_TEMP/browser-evidence-diagnostics.sanitized.txt"
           rm -f "$raw_log"
 
           if (( browser_status != 0 )); then
