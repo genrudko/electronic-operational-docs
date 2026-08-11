@@ -153,3 +153,55 @@ class OperationalJournalAcceptanceRepairSourceTests(SimpleTestCase):
         )
         self.assertIn("width: 38px !important", css)
         self.assertIn("min-height: 49px !important", css)
+
+    def test_repair_v4_marker_tooltip_consumes_complete_theme_contract(self) -> None:
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
+        )
+
+        self.assertIn("var(--theme-surface-raised", css)
+        self.assertIn("color: var(--theme-text, #111827) !important", css)
+        self.assertIn("color: var(--theme-text-muted) !important", css)
+        self.assertIn("color: var(--theme-primary) !important", css)
+        self.assertIn("color: var(--theme-primary-hover) !important", css)
+        self.assertIn("var(--theme-shadow-overlay", css)
+        self.assertNotIn("--theme-surface-elevated", css)
+
+    def test_repair_v4_toolbar_states_do_not_hide_disabled_controls_with_opacity(self) -> None:
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
+        )
+
+        self.assertIn(".draft-row-action):disabled", css)
+        self.assertIn("background: var(--theme-control-disabled) !important", css)
+        self.assertIn("color: var(--theme-text-muted) !important", css)
+        self.assertIn("opacity: 1 !important", css)
+        self.assertIn(".opj-register-draft-button", css)
+        self.assertIn("background: var(--theme-primary) !important", css)
+        self.assertIn("color: var(--theme-on-primary) !important", css)
+
+    def test_repair_v4_spread_and_width_profiles_use_platform_geometry(self) -> None:
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
+        )
+
+        self.assertIn('.opj-workspace[data-page-width="wide"]', css)
+        self.assertIn('.opj-workspace[data-page-width="full"]', css)
+        self.assertIn("width: min(100%, 1680px) !important", css)
+        self.assertIn("max-width: none !important", css)
+        self.assertIn("--opj-grid-strong: var(--theme-border-strong)", css)
+        self.assertIn("border-color: var(--theme-border-strong) !important", css)
+        self.assertIn("background: var(--theme-surface-soft) !important", css)
+
+    def test_repair_v4_disclosure_uses_canonical_svg_and_no_raw_caret(self) -> None:
+        drawer = self.source("templates/operational_log/_shift_workspace_drawer.html")
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
+        )
+
+        self.assertGreaterEqual(drawer.count("#icon-chevron-right"), 5)
+        self.assertNotIn('class="opj-drawer-chevron" aria-hidden="true">⌄', drawer)
+        self.assertNotIn('class="opj-drawer-chevron" aria-hidden="true">^', drawer)
+        self.assertIn(".opj-drawer-chevron .ui-icon", css)
+        self.assertIn("transform: rotate(90deg)", css)
+        self.assertIn("color: var(--theme-primary-hover)", css)

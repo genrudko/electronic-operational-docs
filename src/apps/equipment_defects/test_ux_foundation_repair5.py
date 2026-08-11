@@ -20,6 +20,9 @@ class EquipmentDefectUXFoundationRepairFiveTests(SimpleTestCase):
             / "static"
             / "equipment_defects"
         )
+        self.project_template_root = (
+            Path(settings.BASE_DIR) / "src" / "templates"
+        )
 
     def test_repair_five_asset_is_loaded_after_repair_four(self) -> None:
         for filename in (
@@ -37,42 +40,73 @@ class EquipmentDefectUXFoundationRepairFiveTests(SimpleTestCase):
                 self.assertIn("?v=uxf001r5", template)
                 self.assertLess(template.index(repair_four), template.index(repair_five))
 
-    def test_registry_statuses_follow_reference_pill_contract(self) -> None:
+    def test_defect_status_mapping_consumes_platform_semantic_tokens(self) -> None:
         stylesheet = (self.static_root / "ux_foundation_repair5.css").read_text(
             encoding="utf-8"
         )
         required = (
+            "--da-status-registered: var(--theme-primary)",
+            "--da-status-progress: var(--theme-warning)",
+            "--da-status-resolved: var(--theme-success)",
+            "--da-status-closed: var(--theme-text-muted)",
             ".defect-da-status::before",
-            'content: ""',
             "background: currentColor",
-            "border-radius: 999px",
-            "text-transform: none",
-            "white-space: nowrap",
-            '--da-status-registered-soft: #e7f2fb',
-            '--da-status-progress-soft: #fff0df',
-            '--da-status-resolved-soft: #e5f4ea',
-            '--da-status-closed-soft: #edf1f4',
+            "white-space: nowrap !important",
+            "word-break: keep-all !important",
         )
         for marker in required:
             with self.subTest(marker=marker):
                 self.assertIn(marker, stylesheet)
 
-    def test_lifecycle_has_separate_completed_current_and_future_semantics(self) -> None:
+        for obsolete in (
+            "--da-status-registered-soft: #e7f2fb",
+            "--da-status-progress-soft: #fff0df",
+            "--da-status-resolved-soft: #e5f4ea",
+            "--da-status-closed-soft: #edf1f4",
+        ):
+            self.assertNotIn(obsolete, stylesheet)
+
+    def test_future_lifecycle_is_secondary_without_component_opacity(self) -> None:
         stylesheet = (self.static_root / "ux_foundation_repair5.css").read_text(
             encoding="utf-8"
         )
         required = (
-            "completed = neutral card + teal check",
-            "current = semantic status colour",
-            "future = quiet neutral placeholder",
-            '--da-lifecycle-complete: #317c7a',
+            "border-color: var(--theme-border)",
+            "background: var(--theme-surface-soft)",
+            "color: var(--theme-text-muted)",
+            "opacity: 1",
             'data-current-status="REGISTERED"',
             'data-current-status="IN_PROGRESS"',
             'data-current-status="RESOLVED"',
             'data-current-status="CLOSED"',
             'content: "✓"',
-            "--da-status-closed: #465568",
         )
         for marker in required:
             with self.subTest(marker=marker):
                 self.assertIn(marker, stylesheet)
+
+        self.assertNotIn("opacity: .25", stylesheet)
+        self.assertNotIn("opacity: .38", stylesheet)
+
+    def test_defect_detail_links_use_generic_platform_link_semantics(self) -> None:
+        stylesheet = (self.static_root / "ux_foundation_repair5.css").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(".defect-da-back-link", stylesheet)
+        self.assertIn(".defect-da-aside-card summary", stylesheet)
+        self.assertIn("color: var(--theme-primary)", stylesheet)
+        self.assertIn("color: var(--theme-primary-hover)", stylesheet)
+        self.assertIn("outline: var(--theme-focus-width) solid var(--theme-focus)", stylesheet)
+
+    def test_operational_documents_uses_defect_domain_status_code_mapping_only(self) -> None:
+        template = (
+            self.project_template_root / "operational_documents" / "registry.html"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("record.document_type.code == 'DEFECTS'", template)
+        self.assertIn("record.status_code == 'REGISTERED'", template)
+        self.assertIn("record.status_code == 'IN_PROGRESS'", template)
+        self.assertIn("record.status_code == 'RESOLVED'", template)
+        self.assertIn('data-domain-status="DEFECT"', template)
+        self.assertIn('data-status="{{ record.status_code }}"', template)
+        self.assertIn("record.status_is_terminal", template)

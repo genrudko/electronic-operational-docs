@@ -154,3 +154,50 @@ class UxPlatformFoundationSourceContractTests(SimpleTestCase):
         self.assertIn('"OPJ" "CAP-OPJ-DEMO"', sidebar)
         self.assertIn('"DEFECT" "CAP-DEFECT-DEMO"', sidebar)
         self.assertIn('"WORKPLACE-DOCS" "CAP-WORKPLACE-DOCS-DEMO"', sidebar)
+
+    def test_repair_v4_summary_grid_has_deterministic_four_two_one_geometry(self) -> None:
+        compositions = read("src/static/system/ux_platform_compositions.css")
+
+        self.assertIn("grid-template-columns:repeat(4,minmax(0,1fr))", compositions)
+        self.assertIn("@media (max-width:70rem)", compositions)
+        self.assertIn("repeat(2,minmax(0,1fr))", compositions)
+        self.assertIn("@media (max-width:42rem)", compositions)
+        self.assertIn(".ux-stat-grid { grid-template-columns:1fr; }", compositions)
+
+    def test_repair_v4_import_and_workplace_use_semantic_compositions(self) -> None:
+        imports = read("src/templates/imports/list.html")
+        workplace_detail = read("src/templates/workplace_docs/detail.html")
+        workplace_registry = read("src/templates/workplace_docs/registry.html")
+
+        self.assertIn("ux-page-header-balanced", imports)
+        self.assertIn("ux-profile-strip", imports)
+        self.assertIn("ux-readable-value", imports)
+        self.assertIn("ux-cell-stack", workplace_detail)
+        self.assertIn("ux-technical-chip", workplace_detail)
+        self.assertIn("ux-cell-secondary", workplace_detail)
+        self.assertIn("ux-cell-stack", workplace_registry)
+        self.assertNotIn("{{ entry.title }}<code", workplace_detail)
+
+    def test_repair_v4_public_home_and_demo_credential_have_distinct_measures(self) -> None:
+        home = read("src/templates/system/home.html")
+        login = read("src/templates/organizations/login.html")
+        public_css = read("src/static/system/ux_platform_public.css")
+
+        self.assertIn("ux-public-home-page", home)
+        self.assertIn(":has(> main.ux-public-home-page)", public_css)
+        self.assertIn("width: min(100%, 82rem)", public_css)
+        self.assertIn("ux-demo-credential", login)
+        self.assertIn("white-space: pre-wrap", public_css)
+        self.assertIn("user-select: all", public_css)
+
+    def test_repair_v4_long_identity_and_active_relations_are_not_silent_disabled_text(self) -> None:
+        sidebar = read("src/templates/shared/direction_a/_sidebar.html")
+        compositions = read("src/static/system/ux_platform_compositions.css")
+
+        self.assertIn('title="{{ user_display_name }} — {{ user_display_role', sidebar)
+        self.assertIn('aria-label="Настройки интерфейса: {{ user_display_name }}', sidebar)
+        self.assertIn(".da-user:is(:hover,:focus-visible) .da-user-copy strong", compositions)
+        self.assertIn("body.ux-platform .equipment-relation-list li > a", compositions)
+        self.assertIn("background:var(--theme-primary-soft)", compositions)
+        self.assertIn(".management-function-card .authority-kind", compositions)
+        self.assertIn(".supervision-function-card .authority-kind", compositions)
