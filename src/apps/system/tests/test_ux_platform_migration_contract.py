@@ -89,11 +89,12 @@ class UXPlatformMigrationContractTests(SimpleTestCase):
                 if path.suffix not in {".html", ".css"}:
                     continue
                 source = path.read_text(encoding="utf-8").lower()
-                for marker in forbidden:
-                    if marker in source:
-                        offenders.append(
-                            f"{path.relative_to(Path(settings.BASE_DIR)).as_posix()}: {marker}"
-                        )
+                for line_number, line in enumerate(source.splitlines(), start=1):
+                    for marker in forbidden:
+                        if marker in line:
+                            offenders.append(
+                                f"{path.relative_to(Path(settings.BASE_DIR)).as_posix()}:{line_number}: {marker}"
+                            )
         self.assertEqual(
             offenders,
             [],
