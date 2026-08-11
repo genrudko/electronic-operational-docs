@@ -3,13 +3,13 @@
 {% block title %}Исправление строки {{ row.row_number }} · {{ batch.original_filename }} · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading">
+<section class="da-page-header">
     <div>
-        <div class="eyebrow">РУЧНАЯ ПРОВЕРКА СТРОКИ</div>
+        <span class="ux-kicker">Ручная проверка строки</span>
         <h1>Строка {{ row.row_number }}</h1>
         <p>{{ batch.original_filename }} · {{ batch.get_target_registry_display }}</p>
     </div>
-    <a href="{% url 'imports:detail' batch.public_id %}">К списку строк</a>
+    <a class="da-button is-tertiary" href="{% url 'imports:detail' batch.public_id %}">К списку строк</a>
 </section>
 
 <section class="notice-card import-safety-notice">
@@ -21,40 +21,40 @@
 </section>
 
 <div class="content-grid import-row-edit-layout">
-    <section class="profile-card">
+    <section class="da-card">
         <div class="section-heading">
             <div>
-                <div class="eyebrow">ИСПРАВЛЕННЫЕ ЗНАЧЕНИЯ</div>
+                <span class="ux-kicker">Исправленные значения</span>
                 <h2>Поля будущей записи</h2>
             </div>
             <span class="import-status status-{{ row.review_status|lower }}">
                 {{ row.get_review_status_display }}
             </span>
         </div>
-        <form method="post" class="stack-form row-correction-form">
+        <form method="post" class="stack-form row-correction-form ux-form-grid">
             {% csrf_token %}
             {% if form.non_field_errors %}
-                <div class="form-errors">{{ form.non_field_errors }}</div>
+                <div class="da-alert is-danger">{{ form.non_field_errors }}</div>
             {% endif %}
             {% for field in form %}
-                <label>
+                <label class="da-field">
                     <span>{{ field.label }}</span>
                     {{ field }}
                     {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
                     {% for error in field.errors %}<small class="field-error">{{ error }}</small>{% endfor %}
                 </label>
             {% endfor %}
-            <div class="form-actions">
-                <button class="button" type="submit">Сохранить исправления и принять предварительно</button>
-                <a class="button secondary" href="{% url 'imports:detail' batch.public_id %}">Отмена</a>
+            <div class="ux-form-actions">
+                <button class="da-button" type="submit">Сохранить исправления и принять предварительно</button>
+                <a class="da-button is-secondary" href="{% url 'imports:detail' batch.public_id %}">Отмена</a>
             </div>
         </form>
     </section>
 
-    <aside class="profile-card">
-        <div class="eyebrow">ИСХОДНАЯ СТРОКА</div>
+    <aside class="da-card">
+        <span class="ux-kicker">Исходная строка</span>
         <h2>Неизменяемая копия</h2>
-        <dl class="source-value-list">
+        <dl class="source-value-list ux-key-value">
         {% for value in row.source_values %}
             <dt>Колонка {{ forloop.counter }}</dt>
             <dd>{{ value|default:"—" }}</dd>
