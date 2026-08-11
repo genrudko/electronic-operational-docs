@@ -123,8 +123,8 @@ jobs:
         run: |
           set -euo pipefail
           evidence_dir="$RUNNER_TEMP/browser-theme"
-          raw_log="$evidence_dir/browser-run.raw.log"
-          sanitized_log="$evidence_dir/browser-run.sanitized.log"
+          raw_log="$RUNNER_TEMP/browser-evidence-diagnostics.raw.txt"
+          sanitized_log="$RUNNER_TEMP/browser-evidence-diagnostics.sanitized.txt"
           mkdir -p "$evidence_dir"
 
           set +e
@@ -183,7 +183,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: browser-evidence-diagnostics-${{ github.run_id }}
-          path: ${{ runner.temp }}/browser-theme/browser-run.sanitized.log
+          path: ${{ runner.temp }}/browser-evidence-diagnostics.sanitized.txt
           if-no-files-found: error
           retention-days: 7
 
@@ -275,6 +275,8 @@ jobs:
             "$RUNNER_TEMP/development-health.raw.json" \
             "$RUNNER_TEMP/development-health.sanitized.json" \
             "$RUNNER_TEMP/development-db-port.raw.txt" \
+            "$RUNNER_TEMP/browser-evidence-diagnostics.raw.txt" \
+            "$RUNNER_TEMP/browser-evidence-diagnostics.sanitized.txt" \
             "$RUNNER_TEMP/development-diagnostics.raw.txt" \
             "$RUNNER_TEMP/development-diagnostics.sanitized.txt"
           sudo rm -rf "$RUNNER_TEMP/browser-theme"
