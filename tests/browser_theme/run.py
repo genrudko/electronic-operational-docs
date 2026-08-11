@@ -40,7 +40,7 @@ SELECTORS = {
     "workplace_docs": ".da-card.ux-stack",
     "operational_documents": ".opdoc-filter-card",
     "defect_registry": ".defect-da-work-table",
-    "defect_registration": ".defect-form-workspace",
+    "defect_registration": ".defect-guided-form",
     "opj_registry": ".journal-registry-card",
     "registered_opj": ".approved-journal-shell",
     "draft_workspace": ".opj-workspace",
