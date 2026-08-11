@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Импорт объектов энергосистемы · ЭОД{% endblock %}
 {% block content %}
-<section class="page-heading compact">
+<section class="da-page-header da-page-header-compact">
     <div>
-        <div class="eyebrow">ОБЪЕКТЫ ЭНЕРГОСИСТЕМЫ</div>
+        <span class="ux-kicker">Объекты энергосистемы</span>
         <h1>Редакции импорта оборудования</h1>
         <p>Сначала открывайте существующую редакцию. Новый ZIP загружается только отдельной кнопкой.</p>
     </div>
-    <div class="document-actions">
+    <div class="da-actions document-actions">
         {% if revisions %}
-            <a class="button" href="{% url 'imports:power_system_detail' revisions.0.public_id %}">Открыть последнюю редакцию</a>
+            <a class="da-button" href="{% url 'imports:power_system_detail' revisions.0.public_id %}">Открыть последнюю редакцию</a>
         {% endif %}
-        <a class="button secondary" href="{% url 'imports:power_system_upload' %}">Загрузить новый ZIP-пакет</a>
-        <a class="button secondary" href="{% url 'imports:list' %}">Обычный импорт CSV/XLSX</a>
+        <a class="da-button is-secondary" href="{% url 'imports:power_system_upload' %}">Загрузить новый ZIP-пакет</a>
+        <a class="da-button is-secondary" href="{% url 'imports:list' %}">Обычный импорт CSV/XLSX</a>
     </div>
 </section>
 <section class="notice-card import-safety-notice">
@@ -22,14 +22,14 @@
         ручного принятия по одной; решения нужны только для спорных и заблокированных строк.
     </p>
 </section>
-<section class="summary-grid">
-    <article class="metric"><span>Редакций</span><strong>{{ summary.total }}</strong></article>
-    <article class="metric"><span>На проверке</span><strong>{{ summary.staged }}</strong></article>
-    <article class="metric"><span>Требуют внимания</span><strong>{{ summary.attention }}</strong></article>
-    <article class="metric"><span>С публикациями</span><strong>{{ summary.published }}</strong></article>
+<section class="ux-stat-grid">
+    <article class="ux-stat"><span>Редакций</span><strong>{{ summary.total }}</strong></article>
+    <article class="ux-stat"><span>На проверке</span><strong>{{ summary.staged }}</strong></article>
+    <article class="ux-stat"><span>Требуют внимания</span><strong>{{ summary.attention }}</strong></article>
+    <article class="ux-stat"><span>С публикациями</span><strong>{{ summary.published }}</strong></article>
 </section>
-<section class="profile-card">
-    <div class="table-wrap"><table>
+<section class="da-card">
+    <div class="da-table-wrap"><table class="da-table">
         <thead><tr><th>Пакет и источник</th><th>Профиль</th><th>Строки</th><th>Предварительная проверка</th><th>Состояние</th><th>Дата</th></tr></thead>
         <tbody>
         {% for revision in revisions %}
@@ -42,7 +42,7 @@
                 <td>{{ revision.created_at|date:"d.m.Y H:i" }}</td>
             </tr>
         {% empty %}
-            <tr><td colspan="6">Контролируемых пакетов пока нет.</td></tr>
+            <tr><td colspan="6"><div class="ux-empty-state">Контролируемых пакетов пока нет.</div></td></tr>
         {% endfor %}
         </tbody>
     </table></div>
