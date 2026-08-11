@@ -77,6 +77,13 @@ class DevelopmentDemoAuthenticationAcceptanceTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["development_authentication"], "verified")
 
+    @mock.patch.dict("os.environ", {DEMO_ACCESS_ENV: ""}, clear=False)
+    @override_settings(EOD_DEPLOYMENT_MODE="development", ALLOWED_HOSTS=["127.0.0.1", "testserver"])
+    def test_trusted_health_fails_when_development_credential_is_missing(self) -> None:
+        response = Client().get("/_health/", HTTP_HOST="127.0.0.1")
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["development_authentication"], "failed")
+
     @mock.patch.dict("os.environ", {DEMO_ACCESS_ENV: TEST_CREDENTIAL}, clear=False)
     @override_settings(EOD_DEPLOYMENT_MODE="development", ALLOWED_HOSTS=["127.0.0.1", "testserver"])
     def test_trusted_health_fails_if_persistent_demo_account_is_inactive(self) -> None:
