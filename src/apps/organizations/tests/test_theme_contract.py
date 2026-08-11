@@ -131,12 +131,39 @@ class GlobalThemeContractTests(SimpleTestCase):
                 "repository-only browser acceptance harness is not packaged in runtime images"
             )
         runner = runner_path.read_text(encoding="utf-8")
-        self.assertIn("VIEWPORTS = ((1440, 900), (1024, 768), (390, 844))", runner)
+        self.assertIn("DESKTOP_VIEWPORTS = (", runner)
+        self.assertIn("MOBILE_VIEWPORTS = (", runner)
+        for viewport in (
+            "(1280, 800)",
+            "(1366, 768)",
+            "(1536, 864)",
+            "(1920, 1080)",
+            "(390, 844)",
+            "(412, 915)",
+            "(430, 932)",
+        ):
+            self.assertIn(viewport, runner)
+        self.assertIn("VIEWPORTS = DESKTOP_VIEWPORTS + MOBILE_VIEWPORTS", runner)
         self.assertIn('THEMES = ("light", "dark")', runner)
         self.assertIn("len(PUBLIC_ROUTES) + len(ROUTES)", runner)
         self.assertIn("* len(THEMES) * len(VIEWPORTS)", runner)
         self.assertIn('report["meta"]["baseline_state_count"] = expected_baselines', runner)
         self.assertIn('page.emulate_media(media="print")', runner)
+        for evidence_marker in (
+            "full_page=False",
+            "full_page=True",
+            "console_errors",
+            "page_errors",
+            "rendered_regions",
+            "scrollWidth",
+            "innerWidth",
+            "window.visualViewport",
+            "capture_mobile_login_focus",
+            "is_mobile=True",
+            "__unfocused",
+            "__focused",
+        ):
+            self.assertIn(evidence_marker, runner)
         for route in (
             '"documents": "/documents/"',
             '"equipment": "/equipment/"',
