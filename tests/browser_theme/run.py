@@ -349,27 +349,50 @@ def capture_mobile_login_focus(browser, shots, report):
     context.close()
 
 
-def activate_editor_caret(page):
+def activate_editor_reference_selection(page):
     editor = need(page, '.draft-rich-editor-host [contenteditable="true"]')
     editor.click()
     prepared = editor.evaluate(
         """editor => {
-            const block = editor.querySelector('p, li');
-            if (!block) return false;
-            const range = document.createRange();
-            range.selectNodeContents(block);
-            range.collapse(false);
-            const selection = window.getSelection();
-            selection.removeAllRanges();
-            selection.addRange(range);
-            editor.focus({preventScroll: true});
-            document.dispatchEvent(new Event('selectionchange'));
-            return true;
+  const walker = document.createTreeWalker(
+      editor,
+      NodeFilter.SHOW_TEXT,
+      {
+acceptNode(node) {
+    const parent = node.parentElement;
+    const block = parent?.closest?.('p, li');
+    if (!block || !editor.contains(block)) {
+        return NodeFilter.FILTER_REJECT;
+    }
+    return (node.textContent || '').trim()
+        ? NodeFilter.FILTER_ACCEPT
+        : NodeFilter.FILTER_REJECT;
+},
+      },
+  );
+  const textNode = walker.nextNode();
+  if (!textNode) return null;
+  const text = textNode.textContent || '';
+  const start = text.search(/\S/u);
+  if (start < 0) return null;
+  let end = Math.min(text.length, start + 8);
+  while (end > start && /\s/u.test(text[end - 1])) end -= 1;
+  if (end <= start) end = Math.min(text.length, start + 1);
+  const range = document.createRange();
+  range.setStart(textNode, start);
+  range.setEnd(textNode, end);
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  editor.focus({preventScroll: true});
+  document.dispatchEvent(new Event('selectionchange'));
+  return {text: range.toString(), collapsed: range.collapsed};
         }"""
     )
-    if not prepared:
-        raise AssertionError(f"missing editable paragraph at {page.url}")
+    if not prepared or prepared["collapsed"] or not prepared["text"].strip():
+        raise AssertionError(f"missing selectable editor text at {page.url}")
     page.wait_for_timeout(80)
+    return editor
 
 
 def discover(page):
@@ -575,8 +598,17 @@ def main():
         report["open_states"]["opj_drawer"] = style(need(page, "[data-view-drawer]"))
         screenshots(page, shots, "transient__opj_drawer__dark__1440x900")
         need(page, "[data-close-view-drawer]").click()
-        activate_editor_caret(page)
-        need(page, "[data-reference-trigger]:not([disabled])").click()
+        editor = activate_editor_reference_selection(page)
+        reference_trigger = need(
+            page,
+            "[data-reference-trigger]:not([disabled])",
+        )
+        page.keyboard.press("Control+Shift+M")
+        reference_picker = need(page, "[data-reference-picker]")
+        if reference_trigger.get_attribute("aria-expanded") != "true":
+            raise AssertionError(
+                "OPJ reference picker did not publish expanded state"
+            )
         report["open_states"]["opj_reference"] = style(
             need(page, "[data-reference-picker]")
         )
