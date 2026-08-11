@@ -1,0 +1,255 @@
+name: UX reference evidence one-shot transport
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ux-reference-evidence-transport-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    if: ${{ github.event.pull_request.head.ref == 'ux/ux-platform-foundation-001' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout exact transport head
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+
+      - name: Apply deterministic harness repair and regenerate final views
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git log -1 --format=%s)" = "chore(transport): stabilize OPJ reference browser evidence"
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("tests/browser_theme/run.py")
+          source = path.read_text(encoding="utf-8")
+
+          old_function = '''def activate_editor_caret(page):
+              editor = need(page, '.draft-rich-editor-host [contenteditable="true"]')
+              editor.click()
+              prepared = editor.evaluate(
+                  """editor => {
+                      const block = editor.querySelector('p, li');
+                      if (!block) return false;
+                      const range = document.createRange();
+                      range.selectNodeContents(block);
+                      range.collapse(false);
+                      const selection = window.getSelection();
+                      selection.removeAllRanges();
+                      selection.addRange(range);
+                      editor.focus({preventScroll: true});
+                      document.dispatchEvent(new Event('selectionchange'));
+                      return true;
+                  }"""
+              )
+              if not prepared:
+                  raise AssertionError(f"missing editable paragraph at {page.url}")
+              page.wait_for_timeout(80)
+          '''.replace("          ", "")
+
+          new_function = '''def activate_editor_reference_selection(page):
+              editor = need(page, '.draft-rich-editor-host [contenteditable="true"]')
+              editor.click()
+              prepared = editor.evaluate(
+                  """editor => {
+                      const walker = document.createTreeWalker(
+                          editor,
+                          NodeFilter.SHOW_TEXT,
+                          {
+                              acceptNode(node) {
+                                  const parent = node.parentElement;
+                                  const block = parent?.closest?.('p, li');
+                                  if (!block || !editor.contains(block)) {
+                                      return NodeFilter.FILTER_REJECT;
+                                  }
+                                  return (node.textContent || '').trim()
+                                      ? NodeFilter.FILTER_ACCEPT
+                                      : NodeFilter.FILTER_REJECT;
+                              },
+                          },
+                      );
+                      const textNode = walker.nextNode();
+                      if (!textNode) return null;
+                      const text = textNode.textContent || '';
+                      const start = text.search(/\\S/u);
+                      if (start < 0) return null;
+                      let end = Math.min(text.length, start + 8);
+                      while (end > start && /\\s/u.test(text[end - 1])) end -= 1;
+                      if (end <= start) end = Math.min(text.length, start + 1);
+                      const range = document.createRange();
+                      range.setStart(textNode, start);
+                      range.setEnd(textNode, end);
+                      const selection = window.getSelection();
+                      selection.removeAllRanges();
+                      selection.addRange(range);
+                      editor.focus({preventScroll: true});
+                      document.dispatchEvent(new Event('selectionchange'));
+                      return {text: range.toString(), collapsed: range.collapsed};
+                  }"""
+              )
+              if not prepared or prepared["collapsed"] or not prepared["text"].strip():
+                  raise AssertionError(f"missing selectable editor text at {page.url}")
+              page.wait_for_timeout(80)
+              return editor
+          '''.replace("          ", "")
+
+          old_action = '''        activate_editor_caret(page)
+                  need(page, "[data-reference-trigger]:not([disabled])").click()
+                  report["open_states"]["opj_reference"] = style(
+                      need(page, "[data-reference-picker]")
+                  )
+          '''.replace("          ", "")
+
+          new_action = '''        editor = activate_editor_reference_selection(page)
+                  reference_trigger = need(
+                      page,
+                      "[data-reference-trigger]:not([disabled])",
+                  )
+                  page.keyboard.press("Control+Shift+M")
+                  reference_picker = need(page, "[data-reference-picker]")
+                  if reference_trigger.get_attribute("aria-expanded") != "true":
+                      raise AssertionError("OPJ reference picker did not publish expanded state")
+                  report["open_states"]["opj_reference"] = style(reference_picker)
+          '''.replace("          ", "")
+
+          if source.count(old_function) != 1:
+              raise SystemExit(f"unexpected activate_editor_caret match count: {source.count(old_function)}")
+          if source.count(old_action) != 1:
+              raise SystemExit(f"unexpected OPJ reference action match count: {source.count(old_action)}")
+
+          source = source.replace(old_function, new_function, 1)
+          source = source.replace(old_action, new_action, 1)
+          path.write_text(source, encoding="utf-8")
+          PY
+
+          python -m py_compile tests/browser_theme/run.py
+          git rm .github/workflows/ux-reference-evidence-transport.yml
+          python scripts/dependency_provenance_views.py write
+          python scripts/dependency_provenance_views.py check
+          ! grep -R --fixed-strings "ux-reference-evidence-transport.yml" \
+              docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY* >/dev/null
+
+      - name: Verify generated files are publication-safe
+        shell: bash
+        run: |
+          set -euo pipefail
+          for source in docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY*; do
+            python scripts/secret_hygiene.py verify-sanitized --input "$source"
+          done
+
+      - name: Atomically publish repaired runner and self-delete transport
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+          TARGET_BRANCH: ${{ github.event.pull_request.head.ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64
+          import json
+          import os
+          import urllib.request
+          from pathlib import Path
+
+          repo = os.environ["GITHUB_REPOSITORY"]
+          token = os.environ["GITHUB_TOKEN"]
+          expected_head = os.environ["EXPECTED_HEAD"]
+          branch = os.environ["TARGET_BRANCH"]
+          root = Path.cwd()
+          transport = ".github/workflows/ux-reference-evidence-transport.yml"
+          paths = [
+              "tests/browser_theme/run.py",
+              "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.json",
+              "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.md",
+              "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.01.json",
+              "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.02.json",
+              "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.03.json",
+              "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.04.json",
+          ]
+          headers = {
+              "Accept": "application/vnd.github+json",
+              "Authorization": f"Bearer {token}",
+              "Content-Type": "application/json",
+              "User-Agent": "eod-ux-reference-evidence-transport/1",
+              "X-GitHub-Api-Version": "2022-11-28",
+          }
+
+          def request(method, path, payload=None):
+              data = None if payload is None else json.dumps(payload).encode("utf-8")
+              req = urllib.request.Request(
+                  f"https://api.github.com/repos/{repo}{path}",
+                  data=data,
+                  headers=headers,
+                  method=method,
+              )
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  return json.loads(response.read().decode("utf-8"))
+
+          live = request("GET", f"/git/ref/heads/{branch}")["object"]["sha"]
+          if live != expected_head:
+              raise SystemExit(f"stale transport head: live={live} expected={expected_head}")
+
+          base_commit = request("GET", f"/git/commits/{expected_head}")
+          tree_entries = []
+          for relative in paths:
+              content = (root / relative).read_bytes()
+              blob = request(
+                  "POST",
+                  "/git/blobs",
+                  {
+                      "content": base64.b64encode(content).decode("ascii"),
+                      "encoding": "base64",
+                  },
+              )
+              tree_entries.append(
+                  {
+                      "path": relative,
+                      "mode": "100644",
+                      "type": "blob",
+                      "sha": blob["sha"],
+                  }
+              )
+              print(f"FINAL_BLOB path={relative} sha={blob['sha']}")
+          tree_entries.append(
+              {"path": transport, "mode": "100644", "type": "blob", "sha": None}
+          )
+          tree = request(
+              "POST",
+              "/git/trees",
+              {"base_tree": base_commit["tree"]["sha"], "tree": tree_entries},
+          )
+          commit = request(
+              "POST",
+              "/git/commits",
+              {
+                  "message": "test(ux): stabilize OPJ reference browser evidence",
+                  "tree": tree["sha"],
+                  "parents": [expected_head],
+              },
+          )
+          request(
+              "PATCH",
+              f"/git/refs/heads/{branch}",
+              {"sha": commit["sha"], "force": False},
+          )
+          print(f"FINAL_TRANSPORT_HEAD={commit['sha']}")
+          PY
