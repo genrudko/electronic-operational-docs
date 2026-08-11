@@ -121,6 +121,74 @@
     margin-block-start: var(--theme-space-4);
 }
 
+.ux-launcher-grid {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+    gap: var(--theme-space-3);
+    margin-block: var(--theme-space-5);
+}
+
+.ux-launcher-card {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--theme-space-3);
+    color: var(--theme-text);
+    text-decoration: none;
+}
+
+.ux-launcher-card:hover {
+    border-color: var(--theme-primary);
+    background: var(--theme-control-hover);
+    color: var(--theme-text);
+}
+
+.ux-launcher-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: grid;
+    place-items: center;
+    border-radius: var(--theme-radius-md);
+    background: var(--theme-primary-soft);
+    color: var(--theme-primary);
+}
+
+.ux-launcher-icon .ui-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.ux-launcher-copy {
+    min-width: 0;
+    display: grid;
+    gap: var(--theme-space-1);
+}
+
+.ux-launcher-copy strong {
+    color: var(--theme-text);
+}
+
+.ux-launcher-copy small {
+    color: var(--theme-text-muted);
+    line-height: var(--theme-line-height-body);
+}
+
+.ux-principle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+    gap: var(--theme-space-3);
+}
+
+.ux-principle-grid > span {
+    padding: var(--theme-space-3);
+    border-inline-start: 3px solid var(--theme-primary);
+    border-radius: var(--theme-radius-sm);
+    background: var(--theme-surface-soft);
+    color: var(--theme-text-muted);
+}
+
 @media (max-width: 52rem) {
     .ux-detail-grid,
     .ux-form-grid {
@@ -136,5 +204,14 @@
 
     .ux-key-value dd + dt {
         margin-block-start: var(--theme-space-2);
+    }
+
+    .ux-launcher-card {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .ux-launcher-card > .da-status {
+        grid-column: 2;
+        justify-self: start;
     }
 }
