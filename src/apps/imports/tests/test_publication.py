@@ -556,7 +556,7 @@ class ControlledImportPublicationTests(TestCase):
         result = self.client.get(
             reverse("imports:publication_result", args=[batch.public_id])
         )
-        self.assertContains(result, "НЕИЗМЕНЯЕМЫЙ ИТОГ ПУБЛИКАЦИИ")
+        self.assertContains(result, "Неизменяемый итог публикации")
         self.assertContains(result, "PUB-NEW-014")
 
     def test_cross_organization_publication_is_hidden(self):
