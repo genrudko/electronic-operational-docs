@@ -229,7 +229,9 @@ class PresentationUxTests(TestCase):
     def test_home_has_presentation_launcher_without_stage_labels(self):
         response = self.client.get(reverse("system:home"))
         self.assertContains(response, "Рабочее пространство")
-        self.assertContains(response, "module-launcher")
+        self.assertContains(response, "ux-launcher-grid")
+        self.assertContains(response, "ux-launcher-card")
+        self.assertNotContains(response, "module-launcher")
         self.assertNotContains(response, "STAGE 2")
         self.assertNotContains(response, "PATCH 007")
 
