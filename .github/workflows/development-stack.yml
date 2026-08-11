@@ -17,7 +17,7 @@ jobs:
   development-container-smoke:
     name: Isolated development container smoke
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 40
     env:
       DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost
       POSTGRES_DB: eod_development
@@ -40,6 +40,13 @@ jobs:
           actual_sha="$(git rev-parse HEAD)"
           test "$actual_sha" = "$EXPECTED_SHA"
           printf 'EXACT_HEAD=%s\n' "$actual_sha"
+
+      - name: Set up Python 3.13 for browser evidence
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements/locks/browser.txt
 
       - name: Create masked ephemeral development credentials
         shell: bash
@@ -107,6 +114,41 @@ jobs:
             python manage.py verify_development_demo_login \
             --base-url http://127.0.0.1:8766 \
             --wait-seconds 5
+
+      - name: Install locked browser evidence dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --require-hashes \
+            -r requirements/locks/browser.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Run representative UX Platform browser evidence
+        id: browser-evidence
+        shell: bash
+        env:
+          EOD_BROWSER_BASE_URL: http://127.0.0.1:8766
+          EOD_BROWSER_USERNAME: operator.demo
+          EOD_BROWSER_PASSWORD: ${{ env.EOD_DEMO_USER_PASSWORD }}
+          EOD_BROWSER_EVIDENCE: ${{ runner.temp }}/browser-theme
+        run: |
+          set -euo pipefail
+          python tests/browser_theme/run.py
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$RUNNER_TEMP/browser-theme/computed-styles.json" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD \
+            --env EOD_DEMO_USER_PASSWORD
+          printf 'verified=true\n' >>"$GITHUB_OUTPUT"
+
+      - name: Upload verified UX Platform browser evidence
+        if: ${{ steps.browser-evidence.outputs.verified == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ux-platform-browser-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/browser-theme
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Verify trusted Development health after login smoke
         shell: bash
@@ -198,6 +240,7 @@ jobs:
             "$RUNNER_TEMP/development-db-port.raw.txt" \
             "$RUNNER_TEMP/development-diagnostics.raw.txt" \
             "$RUNNER_TEMP/development-diagnostics.sanitized.txt"
+          rm -rf "$RUNNER_TEMP/browser-theme"
 
       - name: Verify development checkout remains exactly clean
         if: ${{ always() }}
