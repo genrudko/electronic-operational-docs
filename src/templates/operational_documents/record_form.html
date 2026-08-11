@@ -3,142 +3,39 @@
 {% block title %}{{ page_title }} · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading">
-    <div>
-        <div class="section-kicker">{{ document_type.name }}</div>
-        <h1>{{ page_title }}</h1>
-        {% if source_form %}<p>{{ source_form.source_document }}, раздел {{ source_form.source_section }}, приложение № {{ source_form.source_appendix }}.</p>{% endif %}
-    </div>
-</section>
+<section class="da-page-header da-page-header-compact"><div><span class="ux-kicker">{{ document_type.name }}</span><h1>{{ page_title }}</h1>{% if source_form %}<p>{{ source_form.source_document }}, раздел {{ source_form.source_section }}, приложение № {{ source_form.source_appendix }}.</p>{% endif %}</div></section>
+<section class="da-alert"><div><strong>Форма задана источником</strong><p>Наименования и порядок предметных полей определены установленной редакцией формы и не настраиваются в этой записи.</p></div></section>
 
-<section class="source-boundary-notice compact">
-    <strong>Форма задана источником</strong>
-    <p>Наименования и порядок предметных полей определены установленной редакцией формы и не настраиваются в этой записи.</p>
-</section>
+<section class="da-card document-form-card opdoc-record-editor">
+<form method="post" class="ux-stack document-form" data-opdoc-record-form>
+{% csrf_token %}
+{% if form.non_field_errors %}<div class="ux-form-errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}
 
-<section class="directory-card document-form-card opdoc-record-editor">
-    <form method="post" class="document-form" data-opdoc-record-form>
-        {% csrf_token %}
-        {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+<section class="opdoc-editor-section da-panel-flat"><header><h2>Основные сведения</h2><p class="ux-muted">Дата, место и краткое содержание записи.</p></header><div class="opdoc-form-grid">{% for field in form.main_fields %}<div class="da-field{% if field.name == 'summary' %} span-2{% endif %}">{{ field.label_tag }}{{ field }}{% if field.help_text %}<small class="ux-muted">{{ field.help_text }}</small>{% endif %}{% if field.errors %}<div class="ux-field-errors">{{ field.errors }}</div>{% endif %}</div>{% endfor %}</div></section>
 
-        <section class="opdoc-editor-section">
-            <header><h2>Основные сведения</h2><p>Дата, место и краткое содержание записи.</p></header>
-            <div class="opdoc-form-grid">
-                {% for field in form.main_fields %}
-                <div class="form-row{% if field.name == 'summary' %} span-2{% endif %}">
-                    {{ field.label_tag }}{{ field }}
-                    {% if field.help_text %}<small class="muted">{{ field.help_text }}</small>{% endif %}
-                    {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
-                </div>
-                {% endfor %}
-            </div>
-        </section>
+<section class="opdoc-editor-section da-panel-flat"><header><h2>Данные установленной формы</h2><p class="ux-muted">Графы соответствуют опубликованной редакции журнала.</p></header><div class="opdoc-form-grid">{% for field in form.subject_fields %}<div class="da-field span-2">{{ field.label_tag }}{{ field }}{% if field.help_text %}<small class="ux-muted">{{ field.help_text }}</small>{% endif %}{% if field.errors %}<div class="ux-field-errors">{{ field.errors }}</div>{% endif %}</div>{% endfor %}</div></section>
 
-        <section class="opdoc-editor-section">
-            <header><h2>Данные установленной формы</h2><p>Графы соответствуют опубликованной редакции журнала.</p></header>
-            <div class="opdoc-form-grid">
-                {% for field in form.subject_fields %}
-                <div class="form-row span-2">
-                    {{ field.label_tag }}{{ field }}
-                    {% if field.help_text %}<small class="muted">{{ field.help_text }}</small>{% endif %}
-                    {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
-                </div>
-                {% endfor %}
-            </div>
-        </section>
+{% if form.participant_fields %}<section class="opdoc-editor-section da-panel-flat"><header><h2>Участники</h2><p class="ux-muted">Выбираются из действующего справочника сотрудников организации.</p></header><div class="opdoc-form-grid">{% for field in form.participant_fields %}<div class="da-field">{{ field.label_tag }}{{ field }}{% if field.help_text %}<small class="ux-muted">{{ field.help_text }}</small>{% endif %}{% if field.errors %}<div class="ux-field-errors">{{ field.errors }}</div>{% endif %}</div>{% endfor %}</div></section>{% endif %}
 
-        {% if form.participant_fields %}
-        <section class="opdoc-editor-section">
-            <header><h2>Участники</h2><p>Выбираются из действующего справочника сотрудников организации.</p></header>
-            <div class="opdoc-form-grid">
-                {% for field in form.participant_fields %}
-                <div class="form-row">
-                    {{ field.label_tag }}{{ field }}
-                    {% if field.help_text %}<small class="muted">{{ field.help_text }}</small>{% endif %}
-                    {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
-                </div>
-                {% endfor %}
-            </div>
-        </section>
-        {% endif %}
+<details class="opdoc-editor-section opdoc-optional-section da-panel-flat" open><summary>Оборудование и связанные документы</summary><p class="ux-muted">Начните вводить часть наименования, затем выбирайте элементы обычным щелчком — удерживать Ctrl не требуется.</p><div class="opdoc-form-grid">{% for field in form.relation_fields %}<div class="da-field{% if field.name == 'equipment_assets' %} span-2{% endif %}">{{ field.label_tag }}{{ field }}{% if field.help_text %}<small class="ux-muted">{{ field.help_text }}</small>{% endif %}{% if field.errors %}<div class="ux-field-errors">{{ field.errors }}</div>{% endif %}</div>{% endfor %}</div></details>
 
-        <details class="opdoc-editor-section opdoc-optional-section" open>
-            <summary>Оборудование и связанные документы</summary>
-            <p>Начните вводить часть наименования, затем выбирайте элементы обычным щелчком — удерживать Ctrl не требуется.</p>
-            <div class="opdoc-form-grid">
-                {% for field in form.relation_fields %}
-                <div class="form-row{% if field.name == 'equipment_assets' %} span-2{% endif %}">
-                    {{ field.label_tag }}{{ field }}
-                    {% if field.help_text %}<small class="muted">{{ field.help_text }}</small>{% endif %}
-                    {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
-                </div>
-                {% endfor %}
-            </div>
-        </details>
+{% if form.change_fields %}<section class="opdoc-editor-section da-panel-flat"><header><h2>Причина изменения</h2><p class="ux-muted">Комментарий сохраняется в новой неизменяемой редакции.</p></header><div class="opdoc-form-grid">{% for field in form.change_fields %}<div class="da-field span-2">{{ field.label_tag }}{{ field }}{% if field.errors %}<div class="ux-field-errors">{{ field.errors }}</div>{% endif %}</div>{% endfor %}</div></section>{% endif %}
 
-        {% if form.change_fields %}
-        <section class="opdoc-editor-section">
-            <header><h2>Причина изменения</h2><p>Комментарий сохраняется в новой неизменяемой редакции.</p></header>
-            <div class="opdoc-form-grid">
-                {% for field in form.change_fields %}
-                <div class="form-row span-2">
-                    {{ field.label_tag }}{{ field }}
-                    {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
-                </div>
-                {% endfor %}
-            </div>
-        </section>
-        {% endif %}
-
-        <div class="form-actions sticky-form-actions">
-            <button class="button" type="submit">{{ submit_label }}</button>
-            {% if record %}
-                <a class="button secondary" href="{% url 'operational_documents:record_detail' record.public_id %}">Отмена</a>
-            {% else %}
-                <a class="button secondary" href="{% url 'operational_documents:registry' %}">Отмена</a>
-            {% endif %}
-        </div>
-    </form>
+<div class="ux-form-actions sticky-form-actions"><button class="da-button" type="submit">{{ submit_label }}</button>{% if record %}<a class="da-button is-tertiary" href="{% url 'operational_documents:record_detail' record.public_id %}">Отмена</a>{% else %}<a class="da-button is-tertiary" href="{% url 'operational_documents:registry' %}">Отмена</a>{% endif %}</div>
+</form>
 </section>
 
 <script>
 (() => {
     const selects = document.querySelectorAll("select.opdoc-multi-select");
     for (const select of selects) {
-        const shell = document.createElement("div");
-        shell.className = "opdoc-multi-picker";
-        select.parentNode.insertBefore(shell, select);
-        shell.appendChild(select);
-
-        const search = document.createElement("input");
-        search.type = "search";
-        search.className = "opdoc-multi-picker-search";
-        search.placeholder = "Поиск по списку";
-        search.setAttribute("aria-label", "Поиск по списку");
-        shell.insertBefore(search, select);
-
-        const selected = document.createElement("div");
-        selected.className = "opdoc-selected-values";
-        shell.appendChild(selected);
-
-        const renderSelected = () => {
-            const values = [...select.selectedOptions].map((option) => option.textContent.trim());
-            selected.textContent = values.length ? `Выбрано: ${values.join("; ")}` : "Ничего не выбрано";
-        };
-        search.addEventListener("input", () => {
-            const query = search.value.trim().toLocaleLowerCase("ru-RU");
-            for (const option of select.options) {
-                option.hidden = Boolean(query) && !option.textContent.toLocaleLowerCase("ru-RU").includes(query);
-            }
-        });
-        select.addEventListener("mousedown", (event) => {
-            if (event.target.tagName !== "OPTION") return;
-            event.preventDefault();
-            event.target.selected = !event.target.selected;
-            select.dispatchEvent(new Event("change", {bubbles: true}));
-        });
-        select.addEventListener("change", renderSelected);
-        renderSelected();
+        const shell = document.createElement("div"); shell.className = "opdoc-multi-picker"; select.parentNode.insertBefore(shell, select); shell.appendChild(select);
+        const search = document.createElement("input"); search.type = "search"; search.className = "opdoc-multi-picker-search"; search.placeholder = "Поиск по списку"; search.setAttribute("aria-label", "Поиск по списку"); shell.insertBefore(search, select);
+        const selected = document.createElement("div"); selected.className = "opdoc-selected-values"; shell.appendChild(selected);
+        const renderSelected = () => { const values = [...select.selectedOptions].map((option) => option.textContent.trim()); selected.textContent = values.length ? `Выбрано: ${values.join("; ")}` : "Ничего не выбрано"; };
+        search.addEventListener("input", () => { const query = search.value.trim().toLocaleLowerCase("ru-RU"); for (const option of select.options) option.hidden = Boolean(query) && !option.textContent.toLocaleLowerCase("ru-RU").includes(query); });
+        select.addEventListener("mousedown", (event) => { if (event.target.tagName !== "OPTION") return; event.preventDefault(); event.target.selected = !event.target.selected; select.dispatchEvent(new Event("change", {bubbles: true})); });
+        select.addEventListener("change", renderSelected); renderSelected();
     }
 })();
 </script>
