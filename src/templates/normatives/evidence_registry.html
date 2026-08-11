@@ -3,9 +3,9 @@
 {% block title %}Правовые режимы и evidence · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading compact">
+<section class="da-page-header da-page-header-compact">
     <div>
-        <div class="eyebrow">НОРМАТИВНОЕ EVIDENCE</div>
+        <span class="ux-kicker">Нормативное evidence</span>
         <h1>Правовые режимы и подтверждения</h1>
         <p>
             Read-only журнал решений и событий. Техническая неизменяемость не означает,
@@ -24,10 +24,10 @@
     </p>
 </section>
 
-<section class="profile-card">
+<section class="da-card">
     <h2>Актуальные решения по режимам</h2>
-    <div class="table-wrap">
-        <table>
+    <div class="da-table-wrap">
+        <table class="da-table">
             <thead>
                 <tr>
                     <th>Функция</th>
@@ -44,13 +44,13 @@
                         <a href="{% url 'normatives:legal_mode_decision_detail' item.public_id %}">
                             {{ item.subject_label }}
                         </a>
-                        <div class="muted">{{ item.module_id }} · {{ item.code }}</div>
+                        <div class="ux-muted">{{ item.module_id }} · {{ item.code }}</div>
                     </td>
                     <td>{{ item.get_product_target_mode_display }}</td>
                     <td>
                         <strong>{{ item.get_proven_legal_mode_display }}</strong>
                         {% if item.proven_legal_mode == "VERIFY" %}
-                            <div class="muted">Юридический вывод не заявлен</div>
+                            <div class="ux-muted">Юридический вывод не заявлен</div>
                         {% endif %}
                     </td>
                     <td>
@@ -62,7 +62,7 @@
             {% empty %}
                 <tr>
                     <td colspan="5">
-                        Решений пока нет. Отсутствие записи не означает автоматически разрешённый режим.
+                        <div class="ux-empty-state">Решений пока нет. Отсутствие записи не означает автоматически разрешённый режим.</div>
                     </td>
                 </tr>
             {% endfor %}
@@ -71,14 +71,14 @@
     </div>
 </section>
 
-<section class="profile-card">
+<section class="da-card">
     <h2>Последние evidence-события</h2>
-    <p class="muted">
+    <p class="ux-muted">
         Типы событий не взаимозаменяемы: ознакомление не доказывает инструктаж,
         проверку знаний или подпись.
     </p>
-    <div class="table-wrap">
-        <table>
+    <div class="da-table-wrap">
+        <table class="da-table">
             <thead>
                 <tr>
                     <th>Время</th>
@@ -102,12 +102,12 @@
                     <td>
                         {{ item.get_confirmation_method_display }}
                         {% if item.requires_reauthentication %}
-                            <div class="muted">Повторная аутентификация требовалась</div>
+                            <div class="ux-muted">Повторная аутентификация требовалась</div>
                         {% endif %}
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="5">Evidence-событий пока нет.</td></tr>
+                <tr><td colspan="5"><div class="ux-empty-state">Evidence-событий пока нет.</div></td></tr>
             {% endfor %}
             </tbody>
         </table>
