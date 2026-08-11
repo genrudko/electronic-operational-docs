@@ -163,7 +163,7 @@
     {% include "operational_log/_shift_workspace_registered_row.html" with draft=item.draft registration=item %}
 {% empty %}
     {% if not drafts %}
-    <div class="empty-state" data-empty-draft>
+    <div class="ux-empty-state" data-empty-draft>
         <h3>Черновых записей пока нет</h3>
         <p>Добавьте первую запись.</p>
     </div>
