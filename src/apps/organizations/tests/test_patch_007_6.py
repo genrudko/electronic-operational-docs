@@ -56,22 +56,26 @@ class Patch0076VisualAcceptanceTests(TestCase):
         css = (
             settings.BASE_DIR / "src/static/system/app.css"
         ).read_text(encoding="utf-8")
-        self.assertIn('class="document-actions"', template)
+        self.assertIn('class="da-actions document-actions"', template)
         self.assertIn(".document-actions {", css)
         self.assertIn("flex-wrap: nowrap;", css)
         self.assertIn("min-width: max-content;", css)
 
-    def test_role_cards_explain_assignment_basis(self):
+    def test_role_cards_show_assignment_mode_and_scope(self):
         template = (
             settings.BASE_DIR / "src/templates/organizations/account.html"
         ).read_text(encoding="utf-8")
         for marker in (
             "role-assignment",
-            "role-assignment-basis",
+            "role-assignment-heading",
             "role-assignment-scope-label",
+            "role-assignment-scope",
+            "Прямое назначение",
+            "По замещению",
             "Область действия",
         ):
             self.assertIn(marker, template)
+        self.assertNotIn("role-assignment-basis", template)
 
     def test_revision_digest_is_grouped_as_technical_details(self):
         template = (
