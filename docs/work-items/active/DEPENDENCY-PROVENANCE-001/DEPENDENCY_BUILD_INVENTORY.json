@@ -449,7 +449,7 @@
     "scripts/dependency_provenance_source_gate.py": "57ec597d4c7749bd595e4aee43e2ae6881edd667b8b2ad2b84a6ea4c6953fd2e",
     "scripts/dependency_provenance_views.py": "853f0dff3d24ac05b6d99478b1e6ef03933a3f4e90fde1df669cd3189591c355",
     "scripts/deployment_preflight.py": "8897c79263594c7998164a50c259c23166016e7c20c430167c75330749b3d4e7",
-    "scripts/development-entrypoint.sh": "56bb59150836f927b915c12f79b689ee4f45ebc50c9e0ebd02f57557bc48d978",
+    "scripts/development-entrypoint.sh": "2ecff056dc832013ef6931e56ab60ba85b0657f421d30e0c35d0f1ed8501f3ae",
     "scripts/development_stack.sh": "3a509b71a6b0a7d6fa5af77661bb596b25eee3d9971a88e3c94a8b983896e646",
     "scripts/eod_context_manager.py": "ab16e2f12e51e00c452753ba9c47312d2a93742d1254c30b2b645488b5298036",
     "scripts/gate_patch_003_1.py": "dccc676702243cc967dfa5291e85ff0d0bf2075df583ca40b9967e0a125cee8a",
