@@ -353,7 +353,7 @@ def activate_editor_reference_selection(page):
     editor = need(page, '.draft-rich-editor-host [contenteditable="true"]')
     editor.click()
     prepared = editor.evaluate(
-        """editor => {
+        r"""editor => {
   const walker = document.createTreeWalker(
       editor,
       NodeFilter.SHOW_TEXT,
@@ -604,7 +604,7 @@ def main():
             "[data-reference-trigger]:not([disabled])",
         )
         page.keyboard.press("Control+Shift+M")
-        reference_picker = need(page, "[data-reference-picker]")
+        need(page, "[data-reference-picker]")
         if reference_trigger.get_attribute("aria-expanded") != "true":
             raise AssertionError(
                 "OPJ reference picker did not publish expanded state"
