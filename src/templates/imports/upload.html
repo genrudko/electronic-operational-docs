@@ -3,52 +3,52 @@
 {% block title %}Новая загрузка · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading">
+<section class="da-page-header">
     <div>
-        <div class="eyebrow">ИМПОРТ СПРАВОЧНИКОВ</div>
+        <span class="ux-kicker">Импорт справочников</span>
         <h1>Новая загрузка</h1>
         <p>CSV или XLSX будет разобран в изолированной промежуточной зоне.</p>
     </div>
-    <a href="{% url 'imports:list' %}">К журналу загрузок</a>
+    <a class="da-button is-tertiary" href="{% url 'imports:list' %}">К журналу загрузок</a>
 </section>
 
 <section class="content-grid import-upload-grid">
-    <article class="profile-card">
+    <article class="da-card">
         <h2>Выберите назначение и файл</h2>
-        <form method="post" enctype="multipart/form-data" class="stack-form">
+        <form method="post" enctype="multipart/form-data" class="stack-form ux-form-grid">
             {% csrf_token %}
             {% if form.non_field_errors %}
-                <div class="field-error">{{ form.non_field_errors }}</div>
+                <div class="da-alert is-danger">{{ form.non_field_errors }}</div>
             {% endif %}
-            <label>
+            <label class="da-field">
                 <span>{{ form.data_profile.label }}</span>
                 {{ form.data_profile }}
                 <small>{{ form.data_profile.help_text }}</small>
                 {{ form.data_profile.errors }}
             </label>
-            <label>
+            <label class="da-field">
                 <span>{{ form.target_registry.label }}</span>
                 {{ form.target_registry }}
                 {{ form.target_registry.errors }}
             </label>
-            <label>
+            <label class="da-field">
                 <span>{{ form.source_reference.label }}</span>
                 {{ form.source_reference }}
                 <small>{{ form.source_reference.help_text }}</small>
                 {{ form.source_reference.errors }}
             </label>
-            <label class="file-drop-field">
+            <label class="da-field file-drop-field">
                 <span>{{ form.source_file.label }}</span>
                 {{ form.source_file }}
                 <small>{{ form.source_file.help_text }}</small>
                 {{ form.source_file.errors }}
             </label>
-            <button class="button" type="submit">Загрузить и сформировать просмотр</button>
+            <div class="ux-form-actions"><button class="da-button" type="submit">Загрузить и сформировать просмотр</button></div>
         </form>
     </article>
 
-    <aside class="profile-card">
-        <div class="eyebrow">ПРОФИЛЬ И ПРОИСХОЖДЕНИЕ</div>
+    <aside class="da-card">
+        <span class="ux-kicker">Профиль и происхождение</span>
         <h2>Что произойдёт</h2>
         <ul class="plain-list">
             <li>Исходные значения ячеек сохранятся без исправления.</li>
@@ -67,7 +67,7 @@
             </div>
         {% endfor %}
         </div>
-        <p class="muted">
+        <p class="ux-muted">
             Ограничения: до 10 МБ, до 5000 строк данных и до 100 колонок.
             Содержимое исходного файла после разбора не хранится; сохраняются его
             SHA-256, метаданные и значения ячеек.
