@@ -5,9 +5,9 @@
 {% block main_class %}opj-main opj-registry-main{% endblock %}
 
 {% block content %}
-<section class="page-heading da-page-header">
+<section class="da-page-header da-page-header-compact">
     <div>
-        <div class="eyebrow">ОПЕРАТИВНАЯ ДОКУМЕНТАЦИЯ</div>
+        <span class="ux-kicker">Оперативная документация</span>
         <h1>Оперативные журналы</h1>
         <p>
             Каждый журнал открывается и печатается по закреплённой утверждённой форме.
@@ -32,14 +32,14 @@
     <span><strong>{{ form_contract.columns|length }}</strong> графы утверждённой формы</span>
 </section>
 
-<section class="profile-card journal-registry-card da-panel">
+<section class="da-card journal-registry-card da-panel">
     <div class="section-heading da-panel-heading">
         <div>
-            <div class="eyebrow">РАБОЧИЕ МЕСТА</div>
+            <span class="ux-kicker">Рабочие места</span>
             <h2>Доступные журналы</h2>
         </div>
     </div>
-    <div class="table-wrap da-table-wrap">
+    <div class="da-table-wrap">
         <table class="journal-registry-table da-table">
             <thead>
                 <tr>
@@ -68,7 +68,7 @@
                     <td>{% if row.last_entry %}{{ row.last_entry.event_at|date:"d.m.Y H:i" }}{% else %}—{% endif %}</td>
                 </tr>
             {% empty %}
-                <tr><td colspan="6" class="muted">Для организации пока не создан оперативный журнал.</td></tr>
+                <tr><td colspan="6"><div class="ux-empty-state">Для организации пока не создан оперативный журнал.</div></td></tr>
             {% endfor %}
             </tbody>
         </table>
