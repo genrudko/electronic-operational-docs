@@ -21,6 +21,8 @@ from apps.organizations.demo_access import (
 _CSRF_PATTERN = re.compile(
     rb'name=["\']csrfmiddlewaretoken["\'][^>]*value=["\']([^"\']+)["\']'
 )
+_DEMO_BLOCK_MARKER = b"data-development-demo-credentials"
+_DEMO_PASSWORD_MARKER = b"data-development-demo-password"
 
 
 class Command(BaseCommand):
@@ -113,9 +115,17 @@ class Command(BaseCommand):
         csrf_token = csrf_match.group(1).decode("utf-8")
 
         # The published Development credential must be the same injected value.
-        # The value is compared only in memory and is never printed.
-        if username.encode("utf-8") not in body or password.encode("utf-8") not in body:
-            raise CommandError("Development login page does not publish the active demo credential.")
+        # All diagnostics are structural; the credential itself is never printed.
+        if _DEMO_BLOCK_MARKER not in body:
+            raise CommandError("Development login page does not render the demo access block.")
+        if username.encode("utf-8") not in body:
+            raise CommandError("Development login page does not publish an expected demo username.")
+        if _DEMO_PASSWORD_MARKER not in body:
+            raise CommandError("Development login page does not render the demo password marker.")
+        if password.encode("utf-8") not in body:
+            raise CommandError(
+                "Development login page publishes a credential that differs from active auth state."
+            )
 
         payload = urlencode(
             {
