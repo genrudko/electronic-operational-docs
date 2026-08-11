@@ -3,18 +3,18 @@
 {% block title %}Импорт справочников · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading">
+<section class="da-page-header">
     <div>
-        <div class="eyebrow">БЕЗОПАСНАЯ ПРОМЕЖУТОЧНАЯ ЗОНА</div>
+        <span class="ux-kicker">Безопасная промежуточная зона</span>
         <h1>Импорт справочников</h1>
         <p>Загруженные файлы разбираются отдельно и не изменяют действующие справочники.</p>
     </div>
-    <div class="document-actions">
-        <a class="button secondary" href="{% url 'imports:data_profiles' %}">Профили данных</a>
-        <a class="button secondary" href="{% url 'imports:power_system_list' %}">Редакции импорта оборудования</a>
-        <a class="button secondary" href="{% url 'imports:personnel_list' %}">Импорт персонала и прав</a>
-        <a class="button secondary" href="{% url 'imports:workplace_document_list' %}">Импорт документации рабочих мест</a>
-        <a class="button" href="{% url 'imports:upload' %}">Обычный импорт CSV/XLSX</a>
+    <div class="da-actions document-actions">
+        <a class="da-button is-secondary" href="{% url 'imports:data_profiles' %}">Профили данных</a>
+        <a class="da-button is-secondary" href="{% url 'imports:power_system_list' %}">Редакции импорта оборудования</a>
+        <a class="da-button is-secondary" href="{% url 'imports:personnel_list' %}">Импорт персонала и прав</a>
+        <a class="da-button is-secondary" href="{% url 'imports:workplace_document_list' %}">Импорт документации рабочих мест</a>
+        <a class="da-button" href="{% url 'imports:upload' %}">Обычный импорт CSV/XLSX</a>
     </div>
 </section>
 
@@ -43,26 +43,26 @@
     </p>
 </section>
 
-<section class="summary-grid import-summary">
-    <article class="metric"><span>Попыток</span><strong>{{ summary.total }}</strong></article>
-    <article class="metric"><span>Готовы к просмотру</span><strong>{{ summary.ready }}</strong></article>
-    <article class="metric"><span>Требуют внимания</span><strong>{{ summary.attention }}</strong></article>
-    <article class="metric"><span>Опубликованы</span><strong>{{ summary.published }}</strong></article>
-    <article class="metric"><span>Убраны из рабочего списка</span><strong>{{ summary.discarded }}</strong></article>
+<section class="ux-stat-grid import-summary">
+    <article class="ux-stat"><span>Попыток</span><strong>{{ summary.total }}</strong></article>
+    <article class="ux-stat"><span>Готовы к просмотру</span><strong>{{ summary.ready }}</strong></article>
+    <article class="ux-stat"><span>Требуют внимания</span><strong>{{ summary.attention }}</strong></article>
+    <article class="ux-stat"><span>Опубликованы</span><strong>{{ summary.published }}</strong></article>
+    <article class="ux-stat"><span>Убраны из рабочего списка</span><strong>{{ summary.discarded }}</strong></article>
 </section>
 
-<section class="profile-card">
+<section class="da-card">
     <div class="section-heading">
         <div>
-            <div class="eyebrow">ЖУРНАЛ ПОПЫТОК</div>
+            <span class="ux-kicker">Журнал попыток</span>
             <h2>Загрузки организации</h2>
         </div>
         {% if batches %}
             <span class="count-badge">Всего загрузок: {{ batches|length }}</span>
         {% endif %}
     </div>
-    <div class="table-wrap">
-        <table>
+    <div class="da-table-wrap">
+        <table class="da-table">
             <thead>
                 <tr>
                     <th>Файл</th>
@@ -108,9 +108,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="8" class="muted">
-                        Загрузок пока нет. Начните с небольшого тестового CSV или XLSX.
-                    </td>
+                    <td colspan="8"><div class="ux-empty-state">Загрузок пока нет. Начните с небольшого тестового CSV или XLSX.</div></td>
                 </tr>
             {% endfor %}
             </tbody>
