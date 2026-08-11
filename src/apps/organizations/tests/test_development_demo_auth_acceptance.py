@@ -15,10 +15,9 @@ from apps.organizations.demo_access import (
 from apps.organizations.development_auth_smoke import (
     verify_development_demo_login_path,
 )
+from tests.credential_fixtures import ephemeral_credential
 
-
-def strong_candidate() -> str:
-    return "OwnerAcceptanceDemoA1!2026"
+TEST_CREDENTIAL = ephemeral_credential("OwnerAcceptanceDemo")
 
 
 class DevelopmentDemoAuthenticationAcceptanceTests(TestCase):
@@ -28,7 +27,7 @@ class DevelopmentDemoAuthenticationAcceptanceTests(TestCase):
 
         development_auth_smoke._verified_fingerprint = None
 
-    @mock.patch.dict("os.environ", {DEMO_ACCESS_ENV: strong_candidate()}, clear=False)
+    @mock.patch.dict("os.environ", {DEMO_ACCESS_ENV: TEST_CREDENTIAL}, clear=False)
     @override_settings(EOD_DEPLOYMENT_MODE="development")
     def test_missing_principals_are_bootstrapped_active_and_authenticatable(self) -> None:
         self.assertEqual(get_user_model().objects.filter(username__in=DEMO_USERNAMES).count(), 0)
@@ -38,9 +37,9 @@ class DevelopmentDemoAuthenticationAcceptanceTests(TestCase):
         for user in get_user_model().objects.filter(username__in=DEMO_USERNAMES):
             self.assertTrue(user.is_active)
             self.assertTrue(user.has_usable_password())
-            self.assertTrue(user.check_password(strong_candidate()))
+            self.assertTrue(user.check_password(TEST_CREDENTIAL))
 
-    @mock.patch.dict("os.environ", {DEMO_ACCESS_ENV: strong_candidate()}, clear=False)
+    @mock.patch.dict("os.environ", {DEMO_ACCESS_ENV: TEST_CREDENTIAL}, clear=False)
     @override_settings(EOD_DEPLOYMENT_MODE="development")
     def test_development_page_publishes_same_injected_credential_used_by_auth(self) -> None:
         ensure_development_demo_accounts()
@@ -49,7 +48,7 @@ class DevelopmentDemoAuthenticationAcceptanceTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "operator.demo")
         self.assertContains(response, "supervisor.demo")
-        self.assertContains(response, strong_candidate())
+        self.assertContains(response, TEST_CREDENTIAL)
         self.assertContains(response, 'data-development-demo-credentials')
         self.assertNotContains(response, 'class="auth-shell"')
         self.assertNotContains(response, 'class="auth-card"')
@@ -57,17 +56,17 @@ class DevelopmentDemoAuthenticationAcceptanceTests(TestCase):
         self.assertNotContains(response, 'class="button full"')
         self.assertNotContains(response, 'class="demo-credentials"')
 
-    @mock.patch.dict("os.environ", {DEMO_ACCESS_ENV: strong_candidate()}, clear=False)
+    @mock.patch.dict("os.environ", {DEMO_ACCESS_ENV: TEST_CREDENTIAL}, clear=False)
     @override_settings(EOD_DEPLOYMENT_MODE="production")
     def test_non_development_login_never_publishes_injected_demo_credential(self) -> None:
         presentation = development_demo_access_presentation(deployment_mode="production")
         self.assertIsNone(presentation)
         response = self.client.get("/accounts/login/")
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, strong_candidate())
+        self.assertNotContains(response, TEST_CREDENTIAL)
         self.assertNotContains(response, 'data-development-demo-credentials')
 
-    @mock.patch.dict("os.environ", {DEMO_ACCESS_ENV: strong_candidate()}, clear=False)
+    @mock.patch.dict("os.environ", {DEMO_ACCESS_ENV: TEST_CREDENTIAL}, clear=False)
     @override_settings(EOD_DEPLOYMENT_MODE="development", ALLOWED_HOSTS=["127.0.0.1", "testserver"])
     def test_real_login_path_and_trusted_health_pass_for_both_demo_accounts(self) -> None:
         ensure_development_demo_accounts()
@@ -78,7 +77,7 @@ class DevelopmentDemoAuthenticationAcceptanceTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["development_authentication"], "verified")
 
-    @mock.patch.dict("os.environ", {DEMO_ACCESS_ENV: strong_candidate()}, clear=False)
+    @mock.patch.dict("os.environ", {DEMO_ACCESS_ENV: TEST_CREDENTIAL}, clear=False)
     @override_settings(EOD_DEPLOYMENT_MODE="development", ALLOWED_HOSTS=["127.0.0.1", "testserver"])
     def test_trusted_health_fails_if_persistent_demo_account_is_inactive(self) -> None:
         ensure_development_demo_accounts()
