@@ -10,7 +10,18 @@ from playwright.sync_api import sync_playwright
 
 BASE = os.getenv("EOD_BROWSER_BASE_URL", "http://127.0.0.1:8766").rstrip("/")
 OUT = Path(os.getenv("EOD_BROWSER_EVIDENCE", "artifacts/browser-theme"))
-VIEWPORTS = ((1440, 900), (1024, 768), (390, 844))
+DESKTOP_VIEWPORTS = (
+    (1280, 800),
+    (1366, 768),
+    (1536, 864),
+    (1920, 1080),
+)
+MOBILE_VIEWPORTS = (
+    (390, 844),
+    (412, 915),
+    (430, 932),
+)
+VIEWPORTS = DESKTOP_VIEWPORTS + MOBILE_VIEWPORTS
 THEMES = ("light", "dark")
 PUBLIC_ROUTES = {
     "login": "/accounts/login/",
@@ -81,8 +92,9 @@ def style(node):
     )
 
 
-def screenshot(page, shots: Path, name: str) -> None:
-    page.screenshot(path=shots / f"{name}.png", full_page=True)
+def screenshots(page, shots: Path, name: str) -> None:
+    page.screenshot(path=shots / f"{name}__screen.png", full_page=False)
+    page.screenshot(path=shots / f"{name}__fullpage.png", full_page=True)
 
 
 def resolved_background(page, token):
@@ -113,8 +125,74 @@ def theme(page, value):
 def document_width(page):
     return page.evaluate(
         """() => ({
-            scroll: document.documentElement.scrollWidth,
-            client: document.documentElement.clientWidth,
+            scrollWidth: document.documentElement.scrollWidth,
+            innerWidth: window.innerWidth,
+            clientWidth: document.documentElement.clientWidth,
+        })"""
+    )
+
+
+def rendered_regions(page, surface):
+    surface_box = surface.bounding_box()
+    heading = page.locator(
+        "main h1, h1, main [role='heading'], [role='heading'], main h2"
+    ).first
+    heading_state = None
+    if heading.count() and heading.is_visible():
+        heading_box = heading.bounding_box()
+        heading_state = {
+            "text": heading.inner_text().strip(),
+            "tag": heading.evaluate("node => node.tagName.toLowerCase()"),
+            "box": heading_box,
+        }
+    main = page.locator("main").first
+    main_box = main.bounding_box() if main.count() and main.is_visible() else None
+    return {
+        "heading": heading_state,
+        "content_region": surface_box,
+        "main_region": main_box,
+    }
+
+
+def bind_runtime_errors(page):
+    bucket = {"console_errors": [], "page_errors": []}
+
+    def on_console(message):
+        if message.type == "error":
+            bucket["console_errors"].append(message.text)
+
+    page.on("console", on_console)
+    page.on("pageerror", lambda error: bucket["page_errors"].append(str(error)))
+    return bucket
+
+
+def clear_runtime_errors(bucket):
+    bucket["console_errors"].clear()
+    bucket["page_errors"].clear()
+
+
+def runtime_error_snapshot(bucket):
+    return {
+        "console_errors": list(bucket["console_errors"]),
+        "page_errors": list(bucket["page_errors"]),
+    }
+
+
+def assert_no_runtime_errors(bucket, context):
+    errors = runtime_error_snapshot(bucket)
+    if errors["console_errors"] or errors["page_errors"]:
+        raise AssertionError(f"browser runtime errors {context}: {errors}")
+    return errors
+
+
+def visual_viewport_state(page):
+    return page.evaluate(
+        """() => ({
+            scale: window.visualViewport ? window.visualViewport.scale : 1,
+            width: window.visualViewport ? window.visualViewport.width : innerWidth,
+            height: window.visualViewport ? window.visualViewport.height : innerHeight,
+            offsetLeft: window.visualViewport ? window.visualViewport.offsetLeft : 0,
+            offsetTop: window.visualViewport ? window.visualViewport.offsetTop : 0,
         })"""
     )
 
@@ -125,8 +203,19 @@ def mask_public_demo_password(page):
         password_node.evaluate("node => { node.textContent = '••••••••'; }")
 
 
-def capture_surface(page, shots, report, route, path, mode, width, height):
+def capture_surface(
+    page,
+    shots,
+    report,
+    runtime_errors,
+    route,
+    path,
+    mode,
+    width,
+    height,
+):
     page.set_viewport_size({"width": width, "height": height})
+    clear_runtime_errors(runtime_errors)
     page.goto(BASE + path)
     if route == "login":
         mask_public_demo_password(page)
@@ -135,26 +224,112 @@ def capture_surface(page, shots, report, route, path, mode, width, height):
     actual = style(node)
     expected = resolved_background(page, TOKENS[route])
     width_state = document_width(page)
+    regions = rendered_regions(page, node)
+    page.wait_for_timeout(50)
+    errors = runtime_error_snapshot(runtime_errors)
     key = f"{route}__{mode}__{width}x{height}"
     report["baseline"][key] = {
         **actual,
         "expected_background": expected,
         "document_width": width_state,
+        "rendered": regions,
+        **errors,
     }
-    screenshot(page, shots, key)
-    if width_state["scroll"] > width_state["client"] + 2:
+    screenshots(page, shots, key)
+
+    if width_state["scrollWidth"] > width_state["innerWidth"] + 2:
         raise AssertionError(
             f"document overflow {route} {mode} {width}px: {width_state}"
         )
+    if not regions["heading"] or not regions["heading"]["text"]:
+        raise AssertionError(f"missing rendered heading {route} {mode} {width}px")
+    if not regions["content_region"]:
+        raise AssertionError(f"missing rendered content region {route} {mode} {width}px")
+    assert_no_runtime_errors(runtime_errors, key)
+
     html_scheme = style(page.locator("html"))["scheme"].split()
     if (
-        actual["background"].replace(" ", "")
-        != expected.replace(" ", "")
+        actual["background"].replace(" ", "") != expected.replace(" ", "")
         or mode not in html_scheme
     ):
         raise AssertionError(
             f"theme mismatch {route} {mode}: {actual} {expected} {html_scheme}"
         )
+
+
+def capture_mobile_login_focus(browser, shots, report):
+    context = browser.new_context(
+        viewport={"width": MOBILE_VIEWPORTS[0][0], "height": MOBILE_VIEWPORTS[0][1]},
+        is_mobile=True,
+        has_touch=True,
+    )
+    page = context.new_page()
+    runtime_errors = bind_runtime_errors(page)
+
+    for mode in THEMES:
+        for width, height in MOBILE_VIEWPORTS:
+            page.set_viewport_size({"width": width, "height": height})
+            clear_runtime_errors(runtime_errors)
+            page.goto(BASE + PUBLIC_ROUTES["login"])
+            mask_public_demo_password(page)
+            theme(page, mode)
+            username_input = need(page, "input[name=username]")
+            password_input = need(page, "input[name=password]")
+            before = visual_viewport_state(page)
+            key = f"login_focus__{mode}__{width}x{height}"
+            screenshots(page, shots, f"{key}__unfocused")
+
+            username_input.focus()
+            page.wait_for_timeout(150)
+            username_scale = visual_viewport_state(page)
+            username_font_size = float(
+                username_input.evaluate(
+                    "node => parseFloat(getComputedStyle(node).fontSize)"
+                )
+            )
+            password_input.focus()
+            page.wait_for_timeout(150)
+            password_scale = visual_viewport_state(page)
+            password_font_size = float(
+                password_input.evaluate(
+                    "node => parseFloat(getComputedStyle(node).fontSize)"
+                )
+            )
+            width_state = document_width(page)
+            errors = runtime_error_snapshot(runtime_errors)
+            report["mobile_focus"][key] = {
+                "before": before,
+                "username_focus": username_scale,
+                "password_focus": password_scale,
+                "username_font_size": username_font_size,
+                "password_font_size": password_font_size,
+                "document_width": width_state,
+                **errors,
+            }
+            screenshots(page, shots, f"{key}__focused")
+
+            if username_font_size < 16 or password_font_size < 16:
+                raise AssertionError(
+                    f"mobile login input font too small {width}px: "
+                    f"{username_font_size}px/{password_font_size}px"
+                )
+            for label, state in (
+                ("before", before),
+                ("username", username_scale),
+                ("password", password_scale),
+            ):
+                if abs(float(state["scale"]) - 1.0) > 0.01:
+                    raise AssertionError(
+                        f"mobile login visualViewport zoom {label} {mode} "
+                        f"{width}px: {state}"
+                    )
+            if width_state["scrollWidth"] > width_state["innerWidth"] + 2:
+                raise AssertionError(
+                    f"mobile login focus overflow {mode} {width}px: {width_state}"
+                )
+            assert_no_runtime_errors(runtime_errors, key)
+
+    context.close()
 
 
 def activate_editor_caret(page):
@@ -201,10 +376,13 @@ def main():
         "meta": {
             "base_url": BASE,
             "themes": THEMES,
+            "desktop_viewports": DESKTOP_VIEWPORTS,
+            "mobile_viewports": MOBILE_VIEWPORTS,
             "viewports": VIEWPORTS,
             "public_routes": PUBLIC_ROUTES,
         },
         "baseline": {},
+        "mobile_focus": {},
         "open_states": {},
     }
     password = os.getenv("EOD_BROWSER_PASSWORD", "").strip()
@@ -213,7 +391,10 @@ def main():
 
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
-        page = browser.new_page(viewport={"width": 1440, "height": 900})
+        page = browser.new_page(
+            viewport={"width": DESKTOP_VIEWPORTS[0][0], "height": DESKTOP_VIEWPORTS[0][1]}
+        )
+        runtime_errors = bind_runtime_errors(page)
 
         for route, path in PUBLIC_ROUTES.items():
             for mode in THEMES:
@@ -222,6 +403,7 @@ def main():
                         page,
                         shots,
                         report,
+                        runtime_errors,
                         route,
                         path,
                         mode,
@@ -229,28 +411,12 @@ def main():
                         height,
                     )
 
-        page.set_viewport_size({"width": 390, "height": 844})
-        page.goto(BASE + PUBLIC_ROUTES["login"])
-        mask_public_demo_password(page)
-        theme(page, "dark")
-        username_input = need(page, "input[name=username]")
-        username_input.focus()
-        font_size = float(
-            username_input.evaluate("node => parseFloat(getComputedStyle(node).fontSize)")
-        )
-        if font_size < 16:
-            raise AssertionError(f"mobile login input font too small: {font_size}px")
-        login_width = document_width(page)
-        if login_width["scroll"] > login_width["client"] + 2:
-            raise AssertionError(f"mobile login focus overflow: {login_width}")
-        report["open_states"]["login_mobile_focus"] = {
-            **style(username_input),
-            "font_size": font_size,
-            "document_width": login_width,
-        }
-        screenshot(page, shots, "transient__login_focus__dark__390x844")
+        capture_mobile_login_focus(browser, shots, report)
 
-        page.set_viewport_size({"width": 1440, "height": 900})
+        page.set_viewport_size(
+            {"width": DESKTOP_VIEWPORTS[0][0], "height": DESKTOP_VIEWPORTS[0][1]}
+        )
+        clear_runtime_errors(runtime_errors)
         page.goto(BASE + PUBLIC_ROUTES["login"])
         need(page, "input[name=username]").fill(
             os.getenv("EOD_BROWSER_USERNAME", "operator.demo")
@@ -258,7 +424,11 @@ def main():
         need(page, "input[name=password]").fill(password)
         need(page, "button[type=submit]").click()
         need(page, "[data-direction-a-shell]")
+        assert_no_runtime_errors(runtime_errors, "authenticated login")
+
+        clear_runtime_errors(runtime_errors)
         discover(page)
+        assert_no_runtime_errors(runtime_errors, "OPJ route discovery")
         report["meta"]["authenticated_routes"] = dict(ROUTES)
 
         for route, path in ROUTES.items():
@@ -268,6 +438,7 @@ def main():
                         page,
                         shots,
                         report,
+                        runtime_errors,
                         route,
                         path,
                         mode,
@@ -285,6 +456,7 @@ def main():
             )
         report["meta"]["baseline_state_count"] = expected_baselines
 
+        clear_runtime_errors(runtime_errors)
         page.set_viewport_size({"width": 390, "height": 844})
         page.goto(BASE + ROUTES["home"])
         theme(page, "dark")
@@ -295,7 +467,7 @@ def main():
         if toggle.get_attribute("aria-expanded") != "true":
             raise AssertionError("mobile shell toggle did not publish expanded state")
         report["open_states"]["mobile_navigation"] = style(sidebar)
-        screenshot(page, shots, "transient__mobile_navigation__dark__390x844")
+        screenshots(page, shots, "transient__mobile_navigation__dark__390x844")
         page.keyboard.press("Escape")
         page.wait_for_function("()=>!document.body.classList.contains('da-nav-open')")
 
@@ -305,7 +477,9 @@ def main():
         create_path = need(page, 'a[href*="/documents/"]').evaluate(
             """node => {
                 const links = Array.from(document.querySelectorAll('a[href]'));
-                const found = links.find(link => link.textContent.trim() === 'Новый черновик');
+                const found = links.find(
+                    link => link.textContent.trim() === 'Новый черновик'
+                );
                 return found ? new URL(found.href).pathname : '';
             }"""
         )
@@ -318,7 +492,11 @@ def main():
         if not equipment_dialog.evaluate("dialog => dialog.open"):
             raise AssertionError("equipment selector dialog did not open")
         report["open_states"]["document_equipment_dialog"] = style(equipment_dialog)
-        screenshot(page, shots, "transient__document_equipment_dialog__dark__1440x900")
+        screenshots(
+            page,
+            shots,
+            "transient__document_equipment_dialog__dark__1440x900",
+        )
         page.keyboard.press("Escape")
 
         page.goto(BASE + ROUTES["dispatching"])
@@ -328,7 +506,7 @@ def main():
         if not dispatching_filter.evaluate("details => details.open"):
             raise AssertionError("dispatching filter disclosure did not open")
         report["open_states"]["dispatching_filters"] = style(dispatching_filter)
-        screenshot(page, shots, "transient__dispatching_filters__dark__1440x900")
+        screenshots(page, shots, "transient__dispatching_filters__dark__1440x900")
 
         page.goto(BASE + ROUTES["defect_registry"])
         theme(page, "dark")
@@ -336,14 +514,14 @@ def main():
         report["open_states"]["defect_filters"] = style(
             need(page, ".defect-filter-grid")
         )
-        screenshot(page, shots, "transient__defect_filters__dark__1440x900")
+        screenshots(page, shots, "transient__defect_filters__dark__1440x900")
 
         page.goto(BASE + ROUTES["defect_registration"])
         theme(page, "dark")
         need(page, ".defect-picker-trigger").click()
         picker = need(page, ".defect-picker-panel")
         report["open_states"]["defect_datetime"] = style(picker)
-        screenshot(page, shots, "transient__defect_datetime__dark__1440x900")
+        screenshots(page, shots, "transient__defect_datetime__dark__1440x900")
         page.keyboard.press("Escape")
         picker.wait_for(state="hidden")
 
@@ -353,7 +531,7 @@ def main():
             report["open_states"][f"defect_{kind}"] = style(
                 need(page, f".defect-tree-selector--{kind} .defect-tree-panel")
             )
-            screenshot(page, shots, f"transient__defect_{kind}__dark__1440x900")
+            screenshots(page, shots, f"transient__defect_{kind}__dark__1440x900")
             field.press("Escape")
 
         page.goto(BASE + ROUTES["defect_registry"])
@@ -364,7 +542,7 @@ def main():
             defect_row = defect_rows.first
             defect_row.hover()
             report["open_states"]["defect_hover"] = style(defect_row)
-            screenshot(page, shots, "transient__defect_hover__dark__1440x900")
+            screenshots(page, shots, "transient__defect_hover__dark__1440x900")
 
         page.goto(BASE + ROUTES["registered_opj"])
         theme(page, "dark")
@@ -372,36 +550,42 @@ def main():
         report["open_states"]["opj_settings"] = style(
             need(page, ".journal-settings-dialog")
         )
-        screenshot(page, shots, "transient__opj_settings__dark__1440x900")
+        screenshots(page, shots, "transient__opj_settings__dark__1440x900")
 
         page.goto(BASE + ROUTES["draft_workspace"])
         theme(page, "dark")
         need(page, "[data-open-view-drawer]").click()
         report["open_states"]["opj_drawer"] = style(need(page, "[data-view-drawer]"))
-        screenshot(page, shots, "transient__opj_drawer__dark__1440x900")
+        screenshots(page, shots, "transient__opj_drawer__dark__1440x900")
         need(page, "[data-close-view-drawer]").click()
         activate_editor_caret(page)
         need(page, "[data-reference-trigger]:not([disabled])").click()
         report["open_states"]["opj_reference"] = style(
             need(page, "[data-reference-picker]")
         )
-        screenshot(page, shots, "transient__opj_reference__dark__1440x900")
+        screenshots(page, shots, "transient__opj_reference__dark__1440x900")
 
         page.goto(BASE + ROUTES["account_settings"])
         theme(page, "dark")
         select = need(page, '.interface-settings-form select[name="theme"]')
         select.focus()
         report["open_states"]["account_theme"] = style(select)
-        screenshot(page, shots, "transient__account_focus__dark__1440x900")
+        screenshots(page, shots, "transient__account_focus__dark__1440x900")
+        assert_no_runtime_errors(runtime_errors, "transient states")
 
+        clear_runtime_errors(runtime_errors)
         page.goto(BASE + ROUTES["registered_opj"])
         theme(page, "dark")
         page.emulate_media(media="print")
         printed = style(page.locator("html"))
-        report["print"] = printed
+        report["print"] = {
+            **printed,
+            **runtime_error_snapshot(runtime_errors),
+        }
         if "light" not in printed["scheme"]:
             raise AssertionError("print isolation failed")
-        screenshot(page, shots, "registered_opj__print__light__1440x900")
+        screenshots(page, shots, "registered_opj__print__light__1440x900")
+        assert_no_runtime_errors(runtime_errors, "print isolation")
 
         browser.close()
 
