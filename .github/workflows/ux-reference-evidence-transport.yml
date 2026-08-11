@@ -94,7 +94,7 @@ jobs:
               re.DOTALL,
           )
           source, function_count = pattern.subn(
-              new_function + "\n\ndef discover(page):",
+              lambda _: new_function + "\n\ndef discover(page):",
               source,
               count=1,
           )
