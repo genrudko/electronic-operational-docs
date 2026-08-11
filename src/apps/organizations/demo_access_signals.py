@@ -23,6 +23,15 @@ logger = logging.getLogger(__name__)
 def enforce_demo_access_policy(sender, **kwargs) -> None:
     if sender.label != "organizations":
         return
+    # Django emits post_migrate while constructing and flushing its isolated
+    # test database. Automatic Development demo bootstrap there would pollute
+    # test fixtures, consume auth_user identities, and make account-creation
+    # tests order-dependent. Tests that exercise demo access call the bootstrap
+    # functions explicitly; real Development migrations keep automatic policy
+    # enforcement enabled.
+    if settings.TESTING:
+        logger.info("Demo access automatic policy skipped for isolated test database.")
+        return
     try:
         created = 0
         if settings.EOD_DEPLOYMENT_MODE == "development" and injected_demo_password():
