@@ -123,7 +123,11 @@ jobs:
         run: |
           set -euo pipefail
           evidence_dir="$RUNNER_TEMP/browser-theme"
+          raw_log="$evidence_dir/browser-run.raw.log"
+          sanitized_log="$evidence_dir/browser-run.sanitized.log"
           mkdir -p "$evidence_dir"
+
+          set +e
           docker run --rm \
             --network host \
             --env EOD_BROWSER_BASE_URL=http://127.0.0.1:8766 \
@@ -134,7 +138,30 @@ jobs:
             --volume "$evidence_dir:/evidence-output" \
             --workdir /workspace \
             eod-browser-evidence:ci \
-            python tests/browser_theme/run.py
+            python tests/browser_theme/run.py \
+            >"$raw_log" 2>&1
+          browser_status=$?
+          set -e
+
+          python scripts/secret_hygiene.py redact \
+            --input "$raw_log" \
+            --output "$sanitized_log" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD \
+            --env EOD_DEMO_USER_PASSWORD
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$sanitized_log" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD \
+            --env EOD_DEMO_USER_PASSWORD
+          printf 'diagnostics_verified=true\n' >>"$GITHUB_OUTPUT"
+          cat "$sanitized_log"
+          rm -f "$raw_log"
+
+          if (( browser_status != 0 )); then
+            exit "$browser_status"
+          fi
+
           python scripts/secret_hygiene.py verify-sanitized \
             --input "$evidence_dir/computed-styles.json" \
             --env DJANGO_SECRET_KEY \
@@ -148,6 +175,15 @@ jobs:
         with:
           name: ux-platform-browser-evidence-${{ github.run_id }}
           path: ${{ runner.temp }}/browser-theme
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload verified browser diagnostics after failure
+        if: ${{ failure() && steps.browser-evidence.outputs.diagnostics_verified == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: browser-evidence-diagnostics-${{ github.run_id }}
+          path: ${{ runner.temp }}/browser-theme/browser-run.sanitized.log
           if-no-files-found: error
           retention-days: 7
 
@@ -241,7 +277,7 @@ jobs:
             "$RUNNER_TEMP/development-db-port.raw.txt" \
             "$RUNNER_TEMP/development-diagnostics.raw.txt" \
             "$RUNNER_TEMP/development-diagnostics.sanitized.txt"
-          rm -rf "$RUNNER_TEMP/browser-theme"
+          sudo rm -rf "$RUNNER_TEMP/browser-theme"
 
       - name: Verify development checkout remains exactly clean
         if: ${{ always() }}
