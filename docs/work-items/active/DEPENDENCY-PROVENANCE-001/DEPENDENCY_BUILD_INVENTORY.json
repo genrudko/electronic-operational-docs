@@ -169,7 +169,7 @@
         "actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803"
       ],
       "name": "actions/checkout",
-      "occurrences": 14,
+      "occurrences": 13,
       "paths": [
         ".github/workflows/auto-001a-foundation-ci.yml",
         ".github/workflows/auto-001b-controller-ci.yml",
@@ -224,7 +224,7 @@
         "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
       ],
       "name": "actions/upload-artifact",
-      "occurrences": 12,
+      "occurrences": 11,
       "paths": [
         ".github/workflows/auto-001a-foundation-ci.yml",
         ".github/workflows/auto-001b-controller-ci.yml",
@@ -241,28 +241,14 @@
       "class": "image",
       "conflicting_declarations": false,
       "declarations": [
-        "mcr.microsoft.com/playwright/python@sha256:678457c4c323b981d8b4befc57b95366bb1bb6aa30057b1269f6b171e8d9975a"
-      ],
-      "name": "mcr.microsoft.com/playwright/python",
-      "occurrences": 2,
-      "paths": [
-        ".github/workflows/development-stack.yml",
-        "supply-chain/Dockerfile.browser"
-      ]
-    },
-    {
-      "class": "image",
-      "conflicting_declarations": false,
-      "declarations": [
         "postgres@sha256:882236b897e39051d2368c5ccc6cda944904723506b2dfc97f2a8f5bc9afa382"
       ],
       "name": "postgres",
-      "occurrences": 9,
+      "occurrences": 8,
       "paths": [
         ".github/workflows/backup-restore-drill.yml",
         ".github/workflows/ci.yml",
         ".github/workflows/dependency-provenance.yml",
-        ".github/workflows/development-stack.yml",
         "compose.development.yaml",
         "compose.preview.yaml",
         "compose.production.yaml",
@@ -284,56 +270,56 @@
       ]
     }
   ],
-  "entries_total": 90,
+  "entries_total": 85,
   "entry_format": "full records in deterministic JSON shards",
   "entry_shards": [
     {
-      "entry_count": 23,
+      "entry_count": 22,
       "first_id": "INP-0001",
-      "last_id": "INP-0023",
+      "last_id": "INP-0022",
       "path": "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.01.json",
-      "sha256": "9ab271ef18b3f19d6e2ab5e716613c95d35adc22d50399360aefa3ccbe70b01a"
+      "sha256": "4cba465c7702058e4e9034336973bdd1d33ecc35cf7ada2eb64c35a0c87154e7"
     },
     {
-      "entry_count": 23,
-      "first_id": "INP-0024",
-      "last_id": "INP-0046",
+      "entry_count": 22,
+      "first_id": "INP-0023",
+      "last_id": "INP-0044",
       "path": "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.02.json",
-      "sha256": "845dc4b705c176b9675662f26a8e69bd0bad8c0536fa29edc8ca49b712b5879b"
+      "sha256": "41bffbbd546e9217398e40eb61c57dd26fcc797a532559b5f28f01436fca8182"
     },
     {
-      "entry_count": 23,
-      "first_id": "INP-0047",
-      "last_id": "INP-0069",
+      "entry_count": 22,
+      "first_id": "INP-0045",
+      "last_id": "INP-0066",
       "path": "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.03.json",
-      "sha256": "92aa08faff6fb91b5c6da4f6f191095ee957740a50797e9a93076a7d04db4669"
+      "sha256": "f7e91ee17ee7cfd0638f7de986ab67288f1f13e4599d51a24d7ceb576a244891"
     },
     {
-      "entry_count": 21,
-      "first_id": "INP-0070",
-      "last_id": "INP-0090",
+      "entry_count": 19,
+      "first_id": "INP-0067",
+      "last_id": "INP-0085",
       "path": "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.04.json",
-      "sha256": "831a2fc24cca0776f356c8ca1fe17cce74d6e2f224dc0de81c62069410ba9429"
+      "sha256": "8f04a8ee2bbe52cf038212298219a7d4db3c74aa137b54a2af844a3b269d3dd8"
     }
   ],
   "floating_input_ids": [
-    "INP-0015",
+    "INP-0013",
+    "INP-0052",
     "INP-0056",
-    "INP-0060",
+    "INP-0061",
     "INP-0065",
     "INP-0069",
+    "INP-0072",
     "INP-0074",
+    "INP-0076",
     "INP-0077",
+    "INP-0078",
     "INP-0079",
+    "INP-0080",
     "INP-0081",
     "INP-0082",
-    "INP-0083",
     "INP-0084",
-    "INP-0085",
-    "INP-0086",
-    "INP-0087",
-    "INP-0089",
-    "INP-0090"
+    "INP-0085"
   ],
   "generation": {
     "deterministic": true,
@@ -359,8 +345,8 @@
     "INP-0010",
     "INP-0011",
     "INP-0012",
-    "INP-0013",
     "INP-0014",
+    "INP-0015",
     "INP-0016",
     "INP-0017",
     "INP-0018",
@@ -397,14 +383,13 @@
     "INP-0049",
     "INP-0050",
     "INP-0051",
-    "INP-0052",
     "INP-0053",
     "INP-0054",
     "INP-0055",
     "INP-0057",
     "INP-0058",
     "INP-0059",
-    "INP-0061",
+    "INP-0060",
     "INP-0062",
     "INP-0063",
     "INP-0064",
@@ -413,12 +398,8 @@
     "INP-0068",
     "INP-0070",
     "INP-0071",
-    "INP-0072",
     "INP-0073",
-    "INP-0075",
-    "INP-0076",
-    "INP-0078",
-    "INP-0080"
+    "INP-0075"
   ],
   "limitations": [
     "Network registries are not queried; future tag movement is outside repository evidence.",
@@ -435,7 +416,7 @@
     ".github/workflows/ci.yml": "8c5de32f8e1232804de2dd1d5ff47a4716f5bc47966def46eaeebe410557ae5e",
     ".github/workflows/dependency-provenance.yml": "d13c3c12660a2f4633ea2e22506674e70337dda4fab6c9d60d63b9a74eb62cab",
     ".github/workflows/deployment-profile.yml": "c1b9fe5de2dca9fa282bd19fe7eec87963c7c8ed368d8964a88976c07b6658de",
-    ".github/workflows/development-stack.yml": "14a777562eb37c979f766230e4f344f519e7163df5ec4a9044a847b94173d2d5",
+    ".github/workflows/development-stack.yml": "ae97a01a1f46b61d8a98eb556821c9dbfa07434de232b223023c110cec62fe67",
     ".github/workflows/documentation-contract.yml": "5f35d6a9a21f57ce6b14ffe72f655a4cd18661fe664173da4a7e0fd5a8919bff",
     ".github/workflows/eod-hot-refresh.yml": "8e60fdc3a4992eefee0a852fbb5ddca2862a6d3545807f8e31a8923540b4c609",
     ".github/workflows/secret-hygiene.yml": "93a89ee3912a5c12b28a3acf865342cc5ece13841421ee7de4fd9470d9374bb5",
@@ -506,21 +487,21 @@
   "totals": {
     "applicable_executable_sources": 71,
     "by_class": {
-      "container-image": 14,
+      "container-image": 12,
       "container-output": 1,
       "external-asset": 1,
-      "github-action": 39,
+      "github-action": 37,
       "python-build": 1,
-      "python-install": 24,
+      "python-install": 23,
       "python-optional": 3,
       "python-runtime": 6,
       "python-transitive": 1
     },
     "conflicting_owner_groups": 0,
-    "duplicate_owner_groups": 7,
+    "duplicate_owner_groups": 6,
     "floating_inputs": 17,
-    "immutable_inputs": 72,
-    "inventory_entries": 90,
+    "immutable_inputs": 67,
+    "inventory_entries": 85,
     "source_completeness_digests": 73,
     "source_files": 21,
     "tracked_files": 924
