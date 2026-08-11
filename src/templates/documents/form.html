@@ -3,124 +3,89 @@
 {% block title %}{{ page_title }} · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading compact">
+<section class="da-page-header da-page-header-compact">
     <div>
-        <div class="eyebrow">ДОКУМЕНТАРНОЕ ЯДРО · PATCH 006.1</div>
+        <span class="ux-kicker">Документарное ядро · Patch 006.1</span>
         <h1>{{ page_title }}</h1>
         <p>Содержимое черновика можно изменять до серверной регистрации.</p>
     </div>
     {% if document %}
-        <a href="{% url 'documents:detail' document.public_id %}">Вернуться к документу</a>
+        <a class="da-button is-tertiary" href="{% url 'documents:detail' document.public_id %}">Вернуться к документу</a>
     {% else %}
-        <a href="{% url 'documents:list' %}">К списку документов</a>
+        <a class="da-button is-tertiary" href="{% url 'documents:list' %}">К списку документов</a>
     {% endif %}
 </section>
 
-<section class="profile-card document-form-card">
-    <form class="document-form" method="post">
+<section class="da-card document-form-card">
+    <form class="ux-stack document-form" method="post">
         {% csrf_token %}
-        {% if form.non_field_errors %}
-            <div class="form-errors">{{ form.non_field_errors }}</div>
-        {% endif %}
+        {% if form.non_field_errors %}<div class="ux-form-errors" role="alert">{{ form.non_field_errors }}</div>{% endif %}
 
-        <label for="{{ form.document_type.id_for_label }}">{{ form.document_type.label }}</label>
-        {{ form.document_type }}
-        <div class="field-errors">{{ form.document_type.errors }}</div>
+        <div class="da-field">
+            <label for="{{ form.document_type.id_for_label }}">{{ form.document_type.label }}</label>
+            {{ form.document_type }}
+            {% if form.document_type.errors %}<div class="ux-field-errors">{{ form.document_type.errors }}</div>{% endif %}
+        </div>
+        <div class="da-field">
+            <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
+            {{ form.title }}
+            {% if form.title.errors %}<div class="ux-field-errors">{{ form.title.errors }}</div>{% endif %}
+        </div>
+        <div class="da-field">
+            <label for="{{ form.subject.id_for_label }}">{{ form.subject.label }}</label>
+            {{ form.subject }}
+            {% if form.subject.errors %}<div class="ux-field-errors">{{ form.subject.errors }}</div>{% endif %}
+        </div>
+        <div class="da-field">
+            <label for="{{ form.body.id_for_label }}">{{ form.body.label }}</label>
+            {{ form.body }}
+            {% if form.body.errors %}<div class="ux-field-errors">{{ form.body.errors }}</div>{% endif %}
+        </div>
 
-        <label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>
-        {{ form.title }}
-        <div class="field-errors">{{ form.title.errors }}</div>
-
-        <label for="{{ form.subject.id_for_label }}">{{ form.subject.label }}</label>
-        {{ form.subject }}
-        <div class="field-errors">{{ form.subject.errors }}</div>
-
-        <label for="{{ form.body.id_for_label }}">{{ form.body.label }}</label>
-        {{ form.body }}
-        <div class="field-errors">{{ form.body.errors }}</div>
-
-        <section
-            class="equipment-selector"
-            data-equipment-selector
-            data-endpoint="{% url 'equipment:selector_options' %}"
-        >
-            <div class="equipment-selector-heading">
+        <section class="da-panel equipment-selector" data-equipment-selector data-endpoint="{% url 'equipment:selector_options' %}">
+            <div class="da-panel-heading equipment-selector-heading">
                 <div>
                     <h2>Оборудование документа</h2>
-                    <p>
-                        Поиск выполняется на сервере порциями по 50 записей.
-                        В браузер не загружается весь реестр.
-                    </p>
+                    <p class="ux-muted">Поиск выполняется на сервере порциями по 50 записей. В браузер не загружается весь реестр.</p>
                 </div>
-                <button
-                    class="button secondary"
-                    type="button"
-                    data-equipment-selector-open
-                >
-                    Выбрать оборудование
-                </button>
+                <button class="da-button is-secondary" type="button" data-equipment-selector-open>Выбрать оборудование</button>
             </div>
 
-            <div data-equipment-hidden-inputs hidden>
-                {{ form.equipment_assets }}
-            </div>
+            <div data-equipment-hidden-inputs hidden>{{ form.equipment_assets }}</div>
             {{ form.selected_equipment_rows|json_script:"equipment-selector-initial" }}
 
-            <div class="equipment-selector-summary">
-                Выбрано: <strong data-equipment-selected-count>0</strong>
-            </div>
-            <div
-                class="equipment-selected-list"
-                data-equipment-selected-list
-                aria-live="polite"
-            ></div>
-            <p class="field-help-text">{{ form.equipment_assets.help_text }}</p>
-            <div class="field-errors">{{ form.equipment_assets.errors }}</div>
+            <div class="equipment-selector-summary">Выбрано: <strong data-equipment-selected-count>0</strong></div>
+            <div class="equipment-selected-list" data-equipment-selected-list aria-live="polite"></div>
+            <p class="ux-muted">{{ form.equipment_assets.help_text }}</p>
+            {% if form.equipment_assets.errors %}<div class="ux-field-errors">{{ form.equipment_assets.errors }}</div>{% endif %}
 
-            <dialog class="equipment-selector-dialog" data-equipment-dialog>
+            <dialog class="ux-dialog equipment-selector-dialog" data-equipment-dialog>
                 <div class="equipment-selector-dialog-shell">
-                    <header>
+                    <header class="da-panel-heading">
                         <div>
-                            <div class="eyebrow">СЕРВЕРНЫЙ СЕЛЕКТОР</div>
+                            <span class="ux-kicker">Серверный селектор</span>
                             <h2>Выбор оборудования</h2>
-                            <p>
-                                Используйте энергообъект, категорию, вид оборудования,
-                                код, диспетчерское наименование или алиас.
-                            </p>
+                            <p class="ux-muted">Используйте энергообъект, категорию, вид оборудования, код, диспетчерское наименование или алиас.</p>
                         </div>
-                        <button
-                            type="button"
-                            class="icon-button"
-                            data-equipment-dialog-close
-                            aria-label="Закрыть окно выбора"
-                        >×</button>
+                        <button type="button" class="da-icon-button" data-equipment-dialog-close aria-label="Закрыть окно выбора">×</button>
                     </header>
 
                     <div class="equipment-selector-layout">
-                        <aside class="equipment-selector-filters">
-                            <label for="equipment-selector-search">Поиск</label>
-                            <input
-                                id="equipment-selector-search"
-                                type="search"
-                                placeholder="КТП-01, ВЭУ, код или старое наименование"
-                                data-equipment-search
-                            >
-
-                            <label for="equipment-selector-site">Энергообъект</label>
-                            <select id="equipment-selector-site" data-equipment-site>
-                                <option value="">Все энергообъекты</option>
-                            </select>
-
+                        <aside class="equipment-selector-filters ux-stack is-compact">
+                            <div class="da-field">
+                                <label for="equipment-selector-search">Поиск</label>
+                                <input id="equipment-selector-search" type="search" placeholder="КТП-01, ВЭУ, код или старое наименование" data-equipment-search>
+                            </div>
+                            <div class="da-field">
+                                <label for="equipment-selector-site">Энергообъект</label>
+                                <select id="equipment-selector-site" data-equipment-site><option value="">Все энергообъекты</option></select>
+                            </div>
                             <h3>Категории</h3>
-                            <div
-                                class="equipment-category-list"
-                                data-equipment-categories
-                            ></div>
-
-                            <label for="equipment-selector-type">Вид оборудования</label>
-                            <select id="equipment-selector-type" data-equipment-type>
-                                <option value="">Все виды</option>
-                            </select>
+                            <div class="equipment-category-list" data-equipment-categories></div>
+                            <div class="da-field">
+                                <label for="equipment-selector-type">Вид оборудования</label>
+                                <select id="equipment-selector-type" data-equipment-type><option value="">Все виды</option></select>
+                            </div>
                         </aside>
 
                         <main class="equipment-selector-results-panel">
@@ -128,65 +93,31 @@
                                 <strong data-equipment-result-total>Найдено: 0</strong>
                                 <span data-equipment-loading hidden>Загрузка…</span>
                             </div>
-                            <div
-                                class="equipment-selector-results"
-                                data-equipment-results
-                            ></div>
-                            <button
-                                type="button"
-                                class="button secondary"
-                                data-equipment-load-more
-                                hidden
-                            >
-                                Показать ещё
-                            </button>
+                            <div class="equipment-selector-results" data-equipment-results></div>
+                            <button type="button" class="da-button is-secondary" data-equipment-load-more hidden>Показать ещё</button>
                         </main>
 
                         <aside class="equipment-selector-picked-panel">
-                            <h3>
-                                Выбрано:
-                                <span data-equipment-dialog-selected-count>0</span>
-                            </h3>
-                            <button
-                                type="button"
-                                class="text-button"
-                                data-equipment-clear
-                            >
-                                Очистить выбор
-                            </button>
-                            <div
-                                class="equipment-selector-picked"
-                                data-equipment-dialog-selected
-                            ></div>
+                            <h3>Выбрано: <span data-equipment-dialog-selected-count>0</span></h3>
+                            <button type="button" class="da-button is-tertiary is-compact" data-equipment-clear>Очистить выбор</button>
+                            <div class="equipment-selector-picked" data-equipment-dialog-selected></div>
                         </aside>
                     </div>
 
-                    <footer>
-                        <button
-                            class="button"
-                            type="button"
-                            data-equipment-apply
-                        >
-                            Применить выбор
-                        </button>
-                        <button
-                            class="button secondary"
-                            type="button"
-                            data-equipment-dialog-close
-                        >
-                            Закрыть
-                        </button>
+                    <footer class="ux-form-actions">
+                        <button class="da-button" type="button" data-equipment-apply>Применить выбор</button>
+                        <button class="da-button is-secondary" type="button" data-equipment-dialog-close>Закрыть</button>
                     </footer>
                 </div>
             </dialog>
         </section>
 
-        <div class="form-actions">
-            <button class="button" type="submit">{{ submit_label }}</button>
+        <div class="ux-form-actions">
+            <button class="da-button" type="submit">{{ submit_label }}</button>
             {% if document %}
-                <a href="{% url 'documents:detail' document.public_id %}">Отмена</a>
+                <a class="da-button is-tertiary" href="{% url 'documents:detail' document.public_id %}">Отмена</a>
             {% else %}
-                <a href="{% url 'documents:list' %}">Отмена</a>
+                <a class="da-button is-tertiary" href="{% url 'documents:list' %}">Отмена</a>
             {% endif %}
         </div>
     </form>
