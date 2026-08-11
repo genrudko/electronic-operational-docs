@@ -1,45 +1,46 @@
-/* UX-FOUNDATION-001 Repair 5: reference-style status chips and lifecycle semantics. */
+/* UX-FOUNDATION-001 Repair 5
+ * Current DEFECT presentation owner. Domain status semantics stay local to
+ * DEFECT, while colour, focus and surface semantics are consumed from the
+ * UX-PLATFORM token layer.
+ */
 
 :root {
-    --da-status-registered: #1769aa;
-    --da-status-registered-soft: #e7f2fb;
-    --da-status-progress: #b85608;
-    --da-status-progress-soft: #fff0df;
-    --da-status-resolved: #237b47;
-    --da-status-resolved-soft: #e5f4ea;
-    --da-status-closed: #465568;
-    --da-status-closed-soft: #edf1f4;
-    --da-lifecycle-complete: #317c7a;
-    --da-lifecycle-complete-soft: #f0f6f6;
+    --da-status-registered: var(--theme-primary);
+    --da-status-registered-soft: var(--theme-primary-soft);
+    --da-status-progress: var(--theme-warning);
+    --da-status-progress-soft: var(--theme-warning-soft);
+    --da-status-resolved: var(--theme-success);
+    --da-status-resolved-soft: var(--theme-success-soft);
+    --da-status-closed: var(--theme-text-muted);
+    --da-status-closed-soft: var(--theme-control-disabled);
+    --da-lifecycle-complete: var(--theme-info);
+    --da-lifecycle-complete-soft: var(--theme-info-soft);
 }
 
-/*
- * Registry/detail status labels follow the approved Direction A poster:
- * a calm tinted pill, a distinct dot and normal-case text.
- */
+/* Registry/detail status labels share one DEFECT-domain mapping. */
 .defect-da-status {
     display: inline-flex !important;
-    width: auto !important;
-    max-width: 100% !important;
+    width: max-content !important;
+    max-width: none !important;
     min-height: 30px !important;
     gap: 7px;
     align-items: center;
     justify-content: flex-start;
     padding: 5px 11px !important;
-    border: 1px solid #b9d8ee !important;
-    border-radius: 999px !important;
+    border: 1px solid color-mix(in srgb, var(--da-status-registered) 38%, var(--theme-border)) !important;
+    border-radius: var(--theme-radius-pill) !important;
     background: var(--da-status-registered-soft) !important;
     color: var(--da-status-registered) !important;
     box-shadow: none !important;
-    font-size: .71rem !important;
+    font-size: var(--theme-font-size-xs) !important;
     font-weight: 800 !important;
     letter-spacing: 0 !important;
-    line-height: 1.15 !important;
+    line-height: 1.2 !important;
     text-align: left;
     text-transform: none !important;
-    white-space: nowrap;
-    overflow-wrap: normal;
-    word-break: normal;
+    white-space: nowrap !important;
+    overflow-wrap: normal !important;
+    word-break: keep-all !important;
 }
 
 .defect-da-status::before {
@@ -49,23 +50,23 @@
     flex: 0 0 7px;
     border-radius: 50%;
     background: currentColor;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, .72);
+    box-shadow: 0 0 0 2px var(--theme-surface);
 }
 
 .defect-da-status[data-status="IN_PROGRESS"] {
-    border-color: #efc393 !important;
+    border-color: color-mix(in srgb, var(--da-status-progress) 42%, var(--theme-border)) !important;
     background: var(--da-status-progress-soft) !important;
     color: var(--da-status-progress) !important;
 }
 
 .defect-da-status[data-status="RESOLVED"] {
-    border-color: #afd8bc !important;
+    border-color: color-mix(in srgb, var(--da-status-resolved) 42%, var(--theme-border)) !important;
     background: var(--da-status-resolved-soft) !important;
     color: var(--da-status-resolved) !important;
 }
 
 .defect-da-status[data-status="CLOSED"] {
-    border-color: #c8d0d8 !important;
+    border-color: var(--theme-border-strong) !important;
     background: var(--da-status-closed-soft) !important;
     color: var(--da-status-closed) !important;
 }
@@ -73,7 +74,7 @@
 .defect-da-status.large {
     min-height: 34px !important;
     padding: 7px 13px !important;
-    font-size: .75rem !important;
+    font-size: var(--theme-font-size-sm) !important;
 }
 
 .defect-da-work-status {
@@ -82,24 +83,31 @@
 }
 
 /*
- * Lifecycle semantics are deliberately separate from registry status chips:
- * completed = neutral card + teal check;
- * current = semantic status colour;
- * future = quiet neutral placeholder.
+ * Lifecycle state is expressed with explicit surface/border/text semantics.
+ * Future/disabled steps remain secondary, but the whole card is never faded
+ * with opacity because that destroys text and icon contrast together.
  */
 .defect-da-lifecycle-card .defect-lifecycle li {
-    border-color: #e3e8ed;
-    background: #fafbfc;
-    color: #8d99a6;
-    opacity: .25;
+    border-color: var(--theme-border);
+    background: var(--theme-surface-soft);
+    color: var(--theme-text-muted);
+    opacity: 1;
     box-shadow: none;
     transform: none;
 }
 
 .defect-da-lifecycle-card .defect-lifecycle li .defect-lifecycle-marker {
-    border-color: #d2d9e0;
+    border-color: var(--theme-border-strong);
     background: var(--theme-surface);
-    color: #9aa5b0;
+    color: var(--theme-text-muted);
+}
+
+.defect-da-lifecycle-card .defect-lifecycle li strong {
+    color: var(--theme-text-muted);
+}
+
+.defect-da-lifecycle-card .defect-lifecycle li small {
+    color: var(--theme-text-muted);
 }
 
 .defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="REGISTERED"],
@@ -108,12 +116,21 @@
 .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="REGISTERED"],
 .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="IN_PROGRESS"],
 .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="RESOLVED"] {
-    border-color: #cbd9dc;
+    border-color: color-mix(in srgb, var(--da-lifecycle-complete) 38%, var(--theme-border));
     background: var(--da-lifecycle-complete-soft);
-    color: #52666d;
+    color: var(--theme-text);
     opacity: 1;
     box-shadow: none;
     transform: none;
+}
+
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="REGISTERED"] strong,
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="REGISTERED"] strong,
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="IN_PROGRESS"] strong,
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="REGISTERED"] strong,
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="IN_PROGRESS"] strong,
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="RESOLVED"] strong {
+    color: var(--theme-text);
 }
 
 .defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="REGISTERED"] .defect-lifecycle-marker,
@@ -139,7 +156,7 @@
     inset: 0;
     display: grid;
     place-items: center;
-    color: #fff;
+    color: var(--theme-surface);
     font-size: .86rem;
     font-weight: 900;
 }
@@ -147,67 +164,118 @@
 .defect-da-lifecycle-card .defect-lifecycle[data-current-status="REGISTERED"] [data-step="REGISTERED"] {
     border-color: var(--da-status-registered);
     background: var(--da-status-registered-soft);
-    color: #124f80;
+    color: var(--da-status-registered);
     opacity: 1;
-    box-shadow: 0 0 0 3px rgba(23, 105, 170, .10);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--da-status-registered) 12%, transparent);
     transform: translateY(-1px);
 }
 
 .defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="IN_PROGRESS"] {
     border-color: var(--da-status-progress);
     background: var(--da-status-progress-soft);
-    color: #8c4208;
+    color: var(--da-status-progress);
     opacity: 1;
-    box-shadow: 0 0 0 3px rgba(184, 86, 8, .10);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--da-status-progress) 12%, transparent);
     transform: translateY(-1px);
 }
 
 .defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="RESOLVED"] {
     border-color: var(--da-status-resolved);
     background: var(--da-status-resolved-soft);
-    color: #1d633a;
+    color: var(--da-status-resolved);
     opacity: 1;
-    box-shadow: 0 0 0 3px rgba(35, 123, 71, .10);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--da-status-resolved) 12%, transparent);
     transform: translateY(-1px);
 }
 
 .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="CLOSED"] {
     border-color: var(--da-status-closed);
     background: var(--da-status-closed-soft);
-    color: #344150;
+    color: var(--theme-text);
     opacity: 1;
-    box-shadow: 0 0 0 3px rgba(70, 85, 104, .12);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--da-status-closed) 14%, transparent);
     transform: translateY(-1px);
+}
+
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="REGISTERED"] [data-step="REGISTERED"] strong,
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="IN_PROGRESS"] strong,
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="RESOLVED"] strong,
+.defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="CLOSED"] strong {
+    color: inherit;
 }
 
 .defect-da-lifecycle-card .defect-lifecycle[data-current-status="REGISTERED"] [data-step="REGISTERED"] .defect-lifecycle-marker {
     border-color: var(--da-status-registered);
-    background: var(--da-status-registered);
-    color: #fff;
+    background: var(--da-status-registered-soft);
+    color: var(--da-status-registered);
 }
 
 .defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="IN_PROGRESS"] .defect-lifecycle-marker {
     border-color: var(--da-status-progress);
-    background: var(--da-status-progress);
-    color: #fff;
+    background: var(--da-status-progress-soft);
+    color: var(--da-status-progress);
 }
 
 .defect-da-lifecycle-card .defect-lifecycle[data-current-status="RESOLVED"] [data-step="RESOLVED"] .defect-lifecycle-marker {
     border-color: var(--da-status-resolved);
-    background: var(--da-status-resolved);
-    color: #fff;
+    background: var(--da-status-resolved-soft);
+    color: var(--da-status-resolved);
 }
 
 .defect-da-lifecycle-card .defect-lifecycle[data-current-status="CLOSED"] [data-step="CLOSED"] .defect-lifecycle-marker {
     border-color: var(--da-status-closed);
-    background: var(--da-status-closed);
-    color: #fff;
+    background: var(--da-status-closed-soft);
+    color: var(--theme-text);
 }
 
-/*
- * The approved journal screen is a normal themed screen surface.
- * Its separate print contract remains untouched because these rules are screen-only.
- */
+/* DEFECT detail actions and disclosure controls consume generic platform link
+ * semantics. No DEFECT-specific link colour is introduced. */
+html[data-theme] .defect-da-back-link,
+html[data-theme] .defect-da-aside-card summary,
+html[data-theme] .defect-da-detail details > summary,
+html[data-theme] .defect-da-detail a:not(.da-button):not(.defect-da-status) {
+    color: var(--theme-primary);
+}
+
+html[data-theme] .defect-da-back-link:visited,
+html[data-theme] .defect-da-aside-card summary:visited,
+html[data-theme] .defect-da-detail a:not(.da-button):not(.defect-da-status):visited {
+    color: var(--theme-primary);
+}
+
+html[data-theme] .defect-da-back-link:hover,
+html[data-theme] .defect-da-aside-card summary:hover,
+html[data-theme] .defect-da-detail details > summary:hover,
+html[data-theme] .defect-da-detail a:not(.da-button):not(.defect-da-status):hover {
+    color: var(--theme-primary-hover);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+html[data-theme] .defect-da-back-link:focus-visible,
+html[data-theme] .defect-da-aside-card summary:focus-visible,
+html[data-theme] .defect-da-detail details > summary:focus-visible,
+html[data-theme] .defect-da-detail a:not(.da-button):not(.defect-da-status):focus-visible {
+    outline: var(--theme-focus-width) solid var(--theme-focus);
+    outline-offset: var(--theme-focus-offset);
+    border-radius: var(--theme-radius-sm);
+}
+
+html[data-theme] .defect-da-record-context,
+html[data-theme] .defect-da-record-context strong,
+html[data-theme] .defect-da-definition-list dt,
+html[data-theme] .defect-da-definition-list dd small,
+html[data-theme] .defect-da-aside-card p {
+    color: var(--theme-text-muted);
+}
+
+html[data-theme] .defect-da-definition-list > div,
+html[data-theme] .defect-da-definition-list.compact > div {
+    border-color: var(--theme-border);
+}
+
+/* The approved journal screen is a normal themed screen surface. Its print
+ * contract remains untouched because these rules are screen-only. */
 @media screen {
     html[data-theme] .defect-journal-view .defect-register-wrap {
         border-color: var(--theme-border);
@@ -258,41 +326,42 @@
     }
 }
 
-/* Legacy journal status text and deadline extensions must use dark semantic foregrounds. */
-html[data-theme="dark"] .defect-status {
-    border-color: color-mix(in srgb, var(--theme-primary) 62%, var(--theme-border));
-    background: var(--theme-primary-soft);
-    color: var(--theme-primary-hover);
+/* Legacy journal status text and deadline extensions resolve through the same
+ * semantic status owner in both themes. */
+html[data-theme] .defect-status {
+    border-color: color-mix(in srgb, var(--da-status-registered) 42%, var(--theme-border));
+    background: var(--da-status-registered-soft);
+    color: var(--da-status-registered);
 }
 
-html[data-theme="dark"] .defect-status[data-status="IN_PROGRESS"] {
-    border-color: color-mix(in srgb, var(--theme-warning) 62%, var(--theme-border));
-    background: var(--theme-warning-soft);
-    color: var(--theme-warning);
+html[data-theme] .defect-status[data-status="IN_PROGRESS"] {
+    border-color: color-mix(in srgb, var(--da-status-progress) 42%, var(--theme-border));
+    background: var(--da-status-progress-soft);
+    color: var(--da-status-progress);
 }
 
-html[data-theme="dark"] .defect-status[data-status="RESOLVED"] {
-    border-color: color-mix(in srgb, var(--theme-success) 62%, var(--theme-border));
-    background: var(--theme-success-soft);
-    color: var(--theme-success);
+html[data-theme] .defect-status[data-status="RESOLVED"] {
+    border-color: color-mix(in srgb, var(--da-status-resolved) 42%, var(--theme-border));
+    background: var(--da-status-resolved-soft);
+    color: var(--da-status-resolved);
 }
 
-html[data-theme="dark"] .defect-status[data-status="CLOSED"] {
+html[data-theme] .defect-status[data-status="CLOSED"] {
     border-color: var(--theme-border-strong);
-    background: var(--theme-control-disabled);
-    color: var(--theme-text-muted);
+    background: var(--da-status-closed-soft);
+    color: var(--da-status-closed);
 }
 
-html[data-theme="dark"] .defect-status span,
-html[data-theme="dark"] .defect-status strong,
-html[data-theme="dark"] .defect-extension span,
-html[data-theme="dark"] .defect-extension strong,
-html[data-theme="dark"] .defect-extension p,
-html[data-theme="dark"] .defect-extension small {
+html[data-theme] .defect-status span,
+html[data-theme] .defect-status strong,
+html[data-theme] .defect-extension span,
+html[data-theme] .defect-extension strong,
+html[data-theme] .defect-extension p,
+html[data-theme] .defect-extension small {
     color: inherit;
 }
 
-html[data-theme="dark"] .defect-extension {
+html[data-theme] .defect-extension {
     border-left-color: var(--theme-warning);
     background: var(--theme-warning-soft);
     color: var(--theme-warning);
@@ -300,7 +369,10 @@ html[data-theme="dark"] .defect-extension {
 
 @media (max-width: 720px) {
     .defect-da-status {
-        max-width: 100% !important;
-        white-space: normal;
+        width: max-content !important;
+        max-width: none !important;
+        white-space: nowrap !important;
+        overflow-wrap: normal !important;
+        word-break: keep-all !important;
     }
 }

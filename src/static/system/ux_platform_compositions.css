@@ -13,23 +13,11 @@
     text-transform: uppercase;
 }
 
-.ux-muted {
-    color: var(--theme-text-muted);
-}
+.ux-muted { color: var(--theme-text-muted); }
+.ux-stack { min-width: 0; display: grid; gap: var(--theme-space-4); }
+.ux-stack.is-compact { gap: var(--theme-space-2); }
 
-.ux-stack {
-    min-width: 0;
-    display: grid;
-    gap: var(--theme-space-4);
-}
-
-.ux-stack.is-compact {
-    gap: var(--theme-space-2);
-}
-
-/* Summary metrics use a deterministic wide-to-narrow progression. Auto-fit
- * previously produced a visually unbalanced 3+1 layout on ordinary wide
- * desktops. */
+/* Summary metrics use a deterministic wide-to-narrow progression. */
 .ux-stat-grid {
     min-width: 0;
     display: grid;
@@ -37,7 +25,6 @@
     gap: var(--theme-space-3);
     margin-block: var(--theme-space-4);
 }
-
 .ux-stat {
     min-width: 0;
     display: grid;
@@ -49,309 +36,62 @@
     color: var(--theme-text);
     box-shadow: var(--theme-shadow-sm);
 }
+.ux-stat > span, .ux-stat > small { color: var(--theme-text-muted); font-size: var(--theme-font-size-sm); }
+.ux-stat > strong { color: var(--theme-text); font-size: var(--theme-font-size-2xl); line-height: 1.1; }
 
-.ux-stat > span,
-.ux-stat > small {
-    color: var(--theme-text-muted);
-    font-size: var(--theme-font-size-sm);
-}
+.ux-detail-grid { min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--theme-space-4); margin-block-end: var(--theme-space-4); }
+.ux-list-reset { margin: 0; padding: 0; list-style: none; }
+.ux-key-value { min-width: 0; display: grid; grid-template-columns: minmax(8rem, .45fr) minmax(0, 1fr); gap: var(--theme-space-2) var(--theme-space-4); margin: 0; }
+.ux-key-value dt { color: var(--theme-text-muted); font-size: var(--theme-font-size-sm); }
+.ux-key-value dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
 
-.ux-stat > strong {
-    color: var(--theme-text);
-    font-size: var(--theme-font-size-2xl);
-    line-height: 1.1;
-}
+/* Primary/secondary values are different semantic values, not adjacent text. */
+.ux-cell-stack { min-width: 0; display: grid; gap: var(--theme-space-1); align-content: start; }
+.ux-cell-primary { min-width: 0; color: var(--theme-text); font-weight: var(--theme-font-weight-semibold); line-height: 1.35; overflow-wrap: anywhere; }
+.ux-cell-secondary { min-width: 0; color: var(--theme-text-muted); font-size: var(--theme-font-size-xs); line-height: 1.4; overflow-wrap: anywhere; }
+.ux-technical-chip { display: inline-flex; width: fit-content; max-width: 100%; padding: .125rem .375rem; border: 1px solid var(--theme-border); border-radius: var(--theme-radius-sm); background: var(--theme-surface-soft); color: var(--theme-text-muted); font-family: var(--theme-font-mono); font-size: var(--theme-font-size-xs); font-weight: var(--theme-font-weight-medium); line-height: 1.35; overflow-wrap: anywhere; }
+.ux-context-value { min-width: 0; display: block; padding: var(--theme-space-2) var(--theme-space-3); border: 1px solid var(--theme-border); border-radius: var(--theme-radius-sm); background: var(--theme-surface-soft); color: var(--theme-text); font-size: var(--theme-font-size-xs); line-height: 1.4; overflow-wrap: anywhere; }
+.ux-heading-count { display: inline-flex; min-width: 1.75rem; min-height: 1.75rem; align-items: center; justify-content: center; margin-inline-start: var(--theme-space-2); padding-inline: var(--theme-space-2); border: 1px solid var(--theme-border); border-radius: var(--theme-radius-pill); background: var(--theme-surface-soft); color: var(--theme-text-muted); font-size: var(--theme-font-size-xs); font-weight: var(--theme-font-weight-semibold); vertical-align: middle; }
 
-.ux-detail-grid {
-    min-width: 0;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--theme-space-4);
-    margin-block-end: var(--theme-space-4);
-}
+.ux-profile-strip { grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr)); }
+.ux-profile-strip .data-profile-chip { min-width: 0; }
+.ux-profile-strip .data-profile-chip strong, .ux-readable-value { max-width: 100%; overflow: visible; color: var(--theme-text); text-overflow: clip; white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
 
-.ux-list-reset {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
+.da-page-header.ux-page-header-balanced { grid-template-columns: minmax(min(30rem, 100%), 1fr) minmax(0, min(44rem, 48vw)); align-items: start; }
+.ux-page-header-balanced > div:first-child { min-width: 0; max-width: 48rem; }
+.ux-page-header-balanced .da-actions { width: 100%; max-width: 44rem; justify-self: end; justify-content: flex-end; align-content: start; }
+.ux-page-header-balanced .da-actions .da-button { min-width: 0; text-align: center; white-space: normal; }
 
-.ux-key-value {
-    min-width: 0;
-    display: grid;
-    grid-template-columns: minmax(8rem, .45fr) minmax(0, 1fr);
-    gap: var(--theme-space-2) var(--theme-space-4);
-    margin: 0;
-}
+.ux-form-grid { min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--theme-space-4); }
+.ux-form-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--theme-space-2); margin-block-start: var(--theme-space-4); }
+.ux-launcher-grid { min-width: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr)); gap: var(--theme-space-3); margin-block: var(--theme-space-5); }
+.ux-launcher-card { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--theme-space-3); color: var(--theme-text); text-decoration: none; }
+.ux-launcher-card:hover { border-color: var(--theme-primary); background: var(--theme-control-hover); color: var(--theme-text); }
+.ux-launcher-icon { width: 2.5rem; height: 2.5rem; display: grid; place-items: center; border-radius: var(--theme-radius-md); background: var(--theme-primary-soft); color: var(--theme-primary); }
+.ux-launcher-icon .ui-icon { width: 1.25rem; height: 1.25rem; }
+.ux-launcher-copy { min-width: 0; display: grid; gap: var(--theme-space-1); }
+.ux-launcher-copy strong { color: var(--theme-text); }
+.ux-launcher-copy small { color: var(--theme-text-muted); line-height: var(--theme-line-height-body); }
+.ux-principle-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr)); gap: var(--theme-space-3); }
+.ux-principle-grid > span { padding: var(--theme-space-3); border-inline-start: 3px solid var(--theme-primary); border-radius: var(--theme-radius-sm); background: var(--theme-surface-soft); color: var(--theme-text-muted); }
 
-.ux-key-value dt {
-    color: var(--theme-text-muted);
-    font-size: var(--theme-font-size-sm);
-}
+body.ux-platform .dispatching-object-card.da-card { border-color: var(--theme-border) !important; background: var(--theme-surface) !important; color: var(--theme-text) !important; }
 
-.ux-key-value dd {
-    min-width: 0;
-    margin: 0;
-    overflow-wrap: anywhere;
-}
-
-/* Primary/secondary values are different semantic values, not adjacent text.
- * This composition is shared by table cells, list rows and operational
- * context labels that need predictable wrapping. */
-.ux-cell-stack {
-    min-width: 0;
-    display: grid;
-    gap: var(--theme-space-1);
-    align-content: start;
-}
-
-.ux-cell-primary {
-    min-width: 0;
-    color: var(--theme-text);
-    font-weight: var(--theme-font-weight-semibold);
-    line-height: 1.35;
-    overflow-wrap: anywhere;
-}
-
-.ux-cell-secondary {
-    min-width: 0;
-    color: var(--theme-text-muted);
-    font-size: var(--theme-font-size-xs);
-    line-height: 1.4;
-    overflow-wrap: anywhere;
-}
-
-.ux-technical-chip {
-    display: inline-flex;
-    width: fit-content;
-    max-width: 100%;
-    padding: .125rem .375rem;
-    border: 1px solid var(--theme-border);
-    border-radius: var(--theme-radius-sm);
-    background: var(--theme-surface-soft);
-    color: var(--theme-text-muted);
-    font-family: var(--theme-font-mono);
-    font-size: var(--theme-font-size-xs);
-    font-weight: var(--theme-font-weight-medium);
-    line-height: 1.35;
-    overflow-wrap: anywhere;
-}
-
-.ux-context-value {
-    min-width: 0;
-    display: block;
-    padding: var(--theme-space-2) var(--theme-space-3);
-    border: 1px solid var(--theme-border);
-    border-radius: var(--theme-radius-sm);
-    background: var(--theme-surface-soft);
-    color: var(--theme-text);
-    font-size: var(--theme-font-size-xs);
-    line-height: 1.4;
-    overflow-wrap: anywhere;
-}
-
-.ux-heading-count {
-    display: inline-flex;
-    min-width: 1.75rem;
-    min-height: 1.75rem;
-    align-items: center;
-    justify-content: center;
-    margin-inline-start: var(--theme-space-2);
-    padding-inline: var(--theme-space-2);
-    border: 1px solid var(--theme-border);
-    border-radius: var(--theme-radius-pill);
-    background: var(--theme-surface-soft);
-    color: var(--theme-text-muted);
-    font-size: var(--theme-font-size-xs);
-    font-weight: var(--theme-font-weight-semibold);
-    vertical-align: middle;
-}
-
-/* Important summary/profile values are allowed to wrap rather than silently
- * losing their meaning through fixed-width ellipsis. */
-.ux-profile-strip {
-    grid-template-columns: repeat(auto-fit, minmax(min(15rem, 100%), 1fr));
-}
-
-.ux-profile-strip .data-profile-chip {
-    min-width: 0;
-}
-
-.ux-profile-strip .data-profile-chip strong,
-.ux-readable-value {
-    max-width: 100%;
-    overflow: visible;
-    color: var(--theme-text);
-    text-overflow: clip;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    line-height: 1.35;
-}
-
-/* A route with many owner-visible actions may wrap the actions without
- * squeezing the page title/description into a pseudo-mobile column. */
-.da-page-header.ux-page-header-balanced {
-    grid-template-columns: minmax(min(30rem, 100%), 1fr) minmax(0, min(44rem, 48vw));
-    align-items: start;
-}
-
-.ux-page-header-balanced > div:first-child {
-    min-width: 0;
-    max-width: 48rem;
-}
-
-.ux-page-header-balanced .da-actions {
-    width: 100%;
-    max-width: 44rem;
-    justify-self: end;
-    justify-content: flex-end;
-    align-content: start;
-}
-
-.ux-page-header-balanced .da-actions .da-button {
-    min-width: 0;
-    text-align: center;
-    white-space: normal;
-}
-
-.ux-form-grid {
-    min-width: 0;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--theme-space-4);
-}
-
-.ux-form-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: flex-end;
-    gap: var(--theme-space-2);
-    margin-block-start: var(--theme-space-4);
-}
-
-.ux-launcher-grid {
-    min-width: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
-    gap: var(--theme-space-3);
-    margin-block: var(--theme-space-5);
-}
-
-.ux-launcher-card {
-    min-width: 0;
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--theme-space-3);
-    color: var(--theme-text);
-    text-decoration: none;
-}
-
-.ux-launcher-card:hover {
-    border-color: var(--theme-primary);
-    background: var(--theme-control-hover);
-    color: var(--theme-text);
-}
-
-.ux-launcher-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-    display: grid;
-    place-items: center;
-    border-radius: var(--theme-radius-md);
-    background: var(--theme-primary-soft);
-    color: var(--theme-primary);
-}
-
-.ux-launcher-icon .ui-icon {
-    width: 1.25rem;
-    height: 1.25rem;
-}
-
-.ux-launcher-copy {
-    min-width: 0;
-    display: grid;
-    gap: var(--theme-space-1);
-}
-
-.ux-launcher-copy strong {
-    color: var(--theme-text);
-}
-
-.ux-launcher-copy small {
-    color: var(--theme-text-muted);
-    line-height: var(--theme-line-height-body);
-}
-
-.ux-principle-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
-    gap: var(--theme-space-3);
-}
-
-.ux-principle-grid > span {
-    padding: var(--theme-space-3);
-    border-inline-start: 3px solid var(--theme-primary);
-    border-radius: var(--theme-radius-sm);
-    background: var(--theme-surface-soft);
-    color: var(--theme-text-muted);
-}
-
-/* app.css still contains the pre-platform Dispatching card gradient with
- * !important. Once the template opts into da-card, the platform surface is
- * authoritative and the legacy composition must not leak through. */
-body.ux-platform .dispatching-object-card.da-card {
-    border-color: var(--theme-border) !important;
-    background: var(--theme-surface) !important;
-    color: var(--theme-text) !important;
-}
+/* DEFECT status words are atomic operational labels. The domain colour mapping
+ * stays in the DEFECT owner; this shared geometry prevents approved-register
+ * tables from breaking a status word inside the chip. */
+.defect-status[data-status] { white-space: nowrap; overflow-wrap: normal; word-break: keep-all; }
 
 @media (max-width: 80rem) {
-    .da-page-header.ux-page-header-balanced {
-        grid-template-columns: 1fr;
-    }
-
-    .ux-page-header-balanced .da-actions {
-        max-width: none;
-        justify-self: start;
-        justify-content: flex-start;
-    }
+    .da-page-header.ux-page-header-balanced { grid-template-columns: 1fr; }
+    .ux-page-header-balanced .da-actions { max-width: none; justify-self: start; justify-content: flex-start; }
 }
-
-@media (max-width: 70rem) {
-    .ux-stat-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 52rem) {
-    .ux-detail-grid,
-    .ux-form-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
+@media (max-width: 70rem) { .ux-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 52rem) { .ux-detail-grid, .ux-form-grid { grid-template-columns: 1fr; } }
 @media (max-width: 42rem) {
-    .ux-stat-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .ux-key-value {
-        grid-template-columns: 1fr;
-        gap: var(--theme-space-1);
-    }
-
-    .ux-key-value dd + dt {
-        margin-block-start: var(--theme-space-2);
-    }
-
-    .ux-launcher-card {
-        grid-template-columns: auto minmax(0, 1fr);
-    }
-
-    .ux-launcher-card > .da-status {
-        grid-column: 2;
-        justify-self: start;
-    }
+    .ux-stat-grid { grid-template-columns: 1fr; }
+    .ux-key-value { grid-template-columns: 1fr; gap: var(--theme-space-1); }
+    .ux-key-value dd + dt { margin-block-start: var(--theme-space-2); }
+    .ux-launcher-card { grid-template-columns: auto minmax(0, 1fr); }
+    .ux-launcher-card > .da-status { grid-column: 2; justify-self: start; }
 }

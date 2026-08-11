@@ -46,7 +46,14 @@
         <td><a href="{% url 'operational_documents:record_detail' record.public_id %}"><strong>{{ record.registration_number }}</strong></a><br><span class="ux-muted">{{ record.document_type.short_name|default:record.document_type.name }}</span>{% if not record.is_source_bound %}<span class="da-status-chip is-warning">Техническая запись</span>{% endif %}</td>
         <td><strong>{{ record.title }}</strong>{% if record.summary %}<div class="ux-muted">{{ record.summary|truncatechars:140 }}</div>{% endif %}</td>
         <td>{% for value in record.visible_values %}<div><span class="ux-muted">{{ value.label }}:</span> {{ value.display|truncatechars:100 }}</div>{% empty %}<span class="ux-muted">Нет отображаемых граф</span>{% endfor %}</td>
-        <td>{{ record.workplace_name_snapshot|default:"—" }}</td><td><span class="da-status-chip {% if record.status_is_terminal %}is-success{% else %}is-warning{% endif %}">{{ record.status_name_snapshot }}</span></td>
+        <td>{{ record.workplace_name_snapshot|default:"—" }}</td>
+        <td>
+            {% if record.document_type.code == 'DEFECTS' %}
+                <span class="da-status-chip{% if record.status_code == 'REGISTERED' %} is-info{% elif record.status_code == 'IN_PROGRESS' %} is-warning{% elif record.status_code == 'RESOLVED' %} is-success{% endif %}" data-domain-status="DEFECT" data-status="{{ record.status_code }}">{{ record.status_name_snapshot }}</span>
+            {% else %}
+                <span class="da-status-chip {% if record.status_is_terminal %}is-success{% else %}is-warning{% endif %}">{{ record.status_name_snapshot }}</span>
+            {% endif %}
+        </td>
     </tr>{% endfor %}</tbody></table></div>
 </section>
 {% else %}<section class="ux-empty-state"><h2>Записей не найдено</h2><p>Измените фильтры или дождитесь установки утверждённой формы журнала.</p></section>{% endif %}
