@@ -1,0 +1,262 @@
+/* UX-PLATFORM-FOUNDATION-001
+ * Canonical public/auth compositions built from theme tokens and platform controls.
+ * This file owns only anonymous-entry composition; generic controls remain in
+ * ux_platform.css.
+ */
+
+.ux-public-stage {
+    min-height: calc(100vh - 3.5rem);
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    background: var(--theme-canvas);
+    color: var(--theme-text);
+}
+
+.ux-public-topbar {
+    position: sticky;
+    top: 0;
+    z-index: var(--theme-z-sticky);
+    min-width: 0;
+    min-height: var(--theme-topbar-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--theme-space-4);
+    padding: var(--theme-space-2) var(--theme-page-gutter);
+    border-bottom: 1px solid var(--theme-border);
+    background: color-mix(in srgb, var(--theme-surface) 94%, transparent);
+    backdrop-filter: blur(14px);
+}
+
+.ux-public-brand {
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--theme-space-3);
+    color: var(--theme-text);
+    text-decoration: none;
+}
+
+.ux-public-brand:hover {
+    color: var(--theme-text);
+}
+
+.ux-public-brand img {
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: 0 0 2.5rem;
+    object-fit: contain;
+}
+
+.ux-public-brand-copy {
+    min-width: 0;
+    display: grid;
+    gap: var(--theme-space-1);
+}
+
+.ux-public-brand-copy strong,
+.ux-public-brand-copy small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ux-public-brand-copy strong {
+    color: var(--theme-text);
+    font-size: var(--theme-font-size-lg);
+}
+
+.ux-public-brand-copy small {
+    color: var(--theme-text-muted);
+    font-size: var(--theme-font-size-xs);
+}
+
+.ux-public-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--theme-space-2);
+}
+
+.ux-public-main {
+    width: min(100%, var(--theme-page-max));
+    min-width: 0;
+    margin-inline: auto;
+    padding: var(--theme-space-6) var(--theme-page-gutter) var(--theme-space-8);
+}
+
+.ux-auth-layout {
+    width: 100%;
+    min-width: 0;
+    min-height: min(42rem, calc(100dvh - var(--theme-topbar-height) - 8rem));
+    display: grid;
+    place-items: center;
+    padding-block: var(--theme-space-4);
+}
+
+.ux-auth-card {
+    width: min(100%, 30rem);
+    min-width: 0;
+    display: grid;
+    gap: var(--theme-space-5);
+    padding: clamp(var(--theme-space-4), 4vw, var(--theme-space-6));
+    border: 1px solid var(--theme-border);
+    border-radius: var(--theme-radius-xl);
+    background: var(--theme-surface);
+    color: var(--theme-text);
+    box-shadow: var(--theme-shadow-md);
+}
+
+.ux-auth-heading {
+    display: grid;
+    gap: var(--theme-space-2);
+}
+
+.ux-auth-heading h1 {
+    margin: 0;
+    color: var(--theme-text);
+    font-size: var(--theme-font-size-2xl);
+    line-height: var(--theme-line-height-heading);
+}
+
+.ux-auth-heading p {
+    margin: 0;
+    color: var(--theme-text-muted);
+    line-height: var(--theme-line-height-body);
+}
+
+.ux-auth-form {
+    min-width: 0;
+    display: grid;
+    gap: var(--theme-space-4);
+}
+
+.ux-auth-form .da-field {
+    min-width: 0;
+}
+
+/* 16px prevents mobile browsers from focus-zooming text controls while keeping
+ * pinch zoom available at the viewport level. */
+.ux-auth-form :where(input[type="text"], input[type="password"]) {
+    min-width: 0;
+    min-height: max(var(--theme-control-height-md), 2.75rem);
+    font-size: 1rem;
+    touch-action: manipulation;
+}
+
+.ux-auth-submit {
+    width: 100%;
+    min-height: 2.75rem;
+}
+
+.ux-form-errors {
+    margin: 0;
+    padding: var(--theme-space-3) var(--theme-space-4);
+    border: 1px solid color-mix(in srgb, var(--theme-danger) 40%, var(--theme-border));
+    border-radius: var(--theme-radius-md);
+    background: var(--theme-danger-soft);
+    color: var(--theme-danger);
+    font-size: var(--theme-font-size-sm);
+}
+
+.ux-form-errors ul {
+    margin: 0;
+    padding-inline-start: var(--theme-space-5);
+}
+
+.ux-field-errors {
+    margin: 0;
+    color: var(--theme-danger);
+    font-size: var(--theme-font-size-sm);
+}
+
+.ux-field-errors ul {
+    margin: 0;
+    padding-inline-start: var(--theme-space-5);
+}
+
+.ux-demo-access {
+    min-width: 0;
+    display: grid;
+    gap: var(--theme-space-3);
+    padding: var(--theme-space-4);
+    border: 1px solid color-mix(in srgb, var(--theme-info) 42%, var(--theme-border));
+    border-radius: var(--theme-radius-lg);
+    background: var(--theme-info-soft);
+    color: var(--theme-text);
+}
+
+.ux-demo-access > strong {
+    color: var(--theme-info);
+    font-size: var(--theme-font-size-sm);
+}
+
+.ux-demo-access-list {
+    display: grid;
+    grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+    gap: var(--theme-space-2) var(--theme-space-3);
+    margin: 0;
+}
+
+.ux-demo-access-list dt {
+    color: var(--theme-text-muted);
+    font-size: var(--theme-font-size-sm);
+}
+
+.ux-demo-access-list dd {
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.ux-demo-access-list code {
+    color: var(--theme-text);
+    font-family: var(--theme-font-mono);
+    font-size: var(--theme-font-size-sm);
+}
+
+.ux-demo-access-note {
+    margin: 0;
+    color: var(--theme-text-muted);
+    font-size: var(--theme-font-size-xs);
+    line-height: var(--theme-line-height-body);
+}
+
+@media (max-width: 42rem) {
+    .ux-public-topbar {
+        padding-inline: var(--theme-space-3);
+    }
+
+    .ux-public-brand-copy small {
+        display: none;
+    }
+
+    .ux-public-actions .da-button {
+        min-height: var(--theme-control-height-lg);
+        padding-inline: var(--theme-space-3);
+    }
+
+    .ux-public-main {
+        padding: var(--theme-space-4) var(--theme-space-3) var(--theme-space-6);
+    }
+
+    .ux-auth-layout {
+        min-height: calc(100dvh - var(--theme-topbar-height) - 6rem);
+        align-items: start;
+        padding-block: var(--theme-space-3);
+    }
+
+    .ux-auth-card {
+        width: 100%;
+        padding: var(--theme-space-4);
+        border-radius: var(--theme-radius-lg);
+    }
+
+    .ux-demo-access-list {
+        grid-template-columns: 1fr;
+        gap: var(--theme-space-1);
+    }
+
+    .ux-demo-access-list dd + dt {
+        margin-block-start: var(--theme-space-2);
+    }
+}
