@@ -41,13 +41,6 @@ jobs:
           test "$actual_sha" = "$EXPECTED_SHA"
           printf 'EXACT_HEAD=%s\n' "$actual_sha"
 
-      - name: Set up Python 3.13 for browser evidence
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
-        with:
-          python-version: "3.13"
-          cache: pip
-          cache-dependency-path: requirements/locks/browser.txt
-
       - name: Create masked ephemeral development credentials
         shell: bash
         run: |
@@ -115,27 +108,35 @@ jobs:
             --base-url http://127.0.0.1:8766 \
             --wait-seconds 5
 
-      - name: Install locked browser evidence dependencies
+      - name: Build immutable browser evidence environment
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --disable-pip-version-check --require-hashes \
-            -r requirements/locks/browser.txt
-          python -m playwright install --with-deps chromium
+          docker build \
+            --file supply-chain/Dockerfile.browser \
+            --tag eod-browser-evidence:ci \
+            .
 
       - name: Run representative UX Platform browser evidence
         id: browser-evidence
         shell: bash
-        env:
-          EOD_BROWSER_BASE_URL: http://127.0.0.1:8766
-          EOD_BROWSER_USERNAME: operator.demo
-          EOD_BROWSER_PASSWORD: ${{ env.EOD_DEMO_USER_PASSWORD }}
-          EOD_BROWSER_EVIDENCE: ${{ runner.temp }}/browser-theme
         run: |
           set -euo pipefail
-          python tests/browser_theme/run.py
+          evidence_dir="$RUNNER_TEMP/browser-theme"
+          mkdir -p "$evidence_dir"
+          docker run --rm \
+            --network host \
+            --env EOD_BROWSER_BASE_URL=http://127.0.0.1:8766 \
+            --env EOD_BROWSER_USERNAME=operator.demo \
+            --env EOD_BROWSER_PASSWORD="$EOD_DEMO_USER_PASSWORD" \
+            --env EOD_BROWSER_EVIDENCE=/evidence-output \
+            --volume "$PWD:/workspace:ro" \
+            --volume "$evidence_dir:/evidence-output" \
+            --workdir /workspace \
+            eod-browser-evidence:ci \
+            python tests/browser_theme/run.py
           python scripts/secret_hygiene.py verify-sanitized \
-            --input "$RUNNER_TEMP/browser-theme/computed-styles.json" \
+            --input "$evidence_dir/computed-styles.json" \
             --env DJANGO_SECRET_KEY \
             --env POSTGRES_PASSWORD \
             --env EOD_DEMO_USER_PASSWORD
