@@ -2,26 +2,24 @@
 {% load static %}
 
 {% block content %}
-<section class="page-heading presentation-heading da-page-header">
+<section class="da-page-header">
     <div>
-        <div class="section-kicker">Рабочее пространство</div>
+        <span class="ux-kicker">Рабочее пространство</span>
         <h1>Электронная оперативная документация</h1>
         <p>Единая среда для документов, оборудования, полномочий и оперативного взаимодействия.</p>
     </div>
     {% if request.user.is_authenticated %}
-        <a class="quiet-action da-button is-secondary" href="{% url 'organizations:account' %}">
+        <a class="da-button is-secondary" href="{% url 'organizations:account' %}">
             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-settings"></use></svg>
             Настроить интерфейс
         </a>
     {% endif %}
 </section>
 
-<section class="hero presentation-hero da-alert is-success">
-    <div class="hero-icon">
-        <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-check"></use></svg>
-    </div>
+<section class="da-alert is-success">
+    <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-check"></use></svg>
     <div>
-        <div class="hero-title">Ядро структурированных журналов готово к установке утверждённых форм</div>
+        <strong>Ядро структурированных журналов готово к установке утверждённых форм</strong>
         <p>
             Формы журналов устанавливаются только по утверждённым инструкциям, а общее ядро сохраняет
             нумерацию, связи, снимки справочников и неизменяемую историю записей.
@@ -30,65 +28,65 @@
 </section>
 
 {% if request.user.is_authenticated %}
-<section class="summary-grid presentation-summary">
-    <article class="metric da-card"><span>Черновики</span><strong>{{ system_stats.drafts }}</strong></article>
-    <article class="metric da-card"><span>Зарегистрировано</span><strong>{{ system_stats.registered }}</strong></article>
-    <article class="metric da-card"><span>Оборудование</span><strong>{{ system_stats.equipment }}</strong></article>
-    <article class="metric da-card"><span>Действующие назначения управления</span><strong>{{ system_stats.management }}</strong></article>
-    <article class="metric da-card"><span>Типы оперативных документов</span><strong>{{ system_stats.operational_document_types }}</strong></article>
-    <article class="metric da-card"><span>Структурированные записи</span><strong>{{ system_stats.operational_document_records }}</strong></article>
+<section class="ux-stat-grid" aria-label="Сводка системы">
+    <article class="ux-stat"><span>Черновики</span><strong>{{ system_stats.drafts }}</strong></article>
+    <article class="ux-stat"><span>Зарегистрировано</span><strong>{{ system_stats.registered }}</strong></article>
+    <article class="ux-stat"><span>Оборудование</span><strong>{{ system_stats.equipment }}</strong></article>
+    <article class="ux-stat"><span>Действующие назначения управления</span><strong>{{ system_stats.management }}</strong></article>
+    <article class="ux-stat"><span>Типы оперативных документов</span><strong>{{ system_stats.operational_document_types }}</strong></article>
+    <article class="ux-stat"><span>Структурированные записи</span><strong>{{ system_stats.operational_document_records }}</strong></article>
 </section>
 {% else %}
-<section class="login-callout da-alert">
+<section class="da-alert">
     <div>
-        <h2>Персональная работа начинается со входа</h2>
+        <strong>Персональная работа начинается со входа</strong>
         <p>Каждое действие связывается с конкретной учётной записью.</p>
     </div>
-    <a class="button da-button" href="{% url 'organizations:login' %}">Войти</a>
+    <a class="da-button" href="{% url 'organizations:login' %}">Войти</a>
 </section>
 {% endif %}
 
-<section class="module-launcher" aria-label="Разделы системы">
-    <a class="module-tile active da-card" href="{% url 'documents:list' %}">
-        <span class="module-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg></span>
-        <span class="module-copy"><strong>Документы</strong><small>Черновики, регистрация, версии и связи</small></span>
-        <span class="module-status ready da-status is-success">Готово</span>
+<section class="ux-launcher-grid" aria-label="Разделы системы">
+    <a class="da-card ux-launcher-card" href="{% url 'documents:list' %}">
+        <span class="ux-launcher-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg></span>
+        <span class="ux-launcher-copy"><strong>Документы</strong><small>Черновики, регистрация, версии и связи</small></span>
+        <span class="da-status is-success">Готово</span>
     </a>
-    <a class="module-tile active da-card" href="{% url 'equipment:registry' %}">
-        <span class="module-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-equipment"></use></svg></span>
-        <span class="module-copy"><strong>Оборудование</strong><small>Иерархия, наименования, алиасы и поиск</small></span>
-        <span class="module-status ready da-status is-success">Готово</span>
+    <a class="da-card ux-launcher-card" href="{% url 'equipment:registry' %}">
+        <span class="ux-launcher-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-equipment"></use></svg></span>
+        <span class="ux-launcher-copy"><strong>Оборудование</strong><small>Иерархия, наименования, алиасы и поиск</small></span>
+        <span class="da-status is-success">Готово</span>
     </a>
-    <a class="module-tile active da-card" href="{% url 'dispatching:registry' %}">
-        <span class="module-icon management"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-management"></use></svg></span>
-        <span class="module-copy"><strong>Управление и ведение</strong><small>Субъекты, уровни и действующее распределение</small></span>
-        <span class="module-status ready da-status is-success">Готово</span>
+    <a class="da-card ux-launcher-card" href="{% url 'dispatching:registry' %}">
+        <span class="ux-launcher-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-management"></use></svg></span>
+        <span class="ux-launcher-copy"><strong>Управление и ведение</strong><small>Субъекты, уровни и действующее распределение</small></span>
+        <span class="da-status is-success">Готово</span>
     </a>
-    <a class="module-tile active da-card" href="{% url 'organizations:directory' %}">
-        <span class="module-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-organization"></use></svg></span>
-        <span class="module-copy"><strong>Организация и персонал</strong><small>Сотрудники, роли и области ответственности</small></span>
-        <span class="module-status ready da-status is-success">Готово</span>
+    <a class="da-card ux-launcher-card" href="{% url 'organizations:directory' %}">
+        <span class="ux-launcher-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-organization"></use></svg></span>
+        <span class="ux-launcher-copy"><strong>Организация и персонал</strong><small>Сотрудники, роли и области ответственности</small></span>
+        <span class="da-status is-success">Готово</span>
     </a>
-    <a class="module-tile active da-card" href="{% url 'normatives:registry' %}">
-        <span class="module-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-normative"></use></svg></span>
-        <span class="module-copy"><strong>Нормативная основа</strong><small>Требования и трассировка функций</small></span>
-        <span class="module-status ready da-status is-success">Готово</span>
+    <a class="da-card ux-launcher-card" href="{% url 'normatives:registry' %}">
+        <span class="ux-launcher-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-normative"></use></svg></span>
+        <span class="ux-launcher-copy"><strong>Нормативная основа</strong><small>Требования и трассировка функций</small></span>
+        <span class="da-status is-success">Готово</span>
     </a>
-    <a class="module-tile active da-card" href="{% url 'operational_log:registry' %}">
-        <span class="module-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-journal"></use></svg></span>
-        <span class="module-copy"><strong>Оперативный журнал</strong><small>Утверждённая форма, нумерация и неизменяемые записи</small></span>
-        <span class="module-status ready da-status is-success">Готово</span>
+    <a class="da-card ux-launcher-card" href="{% url 'operational_log:registry' %}">
+        <span class="ux-launcher-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-journal"></use></svg></span>
+        <span class="ux-launcher-copy"><strong>Оперативный журнал</strong><small>Утверждённая форма, нумерация и неизменяемые записи</small></span>
+        <span class="da-status is-success">Готово</span>
     </a>
-    <a class="module-tile active da-card" href="{% url 'operational_documents:registry' %}">
-        <span class="module-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-request"></use></svg></span>
-        <span class="module-copy"><strong>Оперативные документы</strong><small>Утверждённые формы журналов, записи, связи и история редакций</small></span>
-        <span class="module-status ready da-status is-success">Ядро готово</span>
+    <a class="da-card ux-launcher-card" href="{% url 'operational_documents:registry' %}">
+        <span class="ux-launcher-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-request"></use></svg></span>
+        <span class="ux-launcher-copy"><strong>Оперативные документы</strong><small>Утверждённые формы журналов, записи, связи и история редакций</small></span>
+        <span class="da-status is-success">Ядро готово</span>
     </a>
 </section>
 
-<section class="principles compact-principles da-panel-flat">
+<section class="da-panel-flat ux-stack">
     <h2>Ключевые правила системы</h2>
-    <div class="principle-grid">
+    <div class="ux-principle-grid">
         <span>Зарегистрированные сведения неизменяемы</span>
         <span>История сохраняется редакциями</span>
         <span>Действия связаны с персональной учётной записью</span>
