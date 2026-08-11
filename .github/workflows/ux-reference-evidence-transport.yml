@@ -37,33 +37,11 @@ jobs:
           set -euo pipefail
           test "$(git log -1 --format=%s)" = "chore(transport): stabilize OPJ reference browser evidence"
           python - <<'PY'
+          import re
           from pathlib import Path
 
           path = Path("tests/browser_theme/run.py")
           source = path.read_text(encoding="utf-8")
-
-          old_function = '''def activate_editor_caret(page):
-              editor = need(page, '.draft-rich-editor-host [contenteditable="true"]')
-              editor.click()
-              prepared = editor.evaluate(
-                  """editor => {
-                      const block = editor.querySelector('p, li');
-                      if (!block) return false;
-                      const range = document.createRange();
-                      range.selectNodeContents(block);
-                      range.collapse(false);
-                      const selection = window.getSelection();
-                      selection.removeAllRanges();
-                      selection.addRange(range);
-                      editor.focus({preventScroll: true});
-                      document.dispatchEvent(new Event('selectionchange'));
-                      return true;
-                  }"""
-              )
-              if not prepared:
-                  raise AssertionError(f"missing editable paragraph at {page.url}")
-              page.wait_for_timeout(80)
-          '''.replace("          ", "")
 
           new_function = '''def activate_editor_reference_selection(page):
               editor = need(page, '.draft-rich-editor-host [contenteditable="true"]')
@@ -111,31 +89,41 @@ jobs:
               return editor
           '''.replace("          ", "")
 
-          old_action = '''        activate_editor_caret(page)
-                  need(page, "[data-reference-trigger]:not([disabled])").click()
-                  report["open_states"]["opj_reference"] = style(
-                      need(page, "[data-reference-picker]")
-                  )
-          '''.replace("          ", "")
+          pattern = re.compile(
+              r"def activate_editor_caret\(page\):\n.*?\n\ndef discover\(page\):",
+              re.DOTALL,
+          )
+          source, function_count = pattern.subn(
+              new_function + "\n\ndef discover(page):",
+              source,
+              count=1,
+          )
+          if function_count != 1:
+              raise SystemExit(
+                  f"unexpected activate_editor_caret structural match count: {function_count}"
+              )
 
-          new_action = '''        editor = activate_editor_reference_selection(page)
-                  reference_trigger = need(
-                      page,
-                      "[data-reference-trigger]:not([disabled])",
-                  )
-                  page.keyboard.press("Control+Shift+M")
-                  reference_picker = need(page, "[data-reference-picker]")
-                  if reference_trigger.get_attribute("aria-expanded") != "true":
-                      raise AssertionError("OPJ reference picker did not publish expanded state")
-                  report["open_states"]["opj_reference"] = style(reference_picker)
-          '''.replace("          ", "")
-
-          if source.count(old_function) != 1:
-              raise SystemExit(f"unexpected activate_editor_caret match count: {source.count(old_function)}")
+          old_action = (
+              '        activate_editor_caret(page)\n'
+              '        need(page, "[data-reference-trigger]:not([disabled])").click()\n'
+          )
+          new_action = (
+              '        editor = activate_editor_reference_selection(page)\n'
+              '        reference_trigger = need(\n'
+              '            page,\n'
+              '            "[data-reference-trigger]:not([disabled])",\n'
+              '        )\n'
+              '        page.keyboard.press("Control+Shift+M")\n'
+              '        reference_picker = need(page, "[data-reference-picker]")\n'
+              '        if reference_trigger.get_attribute("aria-expanded") != "true":\n'
+              '            raise AssertionError(\n'
+              '                "OPJ reference picker did not publish expanded state"\n'
+              '            )\n'
+          )
           if source.count(old_action) != 1:
-              raise SystemExit(f"unexpected OPJ reference action match count: {source.count(old_action)}")
-
-          source = source.replace(old_function, new_function, 1)
+              raise SystemExit(
+                  f"unexpected OPJ reference action match count: {source.count(old_action)}"
+              )
           source = source.replace(old_action, new_action, 1)
           path.write_text(source, encoding="utf-8")
           PY
