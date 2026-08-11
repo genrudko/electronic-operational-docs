@@ -10,6 +10,10 @@ from django.db import transaction
 DEMO_ACCESS_ENV = "EOD_DEMO_USER_PASSWORD"
 DEMO_USERNAMES = ("operator.demo", "supervisor.demo")
 MINIMUM_DEMO_PASSWORD_LENGTH = 16
+DEMO_ACCOUNT_IDENTITIES = {
+    "operator.demo": {"first_name": "Илья", "last_name": "Кузнецов"},
+    "supervisor.demo": {"first_name": "Анна", "last_name": "Орлова"},
+}
 
 # Contract marker: COMPROMISED_DEMO_PASSWORD_SHA256.
 # Hashes identify revoked historical values without republishing them.
@@ -72,12 +76,7 @@ def development_demo_access_presentation(
     *,
     deployment_mode: str,
 ) -> DemoAccessPresentation | None:
-    """Return the Development-only credential that the login page may publish.
-
-    The source never contains the credential.  A value is exposed only when the
-    live process is explicitly in the Development deployment mode and the same
-    injected secret passes the demo-access security policy used for authentication.
-    """
+    """Return the Development-only credential that the login page may publish."""
 
     if deployment_mode.strip().lower() != "development":
         return None
@@ -87,6 +86,26 @@ def development_demo_access_presentation(
     except DemoAccessPolicyError:
         return None
     return DemoAccessPresentation(usernames=DEMO_USERNAMES, password=candidate)
+
+
+@transaction.atomic
+def ensure_development_demo_accounts() -> int:
+    """Create only missing authentication principals for the Development demo.
+
+    Full demo business data remains owned by ``seed_demo_organization``.  This
+    narrow bootstrap guarantees that the two credentials published on the live
+    Development login page always have principals to authenticate against.
+    """
+
+    user_model = get_user_model()
+    created = 0
+    for username in DEMO_USERNAMES:
+        _, was_created = user_model.objects.get_or_create(
+            username=username,
+            defaults={**DEMO_ACCOUNT_IDENTITIES[username], "is_active": True},
+        )
+        created += int(was_created)
+    return created
 
 
 @transaction.atomic
