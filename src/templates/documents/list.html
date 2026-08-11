@@ -3,24 +3,24 @@
 {% block title %}Документы · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading compact">
+<section class="da-page-header da-page-header-compact">
     <div>
-        <div class="eyebrow">ДОКУМЕНТАРНОЕ ЯДРО</div>
+        <span class="ux-kicker">Документарное ядро</span>
         <h1>Документы</h1>
         <p>Черновики редактируются до регистрации. Зарегистрированные версии остаются неизменными.</p>
     </div>
-    <a class="button" href="{% url 'documents:create' %}">Новый черновик</a>
+    <a class="da-button" href="{% url 'documents:create' %}">Новый черновик</a>
 </section>
 
-<section class="summary-grid document-summary">
-    <article class="metric"><span>Всего</span><strong>{{ counts.total }}</strong></article>
-    <article class="metric"><span>Черновики</span><strong>{{ counts.drafts }}</strong></article>
-    <article class="metric"><span>Зарегистрировано</span><strong>{{ counts.registered }}</strong></article>
+<section class="ux-stat-grid document-summary" aria-label="Сводка документов">
+    <article class="ux-stat"><span>Всего</span><strong>{{ counts.total }}</strong></article>
+    <article class="ux-stat"><span>Черновики</span><strong>{{ counts.drafts }}</strong></article>
+    <article class="ux-stat"><span>Зарегистрировано</span><strong>{{ counts.registered }}</strong></article>
 </section>
 
-<section class="profile-card document-list-card">
-    <div class="table-wrap">
-        <table>
+<section class="da-card document-list-card">
+    <div class="da-table-wrap">
+        <table class="da-table">
             <thead>
                 <tr>
                     <th>Номер</th>
@@ -39,20 +39,14 @@
                             {% if document.registration_number %}
                                 <code>{{ document.registration_number }}</code>
                             {% else %}
-                                <span class="document-number-placeholder">
-                                    Без регистрационного номера
-                                </span>
+                                <span class="document-number-placeholder">Без регистрационного номера</span>
                             {% endif %}
                         </a>
                     </td>
                     <td>{{ document.document_type.name }}</td>
+                    <td><a href="{% url 'documents:detail' document.public_id %}">{{ document.title }}</a></td>
                     <td>
-                        <a href="{% url 'documents:detail' document.public_id %}">
-                            {{ document.title }}
-                        </a>
-                    </td>
-                    <td>
-                        <span class="status-chip status-{{ document.status|lower }}">
+                        <span class="da-status-chip {% if document.status == 'REGISTERED' %}is-success{% else %}is-warning{% endif %}">
                             {{ document.get_status_display }}
                         </span>
                     </td>
@@ -66,9 +60,7 @@
                     </td>
                 </tr>
             {% empty %}
-                <tr>
-                    <td colspan="6" class="muted">Документов пока нет. Создайте первый черновик.</td>
-                </tr>
+                <tr><td colspan="6"><div class="ux-empty-state">Документов пока нет. Создайте первый черновик.</div></td></tr>
             {% endfor %}
             </tbody>
         </table>
