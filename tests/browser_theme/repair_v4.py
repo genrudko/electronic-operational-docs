@@ -294,8 +294,26 @@ def organization_workplace(page: Page, routes: dict[str, str | None], failures: 
     shot(page, "workplace_docs__light__1440")
     theme(page, "dark")
     shot(page, "workplace_docs__dark__1440")
+
+    # Mobile evidence is a real entry state, not a transient desktop-to-mobile
+    # resize frame. Re-navigation lets the shell initialise against the mobile
+    # media query, then we verify that navigation is actually closed.
     page.set_viewport_size(MOBILE)
-    report["workplaceMobile"] = check_width(page, failures, "workplace mobile")
+    page.goto(BASE + workplace)
+    theme(page, "dark")
+    page.wait_for_function("()=>!document.body.classList.contains('da-nav-open')")
+    mobile_navigation = page.evaluate(
+        """() => ({
+            open: document.body.classList.contains('da-nav-open'),
+            ariaHidden: document.querySelector('[data-direction-a-sidebar]')?.getAttribute('aria-hidden') || '',
+        })"""
+    )
+    check(failures, not mobile_navigation["open"], f"Workplace mobile navigation remained open: {mobile_navigation}")
+    check(failures, mobile_navigation["ariaHidden"] == "true", f"Workplace mobile sidebar not hidden: {mobile_navigation}")
+    report["workplaceMobile"] = {
+        "width": check_width(page, failures, "workplace mobile"),
+        "navigation": mobile_navigation,
+    }
     shot(page, "workplace_docs__dark__390")
 
 
