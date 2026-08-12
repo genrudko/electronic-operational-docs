@@ -116,6 +116,10 @@ jobs:
           docker compose -f compose.development.yaml exec -T app \
             python manage.py seed_demo_dispatching --verbosity 0
           docker compose -f compose.development.yaml exec -T app \
+            python manage.py seed_demo_workplace_documents --verbosity 0
+          docker compose -f compose.development.yaml exec -T app \
+            python manage.py seed_equipment_defects --verbosity 0
+          docker compose -f compose.development.yaml exec -T app \
             python manage.py shell <<'PY'
           from datetime import timedelta
 
