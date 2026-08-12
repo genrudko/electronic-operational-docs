@@ -53,8 +53,7 @@ The accepted Repair v3 boundary supersedes that narrow interpretation:
 - deterministic print isolation where existing print contracts apply;
 - Development demo accounts `operator.demo` and `supervisor.demo` bootstrapped safely against Development PostgreSQL with real server-side authentication;
 - source-level prohibition of viewport zoom locks/layout scaling hacks;
-- final browser matrix on desktop `1280×800`, `1366×768`, `1536×864`, `1920×1080` and mobile `390×844`, `412×915`, `430×932`;
-- screen + fullpage screenshots, runtime console/page errors, width/heading/content geometry and mobile `visualViewport.scale` focus evidence;
+- final browser evidence covering representative wide/desktop/tablet/mobile owner states, including mobile focus/layout proof;
 - deterministic dependency inventory regeneration;
 - one final exact-head applicable CI cycle;
 - trusted persistent Development deployment of that exact SHA with credential-safe auth/health verification;
@@ -64,24 +63,32 @@ The accepted Repair v3 boundary supersedes that narrow interpretation:
 
 The owner-rejected Development candidate was repaired against the concrete `UX-VIS-01 ... UX-VIS-23` walkthrough findings rather than by route-local cosmetic overrides.
 
-The final focused Repair v4 browser evidence on frozen UI/evidence head `f30257c1afe8af60aca41bd7dc82f7db92c9a918` is `PASS` with no reported presentation failures. The isolated Development Stack on that head also passed readiness, real demo login, canonical organization/dispatching/workplace/OPJ fixtures, canonical DEFECT Module Registry activation, guarded DEFECT presentation seeding, post-browser health, database identity, private-port isolation and clean-tree verification.
+The final focused Repair v4 browser evidence was repeated on exact UI/evidence head `02f1508de5bf8ca73d2531781ad1b4750cedbc1b` and is `PASS` with `failures=[]` and 33 retained screenshots. That exact-head Development Stack also passed readiness, real demo login, canonical organization/dispatching/workplace/OPJ fixtures, canonical DEFECT Module Registry activation, guarded DEFECT presentation seeding, post-browser health, database identity, private-port isolation and clean-tree verification.
 
 Representative Repair v4 evidence includes:
 
-- dark OPJ normative-marker tooltip with platform-owned surface/text semantics, viewport containment and verified readable contrast;
+- dark OPJ normative-marker tooltip with platform-owned surface/text semantics, viewport containment and measured contrast `12.35:1`;
 - OPJ wide/spread workspace and mobile page-level overflow containment;
 - canonical OPJ drawer disclosure iconography and enabled/disabled toolbar states;
-- DEFECT lifecycle states without whole-component opacity fading and with mechanically verified secondary-text contrast;
+- DEFECT lifecycle states without whole-component opacity fading and with measured future-state text contrast about `4.57:1`;
 - one DEFECT status presentation mapping across dedicated DEFECT and generic Operational Documents views through canonical domain/schema metadata rather than translated labels or ad-hoc status strings;
 - DEFECT dark links/disclosures, long status chips and approved-journal presentation in both themes;
-- Workplace Documentation label/code/applicability hierarchy on desktop and a settled mobile-entry shell at `390×844` with navigation closed and sidebar `aria-hidden=true`;
+- Workplace Documentation label/code/applicability hierarchy on desktop and a settled mobile-entry shell at `390×844` with `scrollWidth == innerWidth == 390`, navigation closed and sidebar `aria-hidden=true`;
 - Import, Organization/current-user identity, Equipment relations, Dispatching semantic differentiation, Structured Journals metric geometry, public wide composition, Development credential presentation and account/mobile regression evidence.
 
 The earlier apparent Workplace mobile sidebar overlap was traced to a transient desktop-to-mobile resize frame in the evidence runner. The acceptance evidence now re-enters the route at the mobile viewport and explicitly verifies the settled shell state; the resulting PNG was visually reviewed and is clean.
 
-The canonical dependency inventory was regenerated from the repository generator after the focused browser runner became a tracked build/dependency input. A temporary write-capable sync workflow removed itself before generation and is absent from the resulting repository tree; generated inventory content was not manually edited.
+### Trusted-controller boundary
 
-This section records technical candidate evidence only. It does **not** claim owner visual acceptance and does **not** replace the required final exact-head gates, base-freshness check or trusted persistent Development deployment.
+The focused browser evidence was temporarily wired into `.github/workflows/development-stack.yml` while Repair v4 defects were being isolated. That workflow change is **not** part of the product/runtime deliverable and cannot remain in a PR that must deploy itself through AUTO-001B: trusted policy intentionally blocks PRs changing `.github/workflows/**` from invoking the privileged Development controller.
+
+Before the final deployable candidate, `.github/workflows/development-stack.yml` was restored byte-for-byte to the trusted `main` version (`7e74a4f8ca85b631b49b303d6eb118e64ab72e2f`). The temporary self-deleting inventory-sync workflow is also absent from the resulting tree. Therefore the final PR diff contains no `.github/workflows/**` change and does not weaken or bypass the AUTO-001A/AUTO-001B security boundary.
+
+No application/runtime presentation file changed after the `02f1508...` browser evidence. Subsequent changes are limited to restoration of the trusted workflow boundary, generator-owned dependency inventory projections and this work-item evidence record. Thus `02f1508...` remains the runtime-identical automated visual predecessor, while the final persistent Development deployment and the owner's walkthrough are performed on the final controller-compatible exact SHA.
+
+The canonical dependency inventory was regenerated from the repository generator after both addition of the focused browser runner and restoration of the trusted Development workflow. Temporary write-capable sync workflows removed themselves before generation and are absent from the resulting repository tree; generated inventory content was not manually edited.
+
+This section records technical candidate evidence only. It does **not** claim owner visual acceptance. Owner acceptance remains `PENDING` until the owner performs the new persistent Development walkthrough.
 
 ## HARD BOUNDARIES
 
@@ -97,9 +104,9 @@ Stop only at a technically and visually complete Draft PR ready for direct owner
 
 - one final exact head;
 - source contract, full Django suite and applicable project gates green;
-- complete seven-viewport browser evidence and mobile focus proof green;
-- deterministic dependency inventory exact on the same head;
-- trusted persistent Development deployed at that same SHA and verified;
+- focused Repair v4 browser evidence and mobile proof green on the runtime-identical visual predecessor;
+- deterministic dependency inventory exact for the final head;
+- trusted persistent Development deployed at the final exact SHA and verified;
 - `behind_by: 0`;
 - Preview untouched;
 - `OWNER VISUAL ACCEPTANCE = PENDING` until actual owner review.
