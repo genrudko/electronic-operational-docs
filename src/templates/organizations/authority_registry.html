@@ -5,9 +5,8 @@
 {% block main_class %}authority-main authority-matrix-main{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'organizations/personnel_authority.css' %}?v=pa001r2">
-<link rel="stylesheet" href="{% static 'organizations/personnel_authority_matrix.css' %}?v=pa001r3">
-<link rel="stylesheet" href="{% static 'organizations/personnel_authority_repair.css' %}?v=pa001r5">
-<script src="{% static 'organizations/personnel_authority_matrix.js' %}?v=pa001r5" defer></script>
+<link rel="stylesheet" href="{% static 'organizations/personnel_authority_matrix.css' %}?v=pa001r6">
+<script src="{% static 'organizations/personnel_authority_matrix.js' %}?v=pa001r6" defer></script>
 {% endblock %}
 
 {% block content %}
@@ -84,7 +83,7 @@
                 <option value="II">II</option>
             </select>
         </div>
-        <div class="authority-filter-field authority-right-filter" data-filter-for="holders">
+        <div class="authority-filter-field authority-right-filter" data-filter-for="holders" hidden>
             <label for="authority-right">Право</label>
             <select id="authority-right" data-authority-right>
                 <option value="">Все опубликованные права</option>
@@ -99,7 +98,7 @@
         <aside class="authority-org-tree" aria-label="Структура организации">
             <div class="authority-tree-heading">
                 <div><strong>Структура организации</strong><span>Подразделения и подчинённость</span></div>
-                <button type="button" title="Развернуть всё" data-expand-all>＋</button>
+                <button type="button" title="Развернуть всё" aria-label="Развернуть все подразделения" data-expand-all><svg class="authority-control-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-add"></use></svg></button>
             </div>
             <button class="authority-tree-item is-active" type="button" data-division-filter="">
                 <span class="authority-tree-icon tone-blue"><svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-organization"></use></svg></span>
@@ -152,7 +151,7 @@
                     </thead>
                     {% for branch in division_rows %}
                     <tbody data-division-section="{{ branch.division.id }}" data-division-path="{{ branch.division_path }}">
-                        <tr class="authority-division-row"><th colspan="{{ rights|length|add:3 }}"><button type="button" data-collapse-division="{{ branch.division.id }}" aria-expanded="true">▾</button><span style="--division-depth: {{ branch.depth }}"><svg class="authority-inline-icon tone-{{ branch.tone }}" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-org-{{ branch.icon_kind }}"></use></svg>{{ branch.division.name }}</span><b>{{ branch.employee_count }}</b></th></tr>
+                        <tr class="authority-division-row"><th colspan="{{ rights|length|add:3 }}"><button type="button" data-collapse-division="{{ branch.division.id }}" aria-label="Свернуть или развернуть подразделение {{ branch.division.name }}" aria-expanded="true"><svg class="authority-control-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-chevron-right"></use></svg></button><span style="--division-depth: {{ branch.depth }}"><svg class="authority-inline-icon tone-{{ branch.tone }}" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-org-{{ branch.icon_kind }}"></use></svg>{{ branch.division.name }}</span><b>{{ branch.employee_count }}</b></th></tr>
                         {% for row in branch.direct_rows %}
                         <tr class="authority-matrix-person" data-authority-row data-matrix-row data-division-path="{{ row.division_path }}" data-search="{{ row.search_text }}" data-category="{% if row.qualification %}{{ row.qualification.personnel_category }}{% endif %}" data-group="{% if row.qualification %}{{ row.qualification.electrical_safety_group }}{% endif %}">
                             <td class="matrix-sticky-name"><a href="{% url 'organizations:employee_detail' row.employee.public_id %}">{{ row.employee.full_name }}</a>{% if row.employee.workplace %}<small>{{ row.employee.workplace.name }}</small>{% endif %}</td>

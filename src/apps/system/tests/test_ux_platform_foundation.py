@@ -219,7 +219,10 @@ class UxPlatformFoundationSourceContractTests(SimpleTestCase):
         compositions = read("src/static/system/ux_platform_compositions.css")
 
         self.assertIn('title="{{ user_display_name }} — {{ user_display_role', sidebar)
-        self.assertIn('aria-label="Настройки интерфейса: {{ user_display_name }}', sidebar)
+        self.assertIn(
+            'aria-label="Настройки интерфейса: {{ user_display_name }}',
+            sidebar,
+        )
         self.assertIn("-webkit-line-clamp:2", compositions)
         self.assertIn(".da-user { min-height:5rem; }", compositions)
         self.assertNotIn(
@@ -254,16 +257,24 @@ class UxPlatformFoundationSourceContractTests(SimpleTestCase):
         self.assertIn('class="da-button"', aside)
         self.assertNotIn('class="defect-button"', aside)
         self.assertIn("is-terminal-reached", aside)
-        self.assertIn("{% if record.status_code == 'CLOSED' %}✓{% else %}4{% endif %}", aside)
+        self.assertIn(
+            "{% if record.status_code == 'CLOSED' %}✓{% else %}4{% endif %}",
+            aside,
+        )
 
-    def test_repair_v5_personnel_tree_forms_and_wide_workspace_are_normalized(self) -> None:
+    def test_repair_v6_personnel_tree_is_adaptive_and_forms_stay_normalized(self) -> None:
         directory_css = read("src/static/organizations/personnel_directory.css")
         management_css = read("src/static/organizations/personnel_management.css")
+        compact = re.sub(r"\s+", "", directory_css)
 
-        self.assertIn("minmax(19rem, 22rem) minmax(0, 1fr)", directory_css)
+        self.assertIn(
+            "grid-template-columns:clamp(20rem,24%,30rem)minmax(0,1fr)",
+            compact,
+        )
         self.assertIn(".personnel-division-row > strong > small", directory_css)
-        self.assertIn("display: grid", directory_css)
-        self.assertIn("min-width: 64rem", directory_css)
+        self.assertIn("overflow-wrap:normal", compact)
+        self.assertIn("word-break:normal", compact)
+        self.assertIn("min-width:64rem", compact)
         self.assertIn("repeat(12,minmax(0,1fr))", management_css.replace(" ", ""))
         self.assertIn("grid-column:1 / -1", management_css)
 
@@ -277,3 +288,58 @@ class UxPlatformFoundationSourceContractTests(SimpleTestCase):
         self.assertIn('class="da-icon-button draft-row-action"', rows)
         self.assertIn('class="da-icon-button draft-row-action is-danger"', rows)
         self.assertIn("--theme-control-height-sm", compositions)
+
+    def test_repair_v6_authority_layout_css_is_not_runtime_injected(self) -> None:
+        script = read("src/static/organizations/personnel_authority_followup.js")
+
+        self.assertNotIn('createElement("link")', script)
+        self.assertNotIn("document.head.append", script)
+        self.assertNotIn("personnel_authority_followup.css", script)
+        self.assertIn("Progressive enhancement only", script)
+
+    def test_repair_v6_authority_has_one_synchronous_geometry_owner(self) -> None:
+        matrix = read("src/static/organizations/personnel_authority_matrix.css")
+        repair = read("src/static/organizations/personnel_authority_repair.css")
+        followup = read("src/static/organizations/personnel_authority_followup.css")
+
+        self.assertIn("canonical matrix/hierarchy presentation", matrix)
+        self.assertIn("--authority-tree-width:clamp", matrix)
+        self.assertIn("grid-template-columns:var(--authority-tree-width)", matrix)
+        self.assertNotIn(".authority-workspace", repair)
+        self.assertNotIn(".authority-workspace", followup)
+
+    def test_repair_v6_platform_has_explicit_width_profiles(self) -> None:
+        css = read("src/static/system/ux_platform_compositions.css")
+
+        for token in (
+            "--ux-page-normal-max",
+            "--ux-page-wide-max",
+            "--ux-page-gutter",
+            "main.ux-page-wide",
+            "main.ux-page-specialist",
+        ):
+            self.assertIn(token, css)
+        self.assertIn("main.authority-main", css)
+        self.assertIn("main.opj-shift-main", css)
+
+    def test_repair_v6_opj_full_spread_use_specialist_stage(self) -> None:
+        css = read("src/static/system/ux_platform_compositions.css")
+        compact = re.sub(r"\s+", " ", css)
+
+        self.assertIn(
+            'opj-workspace[data-page-width="full"] { width:100%; max-width:none; }',
+            compact,
+        )
+        self.assertIn(
+            'opj-workspace[data-view-mode="spread"] .opj-editor-container '
+            "{ min-width:0; grid-template-columns:repeat(2,minmax(0,1fr))",
+            compact,
+        )
+        self.assertIn("font-size:clamp(1.3rem,1.25vw,1.65rem)", compact)
+
+    def test_repair_v6_opj_bridge_has_no_meaningful_micro_typography(self) -> None:
+        css = read("src/static/system/ux_platform_compositions.css")
+        opj_bridge = css.split("Specialist OPJ", 1)[1]
+
+        for literal in ("0.52rem", "0.53rem", "0.58rem", "0.61rem", "0.64rem"):
+            self.assertNotIn(literal, opj_bridge)
