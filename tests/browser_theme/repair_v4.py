@@ -202,6 +202,7 @@ def public_import_structured(browser, failures: list[str], report: dict[str, obj
     shot(page, "login__dark__390")
 
     page.set_viewport_size(WIDE)
+    login(page, os.getenv("EOD_BROWSER_PASSWORD", ""))
     page.goto(BASE + "/imports/")
     theme(page, "light")
     heading = need(page, ".ux-page-header-balanced h1")
