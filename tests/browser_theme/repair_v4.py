@@ -75,8 +75,8 @@ def visible_metrics(page, selector):
     return node_metrics(locator)
 
 
-def login(page, password):
-    clear_runtime_errors(page._eod_runtime_errors)
+def login(page, password, runtime_errors):
+    clear_runtime_errors(runtime_errors)
     page.goto(BASE + "/accounts/login/")
     need(page, "input[name=username]").fill(
         os.getenv("EOD_BROWSER_USERNAME", "operator.demo")
@@ -95,13 +95,13 @@ def discover_first(page, route, pattern):
 
 
 def ensure_synthetic_marker(page):
-    marker = page.locator("[data-opj-marker]:visible").first
-    if marker.count():
-        return marker, False
-
     host = page.locator(".draft-ledger-visas:visible").first
     if not host.count():
         raise AssertionError("Repair v4 marker probe has no visible OPJ visas cell")
+    marker = host.locator("[data-opj-marker]:visible").first
+    if marker.count():
+        return marker, host, False
+
     host.evaluate(
         """host => {
             for (let index = 1; index <= 3; index += 1) {
@@ -125,9 +125,9 @@ def ensure_synthetic_marker(page):
             window.__EOD_OPJ_MARKER_REFRESH_00612__?.();
         }"""
     )
-    marker = page.locator("[data-opj-marker]:visible").first
+    marker = host.locator("[data-opj-marker]:visible").first
     marker.wait_for(state="visible")
-    return marker, True
+    return marker, host, True
 
 
 def append_check(bucket, condition, message):
@@ -157,8 +157,8 @@ def main():
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
         page = browser.new_page(viewport={"width": 1920, "height": 1080})
-        page._eod_runtime_errors = bind_runtime_errors(page)
-        login(page, password)
+        runtime_errors = bind_runtime_errors(page)
+        login(page, password, runtime_errors)
 
         focused_routes = {
             "organizations": "/organization/",
@@ -184,12 +184,12 @@ def main():
             if not path:
                 continue
             for mode in THEMES:
-                clear_runtime_errors(page._eod_runtime_errors)
+                clear_runtime_errors(runtime_errors)
                 page.goto(BASE + path)
                 theme(page, mode)
                 screenshots(page, SHOTS, f"repair_v4__{route_name}__{mode}__1920x1080")
                 focused["runtime_errors"][f"{route_name}_{mode}"] = runtime_error_snapshot(
-                    page._eod_runtime_errors
+                    runtime_errors
                 )
 
         # UX-VIS-20: Development credential presentation remains readable.
@@ -236,7 +236,7 @@ def main():
             )
 
         # UX-VIS-15/21: wide/full width and spread geometry on 1920 desktop.
-        clear_runtime_errors(page._eod_runtime_errors)
+        clear_runtime_errors(runtime_errors)
         page.goto(BASE + ROUTES["draft_workspace"])
         theme(page, "dark")
         need(page, "[data-open-view-drawer]").click()
@@ -316,8 +316,7 @@ def main():
             )
 
         # UX-VIS-22/02: marker edge geometry and dark tooltip portal.
-        marker, synthetic = ensure_synthetic_marker(page)
-        host = marker.locator("xpath=ancestor::*[contains(@class,'draft-ledger-visas')][1]")
+        marker, host, synthetic = ensure_synthetic_marker(page)
         marker_metrics = node_metrics(marker)
         host_metrics = node_metrics(host)
         focused["marker_edge"] = {
@@ -405,9 +404,7 @@ def main():
                     "DEFECT status chip geometry is too small",
                 )
 
-        focused["runtime_errors"]["focused_opj"] = runtime_error_snapshot(
-            page._eod_runtime_errors
-        )
+        focused["runtime_errors"]["focused_opj"] = runtime_error_snapshot(runtime_errors)
         browser.close()
 
     focused["verdict"] = "PASS" if not failures else "FAIL"
