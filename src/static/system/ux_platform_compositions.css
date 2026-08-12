@@ -138,7 +138,7 @@ body.ux-platform.opj-workspace-page .opj-registered-link { min-height:var(--them
 body.ux-platform.opj-workspace-page .opj-workspace[data-page-width="full"] { width:100%; max-width:none; }
 body.ux-platform.opj-workspace-page .opj-workspace[data-page-width="wide"] { width:min(100%,124rem); max-width:none; }
 body.ux-platform.opj-workspace-page .opj-workspace[data-page-width="full"] .opj-editor-container { width:100%; max-width:none; }
-body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="spread"] .opj-editor-container { min-width:0; width:100%; max-width:none; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--theme-space-3); padding:var(--theme-space-3); }
+body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="spread"] .opj-editor-container { min-width:0; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; max-width:none; gap:var(--theme-space-3); padding:var(--theme-space-3); }
 body.ux-platform.opj-workspace-page :is(.opj-toolbar-primary,.opj-editor-toolbar,.opj-action-strip) { gap:var(--theme-space-2); padding:var(--theme-space-2) var(--theme-space-3); }
 body.ux-platform.opj-workspace-page .opj-toolbar-primary { min-height:var(--theme-control-height-lg); }
 body.ux-platform.opj-workspace-page .opj-toolbar-search .da-field { min-height:var(--theme-control-height-sm); font-size:var(--theme-font-size-xs); }
