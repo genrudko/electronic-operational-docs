@@ -172,7 +172,10 @@ class OperationalJournalAcceptanceRepairSourceTests(SimpleTestCase):
             "static/operational_log/opj_lifecycle_acceptance_repair.css"
         )
 
-        self.assertIn(".draft-row-action):disabled", css)
+        self.assertIn(
+            ":is(.draft-editor-ribbon-button, .draft-row-action, .da-icon-button):disabled",
+            css,
+        )
         self.assertIn("background: var(--theme-control-disabled) !important", css)
         self.assertIn("color: var(--theme-text-muted) !important", css)
         self.assertIn("opacity: 1 !important", css)
