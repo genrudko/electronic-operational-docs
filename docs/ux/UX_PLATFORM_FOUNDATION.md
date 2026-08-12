@@ -1,6 +1,6 @@
 # UX-PLATFORM-FOUNDATION-001 — factual inventory и ownership map
 
-**Статус:** `IN_PROGRESS / FINAL REPAIR EVIDENCE`
+**Статус:** `ACCEPTANCE_CANDIDATE / REPAIR V7 EVIDENCE PASS / FINAL EXACT-HEAD GATES`
 
 **Контур:** issue #69 / Draft PR #70 / `ux/ux-platform-foundation-001`
 
@@ -137,18 +137,22 @@ This is not a component framework or page template library.
 
 Required browser viewport matrix:
 
-### Desktop
+### Desktop / wide
 
-- `1280×800`;
-- `1366×768`;
-- `1536×864`;
-- `1920×1080`.
+- `1280×800` — desktop regression;
+- `1366×768` — required baseline desktop;
+- `1440×900` — desktop regression;
+- `1536×864` — desktop regression;
+- `1920×1080` — **PRIMARY DESKTOP**;
+- `2560×1440` — **REQUIRED WIDE ADAPTIVE**; not optional and not merely an overflow stress case.
 
 ### Mobile
 
 - `390×844`;
 - `412×915`;
 - `430×932`.
+
+The wide-screen contract is semantic rather than indiscriminate stretching: NORMAL/WIDE/SPECIALIST page ownership decides how additional horizontal space is allocated. Readable NORMAL surfaces may retain bounded line length; WIDE and SPECIALIST workspaces must actually gain useful working area where their semantics require it.
 
 For each representative baseline state the harness records:
 
@@ -191,22 +195,41 @@ May remove dead selectors, collapse historical repair files and retire remaining
 
 ## 11. Acceptance evidence contract
 
-Final evidence must be produced on one exact PR head and include:
+Final evidence must be produced on one exact runtime presentation head, followed only by source-neutral closure changes if trusted-controller policy requires restoration of temporary evidence wiring. It includes:
 
 1. source-level generic presentation ownership guard;
 2. Ruff, compile/system/migration/architecture/collectstatic and full Django suite;
 3. Development bootstrap + real server-side demo login smoke;
-4. representative browser matrix across the seven required viewport sizes, light/dark, screen/fullpage, runtime errors and rendered geometry;
+4. representative browser matrix across the **nine required viewport sizes**, light/dark, screen/fullpage, runtime errors and rendered geometry;
 5. mobile login focus proof using `visualViewport.scale`;
 6. DEFECT + OPJ transient/regression surfaces and OPJ print isolation;
-7. deterministic dependency inventory views for that exact head;
-8. trusted persistent Development controller deployment of the same exact SHA;
-9. `behind_by: 0` and Preview untouched.
+7. Personnel and Operational Rights as explicit specialised visual surfaces;
+8. deterministic dependency inventory views for the final exact head;
+9. trusted persistent Development controller deployment of the final exact SHA;
+10. `behind_by: 0` and Preview untouched.
+
+### Repair v7 evidence
+
+Automated Repair v7 visual evidence is `PASS` on runtime presentation head `eabd9a3281673ababc9beb7ce737ca01346a04cf` via Development Stack run `31648061603`.
+
+Retained artifact:
+
+- `ux-platform-browser-evidence-31648061603`;
+- artifact id `9161621583`;
+- SHA-256 digest `d8d98b707326b654315f0c00d4acf604a3d227bf9bc93e5679133fc1fd5207b1`;
+- retention through `2026-08-26` according to the GitHub artifact record.
+
+The harness covered 17 authenticated/public representative surfaces across `light` and `dark` themes and the full nine-viewport matrix. Personnel and Operational Rights are explicit surfaces, not inferred from source tests. The repaired Workplace Documentation registry is verified without document-level horizontal overflow at mobile widths. Registered OPJ, working/draft OPJ, DEFECT, transient states and mobile login focus remain part of the same evidence contour.
+
+Executor manual review of the retained Repair v7 screenshots is `PASS`: required 1920×1080 and 2560×1440 layouts remain semantically distinct rather than mechanically stretched; specialist workspaces consume available width, readable normal pages remain bounded, mobile light/dark composition is coherent, and no new owner-visible defect was identified.
+
+The browser evidence was temporarily wired into `development-stack.yml` only to obtain focused evidence. That temporary workflow modification is not part of the deliverable and must be restored byte-for-byte to the trusted `main` blob before the final persistent Development controller run. No application/runtime presentation file may change after the Repair v7 evidence head without invalidating that evidence and requiring a new browser run.
 
 Final report terminology remains separate:
 
-- `AUTOMATED VISUAL EVIDENCE: PASS/FAIL`;
-- `DEVELOPMENT AUTHENTICATION SMOKE: PASS/FAIL`;
-- `OWNER VISUAL ACCEPTANCE: PENDING/PASS`.
+- `AUTOMATED VISUAL EVIDENCE: PASS`;
+- `EXECUTOR MANUAL VISUAL REVIEW: PASS`;
+- `DEVELOPMENT AUTHENTICATION SMOKE: PASS` for the evidence run and must be re-verified by the final trusted controller deployment;
+- `OWNER VISUAL ACCEPTANCE: PENDING` until actual owner review.
 
 `OWNER VISUAL ACCEPTANCE` can become `PASS` only after actual owner review. Draft PR must not be marked Ready or merged without explicit owner instruction.
