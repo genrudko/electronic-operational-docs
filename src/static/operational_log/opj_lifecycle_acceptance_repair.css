@@ -504,6 +504,24 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
     outline-offset: calc(-1 * var(--theme-focus-width, 2px));
 }
 
+/* On narrow viewports a persisted spread preference stays available, but its
+ * wide two-page rail must scroll inside the specialised workspace rather than
+ * widening the document itself. */
+@media (max-width: 720px) {
+    .opj-workspace-page .opj-workspace {
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .opj-workspace-page .opj-workspace[data-view-mode="spread"] .opj-editor-container {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        overscroll-behavior-inline: contain;
+    }
+}
+
 @media print {
     .opj-marker-popover,
     .opj-marker-popover.is-floating {

@@ -155,6 +155,7 @@ class OperationalJournalAcceptanceRepairSourceTests(SimpleTestCase):
         self.assertIn("min-height: 49px !important", css)
 
     def test_repair_v4_marker_tooltip_consumes_complete_theme_contract(self) -> None:
+        partial = self.source("templates/operational_log/_normative_markers.html")
         css = self.source(
             "static/operational_log/opj_lifecycle_acceptance_repair.css"
         )
@@ -166,6 +167,8 @@ class OperationalJournalAcceptanceRepairSourceTests(SimpleTestCase):
         self.assertIn("color: var(--theme-primary-hover) !important", css)
         self.assertIn("var(--theme-shadow-overlay", css)
         self.assertNotIn("--theme-surface-elevated", css)
+        self.assertNotIn("--theme-surface-elevated", partial)
+        self.assertNotIn(".opj-marker-popover.is-floating {", partial)
 
     def test_repair_v4_toolbar_states_do_not_hide_disabled_controls_with_opacity(self) -> None:
         css = self.source(
@@ -195,6 +198,22 @@ class OperationalJournalAcceptanceRepairSourceTests(SimpleTestCase):
         self.assertIn("--opj-grid-strong: var(--theme-border-strong)", css)
         self.assertIn("border-color: var(--theme-border-strong) !important", css)
         self.assertIn("background: var(--theme-surface-soft) !important", css)
+
+    def test_repair_v4_mobile_spread_scroll_is_contained_inside_workspace(self) -> None:
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
+        )
+
+        self.assertIn("@media (max-width: 720px)", css)
+        self.assertIn(
+            '.opj-workspace-page .opj-workspace[data-view-mode="spread"] '
+            ".opj-editor-container",
+            css,
+        )
+        self.assertIn("width: 100% !important", css)
+        self.assertIn("min-width: 0 !important", css)
+        self.assertIn("max-width: 100% !important", css)
+        self.assertIn("overflow-x: auto !important", css)
 
     def test_repair_v4_disclosure_uses_canonical_svg_and_no_raw_caret(self) -> None:
         drawer = self.source("templates/operational_log/_shift_workspace_drawer.html")
