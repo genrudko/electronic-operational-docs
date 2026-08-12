@@ -25,7 +25,15 @@
         <h2>Размещение и иерархия</h2>
         <dl class="ux-key-value">
             <dt>Энергообъект</dt><dd><a href="{% url 'equipment:site_detail' equipment.site.code %}">{{ equipment.site }}</a></dd>
-            <dt>Родительский объект</dt><dd>{% if equipment.parent %}<a href="{% url 'equipment:detail' equipment.parent.public_id %}"><code class="technical-only">{{ equipment.parent.code }} · </code>{{ equipment.parent.technical_name }}</a>{% else %}Верхний уровень{% endif %}</dd>
+            <dt>Родительский объект</dt>
+            <dd>
+                {% if equipment.parent %}
+                <a class="ux-value-stack" href="{% url 'equipment:detail' equipment.parent.public_id %}">
+                    <span class="ux-value-primary">{{ equipment.parent.technical_name }}</span>
+                    <code class="ux-technical technical-only">{{ equipment.parent.code }}</code>
+                </a>
+                {% else %}Верхний уровень{% endif %}
+            </dd>
             <dt>Контур</dt><dd>{% if equipment.is_external %}Смежное оборудование{% else %}Оборудование организации{% endif %}</dd>
             <dt>Введено</dt><dd>{{ equipment.commissioned_on|date:"d.m.Y"|default:"Не указано" }}</dd>
             <dt>Выведено</dt><dd>{{ equipment.decommissioned_on|date:"d.m.Y"|default:"Не выведено" }}</dd>
@@ -56,12 +64,12 @@
 
 <section class="ux-detail-grid">
     <article class="da-card"><h2>Алиасы и поисковые варианты</h2><ul class="revision-list ux-list-reset">{% for alias in aliases %}<li><strong>{{ alias.alias }}</strong><span>{{ alias.get_alias_type_display }}</span></li>{% empty %}<li class="ux-muted">Действующих алиасов нет.</li>{% endfor %}</ul></article>
-    <article class="da-card"><h2>Дочернее оборудование</h2><ul class="revision-list ux-list-reset">{% for child in children %}<li><a href="{% url 'equipment:detail' child.public_id %}"><code class="technical-only">{{ child.code }} · </code><strong>{{ child.technical_name }}</strong></a></li>{% empty %}<li class="ux-muted">Дочернего оборудования нет.</li>{% endfor %}</ul></article>
+    <article class="da-card"><h2>Дочернее оборудование</h2><ul class="revision-list ux-list-reset">{% for child in children %}<li><a class="ux-value-stack" href="{% url 'equipment:detail' child.public_id %}"><strong class="ux-value-primary">{{ child.technical_name }}</strong><code class="ux-technical technical-only">{{ child.code }}</code></a></li>{% empty %}<li class="ux-muted">Дочернего оборудования нет.</li>{% endfor %}</ul></article>
 </section>
 
 <section class="ux-detail-grid">
-    <article class="da-card"><h2>Исходящие связи</h2><ul class="equipment-relation-list ux-list-reset">{% for relation in outgoing_relations %}<li><span>{{ relation.get_relation_type_display }}</span><a href="{% url 'equipment:detail' relation.target_equipment.public_id %}"><code class="technical-only">{{ relation.target_equipment.code }} · </code>{{ relation.target_equipment.technical_name }}</a>{% if relation.description %}<small>{{ relation.description }}</small>{% endif %}</li>{% empty %}<li class="ux-muted">Исходящих связей нет.</li>{% endfor %}</ul></article>
-    <article class="da-card"><h2>Входящие связи</h2><ul class="equipment-relation-list ux-list-reset">{% for relation in incoming_relations %}<li><span>{{ relation.get_relation_type_display }}</span><a href="{% url 'equipment:detail' relation.source_equipment.public_id %}"><code class="technical-only">{{ relation.source_equipment.code }} · </code>{{ relation.source_equipment.technical_name }}</a>{% if relation.description %}<small>{{ relation.description }}</small>{% endif %}</li>{% empty %}<li class="ux-muted">Входящих связей нет.</li>{% endfor %}</ul></article>
+    <article class="da-card"><h2>Исходящие связи</h2><ul class="equipment-relation-list ux-list-reset">{% for relation in outgoing_relations %}<li><span>{{ relation.get_relation_type_display }}</span><a class="ux-value-stack" href="{% url 'equipment:detail' relation.target_equipment.public_id %}"><strong class="ux-value-primary">{{ relation.target_equipment.technical_name }}</strong><code class="ux-technical technical-only">{{ relation.target_equipment.code }}</code></a>{% if relation.description %}<small>{{ relation.description }}</small>{% endif %}</li>{% empty %}<li class="ux-muted">Исходящих связей нет.</li>{% endfor %}</ul></article>
+    <article class="da-card"><h2>Входящие связи</h2><ul class="equipment-relation-list ux-list-reset">{% for relation in incoming_relations %}<li><span>{{ relation.get_relation_type_display }}</span><a class="ux-value-stack" href="{% url 'equipment:detail' relation.source_equipment.public_id %}"><strong class="ux-value-primary">{{ relation.source_equipment.technical_name }}</strong><code class="ux-technical technical-only">{{ relation.source_equipment.code }}</code></a>{% if relation.description %}<small>{{ relation.description }}</small>{% endif %}</li>{% empty %}<li class="ux-muted">Входящих связей нет.</li>{% endfor %}</ul></article>
 </section>
 
 {% if source_provenance %}
