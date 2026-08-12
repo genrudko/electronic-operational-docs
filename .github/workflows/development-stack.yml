@@ -128,43 +128,60 @@ jobs:
           docker compose -f compose.development.yaml exec -T app \
             python manage.py seed_demo_operational_log --verbosity 0
 
-      - name: Seed representative DEFECT fixture
-        id: defect-fixture
+      - name: Activate representative DEFECT module fixture
         shell: bash
         run: |
           set -euo pipefail
-          raw="$RUNNER_TEMP/defect-fixture.raw.txt"
-          sanitized="$RUNNER_TEMP/defect-fixture.sanitized.txt"
-          set +e
           docker compose -f compose.development.yaml exec -T app \
-            python manage.py seed_equipment_defects --verbosity 2 \
-            >"$raw" 2>&1
-          status=$?
-          set -e
-          python scripts/secret_hygiene.py redact \
-            --input "$raw" \
-            --output "$sanitized" \
-            --env DJANGO_SECRET_KEY \
-            --env POSTGRES_PASSWORD \
-            --env EOD_DEMO_USER_PASSWORD
-          python scripts/secret_hygiene.py verify-sanitized \
-            --input "$sanitized" \
-            --env DJANGO_SECRET_KEY \
-            --env POSTGRES_PASSWORD \
-            --env EOD_DEMO_USER_PASSWORD
-          printf 'diagnostics_verified=true\n' >>"$GITHUB_OUTPUT"
-          cat "$sanitized"
-          rm -f "$raw"
-          exit "$status"
+            python manage.py shell <<'PY'
+          from apps.organizations.models import Employee
+          from apps.system.models import ModuleLifecycleState, ModuleScopeType
+          from apps.system.module_registry import (
+              normalize_context,
+              resolve_effective_state,
+              transition_module_state,
+          )
 
-      - name: Upload verified DEFECT fixture diagnostics
-        if: ${{ failure() && steps.defect-fixture.outputs.diagnostics_verified == 'true' }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: defect-fixture-diagnostics-${{ github.run_id }}
-          path: ${{ runner.temp }}/defect-fixture.sanitized.txt
-          if-no-files-found: error
-          retention-days: 1
+          employee = Employee.objects.select_related("organization", "workplace").get(
+              user__username="operator.demo"
+          )
+          assert employee.workplace_id is not None
+          context = normalize_context(
+              organization=employee.organization,
+              workplace=employee.workplace,
+          )
+          effective = resolve_effective_state(module_id="DEFECT", context=context)
+          if effective.state == ModuleLifecycleState.AVAILABLE:
+              transition_module_state(
+                  module_id="DEFECT",
+                  context=context,
+                  scope_type=ModuleScopeType.WORKPLACE,
+                  new_state=ModuleLifecycleState.CONFIGURED,
+                  actor_identity="repair-v4-visual-evidence",
+                  reason="Prepare isolated representative DEFECT visual fixture.",
+                  configuration_ready=True,
+                  configuration={"purpose": "repair-v4-visual-evidence"},
+              )
+              effective = resolve_effective_state(module_id="DEFECT", context=context)
+          if effective.state == ModuleLifecycleState.CONFIGURED:
+              transition_module_state(
+                  module_id="DEFECT",
+                  context=context,
+                  scope_type=ModuleScopeType.WORKPLACE,
+                  new_state=ModuleLifecycleState.ACTIVE,
+                  actor_identity="repair-v4-visual-evidence",
+                  reason="Activate isolated representative DEFECT visual fixture.",
+                  configuration_ready=True,
+              )
+              effective = resolve_effective_state(module_id="DEFECT", context=context)
+          assert effective.state == ModuleLifecycleState.ACTIVE, effective
+          print("DEFECT module fixture: ACTIVE")
+          PY
+
+      - name: Seed representative DEFECT fixture
+        run: |
+          docker compose -f compose.development.yaml exec -T app \
+            python manage.py seed_equipment_defects --verbosity 0
 
       - name: Build immutable browser evidence environment
         shell: bash
@@ -332,8 +349,6 @@ jobs:
             "$RUNNER_TEMP/development-health.raw.json" \
             "$RUNNER_TEMP/development-health.sanitized.json" \
             "$RUNNER_TEMP/development-db-port.raw.txt" \
-            "$RUNNER_TEMP/defect-fixture.raw.txt" \
-            "$RUNNER_TEMP/defect-fixture.sanitized.txt" \
             "$RUNNER_TEMP/browser-evidence-diagnostics.raw.txt" \
             "$RUNNER_TEMP/browser-evidence-diagnostics.sanitized.txt" \
             "$RUNNER_TEMP/development-diagnostics.raw.txt" \
