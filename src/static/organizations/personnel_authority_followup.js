@@ -1,13 +1,6 @@
 (() => {
-    const stylesheetId = "personnel-authority-followup-css";
-    if (!document.getElementById(stylesheetId)) {
-        const stylesheet = document.createElement("link");
-        stylesheet.id = stylesheetId;
-        stylesheet.rel = "stylesheet";
-        stylesheet.href = "/static/organizations/personnel_authority_followup.css?v=pa001r6";
-        document.head.append(stylesheet);
-    }
-
+    // Progressive enhancement only. Layout-critical authority CSS is linked
+    // synchronously by the server-rendered page and must never be injected here.
     const interactiveSelector = [
         "a",
         "button",

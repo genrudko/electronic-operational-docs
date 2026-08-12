@@ -23,6 +23,20 @@
 
     root.querySelectorAll(".authority-abbreviation-legend").forEach((item) => item.remove());
 
+    const spriteHref = (icon) => `/static/system/icons.svg#${icon}`;
+    const iconSvg = (icon) => {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.classList.add("authority-control-icon");
+        svg.setAttribute("aria-hidden", "true");
+        const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+        use.setAttribute("href", spriteHref(icon));
+        svg.append(use);
+        return svg;
+    };
+
+    root.querySelector("[data-expand-all]")?.replaceChildren(iconSvg("icon-add"));
+    collapsers.forEach((button) => button.replaceChildren(iconSvg("icon-chevron-right")));
+
     const normalize = (value) => (value || "")
         .toLocaleLowerCase("ru-RU")
         .replaceAll("ё", "е")
@@ -78,7 +92,7 @@
         if (noResults) noResults.classList.toggle("is-visible", visible === 0);
     };
 
-    const activateView = (view) => {
+    const activateView = (view, { updateUrl = true } = {}) => {
         activeView = supportedViews.includes(view) ? view : "matrix";
         tabs.forEach((tab) => tab.setAttribute(
             "aria-pressed",
@@ -91,7 +105,7 @@
         root.querySelectorAll("[data-filter-for]").forEach((field) => {
             field.hidden = !field.dataset.filterFor.split(" ").includes(activeView);
         });
-        history.replaceState(null, "", `#${activeView}`);
+        if (updateUrl) history.replaceState(null, "", `#${activeView}`);
         applyFilters();
     };
 
@@ -115,10 +129,7 @@
         selectedDivision = button.dataset.divisionFilter || "";
         treeItems.forEach((item) => item.classList.toggle("is-active", item === button));
         collapsed.clear();
-        collapsers.forEach((item) => {
-            item.setAttribute("aria-expanded", "true");
-            item.textContent = "▾";
-        });
+        collapsers.forEach((item) => item.setAttribute("aria-expanded", "true"));
         applyFilters();
     }));
 
@@ -126,18 +137,13 @@
         const id = button.dataset.collapseDivision;
         if (collapsed.has(id)) collapsed.delete(id);
         else collapsed.add(id);
-        const expanded = !collapsed.has(id);
-        button.setAttribute("aria-expanded", String(expanded));
-        button.textContent = expanded ? "▾" : "▸";
+        button.setAttribute("aria-expanded", String(!collapsed.has(id)));
         applyFilters();
     }));
 
     root.querySelector("[data-expand-all]")?.addEventListener("click", () => {
         collapsed.clear();
-        collapsers.forEach((button) => {
-            button.setAttribute("aria-expanded", "true");
-            button.textContent = "▾";
-        });
+        collapsers.forEach((button) => button.setAttribute("aria-expanded", "true"));
         applyFilters();
     });
 
@@ -151,6 +157,14 @@
         });
     });
 
-    const initial = window.location.hash.slice(1);
-    activateView(supportedViews.includes(initial) ? initial : "matrix");
+    // The server-rendered default is already Matrix. Do not re-compose the page
+    // after first paint just because deferred JS has started. A non-default hash
+    // remains an explicit navigation request and is applied only when present.
+    const requestedView = window.location.hash.slice(1);
+    if (requestedView && supportedViews.includes(requestedView) && requestedView !== "matrix") {
+        activateView(requestedView, { updateUrl: false });
+    } else {
+        activeView = "matrix";
+        applyFilters();
+    }
 })();
