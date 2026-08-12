@@ -1,40 +1,96 @@
 /* UX-PLATFORM-FOUNDATION-001
- * Small shared compositions needed to migrate existing surfaces onto the
- * platform. Page-family templates remain explicitly out of scope.
+ * Shared geometry/composition contracts used by existing server-rendered UI.
+ * This is not PAGE-TEMPLATE-LIBRARY-001: it owns primitive rhythm only.
  */
 .ux-kicker { display:block; margin-block-end:var(--theme-space-2); color:var(--theme-primary); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-bold); letter-spacing:.08em; text-transform:uppercase; }
 .ux-muted { color:var(--theme-text-muted); }
 .ux-stack { min-width:0; display:grid; gap:var(--theme-space-4); }
 .ux-stack.is-compact { gap:var(--theme-space-2); }
 
-/* Summary metrics use a deterministic wide-to-narrow progression. */
-.ux-stat-grid { min-width:0; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--theme-space-3); margin-block:var(--theme-space-4); }
-.ux-stat { min-width:0; display:grid; gap:var(--theme-space-2); padding:var(--theme-space-4); border:1px solid var(--theme-border); border-radius:var(--theme-radius-lg); background:var(--theme-surface); color:var(--theme-text); box-shadow:var(--theme-shadow-sm); }
-.ux-stat > span,.ux-stat > small { color:var(--theme-text-muted); font-size:var(--theme-font-size-sm); }
+/* Workspace width profiles. Generic pages keep the normal platform max-width;
+ * high-density personnel/authority surfaces receive the wide profile. OPJ owns
+ * its specialist/full useful width in its specialised stylesheet. */
+.da-page:has(> main.authority-main) { width:min(100%,132rem); }
+
+/* Canonical page-header rhythm. The title block always owns the left anchor;
+ * actions may use the remaining desktop width and stack only at a breakpoint. */
+.da-page-header.ux-page-header-balanced { grid-template-columns:minmax(24rem,.85fr) minmax(0,1.15fr); align-items:start; }
+.ux-page-header-balanced > div:first-child { min-width:0; max-width:52rem; }
+.ux-page-header-balanced .da-actions { width:auto; max-width:none; justify-self:end; justify-content:flex-end; align-content:start; }
+.ux-page-header-balanced .da-actions .da-button { min-width:0; text-align:center; white-space:nowrap; }
+
+/* Section header / inset contract. */
+.ux-section-inset { padding:var(--theme-space-5); }
+.ux-section-header,
+.section-heading { min-width:0; display:flex; align-items:center; justify-content:space-between; gap:var(--theme-space-4); margin:0 0 var(--theme-space-4); }
+.ux-section-header :where(h2,h3),
+.section-heading :where(h2,h3) { margin:0; }
+.ux-section-header > :first-child,
+.section-heading > :first-child { min-width:0; }
+
+/* Card density profiles consume the one platform spacing scale. */
+:is(.da-card,.ux-card,.da-panel,.ux-section).is-compact { padding:var(--theme-space-3); }
+:is(.da-card,.ux-card,.da-panel,.ux-section).is-dense { padding:var(--theme-space-2); }
+
+/* Buttons remain owned by ux_platform.css. Composition only constrains wrapping
+ * and table/action grouping so compact never means clipped. */
+.da-button,
+.ux-button { max-width:100%; text-align:center; white-space:nowrap; }
+.ux-table-actions { display:flex; flex-wrap:wrap; align-items:center; gap:var(--theme-space-2); }
+.ux-table-actions > :where(.da-button,.ux-button) { flex:0 0 auto; min-width:max-content; }
+.ux-table-actions > :where(.da-button,.ux-button).is-compact { min-height:var(--theme-control-height-sm); padding-inline:var(--theme-space-3); line-height:1.2; }
+.ux-form-actions,
+.ux-filter-actions { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:var(--theme-space-2); margin-block-start:var(--theme-space-4); }
+
+/* Field grid contract: semantic spans on a bounded twelve-column grid. */
+.ux-form-grid { min-width:0; display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:var(--theme-space-4); }
+.ux-form-grid > * { grid-column:span 6; min-width:0; }
+.ux-form-grid > .ux-field-full,
+.ux-form-grid > .full-width { grid-column:1 / -1; }
+.ux-form-grid > .ux-field-half { grid-column:span 6; }
+.ux-form-grid > .ux-field-third { grid-column:span 4; }
+.ux-form-grid > .ux-field-two-thirds { grid-column:span 8; }
+
+/* Summary metrics: columns derive from available width and readable card width,
+ * not feature-specific 3+1 / 4+1 magic numbers. */
+.ux-stat-grid { min-width:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(13.5rem,100%),1fr)); gap:var(--theme-space-3); margin-block:var(--theme-space-4); }
+.ux-stat { min-width:0; display:grid; align-content:start; gap:var(--theme-space-2); padding:var(--theme-space-4); border:1px solid var(--theme-border); border-radius:var(--theme-radius-lg); background:var(--theme-surface); color:var(--theme-text); box-shadow:var(--theme-shadow-sm); }
+.ux-stat > span,.ux-stat > small { color:var(--theme-text-muted); font-size:var(--theme-font-size-sm); line-height:1.35; }
 .ux-stat > strong { color:var(--theme-text); font-size:var(--theme-font-size-2xl); line-height:1.1; }
+
 .ux-detail-grid { min-width:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--theme-space-4); margin-block-end:var(--theme-space-4); }
 .ux-list-reset { margin:0; padding:0; list-style:none; }
 .ux-key-value { min-width:0; display:grid; grid-template-columns:minmax(8rem,.45fr) minmax(0,1fr); gap:var(--theme-space-2) var(--theme-space-4); margin:0; }
 .ux-key-value dt { color:var(--theme-text-muted); font-size:var(--theme-font-size-sm); }
 .ux-key-value dd { min-width:0; margin:0; overflow-wrap:anywhere; }
 
-.ux-cell-stack { min-width:0; display:grid; gap:var(--theme-space-1); align-content:start; }
+/* Primary / secondary / technical value stack. Human-readable text is primary;
+ * internal IDs remain visually distinct and never glue to the human label. */
+.ux-value-stack,
+.ux-cell-stack { min-width:0; display:grid; align-content:start; gap:var(--theme-space-1); }
+.ux-value-primary,
 .ux-cell-primary { min-width:0; color:var(--theme-text); font-weight:var(--theme-font-weight-semibold); line-height:1.35; overflow-wrap:anywhere; }
+.ux-value-secondary,
 .ux-cell-secondary { min-width:0; color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.4; overflow-wrap:anywhere; }
-.ux-technical-chip { display:inline-flex; width:fit-content; max-width:100%; padding:.125rem .375rem; border:1px solid var(--theme-border); border-radius:var(--theme-radius-sm); background:var(--theme-surface-soft); color:var(--theme-text-muted); font-family:var(--theme-font-mono); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-medium); line-height:1.35; overflow-wrap:anywhere; }
+.ux-technical,
+.ux-technical-chip { width:fit-content; max-width:100%; color:var(--theme-text-muted); font-family:var(--theme-font-mono); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-medium); line-height:1.35; overflow-wrap:anywhere; }
+.ux-technical-chip { display:inline-flex; padding:.125rem .375rem; border:1px solid var(--theme-border); border-radius:var(--theme-radius-sm); background:var(--theme-surface-soft); }
 .ux-context-value { min-width:0; display:block; padding:var(--theme-space-2) var(--theme-space-3); border:1px solid var(--theme-border); border-radius:var(--theme-radius-sm); background:var(--theme-surface-soft); color:var(--theme-text); font-size:var(--theme-font-size-xs); line-height:1.4; overflow-wrap:anywhere; }
 .ux-heading-count { display:inline-flex; min-width:1.75rem; min-height:1.75rem; align-items:center; justify-content:center; margin-inline-start:var(--theme-space-2); padding-inline:var(--theme-space-2); border:1px solid var(--theme-border); border-radius:var(--theme-radius-pill); background:var(--theme-surface-soft); color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-semibold); vertical-align:middle; }
+
+/* Generic tree-row primitive. Feature CSS may set only indentation/contextual
+ * composition, not a second text/control geometry. */
+.ux-tree { display:grid; min-width:0; }
+.ux-tree-row { --ux-tree-depth:0; min-width:0; min-height:var(--theme-control-height-lg); display:grid; grid-template-columns:1.5rem minmax(0,1fr) auto; align-items:center; gap:var(--theme-space-2); padding:var(--theme-space-2) var(--theme-space-3); padding-inline-start:calc(var(--theme-space-3) + var(--ux-tree-depth) * var(--theme-space-4)); border-bottom:1px solid var(--theme-border); }
+.ux-tree-row__icon { width:1.125rem; height:1.125rem; align-self:start; margin-top:.15rem; color:var(--theme-primary); }
+.ux-tree-row__copy { min-width:0; display:grid; gap:var(--theme-space-1); }
+.ux-tree-row__primary { color:var(--theme-text); font-size:var(--theme-font-size-sm); font-weight:var(--theme-font-weight-semibold); line-height:1.35; overflow-wrap:anywhere; }
+.ux-tree-row__secondary { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.35; overflow-wrap:anywhere; }
+.ux-tree-row__meta { min-width:1.75rem; min-height:1.75rem; display:inline-grid; place-items:center; padding-inline:var(--theme-space-2); border:1px solid var(--theme-border); border-radius:var(--theme-radius-pill); background:var(--theme-surface-soft); color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-semibold); }
 
 .ux-profile-strip { grid-template-columns:repeat(auto-fit,minmax(min(15rem,100%),1fr)); }
 .ux-profile-strip .data-profile-chip { min-width:0; }
 .ux-profile-strip .data-profile-chip strong,.ux-readable-value { max-width:100%; overflow:visible; color:var(--theme-text); text-overflow:clip; white-space:normal; overflow-wrap:anywhere; line-height:1.35; }
-
-.da-page-header.ux-page-header-balanced { grid-template-columns:minmax(min(30rem,100%),1fr) minmax(0,min(44rem,48vw)); align-items:start; }
-.ux-page-header-balanced > div:first-child { min-width:0; max-width:48rem; }
-.ux-page-header-balanced .da-actions { width:100%; max-width:44rem; justify-self:end; justify-content:flex-end; align-content:start; }
-.ux-page-header-balanced .da-actions .da-button { min-width:0; text-align:center; white-space:normal; }
-.ux-form-grid { min-width:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--theme-space-4); }
-.ux-form-actions { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:var(--theme-space-2); margin-block-start:var(--theme-space-4); }
 .ux-launcher-grid { min-width:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(18rem,100%),1fr)); gap:var(--theme-space-3); margin-block:var(--theme-space-5); }
 .ux-launcher-card { min-width:0; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:var(--theme-space-3); color:var(--theme-text); text-decoration:none; }
 .ux-launcher-card:hover { border-color:var(--theme-primary); background:var(--theme-control-hover); color:var(--theme-text); }
@@ -46,33 +102,39 @@
 .ux-principle-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(16rem,100%),1fr)); gap:var(--theme-space-3); }
 .ux-principle-grid > span { padding:var(--theme-space-3); border-inline-start:3px solid var(--theme-primary); border-radius:var(--theme-radius-sm); background:var(--theme-surface-soft); color:var(--theme-text-muted); }
 
+/* Sidebar identity is operational context: readable by default, not only via a
+ * title attribute or hover. */
+.da-user { min-height:5rem; }
+.da-user-copy strong { display:-webkit-box; overflow:hidden; -webkit-box-orient:vertical; -webkit-line-clamp:2; white-space:normal; text-overflow:clip; line-height:1.25; overflow-wrap:anywhere; }
+.da-user-copy small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.25; }
+
 body.ux-platform .dispatching-object-card.da-card { border-color:var(--theme-border)!important; background:var(--theme-surface)!important; color:var(--theme-text)!important; }
-
-/* Full current-user identity is revealed on direct interaction without growing
- * the sidebar permanently. The title/aria label remains an additional path. */
-.da-user:is(:hover,:focus-visible) .da-user-copy strong { overflow:visible; text-overflow:clip; white-space:normal; line-height:1.25; }
-.da-user:is(:hover,:focus-visible) .da-user-copy small { overflow:visible; text-overflow:clip; white-space:normal; line-height:1.25; }
-
-/* Legacy equipment relation cards used a translucent dark block and looked
- * disabled in both themes. Active relations now use the platform interactive
- * surface language, while relation type/description remain secondary. */
 body.ux-platform .equipment-relation-list li { border-color:var(--theme-border); background:var(--theme-surface-soft); color:var(--theme-text); }
 body.ux-platform .equipment-relation-list li > span { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-semibold); }
-body.ux-platform .equipment-relation-list li > a { display:inline-flex; min-width:0; align-items:center; padding:var(--theme-space-2); border:1px solid transparent; border-radius:var(--theme-radius-sm); color:var(--theme-primary); font-weight:var(--theme-font-weight-semibold); text-decoration:none; }
+body.ux-platform .equipment-relation-list li > a { display:block; min-width:0; padding:var(--theme-space-2); border:1px solid transparent; border-radius:var(--theme-radius-sm); color:var(--theme-primary); text-decoration:none; }
 body.ux-platform .equipment-relation-list li > a:hover { border-color:var(--theme-primary); background:var(--theme-primary-soft); color:var(--theme-primary-hover); }
 body.ux-platform .equipment-relation-list li > a:focus-visible { outline:var(--theme-focus-width) solid var(--theme-focus); outline-offset:var(--theme-focus-offset); }
 body.ux-platform .equipment-relation-list small { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.4; }
-
-/* Management and supervision are distinct assignment semantics, not success /
- * warning statuses. Keep one restrained palette but preserve a stable visual
- * distinction inside the cards themselves. */
 .management-function-card .authority-kind { border-color:color-mix(in srgb,var(--theme-primary) 38%,var(--theme-border)); background:var(--theme-primary-soft); color:var(--theme-primary-hover); }
 .supervision-function-card .authority-kind { border-color:var(--theme-border-strong); background:var(--theme-surface-soft); color:var(--theme-text); box-shadow:inset 3px 0 0 var(--theme-text-muted); }
-
-/* DEFECT status words are atomic operational labels. */
 .defect-status[data-status] { white-space:nowrap; overflow-wrap:normal; word-break:keep-all; }
 
-@media (max-width:80rem) { .da-page-header.ux-page-header-balanced { grid-template-columns:1fr; } .ux-page-header-balanced .da-actions { max-width:none; justify-self:start; justify-content:flex-start; } }
-@media (max-width:70rem) { .ux-stat-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-@media (max-width:52rem) { .ux-detail-grid,.ux-form-grid { grid-template-columns:1fr; } }
-@media (max-width:42rem) { .ux-stat-grid { grid-template-columns:1fr; } .ux-key-value { grid-template-columns:1fr; gap:var(--theme-space-1); } .ux-key-value dd + dt { margin-block-start:var(--theme-space-2); } .ux-launcher-card { grid-template-columns:auto minmax(0,1fr); } .ux-launcher-card > .da-status { grid-column:2; justify-self:start; } }
+@media (max-width:80rem) {
+    .da-page-header.ux-page-header-balanced { grid-template-columns:1fr; }
+    .ux-page-header-balanced .da-actions { width:100%; justify-self:start; justify-content:flex-start; }
+    .ux-page-header-balanced .da-actions .da-button { white-space:normal; }
+}
+@media (max-width:52rem) {
+    .ux-detail-grid { grid-template-columns:1fr; }
+    .ux-form-grid > *, .ux-form-grid > .ux-field-half, .ux-form-grid > .ux-field-third, .ux-form-grid > .ux-field-two-thirds { grid-column:1 / -1; }
+    .ux-form-actions,.ux-filter-actions { justify-content:stretch; }
+    .ux-form-actions > :where(a,button),.ux-filter-actions > :where(a,button) { flex:1 1 12rem; }
+}
+@media (max-width:42rem) {
+    .ux-key-value { grid-template-columns:1fr; gap:var(--theme-space-1); }
+    .ux-key-value dd + dt { margin-block-start:var(--theme-space-2); }
+    .ux-launcher-card { grid-template-columns:auto minmax(0,1fr); }
+    .ux-launcher-card > .da-status { grid-column:2; justify-self:start; }
+    .ux-table-actions { width:100%; }
+    .ux-table-actions > :where(.da-button,.ux-button) { flex:1 1 auto; }
+}
