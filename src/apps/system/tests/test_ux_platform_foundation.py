@@ -35,16 +35,10 @@ class UxPlatformFoundationSourceContractTests(SimpleTestCase):
         self.assertEqual(base.count("operational_log/opj_ux_001.css"), 1)
         self.assertEqual(base.count("operational_log/opj_ux_001.js"), 1)
         self.assertTrue(
-            (
-                ROOT
-                / "src/static/operational_log/opj_workspace_controls.css"
-            ).exists()
+            (ROOT / "src/static/operational_log/opj_workspace_controls.css").exists()
         )
         self.assertTrue(
-            (
-                ROOT
-                / "src/static/operational_log/opj_workspace_controls.js"
-            ).exists()
+            (ROOT / "src/static/operational_log/opj_workspace_controls.js").exists()
         )
 
     def test_defect_forms_consume_shared_shell(self) -> None:
@@ -155,16 +149,39 @@ class UxPlatformFoundationSourceContractTests(SimpleTestCase):
         self.assertIn('"DEFECT" "CAP-DEFECT-DEMO"', sidebar)
         self.assertIn('"WORKPLACE-DOCS" "CAP-WORKPLACE-DOCS-DEMO"', sidebar)
 
-    def test_repair_v4_summary_grid_has_deterministic_four_two_one_geometry(self) -> None:
+    def test_repair_v5_metric_grid_is_content_responsive_not_magic_four_columns(self) -> None:
         compositions = read("src/static/system/ux_platform_compositions.css")
 
-        self.assertIn("grid-template-columns:repeat(4,minmax(0,1fr))", compositions)
-        self.assertIn("@media (max-width:70rem)", compositions)
-        self.assertIn("repeat(2,minmax(0,1fr))", compositions)
-        self.assertIn("@media (max-width:42rem)", compositions)
-        self.assertIn(".ux-stat-grid { grid-template-columns:1fr; }", compositions)
+        self.assertIn(
+            "grid-template-columns:repeat(auto-fit,minmax(min(13.5rem,100%),1fr))",
+            compositions,
+        )
+        self.assertNotIn(
+            ".ux-stat-grid { min-width:0; display:grid; grid-template-columns:repeat(4",
+            compositions,
+        )
+        self.assertIn("--theme-space-3", compositions)
 
-    def test_repair_v4_import_and_workplace_use_semantic_compositions(self) -> None:
+    def test_repair_v5_geometry_contracts_are_shared(self) -> None:
+        compositions = read("src/static/system/ux_platform_compositions.css")
+
+        for selector in (
+            ".ux-section-inset",
+            ".ux-form-grid",
+            ".ux-filter-actions",
+            ".ux-table-actions",
+            ".ux-value-stack",
+            ".ux-value-primary",
+            ".ux-value-secondary",
+            ".ux-technical",
+            ".ux-tree-row",
+        ):
+            self.assertIn(selector, compositions)
+        self.assertIn("repeat(12,minmax(0,1fr))", compositions)
+        self.assertIn("--theme-control-height-sm", compositions)
+        self.assertIn("main.authority-main", compositions)
+
+    def test_repair_v5_import_and_workplace_use_semantic_compositions(self) -> None:
         imports = read("src/templates/imports/list.html")
         workplace_detail = read("src/templates/workplace_docs/detail.html")
         workplace_registry = read("src/templates/workplace_docs/registry.html")
@@ -172,11 +189,18 @@ class UxPlatformFoundationSourceContractTests(SimpleTestCase):
         self.assertIn("ux-page-header-balanced", imports)
         self.assertIn("ux-profile-strip", imports)
         self.assertIn("ux-readable-value", imports)
+        self.assertIn("ux-stat-grid", imports)
         self.assertIn("ux-cell-stack", workplace_detail)
         self.assertIn("ux-technical-chip", workplace_detail)
         self.assertIn("ux-cell-secondary", workplace_detail)
         self.assertIn("ux-cell-stack", workplace_registry)
         self.assertNotIn("{{ entry.title }}<code", workplace_detail)
+
+    def test_repair_v5_home_section_has_platform_inset(self) -> None:
+        home = read("src/templates/system/home.html")
+
+        self.assertIn("da-panel-flat ux-stack ux-section-inset", home)
+        self.assertIn("Ключевые правила системы", home)
 
     def test_repair_v4_public_home_and_demo_credential_have_distinct_measures(self) -> None:
         home = read("src/templates/system/home.html")
@@ -190,14 +214,66 @@ class UxPlatformFoundationSourceContractTests(SimpleTestCase):
         self.assertIn("white-space: pre-wrap", public_css)
         self.assertIn("user-select: all", public_css)
 
-    def test_repair_v4_long_identity_and_active_relations_are_not_silent_disabled_text(self) -> None:
+    def test_repair_v5_long_identity_is_readable_without_hover_only_contract(self) -> None:
         sidebar = read("src/templates/shared/direction_a/_sidebar.html")
         compositions = read("src/static/system/ux_platform_compositions.css")
 
         self.assertIn('title="{{ user_display_name }} — {{ user_display_role', sidebar)
         self.assertIn('aria-label="Настройки интерфейса: {{ user_display_name }}', sidebar)
-        self.assertIn(".da-user:is(:hover,:focus-visible) .da-user-copy strong", compositions)
+        self.assertIn("-webkit-line-clamp:2", compositions)
+        self.assertIn(".da-user { min-height:5rem; }", compositions)
+        self.assertNotIn(
+            ".da-user:is(:hover,:focus-visible) .da-user-copy strong",
+            compositions,
+        )
+
+    def test_repair_v5_equipment_uses_human_label_and_technical_code_stack(self) -> None:
+        template = read("src/templates/equipment/detail.html")
+        compositions = read("src/static/system/ux_platform_compositions.css")
+
+        self.assertIn('class="ux-value-stack"', template)
+        self.assertIn('class="ux-value-primary"', template)
+        self.assertIn('class="ux-technical technical-only"', template)
+        self.assertNotIn("{{ relation.target_equipment.code }} · ", template)
         self.assertIn("body.ux-platform .equipment-relation-list li > a", compositions)
-        self.assertIn("background:var(--theme-primary-soft)", compositions)
-        self.assertIn(".management-function-card .authority-kind", compositions)
-        self.assertIn(".supervision-function-card .authority-kind", compositions)
+
+    def test_repair_v5_dispatching_filter_actions_and_semantics_are_explicit(self) -> None:
+        template = read("src/templates/dispatching/registry.html")
+
+        self.assertIn('class="ux-filter-actions ux-field-full"', template)
+        self.assertIn("management-function-card", template)
+        self.assertIn("supervision-function-card", template)
+
+    def test_repair_v5_defect_detail_uses_canonical_header_and_visible_actions(self) -> None:
+        header = read("src/templates/equipment_defects/_detail_repair2_header.html")
+        aside = read("src/templates/equipment_defects/_detail_repair2_aside.html")
+
+        self.assertIn('class="defect-da-record-header da-page-header"', header)
+        self.assertNotIn("defect-da-record-heading-row", header)
+        self.assertIn('class="da-button is-secondary"', header)
+        self.assertIn('class="da-button"', aside)
+        self.assertNotIn('class="defect-button"', aside)
+        self.assertIn("is-terminal-reached", aside)
+        self.assertIn("{% if record.status_code == 'CLOSED' %}✓{% else %}4{% endif %}", aside)
+
+    def test_repair_v5_personnel_tree_forms_and_wide_workspace_are_normalized(self) -> None:
+        directory_css = read("src/static/organizations/personnel_directory.css")
+        management_css = read("src/static/organizations/personnel_management.css")
+
+        self.assertIn("minmax(19rem, 22rem) minmax(0, 1fr)", directory_css)
+        self.assertIn(".personnel-division-row > strong > small", directory_css)
+        self.assertIn("display: grid", directory_css)
+        self.assertIn("min-width: 64rem", directory_css)
+        self.assertIn("repeat(12,minmax(0,1fr))", management_css.replace(" ", ""))
+        self.assertIn("grid-column:1 / -1", management_css)
+
+    def test_repair_v5_opj_full_width_and_controls_consume_platform_geometry(self) -> None:
+        compositions = read("src/static/system/ux_platform_compositions.css")
+        rows = read("src/templates/operational_log/_shift_workspace_rows.html")
+
+        self.assertIn("body.ux-platform.opj-workspace-page .da-page", compositions)
+        self.assertIn('data-page-width="full"', compositions)
+        self.assertIn("button.draft-editor-ribbon-button", compositions)
+        self.assertIn('class="da-icon-button draft-row-action"', rows)
+        self.assertIn('class="da-icon-button draft-row-action is-danger"', rows)
+        self.assertIn("--theme-control-height-sm", compositions)
