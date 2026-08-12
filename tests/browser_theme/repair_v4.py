@@ -66,9 +66,25 @@ def contrast(node: Locator) -> dict[str, object]:
     return node.evaluate(
         r"""node => {
           const parse=value=>{
-            const m=value.match(/rgba?\(([^)]+)\)/i); if(!m) return null;
-            const p=m[1].split(/[\s,\/]+/).filter(Boolean).map(Number);
-            return {r:p[0],g:p[1],b:p[2],a:p.length>3?p[3]:1};
+            const rgb=value.match(/rgba?\(([^)]+)\)/i);
+            if(rgb){
+              const p=rgb[1].split(/[\s,\/]+/).filter(Boolean).map(Number);
+              return {r:p[0],g:p[1],b:p[2],a:p.length>3?p[3]:1};
+            }
+            const srgb=value.match(/color\(srgb\s+([^)]*)\)/i);
+            if(srgb){
+              const parts=srgb[1].split('/');
+              const channels=parts[0].trim().split(/\s+/).map(Number);
+              if(channels.length<3 || channels.slice(0,3).some(Number.isNaN)) return null;
+              const alpha=parts.length>1?Number(parts[1].trim()):1;
+              return {
+                r:Math.max(0,Math.min(1,channels[0]))*255,
+                g:Math.max(0,Math.min(1,channels[1]))*255,
+                b:Math.max(0,Math.min(1,channels[2]))*255,
+                a:Number.isNaN(alpha)?1:alpha
+              };
+            }
+            return null;
           };
           const channel=v=>{const n=v/255; return n<=.04045?n/12.92:Math.pow((n+.055)/1.055,2.4);};
           const lum=rgb=>.2126*channel(rgb.r)+.7152*channel(rgb.g)+.0722*channel(rgb.b);
