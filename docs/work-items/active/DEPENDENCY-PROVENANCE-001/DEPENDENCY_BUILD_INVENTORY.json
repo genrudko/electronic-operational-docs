@@ -226,7 +226,7 @@
         "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
       ],
       "name": "actions/upload-artifact",
-      "occurrences": 13,
+      "occurrences": 11,
       "paths": [
         ".github/workflows/auto-001a-foundation-ci.yml",
         ".github/workflows/auto-001b-controller-ci.yml",
@@ -272,7 +272,7 @@
       ]
     }
   ],
-  "entries_total": 87,
+  "entries_total": 85,
   "entry_format": "full records in deterministic JSON shards",
   "entry_shards": [
     {
@@ -287,41 +287,41 @@
       "first_id": "INP-0023",
       "last_id": "INP-0044",
       "path": "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.02.json",
-      "sha256": "d06cb3ce5d19cf4713b54565f1fdc3b411a04136ce2815b20669cb557294cbcf"
+      "sha256": "41bffbbd546e9217398e40eb61c57dd26fcc797a532559b5f28f01436fca8182"
     },
     {
       "entry_count": 22,
       "first_id": "INP-0045",
       "last_id": "INP-0066",
       "path": "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.03.json",
-      "sha256": "97cc534892a70f219afbdfb6272728bea7de6d302cad4e74c6c8bc415f5259aa"
+      "sha256": "f7e91ee17ee7cfd0638f7de986ab67288f1f13e4599d51a24d7ceb576a244891"
     },
     {
-      "entry_count": 21,
+      "entry_count": 19,
       "first_id": "INP-0067",
-      "last_id": "INP-0087",
+      "last_id": "INP-0085",
       "path": "docs/work-items/active/DEPENDENCY-PROVENANCE-001/DEPENDENCY_BUILD_INVENTORY.entries.04.json",
-      "sha256": "7adf641b75c65ee1165c3db8bfb5c33fa11e3346d2f189a67905edc6a87300d1"
+      "sha256": "8f04a8ee2bbe52cf038212298219a7d4db3c74aa137b54a2af844a3b269d3dd8"
     }
   ],
   "floating_input_ids": [
     "INP-0013",
-    "INP-0054",
-    "INP-0058",
-    "INP-0063",
-    "INP-0067",
-    "INP-0071",
+    "INP-0052",
+    "INP-0056",
+    "INP-0061",
+    "INP-0065",
+    "INP-0069",
+    "INP-0072",
     "INP-0074",
     "INP-0076",
+    "INP-0077",
     "INP-0078",
     "INP-0079",
     "INP-0080",
     "INP-0081",
     "INP-0082",
-    "INP-0083",
     "INP-0084",
-    "INP-0086",
-    "INP-0087"
+    "INP-0085"
   ],
   "generation": {
     "deterministic": true,
@@ -385,25 +385,23 @@
     "INP-0049",
     "INP-0050",
     "INP-0051",
-    "INP-0052",
     "INP-0053",
+    "INP-0054",
     "INP-0055",
-    "INP-0056",
     "INP-0057",
+    "INP-0058",
     "INP-0059",
     "INP-0060",
-    "INP-0061",
     "INP-0062",
+    "INP-0063",
     "INP-0064",
-    "INP-0065",
     "INP-0066",
+    "INP-0067",
     "INP-0068",
-    "INP-0069",
     "INP-0070",
-    "INP-0072",
+    "INP-0071",
     "INP-0073",
-    "INP-0075",
-    "INP-0077"
+    "INP-0075"
   ],
   "limitations": [
     "Network registries are not queried; future tag movement is outside repository evidence.",
@@ -420,7 +418,7 @@
     ".github/workflows/ci.yml": "8c5de32f8e1232804de2dd1d5ff47a4716f5bc47966def46eaeebe410557ae5e",
     ".github/workflows/dependency-provenance.yml": "d13c3c12660a2f4633ea2e22506674e70337dda4fab6c9d60d63b9a74eb62cab",
     ".github/workflows/deployment-profile.yml": "c1b9fe5de2dca9fa282bd19fe7eec87963c7c8ed368d8964a88976c07b6658de",
-    ".github/workflows/development-stack.yml": "77e6f99cbcaf03e7eb391baf5b24d88625c960c3b5d885bc19e1e3309ba93d97",
+    ".github/workflows/development-stack.yml": "ae97a01a1f46b61d8a98eb556821c9dbfa07434de232b223023c110cec62fe67",
     ".github/workflows/documentation-contract.yml": "5f35d6a9a21f57ce6b14ffe72f655a4cd18661fe664173da4a7e0fd5a8919bff",
     ".github/workflows/eod-hot-refresh.yml": "8e60fdc3a4992eefee0a852fbb5ddca2862a6d3545807f8e31a8923540b4c609",
     ".github/workflows/secret-hygiene.yml": "93a89ee3912a5c12b28a3acf865342cc5ece13841421ee7de4fd9470d9374bb5",
@@ -496,7 +494,7 @@
       "container-image": 12,
       "container-output": 1,
       "external-asset": 1,
-      "github-action": 39,
+      "github-action": 37,
       "python-build": 1,
       "python-install": 23,
       "python-optional": 3,
@@ -506,8 +504,8 @@
     "conflicting_owner_groups": 0,
     "duplicate_owner_groups": 6,
     "floating_inputs": 17,
-    "immutable_inputs": 69,
-    "inventory_entries": 87,
+    "immutable_inputs": 67,
+    "inventory_entries": 85,
     "source_completeness_digests": 75,
     "source_files": 21,
     "tracked_files": 933
