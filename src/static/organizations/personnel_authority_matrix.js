@@ -78,7 +78,7 @@
         if (noResults) noResults.classList.toggle("is-visible", visible === 0);
     };
 
-    const activateView = (view, { updateUrl = true } = {}) => {
+    const activateView = (view) => {
         activeView = supportedViews.includes(view) ? view : "matrix";
         tabs.forEach((tab) => tab.setAttribute(
             "aria-pressed",
@@ -91,7 +91,6 @@
         root.querySelectorAll("[data-filter-for]").forEach((field) => {
             field.hidden = !field.dataset.filterFor.split(" ").includes(activeView);
         });
-        if (updateUrl) history.replaceState(null, "", `#${activeView}`);
         applyFilters();
     };
 
@@ -143,14 +142,8 @@
         });
     });
 
-    // The server-rendered default is already Matrix. Do not re-compose the page
-    // after first paint just because deferred JS has started. A non-default hash
-    // remains an explicit navigation request and is applied only when present.
-    const requestedView = window.location.hash.slice(1);
-    if (requestedView && supportedViews.includes(requestedView) && requestedView !== "matrix") {
-        activateView(requestedView, { updateUrl: false });
-    } else {
-        activeView = "matrix";
-        applyFilters();
-    }
+    // Matrix is the complete server-rendered initial state. JavaScript only
+    // enhances explicit user interaction after first paint; it never replays
+    // URL state or performs an initial layout/view recomposition.
+    applyFilters();
 })();
