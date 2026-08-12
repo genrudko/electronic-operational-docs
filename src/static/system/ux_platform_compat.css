@@ -10,4 +10,13 @@ body.ux-platform {
     --da-radius-sm: var(--theme-radius-sm);
     --da-radius: var(--theme-radius-md);
     --da-radius-lg: var(--theme-radius-lg);
+    --da-shadow: var(--theme-shadow);
+    --da-shadow-overlay: var(--theme-shadow-overlay);
+}
+
+/* app.css historically capped this summary at 760px. Once a consumer adopts
+ * the platform metric primitive, available workspace width belongs to the
+ * responsive ux-stat-grid contract instead of the legacy feature cap. */
+body.ux-platform .ux-stat-grid.document-summary {
+    max-width: none;
 }
