@@ -13,8 +13,10 @@ OUT = Path(os.getenv("EOD_BROWSER_EVIDENCE", "artifacts/browser-theme"))
 DESKTOP_VIEWPORTS = (
     (1280, 800),
     (1366, 768),
+    (1440, 900),
     (1536, 864),
     (1920, 1080),
+    (2560, 1440),
 )
 MOBILE_VIEWPORTS = (
     (390, 844),
