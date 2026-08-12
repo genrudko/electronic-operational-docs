@@ -101,11 +101,11 @@
     <div class="document-equipment-list">
     {% for row in equipment_rows %}
         <article class="document-equipment-item">
-            <div>
-                <a href="{% url 'equipment:detail' row.public_id %}"><strong>{{ row.display_name }}</strong></a>
-                <div class="ux-muted technical-only">{{ row.technical_name }}</div>
+            <div class="ux-value-stack">
+                <a class="ux-value-primary" href="{% url 'equipment:detail' row.public_id %}"><strong>{{ row.display_name }}</strong></a>
+                <code class="ux-value-secondary ux-technical technical-only">{{ row.code }}</code>
+                <span class="ux-value-secondary technical-only">{{ row.technical_name }}</span>
             </div>
-            <code class="technical-only">{{ row.code }}</code>
             <span>{{ row.type_name }}</span>
             <small class="technical-only">{{ row.site_name }}{% if row.hierarchy_path %} · {{ row.hierarchy_path }}{% endif %}</small>
             {% if row.frozen %}<span class="da-status-chip is-info">Снимок на момент регистрации</span>{% endif %}
