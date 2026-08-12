@@ -2,7 +2,7 @@
 
 ## STATUS
 
-`IN_PROGRESS / FINAL REPAIR EVIDENCE`
+`ACCEPTANCE_CANDIDATE / FINAL GATES`
 
 Issue: `#69`
 
@@ -59,6 +59,29 @@ The accepted Repair v3 boundary supersedes that narrow interpretation:
 - one final exact-head applicable CI cycle;
 - trusted persistent Development deployment of that exact SHA with credential-safe auth/health verification;
 - `behind_by: 0`, Preview untouched and clean repository state.
+
+## REPAIR V4 ACCEPTANCE-CANDIDATE EVIDENCE
+
+The owner-rejected Development candidate was repaired against the concrete `UX-VIS-01 ... UX-VIS-23` walkthrough findings rather than by route-local cosmetic overrides.
+
+The final focused Repair v4 browser evidence on frozen UI/evidence head `f30257c1afe8af60aca41bd7dc82f7db92c9a918` is `PASS` with no reported presentation failures. The isolated Development Stack on that head also passed readiness, real demo login, canonical organization/dispatching/workplace/OPJ fixtures, canonical DEFECT Module Registry activation, guarded DEFECT presentation seeding, post-browser health, database identity, private-port isolation and clean-tree verification.
+
+Representative Repair v4 evidence includes:
+
+- dark OPJ normative-marker tooltip with platform-owned surface/text semantics, viewport containment and verified readable contrast;
+- OPJ wide/spread workspace and mobile page-level overflow containment;
+- canonical OPJ drawer disclosure iconography and enabled/disabled toolbar states;
+- DEFECT lifecycle states without whole-component opacity fading and with mechanically verified secondary-text contrast;
+- one DEFECT status presentation mapping across dedicated DEFECT and generic Operational Documents views through canonical domain/schema metadata rather than translated labels or ad-hoc status strings;
+- DEFECT dark links/disclosures, long status chips and approved-journal presentation in both themes;
+- Workplace Documentation label/code/applicability hierarchy on desktop and a settled mobile-entry shell at `390×844` with navigation closed and sidebar `aria-hidden=true`;
+- Import, Organization/current-user identity, Equipment relations, Dispatching semantic differentiation, Structured Journals metric geometry, public wide composition, Development credential presentation and account/mobile regression evidence.
+
+The earlier apparent Workplace mobile sidebar overlap was traced to a transient desktop-to-mobile resize frame in the evidence runner. The acceptance evidence now re-enters the route at the mobile viewport and explicitly verifies the settled shell state; the resulting PNG was visually reviewed and is clean.
+
+The canonical dependency inventory was regenerated from the repository generator after the focused browser runner became a tracked build/dependency input. A temporary write-capable sync workflow removed itself before generation and is absent from the resulting repository tree; generated inventory content was not manually edited.
+
+This section records technical candidate evidence only. It does **not** claim owner visual acceptance and does **not** replace the required final exact-head gates, base-freshness check or trusted persistent Development deployment.
 
 ## HARD BOUNDARIES
 
