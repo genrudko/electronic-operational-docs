@@ -8,9 +8,10 @@
 .ux-stack.is-compact { gap:var(--theme-space-2); }
 
 /* Workspace width profiles. Generic pages keep the normal platform max-width;
- * high-density personnel/authority surfaces receive the wide profile. OPJ owns
- * its specialist/full useful width in its specialised stylesheet. */
+ * high-density personnel/authority surfaces receive the wide profile. OPJ full
+ * is a specialist profile and may use the complete stage width. */
 .da-page:has(> main.authority-main) { width:min(100%,132rem); }
+body.ux-platform.opj-workspace-page .da-page:has(> main.opj-shift-main) { width:100%; max-width:none; }
 
 /* Canonical page-header rhythm. The title block always owns the left anchor;
  * actions may use the remaining desktop width and stack only at a breakpoint. */
@@ -36,6 +37,10 @@
  * and table/action grouping so compact never means clipped. */
 .da-button,
 .ux-button { max-width:100%; text-align:center; white-space:nowrap; }
+.da-icon-button.is-danger,
+.ux-icon-button.is-danger { color:var(--theme-danger); }
+.da-icon-button.is-danger:hover,
+.ux-icon-button.is-danger:hover { border-color:var(--theme-danger); background:var(--theme-danger-soft); color:var(--theme-danger); }
 .ux-table-actions { display:flex; flex-wrap:wrap; align-items:center; gap:var(--theme-space-2); }
 .ux-table-actions > :where(.da-button,.ux-button) { flex:0 0 auto; min-width:max-content; }
 .ux-table-actions > :where(.da-button,.ux-button).is-compact { min-height:var(--theme-control-height-sm); padding-inline:var(--theme-space-3); line-height:1.2; }
@@ -118,6 +123,20 @@ body.ux-platform .equipment-relation-list small { color:var(--theme-text-muted);
 .management-function-card .authority-kind { border-color:color-mix(in srgb,var(--theme-primary) 38%,var(--theme-border)); background:var(--theme-primary-soft); color:var(--theme-primary-hover); }
 .supervision-function-card .authority-kind { border-color:var(--theme-border-strong); background:var(--theme-surface-soft); color:var(--theme-text); box-shadow:inset 3px 0 0 var(--theme-text-muted); }
 .defect-status[data-status] { white-space:nowrap; overflow-wrap:normal; word-break:keep-all; }
+
+/* Existing OPJ CSS hooks keep behaviour, while the platform primitive geometry
+ * wins during migration. This is deliberately bounded to icon/control classes,
+ * not a new OPJ stylesheet or page-family layer. */
+body.ux-platform.opj-workspace-page .opj-title-cluster { display:grid; align-items:start; gap:var(--theme-space-1); }
+body.ux-platform.opj-workspace-page .opj-title-cluster .eyebrow { margin:0; }
+body.ux-platform.opj-workspace-page .opj-workspace[data-page-width="full"] { width:100%!important; max-width:none!important; }
+body.ux-platform.opj-workspace-page button.da-icon-button.draft-row-action { width:var(--theme-control-height-sm); min-width:var(--theme-control-height-sm); height:var(--theme-control-height-sm); min-height:var(--theme-control-height-sm); padding:0; border-radius:var(--theme-radius-md); }
+body.ux-platform.opj-workspace-page button.draft-editor-ribbon-button { min-width:var(--theme-control-height-sm); min-height:var(--theme-control-height-sm); padding:var(--theme-space-1) var(--theme-space-2); border-radius:var(--theme-radius-md); }
+body.ux-platform.opj-workspace-page .opj-page-navigation button.da-icon-button { width:var(--theme-control-height-sm); min-width:var(--theme-control-height-sm); height:var(--theme-control-height-sm); min-height:var(--theme-control-height-sm); }
+body.ux-platform.opj-workspace-page .opj-toolbar-actions .da-button,
+body.ux-platform.opj-workspace-page .opj-ribbon-toggle,
+body.ux-platform.opj-workspace-page .opj-view-switch { min-height:var(--theme-control-height-sm); }
+body.ux-platform.opj-workspace-page .opj-view-switch > button { min-height:calc(var(--theme-control-height-sm) - 2px); padding-inline:var(--theme-space-2); }
 
 @media (max-width:80rem) {
     .da-page-header.ux-page-header-balanced { grid-template-columns:1fr; }
