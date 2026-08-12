@@ -102,7 +102,7 @@
                         <span class="draft-row-action-separator" aria-hidden="true"></span>
                         <button
                             type="button"
-                            class="draft-row-action"
+                            class="da-icon-button draft-row-action"
                             data-date-button
                             data-current-date="{{ draft.event_at|date:'d.m.Y' }}"
                             title="Изменить дату записи"
@@ -114,7 +114,7 @@
                         <span class="draft-row-action-separator" aria-hidden="true"></span>
                         <button
                             type="submit"
-                            class="draft-row-action"
+                            class="da-icon-button draft-row-action"
                             formaction="{% url 'operational_log:move_draft' journal.pk draft.public_id %}"
                             name="direction"
                             value="up"
@@ -124,7 +124,7 @@
                         ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 14 5-5 5 5"/></svg></button>
                         <button
                             type="submit"
-                            class="draft-row-action"
+                            class="da-icon-button draft-row-action"
                             formaction="{% url 'operational_log:move_draft' journal.pk draft.public_id %}"
                             name="direction"
                             value="down"
@@ -134,7 +134,7 @@
                         ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button>
                         <button
                             type="submit"
-                            class="draft-row-action is-danger"
+                            class="da-icon-button draft-row-action is-danger"
                             formaction="{% url 'operational_log:remove_draft' journal.pk draft.public_id %}"
                             data-remove-draft
                             data-restore-url="{% url 'operational_log:restore_draft' journal.pk draft.public_id %}"
