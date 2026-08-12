@@ -17,7 +17,7 @@ jobs:
   development-container-smoke:
     name: Isolated development container smoke
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 40
     env:
       DJANGO_ALLOWED_HOSTS: 127.0.0.1,localhost
       POSTGRES_DB: eod_development
@@ -47,10 +47,13 @@ jobs:
           set -euo pipefail
           django_value="$(python -c 'import secrets; print(secrets.token_urlsafe(48))')"
           postgres_value="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+          demo_value="$(python -c 'import secrets; print("DevDemo-A1!" + secrets.token_urlsafe(32))')"
           printf '::add-mask::%s\n' "$django_value"
           printf '::add-mask::%s\n' "$postgres_value"
+          printf '::add-mask::%s\n' "$demo_value"
           printf 'DJANGO_SECRET_KEY=%s\n' "$django_value" >>"$GITHUB_ENV"
           printf 'POSTGRES_PASSWORD=%s\n' "$postgres_value" >>"$GITHUB_ENV"
+          printf 'EOD_DEMO_USER_PASSWORD=%s\n' "$demo_value" >>"$GITHUB_ENV"
 
       - name: Validate development shell scripts
         shell: bash
@@ -69,32 +72,203 @@ jobs:
       - name: Start development stack
         run: docker compose -f compose.development.yaml up --detach
 
-      - name: Wait for development application health with verified output
+      - name: Wait for development application readiness
         shell: bash
         run: |
           set -euo pipefail
           for attempt in $(seq 1 45); do
             if curl --fail --silent --show-error \
-              http://127.0.0.1:8766/_health/ >"$RUNNER_TEMP/development-health.raw.json"; then
+              http://127.0.0.1:8766/_health/ready/ >"$RUNNER_TEMP/development-ready.raw.json"; then
               python scripts/secret_hygiene.py redact \
-                --input "$RUNNER_TEMP/development-health.raw.json" \
-                --output "$RUNNER_TEMP/development-health.sanitized.json" \
+                --input "$RUNNER_TEMP/development-ready.raw.json" \
+                --output "$RUNNER_TEMP/development-ready.sanitized.json" \
                 --env DJANGO_SECRET_KEY \
-                --env POSTGRES_PASSWORD
+                --env POSTGRES_PASSWORD \
+                --env EOD_DEMO_USER_PASSWORD
               python scripts/secret_hygiene.py verify-sanitized \
-                --input "$RUNNER_TEMP/development-health.sanitized.json" \
+                --input "$RUNNER_TEMP/development-ready.sanitized.json" \
                 --env DJANGO_SECRET_KEY \
-                --env POSTGRES_PASSWORD
-              cat "$RUNNER_TEMP/development-health.sanitized.json"
+                --env POSTGRES_PASSWORD \
+                --env EOD_DEMO_USER_PASSWORD
+              cat "$RUNNER_TEMP/development-ready.sanitized.json"
               exit 0
             fi
             if (( attempt % 10 == 0 )); then
-              echo "Health attempt ${attempt}/45"
+              echo "Readiness attempt ${attempt}/45"
               docker compose -f compose.development.yaml ps --all
             fi
             sleep 2
           done
           exit 1
+
+      - name: Verify isolated Development demo login contract
+        run: |
+          docker compose -f compose.development.yaml exec -T app \
+            python manage.py verify_development_demo_login \
+            --base-url http://127.0.0.1:8766 \
+            --wait-seconds 5
+
+      - name: Prepare isolated representative browser evidence data
+        if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'vps-development-rebuild') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -f compose.development.yaml exec -T app \
+            python manage.py seed_demo_dispatching --verbosity 0
+          docker compose -f compose.development.yaml exec -T app \
+            python manage.py shell <<'PY'
+          from datetime import timedelta
+
+          from django.utils import timezone
+
+          from apps.operational_log.models import OperationalJournal
+          from apps.operational_log.services import (
+              active_shift_for_journal,
+              create_draft_entry,
+              open_shift,
+              register_entry,
+          )
+          from apps.organizations.models import Employee
+
+          employee = Employee.objects.select_related(
+              "organization", "position", "workplace"
+          ).get(user__username="operator.demo")
+          assert employee.workplace_id is not None, (
+              "Presentation seed must provide operator.demo workplace"
+          )
+
+          journal, _ = OperationalJournal.objects.get_or_create(
+              organization=employee.organization,
+              code="browser-evidence-opj",
+              defaults={
+                  "workplace": employee.workplace,
+                  "title": "Оперативный журнал · browser evidence",
+              },
+          )
+          now = timezone.now()
+          if not journal.entries.exists():
+              register_entry(
+                  journal=journal,
+                  actor=employee,
+                  event_at=now - timedelta(minutes=10),
+                  content="Контрольная запись browser evidence.",
+              )
+          shift = active_shift_for_journal(journal)
+          if shift is None:
+              shift = open_shift(
+                  journal=journal,
+                  actor=employee,
+                  planned_start_at=now - timedelta(hours=1),
+                  planned_end_at=now + timedelta(hours=11),
+              )
+          if not shift.draft_entries.filter(is_removed=False).exists():
+              create_draft_entry(
+                  shift=shift,
+                  actor=employee,
+                  event_at=now,
+                  content="Черновая запись browser evidence.",
+              )
+          print(f"OPJ browser fixture: journal={journal.pk} shift={shift.pk}")
+          PY
+
+      - name: Build immutable browser evidence environment
+        if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'vps-development-rebuild') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker build \
+            --file supply-chain/Dockerfile.browser \
+            --tag eod-browser-evidence:ci \
+            .
+
+      - name: Run risk-based UX Platform browser evidence
+        id: browser-evidence
+        if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'vps-development-rebuild') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_dir="$RUNNER_TEMP/browser-theme"
+          raw_log="$RUNNER_TEMP/browser-evidence-diagnostics.raw.txt"
+          mkdir -p "$evidence_dir"
+
+          set +e
+          docker run --rm \
+            --network host \
+            --env EOD_BROWSER_BASE_URL=http://127.0.0.1:8766 \
+            --env EOD_BROWSER_USERNAME=operator.demo \
+            --env EOD_BROWSER_PASSWORD="$EOD_DEMO_USER_PASSWORD" \
+            --env EOD_BROWSER_EVIDENCE=/evidence-output \
+            --volume "$PWD:/workspace:ro" \
+            --volume "$evidence_dir:/evidence-output" \
+            --workdir /workspace \
+            eod-browser-evidence:ci \
+            python tests/browser_theme/repair_v5.py \
+            >"$raw_log" 2>&1
+          browser_status=$?
+          set -e
+
+          python scripts/secret_hygiene.py redact \
+            --input "$raw_log" \
+            --output "$RUNNER_TEMP/browser-evidence-diagnostics.sanitized.txt" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD \
+            --env EOD_DEMO_USER_PASSWORD
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$RUNNER_TEMP/browser-evidence-diagnostics.sanitized.txt" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD \
+            --env EOD_DEMO_USER_PASSWORD
+          printf 'diagnostics_verified=true\n' >>"$GITHUB_OUTPUT"
+          cat "$RUNNER_TEMP/browser-evidence-diagnostics.sanitized.txt"
+          rm -f "$raw_log"
+
+          if (( browser_status != 0 )); then
+            exit "$browser_status"
+          fi
+
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$evidence_dir/computed-styles.json" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD \
+            --env EOD_DEMO_USER_PASSWORD
+          printf 'verified=true\n' >>"$GITHUB_OUTPUT"
+
+      - name: Upload verified UX Platform browser evidence
+        if: ${{ steps.browser-evidence.outputs.verified == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ux-platform-browser-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/browser-theme
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload verified browser diagnostics after failure
+        if: ${{ failure() && steps.browser-evidence.outputs.diagnostics_verified == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: browser-evidence-diagnostics-${{ github.run_id }}
+          path: ${{ runner.temp }}/browser-evidence-diagnostics.sanitized.txt
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Verify Development health after login and browser smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error \
+            http://127.0.0.1:8766/_health/ >"$RUNNER_TEMP/development-health.raw.json"
+          python scripts/secret_hygiene.py redact \
+            --input "$RUNNER_TEMP/development-health.raw.json" \
+            --output "$RUNNER_TEMP/development-health.sanitized.json" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD \
+            --env EOD_DEMO_USER_PASSWORD
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$RUNNER_TEMP/development-health.sanitized.json" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD \
+            --env EOD_DEMO_USER_PASSWORD
+          cat "$RUNNER_TEMP/development-health.sanitized.json"
 
       - name: Verify isolated database identity
         run: |
@@ -131,11 +305,13 @@ jobs:
             --input "$RUNNER_TEMP/development-diagnostics.raw.txt" \
             --output "$RUNNER_TEMP/development-diagnostics.sanitized.txt" \
             --env DJANGO_SECRET_KEY \
-            --env POSTGRES_PASSWORD
+            --env POSTGRES_PASSWORD \
+            --env EOD_DEMO_USER_PASSWORD
           python scripts/secret_hygiene.py verify-sanitized \
             --input "$RUNNER_TEMP/development-diagnostics.sanitized.txt" \
             --env DJANGO_SECRET_KEY \
-            --env POSTGRES_PASSWORD
+            --env POSTGRES_PASSWORD \
+            --env EOD_DEMO_USER_PASSWORD
           printf 'verified=true\n' >>"$GITHUB_OUTPUT"
           cat "$RUNNER_TEMP/development-diagnostics.sanitized.txt"
 
@@ -158,11 +334,16 @@ jobs:
         run: |
           set -euo pipefail
           rm -f \
+            "$RUNNER_TEMP/development-ready.raw.json" \
+            "$RUNNER_TEMP/development-ready.sanitized.json" \
             "$RUNNER_TEMP/development-health.raw.json" \
             "$RUNNER_TEMP/development-health.sanitized.json" \
             "$RUNNER_TEMP/development-db-port.raw.txt" \
+            "$RUNNER_TEMP/browser-evidence-diagnostics.raw.txt" \
+            "$RUNNER_TEMP/browser-evidence-diagnostics.sanitized.txt" \
             "$RUNNER_TEMP/development-diagnostics.raw.txt" \
             "$RUNNER_TEMP/development-diagnostics.sanitized.txt"
+          sudo rm -rf "$RUNNER_TEMP/browser-theme"
 
       - name: Verify development checkout remains exactly clean
         if: ${{ always() }}
