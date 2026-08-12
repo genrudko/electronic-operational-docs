@@ -129,9 +129,42 @@ jobs:
             python manage.py seed_demo_operational_log --verbosity 0
 
       - name: Seed representative DEFECT fixture
+        id: defect-fixture
+        shell: bash
         run: |
+          set -euo pipefail
+          raw="$RUNNER_TEMP/defect-fixture.raw.txt"
+          sanitized="$RUNNER_TEMP/defect-fixture.sanitized.txt"
+          set +e
           docker compose -f compose.development.yaml exec -T app \
-            python manage.py seed_equipment_defects --verbosity 0
+            python manage.py seed_equipment_defects --verbosity 2 \
+            >"$raw" 2>&1
+          status=$?
+          set -e
+          python scripts/secret_hygiene.py redact \
+            --input "$raw" \
+            --output "$sanitized" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD \
+            --env EOD_DEMO_USER_PASSWORD
+          python scripts/secret_hygiene.py verify-sanitized \
+            --input "$sanitized" \
+            --env DJANGO_SECRET_KEY \
+            --env POSTGRES_PASSWORD \
+            --env EOD_DEMO_USER_PASSWORD
+          printf 'diagnostics_verified=true\n' >>"$GITHUB_OUTPUT"
+          cat "$sanitized"
+          rm -f "$raw"
+          exit "$status"
+
+      - name: Upload verified DEFECT fixture diagnostics
+        if: ${{ failure() && steps.defect-fixture.outputs.diagnostics_verified == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: defect-fixture-diagnostics-${{ github.run_id }}
+          path: ${{ runner.temp }}/defect-fixture.sanitized.txt
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Build immutable browser evidence environment
         shell: bash
@@ -299,6 +332,8 @@ jobs:
             "$RUNNER_TEMP/development-health.raw.json" \
             "$RUNNER_TEMP/development-health.sanitized.json" \
             "$RUNNER_TEMP/development-db-port.raw.txt" \
+            "$RUNNER_TEMP/defect-fixture.raw.txt" \
+            "$RUNNER_TEMP/defect-fixture.sanitized.txt" \
             "$RUNNER_TEMP/browser-evidence-diagnostics.raw.txt" \
             "$RUNNER_TEMP/browser-evidence-diagnostics.sanitized.txt" \
             "$RUNNER_TEMP/development-diagnostics.raw.txt" \
