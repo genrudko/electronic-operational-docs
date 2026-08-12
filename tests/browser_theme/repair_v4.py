@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: E501
 """Focused owner-walkthrough visual evidence for UX-PLATFORM Repair v4.
 
 This is intentionally a representative matrix, not the historical route x theme
@@ -501,9 +502,9 @@ def opj_states(
     theme(page, "dark")
     need(page, "[data-open-view-drawer]").click()
     drawer = need(page, "[data-view-drawer]")
-    need(page, '[data-page-width-choice="full"]').click()
+    drawer.locator('[data-page-width-choice="full"]:visible').click()
     page.wait_for_function("()=>document.querySelector('[data-draft-workspace]')?.dataset.pageWidth==='full'")
-    need(page, '[data-view-mode="spread"]').click()
+    drawer.locator('[data-view-mode="spread"]:visible').click()
     page.wait_for_function("()=>document.querySelector('[data-draft-workspace]')?.dataset.viewMode==='spread'")
 
     card = drawer.locator(".opj-drawer-card:visible").first
@@ -523,7 +524,7 @@ def opj_states(
     summary.focus()
     screenshot(page, "opj_view_settings_focus__dark__2560", full_page=False)
 
-    close_control = page.locator("[data-close-view-drawer]").first
+    close_control = drawer.locator("[data-close-view-drawer]").first
     check(failures, close_control.count() > 0, "OPJ drawer close state control missing from DOM")
     if close_control.count():
         close_control.evaluate("node=>node.click()")
