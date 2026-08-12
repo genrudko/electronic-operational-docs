@@ -145,9 +145,7 @@ def main() -> None:
 
         # 2K is not the design target. It is a bounded supplemental check that
         # the wider canvas does not introduce document overflow or pathological
-        # whitespace on representative high-density surfaces. These screenshots
-        # bypass the Full-HD legacy-name normalizer so the filename remains
-        # truthful to the actual 2560px viewport.
+        # whitespace on representative high-density surfaces.
         context = browser.new_context(viewport=WIDE_STRESS)
         wide = context.new_page()
         wide.goto(mod.BASE + "/")
@@ -155,10 +153,7 @@ def main() -> None:
         wide_states: dict[str, object] = {
             "publicHome": mod.check_width(wide, failures, "public home 2560 supplemental")
         }
-        wide.screenshot(
-            path=shots / "wide_stress_public_home__light__2560.png",
-            full_page=True,
-        )
+        evidence_shot(wide, "wide_stress_public_home__light__2560")
 
         mod.login(wide, password)
         representative = [
@@ -176,10 +171,7 @@ def main() -> None:
             main_node = wide.locator("main:visible").first
             main_state = mod.metrics(main_node) if main_node.count() else None
             wide_states[name] = {"width": width_state, "main": main_state}
-            wide.screenshot(
-                path=shots / f"wide_stress_{name}__light__2560.png",
-                full_page=True,
-            )
+            evidence_shot(wide, f"wide_stress_{name}__light__2560")
 
         report["wideStress2560"] = wide_states
         context.close()
