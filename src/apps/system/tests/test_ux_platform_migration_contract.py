@@ -127,3 +127,64 @@ class UXPlatformMigrationContractTests(SimpleTestCase):
             [],
             "Unsafe mobile scaling contract found:\n" + "\n".join(offenders),
         )
+
+    def test_repair_v7_profiles_reach_useful_inner_workspaces(self) -> None:
+        css = (
+            Path(settings.BASE_DIR) / "src/static/system/ux_platform_compositions.css"
+        ).read_text(encoding="utf-8")
+        compact = re.sub(r"\s+", "", css)
+
+        self.assertIn(
+            "body.ux-platform.opj-clean-journal-page.da-page:has(>main.opj-main)",
+            compact,
+        )
+        self.assertIn(".da-page:has(.personnel-layout)", css)
+        self.assertIn(".authority-workspace", css)
+        self.assertIn(".authority-table-wrap", css)
+        self.assertIn(".approved-journal-shell", css)
+        self.assertIn("width:100%;max-width:none", compact)
+
+    def test_repair_v7_opj_dense_geometry_uses_platform_tokens(self) -> None:
+        css = (
+            Path(settings.BASE_DIR) / "src/static/system/ux_platform_compositions.css"
+        ).read_text(encoding="utf-8")
+        compact = re.sub(r"\s+", "", css)
+
+        self.assertIn(
+            ":is(.opj-toolbar-primary,.opj-editor-toolbar,.opj-action-strip)",
+            compact,
+        )
+        self.assertIn("padding:var(--theme-space-2)var(--theme-space-3)", compact)
+        self.assertIn("min-height:var(--theme-control-height-sm)", compact)
+        self.assertIn(
+            'opj-workspace[data-page-width="full"].opj-editor-container', compact
+        )
+        self.assertIn(
+            'opj-workspace[data-view-mode="spread"].opj-editor-container', compact
+        )
+
+    def test_repair_v7_core_relations_separate_human_and_technical_values(self) -> None:
+        template_root = Path(settings.BASE_DIR) / "src/templates"
+        equipment = (template_root / "equipment/site_detail.html").read_text(
+            encoding="utf-8"
+        )
+        documents = (template_root / "documents/detail.html").read_text(
+            encoding="utf-8"
+        )
+
+        for template in (equipment, documents):
+            self.assertIn("ux-value-stack", template)
+            self.assertIn("ux-value-primary", template)
+            self.assertIn("ux-value-secondary ux-technical technical-only", template)
+
+        self.assertNotIn("<strong>{{ row.display_name }}</strong><code", equipment)
+        self.assertNotIn(
+            "<strong>{{ row.display_name }}</strong></a>\n            <code", documents
+        )
+
+    def test_repair_v7_does_not_create_another_acceptance_stylesheet(self) -> None:
+        static_root = Path(settings.BASE_DIR) / "src/static"
+        forbidden = {"repair_v7.css", "final_fix.css", "owner_acceptance_patch.css"}
+        existing = {path.name for path in static_root.rglob("*.css")}
+
+        self.assertTrue(forbidden.isdisjoint(existing))
