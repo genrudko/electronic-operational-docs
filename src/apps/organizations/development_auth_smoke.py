@@ -16,15 +16,38 @@ _CSRF_PATTERN = re.compile(
     rb'name=["\']csrfmiddlewaretoken["\'][^>]*value=["\']([^"\']+)["\']'
 )
 _verified_fingerprint: str | None = None
+_verified_authentication_state_fingerprint: str | None = None
+
+
+def _authentication_state_fingerprint(password: str, users: dict[str, object]) -> str:
+    """Fingerprint the credential plus persistent demo-account state cheaply."""
+
+    credential_fingerprint = hashlib.sha256(password.encode("utf-8")).hexdigest()
+    parts = [credential_fingerprint]
+    for username in DEMO_USERNAMES:
+        user = users[username]
+        parts.extend(
+            [
+                username,
+                str(user.pk),
+                "1" if user.is_active else "0",
+                user.password,
+            ]
+        )
+    return hashlib.sha256("\0".join(parts).encode("utf-8")).hexdigest()
 
 
 def verify_development_demo_authentication_state() -> bool:
     """Verify persistent Development principals and the configured auth backend.
 
-    This bounded readiness check deliberately does not instantiate Django's test
-    client or perform an HTTP request. The live published login path is proved
-    separately by ``verify_development_demo_login`` against the running server.
+    A successful real authentication is cached only while the injected credential
+    and persistent account state remain unchanged. Every call still reads the
+    current account rows, so account deactivation, password changes or credential
+    rotation invalidate the cache without repeating expensive password hashing on
+    every container-health probe.
     """
+
+    global _verified_authentication_state_fingerprint
 
     password = injected_demo_password()
     validate_demo_password(password)
@@ -41,12 +64,18 @@ def verify_development_demo_authentication_state() -> bool:
         user = users[username]
         if not user.is_active or not user.has_usable_password():
             return False
-        if not user.check_password(password):
-            return False
+
+    state_fingerprint = _authentication_state_fingerprint(password, users)
+    if _verified_authentication_state_fingerprint == state_fingerprint:
+        return True
+
+    for username in DEMO_USERNAMES:
+        user = users[username]
         authenticated = authenticate(username=username, password=password)
         if authenticated is None or authenticated.pk != user.pk:
             return False
 
+    _verified_authentication_state_fingerprint = state_fingerprint
     return True
 
 
