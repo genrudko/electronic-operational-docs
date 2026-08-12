@@ -21,8 +21,8 @@
     <article class="ux-stat"><span>Требуют пересмотра</span><strong>{{ summary.due }}</strong></article>
 </section>
 
-<section class="da-card ux-stack">
-    <div class="da-panel-heading"><div><span class="ux-kicker">Рабочие места</span><h2>Действующие перечни</h2></div>{% if storage_forms %}<span class="ux-counter">Формы хранения: {{ storage_forms|join:", " }}</span>{% endif %}</div>
+<section class="da-card ux-stack workplace-document-registry">
+    <div class="da-panel-heading"><div><span class="ux-kicker">Рабочие места</span><h2>Действующие перечни</h2></div>{% if storage_forms %}<span class="ux-counter ux-readable-value">Формы хранения: {{ storage_forms|join:", " }}</span>{% endif %}</div>
     <div class="da-table-wrap"><table class="da-table"><thead><tr><th>Рабочее место</th><th>Перечень</th><th>Редакция</th><th>Действует</th><th>Следующий пересмотр</th><th>Состояние</th></tr></thead><tbody>
     {% for row in rows %}<tr>
         <td><div class="ux-cell-stack"><strong class="ux-cell-primary">{{ row.document_list.workplace.name }}</strong>{% if row.document_list.workplace.division %}<small class="ux-cell-secondary">{{ row.document_list.workplace.division.name }}</small>{% endif %}</div></td>
