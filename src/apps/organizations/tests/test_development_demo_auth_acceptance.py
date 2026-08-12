@@ -22,10 +22,12 @@ TEST_CREDENTIAL = ephemeral_credential("OwnerAcceptanceDemo")
 
 class DevelopmentDemoAuthenticationAcceptanceTests(TestCase):
     def setUp(self) -> None:
-        # Reset the per-process smoke cache so every test proves its own DB state.
+        # Reset the independent per-process smoke caches so every test proves its
+        # own persistent account state and live login path.
         from apps.organizations import development_auth_smoke
 
         development_auth_smoke._verified_fingerprint = None
+        development_auth_smoke._verified_authentication_state_fingerprint = None
 
     @mock.patch.dict("os.environ", {DEMO_ACCESS_ENV: TEST_CREDENTIAL}, clear=False)
     @override_settings(EOD_DEPLOYMENT_MODE="development")
@@ -77,6 +79,27 @@ class DevelopmentDemoAuthenticationAcceptanceTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["development_authentication"], "verified")
 
+    @mock.patch.dict("os.environ", {DEMO_ACCESS_ENV: TEST_CREDENTIAL}, clear=False)
+    @override_settings(EOD_DEPLOYMENT_MODE="development", ALLOWED_HOSTS=["127.0.0.1", "testserver"])
+    def test_trusted_health_reuses_successful_authentication_while_account_state_is_unchanged(self) -> None:
+        from apps.organizations import development_auth_smoke
+
+        ensure_development_demo_accounts()
+        reconcile_demo_access(require_injection=True)
+
+        with mock.patch.object(
+            development_auth_smoke,
+            "authenticate",
+            wraps=development_auth_smoke.authenticate,
+        ) as authenticate_spy:
+            first = Client().get("/_health/", HTTP_HOST="127.0.0.1")
+            self.assertEqual(first.status_code, 200)
+            self.assertEqual(authenticate_spy.call_count, len(DEMO_USERNAMES))
+
+            second = Client().get("/_health/", HTTP_HOST="127.0.0.1")
+            self.assertEqual(second.status_code, 200)
+            self.assertEqual(authenticate_spy.call_count, len(DEMO_USERNAMES))
+
     @mock.patch.dict("os.environ", {DEMO_ACCESS_ENV: ""}, clear=False)
     @override_settings(EOD_DEPLOYMENT_MODE="development", ALLOWED_HOSTS=["127.0.0.1", "testserver"])
     def test_trusted_health_fails_when_development_credential_is_missing(self) -> None:
@@ -86,9 +109,13 @@ class DevelopmentDemoAuthenticationAcceptanceTests(TestCase):
 
     @mock.patch.dict("os.environ", {DEMO_ACCESS_ENV: TEST_CREDENTIAL}, clear=False)
     @override_settings(EOD_DEPLOYMENT_MODE="development", ALLOWED_HOSTS=["127.0.0.1", "testserver"])
-    def test_trusted_health_fails_if_persistent_demo_account_is_inactive(self) -> None:
+    def test_trusted_health_invalidates_cached_success_when_account_becomes_inactive(self) -> None:
         ensure_development_demo_accounts()
         reconcile_demo_access(require_injection=True)
+
+        first = Client().get("/_health/", HTTP_HOST="127.0.0.1")
+        self.assertEqual(first.status_code, 200)
+
         user = get_user_model().objects.get(username="operator.demo")
         user.is_active = False
         user.save(update_fields=["is_active"])
