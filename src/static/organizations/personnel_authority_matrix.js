@@ -23,20 +23,6 @@
 
     root.querySelectorAll(".authority-abbreviation-legend").forEach((item) => item.remove());
 
-    const spriteHref = (icon) => `/static/system/icons.svg#${icon}`;
-    const iconSvg = (icon) => {
-        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.classList.add("authority-control-icon");
-        svg.setAttribute("aria-hidden", "true");
-        const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
-        use.setAttribute("href", spriteHref(icon));
-        svg.append(use);
-        return svg;
-    };
-
-    root.querySelector("[data-expand-all]")?.replaceChildren(iconSvg("icon-add"));
-    collapsers.forEach((button) => button.replaceChildren(iconSvg("icon-chevron-right")));
-
     const normalize = (value) => (value || "")
         .toLocaleLowerCase("ru-RU")
         .replaceAll("ё", "е")
