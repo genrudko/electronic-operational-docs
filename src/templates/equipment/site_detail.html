@@ -24,7 +24,12 @@
     <div class="equipment-tree">
     {% for row in tree_rows %}
         <a class="equipment-tree-row" style="--tree-level: {{ row.level }}" href="{% url 'equipment:detail' row.equipment.public_id %}">
-            <span class="tree-branch" aria-hidden="true">└</span><strong>{{ row.display_name }}</strong><code class="technical-only">{{ row.equipment.code }}</code><span>{{ row.equipment.equipment_type.name }}</span>
+            <span class="tree-branch" aria-hidden="true">└</span>
+            <span class="ux-value-stack">
+                <strong class="ux-value-primary">{{ row.display_name }}</strong>
+                <code class="ux-value-secondary ux-technical technical-only">{{ row.equipment.code }}</code>
+            </span>
+            <span>{{ row.equipment.equipment_type.name }}</span>
         </a>
     {% empty %}<div class="ux-empty-state">Оборудование на энергообъекте пока не заведено.</div>{% endfor %}
     </div>
