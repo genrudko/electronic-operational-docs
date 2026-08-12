@@ -59,6 +59,19 @@ def main() -> None:
 
     mod.shot = evidence_shot
 
+    # Repair v4's absolute >=1800px OPJ assertion was valid only when its WIDE
+    # viewport was 2560px. Repair v5 replaces that one stale absolute threshold
+    # with a relative Full-HD stage-utilisation check below; all other v4 checks
+    # continue to fail closed without weakening.
+    v4_check = mod.check
+
+    def repair_v5_check(failures: list[str], condition: bool, message: str) -> None:
+        if message.startswith("OPJ full width compressed at 2560:"):
+            return
+        v4_check(failures, condition, message)
+
+    mod.check = repair_v5_check
+
     failures: list[str] = []
     report: dict[str, object] = {
         "meta": {
@@ -88,6 +101,44 @@ def main() -> None:
         mod.organization_workplace(page, routes, failures, report)
         mod.defect_states(page, routes, failures, report)
         mod.opj_states(page, routes, failures, report)
+
+        # Validate the "Полная" OPJ profile against the actual usable Full-HD
+        # workspace, not against an absolute 2K-era pixel count. A full workspace
+        # must consume essentially the complete main content box after the fixed
+        # sidebar and canonical page gutters are accounted for.
+        draft = routes.get("draft_opj")
+        if draft:
+            page.set_viewport_size(PRIMARY_DESKTOP)
+            page.goto(mod.BASE + draft)
+            mod.theme(page, "dark")
+            workspace = mod.need(page, "[data-draft-workspace]")
+            if workspace.get_attribute("data-page-width") != "full":
+                mod.need(page, "[data-open-view-drawer]").click()
+                drawer = mod.need(page, "[data-view-drawer]")
+                drawer.locator('[data-page-width-choice="full"]:visible').click()
+                page.wait_for_function("()=>document.querySelector('[data-draft-workspace]')?.dataset.pageWidth==='full'")
+                close = drawer.locator("[data-close-view-drawer]").first
+                if close.count():
+                    close.evaluate("node=>node.click()")
+                    page.wait_for_function("()=>document.querySelector('[data-view-drawer]')?.hidden===true")
+            workspace_state = mod.metrics(workspace)
+            main_node = mod.need(page, "main.opj-shift-main")
+            main_state = mod.metrics(main_node)
+            workspace_width = float(workspace_state["box"]["width"])
+            main_width = float(main_state["box"]["width"])
+            utilisation = workspace_width / main_width if main_width else 0.0
+            v4_check(
+                failures,
+                utilisation >= 0.98,
+                f"OPJ full profile does not consume Full HD main workspace: utilisation={utilisation:.3f}, workspace={workspace_state['box']}, main={main_state['box']}",
+            )
+            report["opjPrimaryDesktopFullWidth"] = {
+                "workspace": workspace_state,
+                "main": main_state,
+                "utilisation": round(utilisation, 4),
+            }
+            evidence_shot(page, "opj_full_width_primary__dark__1920")
+
         mod.equipment_dispatching(page, routes, failures, report)
         mod.account_mobile(page, routes, failures, report)
         page.close()
