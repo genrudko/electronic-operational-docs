@@ -8,9 +8,46 @@ from apps.operational_log.models import OperationalLogEntry
 from apps.organizations.models import Employee
 from apps.system.module_registry import EntryPointClass
 
+from ..constants import DOCUMENT_TYPE_CODE
 from ..services import defect_opj_link_access_decision
 
 register = template.Library()
+
+_TONE_CLASSES = {
+    "info": "is-info",
+    "warning": "is-warning",
+    "success": "is-success",
+    "neutral": "",
+}
+
+
+@register.simple_tag
+def equipment_defect_status_presentation(record: Any) -> dict[str, str] | None:
+    """Return canonical DEFECT presentation metadata for a generic record row."""
+
+    document_type = getattr(record, "document_type", None)
+    if document_type is None or getattr(document_type, "code", "") != DOCUMENT_TYPE_CODE:
+        return None
+
+    tone = "neutral"
+    revision = getattr(record, "schema_revision", None)
+    definitions = getattr(revision, "status_definitions", ()) or ()
+    status_code = str(getattr(record, "status_code", "")).strip().upper()
+    for definition in definitions:
+        if not isinstance(definition, dict):
+            continue
+        if str(definition.get("code", "")).strip().upper() != status_code:
+            continue
+        candidate = str(definition.get("tone", "")).strip().lower()
+        if candidate in _TONE_CLASSES:
+            tone = candidate
+        break
+
+    return {
+        "domain": "DEFECT",
+        "tone": tone,
+        "class_name": _TONE_CLASSES[tone],
+    }
 
 
 @register.simple_tag(takes_context=True)

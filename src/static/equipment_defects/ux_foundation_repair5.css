@@ -15,6 +15,7 @@
     --da-status-closed-soft: var(--theme-control-disabled);
     --da-lifecycle-complete: var(--theme-info);
     --da-lifecycle-complete-soft: var(--theme-info-soft);
+    --da-lifecycle-future-text: color-mix(in srgb, var(--theme-text-muted) 95%, var(--theme-text));
 }
 
 /* Registry/detail status labels share one DEFECT-domain mapping. */
@@ -90,7 +91,7 @@
 .defect-da-lifecycle-card .defect-lifecycle li {
     border-color: var(--theme-border);
     background: var(--theme-surface-soft);
-    color: var(--theme-text-muted);
+    color: var(--da-lifecycle-future-text);
     opacity: 1;
     box-shadow: none;
     transform: none;
@@ -99,15 +100,15 @@
 .defect-da-lifecycle-card .defect-lifecycle li .defect-lifecycle-marker {
     border-color: var(--theme-border-strong);
     background: var(--theme-surface);
-    color: var(--theme-text-muted);
+    color: var(--da-lifecycle-future-text);
 }
 
 .defect-da-lifecycle-card .defect-lifecycle li strong {
-    color: var(--theme-text-muted);
+    color: var(--da-lifecycle-future-text);
 }
 
 .defect-da-lifecycle-card .defect-lifecycle li small {
-    color: var(--theme-text-muted);
+    color: var(--da-lifecycle-future-text);
 }
 
 .defect-da-lifecycle-card .defect-lifecycle[data-current-status="IN_PROGRESS"] [data-step="REGISTERED"],

@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 from django.conf import settings
 from django.test import SimpleTestCase
+
+from .constants import DOCUMENT_TYPE_CODE
+from .templatetags.equipment_defect_tags import equipment_defect_status_presentation
 
 
 class EquipmentDefectUXFoundationRepairFiveTests(SimpleTestCase):
@@ -71,9 +75,10 @@ class EquipmentDefectUXFoundationRepairFiveTests(SimpleTestCase):
             encoding="utf-8"
         )
         required = (
+            "--da-lifecycle-future-text: color-mix(in srgb, var(--theme-text-muted) 95%, var(--theme-text))",
             "border-color: var(--theme-border)",
             "background: var(--theme-surface-soft)",
-            "color: var(--theme-text-muted)",
+            "color: var(--da-lifecycle-future-text)",
             "opacity: 1",
             'data-current-status="REGISTERED"',
             'data-current-status="IN_PROGRESS"',
@@ -98,15 +103,44 @@ class EquipmentDefectUXFoundationRepairFiveTests(SimpleTestCase):
         self.assertIn("color: var(--theme-primary-hover)", stylesheet)
         self.assertIn("outline: var(--theme-focus-width) solid var(--theme-focus)", stylesheet)
 
-    def test_operational_documents_uses_defect_domain_status_code_mapping_only(self) -> None:
+    def test_operational_documents_uses_defect_domain_presentation_owner(self) -> None:
         template = (
             self.project_template_root / "operational_documents" / "registry.html"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("record.document_type.code == 'DEFECTS'", template)
-        self.assertIn("record.status_code == 'REGISTERED'", template)
-        self.assertIn("record.status_code == 'IN_PROGRESS'", template)
-        self.assertIn("record.status_code == 'RESOLVED'", template)
-        self.assertIn('data-domain-status="DEFECT"', template)
+        self.assertIn("{% load equipment_defect_tags %}", template)
+        self.assertIn(
+            "{% equipment_defect_status_presentation record as defect_status %}",
+            template,
+        )
+        self.assertIn('data-domain-status="{{ defect_status.domain }}"', template)
         self.assertIn('data-status="{{ record.status_code }}"', template)
         self.assertIn("record.status_is_terminal", template)
+        self.assertNotIn("record.document_type.code == 'DEFECTS'", template)
+        self.assertNotIn("record.status_code == 'REGISTERED'", template)
+        self.assertNotIn("record.status_code == 'IN_PROGRESS'", template)
+        self.assertNotIn("record.status_code == 'RESOLVED'", template)
+
+    def test_defect_presentation_tag_uses_canonical_document_code_and_schema_tone(self) -> None:
+        record = SimpleNamespace(
+            document_type=SimpleNamespace(code=DOCUMENT_TYPE_CODE),
+            schema_revision=SimpleNamespace(
+                status_definitions=[
+                    {"code": "REGISTERED", "name": "Зарегистрирован", "tone": "info"},
+                    {"code": "IN_PROGRESS", "name": "В работе", "tone": "warning"},
+                ]
+            ),
+            status_code="REGISTERED",
+        )
+        presentation = equipment_defect_status_presentation(record)
+        self.assertEqual(
+            presentation,
+            {"domain": "DEFECT", "tone": "info", "class_name": "is-info"},
+        )
+
+        generic = SimpleNamespace(
+            document_type=SimpleNamespace(code="technical-record"),
+            schema_revision=record.schema_revision,
+            status_code="REGISTERED",
+        )
+        self.assertIsNone(equipment_defect_status_presentation(generic))
