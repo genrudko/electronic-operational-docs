@@ -108,18 +108,28 @@ jobs:
             --base-url http://127.0.0.1:8766 \
             --wait-seconds 5
 
-      - name: Prepare isolated representative browser evidence data
-        shell: bash
+      - name: Seed representative organization fixture
         run: |
-          set -euo pipefail
           docker compose -f compose.development.yaml exec -T app \
             python manage.py seed_demo_organization --verbosity 0
+
+      - name: Seed representative dispatching fixture
+        run: |
           docker compose -f compose.development.yaml exec -T app \
             python manage.py seed_demo_dispatching --verbosity 0
+
+      - name: Seed representative workplace documentation fixture
+        run: |
           docker compose -f compose.development.yaml exec -T app \
             python manage.py seed_demo_workplace_documents --verbosity 0
+
+      - name: Seed representative OPJ fixture
+        run: |
           docker compose -f compose.development.yaml exec -T app \
             python manage.py seed_demo_operational_log --verbosity 0
+
+      - name: Seed representative DEFECT fixture
+        run: |
           docker compose -f compose.development.yaml exec -T app \
             python manage.py seed_equipment_defects --verbosity 0
 
