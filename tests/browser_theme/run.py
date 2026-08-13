@@ -140,6 +140,121 @@ def document_width(page):
     )
 
 
+def mobile_geometry(page, route, width):
+    if width > 520:
+        return None
+    return page.evaluate(
+        """route => {
+            const visible = node => {
+                const style = getComputedStyle(node);
+                const rect = node.getBoundingClientRect();
+                return style.display !== "none"
+                    && style.visibility !== "hidden"
+                    && Number(style.opacity || 1) !== 0
+                    && rect.width > 0
+                    && rect.height > 0;
+            };
+            const describe = node => {
+                const rect = node.getBoundingClientRect();
+                return {
+                    tag: node.tagName.toLowerCase(),
+                    className: String(node.className || ""),
+                    text: (node.innerText || node.textContent || "").trim().slice(0, 120),
+                    x: rect.x,
+                    y: rect.y,
+                    width: rect.width,
+                    height: rect.height,
+                    right: rect.right,
+                    bottom: rect.bottom,
+                };
+            };
+            const intersect = (a, b) => {
+                const x = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+                const y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+                return x > 2 && y > 2;
+            };
+            const siblingOverlaps = selector => {
+                const collisions = [];
+                for (const parent of document.querySelectorAll(selector)) {
+                    if (!visible(parent)) continue;
+                    const nodes = [...parent.children].filter(visible);
+                    for (let i = 0; i < nodes.length; i += 1) {
+                        for (let j = i + 1; j < nodes.length; j += 1) {
+                            const a = nodes[i].getBoundingClientRect();
+                            const b = nodes[j].getBoundingClientRect();
+                            if (intersect(a, b)) {
+                                collisions.push({
+                                    parent: String(parent.className || selector),
+                                    first: describe(nodes[i]),
+                                    second: describe(nodes[j]),
+                                });
+                            }
+                        }
+                    }
+                }
+                return collisions;
+            };
+
+            const touchSelectors = [".da-menu-button"];
+            if (route === "authorities") {
+                touchSelectors.push(".authority-tabs button", ".authority-tree-heading button");
+            }
+            if (route === "personnel") {
+                touchSelectors.push(".personnel-management-actions .da-button");
+            }
+            if (route === "draft_workspace") {
+                touchSelectors.push(
+                    ".opj-toolbar-actions .da-button",
+                    ".opj-ribbon-toggle",
+                    ".opj-view-switch > button",
+                    "button.draft-editor-ribbon-button",
+                    ".opj-page-navigation button.da-icon-button",
+                    "button.da-icon-button.draft-row-action"
+                );
+            }
+            if (route === "registered_opj") {
+                touchSelectors.push(".journal-workspace-actions .da-button");
+            }
+
+            const touchNodes = new Set();
+            for (const selector of touchSelectors) {
+                for (const node of document.querySelectorAll(selector)) {
+                    if (visible(node)) touchNodes.add(node);
+                }
+            }
+            const smallTargets = [...touchNodes]
+                .map(describe)
+                .filter(item => item.width < 42 || item.height < 42);
+            const escapedControls = [...touchNodes]
+                .map(describe)
+                .filter(item => item.x < -2 || item.right > innerWidth + 2);
+
+            const authorityPositionedCells = route === "authorities"
+                ? [...document.querySelectorAll(".authority-matrix-person > td")]
+                    .filter(visible)
+                    .filter(node => ["sticky", "fixed", "absolute"].includes(
+                        getComputedStyle(node).position
+                    ))
+                    .map(describe)
+                : [];
+
+            return {
+                viewportWidth: innerWidth,
+                smallTargets,
+                escapedControls,
+                publicationOverlaps: route === "authorities"
+                    ? siblingOverlaps(".authority-publication-banner")
+                    : [],
+                personnelManagementOverlaps: route === "personnel"
+                    ? siblingOverlaps(".personnel-recent-row")
+                    : [],
+                authorityPositionedCells,
+            };
+        }""",
+        route,
+    )
+
+
 def rendered_regions(page, surface):
     surface_box = surface.bounding_box()
     heading_state = page.evaluate(
@@ -249,6 +364,7 @@ def capture_surface(
     actual = style(node)
     expected = resolved_background(page, TOKENS[route])
     width_state = document_width(page)
+    geometry = mobile_geometry(page, route, width)
     regions = rendered_regions(page, node)
     page.wait_for_timeout(50)
     errors = runtime_error_snapshot(runtime_errors)
@@ -257,6 +373,7 @@ def capture_surface(
         **actual,
         "expected_background": expected,
         "document_width": width_state,
+        "responsive_geometry": geometry,
         "rendered": regions,
         **errors,
     }
@@ -266,6 +383,22 @@ def capture_surface(
         raise AssertionError(
             f"document overflow {route} {mode} {width}px: {width_state}"
         )
+    if geometry:
+        broken = {
+            name: geometry[name]
+            for name in (
+                "smallTargets",
+                "escapedControls",
+                "publicationOverlaps",
+                "personnelManagementOverlaps",
+                "authorityPositionedCells",
+            )
+            if geometry[name]
+        }
+        if broken:
+            raise AssertionError(
+                f"mobile geometry violation {route} {mode} {width}px: {broken}"
+            )
     if not regions["heading"] or not regions["heading"]["text"]:
         raise AssertionError(f"missing rendered heading {route} {mode} {width}px")
     if not regions["content_region"]:
