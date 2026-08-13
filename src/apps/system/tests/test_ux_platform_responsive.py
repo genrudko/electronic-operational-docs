@@ -142,14 +142,30 @@ class UxPlatformResponsiveSourceContractTests(SimpleTestCase):
         css = read("src/static/system/ux_platform_compositions.css")
         template = read("src/templates/documents/detail.html")
 
-        self.assertIn('class="ux-value-stack" href="{% url \'documents:detail\' link.target_document.public_id %}"', template)
-        self.assertIn('class="ux-value-stack" href="{% url \'documents:detail\' link.source_document.public_id %}"', template)
+        self.assertIn(
+            'class="ux-value-stack" href="{% url \'documents:detail\' '
+            'link.target_document.public_id %}"',
+            template,
+        )
+        self.assertIn(
+            'class="ux-value-stack" href="{% url \'documents:detail\' '
+            'link.source_document.public_id %}"',
+            template,
+        )
         self.assertIn('class="ux-value-primary">{{ link.target_document.title }}', template)
         self.assertIn('class="ux-technical">{{ link.target_document.registration_number }}', template)
         self.assertIn('class="ux-value-primary">{{ link.source_document.title }}', template)
         self.assertIn('class="ux-technical">{{ link.source_document.registration_number }}', template)
-        self.assertIn(".ux-form-grid > .ux-form-actions,.ux-form-grid > .ux-filter-actions { grid-column:1 / -1; }", css)
-        self.assertIn('<div class="ux-form-actions"><button class="da-button" type="submit">Создать связь</button></div>', template)
+        self.assertIn(
+            ".ux-form-grid > .ux-form-actions,.ux-form-grid > .ux-filter-actions "
+            "{ grid-column:1 / -1; }",
+            css,
+        )
+        self.assertIn(
+            '<div class="ux-form-actions"><button class="da-button" type="submit">'
+            "Создать связь</button></div>",
+            template,
+        )
 
     def test_v9_authority_condition_popovers_have_one_active_controller(self) -> None:
         script = read("src/static/organizations/personnel_authority_matrix.js")
@@ -234,7 +250,11 @@ class UxPlatformResponsiveSourceContractTests(SimpleTestCase):
         self.assertIn(".opdoc-related-link:hover", template)
         self.assertIn(".opdoc-related-link:focus-visible", template)
         self.assertIn("padding:var(--theme-space-3)", template)
-        self.assertNotIn("{{ item.target_record.registration_number }} · {{ item.target_record.title }}", template)
+        self.assertNotIn(
+            "{{ item.target_record.registration_number }} · "
+            "{{ item.target_record.title }}",
+            template,
+        )
 
     def test_v10_personnel_current_route_and_compact_workspace_are_server_owned(self) -> None:
         template = read("src/templates/organizations/directory.html")
