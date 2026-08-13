@@ -157,9 +157,15 @@ class UxPlatformResponsiveSourceContractTests(SimpleTestCase):
             template,
         )
         self.assertIn('class="ux-value-primary">{{ link.target_document.title }}', template)
-        self.assertIn('class="ux-technical">{{ link.target_document.registration_number }}', template)
+        self.assertIn(
+            'class="ux-technical">{{ link.target_document.registration_number }}',
+            template,
+        )
         self.assertIn('class="ux-value-primary">{{ link.source_document.title }}', template)
-        self.assertIn('class="ux-technical">{{ link.source_document.registration_number }}', template)
+        self.assertIn(
+            'class="ux-technical">{{ link.source_document.registration_number }}',
+            template,
+        )
         self.assertIn(
             ".ux-form-grid > .ux-form-actions,.ux-form-grid > .ux-filter-actions "
             "{ grid-column:1 / -1; }",
@@ -180,7 +186,10 @@ class UxPlatformResponsiveSourceContractTests(SimpleTestCase):
         self.assertIn("activeConditionOwner && activeConditionOwner !== owner", script)
         self.assertIn('event.key === "Escape"', script)
         self.assertIn('lastPointerType !== "touch" && lastPointerType !== "pen"', script)
-        self.assertIn('window.addEventListener("scroll", scheduleConditionPlacement, true)', script)
+        self.assertIn(
+            'window.addEventListener("scroll", scheduleConditionPlacement, true)',
+            script,
+        )
 
     def test_v9_width_chain_reaches_actual_specialist_and_wide_consumers(self) -> None:
         css = read("src/static/system/ux_platform_compositions.css")
@@ -209,8 +218,11 @@ class UxPlatformResponsiveSourceContractTests(SimpleTestCase):
     def test_v9_opj_single_page_owns_canvas_without_spread_regression(self) -> None:
         css = read("src/static/system/ux_platform_compositions.css")
         workspace = read("src/templates/operational_log/shift_workspace.html")
+        controls = read("src/static/operational_log/opj_workspace_controls.js")
 
-        self.assertIn('data-view-mode="{{ workspace_preferences.view_mode }}"', workspace)
+        self.assertIn('data-opj-presentation-mode="single-spread"', workspace)
+        self.assertIn('workspace.dataset.viewMode === "spread"', controls)
+        self.assertIn('attributeFilter: ["data-view-mode"]', controls)
         self.assertIn('.opj-workspace[data-view-mode="single"] .opj-editor-container', css)
         self.assertIn('.opj-workspace[data-view-mode="single"] .opj-ledger-surface', css)
         self.assertIn("width:min(100%,112rem)", css)
