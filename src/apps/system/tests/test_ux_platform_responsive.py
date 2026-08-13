@@ -120,7 +120,12 @@ class UxPlatformResponsiveSourceContractTests(SimpleTestCase):
         self.assertIn('class="da-workplace"', topbar)
 
     def test_existing_browser_matrix_still_blocks_document_level_overflow(self) -> None:
-        browser = read("tests/browser_theme/run.py")
+        browser_path = ROOT / "tests/browser_theme/run.py"
+        if not browser_path.exists():
+            self.skipTest(
+                "repository-only browser acceptance harness is not packaged in runtime images"
+            )
+        browser = browser_path.read_text(encoding="utf-8")
 
         self.assertIn("(1920, 1080)", browser)
         self.assertIn("(2560, 1440)", browser)
