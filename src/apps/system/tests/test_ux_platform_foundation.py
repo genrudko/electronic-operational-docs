@@ -268,9 +268,14 @@ class UxPlatformFoundationSourceContractTests(SimpleTestCase):
         compact = re.sub(r"\s+", "", directory_css)
 
         self.assertIn(
-            "grid-template-columns:clamp(20rem,24%,30rem)minmax(0,1fr)",
+            "grid-template-columns:minmax(19rem,22rem)minmax(0,1fr)",
             compact,
         )
+        self.assertIn(
+            "grid-template-columns:clamp(19rem,17vw,23rem)minmax(0,1fr)",
+            compact,
+        )
+        self.assertNotIn("clamp(20rem,24%,30rem)", compact)
         self.assertIn(".personnel-division-row > strong > small", directory_css)
         self.assertIn("overflow-wrap:normal", compact)
         self.assertIn("word-break:normal", compact)
