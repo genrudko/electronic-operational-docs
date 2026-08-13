@@ -135,7 +135,17 @@
         <h2>Исходящие связи</h2>
         <ul class="ux-list-reset document-links">
             {% for link in outgoing_links %}
-                <li><span>{{ link.get_link_type_display }}</span><a href="{% url 'documents:detail' link.target_document.public_id %}">{{ link.target_document.registration_number }} · {{ link.target_document.title }}</a></li>
+                <li>
+                    <span>{{ link.get_link_type_display }}</span>
+                    <a class="ux-value-stack" href="{% url 'documents:detail' link.target_document.public_id %}">
+                        <span class="ux-value-primary">{{ link.target_document.title }}</span>
+                        {% if link.target_document.registration_number %}
+                            <code class="ux-technical">{{ link.target_document.registration_number }}</code>
+                        {% else %}
+                            <span class="ux-value-secondary">Черновик без регистрационного номера</span>
+                        {% endif %}
+                    </a>
+                </li>
             {% empty %}<li class="ux-muted">Исходящих связей нет.</li>{% endfor %}
         </ul>
     </article>
@@ -143,7 +153,17 @@
         <h2>Входящие связи</h2>
         <ul class="ux-list-reset document-links">
             {% for link in incoming_links %}
-                <li><span>{{ link.get_link_type_display }}</span><a href="{% url 'documents:detail' link.source_document.public_id %}">{{ link.source_document.registration_number }} · {{ link.source_document.title }}</a></li>
+                <li>
+                    <span>{{ link.get_link_type_display }}</span>
+                    <a class="ux-value-stack" href="{% url 'documents:detail' link.source_document.public_id %}">
+                        <span class="ux-value-primary">{{ link.source_document.title }}</span>
+                        {% if link.source_document.registration_number %}
+                            <code class="ux-technical">{{ link.source_document.registration_number }}</code>
+                        {% else %}
+                            <span class="ux-value-secondary">Черновик без регистрационного номера</span>
+                        {% endif %}
+                    </a>
+                </li>
             {% empty %}<li class="ux-muted">Входящих связей нет.</li>{% endfor %}
         </ul>
     </article>

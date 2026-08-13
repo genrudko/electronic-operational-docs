@@ -1,6 +1,6 @@
 /* UX-PLATFORM-FOUNDATION-001
  * Shared geometry/composition contracts used by existing server-rendered UI.
- * Repair v7 closes width, inset, density and semantic-consumer contracts.
+ * Repair v9 closes rendered-consumer ownership after the v8 responsive baseline.
  * This remains platform geometry, not PAGE-TEMPLATE-LIBRARY-001.
  */
 :root {
@@ -34,6 +34,43 @@ body.ux-platform .authority-table-wrap { min-width:0; width:100%; max-width:none
 body.ux-platform.opj-workspace-page :is(.opj-workspace,.opj-editor-container) { min-width:0; max-width:none; }
 body.ux-platform.opj-clean-journal-page :is(main.opj-main,.approved-journal-shell,.approved-journal-table-wrap) { min-width:0; width:100%; max-width:none; }
 
+/* Rendered SPECIALIST/WIDE consumers own the width all the way to their data
+ * surface. Outer page profiles alone are not acceptance evidence. */
+body.ux-platform .da-page:has(> main.authority-main) > main.authority-main {
+    width:100%;
+    max-width:none;
+    min-width:0;
+    padding-inline:0;
+}
+body.ux-platform main.authority-main > .authority-matrix-page,
+body.ux-platform .authority-matrix-page > .authority-workspace,
+body.ux-platform .authority-matrix-page > .authority-panel,
+body.ux-platform .authority-workspace > .authority-matrix-panel,
+body.ux-platform .authority-matrix-panel > .authority-matrix-scroll {
+    width:100%;
+    max-width:none;
+    min-width:0;
+}
+body.ux-platform .authority-panel:has(.authority-external-directory-table),
+body.ux-platform .authority-table-wrap:has(.authority-external-directory-table),
+body.ux-platform .authority-external-directory-table {
+    width:100%;
+    max-width:none;
+    min-width:0;
+}
+body.ux-platform .da-page:has(.opdoc-filter-card) > main,
+body.ux-platform .opdoc-filter-card,
+body.ux-platform .opdoc-filter-card + .da-card,
+body.ux-platform .opdoc-filter-card + .da-card .da-table-wrap {
+    width:100%;
+    max-width:none;
+    min-width:0;
+}
+body.ux-platform .opdoc-filter-card + .da-card .da-table {
+    width:100%;
+    max-width:none;
+}
+
 /* Canonical page-header rhythm. The title block owns the left anchor; actions
  * use the remaining desktop width and stack only when space is genuinely low. */
 .da-page-header.ux-page-header-balanced { grid-template-columns:minmax(24rem,.85fr) minmax(0,1.15fr); align-items:start; }
@@ -59,6 +96,7 @@ body.ux-platform.opj-clean-journal-page :is(main.opj-main,.approved-journal-shel
 .ux-form-grid { min-width:0; display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:var(--theme-space-4); }
 .ux-form-grid > * { grid-column:span 6; min-width:0; }
 .ux-form-grid > .ux-field-full,.ux-form-grid > .full-width { grid-column:1 / -1; }
+.ux-form-grid > .ux-form-actions,.ux-form-grid > .ux-filter-actions { grid-column:1 / -1; }
 .ux-form-grid > .ux-field-half { grid-column:span 6; }
 .ux-form-grid > .ux-field-third { grid-column:span 4; }
 .ux-form-grid > .ux-field-two-thirds { grid-column:span 8; }
@@ -110,7 +148,10 @@ body.ux-platform.opj-clean-journal-page :is(main.opj-main,.approved-journal-shel
 body.ux-platform .dispatching-object-card.da-card { border-color:var(--theme-border)!important; background:var(--theme-surface)!important; color:var(--theme-text)!important; }
 body.ux-platform .equipment-relation-list li { border-color:var(--theme-border); background:var(--theme-surface-soft); color:var(--theme-text); }
 body.ux-platform .equipment-relation-list li > span { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-semibold); }
-body.ux-platform .equipment-relation-list li > a { display:block; min-width:0; padding:var(--theme-space-2); border:1px solid transparent; border-radius:var(--theme-radius-sm); color:var(--theme-primary); text-decoration:none; }
+body.ux-platform .equipment-relation-list li > a { min-width:0; padding:var(--theme-space-2); border:1px solid transparent; border-radius:var(--theme-radius-sm); color:var(--theme-primary); text-decoration:none; }
+body.ux-platform .equipment-relation-list li > a:not(.ux-value-stack) { display:block; }
+body.ux-platform .equipment-relation-list li > a.ux-value-stack,
+body.ux-platform .document-links li > a.ux-value-stack { display:grid; }
 body.ux-platform .equipment-relation-list li > a:hover { border-color:var(--theme-primary); background:var(--theme-primary-soft); color:var(--theme-primary-hover); }
 body.ux-platform .equipment-relation-list li > a:focus-visible { outline:var(--theme-focus-width) solid var(--theme-focus); outline-offset:var(--theme-focus-offset); }
 body.ux-platform .equipment-relation-list small { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.4; }
@@ -138,6 +179,8 @@ body.ux-platform.opj-workspace-page .opj-registered-link { min-height:var(--them
 body.ux-platform.opj-workspace-page .opj-workspace[data-page-width="full"] { width:100%; max-width:none; }
 body.ux-platform.opj-workspace-page .opj-workspace[data-page-width="wide"] { width:min(100%,124rem); max-width:none; }
 body.ux-platform.opj-workspace-page .opj-workspace[data-page-width="full"] .opj-editor-container { width:100%; max-width:none; }
+body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="single"] .opj-editor-container { display:grid; grid-template-columns:minmax(0,1fr); width:100%; max-width:none; min-width:0; padding:var(--theme-space-3); overflow:visible; background:var(--theme-surface-soft); }
+body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="single"] .opj-ledger-surface { width:min(100%,112rem); max-width:100%; min-width:0; margin-inline:auto; }
 body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="spread"] .opj-editor-container { min-width:0; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; max-width:none; gap:var(--theme-space-3); padding:var(--theme-space-3); }
 body.ux-platform.opj-workspace-page :is(.opj-toolbar-primary,.opj-editor-toolbar,.opj-action-strip) { gap:var(--theme-space-2); padding:var(--theme-space-2) var(--theme-space-3); }
 body.ux-platform.opj-workspace-page .opj-toolbar-primary { min-height:var(--theme-control-height-lg); }
