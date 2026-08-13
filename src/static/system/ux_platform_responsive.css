@@ -1,0 +1,950 @@
+/* UX-PLATFORM-FOUNDATION-001
+ * Responsive data-surface owner.
+ * Shared mobile presentation contracts without a second design system.
+ * Domain semantics, print contracts and business logic remain feature-owned.
+ */
+
+body.ux-platform .document-links li,
+body.ux-platform .equipment-relation-list li {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(9rem, .32fr) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--theme-space-2) var(--theme-space-4);
+    padding-block: var(--theme-space-2);
+}
+
+body.ux-platform .document-links li > span,
+body.ux-platform .equipment-relation-list li > span {
+    color: var(--theme-text-muted);
+    font-size: var(--theme-font-size-xs);
+    font-weight: var(--theme-font-weight-semibold);
+    line-height: 1.35;
+}
+
+body.ux-platform .document-links li > a,
+body.ux-platform .equipment-relation-list li > a {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+body.ux-platform .ux-form-actions,
+body.ux-platform .ux-filter-actions { min-width: 0; }
+
+body.ux-platform .da-page:has(.ux-launcher-grid) {
+    width: min(100%, var(--ux-page-wide-max));
+}
+
+body.ux-platform .da-page:has(.ux-launcher-grid) .da-page-header > div:first-child,
+body.ux-platform .da-page:has(.ux-launcher-grid) .da-alert > div { max-width: 72ch; }
+
+@media screen and (min-width: 100rem) {
+    body.ux-platform .authority-matrix-page {
+        --authority-tree-width: clamp(19rem, 18vw, 24rem);
+    }
+
+    body.ux-platform .authority-workspace {
+        grid-template-columns: var(--authority-tree-width) minmax(0, 1fr);
+        width: 100%;
+    }
+
+    body.ux-platform .authority-matrix-panel,
+    body.ux-platform .authority-matrix-scroll,
+    body.ux-platform .authority-table-wrap {
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+    }
+
+    body.ux-platform .authority-matrix-page .authority-toolbar {
+        grid-template-columns: minmax(18rem, .8fr) minmax(14rem, .65fr) 9rem 9rem;
+    }
+
+    body.ux-platform .authority-matrix-page .authority-tabs {
+        grid-column: 1 / -1;
+        width: 100%;
+        max-width: none;
+        display: flex;
+        flex-wrap: wrap;
+        overflow: visible;
+    }
+
+    body.ux-platform .authority-matrix-page .authority-tabs button { flex: 0 1 auto; }
+
+    body.ux-platform .personnel-directory-workspace {
+        grid-template-columns: clamp(20rem, 19vw, 25rem) minmax(0, 1fr);
+    }
+
+    body.ux-platform .personnel-employee-table {
+        width: 100%;
+        min-width: 70rem;
+    }
+
+    body.ux-platform .opdoc-filter-card + .da-card .da-table { table-layout: fixed; }
+    body.ux-platform .opdoc-filter-card + .da-card .da-table th:nth-child(1) { width: 11%; }
+    body.ux-platform .opdoc-filter-card + .da-card .da-table th:nth-child(2) { width: 17%; }
+    body.ux-platform .opdoc-filter-card + .da-card .da-table th:nth-child(3) { width: 23%; }
+    body.ux-platform .opdoc-filter-card + .da-card .da-table th:nth-child(4) { width: 27%; }
+    body.ux-platform .opdoc-filter-card + .da-card .da-table th:nth-child(5) { width: 13%; }
+    body.ux-platform .opdoc-filter-card + .da-card .da-table th:nth-child(6) { width: 9%; }
+
+    body.ux-platform.opj-workspace-page main.opj-shift-main,
+    body.ux-platform.opj-clean-journal-page main.opj-main,
+    body.ux-platform.opj-workspace-page .opj-workspace,
+    body.ux-platform.opj-clean-journal-page .approved-journal-shell {
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+    }
+
+    body.ux-platform.opj-workspace-page .opj-workspace[data-page-width="wide"] {
+        width: min(100%, 144rem);
+    }
+
+    body.ux-platform.opj-workspace-page .opj-workspace[data-page-width="full"] { width: 100%; }
+
+    body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="spread"] .opj-editor-container {
+        width: 100%;
+        max-width: none;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--theme-space-4);
+    }
+}
+
+body.ux-platform.opj-workspace-page :is(.opj-toolbar-primary, .opj-editor-toolbar, .opj-action-strip) {
+    padding: var(--theme-space-3) var(--theme-space-4);
+    gap: var(--theme-space-3);
+}
+
+body.ux-platform.opj-workspace-page :is(
+    .opj-page-navigation button.da-icon-button,
+    button.da-icon-button.draft-row-action,
+    button.draft-editor-ribbon-button
+) {
+    min-width: var(--theme-control-height-md);
+    width: var(--theme-control-height-md);
+    min-height: var(--theme-control-height-md);
+    height: var(--theme-control-height-md);
+}
+
+body.ux-platform.opj-workspace-page :is(
+    .opj-toolbar-actions .da-button,
+    .opj-ribbon-toggle,
+    .opj-view-switch,
+    .opj-view-switch > button
+) { min-height: var(--theme-control-height-md); }
+
+body.ux-platform.opj-workspace-page .opj-toolbar-primary {
+    min-height: calc(var(--theme-control-height-lg) + var(--theme-space-2));
+}
+
+body.ux-platform.opj-clean-journal-page .journal-workspace-bar,
+body.ux-platform.opj-workspace-page .opj-workspace-header {
+    padding: var(--theme-space-4) var(--theme-space-5);
+}
+
+.ux-intrinsic-wide,
+body.ux-platform .defect-journal-view .defect-register-wrap {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scrollbar-gutter: stable;
+    border: 1px solid var(--theme-border);
+    border-radius: var(--theme-radius-md);
+}
+
+@media screen and (max-width: 52rem) {
+    html,
+    body.ux-platform {
+        max-width: 100%;
+        overflow-x: clip;
+    }
+
+    body.ux-platform :is(
+        .da-shell, .da-stage, .da-page, .da-page > main,
+        .authority-page, .authority-workspace,
+        .personnel-directory-page, .personnel-directory-workspace, .personnel-directory-main,
+        .opj-workspace, .approved-journal-shell
+    ) {
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    body.ux-platform .da-topbar {
+        align-items: flex-start;
+        min-height: var(--theme-topbar-height);
+    }
+
+    body.ux-platform .da-workplace { align-self: center; }
+
+    body.ux-platform .da-workplace strong {
+        max-width: none;
+        overflow: visible;
+        white-space: normal;
+        text-overflow: clip;
+        overflow-wrap: anywhere;
+        line-height: 1.25;
+    }
+
+    body.ux-platform :is(
+        .da-icon-button, .ux-icon-button, .da-menu-button,
+        .authority-tabs button, .authority-tree-heading button,
+        .opj-page-navigation button.da-icon-button,
+        button.da-icon-button.draft-row-action,
+        button.draft-editor-ribbon-button,
+        .opj-ribbon-toggle, .opj-view-switch > button
+    ) {
+        min-width: 2.75rem;
+        min-height: 2.75rem;
+    }
+
+    body.ux-platform :is(.da-button, .ux-button, button.da-button, a.da-button) {
+        min-height: 2.75rem;
+    }
+
+    body.ux-platform .ux-stat-grid,
+    body.ux-platform .personnel-directory-summary,
+    body.ux-platform .authority-matrix-page .authority-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--theme-space-2);
+    }
+
+    body.ux-platform .ux-stat,
+    body.ux-platform .personnel-directory-summary article,
+    body.ux-platform .authority-matrix-page .authority-summary-card {
+        min-height: 0;
+        padding: var(--theme-space-3);
+    }
+
+    body.ux-platform .ux-stat {
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: var(--theme-space-2);
+    }
+
+    body.ux-platform .ux-stat > strong { font-size: var(--theme-font-size-xl); }
+    body.ux-platform :is(.da-card, .ux-card) { max-width: 100%; }
+
+    body.ux-platform .da-page-header,
+    body.ux-platform .ux-page-header {
+        gap: var(--theme-space-3);
+        margin-block-end: var(--theme-space-3);
+        padding-block-end: var(--theme-space-3);
+    }
+
+    body.ux-platform :is(.da-panel-heading, .ux-section-heading, .section-heading) {
+        align-items: flex-start;
+        gap: var(--theme-space-3);
+    }
+
+    body.ux-platform .document-links li,
+    body.ux-platform .equipment-relation-list li {
+        grid-template-columns: 1fr;
+        gap: var(--theme-space-1);
+    }
+
+    body.ux-platform :is(
+        .document-list-card .da-table,
+        .equipment-filter-card ~ .da-card.ux-stack .da-table,
+        .journal-registry-table,
+        .opdoc-filter-card + .da-card .da-table,
+        .personnel-employee-table,
+        .authority-table
+    ) {
+        min-width: 0;
+        width: 100%;
+        display: block;
+        background: transparent;
+    }
+
+    body.ux-platform :is(
+        .document-list-card .da-table,
+        .equipment-filter-card ~ .da-card.ux-stack .da-table,
+        .journal-registry-table,
+        .opdoc-filter-card + .da-card .da-table,
+        .personnel-employee-table,
+        .authority-table
+    ) > thead { display: none; }
+
+    body.ux-platform :is(
+        .document-list-card .da-table,
+        .equipment-filter-card ~ .da-card.ux-stack .da-table,
+        .journal-registry-table,
+        .opdoc-filter-card + .da-card .da-table,
+        .personnel-employee-table,
+        .authority-table
+    ) > tbody {
+        display: grid;
+        gap: var(--theme-space-3);
+    }
+
+    body.ux-platform :is(
+        .document-list-card .da-table,
+        .equipment-filter-card ~ .da-card.ux-stack .da-table,
+        .journal-registry-table,
+        .opdoc-filter-card + .da-card .da-table,
+        .personnel-employee-table,
+        .authority-table
+    ) > tbody > tr {
+        min-width: 0;
+        display: grid;
+        gap: 0;
+        overflow: hidden;
+        border: 1px solid var(--theme-border);
+        border-radius: var(--theme-radius-md);
+        background: var(--theme-surface);
+        box-shadow: var(--theme-shadow-sm);
+    }
+
+    body.ux-platform :is(
+        .document-list-card .da-table,
+        .equipment-filter-card ~ .da-card.ux-stack .da-table,
+        .journal-registry-table,
+        .opdoc-filter-card + .da-card .da-table,
+        .personnel-employee-table,
+        .authority-table
+    ) > tbody > tr > td {
+        min-width: 0;
+        display: grid;
+        grid-template-columns: minmax(7.5rem, .42fr) minmax(0, 1fr);
+        gap: var(--theme-space-2);
+        padding: var(--theme-space-2) var(--theme-space-3);
+        border: 0;
+        border-bottom: 1px solid var(--theme-border);
+        background: transparent;
+        overflow-wrap: anywhere;
+    }
+
+    body.ux-platform :is(
+        .document-list-card .da-table,
+        .equipment-filter-card ~ .da-card.ux-stack .da-table,
+        .journal-registry-table,
+        .opdoc-filter-card + .da-card .da-table,
+        .personnel-employee-table,
+        .authority-table
+    ) > tbody > tr > td:last-child { border-bottom: 0; }
+
+    body.ux-platform :is(
+        .document-list-card .da-table,
+        .equipment-filter-card ~ .da-card.ux-stack .da-table,
+        .journal-registry-table,
+        .opdoc-filter-card + .da-card .da-table,
+        .personnel-employee-table,
+        .authority-table
+    ) > tbody > tr > td::before {
+        align-self: start;
+        color: var(--theme-text-muted);
+        font-size: var(--theme-font-size-xs);
+        font-weight: var(--theme-font-weight-semibold);
+        line-height: 1.35;
+    }
+
+    body.ux-platform .document-list-card .da-table td:nth-child(1)::before { content: "Номер"; }
+    body.ux-platform .document-list-card .da-table td:nth-child(2)::before { content: "Тип"; }
+    body.ux-platform .document-list-card .da-table td:nth-child(3)::before { content: "Документ"; }
+    body.ux-platform .document-list-card .da-table td:nth-child(4)::before { content: "Статус"; }
+    body.ux-platform .document-list-card .da-table td:nth-child(5)::before { content: "Автор"; }
+    body.ux-platform .document-list-card .da-table td:nth-child(6)::before { content: "Время"; }
+    body.ux-platform .document-list-card .da-table td:nth-child(3) {
+        order: -2;
+        grid-template-columns: 1fr;
+        padding-block: var(--theme-space-3);
+        font-size: var(--theme-font-size-md);
+        font-weight: var(--theme-font-weight-semibold);
+    }
+    body.ux-platform .document-list-card .da-table td:nth-child(1) { order: -1; }
+
+    body.ux-platform .equipment-filter-card ~ .da-card.ux-stack .da-table td:nth-child(1)::before { content: "Оборудование"; }
+    body.ux-platform .equipment-filter-card ~ .da-card.ux-stack .da-table td:nth-child(2)::before { content: "Стабильный код"; }
+    body.ux-platform .equipment-filter-card ~ .da-card.ux-stack .da-table td:nth-child(3)::before { content: "Вид"; }
+    body.ux-platform .equipment-filter-card ~ .da-card.ux-stack .da-table td:nth-child(4)::before { content: "Энергообъект"; }
+    body.ux-platform .equipment-filter-card ~ .da-card.ux-stack .da-table td:nth-child(5)::before { content: "Состояние"; }
+    body.ux-platform .equipment-filter-card ~ .da-card.ux-stack .da-table td:nth-child(1) {
+        order: -2;
+        grid-template-columns: 1fr;
+        padding-block: var(--theme-space-3);
+    }
+    body.ux-platform .equipment-filter-card ~ .da-card.ux-stack .da-table td:nth-child(2) { order: -1; }
+
+    body.ux-platform .journal-registry-table td:nth-child(1)::before { content: "Рабочее место"; }
+    body.ux-platform .journal-registry-table td:nth-child(2)::before { content: "Журнал"; }
+    body.ux-platform .journal-registry-table td:nth-child(3)::before { content: "Форма"; }
+    body.ux-platform .journal-registry-table td:nth-child(4)::before { content: "Записей"; }
+    body.ux-platform .journal-registry-table td:nth-child(5)::before { content: "Последняя запись"; }
+    body.ux-platform .journal-registry-table td:nth-child(6)::before { content: "Последнее событие"; }
+    body.ux-platform .journal-registry-table td:nth-child(2) {
+        order: -2;
+        grid-template-columns: 1fr;
+        padding-block: var(--theme-space-3);
+        font-size: var(--theme-font-size-md);
+        font-weight: var(--theme-font-weight-semibold);
+    }
+    body.ux-platform .journal-registry-table td:nth-child(1) { order: -1; }
+
+    body.ux-platform .opdoc-filter-card + .da-card .da-table td:nth-child(1)::before { content: "Дата и время"; }
+    body.ux-platform .opdoc-filter-card + .da-card .da-table td:nth-child(2)::before { content: "Номер и журнал"; }
+    body.ux-platform .opdoc-filter-card + .da-card .da-table td:nth-child(3)::before { content: "Содержание"; }
+    body.ux-platform .opdoc-filter-card + .da-card .da-table td:nth-child(4)::before { content: "Данные формы"; }
+    body.ux-platform .opdoc-filter-card + .da-card .da-table td:nth-child(5)::before { content: "Рабочее место"; }
+    body.ux-platform .opdoc-filter-card + .da-card .da-table td:nth-child(6)::before { content: "Состояние"; }
+    body.ux-platform .opdoc-filter-card + .da-card .da-table td:nth-child(3) {
+        order: -2;
+        grid-template-columns: 1fr;
+        padding-block: var(--theme-space-3);
+    }
+    body.ux-platform .opdoc-filter-card + .da-card .da-table td:nth-child(2) { order: -1; }
+
+    body.ux-platform .personnel-employee-table-wrap { overflow: visible; }
+    body.ux-platform .personnel-directory-main > section.personnel-directory-panel:nth-of-type(1) .personnel-employee-table td:nth-child(1)::before { content: "Сотрудник"; }
+    body.ux-platform .personnel-directory-main > section.personnel-directory-panel:nth-of-type(1) .personnel-employee-table td:nth-child(2)::before { content: "Подразделение и должность"; }
+    body.ux-platform .personnel-directory-main > section.personnel-directory-panel:nth-of-type(1) .personnel-employee-table td:nth-child(3)::before { content: "Контакты"; }
+    body.ux-platform .personnel-directory-main > section.personnel-directory-panel:nth-of-type(1) .personnel-employee-table td:nth-child(4)::before { content: "Квалификация"; }
+    body.ux-platform .personnel-directory-main > section.personnel-directory-panel:nth-of-type(1) .personnel-employee-table td:nth-child(5)::before { content: "Права"; }
+    body.ux-platform .personnel-directory-main > section.personnel-directory-panel:nth-of-type(1) .personnel-employee-table td:nth-child(6)::before { content: "Действия"; }
+    body.ux-platform .personnel-directory-main > section.personnel-directory-panel:nth-of-type(1) .personnel-employee-table td:nth-child(1) {
+        order: -2;
+        grid-template-columns: 1fr;
+        padding-block: var(--theme-space-3);
+        font-size: var(--theme-font-size-md);
+    }
+    body.ux-platform .personnel-directory-main > section.personnel-directory-panel:nth-of-type(1) .personnel-employee-table td:nth-child(2) { order: -1; }
+
+    body.ux-platform .personnel-management-actions {
+        min-width: 0;
+        width: 100%;
+    }
+    body.ux-platform .personnel-management-actions .da-button {
+        min-height: 2.75rem;
+        flex: 1 1 8rem;
+    }
+
+    body.ux-platform .personnel-recent-row {
+        grid-template-columns: 1fr;
+        align-items: start;
+        gap: var(--theme-space-2);
+    }
+    body.ux-platform .personnel-recent-row > time {
+        margin: 0;
+        justify-self: start;
+        padding: var(--theme-space-1) var(--theme-space-2);
+        border-radius: var(--theme-radius-pill);
+        background: var(--theme-surface-soft);
+    }
+
+    body.ux-platform .personnel-directory-main > section.personnel-directory-panel:nth-of-type(2) .personnel-employee-table td:nth-child(1)::before { content: "Организация"; }
+    body.ux-platform .personnel-directory-main > section.personnel-directory-panel:nth-of-type(2) .personnel-employee-table td:nth-child(2)::before { content: "Сотрудник"; }
+    body.ux-platform .personnel-directory-main > section.personnel-directory-panel:nth-of-type(2) .personnel-employee-table td:nth-child(3)::before { content: "Роль"; }
+    body.ux-platform .personnel-directory-main > section.personnel-directory-panel:nth-of-type(2) .personnel-employee-table td:nth-child(4)::before { content: "Область взаимодействия"; }
+    body.ux-platform .personnel-directory-main > section.personnel-directory-panel:nth-of-type(2) .personnel-employee-table td:nth-child(5)::before { content: "Контакт"; }
+    body.ux-platform .personnel-directory-main > section.personnel-directory-panel:nth-of-type(2) .personnel-employee-table td:nth-child(2) {
+        order: -2;
+        grid-template-columns: 1fr;
+        padding-block: var(--theme-space-3);
+    }
+    body.ux-platform .personnel-directory-main > section.personnel-directory-panel:nth-of-type(2) .personnel-employee-table td:nth-child(1) { order: -1; }
+
+    body.ux-platform .authority-publication-banner {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+        gap: var(--theme-space-3);
+        padding: var(--theme-space-3);
+    }
+    body.ux-platform .authority-publication-banner > div {
+        grid-template-columns: 1fr;
+        align-items: start;
+        gap: var(--theme-space-1);
+    }
+    body.ux-platform .authority-publication-banner :is(strong, small, span) {
+        min-width: 0;
+        max-width: 100%;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    body.ux-platform .authority-workspace {
+        grid-template-columns: 1fr;
+        gap: var(--theme-space-3);
+    }
+    body.ux-platform .authority-org-tree {
+        position: static;
+        max-width: 100%;
+    }
+    body.ux-platform .authority-matrix-page .authority-toolbar { grid-template-columns: 1fr; }
+    body.ux-platform .authority-matrix-page .authority-tabs {
+        grid-column: 1;
+        width: 100%;
+        max-width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--theme-space-1);
+        overflow: visible;
+    }
+    body.ux-platform .authority-tabs button {
+        width: 100%;
+        min-width: 0;
+        height: auto;
+        padding: var(--theme-space-2);
+        white-space: normal;
+        line-height: 1.25;
+    }
+
+    body.ux-platform .authority-matrix-scroll {
+        max-height: none;
+        overflow: visible;
+        scrollbar-gutter: auto;
+    }
+    body.ux-platform .authority-matrix {
+        min-width: 0;
+        width: 100%;
+        display: block;
+        table-layout: auto;
+        border-collapse: separate;
+    }
+    body.ux-platform .authority-matrix > thead { display: none; }
+    body.ux-platform .authority-matrix > tbody {
+        display: grid;
+        gap: var(--theme-space-3);
+        margin-block-end: var(--theme-space-3);
+    }
+    body.ux-platform .authority-matrix .authority-division-row { display: block; }
+    body.ux-platform .authority-matrix .authority-division-row > th {
+        position: static;
+        width: 100%;
+        max-width: none;
+        display: flex;
+        align-items: center;
+        gap: var(--theme-space-2);
+        padding: var(--theme-space-3);
+        border: 1px solid var(--theme-border);
+        border-radius: var(--theme-radius-md);
+        background: var(--theme-surface-soft);
+    }
+    body.ux-platform .authority-matrix .authority-matrix-person {
+        min-width: 0;
+        display: grid;
+        overflow: hidden;
+        border: 1px solid var(--theme-border);
+        border-radius: var(--theme-radius-md);
+        background: var(--theme-surface);
+        box-shadow: var(--theme-shadow-sm);
+    }
+    body.ux-platform .authority-matrix .authority-matrix-person > td {
+        position: static;
+        left: auto;
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(7.5rem, .42fr) minmax(0, 1fr);
+        align-items: start;
+        gap: var(--theme-space-2);
+        padding: var(--theme-space-2) var(--theme-space-3);
+        border: 0;
+        border-bottom: 1px solid var(--theme-border);
+        box-shadow: none;
+        background: transparent;
+    }
+    body.ux-platform .authority-matrix .authority-matrix-person > td::before {
+        color: var(--theme-text-muted);
+        font-size: var(--theme-font-size-xs);
+        font-weight: var(--theme-font-weight-semibold);
+        line-height: 1.35;
+    }
+    body.ux-platform .authority-matrix .matrix-sticky-name::before { content: "Сотрудник"; }
+    body.ux-platform .authority-matrix .matrix-sticky-position::before { content: "Должность"; }
+    body.ux-platform .authority-matrix .matrix-sticky-qualification::before { content: "Квалификация"; }
+    body.ux-platform .authority-matrix .matrix-sticky-name {
+        order: -3;
+        grid-template-columns: 1fr;
+        padding-block: var(--theme-space-3);
+        font-size: var(--theme-font-size-md);
+    }
+    body.ux-platform .authority-matrix .matrix-sticky-position { order: -2; }
+    body.ux-platform .authority-matrix .matrix-sticky-qualification { order: -1; }
+    body.ux-platform .authority-matrix .authority-right-cell:not(:has(a)) { display: none; }
+    body.ux-platform .authority-matrix .authority-right-cell:has(a) {
+        display: block;
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        padding: 0;
+        border-bottom: 1px solid var(--theme-border);
+    }
+    body.ux-platform .authority-matrix .authority-right-cell > a {
+        min-height: 2.75rem;
+        width: 100%;
+        display: grid;
+        gap: var(--theme-space-1);
+        padding: var(--theme-space-2) var(--theme-space-3);
+        color: var(--theme-primary);
+        text-decoration: none;
+        overflow-wrap: anywhere;
+    }
+    body.ux-platform .authority-matrix .authority-right-cell > a::before {
+        content: attr(aria-label);
+        color: var(--theme-text);
+        font-size: var(--theme-font-size-sm);
+        font-weight: var(--theme-font-weight-semibold);
+        line-height: 1.35;
+    }
+    body.ux-platform .authority-matrix .authority-cell-marker { display: none; }
+    body.ux-platform .authority-matrix .authority-condition-popover {
+        position: static;
+        inset: auto;
+        width: auto;
+        max-width: none;
+        display: grid;
+        visibility: visible;
+        opacity: 1;
+        transform: none;
+        pointer-events: auto;
+        box-shadow: none;
+    }
+
+    body.ux-platform .authority-table-wrap { overflow: visible; }
+    body.ux-platform .authority-holders-table td:nth-child(1)::before { content: "Сотрудник"; }
+    body.ux-platform .authority-holders-table td:nth-child(2)::before { content: "Подразделение"; }
+    body.ux-platform .authority-holders-table td:nth-child(3)::before { content: "Квалификация"; }
+    body.ux-platform .authority-holders-table td:nth-child(4)::before { content: "Право"; }
+    body.ux-platform .authority-holders-table td:nth-child(5)::before { content: "Область и условие"; }
+    body.ux-platform .authority-holders-table td:nth-child(6)::before { content: "Срок и основание"; }
+    body.ux-platform .authority-holders-table td:nth-child(1),
+    body.ux-platform .authority-holders-table td:nth-child(4) { grid-template-columns: 1fr; }
+
+    body.ux-platform .authority-external-directory-table { min-width: 0; }
+    body.ux-platform .authority-external-directory-table td:nth-child(1)::before { content: "Организация и сотрудник"; }
+    body.ux-platform .authority-external-directory-table td:nth-child(2)::before { content: "Подразделение / объект"; }
+    body.ux-platform .authority-external-directory-table td:nth-child(3)::before { content: "Роль"; }
+    body.ux-platform .authority-external-directory-table td:nth-child(4)::before { content: "Оперативная область"; }
+    body.ux-platform .authority-external-directory-table td:nth-child(5)::before { content: "Полномочия"; }
+    body.ux-platform .authority-external-directory-table td:nth-child(6)::before { content: "Контакты"; }
+    body.ux-platform .authority-external-directory-table td:nth-child(7)::before { content: "Срок и основание"; }
+
+    body.ux-platform [data-authority-panel="contractors"] .authority-table td:nth-child(1)::before { content: "Сотрудник"; }
+    body.ux-platform [data-authority-panel="contractors"] .authority-table td:nth-child(2)::before { content: "Организация"; }
+    body.ux-platform [data-authority-panel="contractors"] .authority-table td:nth-child(3)::before { content: "Вид"; }
+    body.ux-platform [data-authority-panel="contractors"] .authority-table td:nth-child(4)::before { content: "Область допуска"; }
+    body.ux-platform [data-authority-panel="contractors"] .authority-table td:nth-child(5)::before { content: "Срок и основание"; }
+    body.ux-platform [data-authority-panel="contractors"] .authority-table td:nth-child(6)::before { content: "Состояние"; }
+
+    body.ux-platform .authority-evaluation-row {
+        grid-template-columns: 1fr;
+        gap: var(--theme-space-2);
+    }
+
+    body.ux-platform .defect-journal-view {
+        max-width: 100%;
+        min-width: 0;
+    }
+    body.ux-platform .defect-journal-view-header {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--theme-space-2);
+    }
+    body.ux-platform .defect-journal-view-header::after {
+        content: "Широкая нормативная форма прокручивается внутри области просмотра.";
+        color: var(--theme-text-muted);
+        font-size: var(--theme-font-size-xs);
+        line-height: 1.35;
+    }
+    body.ux-platform .defect-journal-view .defect-register-wrap {
+        position: relative;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        touch-action: pan-x pan-y;
+    }
+    body.ux-platform .defect-journal-view .defect-register { min-width: 78rem; }
+
+    body.ux-platform.opj-clean-journal-page .journal-workspace-bar {
+        grid-template-columns: 1fr;
+        padding: var(--theme-space-3);
+    }
+    body.ux-platform.opj-clean-journal-page .journal-workspace-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--theme-space-2);
+    }
+    body.ux-platform.opj-clean-journal-page .journal-workspace-actions .da-button {
+        width: 100%;
+        white-space: normal;
+    }
+    body.ux-platform.opj-clean-journal-page .opj-clean-context-bar,
+    body.ux-platform.opj-clean-journal-page .opj-shift-selector-form {
+        max-width: 100%;
+        min-width: 0;
+    }
+    body.ux-platform.opj-clean-journal-page .opj-shift-selector-form {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--theme-space-2);
+    }
+    body.ux-platform.opj-clean-journal-page .approved-journal-table-wrap { overflow: visible; }
+    body.ux-platform.opj-clean-journal-page .approved-journal-table {
+        width: 100%;
+        min-width: 0;
+        display: block;
+        table-layout: auto;
+    }
+    body.ux-platform.opj-clean-journal-page .approved-journal-table colgroup,
+    body.ux-platform.opj-clean-journal-page .approved-journal-table thead { display: none; }
+    body.ux-platform.opj-clean-journal-page .approved-journal-table tbody {
+        display: grid;
+        gap: var(--theme-space-3);
+    }
+    body.ux-platform.opj-clean-journal-page .approved-journal-row {
+        display: grid;
+        overflow: hidden;
+        border: 1px solid var(--theme-border);
+        border-radius: var(--theme-radius-md);
+        background: var(--theme-surface-document);
+        box-shadow: var(--theme-shadow-sm);
+    }
+    body.ux-platform.opj-clean-journal-page .approved-journal-row > td {
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        display: block;
+        padding: var(--theme-space-3);
+        border: 0;
+        border-bottom: 1px solid var(--theme-border);
+        overflow-wrap: anywhere;
+    }
+    body.ux-platform.opj-clean-journal-page .approved-journal-row > td:last-child { border-bottom: 0; }
+    body.ux-platform.opj-clean-journal-page .approved-journal-date-time {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        align-items: center;
+        gap: var(--theme-space-2);
+        background: var(--theme-surface-soft);
+    }
+    body.ux-platform.opj-clean-journal-page .approved-journal-message::before {
+        content: "Содержание записи";
+        display: block;
+        margin-block-end: var(--theme-space-2);
+        color: var(--theme-text-muted);
+        font-size: var(--theme-font-size-xs);
+        font-weight: var(--theme-font-weight-semibold);
+    }
+    body.ux-platform.opj-clean-journal-page .approved-journal-row > td:nth-child(n + 3)::before {
+        content: "Визы и замечания";
+        display: block;
+        margin-block-end: var(--theme-space-2);
+        color: var(--theme-text-muted);
+        font-size: var(--theme-font-size-xs);
+        font-weight: var(--theme-font-weight-semibold);
+    }
+    body.ux-platform.opj-clean-journal-page .opj-entry-actions { max-width: 100%; }
+
+    body.ux-platform.opj-workspace-page .opj-workspace-header {
+        grid-template-columns: 1fr;
+        padding: var(--theme-space-3);
+        gap: var(--theme-space-3);
+    }
+    body.ux-platform.opj-workspace-page .opj-workspace-meta {
+        grid-column: auto;
+        justify-content: flex-start;
+    }
+    body.ux-platform.opj-workspace-page .opj-registered-link {
+        justify-self: stretch;
+        width: 100%;
+    }
+    body.ux-platform.opj-workspace-page .opj-workspace {
+        width: 100%;
+        max-width: 100%;
+        padding: var(--theme-space-2);
+    }
+    body.ux-platform.opj-workspace-page .opj-toolbar {
+        max-width: 100%;
+        overflow: visible;
+    }
+    body.ux-platform.opj-workspace-page .opj-toolbar-primary {
+        display: grid;
+        grid-template-columns: 1fr;
+        align-items: stretch;
+        padding: var(--theme-space-3);
+        gap: var(--theme-space-3);
+    }
+    body.ux-platform.opj-workspace-page .opj-toolbar-search {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--theme-space-2);
+    }
+    body.ux-platform.opj-workspace-page .opj-page-navigation {
+        width: 100%;
+        min-width: 0;
+        display: grid;
+        grid-template-columns: 2.75rem minmax(0, 1fr) 2.75rem;
+        align-items: center;
+        gap: var(--theme-space-2);
+    }
+    body.ux-platform.opj-workspace-page :is(.draft-page-buttons, .draft-page-range, .opj-page-label) { display: none; }
+    body.ux-platform.opj-workspace-page .draft-page-jump {
+        min-width: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: var(--theme-space-1);
+    }
+    body.ux-platform.opj-workspace-page .draft-page-jump input {
+        width: 4.5rem;
+        min-height: 2.75rem;
+    }
+    body.ux-platform.opj-workspace-page .opj-toolbar-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--theme-space-2);
+    }
+    body.ux-platform.opj-workspace-page .opj-toolbar-actions > *,
+    body.ux-platform.opj-workspace-page .opj-toolbar-actions form,
+    body.ux-platform.opj-workspace-page .opj-toolbar-actions .da-button,
+    body.ux-platform.opj-workspace-page .opj-ribbon-toggle,
+    body.ux-platform.opj-workspace-page .opj-view-switch {
+        min-width: 0;
+        width: 100%;
+    }
+    body.ux-platform.opj-workspace-page .opj-view-switch {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+    body.ux-platform.opj-workspace-page .opj-view-switch [data-view-mode="spread"] { display: none; }
+    body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode="compact"] .opj-editor-toolbar { display: none; }
+    body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode="expanded"] .opj-editor-toolbar {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--theme-space-3);
+        padding: var(--theme-space-3);
+        overflow: visible;
+    }
+    body.ux-platform.opj-workspace-page .opj-editor-tools,
+    body.ux-platform.opj-workspace-page .draft-editor-ribbon-groups {
+        min-width: 0;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--theme-space-3);
+        overflow: visible;
+    }
+    body.ux-platform.opj-workspace-page .draft-editor-ribbon-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--theme-space-2);
+        overflow: visible;
+    }
+    body.ux-platform.opj-workspace-page button.draft-editor-ribbon-button {
+        flex: 0 0 2.75rem;
+        width: auto;
+        min-width: 2.75rem;
+        height: auto;
+        min-height: 2.75rem;
+    }
+    body.ux-platform.opj-workspace-page .opj-editor-container,
+    body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="spread"] .opj-editor-container {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        display: block;
+        overflow: visible;
+        padding: 0;
+    }
+    body.ux-platform.opj-workspace-page .opj-secondary-page { display: none !important; }
+    body.ux-platform.opj-workspace-page :is(.opj-ledger-header, .opj-ledger-date, .opj-ledger-footer, .draft-column-resizer) { display: none; }
+    body.ux-platform.opj-workspace-page .opj-ledger-surface {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+    body.ux-platform.opj-workspace-page .opj-ledger-body {
+        display: grid;
+        gap: var(--theme-space-3);
+    }
+    body.ux-platform.opj-workspace-page .draft-ledger-row {
+        min-width: 0;
+        width: 100%;
+        overflow: hidden;
+        border: 1px solid var(--theme-border);
+        border-radius: var(--theme-radius-md);
+        background: var(--theme-surface);
+        box-shadow: var(--theme-shadow-sm);
+    }
+    body.ux-platform.opj-workspace-page .draft-ledger-form {
+        min-width: 0;
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+    body.ux-platform.opj-workspace-page :is(.draft-ledger-time, .draft-ledger-content, .draft-ledger-visas) {
+        min-width: 0;
+        width: 100%;
+        padding: var(--theme-space-3);
+        border: 0;
+        border-bottom: 1px solid var(--theme-border);
+    }
+    body.ux-platform.opj-workspace-page .draft-ledger-time::before,
+    body.ux-platform.opj-workspace-page .draft-ledger-content::before,
+    body.ux-platform.opj-workspace-page .draft-ledger-visas::before {
+        display: block;
+        margin-block-end: var(--theme-space-1);
+        color: var(--theme-text-muted);
+        font-size: var(--theme-font-size-xs);
+        font-weight: var(--theme-font-weight-semibold);
+    }
+    body.ux-platform.opj-workspace-page .draft-ledger-time::before { content: "Время"; }
+    body.ux-platform.opj-workspace-page .draft-ledger-content::before { content: "Содержание записи"; }
+    body.ux-platform.opj-workspace-page .draft-ledger-visas::before { content: "Визы и замечания"; }
+    body.ux-platform.opj-workspace-page .draft-ledger-visas:empty { display: none; }
+    body.ux-platform.opj-workspace-page .draft-ledger-lower {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--theme-space-2);
+    }
+    body.ux-platform.opj-workspace-page .draft-mini-toolbar,
+    body.ux-platform.opj-workspace-page .draft-row-action-toolbar {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--theme-space-2);
+    }
+    body.ux-platform.opj-workspace-page .opj-register-draft-button { min-height: 2.75rem; }
+    body.ux-platform.opj-workspace-page .opj-row-selector {
+        min-width: 2.75rem;
+        min-height: 2.75rem;
+        display: inline-grid;
+        place-items: center;
+    }
+    body.ux-platform.opj-workspace-page .opj-batch-registration-bar,
+    body.ux-platform.opj-workspace-page .opj-clean-summary {
+        max-width: 100%;
+        min-width: 0;
+        grid-template-columns: 1fr;
+        gap: var(--theme-space-3);
+    }
+}
+
+@media screen and (max-width: 30rem) {
+    body.ux-platform :is(
+        .document-list-card .da-table,
+        .equipment-filter-card ~ .da-card.ux-stack .da-table,
+        .journal-registry-table,
+        .opdoc-filter-card + .da-card .da-table,
+        .personnel-employee-table,
+        .authority-table
+    ) > tbody > tr > td,
+    body.ux-platform .authority-matrix .authority-matrix-person > td {
+        grid-template-columns: 1fr;
+        gap: var(--theme-space-1);
+    }
+
+    body.ux-platform .authority-matrix-page .authority-tabs { grid-template-columns: 1fr; }
+    body.ux-platform.opj-clean-journal-page .journal-workspace-actions,
+    body.ux-platform.opj-workspace-page .opj-toolbar-actions { grid-template-columns: 1fr; }
+}
