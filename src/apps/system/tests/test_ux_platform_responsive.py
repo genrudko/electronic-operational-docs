@@ -20,9 +20,7 @@ class UxPlatformResponsiveSourceContractTests(SimpleTestCase):
 
         self.assertLess(extra_head, responsive)
         self.assertEqual(base.count("system/ux_platform_responsive.css"), 1)
-        self.assertTrue(
-            (ROOT / "src/static/system/ux_platform_responsive.css").exists()
-        )
+        self.assertTrue((ROOT / "src/static/system/ux_platform_responsive.css").exists())
 
     def test_responsive_owner_is_semantic_and_not_a_repair_stylesheet(self) -> None:
         css = read("src/static/system/ux_platform_responsive.css")
@@ -122,9 +120,7 @@ class UxPlatformResponsiveSourceContractTests(SimpleTestCase):
     def test_existing_browser_matrix_still_blocks_document_level_overflow(self) -> None:
         browser_path = ROOT / "tests/browser_theme/run.py"
         if not browser_path.exists():
-            self.skipTest(
-                "repository-only browser acceptance harness is not packaged in runtime images"
-            )
+            self.skipTest("repository-only browser acceptance harness is not packaged in runtime images")
         browser = browser_path.read_text(encoding="utf-8")
 
         self.assertIn("(1920, 1080)", browser)
@@ -146,36 +142,14 @@ class UxPlatformResponsiveSourceContractTests(SimpleTestCase):
         css = read("src/static/system/ux_platform_compositions.css")
         template = read("src/templates/documents/detail.html")
 
-        self.assertIn(
-            'class="ux-value-stack" href="{% url \'documents:detail\' '
-            'link.target_document.public_id %}"',
-            template,
-        )
-        self.assertIn(
-            'class="ux-value-stack" href="{% url \'documents:detail\' '
-            'link.source_document.public_id %}"',
-            template,
-        )
+        self.assertIn('class="ux-value-stack" href="{% url \'documents:detail\' link.target_document.public_id %}"', template)
+        self.assertIn('class="ux-value-stack" href="{% url \'documents:detail\' link.source_document.public_id %}"', template)
         self.assertIn('class="ux-value-primary">{{ link.target_document.title }}', template)
-        self.assertIn(
-            'class="ux-technical">{{ link.target_document.registration_number }}',
-            template,
-        )
+        self.assertIn('class="ux-technical">{{ link.target_document.registration_number }}', template)
         self.assertIn('class="ux-value-primary">{{ link.source_document.title }}', template)
-        self.assertIn(
-            'class="ux-technical">{{ link.source_document.registration_number }}',
-            template,
-        )
-        self.assertIn(
-            ".ux-form-grid > .ux-form-actions,.ux-form-grid > .ux-filter-actions "
-            "{ grid-column:1 / -1; }",
-            css,
-        )
-        self.assertIn(
-            '<div class="ux-form-actions"><button class="da-button" type="submit">'
-            "Создать связь</button></div>",
-            template,
-        )
+        self.assertIn('class="ux-technical">{{ link.source_document.registration_number }}', template)
+        self.assertIn(".ux-form-grid > .ux-form-actions,.ux-form-grid > .ux-filter-actions { grid-column:1 / -1; }", css)
+        self.assertIn('<div class="ux-form-actions"><button class="da-button" type="submit">Создать связь</button></div>', template)
 
     def test_v9_authority_condition_popovers_have_one_active_controller(self) -> None:
         script = read("src/static/organizations/personnel_authority_matrix.js")
@@ -186,10 +160,7 @@ class UxPlatformResponsiveSourceContractTests(SimpleTestCase):
         self.assertIn("activeConditionOwner && activeConditionOwner !== owner", script)
         self.assertIn('event.key === "Escape"', script)
         self.assertIn('lastPointerType !== "touch" && lastPointerType !== "pen"', script)
-        self.assertIn(
-            'window.addEventListener("scroll", scheduleConditionPlacement, true)',
-            script,
-        )
+        self.assertIn('window.addEventListener("scroll", scheduleConditionPlacement, true)', script)
 
     def test_v9_width_chain_reaches_actual_specialist_and_wide_consumers(self) -> None:
         css = read("src/static/system/ux_platform_compositions.css")
@@ -210,7 +181,7 @@ class UxPlatformResponsiveSourceContractTests(SimpleTestCase):
         self.assertIn("authority-external-directory-table", contacts)
         self.assertIn(".authority-panel:has(.authority-external-directory-table)", css)
         self.assertIn(".authority-table-wrap:has(.authority-external-directory-table)", css)
-        self.assertIn('class="da-card opdoc-filter-card"', opdocs)
+        self.assertIn("opdoc-filter-card", opdocs)
         self.assertIn(".da-page:has(.opdoc-filter-card) > main", css)
         self.assertIn(".opdoc-filter-card + .da-card .da-table-wrap", css)
         self.assertIn(".opdoc-filter-card + .da-card .da-table", css)
@@ -236,3 +207,49 @@ class UxPlatformResponsiveSourceContractTests(SimpleTestCase):
         self.assertEqual(css.count("!important"), 3)
         self.assertFalse((ROOT / "src/static/system/repair_v9.css").exists())
         self.assertFalse((ROOT / "src/static/system/final_final.css").exists())
+
+    def test_v10_operational_documents_registry_has_compact_semantic_geometry(self) -> None:
+        template = read("src/templates/operational_documents/registry.html")
+
+        self.assertIn('class="da-page-header opdoc-page-header"', template)
+        self.assertNotIn('class="da-page-header da-page-header-compact"', template)
+        self.assertIn('class="ux-kicker">Формы по утверждённым источникам', template)
+        self.assertIn('class="da-field ux-field-two-thirds"', template)
+        self.assertGreaterEqual(template.count('class="da-field ux-field-third"'), 4)
+        self.assertIn('class="opdoc-date-range ux-field-full"', template)
+        self.assertIn('class="ux-form-actions"', template)
+        self.assertIn(".opdoc-registry-notices", template)
+        self.assertIn("padding:var(--theme-space-3)", template)
+
+    def test_v10_operational_documents_related_entities_are_semantic_links(self) -> None:
+        template = read("src/templates/operational_documents/record_detail.html")
+
+        self.assertIn('>← К журналам</a>', template)
+        self.assertIn("equipment:detail", template)
+        self.assertIn("documents:detail", template)
+        self.assertIn('class="ux-value-primary">{{ item.dispatcher_name_snapshot }}', template)
+        self.assertIn('class="ux-technical">{{ item.equipment_code_snapshot }}', template)
+        self.assertIn('class="ux-value-primary">{{ item.title_snapshot }}', template)
+        self.assertIn('class="opdoc-related-relation">{{ item.get_link_type_display }}', template)
+        self.assertIn(".opdoc-related-link:hover", template)
+        self.assertIn(".opdoc-related-link:focus-visible", template)
+        self.assertIn("padding:var(--theme-space-3)", template)
+        self.assertNotIn("{{ item.target_record.registration_number }} · {{ item.target_record.title }}", template)
+
+    def test_v10_personnel_current_route_and_compact_workspace_are_server_owned(self) -> None:
+        template = read("src/templates/organizations/directory.html")
+        css = read("src/static/organizations/personnel_directory.css")
+
+        self.assertIn('class="personnel-contour-card is-current"', template)
+        self.assertIn('aria-current="page"', template)
+        self.assertIn("grid-template-columns:minmax(19rem,22rem) minmax(0,1fr)", css)
+        self.assertIn("grid-template-columns:clamp(19rem,17vw,23rem) minmax(0,1fr)", css)
+        self.assertIn('.personnel-contour-card[aria-current="page"]', css)
+        self.assertIn("background:var(--theme-selected)", css)
+        self.assertNotIn("clamp(20rem,24%,30rem)", css)
+
+    def test_v10_adds_no_repair_or_inventory_expanding_helper_files(self) -> None:
+        self.assertFalse((ROOT / "src/static/operational_documents/operational_documents.css").exists())
+        self.assertFalse((ROOT / "src/apps/system/tests/test_ux_platform_repair_v10.py").exists())
+        self.assertFalse((ROOT / "tests/browser_theme/repair_v10.py").exists())
+        self.assertFalse((ROOT / "src/static/system/repair_v10.css").exists())

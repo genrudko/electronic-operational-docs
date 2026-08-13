@@ -1,9 +1,18 @@
 {% extends "base.html" %}
-{% load static %}
 
 {% block title %}{{ record.registration_number }} · ЭОД{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'operational_documents/operational_documents.css' %}?v=opdoc001">
+<style>
+.opdoc-record-detail{min-width:0}
+.opdoc-related-list{min-width:0;display:grid;gap:var(--theme-space-2)}
+.opdoc-related-list>li{min-width:0}
+.opdoc-related-link{min-width:0;display:grid;gap:var(--theme-space-1);padding:var(--theme-space-3);border:1px solid var(--theme-border);border-radius:var(--theme-radius-md);background:var(--theme-surface-soft);color:var(--theme-text);text-decoration:none}
+.opdoc-related-link .ux-value-primary{color:var(--theme-primary)}
+.opdoc-related-link:hover{border-color:var(--theme-primary);background:var(--theme-control-hover);color:var(--theme-text)}
+.opdoc-related-link:hover .ux-value-primary{color:var(--theme-primary-hover)}
+.opdoc-related-link:focus-visible{outline:var(--theme-focus-width) solid var(--theme-focus);outline-offset:var(--theme-focus-offset)}
+.opdoc-related-relation{width:fit-content;max-width:100%;display:inline-flex;padding:var(--theme-space-1) var(--theme-space-2);border-radius:var(--theme-radius-pill);background:var(--theme-surface);color:var(--theme-text-muted);font-size:var(--theme-font-size-xs);font-weight:var(--theme-font-weight-semibold);line-height:1.35}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -11,7 +20,6 @@
 <section class="da-page-header da-page-header-compact"><div><span class="ux-kicker">{{ record.document_type.name }}</span><h1>{{ record.registration_number }}</h1><p>{{ record.title }}</p></div><div class="da-actions"><a class="da-button is-tertiary" href="{% url 'operational_documents:registry' %}">← К журналам</a>{% if is_source_bound and not record.status_is_terminal %}<a class="da-button" href="{% url 'operational_documents:record_edit' record.public_id %}">Изменить</a>{% endif %}</div></section>
 
 {% if source_form %}<section class="da-alert"><div><strong>{{ source_form.source_document }}</strong><p>Раздел {{ source_form.source_section }}, приложение № {{ source_form.source_appendix }}.</p></div></section>{% else %}<section class="da-alert is-warning"><div><strong>Техническая запись общего ядра</strong><p>Источник формы не привязан. Запись доступна только для просмотра; изменение и переходы состояния заблокированы.</p></div></section>{% endif %}
-
 <section class="da-alert {% if record.status_is_terminal %}is-success{% else %}is-warning{% endif %}"><div><strong>{{ record.status_name_snapshot }}</strong><p>Редакция {{ record.version }} · {{ record.event_at|date:"d.m.Y H:i" }} · {{ record.workplace_name_snapshot|default:"рабочее место не указано" }}</p></div></section>
 
 <section class="ux-detail-grid">
@@ -30,11 +38,9 @@
 </section>
 
 {% if transitions %}<section class="da-card ux-stack"><h2>Доступные действия</h2><div class="opdoc-transition-grid">{% for transition in transitions %}<form method="post" action="{% url 'operational_documents:record_transition' record.public_id %}" class="opdoc-transition-card da-panel-flat ux-stack is-compact" data-transition-form>{% csrf_token %}<input type="hidden" name="transition_code" value="{{ transition.code }}"><strong>{{ transition.name }}</strong><span class="ux-muted">{{ record.status_name_snapshot }} → {{ transition.target.name }}</span><div class="da-field"><label for="transition-comment-{{ transition.code }}">Комментарий{% if transition.requires_comment %} <span class="required-mark">обязательно</span>{% endif %}</label><textarea id="transition-comment-{{ transition.code }}" name="comment" rows="3" {% if transition.requires_comment %}required data-required-message="Укажите комментарий для действия «{{ transition.name }}»."{% endif %}></textarea>{% if transition.requires_comment %}<small class="ux-muted">Без комментария действие не будет выполнено.</small>{% endif %}</div><button class="da-button" type="submit">{{ transition.name }}</button></form>{% endfor %}</div></section>{% endif %}
-
 <section class="da-card ux-stack"><h2>История редакций</h2><div class="da-table-wrap"><table class="da-table"><thead><tr><th>Редакция</th><th>Действие</th><th>Состояние</th><th>Автор и время</th><th>Комментарий</th></tr></thead><tbody>{% for revision in revisions %}<tr><td>{{ revision.revision_number }}</td><td>{{ revision.get_action_display }}</td><td>{{ revision.status_name_snapshot }}</td><td>{{ revision.actor.full_name }}<br><span class="ux-muted">{{ revision.created_at|date:"d.m.Y H:i:s" }}</span></td><td>{{ revision.comment|default:"—" }}</td></tr>{% endfor %}</tbody></table></div></section>
 
 {% if ui_preferences.show_technical_details %}<details class="da-card technical-only"><summary>Технические сведения и неизменяемый журнал аудита</summary><dl class="ux-key-value"><dt>Редакция структуры</dt><dd>{{ record.schema_revision.revision_number }}</dd><dt>SHA-256 структуры</dt><dd><code class="hash-value">{{ record.schema_revision.sha256 }}</code></dd></dl><h3>SHA-256 редакций записи</h3><ul class="ux-list-reset">{% for revision in revisions %}<li><strong>Редакция {{ revision.revision_number }}</strong> <code class="hash-value">{{ revision.sha256 }}</code></li>{% endfor %}</ul><h3>Аудит</h3><div class="da-table-wrap"><table class="da-table"><thead><tr><th>Время</th><th>Событие</th><th>Инициатор</th><th>Данные</th></tr></thead><tbody>{% for event in audit_events %}<tr><td>{{ event.occurred_at|date:"d.m.Y H:i:s" }}</td><td>{{ event.event_type }}</td><td>{{ event.actor.full_name }}</td><td><code class="hash-value">{{ event.payload }}</code></td></tr>{% endfor %}</tbody></table></div></details>{% endif %}
-
 <script>(() => { for (const textarea of document.querySelectorAll("textarea[data-required-message]")) { textarea.addEventListener("invalid", () => textarea.setCustomValidity(textarea.dataset.requiredMessage)); textarea.addEventListener("input", () => textarea.setCustomValidity("")); } })();</script>
 </div>
 {% endblock %}

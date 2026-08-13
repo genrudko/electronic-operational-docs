@@ -1,9 +1,23 @@
 {% extends "base.html" %}
-{% load static equipment_defect_tags %}
+{% load equipment_defect_tags %}
 
 {% block title %}Структурированные журналы · ЭОД{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{% static 'operational_documents/operational_documents.css' %}?v=opdoc001">
+<style>
+.opdoc-registry-page{min-width:0;display:grid;gap:var(--theme-space-3)}
+.opdoc-page-header{margin-block-end:0;padding-block-end:var(--theme-space-3)}
+.opdoc-page-header .ux-kicker{margin-block-end:var(--theme-space-1);color:var(--theme-text-muted)}
+.opdoc-registry-notices{min-width:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(28rem,100%),1fr));gap:var(--theme-space-2)}
+.opdoc-registry-notices .da-alert{min-width:0;margin-block-end:0;padding:var(--theme-space-2) var(--theme-space-3)}
+.opdoc-registry-notices .da-alert p{font-size:var(--theme-font-size-sm);line-height:1.4}
+.opdoc-summary{margin-block:0;gap:var(--theme-space-2)}
+.opdoc-summary .ux-stat{gap:var(--theme-space-1);padding:var(--theme-space-3);box-shadow:none}
+.opdoc-summary .ux-stat>strong{font-size:var(--theme-font-size-xl)}
+.opdoc-filter-grid{gap:var(--theme-space-3)}
+.opdoc-date-range{min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--theme-space-3)}
+.opdoc-filter-grid>.ux-form-actions{margin-block-start:0;padding-block-start:var(--theme-space-1)}
+@media(max-width:52rem){.opdoc-registry-page{gap:var(--theme-space-2)}.opdoc-registry-notices,.opdoc-date-range{grid-template-columns:1fr}.opdoc-filter-grid>:is(.ux-field-two-thirds,.ux-field-third,.ux-field-full,.ux-form-actions){grid-column:1/-1}.opdoc-filter-grid>.ux-form-actions{justify-content:stretch}.opdoc-filter-grid>.ux-form-actions>:where(a,button){flex:1 1 10rem}}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -58,13 +72,7 @@
         <td><strong>{{ record.title }}</strong>{% if record.summary %}<div class="ux-muted">{{ record.summary|truncatechars:140 }}</div>{% endif %}</td>
         <td>{% for value in record.visible_values %}<div><span class="ux-muted">{{ value.label }}:</span> {{ value.display|truncatechars:100 }}</div>{% empty %}<span class="ux-muted">Нет отображаемых граф</span>{% endfor %}</td>
         <td>{{ record.workplace_name_snapshot|default:"—" }}</td>
-        <td>
-            {% if defect_status %}
-                <span class="da-status-chip{% if defect_status.class_name %} {{ defect_status.class_name }}{% endif %}" data-domain-status="{{ defect_status.domain }}" data-status="{{ record.status_code }}">{{ record.status_name_snapshot }}</span>
-            {% else %}
-                <span class="da-status-chip {% if record.status_is_terminal %}is-success{% else %}is-warning{% endif %}">{{ record.status_name_snapshot }}</span>
-            {% endif %}
-        </td>
+        <td>{% if defect_status %}<span class="da-status-chip{% if defect_status.class_name %} {{ defect_status.class_name }}{% endif %}" data-domain-status="{{ defect_status.domain }}" data-status="{{ record.status_code }}">{{ record.status_name_snapshot }}</span>{% else %}<span class="da-status-chip {% if record.status_is_terminal %}is-success{% else %}is-warning{% endif %}">{{ record.status_name_snapshot }}</span>{% endif %}</td>
     </tr>{% endfor %}</tbody></table></div>
 </section>
 {% else %}<section class="ux-empty-state"><h2>Записей не найдено</h2><p>Измените фильтры или дождитесь установки утверждённой формы журнала.</p></section>{% endif %}
