@@ -5,7 +5,7 @@
 {% block main_class %}authority-main{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'organizations/personnel_management.css' %}?v=pa001m2">
-<link rel="stylesheet" href="{% static 'organizations/personnel_directory.css' %}?v=pa001d2">
+<link rel="stylesheet" href="{% static 'organizations/personnel_directory.css' %}?v=pa001d3">
 {% endblock %}
 
 {% block content %}
@@ -32,7 +32,7 @@
     </section>
 
     <section class="personnel-contours" aria-label="Контуры персонала">
-        <a class="personnel-contour-card" href="{% url 'organizations:authority_registry' %}#matrix">
+        <a class="personnel-contour-card is-current" href="{% url 'organizations:directory' %}" aria-current="page">
             <header><span class="personnel-contour-icon"><svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-organization"></use></svg></span><h3>Штатный персонал</h3></header>
             <p>Структура подразделений, квалификации и опубликованная матрица прав.</p>
             <div class="personnel-contour-organizations">{% for item in own_organizations %}<span>{{ item.short_name|default:item.name }}</span>{% empty %}<span>Не настроено</span>{% endfor %}</div>

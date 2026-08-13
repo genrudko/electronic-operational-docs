@@ -3,26 +3,28 @@
  * the remaining space. Shared spacing, controls and text hierarchy stay
  * platform-owned.
  */
-.personnel-directory-page { display:grid; gap:var(--theme-space-4); font-family:inherit; }
-.personnel-directory-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(14rem,100%),1fr)); gap:var(--theme-space-3); }
-.personnel-directory-summary article { display:grid; align-content:start; gap:var(--theme-space-1); padding:var(--theme-space-4); border:1px solid var(--theme-border); border-radius:var(--theme-radius-lg); background:var(--theme-surface); }
+.personnel-directory-page { display:grid; gap:var(--theme-space-3); font-family:inherit; }
+.personnel-directory-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(14rem,100%),1fr)); gap:var(--theme-space-2); }
+.personnel-directory-summary article { display:grid; align-content:start; gap:var(--theme-space-1); padding:var(--theme-space-3); border:1px solid var(--theme-border); border-radius:var(--theme-radius-lg); background:var(--theme-surface); }
 .personnel-directory-summary span { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.35; }
 .personnel-directory-summary strong { color:var(--theme-text); font-size:var(--theme-font-size-xl); }
 
-.personnel-contours { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(13rem,100%),1fr)); gap:var(--theme-space-3); }
-.personnel-contour-card { display:grid; min-width:0; align-content:start; gap:var(--theme-space-2); padding:var(--theme-space-3); border:1px solid var(--theme-border); border-radius:var(--theme-radius-md); background:var(--theme-surface); color:var(--theme-text); text-decoration:none; }
+.personnel-contours { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(13rem,100%),1fr)); align-items:start; gap:var(--theme-space-2); }
+.personnel-contour-card { display:grid; min-width:0; align-content:start; gap:var(--theme-space-1); padding:var(--theme-space-3); border:1px solid var(--theme-border); border-radius:var(--theme-radius-md); background:var(--theme-surface); color:var(--theme-text); text-decoration:none; }
 .personnel-contour-card:hover { border-color:var(--theme-primary); background:var(--theme-primary-soft); }
 .personnel-contour-card:focus-visible { outline:var(--theme-focus-width) solid var(--theme-focus); outline-offset:var(--theme-focus-offset); }
+.personnel-contour-card[aria-current="page"],.personnel-contour-card.is-current { border-color:var(--theme-primary); background:var(--theme-selected); }
+.personnel-contour-card[aria-current="page"] h3,.personnel-contour-card.is-current h3 { color:var(--theme-primary-hover); }
 .personnel-contour-card header { display:flex; align-items:center; gap:var(--theme-space-2); }
 .personnel-contour-icon { display:grid; width:var(--theme-control-height-md); height:var(--theme-control-height-md); flex:0 0 var(--theme-control-height-md); place-items:center; border-radius:var(--theme-radius-md); background:var(--theme-primary-soft); color:var(--theme-primary); }
 .personnel-contour-icon svg { width:1.125rem; height:1.125rem; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
 .personnel-contour-card h3,.personnel-contour-card p { margin:0; }
 .personnel-contour-card h3 { font-size:var(--theme-font-size-sm); }
-.personnel-contour-card p { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.45; }
+.personnel-contour-card p { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.4; }
 .personnel-contour-organizations { display:flex; flex-wrap:wrap; gap:var(--theme-space-1); }
 .personnel-contour-organizations span { padding:.2rem var(--theme-space-2); border-radius:var(--theme-radius-pill); background:var(--theme-surface-soft); color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); }
 
-.personnel-directory-workspace { display:grid; grid-template-columns:clamp(20rem,24%,30rem) minmax(0,1fr); align-items:start; gap:var(--theme-space-4); min-width:0; }
+.personnel-directory-workspace { display:grid; grid-template-columns:minmax(19rem,22rem) minmax(0,1fr); align-items:start; gap:var(--theme-space-3); min-width:0; }
 .personnel-directory-sidebar,.personnel-directory-panel { overflow:hidden; border:1px solid var(--theme-border); border-radius:var(--theme-radius-md); background:var(--theme-surface); }
 .personnel-directory-sidebar { position:sticky; top:var(--theme-space-3); min-width:0; }
 .personnel-directory-panel { min-width:0; }
@@ -70,17 +72,21 @@
     body.ux-platform .da-page:has(.personnel-directory-page) {
         width:min(100%,var(--ux-page-wide-max));
     }
-    .personnel-directory-page,
-    .personnel-directory-workspace,
-    .personnel-directory-main,
-    .personnel-directory-panel:has(.personnel-employee-table),
-    .personnel-directory-panel:has(.personnel-employee-table) .personnel-employee-table-wrap {
+    body.ux-platform .personnel-directory-page,
+    body.ux-platform .personnel-directory-workspace,
+    body.ux-platform .personnel-directory-main,
+    body.ux-platform .personnel-directory-panel:has(.personnel-employee-table),
+    body.ux-platform .personnel-directory-panel:has(.personnel-employee-table) .personnel-employee-table-wrap {
         width:100%;
         max-width:none;
         min-width:0;
     }
+    body.ux-platform .personnel-directory-page .personnel-directory-workspace {
+        grid-template-columns:clamp(19rem,17vw,23rem) minmax(0,1fr);
+        gap:var(--theme-space-3);
+    }
 }
 
-@media (max-width:70rem) { .personnel-directory-workspace { grid-template-columns:minmax(18rem,20rem) minmax(0,1fr); } }
+@media (max-width:70rem) { .personnel-directory-workspace { grid-template-columns:minmax(18rem,20rem) minmax(0,1fr); gap:var(--theme-space-3); } }
 @media (max-width:59.375rem) { .personnel-recent-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .personnel-directory-workspace { grid-template-columns:1fr; } .personnel-directory-sidebar { position:static; } }
 @media (max-width:38.75rem) { .personnel-recent-grid { grid-template-columns:1fr; } .personnel-management-actions { min-width:0; width:100%; } .personnel-management-actions .da-button { flex:1 1 auto; } }

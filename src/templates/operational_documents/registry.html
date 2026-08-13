@@ -1,10 +1,14 @@
 {% extends "base.html" %}
-{% load equipment_defect_tags %}
+{% load static equipment_defect_tags %}
 
 {% block title %}Структурированные журналы · ЭОД{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'operational_documents/operational_documents.css' %}?v=opdoc001">
+{% endblock %}
 
 {% block content %}
-<section class="da-page-header da-page-header-compact">
+<div class="opdoc-registry-page">
+<section class="da-page-header opdoc-page-header">
     <div>
         <span class="ux-kicker">Формы по утверждённым источникам</span>
         <h1>Структурированные журналы</h1>
@@ -16,25 +20,29 @@
     </div>
 </section>
 
-<section class="da-alert"><div><strong>Источник формы обязателен</strong><p>Новая запись доступна только после установки формы, привязанной к конкретному разделу и приложению утверждённой инструкции.</p></div></section>
-{% if counts.technical %}<section class="da-alert is-warning"><div><strong>Технические данные ядра: {{ counts.technical }}</strong><p>Они сохранены для проверки механизма, но не считаются записями утверждённого журнала и недоступны для новых действий.</p></div></section>{% endif %}
+<section class="opdoc-registry-notices" aria-label="Условия ведения журналов">
+    <div class="da-alert"><div><strong>Источник формы обязателен</strong><p>Новая запись доступна только после установки формы, привязанной к конкретному разделу и приложению утверждённой инструкции.</p></div></div>
+    {% if counts.technical %}<div class="da-alert is-warning"><div><strong>Технические данные ядра: {{ counts.technical }}</strong><p>Они сохранены для проверки механизма, но не считаются записями утверждённого журнала и недоступны для новых действий.</p></div></div>{% endif %}
+</section>
 
-<section class="ux-stat-grid document-summary" aria-label="Сводка структурированных журналов">
+<section class="ux-stat-grid document-summary opdoc-summary" aria-label="Сводка структурированных журналов">
     <article class="ux-stat"><span>Всего записей</span><strong>{{ counts.total }}</strong></article>
     <article class="ux-stat"><span>В работе</span><strong>{{ counts.active }}</strong></article>
     <article class="ux-stat"><span>Завершено</span><strong>{{ counts.closed }}</strong></article>
     <article class="ux-stat"><span>Установленных форм</span><strong>{{ counts.types }}</strong></article>
 </section>
 
-<section class="da-card opdoc-filter-card">
+<section class="da-card is-compact opdoc-filter-card">
     <form method="get" class="ux-form-grid opdoc-filter-grid">
-        <div class="da-field"><label>Поиск</label><input type="search" name="q" value="{{ filters.q }}" placeholder="Номер, содержание, участник"></div>
-        <div class="da-field"><label>Журнал</label><select name="type"><option value="">Все журналы и технические записи</option>{% for item in document_types %}<option value="{{ item.public_id }}" {% if filters.type == item.public_id|stringformat:'s' %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
-        <div class="da-field"><label>Состояние</label><select name="status"><option value="">Все состояния</option>{% for code, name in status_options %}<option value="{{ code }}" {% if filters.status == code %}selected{% endif %}>{{ name }}</option>{% endfor %}</select></div>
-        <div class="da-field"><label>Рабочее место</label><select name="workplace"><option value="">Все рабочие места</option>{% for item in workplaces %}<option value="{{ item.code }}" {% if filters.workplace == item.code %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
-        <div class="da-field"><label>Оборудование</label><select name="equipment"><option value="">Любое оборудование</option>{% for item in equipment_assets %}<option value="{{ item.public_id }}" {% if filters.equipment == item.public_id|stringformat:'s' %}selected{% endif %}>{{ item.code }} · {{ item.technical_name }}</option>{% endfor %}</select></div>
-        <div class="da-field"><label>С даты</label><input type="date" name="date_from" value="{{ filters.date_from }}"></div>
-        <div class="da-field"><label>По дату</label><input type="date" name="date_to" value="{{ filters.date_to }}"></div>
+        <div class="da-field ux-field-two-thirds"><label>Поиск</label><input type="search" name="q" value="{{ filters.q }}" placeholder="Номер, содержание, участник"></div>
+        <div class="da-field ux-field-third"><label>Журнал</label><select name="type"><option value="">Все журналы и технические записи</option>{% for item in document_types %}<option value="{{ item.public_id }}" {% if filters.type == item.public_id|stringformat:'s' %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
+        <div class="da-field ux-field-third"><label>Состояние</label><select name="status"><option value="">Все состояния</option>{% for code, name in status_options %}<option value="{{ code }}" {% if filters.status == code %}selected{% endif %}>{{ name }}</option>{% endfor %}</select></div>
+        <div class="da-field ux-field-third"><label>Рабочее место</label><select name="workplace"><option value="">Все рабочие места</option>{% for item in workplaces %}<option value="{{ item.code }}" {% if filters.workplace == item.code %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
+        <div class="da-field ux-field-third"><label>Оборудование</label><select name="equipment"><option value="">Любое оборудование</option>{% for item in equipment_assets %}<option value="{{ item.public_id }}" {% if filters.equipment == item.public_id|stringformat:'s' %}selected{% endif %}>{{ item.code }} · {{ item.technical_name }}</option>{% endfor %}</select></div>
+        <div class="opdoc-date-range ux-field-full" role="group" aria-label="Период">
+            <div class="da-field"><label>С даты</label><input type="date" name="date_from" value="{{ filters.date_from }}"></div>
+            <div class="da-field"><label>По дату</label><input type="date" name="date_to" value="{{ filters.date_to }}"></div>
+        </div>
         <div class="ux-form-actions"><button class="da-button" type="submit">Применить</button><a class="da-button is-tertiary" href="{% url 'operational_documents:registry' %}">Сбросить</a></div>
     </form>
 </section>
@@ -60,4 +68,5 @@
     </tr>{% endfor %}</tbody></table></div>
 </section>
 {% else %}<section class="ux-empty-state"><h2>Записей не найдено</h2><p>Измените фильтры или дождитесь установки утверждённой формы журнала.</p></section>{% endif %}
+</div>
 {% endblock %}

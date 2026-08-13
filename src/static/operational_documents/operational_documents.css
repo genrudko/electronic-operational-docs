@@ -1,0 +1,155 @@
+/* Operational Documents rendered-consumer composition on the shared UX Platform. */
+.opdoc-registry-page,
+.opdoc-record-detail {
+    min-width: 0;
+}
+
+.opdoc-registry-page {
+    display: grid;
+    gap: var(--theme-space-3);
+}
+
+.opdoc-page-header {
+    margin-block-end: 0;
+    padding-block-end: var(--theme-space-3);
+}
+
+.opdoc-page-header .ux-kicker {
+    margin-block-end: var(--theme-space-1);
+    color: var(--theme-text-muted);
+}
+
+.opdoc-registry-notices {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(28rem, 100%), 1fr));
+    gap: var(--theme-space-2);
+}
+
+.opdoc-registry-notices .da-alert {
+    min-width: 0;
+    margin-block-end: 0;
+    padding: var(--theme-space-2) var(--theme-space-3);
+}
+
+.opdoc-registry-notices .da-alert p {
+    font-size: var(--theme-font-size-sm);
+    line-height: 1.4;
+}
+
+.opdoc-summary {
+    margin-block: 0;
+    gap: var(--theme-space-2);
+}
+
+.opdoc-summary .ux-stat {
+    gap: var(--theme-space-1);
+    padding: var(--theme-space-3);
+    box-shadow: none;
+}
+
+.opdoc-summary .ux-stat > strong {
+    font-size: var(--theme-font-size-xl);
+}
+
+.opdoc-filter-grid {
+    gap: var(--theme-space-3);
+}
+
+.opdoc-date-range {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--theme-space-3);
+}
+
+.opdoc-filter-grid > .ux-form-actions {
+    margin-block-start: 0;
+    padding-block-start: var(--theme-space-1);
+}
+
+.opdoc-related-list {
+    min-width: 0;
+    display: grid;
+    gap: var(--theme-space-2);
+}
+
+.opdoc-related-list > li {
+    min-width: 0;
+}
+
+.opdoc-related-link {
+    min-width: 0;
+    display: grid;
+    gap: var(--theme-space-1);
+    padding: var(--theme-space-3);
+    border: 1px solid var(--theme-border);
+    border-radius: var(--theme-radius-md);
+    background: var(--theme-surface-soft);
+    color: var(--theme-text);
+    text-decoration: none;
+}
+
+.opdoc-related-link .ux-value-primary {
+    color: var(--theme-primary);
+}
+
+.opdoc-related-link:hover {
+    border-color: var(--theme-primary);
+    background: var(--theme-control-hover);
+    color: var(--theme-text);
+}
+
+.opdoc-related-link:hover .ux-value-primary {
+    color: var(--theme-primary-hover);
+}
+
+.opdoc-related-link:focus-visible {
+    outline: var(--theme-focus-width) solid var(--theme-focus);
+    outline-offset: var(--theme-focus-offset);
+}
+
+.opdoc-related-relation {
+    width: fit-content;
+    max-width: 100%;
+    display: inline-flex;
+    padding: var(--theme-space-1) var(--theme-space-2);
+    border-radius: var(--theme-radius-pill);
+    background: var(--theme-surface);
+    color: var(--theme-text-muted);
+    font-size: var(--theme-font-size-xs);
+    font-weight: var(--theme-font-weight-semibold);
+    line-height: 1.35;
+}
+
+@media (max-width: 52rem) {
+    .opdoc-registry-page {
+        gap: var(--theme-space-2);
+    }
+
+    .opdoc-registry-notices,
+    .opdoc-date-range {
+        grid-template-columns: 1fr;
+    }
+
+    .opdoc-filter-grid > :is(
+        .ux-field-two-thirds,
+        .ux-field-third,
+        .ux-field-full,
+        .ux-form-actions
+    ) {
+        grid-column: 1 / -1;
+    }
+
+    .opdoc-filter-grid > .ux-form-actions {
+        justify-content: stretch;
+    }
+
+    .opdoc-filter-grid > .ux-form-actions > :where(a, button) {
+        flex: 1 1 10rem;
+    }
+
+    .opdoc-related-link {
+        padding: var(--theme-space-3);
+    }
+}
