@@ -236,3 +236,211 @@ tr.is-authority-row-link:focus-visible > td { box-shadow:inset 0 2px var(--theme
     .authority-evaluation-row { grid-template-columns:1fr; }
     .authority-evaluation-date,.authority-evaluation-result,.authority-evaluation-person,.authority-evaluation-action,.authority-evaluation-subject,.authority-evaluation-context { grid-column:1; grid-row:auto; justify-self:start; }
 }
+
+/* Phone-only functional matrix. JS creates this presentation from the same
+ * server-rendered matrix cells, so desktop semantics and business data remain
+ * single-source. Tablet and desktop continue to use the accepted table. */
+.authority-mobile-matrix,
+.authority-mobile-preamble-disclosure { display:none; }
+
+@media (max-width:47.99rem) {
+    html body.ux-platform .authority-mobile-preamble-disclosure {
+        display:block;
+        border-bottom:1px solid var(--theme-border);
+    }
+    html body.ux-platform .authority-mobile-preamble-disclosure > summary,
+    html body.ux-platform .authority-mobile-employee > summary {
+        min-height:2.75rem;
+        cursor:pointer;
+        list-style:none;
+    }
+    html body.ux-platform .authority-mobile-preamble-disclosure > summary {
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:var(--theme-space-2);
+        padding:var(--theme-space-3);
+        color:var(--theme-text);
+        font-size:var(--theme-font-size-sm);
+        font-weight:var(--theme-font-weight-semibold);
+    }
+    html body.ux-platform .authority-mobile-preamble-disclosure > summary::-webkit-details-marker,
+    html body.ux-platform .authority-mobile-employee > summary::-webkit-details-marker { display:none; }
+    html body.ux-platform .authority-mobile-preamble-disclosure > summary:focus-visible,
+    html body.ux-platform .authority-mobile-employee > summary:focus-visible {
+        outline:var(--theme-focus-width) solid var(--theme-focus);
+        outline-offset:calc(-1 * var(--theme-focus-width));
+    }
+    html body.ux-platform .authority-mobile-preamble-disclosure > summary::after,
+    html body.ux-platform .authority-mobile-employee > summary::after {
+        content:"+";
+        flex:0 0 auto;
+        color:var(--theme-primary);
+        font-size:var(--theme-font-size-lg);
+        font-weight:var(--theme-font-weight-bold);
+    }
+    html body.ux-platform .authority-mobile-preamble-disclosure[open] > summary::after,
+    html body.ux-platform .authority-mobile-employee[open] > summary::after { content:"−"; }
+    html body.ux-platform .authority-mobile-preamble-disclosure .authority-tree-heading,
+    html body.ux-platform .authority-mobile-preamble-disclosure .authority-reference-heading { display:none; }
+    html body.ux-platform .authority-mobile-preamble-disclosure .authority-tree-list { max-height:18rem; }
+    html body.ux-platform .authority-mobile-preamble-disclosure .authority-category-legend { padding-top:var(--theme-space-3); }
+
+    html body.ux-platform .authority-matrix-panel .authority-matrix-scroll { display:none; }
+    html body.ux-platform .authority-mobile-matrix {
+        min-width:0;
+        display:grid;
+        gap:var(--theme-space-3);
+    }
+    html body.ux-platform .authority-mobile-employee {
+        min-width:0;
+        overflow:hidden;
+        border:1px solid var(--theme-border);
+        border-radius:var(--theme-radius-md);
+        background:var(--theme-surface);
+        box-shadow:var(--theme-shadow-sm);
+    }
+    html body.ux-platform .authority-mobile-employee[hidden] { display:none; }
+    html body.ux-platform .authority-mobile-employee > summary {
+        display:grid;
+        grid-template-columns:minmax(0,1fr) auto;
+        align-items:start;
+        gap:var(--theme-space-2);
+        padding:var(--theme-space-3);
+    }
+    html body.ux-platform .authority-mobile-identity {
+        min-width:0;
+        display:grid;
+        gap:var(--theme-space-2);
+    }
+    html body.ux-platform .authority-mobile-identity > a {
+        color:var(--theme-primary);
+        font-size:var(--theme-font-size-md);
+        font-weight:var(--theme-font-weight-bold);
+        line-height:1.3;
+        text-decoration:none;
+        overflow-wrap:break-word;
+        word-break:normal;
+    }
+    html body.ux-platform .authority-mobile-identity > span {
+        color:var(--theme-text-muted);
+        font-size:var(--theme-font-size-sm);
+        line-height:1.35;
+        overflow-wrap:break-word;
+        word-break:normal;
+    }
+    html body.ux-platform .authority-mobile-qualification {
+        min-width:0;
+        display:flex;
+        flex-wrap:wrap;
+        align-items:center;
+        gap:var(--theme-space-1) var(--theme-space-2);
+    }
+    html body.ux-platform .authority-mobile-qualification :is(span,small) {
+        color:var(--theme-text-muted);
+        font-size:var(--theme-font-size-xs);
+        line-height:1.35;
+        overflow-wrap:break-word;
+        word-break:normal;
+    }
+    html body.ux-platform .authority-mobile-counts {
+        grid-column:1 / -1;
+        display:flex;
+        flex-wrap:wrap;
+        gap:var(--theme-space-1);
+    }
+    html body.ux-platform .authority-mobile-counts span {
+        width:fit-content;
+        padding:.2rem var(--theme-space-2);
+        border-radius:var(--theme-radius-pill);
+        background:var(--theme-surface-soft);
+        color:var(--theme-text-muted);
+        font-size:var(--theme-font-size-xs);
+        font-weight:var(--theme-font-weight-semibold);
+    }
+    html body.ux-platform .authority-mobile-rights {
+        display:grid;
+        gap:var(--theme-space-3);
+        padding:0 var(--theme-space-3) var(--theme-space-3);
+        border-top:1px solid var(--theme-border);
+    }
+    html body.ux-platform .authority-mobile-right-group { display:grid; gap:var(--theme-space-1); }
+    html body.ux-platform .authority-mobile-right-group > h3 {
+        margin:var(--theme-space-3) 0 var(--theme-space-1);
+        color:var(--theme-text-muted);
+        font-size:var(--theme-font-size-xs);
+        font-weight:var(--theme-font-weight-bold);
+        letter-spacing:.02em;
+        line-height:1.3;
+    }
+    html body.ux-platform .authority-mobile-right-row {
+        min-width:0;
+        display:grid;
+        grid-template-columns:minmax(0,1fr) auto;
+        align-items:center;
+        gap:var(--theme-space-3);
+        padding:var(--theme-space-2) 0;
+        border-top:1px solid var(--theme-border);
+    }
+    html body.ux-platform .authority-mobile-right-row > span:first-child {
+        min-width:0;
+        color:var(--theme-text);
+        font-size:var(--theme-font-size-sm);
+        font-weight:var(--theme-font-weight-semibold);
+        line-height:1.4;
+        overflow-wrap:break-word;
+        word-break:normal;
+    }
+    html body.ux-platform .authority-mobile-marker {
+        display:inline-grid;
+        width:2.75rem;
+        min-width:2.75rem;
+        height:2.75rem;
+        place-items:center;
+        padding:0;
+        border:1px solid transparent;
+        border-radius:var(--theme-radius-md);
+        font:inherit;
+        font-size:var(--theme-font-size-md);
+        font-weight:var(--theme-font-weight-bold);
+        line-height:1;
+    }
+    html body.ux-platform .authority-mobile-marker.is-granted {
+        background:var(--theme-success-soft);
+        color:var(--theme-success);
+    }
+    html body.ux-platform button.authority-mobile-marker.is-conditional {
+        border-color:color-mix(in srgb,var(--theme-warning) 45%,var(--theme-border));
+        background:var(--theme-warning-soft);
+        color:var(--theme-warning);
+        cursor:pointer;
+    }
+    html body.ux-platform button.authority-mobile-marker.is-conditional:focus-visible {
+        outline:var(--theme-focus-width) solid var(--theme-focus);
+        outline-offset:var(--theme-focus-offset);
+    }
+    html body.ux-platform .authority-mobile-condition-detail {
+        grid-column:1 / -1;
+        display:grid;
+        gap:var(--theme-space-1);
+        margin-top:var(--theme-space-1);
+        padding:var(--theme-space-3);
+        border-left:3px solid var(--theme-warning);
+        border-radius:var(--theme-radius-sm);
+        background:var(--theme-warning-soft);
+        color:var(--theme-text);
+    }
+    html body.ux-platform .authority-mobile-condition-detail[hidden] { display:none; }
+    html body.ux-platform .authority-mobile-condition-detail :is(strong,span,small) {
+        overflow-wrap:break-word;
+        word-break:normal;
+        line-height:1.4;
+    }
+    html body.ux-platform .authority-mobile-condition-detail small { color:var(--theme-text-muted); }
+    html body.ux-platform .authority-mobile-matrix-note {
+        margin:0;
+        color:var(--theme-text-muted);
+        font-size:var(--theme-font-size-xs);
+        line-height:1.4;
+    }
+}
