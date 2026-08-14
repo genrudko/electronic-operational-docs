@@ -933,7 +933,7 @@ def main():
             page,
             "[data-reference-trigger]:not([disabled])",
         )
-        page.keyboard.press("Control+Shift+M")
+        reference_trigger.click()
         need(page, "[data-reference-picker]")
         if reference_trigger.get_attribute("aria-expanded") != "true":
             raise AssertionError(
