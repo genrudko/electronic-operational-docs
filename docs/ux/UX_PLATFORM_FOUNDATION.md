@@ -133,7 +133,23 @@ Foundation owns primitive contracts for:
 
 This is not a component framework or page template library.
 
-## 7. Responsive/accessibility acceptance matrix
+## 7. Responsive state contract
+
+UX Platform has one responsive system with three states:
+
+| State | Width contract | Composition contract |
+|---|---|---|
+| **FULL DESKTOP** | above `61.25rem` / `980px` | persistent shell, wide and specialist workspaces may use simultaneous panes, dense tables and the accepted OPJ desktop ribbon when content remains usable |
+| **COMPACT** | `48rem` through `61.25rem` | compact shell; competing hierarchy/content panes stack; dense registries selectively become stacked rows, cards or accordions; OPJ secondary formatting is disclosed; controls retain mouse-oriented platform density; ordinary pages never require horizontal panning |
+| **PHONE** | below `48rem` (`47.99rem` maximum query) | touch-first 44px-class controls, stacked records, cards/employee accordions and phone command composition |
+
+The boundary is content-driven: a feature may release a competing pane earlier when its own minimum usable width requires it. Personnel therefore stacks hierarchy and employee content below `70rem`, before the shared shell transition. Intrinsic-wide normative forms may keep an explicitly labelled, locally scrollable viewport; that exception never permits document-level horizontal overflow.
+
+Human labels, names, duties, organizations, qualifications and journal text use normal word boundaries (`overflow-wrap: break-word; word-break: normal`). `overflow-wrap: anywhere` is restricted to technical identifiers such as UUID-like values and machine codes.
+
+Canonical responsive ownership remains in the existing platform and feature stylesheets: `ux_platform.css` owns shell state, `ux_platform_responsive.css` owns shared data-surface state, `ux_mobile_surfaces.css` owns compact/phone record compositions, and specialised feature files own only their domain geometry. Repair-specific stylesheets are prohibited.
+
+### 7.1 Responsive/accessibility acceptance matrix
 
 Required browser viewport matrix:
 
@@ -145,6 +161,13 @@ Required browser viewport matrix:
 - `1536×864` — desktop regression;
 - `1920×1080` — **PRIMARY DESKTOP**;
 - `2560×1440` — **REQUIRED WIDE ADAPTIVE**; not optional and not merely an overflow stress case.
+
+### Compact transition
+
+- `1180`, `1100`, `1024`, `976`, `950`, `900`, `832`, `768` CSS px;
+- continuous same-page resize `1440 → 1280 → 1180 → 1100 → 1024 → 976 → 950 → 900 → 832 → 768 → 600 → 440 → 412 → 390 → 412 → 440 → 600 → 768 → 832 → 900 → 950 → 976 → 1024 → 1100 → 1180 → 1280 → 1440`;
+- mandatory surfaces: Personnel, Operational Rights, Imports, Workplace Documentation, DEFECT worklist, OPJ registry and OPJ draft workspace;
+- both light and dark themes, document-width checks, normal human wrapping and route-specific compact composition assertions.
 
 ### Mobile
 

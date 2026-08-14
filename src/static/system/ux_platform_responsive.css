@@ -25,7 +25,8 @@ body.ux-platform .equipment-relation-list li > span {
 body.ux-platform .document-links li > a,
 body.ux-platform .equipment-relation-list li > a {
     min-width: 0;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
+    word-break: normal;
 }
 
 body.ux-platform .ux-form-actions,
@@ -155,7 +156,7 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
     border-radius: var(--theme-radius-md);
 }
 
-@media screen and (max-width: 52rem) {
+@media screen and (max-width: 61.25rem) {
     html,
     body.ux-platform {
         max-width: 100%;
@@ -184,7 +185,8 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         overflow: visible;
         white-space: normal;
         text-overflow: clip;
-        overflow-wrap: anywhere;
+        overflow-wrap: break-word;
+        word-break: normal;
         line-height: 1.25;
     }
 
@@ -314,7 +316,8 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         border: 0;
         border-bottom: 1px solid var(--theme-border);
         background: transparent;
-        overflow-wrap: anywhere;
+        overflow-wrap: break-word;
+        word-break: normal;
     }
 
     body.ux-platform :is(
@@ -460,7 +463,8 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         min-width: 0;
         max-width: 100%;
         white-space: normal;
-        overflow-wrap: anywhere;
+        overflow-wrap: break-word;
+        word-break: normal;
     }
 
     body.ux-platform .authority-workspace {
@@ -581,7 +585,8 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         padding: var(--theme-space-2) var(--theme-space-3);
         color: var(--theme-primary);
         text-decoration: none;
-        overflow-wrap: anywhere;
+        overflow-wrap: break-word;
+        word-break: normal;
     }
     body.ux-platform .authority-matrix .authority-right-cell > a::before {
         content: attr(aria-label);
@@ -713,7 +718,8 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         padding: var(--theme-space-3);
         border: 0;
         border-bottom: 1px solid var(--theme-border);
-        overflow-wrap: anywhere;
+        overflow-wrap: break-word;
+        word-break: normal;
     }
     body.ux-platform.opj-clean-journal-page .approved-journal-row > td:last-child { border-bottom: 0; }
     body.ux-platform.opj-clean-journal-page .approved-journal-date-time {
@@ -949,15 +955,15 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
     body.ux-platform.opj-workspace-page .opj-toolbar-actions { grid-template-columns: 1fr; }
 }
 
-/* Final mobile functional closure.
- * Breakpoint map: shell/generic tables <=52rem; domain mobile compositions
- * (DEFECT worklist, OPJ, Rights, Documentation and Imports) <=47.99rem;
+/* Compact functional closure.
+ * Breakpoint map: shell and content compositions <=61.25rem; phone density
+ * <=47.99rem; intrinsic-wide normative forms retain local overflow only;
  * Personnel contours use 1 column <=38.75rem, 2 columns below desktop,
  * and the accepted five-card desktop row from 80rem upward.
  */
 .authority-evaluation-technical { display: none; }
 
-@media screen and (max-width: 47.99rem) {
+@media screen and (max-width: 61.25rem) {
     /* DEFECT working list is an ordinary registry, not an intrinsic-wide form. */
     body.ux-platform .defect-da-work-table {
         width: 100%;
@@ -1053,7 +1059,7 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         overflow: visible;
     }
 
-    /* Spread becomes two sequential full-width pages on phones. */
+    /* Spread becomes two sequential full-width pages below desktop width. */
     body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="spread"] .opj-editor-container {
         width: 100%;
         max-width: 100%;
@@ -1177,6 +1183,84 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         width: 100%;
         max-width: 100%;
         min-width: 0;
+    }
+}
+
+/* Compact keeps mouse-oriented control density. Phone touch geometry is owned
+ * by the narrower state below. */
+@media screen and (min-width: 48rem) and (max-width: 61.25rem) {
+    body.ux-platform :is(
+        .da-icon-button, .ux-icon-button, .da-menu-button,
+        .authority-tabs button, .authority-tree-heading button,
+        .opj-page-navigation button.da-icon-button,
+        button.da-icon-button.draft-row-action,
+        button.draft-editor-ribbon-button,
+        .opj-ribbon-toggle, .opj-view-switch > button
+    ) {
+        min-width: var(--theme-control-height-md);
+        min-height: var(--theme-control-height-md);
+    }
+
+    body.ux-platform :is(.da-button, .ux-button, button.da-button, a.da-button) {
+        min-height: var(--theme-control-height-md);
+    }
+
+    body.ux-platform.opj-workspace-page :is(
+        .opj-page-navigation button.da-icon-button,
+        button.da-icon-button.draft-row-action,
+        button.draft-editor-ribbon-button
+    ) {
+        width: var(--theme-control-height-md);
+        height: var(--theme-control-height-md);
+    }
+
+    body.ux-platform.opj-workspace-page :is(
+        .draft-page-jump input,
+        .opj-register-draft-button,
+        .opj-row-selector
+    ) { min-height: var(--theme-control-height-md); }
+
+    html body.ux-platform.opj-workspace-page .opj-toolbar-actions :is(
+        .da-button, .opj-ribbon-toggle, .opj-view-switch > button
+    ),
+    html body.ux-platform.opj-workspace-page .opj-page-navigation .da-icon-button,
+    html body.ux-platform.opj-workspace-page .opj-toolbar-search .da-field,
+    html body.ux-platform.opj-workspace-page .draft-page-jump input,
+    html body.ux-platform.opj-workspace-page .draft-row-action,
+    html body.ux-platform.opj-workspace-page .opj-register-draft-button {
+        min-height: var(--theme-control-height-md);
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-tool-group .draft-editor-ribbon-button {
+        flex-basis: var(--theme-control-height-md);
+        min-width: var(--theme-control-height-md);
+        min-height: var(--theme-control-height-md);
+        padding: var(--theme-space-1);
+    }
+
+    html body.ux-platform :is(
+        .authority-mobile-preamble-disclosure > summary,
+        .authority-mobile-employee > summary
+    ) { min-height: var(--theme-control-height-md); }
+
+    html body.ux-platform .authority-mobile-marker {
+        width: var(--theme-control-height-md);
+        min-width: var(--theme-control-height-md);
+        height: var(--theme-control-height-md);
+    }
+}
+
+@media screen and (max-width: 47.99rem) {
+    body.ux-platform :is(
+        .da-icon-button, .ux-icon-button, .da-menu-button,
+        .authority-tabs button, .authority-tree-heading button,
+        .opj-page-navigation button.da-icon-button,
+        button.da-icon-button.draft-row-action,
+        button.draft-editor-ribbon-button,
+        .opj-ribbon-toggle, .opj-view-switch > button
+    ) {
+        min-width: 2.75rem;
+        min-height: 2.75rem;
     }
 }
 

@@ -1,9 +1,10 @@
 /* UX-PLATFORM-FOUNDATION-001
- * Mobile functional data-surface compositions.
+ * Compact and phone functional data-surface compositions.
  *
- * This is a bounded platform owner for phone-only record, audit, disclosure and
- * command-group patterns shared by Repair v12 consumers. Desktop presentation,
- * domain semantics and business workflows remain feature-owned.
+ * This is a bounded platform owner for record, audit, disclosure and command-
+ * group patterns below the shared shell transition. Phone density remains a
+ * narrower state. Desktop presentation, domain semantics and business workflows
+ * remain feature-owned.
  */
 
 .ux-mobile-surface,
@@ -17,7 +18,7 @@
     display: none;
 }
 
-@media screen and (max-width: 47.99rem) {
+@media screen and (max-width: 61.25rem) {
     .ux-mobile-surface,
     .opdoc-revision-mobile-list,
     .workplace-document-mobile-list,
@@ -131,7 +132,7 @@
     .ux-mobile-record-card__actions :is(.da-button, button, a) { min-height: 2.75rem; }
 
     /* Operational documents: the desktop revision table remains canonical above
-     * phone width; phone users receive one audit event per card. */
+     * compact width; narrower states receive one audit event per card. */
     .opdoc-revision-history .opdoc-revision-desktop-table { display: none; }
     .opdoc-revision-mobile-list { list-style: none; margin: 0; padding: 0; }
     .opdoc-revision-mobile-list .da-status-chip { width: fit-content; max-width: 100%; }
@@ -146,7 +147,7 @@
         word-break: normal;
     }
 
-    /* Workplace documentation is an ordinary registry on phones. */
+    /* Workplace documentation is an ordinary registry below desktop width. */
     .workplace-document-registry .workplace-document-desktop-table,
     .workplace-document-entries .workplace-document-entry-desktop-table { display: none; }
     .workplace-document-mobile-list,
@@ -175,10 +176,9 @@
         grid-column: 1 / -1;
     }
 
-    /* OPJ phone command composition. The accepted desktop ribbon is untouched;
-     * at phone width compact mode keeps operational groups visible, while Text
-     * and Paragraph become secondary formatting exposed by the existing ribbon
-     * disclosure. */
+    /* OPJ compact command composition. The accepted desktop ribbon is untouched;
+     * below the shell transition operational groups stay visible, while Text and
+     * Paragraph become secondary formatting exposed by the existing disclosure. */
     html body.ux-platform.opj-workspace-page .opj-workspace-meta {
         width: 100%;
         display: grid;
@@ -570,6 +570,18 @@
         color: var(--theme-text-muted);
         font-size: var(--theme-font-size-xs);
         line-height: 1.4;
+    }
+}
+
+/* Phone is touch-first; compact widths above it retain mouse-oriented density. */
+@media screen and (max-width: 47.99rem) {
+    .ux-mobile-record-card__meta,
+    .ux-mobile-audit-card__meta { grid-template-columns: 1fr; }
+
+    .ux-mobile-record-card__actions :is(.da-button, button, a),
+    html body.ux-platform.opj-workspace-page .opj-toolbar-actions :is(.da-button, .opj-ribbon-toggle, .opj-view-switch > button),
+    html body.ux-platform.opj-workspace-page .opj-page-navigation .da-icon-button {
+        min-height: 2.75rem;
     }
 }
 

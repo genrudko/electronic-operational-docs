@@ -24,6 +24,32 @@ MOBILE_VIEWPORTS = (
     (430, 932),
 )
 VIEWPORTS = DESKTOP_VIEWPORTS + MOBILE_VIEWPORTS
+TRANSITION_WIDTHS = (
+    1440,
+    1280,
+    1180,
+    1100,
+    1024,
+    976,
+    950,
+    900,
+    832,
+    768,
+    600,
+    440,
+    412,
+    390,
+)
+TRANSITION_ROUTES = (
+    "personnel",
+    "authorities",
+    "imports",
+    "workplace_docs",
+    "defect_registry",
+    "opj_registry",
+    "draft_workspace",
+)
+TRANSITION_SCREENSHOTS = {1180, 976, 768, 412}
 THEMES = ("light", "dark")
 PUBLIC_ROUTES = {
     "login": "/accounts/login/",
@@ -550,6 +576,159 @@ def discover(page):
     )
 
 
+def responsive_transition_state(page, route):
+    return page.evaluate(
+        """route => {
+            const visible = node => {
+                const style = getComputedStyle(node);
+                const rect = node.getBoundingClientRect();
+                return style.display !== "none"
+                    && style.visibility !== "hidden"
+                    && rect.width > 0
+                    && rect.height > 0;
+            };
+            const display = selector => {
+                const node = document.querySelector(selector);
+                return node ? getComputedStyle(node).display : null;
+            };
+            const columns = selector => {
+                const node = document.querySelector(selector);
+                if (!node) return null;
+                return getComputedStyle(node).gridTemplateColumns;
+            };
+            const overflow = selector => {
+                const node = document.querySelector(selector);
+                if (!node || !visible(node)) return null;
+                return {
+                    clientWidth: node.clientWidth,
+                    scrollWidth: node.scrollWidth,
+                };
+            };
+            const surfaceSelector = {
+                personnel: ".personnel-directory-page",
+                authorities: ".authority-matrix-page",
+                imports: ".import-attempts-panel",
+                workplace_docs: ".workplace-document-registry",
+                defect_registry: ".defect-da-work-table",
+                opj_registry: ".journal-registry-card",
+                draft_workspace: ".opj-workspace",
+            }[route];
+            const surface = document.querySelector(surfaceSelector) || document.body;
+            const humanWrapViolations = [...surface.querySelectorAll(
+                "p, a, strong, span, small, td, th, dt, dd, label, button"
+            )]
+                .filter(visible)
+                .filter(node => !node.closest(
+                    "code, pre, .ux-technical, .technical-only, [data-technical-only]"
+                ))
+                .filter(node => /[А-Яа-яЁёA-Za-z]{6}/u.test(
+                    (node.innerText || node.textContent || "").trim()
+                ))
+                .map(node => ({
+                    node,
+                    style: getComputedStyle(node),
+                }))
+                .filter(item => item.style.overflowWrap === "anywhere"
+                    || item.style.wordBreak === "break-all")
+                .slice(0, 12)
+                .map(item => ({
+                    tag: item.node.tagName.toLowerCase(),
+                    className: String(item.node.className || ""),
+                    text: (item.node.innerText || item.node.textContent || "")
+                        .trim().slice(0, 100),
+                    overflowWrap: item.style.overflowWrap,
+                    wordBreak: item.style.wordBreak,
+                }));
+
+            return {
+                width: innerWidth,
+                documentWidth: {
+                    innerWidth,
+                    scrollWidth: document.documentElement.scrollWidth,
+                },
+                humanWrapViolations,
+                personnelWorkspaceColumns: columns(".personnel-directory-workspace"),
+                personnelRecentColumns: columns(".personnel-recent-grid"),
+                authorityDesktopMatrix: display(".authority-matrix-panel .authority-matrix-scroll"),
+                authorityCompactMatrix: display(".authority-mobile-matrix"),
+                defectDesktopHead: display(".defect-da-work-head"),
+                workplaceDesktop: display(".workplace-document-desktop-table"),
+                workplaceCompact: display(".workplace-document-mobile-list"),
+                importsDesktop: display(".import-attempt-desktop-table"),
+                importsCompact: display(".import-attempt-mobile-list"),
+                opjRegistryHead: display(".journal-registry-table > thead"),
+                opjToolbarOverflow: overflow(".opj-toolbar"),
+            };
+        }""",
+        route,
+    )
+
+
+def assert_responsive_transition(state, route, mode):
+    width = state["width"]
+    if state["documentWidth"]["scrollWidth"] > width + 2:
+        raise AssertionError(
+            f"responsive transition document overflow {route} {mode} {width}px: "
+            f"{state['documentWidth']}"
+        )
+    if state["humanWrapViolations"]:
+        raise AssertionError(
+            f"responsive transition human-word shredding {route} {mode} {width}px: "
+            f"{state['humanWrapViolations']}"
+        )
+    if width <= 1120 and route == "personnel":
+        if not state["personnelWorkspaceColumns"] or " " in state["personnelWorkspaceColumns"]:
+            raise AssertionError(f"personnel workspace not single-column at {width}px: {state}")
+    if width <= 980 and route == "personnel":
+        if not state["personnelRecentColumns"] or " " in state["personnelRecentColumns"]:
+            raise AssertionError(f"personnel nested panels not single-column at {width}px: {state}")
+    if width <= 980 and route == "authorities":
+        if state["authorityDesktopMatrix"] != "none" or state["authorityCompactMatrix"] == "none":
+            raise AssertionError(f"rights compact composition missing at {width}px: {state}")
+    if width <= 980 and route == "defect_registry" and state["defectDesktopHead"] != "none":
+        raise AssertionError(f"DEFECT worklist stayed desktop at {width}px: {state}")
+    if width <= 980 and route == "workplace_docs":
+        if state["workplaceDesktop"] != "none" or state["workplaceCompact"] == "none":
+            raise AssertionError(f"workplace documents compact composition missing at {width}px: {state}")
+    if width <= 980 and route == "imports":
+        if state["importsDesktop"] != "none" or state["importsCompact"] == "none":
+            raise AssertionError(f"imports compact composition missing at {width}px: {state}")
+    if width <= 980 and route == "opj_registry" and state["opjRegistryHead"] != "none":
+        raise AssertionError(f"OPJ registry stayed desktop at {width}px: {state}")
+    toolbar = state["opjToolbarOverflow"]
+    if width <= 980 and route == "draft_workspace" and toolbar:
+        if toolbar["scrollWidth"] > toolbar["clientWidth"] + 2:
+            raise AssertionError(f"OPJ toolbar overflow at {width}px: {state}")
+
+
+def capture_responsive_transitions(page, shots, report, runtime_errors):
+    sequence = TRANSITION_WIDTHS + tuple(reversed(TRANSITION_WIDTHS[:-1]))
+    for route in TRANSITION_ROUTES:
+        path = ROUTES[route]
+        for mode in THEMES:
+            page.set_viewport_size({"width": TRANSITION_WIDTHS[0], "height": 900})
+            clear_runtime_errors(runtime_errors)
+            page.goto(BASE + path)
+            theme(page, mode)
+            route_states = []
+            for width in sequence:
+                height = 844 if width <= 768 else 900
+                page.set_viewport_size({"width": width, "height": height})
+                page.wait_for_timeout(80)
+                state = responsive_transition_state(page, route)
+                assert_responsive_transition(state, route, mode)
+                route_states.append(state)
+                if width in TRANSITION_SCREENSHOTS:
+                    direction = "down" if len(route_states) <= len(TRANSITION_WIDTHS) else "up"
+                    page.screenshot(
+                        path=shots / f"transition__{route}__{mode}__{width}px__{direction}.png",
+                        full_page=False,
+                    )
+            key = f"{route}__{mode}__1440-to-390-to-1440"
+            report["responsive_transitions"][key] = route_states
+            assert_no_runtime_errors(runtime_errors, key)
+
+
 def main():
     shots = OUT / "screenshots"
     shots.mkdir(parents=True, exist_ok=True)
@@ -565,6 +744,7 @@ def main():
         "baseline": {},
         "mobile_focus": {},
         "open_states": {},
+        "responsive_transitions": {},
     }
     password = os.getenv("EOD_BROWSER_PASSWORD", "").strip()
     if not password:
@@ -611,6 +791,8 @@ def main():
         discover(page)
         assert_no_runtime_errors(runtime_errors, "OPJ route discovery")
         report["meta"]["authenticated_routes"] = dict(ROUTES)
+
+        capture_responsive_transitions(page, shots, report, runtime_errors)
 
         for route, path in ROUTES.items():
             for mode in THEMES:

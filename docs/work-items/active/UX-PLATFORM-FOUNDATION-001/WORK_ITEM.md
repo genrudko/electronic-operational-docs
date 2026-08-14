@@ -2,7 +2,7 @@
 
 ## STATUS
 
-`ACCEPTANCE_CANDIDATE / FINAL GATES`
+`REPAIR V13 / IMPLEMENTATION AND GATES`
 
 Issue: `#69`
 
@@ -11,6 +11,8 @@ Branch: `ux/ux-platform-foundation-001`
 Draft PR: `#70 / OPEN / DRAFT / NOT MERGED`
 
 Owner visual acceptance: `PENDING`
+
+Latest owner verdict: `RESPONSIVE TRANSITION / COMPACT UX = FAIL` on the Repair v12 Development candidate. Repair v12 technical evidence remains historical evidence only and is superseded for owner acceptance by Repair v13.
 
 ## EXACT BASELINE SHA
 
@@ -161,6 +163,22 @@ The final controller-compatible candidate restores `.github/workflows/developmen
 No application/runtime presentation file may change after `eabd9a32...` without invalidating the Repair v7 visual evidence. Source-neutral closure is limited to restoring the trusted workflow boundary, canonical evidence documentation and deterministic generated dependency projections if required by the repository generator.
 
 This Repair v7 evidence is technical/executor evidence only. It does **not** claim owner visual acceptance. `OWNER VISUAL ACCEPTANCE` remains `PENDING` until the owner inspects the final persistent Development candidate.
+
+## REPAIR V13 RESPONSIVE-STATE CLOSURE
+
+Repair v13 removes the fragmented interval where the shell had already compacted but content still rendered as squeezed desktop panes, tables and ribbons. It uses the existing canonical owners and introduces no repair-specific stylesheet or third design system.
+
+The implementation contract is:
+
+- **FULL DESKTOP** above `61.25rem`: accepted desktop shell, specialist matrices, dense tables and OPJ ribbon remain unchanged;
+- **COMPACT** from `48rem` through `61.25rem`: shell and data surfaces change together; Personnel hierarchy releases employee width before the shell boundary; nested Personnel panels stack; Rights uses the existing employee-first grouped composition; dense Rights/OPJ/DEFECT/Documentation/Import surfaces adapt before pathological wrapping; OPJ secondary formatting remains behind the existing `Формат` disclosure; controls retain mouse-oriented platform height;
+- **PHONE** below `48rem`: 44px-class touch targets, stacked card metadata and existing phone composition remain active;
+- normal human text keeps word boundaries; `overflow-wrap:anywhere` is limited to technical identifiers;
+- ordinary surfaces cannot create document-level horizontal overflow; the DEFECT normative register remains the explicit local-scroll exception.
+
+The canonical browser harness now performs the mandatory same-page continuous resize down and back up at widths `1440, 1280, 1180, 1100, 1024, 976, 950, 900, 832, 768, 600, 440, 412, 390` in both themes for Personnel, Rights, Imports, Workplace Documentation, DEFECT, OPJ registry and OPJ draft workspace. It blocks document overflow, human-word shredding, stale desktop compositions below the shared boundary and OPJ toolbar overflow.
+
+Repair v13 technical evidence, exact-head workflow results, trusted persistent Development deployment and executor visual verdict must be recorded here after they exist. Until then, and until a new owner walkthrough occurs, `OWNER VISUAL ACCEPTANCE` remains `PENDING`; Draft PR `#70` must remain Draft and unmerged.
 
 ## HARD BOUNDARIES
 

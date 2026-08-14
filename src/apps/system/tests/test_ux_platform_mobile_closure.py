@@ -15,7 +15,8 @@ class UxPlatformMobileClosureSourceContractTests(SimpleTestCase):
     def test_shared_phone_surfaces_are_semantic_and_do_not_break_human_words(self) -> None:
         css = read("src/static/system/ux_mobile_surfaces.css")
 
-        self.assertIn("Mobile functional data-surface compositions", css)
+        self.assertIn("Compact and phone functional data-surface compositions", css)
+        self.assertIn("@media screen and (max-width: 61.25rem)", css)
         self.assertIn("@media screen and (max-width: 47.99rem)", css)
         self.assertIn(".ux-mobile-record-card", css)
         self.assertIn(".ux-mobile-audit-card", css)
@@ -49,7 +50,8 @@ class UxPlatformMobileClosureSourceContractTests(SimpleTestCase):
         responsive = read("src/static/system/ux_platform_responsive.css")
         page = read("src/templates/operational_log/shift_workspace.html")
 
-        self.assertIn("Final mobile functional closure", responsive)
+        self.assertIn("Compact functional closure", responsive)
+        self.assertIn("@media screen and (max-width: 61.25rem)", responsive)
         self.assertIn("grid-template-columns: repeat(3, minmax(0, 1fr))", responsive)
         self.assertIn('.opj-view-switch [data-view-mode="spread"] { display: inline-flex; }', responsive)
         self.assertIn(
@@ -63,14 +65,14 @@ class UxPlatformMobileClosureSourceContractTests(SimpleTestCase):
         self.assertIn('data-page-shell="left"', page)
         self.assertIn('data-page-shell="right"', page)
 
-    def test_defect_worklist_uses_phone_cards_at_platform_mobile_breakpoint(self) -> None:
+    def test_defect_worklist_uses_cards_from_platform_compact_breakpoint(self) -> None:
         template = read("src/templates/equipment_defects/_registry_repair2_worklist.html")
         responsive = read("src/static/system/ux_platform_responsive.css")
 
         self.assertIn("data-defect-mobile-register", template)
         self.assertIn("defect-da-work-head", template)
         self.assertIn("defect-da-work-row", template)
-        self.assertIn("@media screen and (max-width: 47.99rem)", responsive)
+        self.assertIn("@media screen and (max-width: 61.25rem)", responsive)
         self.assertIn("body.ux-platform .defect-da-work-head { display: none; }", responsive)
         self.assertIn("body.ux-platform .defect-da-work-row {", responsive)
         self.assertIn("overflow-wrap: break-word", responsive)
