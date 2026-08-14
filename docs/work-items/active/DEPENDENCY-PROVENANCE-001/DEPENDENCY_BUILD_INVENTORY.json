@@ -10,7 +10,7 @@
   "contours": {
     "assets": {
       "external_asset_reference_count": 1,
-      "tracked_static_file_count": 69
+      "tracked_static_file_count": 70
     },
     "browser": {
       "binary_integrity_contract_present": false,
@@ -508,7 +508,7 @@
     "inventory_entries": 85,
     "source_completeness_digests": 75,
     "source_files": 21,
-    "tracked_files": 935
+    "tracked_files": 937
   },
   "work_item": "DEPENDENCY-PROVENANCE-001"
 }
