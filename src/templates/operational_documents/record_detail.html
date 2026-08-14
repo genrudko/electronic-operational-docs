@@ -1,7 +1,9 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ record.registration_number }} · ЭОД{% endblock %}
 {% block extra_head %}
+<link rel="stylesheet" href="{% static 'system/ux_mobile_surfaces.css' %}?v=uxmobile001">
 <style>
 .opdoc-record-detail{min-width:0}
 .opdoc-related-list{min-width:0;display:grid;gap:var(--theme-space-2)}
@@ -38,7 +40,25 @@
 </section>
 
 {% if transitions %}<section class="da-card ux-stack"><h2>Доступные действия</h2><div class="opdoc-transition-grid">{% for transition in transitions %}<form method="post" action="{% url 'operational_documents:record_transition' record.public_id %}" class="opdoc-transition-card da-panel-flat ux-stack is-compact" data-transition-form>{% csrf_token %}<input type="hidden" name="transition_code" value="{{ transition.code }}"><strong>{{ transition.name }}</strong><span class="ux-muted">{{ record.status_name_snapshot }} → {{ transition.target.name }}</span><div class="da-field"><label for="transition-comment-{{ transition.code }}">Комментарий{% if transition.requires_comment %} <span class="required-mark">обязательно</span>{% endif %}</label><textarea id="transition-comment-{{ transition.code }}" name="comment" rows="3" {% if transition.requires_comment %}required data-required-message="Укажите комментарий для действия «{{ transition.name }}»."{% endif %}></textarea>{% if transition.requires_comment %}<small class="ux-muted">Без комментария действие не будет выполнено.</small>{% endif %}</div><button class="da-button" type="submit">{{ transition.name }}</button></form>{% endfor %}</div></section>{% endif %}
-<section class="da-card ux-stack"><h2>История редакций</h2><div class="da-table-wrap"><table class="da-table"><thead><tr><th>Редакция</th><th>Действие</th><th>Состояние</th><th>Автор и время</th><th>Комментарий</th></tr></thead><tbody>{% for revision in revisions %}<tr><td>{{ revision.revision_number }}</td><td>{{ revision.get_action_display }}</td><td>{{ revision.status_name_snapshot }}</td><td>{{ revision.actor.full_name }}<br><span class="ux-muted">{{ revision.created_at|date:"d.m.Y H:i:s" }}</span></td><td>{{ revision.comment|default:"—" }}</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="da-card ux-stack opdoc-revision-history">
+    <h2>История редакций</h2>
+    <div class="da-table-wrap opdoc-revision-desktop-table"><table class="da-table"><thead><tr><th>Редакция</th><th>Действие</th><th>Состояние</th><th>Автор и время</th><th>Комментарий</th></tr></thead><tbody>{% for revision in revisions %}<tr><td>{{ revision.revision_number }}</td><td>{{ revision.get_action_display }}</td><td>{{ revision.status_name_snapshot }}</td><td>{{ revision.actor.full_name }}<br><span class="ux-muted">{{ revision.created_at|date:"d.m.Y H:i:s" }}</span></td><td>{{ revision.comment|default:"—" }}</td></tr>{% endfor %}</tbody></table></div>
+    <ol class="opdoc-revision-mobile-list" aria-label="История редакций">
+        {% for revision in revisions %}
+        <li class="ux-mobile-audit-card">
+            <header class="ux-mobile-audit-card__header">
+                <div class="ux-mobile-audit-card__title"><strong>Редакция {{ revision.revision_number }}</strong><span class="ux-muted">{{ revision.get_action_display }}</span></div>
+                <span class="da-status-chip">{{ revision.status_name_snapshot }}</span>
+            </header>
+            <dl class="ux-mobile-audit-card__meta">
+                <div class="is-wide"><dt>Автор</dt><dd>{{ revision.actor.full_name }}</dd></div>
+                <div><dt>Дата и время</dt><dd>{{ revision.created_at|date:"d.m.Y H:i:s" }}</dd></div>
+            </dl>
+            <p class="opdoc-revision-comment"><strong>Комментарий:</strong> {{ revision.comment|default:"—" }}</p>
+        </li>
+        {% endfor %}
+    </ol>
+</section>
 
 {% if ui_preferences.show_technical_details %}<details class="da-card technical-only"><summary>Технические сведения и неизменяемый журнал аудита</summary><dl class="ux-key-value"><dt>Редакция структуры</dt><dd>{{ record.schema_revision.revision_number }}</dd><dt>SHA-256 структуры</dt><dd><code class="hash-value">{{ record.schema_revision.sha256 }}</code></dd></dl><h3>SHA-256 редакций записи</h3><ul class="ux-list-reset">{% for revision in revisions %}<li><strong>Редакция {{ revision.revision_number }}</strong> <code class="hash-value">{{ revision.sha256 }}</code></li>{% endfor %}</ul><h3>Аудит</h3><div class="da-table-wrap"><table class="da-table"><thead><tr><th>Время</th><th>Событие</th><th>Инициатор</th><th>Данные</th></tr></thead><tbody>{% for event in audit_events %}<tr><td>{{ event.occurred_at|date:"d.m.Y H:i:s" }}</td><td>{{ event.event_type }}</td><td>{{ event.actor.full_name }}</td><td><code class="hash-value">{{ event.payload }}</code></td></tr>{% endfor %}</tbody></table></div></details>{% endif %}
 <script>(() => { for (const textarea of document.querySelectorAll("textarea[data-required-message]")) { textarea.addEventListener("invalid", () => textarea.setCustomValidity(textarea.dataset.requiredMessage)); textarea.addEventListener("input", () => textarea.setCustomValidity("")); } })();</script>
