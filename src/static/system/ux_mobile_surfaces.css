@@ -577,10 +577,14 @@
     .ux-mobile-record-card__meta,
     .ux-mobile-audit-card__meta,
     html body.ux-platform.opj-workspace-page .opj-workspace-meta,
-    html body.ux-platform.opj-workspace-page .opj-clean-summary-meta,
+    html body.ux-platform.opj-workspace-page .opj-clean-summary-meta {
+        grid-template-columns: 1fr;
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-toolbar-actions,
     html body.ux-platform.opj-workspace-page .opj-editor-tools,
     html body.ux-platform.opj-workspace-page .draft-editor-ribbon-groups {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     html body.ux-platform.opj-workspace-page .opj-workspace-meta .opj-shift-period,
