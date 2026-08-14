@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Импорт справочников · ЭОД{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'system/ux_mobile_surfaces.css' %}?v=uxmobile001">{% endblock %}
 
 {% block content %}
 <section class="da-page-header ux-page-header-balanced import-page-header">
@@ -54,7 +56,7 @@
     <article class="ux-stat"><span>Убраны из рабочего списка</span><strong>{{ summary.discarded }}</strong></article>
 </section>
 
-<section class="da-card">
+<section class="da-card import-attempts-panel">
     <div class="section-heading">
         <div>
             <span class="ux-kicker">Журнал попыток</span>
@@ -64,7 +66,7 @@
             <span class="count-badge">Всего загрузок: {{ batches|length }}</span>
         {% endif %}
     </div>
-    <div class="da-table-wrap">
+    <div class="da-table-wrap import-attempt-desktop-table">
         <table class="da-table">
             <thead>
                 <tr>
@@ -117,5 +119,24 @@
             </tbody>
         </table>
     </div>
+    <ol class="import-attempt-mobile-list" aria-label="Загрузки организации">
+        {% for batch in batches %}
+        <li class="ux-mobile-audit-card{% if batch.status == 'DISCARDED' %} is-muted{% endif %}">
+            <header class="ux-mobile-audit-card__header">
+                <div class="ux-mobile-audit-card__title"><a href="{% url 'imports:detail' batch.public_id %}">{{ batch.original_filename }}</a><span class="ux-muted">{{ batch.get_target_registry_display }}</span></div>
+                <span class="import-status status-{{ batch.status|lower }}">{{ batch.get_status_display }}</span>
+            </header>
+            <dl class="ux-mobile-audit-card__meta">
+                <div class="is-wide"><dt>Профиль данных</dt><dd><span class="data-profile-badge profile-kind-{{ batch.data_profile.kind|lower }}">{{ batch.data_profile.name }}</span></dd></div>
+                <div><dt>Формат</dt><dd>{{ batch.get_source_format_display }}</dd></div>
+                <div><dt>Строки</dt><dd>{{ batch.data_rows }}</dd></div>
+                <div class="is-wide"><dt>Загрузил</dt><dd>{{ batch.created_by.full_name }}</dd></div>
+                <div><dt>Время</dt><dd>{{ batch.created_at|date:"d.m.Y H:i" }}</dd></div>
+                {% if batch.status == 'PUBLISHED' %}<div class="is-wide"><dt>Результат</dt><dd>Создано записей: {{ batch.publication_counts.accepted }}</dd></div>{% elif batch.mapping_completed_at %}<div class="is-wide"><dt>Сопоставление</dt><dd>Редакция № {{ batch.mapping_revision }}</dd></div>{% elif batch.status == 'READY' %}<div class="is-wide"><dt>Следующий шаг</dt><dd>Ожидается сопоставление колонок</dd></div>{% endif %}
+            </dl>
+            <div class="ux-mobile-record-card__actions"><a class="da-button is-secondary" href="{% url 'imports:detail' batch.public_id %}">Открыть загрузку</a></div>
+        </li>
+        {% empty %}<li class="ux-empty-state">Загрузок пока нет. Начните с небольшого тестового CSV или XLSX.</li>{% endfor %}
+    </ol>
 </section>
 {% endblock %}
