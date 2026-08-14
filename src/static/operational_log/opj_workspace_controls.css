@@ -638,6 +638,8 @@
     min-height: 24px;
     font-size: var(--opj-entry-font-size);
     line-height: var(--opj-entry-line-height);
+    overflow-wrap: break-word;
+    word-break: normal;
 }
 
 .opj-workspace .draft-rich-editor-host [contenteditable="true"] {
