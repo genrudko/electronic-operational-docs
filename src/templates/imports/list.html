@@ -3,7 +3,7 @@
 {% block title %}Импорт справочников · ЭОД{% endblock %}
 
 {% block content %}
-<section class="da-page-header import-page-header">
+<section class="da-page-header ux-page-header-balanced import-page-header">
     <div>
         <span class="ux-kicker">Безопасная промежуточная зона</span>
         <h1>Импорт справочников</h1>
@@ -20,7 +20,7 @@
     </div>
 </section>
 
-<section class="import-profile-grid" aria-label="Профили данных организации">
+<section class="ux-profile-strip import-profile-grid" aria-label="Профили данных организации">
     {% for profile in profiles %}
     <article class="import-profile-card profile-kind-{{ profile.kind|lower }}{% if profile.sensitivity_level != 'SAFE_DEMO' %} is-sensitive{% endif %}">
         <strong class="ux-readable-value">{{ profile.name }}</strong>
