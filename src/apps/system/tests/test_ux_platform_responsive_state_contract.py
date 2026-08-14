@@ -117,7 +117,10 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
         self.assertFalse((ROOT / "src/static/system/repair_v13.css").exists())
 
     def test_browser_gate_resizes_mandatory_surfaces_down_and_back_up(self) -> None:
-        browser = read("tests/browser_theme/run.py")
+        browser_path = ROOT / "tests/browser_theme/run.py"
+        if not browser_path.is_file():
+            self.skipTest("repository-level browser harness is not packaged in runtime images")
+        browser = browser_path.read_text(encoding="utf-8")
 
         for width in (1440, 1280, 1180, 1100, 1024, 976, 950, 900, 832, 768, 600, 440, 412, 390):
             self.assertIn(f"    {width},", browser)
