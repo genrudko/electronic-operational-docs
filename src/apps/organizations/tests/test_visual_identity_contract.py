@@ -149,3 +149,68 @@ class VisualIdentityContractTests(SimpleTestCase):
         self.assertIn("place-items: center", stylesheet)
         self.assertIn(".da-brand-logo", stylesheet)
         self.assertIn("object-fit: contain", stylesheet)
+
+    def test_authority_matrix_owner_polish_owns_full_cell_marker_geometry(self) -> None:
+        stylesheet = (
+            self.source_root / "static/organizations/personnel_authority_matrix.css"
+        ).read_text(encoding="utf-8")
+        template = (
+            self.source_root / "templates/organizations/authority_registry.html"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn(
+            ".authority-matrix-person td.authority-right-cell {",
+            stylesheet,
+        )
+        self.assertIn("padding:0; text-align:center", stylesheet)
+        self.assertIn(
+            ".authority-matrix-person td.authority-right-cell.is-granted",
+            stylesheet,
+        )
+        self.assertIn("background:var(--theme-success-soft)", stylesheet)
+        self.assertIn(
+            ".authority-matrix-person td.authority-right-cell.is-conditional",
+            stylesheet,
+        )
+        self.assertIn("background:var(--theme-warning-soft)", stylesheet)
+        self.assertIn(".authority-right-cell .authority-cell-marker", stylesheet)
+        self.assertIn("font-size:var(--theme-font-size-sm)", stylesheet)
+        self.assertIn("place-items:center", stylesheet)
+        self.assertIn("authority-cell-marker--missing", template)
+        self.assertNotIn("padding:0 !important", stylesheet)
+        self.assertNotIn(
+            ".authority-right-cell.is-granted a { background:var(--theme-success-soft)",
+            stylesheet,
+        )
+        self.assertNotIn(
+            ".authority-right-cell.is-conditional a { background:var(--theme-warning-soft)",
+            stylesheet,
+        )
+
+    def test_authority_matrix_qualification_has_compact_semantic_zones(self) -> None:
+        stylesheet = (
+            self.source_root / "static/organizations/personnel_authority_matrix.css"
+        ).read_text(encoding="utf-8")
+        template = (
+            self.source_root / "templates/organizations/authority_registry.html"
+        ).read_text(encoding="utf-8")
+
+        for marker in (
+            "authority-qualification-layout",
+            "authority-qualification-category",
+            "authority-qualification-content",
+            "authority-qualification-additional",
+            "authority-qualification-primary",
+            "authority-qualification-scope",
+        ):
+            self.assertIn(marker, template)
+            self.assertIn(marker, stylesheet)
+        self.assertIn("{% for special in row.special_qualifications %}", template)
+        self.assertIn(
+            "grid-template-columns:minmax(4.25rem,auto) minmax(0,1fr)",
+            stylesheet,
+        )
+        self.assertIn(
+            "overflow-wrap:break-word; word-break:normal",
+            stylesheet,
+        )

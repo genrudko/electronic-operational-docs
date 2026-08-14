@@ -5,7 +5,7 @@
 {% block main_class %}authority-main authority-matrix-main{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'organizations/personnel_authority.css' %}?v=pa001r2">
-<link rel="stylesheet" href="{% static 'organizations/personnel_authority_matrix.css' %}?v=pa001r7">
+<link rel="stylesheet" href="{% static 'organizations/personnel_authority_matrix.css' %}?v=pa001r8">
 <script src="{% static 'organizations/personnel_authority_matrix.js' %}?v=pa001r7" defer></script>
 {% endblock %}
 
@@ -160,8 +160,13 @@
                             <td class="matrix-sticky-name"><a href="{% url 'organizations:employee_detail' row.employee.public_id %}">{{ row.employee.full_name }}</a>{% if row.employee.workplace %}<small>{{ row.employee.workplace.name }}</small>{% endif %}</td>
                             <td class="matrix-sticky-position">{{ row.employee.position.name }}</td>
                             <td class="matrix-sticky-qualification">
-                                {% if row.qualification %}<strong class="personnel-category-chip">{{ row.qualification.personnel_category }}</strong><span>Группа {{ row.qualification.electrical_safety_group }} по электробезопасности</span><small>{{ row.qualification.voltage_scope }}</small>{% else %}<em>Не опубликовано</em>{% endif %}
-                                {% for special in row.special_qualifications %}<small class="special-qualification-chip">{{ special.get_kind_display }}: {{ special.level }}</small>{% endfor %}
+                                <div class="authority-qualification-layout">
+                                    {% if row.qualification %}
+                                    <div class="authority-qualification-category"><strong class="personnel-category-chip">{{ row.qualification.personnel_category }}</strong></div>
+                                    <div class="authority-qualification-content"><span class="authority-qualification-primary">Группа {{ row.qualification.electrical_safety_group }} по электробезопасности</span><small class="authority-qualification-scope">{{ row.qualification.voltage_scope }}</small></div>
+                                    {% else %}<div class="authority-qualification-content authority-qualification-content--full"><em class="authority-qualification-empty">Не опубликовано</em></div>{% endif %}
+                                    <div class="authority-qualification-additional">{% for special in row.special_qualifications %}<small class="special-qualification-chip">{{ special.get_kind_display }}: {{ special.level }}</small>{% endfor %}</div>
+                                </div>
                             </td>
                             {% for cell in row.cells %}
                             <td class="authority-right-cell{% if cell and cell.source_marker != '+' %} is-conditional{% elif cell %} is-granted{% endif %}" data-right-cell="{% if cell %}{{ cell.right_definition.code }}{% endif %}">
@@ -170,7 +175,7 @@
                                     <span class="authority-cell-marker">{{ cell.source_marker }}</span>
                                     {% if cell.source_marker != '+' %}<span class="authority-condition-popover" role="tooltip"><strong>{% if cell.condition_detail %}{{ cell.condition_detail.title }}{% else %}Условие {{ cell.source_marker }}{% endif %}</strong><em>{% if cell.condition_detail %}{{ cell.condition_detail.description }}{% elif cell.qualifier %}{{ cell.qualifier }}{% else %}Условие не расшифровано — требуется проверка.{% endif %}</em>{% if cell.condition_detail.source_clause %}<small>{{ cell.condition_detail.source_clause }} · {{ cell.condition_detail.source_reference }}</small>{% else %}<small>{{ cell.source_reference|authority_basis_label }}</small>{% endif %}</span>{% endif %}
                                 </a>
-                                {% else %}<span>—</span>{% endif %}
+                                {% else %}<span class="authority-cell-marker authority-cell-marker--missing">—</span>{% endif %}
                             </td>
                             {% endfor %}
                         </tr>
