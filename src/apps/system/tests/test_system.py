@@ -1,10 +1,10 @@
-from pathlib import Path
+import pathlib
 
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
 
-ROOT = Path(__file__).resolve().parents[4]
+ROOT = pathlib.Path(__file__).resolve().parents[4]
 
 
 def read_source(path: str) -> str:
