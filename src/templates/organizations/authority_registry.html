@@ -5,12 +5,13 @@
 {% block main_class %}authority-main authority-matrix-main{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'organizations/personnel_authority.css' %}?v=pa001r2">
-<link rel="stylesheet" href="{% static 'organizations/personnel_authority_matrix.css' %}?v=pa001r6">
-<script src="{% static 'organizations/personnel_authority_matrix.js' %}?v=pa001r6" defer></script>
+<link rel="stylesheet" href="{% static 'organizations/personnel_authority_matrix.css' %}?v=pa001r7">
+<script src="{% static 'organizations/personnel_authority_matrix.js' %}?v=pa001r7" defer></script>
 {% endblock %}
 
 {% block content %}
-<section class="authority-page authority-matrix-page" data-authority-page>
+{% with initial_view=request.GET.view|default:"matrix" related_scope=request.GET.scope|default:"" %}
+<section class="authority-page authority-matrix-page" data-authority-page data-initial-view="{{ initial_view }}" data-related-scope="{{ related_scope }}">
     <header class="da-page-header">
         <div class="authority-page-header-copy">
             <h1>Оперативные права персонала</h1>
@@ -31,6 +32,8 @@
         </div>
         {% if organizations|length > 1 %}
         <form method="get">
+            <input type="hidden" name="view" value="{{ initial_view }}">
+            {% if related_scope %}<input type="hidden" name="scope" value="{{ related_scope }}">{% endif %}
             <label for="authority-organization">Организация</label>
             <select id="authority-organization" name="organization" onchange="this.form.submit()">
                 {% for organization in organizations %}
@@ -49,20 +52,20 @@
         <button type="button" class="authority-summary-card" data-summary-view="holders" data-summary-condition="true"><span>Прав с условием</span><strong>{{ conditional_count }}</strong></button>
     </nav>
 
-    <section class="authority-toolbar" aria-label="Поиск и представление">
+    <section class="authority-toolbar" aria-label="Поиск и представление" data-active-view="{{ initial_view }}">
         <div class="authority-tabs" role="group" aria-label="Раздел реестра">
-            <button type="button" data-authority-view="matrix" aria-pressed="true">Матрица прав</button>
-            <button type="button" data-authority-view="holders" aria-pressed="false">Кто имеет право</button>
-            <button type="button" data-authority-view="dispatch" aria-pressed="false">ОДУ и РДУ</button>
-            <button type="button" data-authority-view="related" aria-pressed="false">ЦУС и смежные объекты</button>
-            <button type="button" data-authority-view="contractors" aria-pressed="false">Подрядный персонал</button>
-            <button type="button" data-authority-view="checks" aria-pressed="false">История проверок</button>
+            <button type="button" data-authority-view="matrix" aria-pressed="{% if initial_view == 'matrix' %}true{% else %}false{% endif %}">Матрица прав</button>
+            <button type="button" data-authority-view="holders" aria-pressed="{% if initial_view == 'holders' %}true{% else %}false{% endif %}">Кто имеет право</button>
+            <button type="button" data-authority-view="dispatch" aria-pressed="{% if initial_view == 'dispatch' %}true{% else %}false{% endif %}">ОДУ и РДУ</button>
+            <button type="button" data-authority-view="related" aria-pressed="{% if initial_view == 'related' %}true{% else %}false{% endif %}">ЦУС и смежные объекты</button>
+            <button type="button" data-authority-view="contractors" aria-pressed="{% if initial_view == 'contractors' %}true{% else %}false{% endif %}">Подрядный персонал</button>
+            <button type="button" data-authority-view="checks" aria-pressed="{% if initial_view == 'checks' %}true{% else %}false{% endif %}">История проверок</button>
         </div>
         <div class="authority-filter-field authority-search-field">
             <label for="authority-search">Поиск</label>
             <input id="authority-search" type="search" placeholder="ФИО, должность, подразделение, право, условие или основание" autocomplete="off" data-authority-search>
         </div>
-        <div class="authority-filter-field" data-filter-for="matrix holders">
+        <div class="authority-filter-field" data-filter-for="matrix holders"{% if initial_view != 'matrix' and initial_view != 'holders' %} hidden{% endif %}>
             <label for="authority-category">Категория</label>
             <select id="authority-category" data-authority-category>
                 <option value="">Все категории</option>
@@ -73,7 +76,7 @@
                 <option value="РП">РП</option>
             </select>
         </div>
-        <div class="authority-filter-field" data-filter-for="matrix holders">
+        <div class="authority-filter-field" data-filter-for="matrix holders"{% if initial_view != 'matrix' and initial_view != 'holders' %} hidden{% endif %}>
             <label for="authority-group">Группа по ЭБ</label>
             <select id="authority-group" data-authority-group>
                 <option value="">Все группы</option>
@@ -83,7 +86,7 @@
                 <option value="II">II</option>
             </select>
         </div>
-        <div class="authority-filter-field authority-right-filter" data-filter-for="holders" hidden>
+        <div class="authority-filter-field authority-right-filter" data-filter-for="holders"{% if initial_view != 'holders' %} hidden{% endif %}>
             <label for="authority-right">Право</label>
             <select id="authority-right" data-authority-right>
                 <option value="">Все опубликованные права</option>
@@ -94,11 +97,11 @@
         </div>
     </section>
 
-    <div class="authority-workspace" data-authority-workspace>
+    <div class="authority-workspace" data-authority-workspace{% if initial_view != 'matrix' and initial_view != 'holders' %} hidden{% endif %}>
         <aside class="authority-org-tree" aria-label="Структура организации">
             <div class="authority-tree-heading">
                 <div><strong>Структура организации</strong><span>Подразделения и подчинённость</span></div>
-                <button type="button" title="Развернуть всё" aria-label="Развернуть все подразделения" data-expand-all><svg class="authority-control-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-add"></use></svg></button>
+                <button type="button" class="authority-expand-all" title="Свернуть всё" aria-label="Свернуть все подразделения" aria-expanded="true" data-expand-all><svg class="authority-control-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-chevron-right"></use></svg><span data-expand-all-label>Свернуть всё</span></button>
             </div>
             <button class="authority-tree-item is-active" type="button" data-division-filter="">
                 <span class="authority-tree-icon tone-blue"><svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-organization"></use></svg></span>
@@ -132,7 +135,7 @@
             </section>
         </aside>
 
-        <section class="authority-panel authority-matrix-panel" data-authority-panel="matrix">
+        <section class="authority-panel authority-matrix-panel" data-authority-panel="matrix"{% if initial_view != 'matrix' %} hidden{% endif %}>
             <div class="authority-panel-heading">
                 <div><h2>Матрица прав штатного персонала</h2><p>Индекс в ячейке раскрывается в точное условие, пункт документа и источник.</p></div>
                 <span class="authority-count">{{ published_right_count }}</span>
@@ -179,7 +182,7 @@
             {% else %}<div class="authority-empty"><strong>Опубликованная матрица отсутствует</strong></div>{% endif %}
         </section>
 
-        <section class="authority-panel" data-authority-panel="holders" hidden>
+        <section class="authority-panel" data-authority-panel="holders"{% if initial_view != 'holders' %} hidden{% endif %}>
             <div class="authority-panel-heading"><div><h2>Кто имеет право</h2><p>Список работников с квалификацией, областью, точным условием, сроком и основанием.</p></div><span class="authority-count">{{ holder_assignments|length }}</span></div>
             {% if holder_assignments %}
             <div class="authority-table-wrap"><table class="authority-table authority-holders-table"><thead><tr><th>Сотрудник</th><th>Подразделение</th><th>Квалификация</th><th>Предоставленное право</th><th>Область и условие</th><th>Срок и основание</th></tr></thead><tbody>
@@ -198,31 +201,60 @@
         </section>
     </div>
 
-    <section class="authority-panel" data-authority-panel="dispatch" hidden>
+    <section class="authority-panel" data-authority-panel="dispatch"{% if initial_view != 'dispatch' %} hidden{% endif %}>
         <div class="authority-panel-heading"><div><h2>Диспетчерские центры — ОДУ и РДУ</h2><p>Руководство и оперативно-диспетчерский персонал, с которым ведётся рабочее взаимодействие.</p></div><span class="authority-count">{{ dispatch_contacts|length }}</span></div>
         {% include "organizations/_external_operational_contacts.html" with contacts=dispatch_contacts empty_title="Диспетчерские контакты не опубликованы" %}
     </section>
 
-    <section class="authority-panel" data-authority-panel="related" hidden>
-        <div class="authority-panel-heading"><div><h2>ЦУС, смежные организации и энергообъекты</h2><p>Оперативный персонал СК ПМЭС, ЦУС, ПС 500 кВ Невинномысск и коммерческого диспетчерского центра.</p></div><span class="authority-count">{{ external_operational_contacts|length }}</span></div>
-        {% include "organizations/_external_operational_contacts.html" with contacts=related_contacts empty_title="Смежные оперативные контакты не опубликованы" %}
-        {% if commercial_contacts %}<div class="authority-subsection-heading"><strong>Коммерческий диспетчерский центр</strong><span>{{ commercial_contacts|length }}</span></div>{% include "organizations/_external_operational_contacts.html" with contacts=commercial_contacts empty_title="" %}{% endif %}
+    <section class="authority-panel" data-authority-panel="related"{% if initial_view != 'related' %} hidden{% endif %}>
+        {% if related_scope %}
+            {% with scoped_contacts=external_operational_contacts|authority_contact_scope:related_scope %}
+            <div class="authority-panel-heading"><div>
+                {% if related_scope == 'grid' %}<h2>ЦУС и смежные сети</h2><p>Оперативный персонал ЦУС и смежных сетевых организаций.</p>
+                {% elif related_scope == 'site' %}<h2>Смежные энергообъекты</h2><p>Оперативные контакты смежных подстанций и других энергообъектов.</p>
+                {% elif related_scope == 'commercial' %}<h2>Коммерческий диспетчерский центр</h2><p>Руководство и коммерческие диспетчеры с опубликованными контактами.</p>
+                {% else %}<h2>ЦУС, смежные организации и энергообъекты</h2><p>Оперативные контакты внешних организаций и объектов.</p>{% endif %}
+            </div><span class="authority-count">{{ scoped_contacts|length }}</span></div>
+            {% include "organizations/_external_operational_contacts.html" with contacts=scoped_contacts empty_title="Контакты выбранного контура не опубликованы" %}
+            {% endwith %}
+        {% else %}
+            <div class="authority-panel-heading"><div><h2>ЦУС, смежные организации и энергообъекты</h2><p>Оперативный персонал СК ПМЭС, ЦУС, ПС 500 кВ Невинномысск и коммерческого диспетчерского центра.</p></div><span class="authority-count">{{ external_operational_contacts|length }}</span></div>
+            {% include "organizations/_external_operational_contacts.html" with contacts=related_contacts empty_title="Смежные оперативные контакты не опубликованы" %}
+            {% if commercial_contacts %}<div class="authority-subsection-heading"><strong>Коммерческий диспетчерский центр</strong><span>{{ commercial_contacts|length }}</span></div>{% include "organizations/_external_operational_contacts.html" with contacts=commercial_contacts empty_title="" %}{% endif %}
+        {% endif %}
     </section>
 
-    <section class="authority-panel" data-authority-panel="contractors" hidden>
+    <section class="authority-panel" data-authority-panel="contractors"{% if initial_view != 'contractors' %} hidden{% endif %}>
         <div class="authority-panel-heading"><div><h2>Подрядный и командированный персонал</h2><p>Отдельный контур допуска: направляющая и принимающая организации, область, срок и основание.</p></div><span class="authority-count">{{ external_engagements|length }}</span></div>
         {% if external_engagements %}<div class="authority-table-wrap"><table class="authority-table"><thead><tr><th>Сотрудник</th><th>Организация</th><th>Вид</th><th>Область допуска</th><th>Срок и основание</th><th>Состояние</th></tr></thead><tbody>
         {% for item in external_engagements %}<tr data-authority-row data-search="{{ item.employee.full_name }} {{ item.employee.division.name }} {{ item.home_organization.name }} {{ item.scope_label }} {{ item.basis_reference }}"><td><a class="authority-primary-value" href="{% url 'organizations:employee_detail' item.employee.public_id %}">{{ item.employee.full_name }}</a><span class="authority-secondary-value">{{ item.employee.position.name }}</span></td><td>{{ item.home_organization.short_name|default:item.home_organization.name }}</td><td>{{ item.get_relation_kind_display }}</td><td>{{ item.scope_label|default:item.scope_reference }}</td><td><span class="authority-primary-value">{{ item.valid_from|date:'d.m.Y' }} — {% if item.valid_until %}{{ item.valid_until|date:'d.m.Y' }}{% else %}без ограничения срока{% endif %}</span><span class="authority-secondary-value">{{ item.basis_reference|authority_basis_label }}</span></td><td>{% if item.is_active %}<span class="authority-status allowed">Действует</span>{% else %}<span class="authority-status denied">Не действует</span>{% endif %}</td></tr>{% endfor %}
         </tbody></table></div>{% else %}<div class="authority-empty"><strong>Подрядный персонал не опубликован</strong></div>{% endif %}
     </section>
 
-    <section class="authority-panel" data-authority-panel="checks" hidden>
+    <section class="authority-panel" data-authority-panel="checks"{% if initial_view != 'checks' %} hidden{% endif %}>
         <div class="authority-panel-heading"><div><h2>История проверок полномочий</h2><p>Аудит результата проверки конкретного действия на конкретный момент.</p></div><span class="authority-count">{{ recent_evaluations|length }}</span></div>
-        {% if recent_evaluations %}<div class="authority-evaluation-list">{% for item in recent_evaluations %}<a class="authority-evaluation-row" href="{% url 'organizations:authority_evaluation_detail' item.public_id %}" data-authority-row data-search="{{ item.actor.full_name }} {{ item.action_code }} {{ item.subject_id }} {{ item.reason_codes|join:' ' }}"><time>{{ item.occurred_at|date:'d.m.Y H:i' }}</time><span><strong>{{ item.actor.full_name }}</strong><small>{{ item.actor.division.name }}</small></span><span><strong>{{ item.action_code|authority_action_label }}</strong><small>{{ item.subject_id|authority_subject_label }}</small></span><span class="authority-status {{ item.decision|authority_decision_tone }}">{{ item.get_decision_display }}</span></a>{% endfor %}</div>{% else %}<div class="authority-empty"><strong>Проверки ещё не выполнялись</strong></div>{% endif %}
+        {% if recent_evaluations %}
+        <div class="authority-evaluation-list" role="table" aria-label="История проверок полномочий">
+            <div class="authority-evaluation-header" role="row">
+                <span role="columnheader">Дата и время</span><span role="columnheader">Сотрудник</span><span role="columnheader">Контекст</span><span role="columnheader">Проверяемое действие</span><span role="columnheader">Объект</span><span role="columnheader">Результат</span>
+            </div>
+            {% for item in recent_evaluations %}
+            <a class="authority-evaluation-row" href="{% url 'organizations:authority_evaluation_detail' item.public_id %}" role="row" data-authority-row data-search="{{ item.actor.full_name }} {{ item.actor.division.name }} {{ item.organization.name }} {{ item.action_code }} {{ item.subject_type }} {{ item.subject_id }} {{ item.reasons|join:' ' }}">
+                <time class="authority-evaluation-date" role="cell">{{ item.occurred_at|date:'d.m.Y H:i' }}</time>
+                <span class="authority-evaluation-person" role="cell"><strong>{{ item.actor.full_name }}</strong><small>{{ item.actor.division.name }}</small></span>
+                <span class="authority-evaluation-context" role="cell"><strong>{{ item.organization.short_name|default:item.organization.name }}</strong><small>{{ item.scope_label|default:item.get_scope_kind_display }}</small></span>
+                <span class="authority-evaluation-action" role="cell"><strong>{{ item.action_code|authority_action_label }}</strong><code class="ux-technical">{{ item.action_code|authority_action_technical_label }}</code>{% if item.reasons %}<small>{{ item.reasons.0|authority_reason_label }}</small>{% endif %}</span>
+                <span class="authority-evaluation-subject" role="cell"><strong>{{ item.subject_id|authority_subject_label }}</strong><code class="ux-technical">{{ item.subject_type }} · {{ item.subject_id }}</code></span>
+                <span class="authority-evaluation-result" role="cell"><span class="authority-status {{ item.decision|authority_decision_tone }}">{{ item.get_decision_display }}</span></span>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}<div class="authority-empty"><strong>Проверки ещё не выполнялись</strong></div>{% endif %}
     </section>
 
     <div class="authority-no-results" data-authority-no-results>По выбранным условиям записи не найдены.</div>
 
     <aside class="authority-guidance"><span>i</span><div><strong>Как формируется право</strong><p>Положительная ячейка публикует право. Индексы +1 и +2 связаны с пунктами 5.4 и 5.13 Правил по охране труда при эксплуатации электроустановок; для любого другого индекса система обязана показать точный текст условия или состояние «требуется проверка».</p></div></aside>
 </section>
+{% endwith %}
 {% endblock %}
