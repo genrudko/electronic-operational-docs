@@ -52,7 +52,10 @@ class UxPlatformMobileClosureSourceContractTests(SimpleTestCase):
         self.assertIn("Final mobile functional closure", responsive)
         self.assertIn("grid-template-columns: repeat(3, minmax(0, 1fr))", responsive)
         self.assertIn('.opj-view-switch [data-view-mode="spread"] { display: inline-flex; }', responsive)
-        self.assertIn('.opj-workspace[data-view-mode="single"] .opj-secondary-page { display: none !important; }', responsive)
+        self.assertIn(
+            '.opj-workspace[data-view-mode="single"] .opj-secondary-page { display: none !important; }',
+            responsive,
+        )
         self.assertIn('[data-page-shell="left"]::before', responsive)
         self.assertIn('content: "Первая страница разворота";', responsive)
         self.assertIn('[data-page-shell="right"]::before', responsive)
@@ -172,8 +175,16 @@ class UxPlatformMobileClosureSourceContractTests(SimpleTestCase):
         self.assertIn("@media screen and (min-width: 38.76rem) and (max-width: 79.99rem)", responsive)
         self.assertIn("@media screen and (min-width: 80rem)", responsive)
         self.assertIn("body.ux-platform .personnel-contours { grid-template-columns: 1fr; }", responsive)
-        self.assertIn("body.ux-platform .personnel-contours { grid-template-columns: repeat(2, minmax(0, 1fr)); }", responsive)
-        self.assertIn("body.ux-platform .personnel-contours { grid-template-columns: repeat(5, minmax(0, 1fr)); }", responsive)
+        self.assertIn(
+            "body.ux-platform .personnel-contours { "
+            "grid-template-columns: repeat(2, minmax(0, 1fr)); }",
+            responsive,
+        )
+        self.assertIn(
+            "body.ux-platform .personnel-contours { "
+            "grid-template-columns: repeat(5, minmax(0, 1fr)); }",
+            responsive,
+        )
 
     def test_new_phone_surfaces_preserve_desktop_tables(self) -> None:
         opdoc = read("src/templates/operational_documents/record_detail.html")
