@@ -3,7 +3,6 @@ import pathlib
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
-
 ROOT = pathlib.Path(__file__).resolve().parents[4]
 
 
