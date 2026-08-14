@@ -391,7 +391,9 @@ def capture_surface(
         surface_selector = ".defect-da-work-row"
     node = need(page, surface_selector)
     page.mouse.move(0, 0)
-    page.wait_for_timeout(20)
+    # Some registry rows animate their background for 120 ms. Compare the
+    # settled theme token, not an interpolation frame after light -> dark.
+    page.wait_for_timeout(160)
     actual = style(node)
     expected = resolved_background(page, TOKENS[route])
     width_state = document_width(page)

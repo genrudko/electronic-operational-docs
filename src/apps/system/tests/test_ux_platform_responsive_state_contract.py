@@ -128,4 +128,5 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
         self.assertIn("responsive transition human-word shredding", browser)
         self.assertIn('surface_selector = ".defect-da-work-row"', browser)
         self.assertIn("page.mouse.move(0, 0)", browser)
+        self.assertIn("page.wait_for_timeout(160)", browser)
         self.assertIn("capture_responsive_transitions(page, shots, report, runtime_errors)", browser)
