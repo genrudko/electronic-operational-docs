@@ -38,6 +38,7 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
     def test_compact_state_adapts_dense_operational_surfaces(self) -> None:
         responsive = read("src/static/system/ux_platform_responsive.css")
         surfaces = read("src/static/system/ux_mobile_surfaces.css")
+        authority = read("src/static/organizations/personnel_authority_matrix.css")
 
         compact = responsive[responsive.index("@media screen and (max-width: 61.25rem)") :]
         for selector in (
@@ -57,6 +58,10 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
             ".authority-mobile-matrix",
         ):
             self.assertIn(selector, surfaces)
+
+        self.assertIn("@media (max-width:61.25rem)", authority)
+        self.assertIn(".authority-matrix-panel .authority-matrix-scroll { display:none; }", authority)
+        self.assertIn(".authority-mobile-matrix", authority)
 
     def test_human_text_uses_word_boundaries_and_only_technical_codes_use_anywhere(self) -> None:
         responsive = read("src/static/system/ux_platform_responsive.css")

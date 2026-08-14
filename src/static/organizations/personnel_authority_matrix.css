@@ -237,13 +237,14 @@ tr.is-authority-row-link:focus-visible > td { box-shadow:inset 0 2px var(--theme
     .authority-evaluation-date,.authority-evaluation-result,.authority-evaluation-person,.authority-evaluation-action,.authority-evaluation-subject,.authority-evaluation-context { grid-column:1; grid-row:auto; justify-self:start; }
 }
 
-/* Phone-only functional matrix. JS creates this presentation from the same
- * server-rendered matrix cells, so desktop semantics and business data remain
- * single-source. Tablet and desktop continue to use the accepted table. */
+/* Compact functional matrix. JS creates this presentation from the same server-
+ * rendered cells, so desktop semantics and business data remain single-source.
+ * Full desktop keeps the accepted matrix; compact and phone widths use the
+ * employee-first grouped drill-down. */
 .authority-mobile-matrix,
 .authority-mobile-preamble-disclosure { display:none; }
 
-@media (max-width:47.99rem) {
+@media (max-width:61.25rem) {
     html body.ux-platform .authority-mobile-preamble-disclosure {
         display:block;
         border-bottom:1px solid var(--theme-border);
