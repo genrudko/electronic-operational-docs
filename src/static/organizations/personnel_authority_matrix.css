@@ -445,3 +445,7 @@ tr.is-authority-row-link:focus-visible > td { box-shadow:inset 0 2px var(--theme
         line-height:1.4;
     }
 }
+
+.authority-subsection-heading { min-width:0; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:start; gap:var(--theme-space-2); }
+.authority-subsection-heading > strong { min-width:0; overflow-wrap:break-word; word-break:normal; }
+.authority-subsection-heading > span { justify-self:end; white-space:nowrap; }

@@ -675,6 +675,9 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: var(--theme-space-2);
     }
+    body.ux-platform.opj-clean-journal-page .journal-workspace-actions > :is(a, button) {
+        grid-column: auto;
+    }
     body.ux-platform.opj-clean-journal-page .journal-workspace-actions .da-button {
         width: 100%;
         white-space: normal;
