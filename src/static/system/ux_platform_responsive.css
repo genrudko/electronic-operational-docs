@@ -1262,6 +1262,10 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         min-width: 2.75rem;
         min-height: 2.75rem;
     }
+
+    body.ux-platform.opj-clean-journal-page .journal-workspace-actions .da-button {
+        min-height: 2.75rem;
+    }
 }
 
 @media screen and (max-width: 38.75rem) {

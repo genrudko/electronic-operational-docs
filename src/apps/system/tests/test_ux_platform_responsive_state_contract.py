@@ -24,6 +24,11 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
         self.assertIn("@media screen and (max-width: 47.99rem)", surfaces)
         self.assertIn("Compact keeps mouse-oriented control density", responsive)
         self.assertIn("Phone is touch-first", surfaces)
+        phone = responsive[responsive.index("@media screen and (max-width: 47.99rem)") :]
+        self.assertIn(
+            "body.ux-platform.opj-clean-journal-page .journal-workspace-actions .da-button",
+            phone,
+        )
 
     def test_personnel_releases_content_width_before_shell_compacts(self) -> None:
         css = read("src/static/organizations/personnel_directory.css")
