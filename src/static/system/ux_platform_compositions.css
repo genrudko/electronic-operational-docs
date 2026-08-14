@@ -101,6 +101,12 @@ body.ux-platform .opdoc-filter-card + .da-card .da-table {
 .ux-form-grid > .ux-field-third { grid-column:span 4; }
 .ux-form-grid > .ux-field-two-thirds { grid-column:span 8; }
 
+/* Compact filter rows keep small filter sets and their actions in one controlled
+ * composition. They intentionally wrap by breakpoint, not by browser accident. */
+.ux-compact-filter-row { min-width:0; display:grid; grid-template-columns:minmax(16rem,1.25fr) minmax(13rem,.85fr) auto; align-items:end; gap:var(--theme-space-3); }
+.ux-compact-filter-row > * { min-width:0; }
+.ux-compact-filter-row > .ux-filter-actions { align-self:end; justify-content:flex-start; margin-block-start:0; }
+
 .ux-stat-grid { min-width:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(13.5rem,100%),1fr)); gap:var(--theme-space-3); margin-block:var(--theme-space-4); }
 .ux-stat { min-width:0; display:grid; align-content:start; gap:var(--theme-space-2); padding:var(--theme-space-4); border:1px solid var(--theme-border); border-radius:var(--theme-radius-lg); background:var(--theme-surface); color:var(--theme-text); box-shadow:var(--theme-shadow-sm); }
 .ux-stat > span,.ux-stat > small { color:var(--theme-text-muted); font-size:var(--theme-font-size-sm); line-height:1.35; }
@@ -109,27 +115,29 @@ body.ux-platform .opdoc-filter-card + .da-card .da-table {
 .ux-list-reset { margin:0; padding:0; list-style:none; }
 .ux-key-value { min-width:0; display:grid; grid-template-columns:minmax(8rem,.45fr) minmax(0,1fr); gap:var(--theme-space-2) var(--theme-space-4); margin:0; }
 .ux-key-value dt { color:var(--theme-text-muted); font-size:var(--theme-font-size-sm); }
-.ux-key-value dd { min-width:0; margin:0; overflow-wrap:anywhere; }
+.ux-key-value dd { min-width:0; margin:0; overflow-wrap:break-word; word-break:normal; }
 
+/* Human-readable copy keeps word boundaries. Only explicitly technical values
+ * retain arbitrary breaking for UUIDs, codes and other unspaced identifiers. */
 .ux-value-stack,.ux-cell-stack { min-width:0; display:grid; align-content:start; gap:var(--theme-space-1); }
-.ux-value-primary,.ux-cell-primary { min-width:0; color:var(--theme-text); font-weight:var(--theme-font-weight-semibold); line-height:1.35; overflow-wrap:anywhere; }
-.ux-value-secondary,.ux-cell-secondary { min-width:0; color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.4; overflow-wrap:anywhere; }
-.ux-technical,.ux-technical-chip { width:fit-content; max-width:100%; color:var(--theme-text-muted); font-family:var(--theme-font-mono); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-medium); line-height:1.35; overflow-wrap:anywhere; }
+.ux-value-primary,.ux-cell-primary { min-width:0; color:var(--theme-text); font-weight:var(--theme-font-weight-semibold); line-height:1.35; overflow-wrap:break-word; word-break:normal; }
+.ux-value-secondary,.ux-cell-secondary { min-width:0; color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.4; overflow-wrap:break-word; word-break:normal; }
+.ux-technical,.ux-technical-chip { width:fit-content; max-width:100%; color:var(--theme-text-muted); font-family:var(--theme-font-mono); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-medium); line-height:1.35; overflow-wrap:anywhere; word-break:break-word; }
 .ux-technical-chip { display:inline-flex; padding:.125rem .375rem; border:1px solid var(--theme-border); border-radius:var(--theme-radius-sm); background:var(--theme-surface-soft); }
-.ux-context-value { min-width:0; display:block; padding:var(--theme-space-2) var(--theme-space-3); border:1px solid var(--theme-border); border-radius:var(--theme-radius-sm); background:var(--theme-surface-soft); color:var(--theme-text); font-size:var(--theme-font-size-xs); line-height:1.4; overflow-wrap:anywhere; }
+.ux-context-value { min-width:0; display:block; padding:var(--theme-space-2) var(--theme-space-3); border:1px solid var(--theme-border); border-radius:var(--theme-radius-sm); background:var(--theme-surface-soft); color:var(--theme-text); font-size:var(--theme-font-size-xs); line-height:1.4; overflow-wrap:break-word; word-break:normal; }
 .ux-heading-count { display:inline-flex; min-width:1.75rem; min-height:1.75rem; align-items:center; justify-content:center; margin-inline-start:var(--theme-space-2); padding-inline:var(--theme-space-2); border:1px solid var(--theme-border); border-radius:var(--theme-radius-pill); background:var(--theme-surface-soft); color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-semibold); vertical-align:middle; }
 
 .ux-tree { display:grid; min-width:0; }
 .ux-tree-row { --ux-tree-depth:0; min-width:0; min-height:var(--theme-control-height-lg); display:grid; grid-template-columns:1.5rem minmax(0,1fr) auto; align-items:center; gap:var(--theme-space-2); padding:var(--theme-space-2) var(--theme-space-3); padding-inline-start:calc(var(--theme-space-3) + var(--ux-tree-depth) * var(--theme-space-4)); border-bottom:1px solid var(--theme-border); }
 .ux-tree-row__icon { width:1.125rem; height:1.125rem; align-self:start; margin-top:.15rem; color:var(--theme-primary); }
 .ux-tree-row__copy { min-width:0; display:grid; gap:var(--theme-space-1); }
-.ux-tree-row__primary { color:var(--theme-text); font-size:var(--theme-font-size-sm); font-weight:var(--theme-font-weight-semibold); line-height:1.35; overflow-wrap:anywhere; }
-.ux-tree-row__secondary { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.35; overflow-wrap:anywhere; }
+.ux-tree-row__primary { color:var(--theme-text); font-size:var(--theme-font-size-sm); font-weight:var(--theme-font-weight-semibold); line-height:1.35; overflow-wrap:break-word; word-break:normal; }
+.ux-tree-row__secondary { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.35; overflow-wrap:break-word; word-break:normal; }
 .ux-tree-row__meta { min-width:1.75rem; min-height:1.75rem; display:inline-grid; place-items:center; padding-inline:var(--theme-space-2); border:1px solid var(--theme-border); border-radius:var(--theme-radius-pill); background:var(--theme-surface-soft); color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-semibold); }
 
 .ux-profile-strip { grid-template-columns:repeat(auto-fit,minmax(min(15rem,100%),1fr)); }
 .ux-profile-strip .data-profile-chip { min-width:0; }
-.ux-profile-strip .data-profile-chip strong,.ux-readable-value { max-width:100%; overflow:visible; color:var(--theme-text); text-overflow:clip; white-space:normal; overflow-wrap:anywhere; line-height:1.35; }
+.ux-profile-strip .data-profile-chip strong,.ux-readable-value { max-width:100%; overflow:visible; color:var(--theme-text); text-overflow:clip; white-space:normal; overflow-wrap:break-word; word-break:normal; line-height:1.35; }
 .ux-launcher-grid { min-width:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(18rem,100%),1fr)); gap:var(--theme-space-3); margin-block:var(--theme-space-5); }
 .ux-launcher-card { min-width:0; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:var(--theme-space-3); color:var(--theme-text); text-decoration:none; }
 .ux-launcher-card:hover { border-color:var(--theme-primary); background:var(--theme-control-hover); color:var(--theme-text); }
@@ -142,7 +150,7 @@ body.ux-platform .opdoc-filter-card + .da-card .da-table {
 .ux-principle-grid > span { padding:var(--theme-space-3); border-inline-start:3px solid var(--theme-primary); border-radius:var(--theme-radius-sm); background:var(--theme-surface-soft); color:var(--theme-text-muted); }
 
 .da-user { min-height:5rem; }
-.da-user-copy strong { display:-webkit-box; overflow:hidden; -webkit-box-orient:vertical; -webkit-line-clamp:2; white-space:normal; text-overflow:clip; line-height:1.25; overflow-wrap:anywhere; }
+.da-user-copy strong { display:-webkit-box; overflow:hidden; -webkit-box-orient:vertical; -webkit-line-clamp:2; white-space:normal; text-overflow:clip; line-height:1.25; overflow-wrap:break-word; word-break:normal; }
 .da-user-copy small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.25; }
 
 body.ux-platform .dispatching-object-card.da-card { border-color:var(--theme-border)!important; background:var(--theme-surface)!important; color:var(--theme-text)!important; }
@@ -162,6 +170,29 @@ body.ux-platform .equipment-relation-list small { color:var(--theme-text-muted);
 /* Technical labels in tree/list consumers use the same semantic stack. */
 body.ux-platform .equipment-tree-row > .ux-value-stack { min-width:0; }
 
+/* Import registry top area uses deterministic, content-sized composition. KPI
+ * cards and the upload table remain owned by their existing contracts. */
+.import-page-header { grid-template-columns:minmax(24rem,.8fr) minmax(0,1.2fr); align-items:start; }
+.import-page-header > div:first-child { min-width:0; max-width:48rem; }
+.import-header-actions { min-width:0; display:grid; grid-template-columns:minmax(13rem,auto) minmax(0,1fr); align-items:start; justify-self:end; gap:var(--theme-space-2); }
+.import-header-actions__primary { grid-row:1 / span 2; align-self:stretch; }
+.import-header-nav { min-width:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--theme-space-2); }
+.import-header-nav .da-button { width:100%; min-width:0; white-space:normal; }
+.import-profile-grid { min-width:0; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--theme-space-3); }
+.import-profile-card { position:relative; min-width:0; display:grid; align-content:start; gap:var(--theme-space-2); padding:var(--theme-space-3) var(--theme-space-4); overflow:hidden; border:1px solid var(--theme-border); border-radius:var(--theme-radius-md); background:var(--theme-surface); color:var(--theme-text); text-decoration:none; }
+.import-profile-card::before { position:absolute; inset:0 auto 0 0; width:3px; background:var(--theme-primary); content:""; }
+.import-profile-card.is-sensitive::before { background:var(--theme-warning); }
+.import-profile-card strong { font-size:var(--theme-font-size-sm); line-height:1.35; overflow-wrap:break-word; word-break:normal; }
+.import-profile-card dl { min-width:0; display:grid; gap:var(--theme-space-2); margin:0; }
+.import-profile-card dl > div { min-width:0; display:grid; gap:var(--theme-space-1); }
+.import-profile-card dt { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-semibold); }
+.import-profile-card dd { min-width:0; margin:0; color:var(--theme-text); font-size:var(--theme-font-size-xs); line-height:1.4; overflow-wrap:break-word; word-break:normal; }
+.import-profile-card__description { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.4; overflow-wrap:break-word; word-break:normal; }
+.import-profile-card__metric { width:fit-content; display:inline-flex; align-items:baseline; gap:var(--theme-space-1); color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); white-space:normal; overflow-wrap:break-word; word-break:normal; }
+.import-profile-card__metric b { color:var(--theme-text); font-size:var(--theme-font-size-md); }
+.import-safety-notice { display:grid; gap:var(--theme-space-1); padding:var(--theme-space-3) var(--theme-space-4); }
+.import-safety-notice :where(strong,p) { margin:0; }
+
 /* Specialist OPJ remains denser than generic forms, but meaningful labels and
  * controls may not collapse into micro-typography. Platform owns interaction
  * geometry; feature CSS keeps journal-specific structure and behaviour. */
@@ -176,8 +207,9 @@ body.ux-platform.opj-workspace-page .opj-workspace-header[data-journal-title-siz
 body.ux-platform.opj-workspace-page .opj-workspace-meta { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:var(--theme-space-2); margin:0; font-size:var(--theme-font-size-xs); white-space:normal; }
 body.ux-platform.opj-workspace-page :is(.opj-shift-period,.opj-meta-item) { min-height:var(--theme-control-height-sm); padding:var(--theme-space-1) var(--theme-space-2); }
 body.ux-platform.opj-workspace-page .opj-registered-link { min-height:var(--theme-control-height-sm); padding:var(--theme-space-2) var(--theme-space-3); font-size:var(--theme-font-size-xs); }
-body.ux-platform.opj-workspace-page .opj-workspace[data-page-width="full"] { width:100%; max-width:none; }
+body.ux-platform.opj-workspace-page .opj-workspace[data-page-width="standard"] { width:min(100%,72rem); max-width:72rem; margin-inline:auto; }
 body.ux-platform.opj-workspace-page .opj-workspace[data-page-width="wide"] { width:min(100%,124rem); max-width:none; }
+body.ux-platform.opj-workspace-page .opj-workspace[data-page-width="full"] { width:100%; max-width:none; }
 body.ux-platform.opj-workspace-page .opj-workspace[data-page-width="full"] .opj-editor-container { width:100%; max-width:none; }
 body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="single"] .opj-editor-container { display:grid; grid-template-columns:minmax(0,1fr); width:100%; max-width:none; min-width:0; padding:var(--theme-space-3); overflow:visible; background:var(--theme-surface-soft); }
 body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="single"] .opj-ledger-surface { width:min(100%,112rem); max-width:100%; min-width:0; margin-inline:auto; }
@@ -203,7 +235,7 @@ body.ux-platform.opj-workspace-page .opj-tool-group > small { font-size:var(--th
 body.ux-platform.opj-clean-journal-page .journal-workspace-bar { min-width:0; align-items:start; gap:var(--theme-space-4); padding:var(--theme-space-4) var(--theme-space-5); }
 body.ux-platform.opj-clean-journal-page .journal-workspace-title { min-width:0; display:grid; gap:var(--theme-space-2); }
 body.ux-platform.opj-clean-journal-page .journal-workspace-title .eyebrow { margin:0; font-size:var(--theme-font-size-xs); letter-spacing:.075em; line-height:1.2; }
-body.ux-platform.opj-clean-journal-page .journal-workspace-title h1 { margin:0; font-size:clamp(1.35rem,1.3vw,1.75rem); line-height:1.15; overflow-wrap:anywhere; }
+body.ux-platform.opj-clean-journal-page .journal-workspace-title h1 { margin:0; font-size:clamp(1.35rem,1.3vw,1.75rem); line-height:1.15; overflow-wrap:break-word; word-break:normal; }
 body.ux-platform.opj-clean-journal-page .journal-workspace-meta { display:flex; flex-wrap:wrap; gap:var(--theme-space-2); color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); }
 body.ux-platform.opj-clean-journal-page .journal-workspace-actions { align-items:center; gap:var(--theme-space-2); }
 
@@ -211,14 +243,26 @@ body.ux-platform.opj-clean-journal-page .journal-workspace-actions { align-items
     .da-page-header.ux-page-header-balanced { grid-template-columns:1fr; }
     .ux-page-header-balanced .da-actions { width:100%; justify-self:start; justify-content:flex-start; }
     .ux-page-header-balanced .da-actions .da-button { white-space:normal; }
+    .import-page-header { grid-template-columns:1fr; }
+    .import-header-actions { width:100%; justify-self:stretch; grid-template-columns:minmax(12rem,auto) minmax(0,1fr); }
     body.ux-platform.opj-workspace-page .opj-workspace-header { grid-template-columns:minmax(0,1fr) auto; }
     body.ux-platform.opj-workspace-page .opj-workspace-meta { grid-column:1 / -1; justify-content:flex-start; }
+}
+@media (max-width:64rem) {
+    .ux-compact-filter-row { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .ux-compact-filter-row > .ux-filter-actions { grid-column:1 / -1; }
+    .import-profile-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .import-header-actions { grid-template-columns:1fr; }
+    .import-header-actions__primary { grid-row:auto; }
 }
 @media (max-width:52rem) {
     .ux-detail-grid { grid-template-columns:1fr; }
     .ux-form-grid > *,.ux-form-grid > .ux-field-half,.ux-form-grid > .ux-field-third,.ux-form-grid > .ux-field-two-thirds { grid-column:1 / -1; }
     .ux-form-actions,.ux-filter-actions { justify-content:stretch; }
     .ux-form-actions > :where(a,button),.ux-filter-actions > :where(a,button) { flex:1 1 12rem; }
+    .ux-compact-filter-row { grid-template-columns:1fr; }
+    .ux-compact-filter-row > .ux-filter-actions { grid-column:auto; }
+    .import-header-nav { grid-template-columns:1fr 1fr; }
     body.ux-platform.opj-workspace-page .opj-workspace-header { grid-template-columns:1fr; }
     body.ux-platform.opj-workspace-page .opj-workspace-meta { grid-column:auto; justify-content:flex-start; }
     body.ux-platform.opj-workspace-page .opj-registered-link { justify-self:start; }
@@ -232,4 +276,5 @@ body.ux-platform.opj-clean-journal-page .journal-workspace-actions { align-items
     .ux-launcher-card > .da-status { grid-column:2; justify-self:start; }
     .ux-table-actions { width:100%; }
     .ux-table-actions > :where(.da-button,.ux-button) { flex:1 1 auto; }
+    .import-profile-grid,.import-header-nav { grid-template-columns:1fr; }
 }
