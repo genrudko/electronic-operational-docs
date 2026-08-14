@@ -16,6 +16,10 @@
 .opdoc-filter-grid{gap:var(--theme-space-3)}
 .opdoc-date-range{min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--theme-space-3)}
 .opdoc-filter-grid>.ux-form-actions{margin-block-start:0;padding-block-start:var(--theme-space-1)}
+.opdoc-record-identity{display:grid;gap:var(--theme-space-1)}
+.opdoc-record-meta{display:flex;min-width:0;flex-wrap:wrap;align-items:baseline;gap:var(--theme-space-1);color:var(--theme-text-muted);font-size:var(--theme-font-size-xs);line-height:1.35}
+.opdoc-record-meta__technical{font-weight:var(--theme-font-weight-semibold)}
+.opdoc-record-meta__technical::before{margin-inline-end:var(--theme-space-1);color:var(--theme-border-strong);content:"·"}
 @media(max-width:52rem){.opdoc-registry-page{gap:var(--theme-space-2)}.opdoc-registry-notices,.opdoc-date-range{grid-template-columns:1fr}.opdoc-filter-grid>:is(.ux-field-two-thirds,.ux-field-third,.ux-field-full,.ux-form-actions){grid-column:1/-1}.opdoc-filter-grid>.ux-form-actions{justify-content:stretch}.opdoc-filter-grid>.ux-form-actions>:where(a,button){flex:1 1 10rem}}
 </style>
 {% endblock %}
@@ -68,7 +72,7 @@
         {% equipment_defect_status_presentation record as defect_status %}
         <tr{% if not record.is_source_bound %} class="technical-record-row"{% endif %}>
         <td>{{ record.event_at|date:"d.m.Y H:i" }}</td>
-        <td><a href="{% url 'operational_documents:record_detail' record.public_id %}"><strong>{{ record.registration_number }}</strong></a><br><span class="ux-muted">{{ record.document_type.short_name|default:record.document_type.name }}</span>{% if not record.is_source_bound %}<span class="da-status-chip is-warning">Техническая запись</span>{% endif %}</td>
+        <td><div class="opdoc-record-identity"><a href="{% url 'operational_documents:record_detail' record.public_id %}"><strong>{{ record.registration_number }}</strong></a><div class="opdoc-record-meta"><span>{{ record.document_type.short_name|default:record.document_type.name }}</span>{% if not record.is_source_bound %}<span class="opdoc-record-meta__technical" title="Техническая запись ядра, не связанная с утверждённой формой">Техническая запись</span>{% endif %}</div></div></td>
         <td><strong>{{ record.title }}</strong>{% if record.summary %}<div class="ux-muted">{{ record.summary|truncatechars:140 }}</div>{% endif %}</td>
         <td>{% for value in record.visible_values %}<div><span class="ux-muted">{{ value.label }}:</span> {{ value.display|truncatechars:100 }}</div>{% empty %}<span class="ux-muted">Нет отображаемых граф</span>{% endfor %}</td>
         <td>{{ record.workplace_name_snapshot|default:"—" }}</td>
