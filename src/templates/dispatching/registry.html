@@ -32,7 +32,7 @@
 
 <details class="da-card filter-disclosure" {% if query or level_type %}open{% endif %}>
     <summary><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-search"></use></svg> Поиск и фильтры</summary>
-    <form method="get" class="ux-form-grid disclosure-body equipment-filter-form">
+    <form method="get" class="ux-compact-filter-row disclosure-body equipment-filter-form">
         <div class="da-field">
             <label for="dispatching-search">Оборудование или субъект</label>
             <input id="dispatching-search" type="search" name="q" value="{{ query }}" placeholder="Например: КЛ 35 кВ или Региональный ДЦ">
@@ -44,7 +44,7 @@
                 {% for value, label in level_types %}<option value="{{ value }}" {% if level_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
             </select>
         </div>
-        <div class="ux-filter-actions ux-field-full">
+        <div class="ux-filter-actions">
             <button class="da-button" type="submit">Найти</button>
             {% if query or level_type %}<a class="da-button is-tertiary" href="{% url 'dispatching:registry' %}">Сбросить</a>{% endif %}
         </div>
