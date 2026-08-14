@@ -97,4 +97,5 @@
     .personnel-directory-workspace { grid-template-columns:minmax(18rem,20rem) minmax(0,1fr); gap:var(--theme-space-3); }
 }
 @media (max-width:59.375rem) { .personnel-recent-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .personnel-directory-workspace { grid-template-columns:1fr; } .personnel-directory-sidebar { position:static; } }
+@media (max-width:47.99rem) { .personnel-contours > .personnel-contour-card:last-child:nth-child(odd) { grid-column:1 / -1; } }
 @media (max-width:38.75rem) { .personnel-recent-grid { grid-template-columns:1fr; } .personnel-management-actions { min-width:0; width:100%; } .personnel-management-actions .da-button { flex:1 1 auto; } .personnel-service-relation { grid-template-columns:1fr; } .personnel-service-relation > small { white-space:normal; } }
