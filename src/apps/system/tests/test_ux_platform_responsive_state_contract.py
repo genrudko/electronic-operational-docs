@@ -67,6 +67,7 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
         responsive = read("src/static/system/ux_platform_responsive.css")
         surfaces = read("src/static/system/ux_mobile_surfaces.css")
         defect_registry = read("src/static/equipment_defects/ux_foundation_repair2_registry.css")
+        opj_registered = read("src/static/operational_log/opj_registered_actions.css")
 
         self.assertIn("overflow-wrap: break-word", responsive)
         self.assertIn("word-break: normal", responsive)
@@ -79,6 +80,9 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
             "{overflow-wrap:break-word;word-break:normal;}",
             defect_registry,
         )
+        rich_paragraph = opj_registered[opj_registered.index(".opj-rich-paragraph") :]
+        self.assertIn("overflow-wrap: break-word", rich_paragraph)
+        self.assertIn("word-break: normal", rich_paragraph)
 
     def test_compact_opj_is_disclosure_based_and_spread_is_sequential(self) -> None:
         responsive = read("src/static/system/ux_platform_responsive.css")
