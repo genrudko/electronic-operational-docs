@@ -44,7 +44,7 @@
                 {% for value, label in level_types %}<option value="{{ value }}" {% if level_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
             </select>
         </div>
-        <div class="ux-filter-actions">
+        <div class="ux-filter-actions ux-field-full">
             <button class="da-button" type="submit">Найти</button>
             {% if query or level_type %}<a class="da-button is-tertiary" href="{% url 'dispatching:registry' %}">Сбросить</a>{% endif %}
         </div>
