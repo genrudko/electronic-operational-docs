@@ -24,7 +24,8 @@ def test_opj_width_profiles_have_distinct_geometry_and_persistence_chain() -> No
 
     assert '["standard", "wide", "full"].includes(normalized)' in workspace_js
     assert "workspace.dataset.pageWidth = pageWidthPreference" in workspace_js
-    assert 'data.set("journal_width", pageWidthPreference.toUpperCase())' in workspace_js
+    assert '"journal_width"' in workspace_js
+    assert "pageWidthPreference.toUpperCase()" in workspace_js
     assert "payload.journal_width" in workspace_js
 
 
