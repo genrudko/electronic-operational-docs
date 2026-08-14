@@ -28,7 +28,7 @@
 .defect-da-work-row:hover{z-index:1;background:#f8fbff;box-shadow:inset 3px 0 0 #3a8dcc;}
 .defect-da-work-row > div{display:grid;min-width:0;gap:4px;align-content:center;padding:11px 12px;border-right:1px solid #edf0f4;}
 .defect-da-work-row > div:last-child{border-right:0;}
-.defect-da-work-row strong,.defect-da-work-row a{overflow-wrap:anywhere;}
+.defect-da-work-row strong,.defect-da-work-row a{overflow-wrap:break-word;word-break:normal;}
 .defect-da-work-row strong{color:var(--da-text);font-size:.76rem;line-height:1.38;}
 .defect-da-work-row small,.defect-da-work-row span:not(.defect-status){color:var(--da-muted);font-size:.66rem;line-height:1.35;}
 .defect-da-work-description a{color:var(--da-text);font-size:.78rem;font-weight:720;line-height:1.42;text-decoration:none;}

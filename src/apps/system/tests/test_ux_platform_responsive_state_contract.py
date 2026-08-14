@@ -66,6 +66,7 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
     def test_human_text_uses_word_boundaries_and_only_technical_codes_use_anywhere(self) -> None:
         responsive = read("src/static/system/ux_platform_responsive.css")
         surfaces = read("src/static/system/ux_mobile_surfaces.css")
+        defect_registry = read("src/static/equipment_defects/ux_foundation_repair2_registry.css")
 
         self.assertIn("overflow-wrap: break-word", responsive)
         self.assertIn("word-break: normal", responsive)
@@ -73,6 +74,11 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
         self.assertEqual(responsive.count("overflow-wrap: anywhere"), 1)
         technical_rule = responsive[responsive.index(".authority-evaluation-technical code") :]
         self.assertIn("overflow-wrap: anywhere", technical_rule)
+        self.assertIn(
+            ".defect-da-work-row strong,.defect-da-work-row a"
+            "{overflow-wrap:break-word;word-break:normal;}",
+            defect_registry,
+        )
 
     def test_compact_opj_is_disclosure_based_and_spread_is_sequential(self) -> None:
         responsive = read("src/static/system/ux_platform_responsive.css")
