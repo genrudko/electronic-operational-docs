@@ -390,6 +390,8 @@ def capture_surface(
     if route == "defect_registry" and width <= 980:
         surface_selector = ".defect-da-work-row"
     node = need(page, surface_selector)
+    page.mouse.move(0, 0)
+    page.wait_for_timeout(20)
     actual = style(node)
     expected = resolved_background(page, TOKENS[route])
     width_state = document_width(page)
