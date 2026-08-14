@@ -864,7 +864,7 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
     body.ux-platform.opj-workspace-page .opj-ledger-surface {
         width: 100%;
         max-width: 100%;
-        min-width: 0;
+        min-width: 0 !important;
         border: 0;
         background: transparent;
         box-shadow: none;
@@ -1265,6 +1265,23 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
 
     body.ux-platform.opj-clean-journal-page .journal-workspace-actions .da-button {
         min-height: 2.75rem;
+    }
+
+    html body.ux-platform.opj-workspace-page :is(
+        .opj-page-navigation button.da-icon-button,
+        button.da-icon-button.draft-row-action,
+        button.draft-editor-ribbon-button
+    ) {
+        min-width: 2.75rem;
+        width: 2.75rem;
+        min-height: 2.75rem;
+        height: 2.75rem;
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-tool-group button.draft-editor-ribbon-button {
+        width: auto;
+        min-height: 2.75rem;
+        height: auto;
     }
 }
 

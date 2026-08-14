@@ -29,6 +29,9 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
             "body.ux-platform.opj-clean-journal-page .journal-workspace-actions .da-button",
             phone,
         )
+        self.assertIn("button.da-icon-button.draft-row-action", phone)
+        self.assertIn("button.draft-editor-ribbon-button", phone)
+        self.assertIn("min-width: 0 !important", responsive)
 
     def test_personnel_releases_content_width_before_shell_compacts(self) -> None:
         css = read("src/static/organizations/personnel_directory.css")
