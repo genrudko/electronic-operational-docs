@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Перечни документации рабочих мест · ЭОД{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'system/ux_mobile_surfaces.css' %}?v=uxmobile001">{% endblock %}
 
 {% block content %}
 <section class="da-page-header da-page-header-compact">
@@ -23,7 +25,7 @@
 
 <section class="da-card ux-stack workplace-document-registry">
     <div class="da-panel-heading"><div><span class="ux-kicker">Рабочие места</span><h2>Действующие перечни</h2></div>{% if storage_forms %}<span class="ux-counter ux-readable-value">Формы хранения: {{ storage_forms|join:", " }}</span>{% endif %}</div>
-    <div class="da-table-wrap"><table class="da-table"><thead><tr><th>Рабочее место</th><th>Перечень</th><th>Редакция</th><th>Действует</th><th>Следующий пересмотр</th><th>Состояние</th></tr></thead><tbody>
+    <div class="da-table-wrap workplace-document-desktop-table"><table class="da-table"><thead><tr><th>Рабочее место</th><th>Перечень</th><th>Редакция</th><th>Действует</th><th>Следующий пересмотр</th><th>Состояние</th></tr></thead><tbody>
     {% for row in rows %}<tr>
         <td><div class="ux-cell-stack"><strong class="ux-cell-primary">{{ row.document_list.workplace.name }}</strong>{% if row.document_list.workplace.division %}<small class="ux-cell-secondary">{{ row.document_list.workplace.division.name }}</small>{% endif %}</div></td>
         <td>{% if row.revision %}<a href="{% url 'workplace_docs:detail' row.document_list.pk %}">{{ row.document_list.title }}</a>{% else %}{{ row.document_list.title }}{% endif %}</td>
@@ -33,5 +35,24 @@
         <td>{% if row.review_state == 'OVERDUE' %}<span class="da-status-chip is-danger">Пересмотр просрочен</span>{% elif row.review_state == 'DUE_SOON' %}<span class="da-status-chip is-warning">Скоро пересмотр</span>{% elif row.review_state == 'CURRENT' %}<span class="da-status-chip is-success">Действует</span>{% else %}<span class="da-status-chip is-warning">Нет действующей редакции</span>{% endif %}</td>
     </tr>{% empty %}<tr><td colspan="6"><div class="ux-empty-state">Для организации пока не утверждены перечни документации.</div></td></tr>{% endfor %}
     </tbody></table></div>
+    <ul class="workplace-document-mobile-list" aria-label="Действующие перечни документации">
+        {% for row in rows %}
+        <li class="ux-mobile-record-card">
+            <header class="ux-mobile-record-card__header">
+                <div class="ux-mobile-record-card__title">
+                    {% if row.revision %}<a href="{% url 'workplace_docs:detail' row.document_list.pk %}">{{ row.document_list.title }}</a>{% else %}<strong>{{ row.document_list.title }}</strong>{% endif %}
+                    <span class="ux-muted">{{ row.document_list.workplace.name }}{% if row.document_list.workplace.division %} · {{ row.document_list.workplace.division.name }}{% endif %}</span>
+                </div>
+                {% if row.review_state == 'OVERDUE' %}<span class="da-status-chip is-danger">Просрочен</span>{% elif row.review_state == 'DUE_SOON' %}<span class="da-status-chip is-warning">Скоро пересмотр</span>{% elif row.review_state == 'CURRENT' %}<span class="da-status-chip is-success">Действует</span>{% else %}<span class="da-status-chip is-warning">Нет редакции</span>{% endif %}
+            </header>
+            <dl class="ux-mobile-record-card__meta">
+                <div><dt>Редакция</dt><dd>{% if row.revision %}№ {{ row.revision.revision_number }}{% else %}—{% endif %}</dd></div>
+                <div><dt>Следующий пересмотр</dt><dd>{% if row.revision %}{{ row.revision.next_review_date|date:"d.m.Y" }}{% else %}—{% endif %}</dd></div>
+                <div class="is-wide"><dt>Период действия</dt><dd>{% if row.revision %}с {{ row.revision.effective_from|date:"d.m.Y" }}{% if row.revision.effective_until %} по {{ row.revision.effective_until|date:"d.m.Y" }}{% endif %}{% else %}—{% endif %}</dd></div>
+            </dl>
+            {% if row.revision %}<div class="ux-mobile-record-card__actions"><a class="da-button is-secondary" href="{% url 'workplace_docs:detail' row.document_list.pk %}">Открыть перечень</a></div>{% endif %}
+        </li>
+        {% empty %}<li class="ux-empty-state">Для организации пока не утверждены перечни документации.</li>{% endfor %}
+    </ul>
 </section>
 {% endblock %}
