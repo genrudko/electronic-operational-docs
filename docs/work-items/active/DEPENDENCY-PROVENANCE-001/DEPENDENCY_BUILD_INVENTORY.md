@@ -4,7 +4,7 @@
 
 ## Итог
 
-- tracked files: `935`;
+- tracked files: `937`;
 - inventory entries: `85`;
 - floating inputs: `17`;
 - immutable inputs: `67`;
@@ -29,7 +29,7 @@
 - Containers: Dockerfiles=['Dockerfile', 'deploy/automation/Dockerfile.development', 'supply-chain/Dockerfile.browser']; Compose=['compose.development.yaml', 'compose.preview.yaml', 'compose.production.yaml', 'compose.yaml', 'deploy/automation/compose.development.yaml'].
 - GitHub Actions: workflows=`12`; temporary=NONE.
 - External downloads: `0`; local runtime probes excluded=`True`.
-- Static assets: tracked=`69`; external references=`1`.
+- Static assets: tracked=`70`; external references=`1`.
 
 ## Totals by class
 
