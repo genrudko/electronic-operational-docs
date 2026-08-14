@@ -42,8 +42,16 @@ def test_personnel_contours_use_server_resolvable_destinations() -> None:
 
     assert 'data-initial-view="{{ initial_view }}"' in authority
     assert 'request.GET.view|default:"matrix"' in authority
-    assert 'data-authority-panel="dispatch"{% if initial_view != \'dispatch\' %} hidden' in authority
-    assert 'data-authority-panel="related"{% if initial_view != \'related\' %} hidden' in authority
+    dispatch_contract = (
+        'data-authority-panel="dispatch"'
+        "{% if initial_view != 'dispatch' %} hidden"
+    )
+    related_contract = (
+        'data-authority-panel="related"'
+        "{% if initial_view != 'related' %} hidden"
+    )
+    assert dispatch_contract in authority
+    assert related_contract in authority
 
 
 def test_personnel_grid_geometry_has_intentional_stretch_ownership() -> None:
@@ -73,10 +81,14 @@ def test_authority_controls_headers_and_audit_have_semantic_contracts() -> None:
     assert "Развернуть всё" in js
     assert "Свернуть всё" in js
 
-    assert ".authority-right-header > :is(.matrix-sticky-name,.matrix-sticky-position,.matrix-sticky-qualification)" in css
+    identity_header_selector = (
+        ".authority-right-header > "
+        ":is(.matrix-sticky-name,.matrix-sticky-position,.matrix-sticky-qualification)"
+    )
+    assert identity_header_selector in css
     assert "vertical-align:middle" in css
 
-    assert "data-active-view=\"{{ initial_view }}\"" in template
+    assert 'data-active-view="{{ initial_view }}"' in template
     assert 'authority-toolbar[data-active-view="checks"]' in css
     assert "toolbar.dataset.activeView = activeView" in js
 
