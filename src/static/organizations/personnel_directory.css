@@ -9,8 +9,8 @@
 .personnel-directory-summary span { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.35; }
 .personnel-directory-summary strong { color:var(--theme-text); font-size:var(--theme-font-size-xl); }
 
-.personnel-contours { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(13rem,100%),1fr)); align-items:start; gap:var(--theme-space-2); }
-.personnel-contour-card { display:grid; min-width:0; align-content:start; gap:var(--theme-space-1); padding:var(--theme-space-3); border:1px solid var(--theme-border); border-radius:var(--theme-radius-md); background:var(--theme-surface); color:var(--theme-text); text-decoration:none; }
+.personnel-contours { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(13rem,100%),1fr)); align-items:stretch; gap:var(--theme-space-2); }
+.personnel-contour-card { display:grid; min-width:0; height:100%; grid-template-rows:auto minmax(0,1fr) auto; align-content:start; gap:var(--theme-space-1); padding:var(--theme-space-3); border:1px solid var(--theme-border); border-radius:var(--theme-radius-md); background:var(--theme-surface); color:var(--theme-text); text-decoration:none; }
 .personnel-contour-card:hover { border-color:var(--theme-primary); background:var(--theme-primary-soft); }
 .personnel-contour-card:focus-visible { outline:var(--theme-focus-width) solid var(--theme-focus); outline-offset:var(--theme-focus-offset); }
 .personnel-contour-card[aria-current="page"],.personnel-contour-card.is-current { border-color:var(--theme-primary); background:var(--theme-selected); }
@@ -21,7 +21,7 @@
 .personnel-contour-card h3,.personnel-contour-card p { margin:0; }
 .personnel-contour-card h3 { font-size:var(--theme-font-size-sm); }
 .personnel-contour-card p { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.4; }
-.personnel-contour-organizations { display:flex; flex-wrap:wrap; gap:var(--theme-space-1); }
+.personnel-contour-organizations { display:flex; align-self:end; flex-wrap:wrap; gap:var(--theme-space-1); }
 .personnel-contour-organizations span { padding:.2rem var(--theme-space-2); border-radius:var(--theme-radius-pill); background:var(--theme-surface-soft); color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); }
 
 .personnel-directory-workspace { display:grid; grid-template-columns:minmax(19rem,22rem) minmax(0,1fr); align-items:start; gap:var(--theme-space-3); min-width:0; }
@@ -59,14 +59,18 @@
 
 .personnel-management-actions { display:flex; flex-wrap:wrap; align-items:center; gap:var(--theme-space-2); min-width:max-content; }
 .personnel-management-actions .da-button { flex:0 0 auto; min-height:var(--theme-control-height-sm); padding-inline:var(--theme-space-3); }
-.personnel-directory-relation-heading { display:flex; align-items:center; gap:var(--theme-space-2); }
+.personnel-directory-relation-heading { display:flex; align-items:center; gap:var(--theme-space-2); padding:var(--theme-space-2) var(--theme-space-4); border-bottom:1px solid var(--theme-border); background:var(--theme-surface); }
 .personnel-directory-relation-heading > span { display:inline-grid; min-width:1.75rem; min-height:1.75rem; place-items:center; padding-inline:var(--theme-space-2); border:1px solid var(--theme-border); border-radius:var(--theme-radius-pill); background:var(--theme-surface-soft); color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-semibold); }
-.personnel-recent-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--theme-space-4); }
+.personnel-recent-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:var(--theme-space-4); }
 .personnel-recent-list { display:grid; }
 .personnel-recent-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:var(--theme-space-2); padding:var(--theme-space-3); border-bottom:1px solid var(--theme-border); }
 .personnel-recent-row strong,.personnel-recent-row span,.personnel-recent-row time { display:block; }
 .personnel-recent-row strong { font-size:var(--theme-font-size-sm); }
 .personnel-recent-row span,.personnel-recent-row time { margin-top:var(--theme-space-1); color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.35; }
+.personnel-service-relations { display:grid!important; gap:var(--theme-space-1); margin-top:var(--theme-space-2)!important; }
+.personnel-service-relation { display:grid!important; grid-template-columns:minmax(0,1fr) auto; align-items:baseline; gap:var(--theme-space-2); margin:0!important; padding:var(--theme-space-1) 0; border-top:1px solid var(--theme-border); color:var(--theme-text)!important; }
+.personnel-service-relation > span { min-width:0; margin:0!important; color:var(--theme-text)!important; overflow-wrap:break-word; word-break:normal; }
+.personnel-service-relation > small { margin:0; color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); white-space:nowrap; }
 
 @media (min-width:100rem) {
     body.ux-platform .da-page:has(.personnel-directory-page) {
@@ -87,6 +91,10 @@
     }
 }
 
-@media (max-width:70rem) { .personnel-directory-workspace { grid-template-columns:minmax(18rem,20rem) minmax(0,1fr); gap:var(--theme-space-3); } }
+@media (max-width:70rem) {
+    .personnel-contours { align-items:start; }
+    .personnel-contour-card { height:auto; grid-template-rows:auto; }
+    .personnel-directory-workspace { grid-template-columns:minmax(18rem,20rem) minmax(0,1fr); gap:var(--theme-space-3); }
+}
 @media (max-width:59.375rem) { .personnel-recent-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .personnel-directory-workspace { grid-template-columns:1fr; } .personnel-directory-sidebar { position:static; } }
-@media (max-width:38.75rem) { .personnel-recent-grid { grid-template-columns:1fr; } .personnel-management-actions { min-width:0; width:100%; } .personnel-management-actions .da-button { flex:1 1 auto; } }
+@media (max-width:38.75rem) { .personnel-recent-grid { grid-template-columns:1fr; } .personnel-management-actions { min-width:0; width:100%; } .personnel-management-actions .da-button { flex:1 1 auto; } .personnel-service-relation { grid-template-columns:1fr; } .personnel-service-relation > small { white-space:normal; } }
