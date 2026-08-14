@@ -126,4 +126,5 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
         self.assertIn("TRANSITION_WIDTHS + tuple(reversed(TRANSITION_WIDTHS[:-1]))", browser)
         self.assertIn("responsive transition document overflow", browser)
         self.assertIn("responsive transition human-word shredding", browser)
+        self.assertIn('surface_selector = ".defect-da-work-row"', browser)
         self.assertIn("capture_responsive_transitions(page, shots, report, runtime_errors)", browser)

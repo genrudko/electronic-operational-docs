@@ -386,7 +386,10 @@ def capture_surface(
     if route == "login":
         mask_public_demo_password(page)
     theme(page, mode)
-    node = need(page, SELECTORS[route])
+    surface_selector = SELECTORS[route]
+    if route == "defect_registry" and width <= 980:
+        surface_selector = ".defect-da-work-row"
+    node = need(page, surface_selector)
     actual = style(node)
     expected = resolved_background(page, TOKENS[route])
     width_state = document_width(page)
