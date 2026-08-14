@@ -853,7 +853,7 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         overflow: visible;
         padding: 0;
     }
-    body.ux-platform.opj-workspace-page .opj-secondary-page { display: none !important; }
+    body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="single"] .opj-secondary-page { display: none !important; }
     body.ux-platform.opj-workspace-page :is(.opj-ledger-header, .opj-ledger-date, .opj-ledger-footer, .draft-column-resizer) { display: none; }
     body.ux-platform.opj-workspace-page .opj-ledger-surface {
         width: 100%;
@@ -947,4 +947,250 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
     body.ux-platform .authority-matrix-page .authority-tabs { grid-template-columns: 1fr; }
     body.ux-platform.opj-clean-journal-page .journal-workspace-actions,
     body.ux-platform.opj-workspace-page .opj-toolbar-actions { grid-template-columns: 1fr; }
+}
+
+/* Final mobile functional closure.
+ * Breakpoint map: shell/generic tables <=52rem; domain mobile compositions
+ * (DEFECT worklist, OPJ, Rights, Documentation and Imports) <=47.99rem;
+ * Personnel contours use 1 column <=38.75rem, 2 columns below desktop,
+ * and the accepted five-card desktop row from 80rem upward.
+ */
+.authority-evaluation-technical { display: none; }
+
+@media screen and (max-width: 47.99rem) {
+    /* DEFECT working list is an ordinary registry, not an intrinsic-wide form. */
+    body.ux-platform .defect-da-work-table {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        overflow: visible;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+    body.ux-platform .defect-da-work-head { display: none; }
+    body.ux-platform .defect-da-work-body {
+        min-width: 0;
+        display: grid;
+        gap: var(--theme-space-3);
+    }
+    body.ux-platform .defect-da-work-row {
+        width: 100%;
+        min-width: 0;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow: hidden;
+        border: 1px solid var(--theme-border);
+        border-radius: var(--theme-radius-md);
+        background: var(--theme-surface);
+        box-shadow: var(--theme-shadow-sm);
+    }
+    body.ux-platform .defect-da-work-row > div {
+        min-width: 0;
+        display: grid;
+        align-content: start;
+        gap: var(--theme-space-1);
+        padding: var(--theme-space-3);
+        border-right: 0;
+        border-bottom: 1px solid var(--theme-border);
+        overflow-wrap: break-word;
+        word-break: normal;
+    }
+    body.ux-platform .defect-da-work-row > div::before {
+        content: attr(data-column-title);
+        color: var(--theme-text-muted);
+        font-size: var(--theme-font-size-xs);
+        font-weight: var(--theme-font-weight-semibold);
+        line-height: 1.3;
+    }
+    body.ux-platform .defect-da-work-row > div:last-child { border-bottom: 0; }
+    body.ux-platform .defect-da-work-number { grid-column: 1; justify-items: start; text-align: left; }
+    body.ux-platform .defect-da-work-date { grid-column: 2; }
+    body.ux-platform :is(
+        .defect-da-work-equipment,
+        .defect-da-work-description,
+        .defect-da-work-status,
+        .defect-da-work-owner
+    ) { grid-column: 1 / -1; }
+    body.ux-platform .defect-da-work-row :is(strong, a, small, span) {
+        overflow-wrap: break-word;
+        word-break: normal;
+    }
+    body.ux-platform .defect-da-work-description a {
+        min-height: 2.75rem;
+        display: flex;
+        align-items: center;
+    }
+    body.ux-platform .defect-da-sequence-badge { min-height: 2.75rem; }
+    body.ux-platform .defect-da-status { max-width: 100%; white-space: normal; }
+
+    /* OPJ: compact primary commands stay visible without a horizontal ribbon. */
+    body.ux-platform.opj-workspace-page .opj-toolbar-actions {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        overflow: visible;
+    }
+    body.ux-platform.opj-workspace-page .opj-toolbar-actions > *,
+    body.ux-platform.opj-workspace-page .opj-toolbar-actions form,
+    body.ux-platform.opj-workspace-page .opj-toolbar-actions .da-button,
+    body.ux-platform.opj-workspace-page .opj-ribbon-toggle,
+    body.ux-platform.opj-workspace-page .opj-view-switch {
+        min-width: 0;
+        width: 100%;
+    }
+    body.ux-platform.opj-workspace-page .opj-view-switch {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    body.ux-platform.opj-workspace-page .opj-view-switch [data-view-mode="spread"] { display: inline-flex; }
+    body.ux-platform.opj-workspace-page .opj-toolbar-actions .da-button > span,
+    body.ux-platform.opj-workspace-page .opj-view-switch > button > span,
+    body.ux-platform.opj-workspace-page .opj-ribbon-toggle-mobile-label { display: inline; }
+    body.ux-platform.opj-workspace-page .opj-ribbon-toggle-label { display: none; }
+    body.ux-platform.opj-workspace-page .opj-editor-tools,
+    body.ux-platform.opj-workspace-page .draft-editor-ribbon-groups {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        overflow: visible;
+    }
+
+    /* Spread becomes two sequential full-width pages on phones. */
+    body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="spread"] .opj-editor-container {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--theme-space-4);
+        padding: 0;
+        overflow: visible;
+        background: transparent;
+    }
+    body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="spread"] .opj-secondary-page:not([hidden]) {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+    body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="spread"] [data-page-shell]::before {
+        display: block;
+        padding: var(--theme-space-2) var(--theme-space-3);
+        border-bottom: 1px solid var(--theme-border);
+        background: var(--theme-surface-soft);
+        color: var(--theme-text-muted);
+        font-size: var(--theme-font-size-xs);
+        font-weight: var(--theme-font-weight-semibold);
+        line-height: 1.3;
+    }
+    body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="spread"] [data-page-shell="left"]::before {
+        content: "Первая страница разворота";
+    }
+    body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="spread"] [data-page-shell="right"]::before {
+        content: "Вторая страница разворота";
+    }
+    body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="spread"] .opj-ledger-footer {
+        min-height: 2.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: var(--theme-space-1);
+        padding: var(--theme-space-2) var(--theme-space-3);
+        border-top: 1px solid var(--theme-border);
+        background: var(--theme-surface-soft);
+        color: var(--theme-text-muted);
+        font-size: var(--theme-font-size-xs);
+        font-weight: var(--theme-font-weight-semibold);
+    }
+    body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="spread"] .opj-ledger-footer::before {
+        content: "Страница ";
+    }
+
+    /* Rights History keeps human audit context primary and technical IDs opt-in. */
+    body.ux-platform [data-authority-panel="checks"] .authority-evaluation-row {
+        margin-bottom: 0;
+        border-radius: var(--theme-radius-md) var(--theme-radius-md) 0 0;
+    }
+    body.ux-platform [data-authority-panel="checks"] .authority-evaluation-row .ux-technical { display: none; }
+    body.ux-platform [data-authority-panel="checks"] .authority-evaluation-technical {
+        min-width: 0;
+        display: block;
+        margin-bottom: var(--theme-space-2);
+        overflow: hidden;
+        border: 1px solid var(--theme-border);
+        border-top: 0;
+        border-radius: 0 0 var(--theme-radius-md) var(--theme-radius-md);
+        background: var(--theme-surface-soft);
+    }
+    body.ux-platform [data-authority-panel="checks"] .authority-evaluation-technical > summary {
+        min-height: 2.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--theme-space-2);
+        padding: var(--theme-space-2) var(--theme-space-3);
+        color: var(--theme-text-muted);
+        font-size: var(--theme-font-size-xs);
+        font-weight: var(--theme-font-weight-semibold);
+        cursor: pointer;
+    }
+    body.ux-platform [data-authority-panel="checks"] .authority-evaluation-technical > summary::after {
+        content: "+";
+        color: var(--theme-primary);
+        font-size: var(--theme-font-size-md);
+        font-weight: var(--theme-font-weight-bold);
+    }
+    body.ux-platform [data-authority-panel="checks"] .authority-evaluation-technical[open] > summary::after { content: "−"; }
+    body.ux-platform [data-authority-panel="checks"] .authority-evaluation-technical dl {
+        display: grid;
+        gap: var(--theme-space-2);
+        margin: 0;
+        padding: 0 var(--theme-space-3) var(--theme-space-3);
+    }
+    body.ux-platform [data-authority-panel="checks"] .authority-evaluation-technical dl > div {
+        min-width: 0;
+        display: grid;
+        grid-template-columns: minmax(7rem, .35fr) minmax(0, 1fr);
+        gap: var(--theme-space-2);
+    }
+    body.ux-platform [data-authority-panel="checks"] .authority-evaluation-technical :is(dt, dd) {
+        min-width: 0;
+        margin: 0;
+        font-size: var(--theme-font-size-xs);
+        line-height: 1.4;
+    }
+    body.ux-platform [data-authority-panel="checks"] .authority-evaluation-technical dt {
+        color: var(--theme-text-muted);
+        font-weight: var(--theme-font-weight-semibold);
+    }
+    body.ux-platform [data-authority-panel="checks"] .authority-evaluation-technical dd { color: var(--theme-text); }
+    body.ux-platform [data-authority-panel="checks"] .authority-evaluation-technical code {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    /* Ordinary phone surfaces must own their width; intrinsic-wide forms are excluded. */
+    body.ux-platform :is(
+        .defect-da-work-table,
+        .authority-mobile-matrix,
+        .workplace-document-mobile-list,
+        .workplace-document-entry-mobile-list,
+        .import-attempt-mobile-list
+    ) {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+}
+
+@media screen and (max-width: 38.75rem) {
+    body.ux-platform .personnel-contours { grid-template-columns: 1fr; }
+    body.ux-platform .personnel-contours > .personnel-contour-card:last-child:nth-child(odd) { grid-column: auto; }
+}
+
+@media screen and (min-width: 38.76rem) and (max-width: 79.99rem) {
+    body.ux-platform .personnel-contours { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    body.ux-platform .personnel-contours > .personnel-contour-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+
+@media screen and (min-width: 80rem) {
+    body.ux-platform .personnel-contours { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    body.ux-platform .personnel-contours > .personnel-contour-card:last-child:nth-child(odd) { grid-column: auto; }
 }

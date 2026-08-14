@@ -45,6 +45,35 @@ class UxPlatformMobileClosureSourceContractTests(SimpleTestCase):
         self.assertIn("min-height: 2.75rem", css)
         self.assertIn(".opj-clean-summary-meta", css)
 
+    def test_final_responsive_owner_keeps_phone_toolbar_compact_and_spread_sequential(self) -> None:
+        responsive = read("src/static/system/ux_platform_responsive.css")
+        page = read("src/templates/operational_log/shift_workspace.html")
+
+        self.assertIn("Final mobile functional closure", responsive)
+        self.assertIn("grid-template-columns: repeat(3, minmax(0, 1fr))", responsive)
+        self.assertIn('.opj-view-switch [data-view-mode="spread"] { display: inline-flex; }', responsive)
+        self.assertIn('.opj-workspace[data-view-mode="single"] .opj-secondary-page { display: none !important; }', responsive)
+        self.assertIn('[data-page-shell="left"]::before', responsive)
+        self.assertIn('content: "Первая страница разворота";', responsive)
+        self.assertIn('[data-page-shell="right"]::before', responsive)
+        self.assertIn('content: "Вторая страница разворота";', responsive)
+        self.assertIn('data-page-shell="left"', page)
+        self.assertIn('data-page-shell="right"', page)
+
+    def test_defect_worklist_uses_phone_cards_at_platform_mobile_breakpoint(self) -> None:
+        template = read("src/templates/equipment_defects/_registry_repair2_worklist.html")
+        responsive = read("src/static/system/ux_platform_responsive.css")
+
+        self.assertIn("data-defect-mobile-register", template)
+        self.assertIn("defect-da-work-head", template)
+        self.assertIn("defect-da-work-row", template)
+        self.assertIn("@media screen and (max-width: 47.99rem)", responsive)
+        self.assertIn("body.ux-platform .defect-da-work-head { display: none; }", responsive)
+        self.assertIn("body.ux-platform .defect-da-work-row {", responsive)
+        self.assertIn("overflow-wrap: break-word", responsive)
+        self.assertIn("word-break: normal", responsive)
+        self.assertIn("body.ux-platform .defect-da-sequence-badge { min-height: 2.75rem; }", responsive)
+
     def test_operational_document_revisions_have_phone_audit_cards(self) -> None:
         template = read("src/templates/operational_documents/record_detail.html")
 
@@ -115,12 +144,36 @@ class UxPlatformMobileClosureSourceContractTests(SimpleTestCase):
         self.assertIn("authority-condition-popover", template)
         self.assertIn("authority-qualification-layout", template)
 
+    def test_rights_history_hides_technical_metadata_behind_phone_disclosure(self) -> None:
+        template = read("src/templates/organizations/authority_registry.html")
+        responsive = read("src/static/system/ux_platform_responsive.css")
+
+        self.assertIn('class="authority-evaluation-technical"', template)
+        self.assertIn("<summary>Технические сведения</summary>", template)
+        self.assertIn("Код операции", template)
+        self.assertIn("item.action_code|authority_action_technical_label", template)
+        self.assertIn("item.subject_type", template)
+        self.assertIn("item.subject_id", template)
+        self.assertIn(".authority-evaluation-technical { display: none; }", responsive)
+        self.assertIn('.authority-evaluation-row .ux-technical { display: none; }', responsive)
+        self.assertIn("min-height: 2.75rem", responsive)
+
     def test_personnel_odd_contour_owns_full_phone_row_only(self) -> None:
         css = read("src/static/organizations/personnel_directory.css")
 
         self.assertIn("@media (max-width:47.99rem)", css)
         self.assertIn(".personnel-contours > .personnel-contour-card:last-child:nth-child(odd)", css)
         self.assertIn("grid-column:1 / -1", css)
+
+    def test_personnel_contours_have_predictable_phone_tablet_and_desktop_columns(self) -> None:
+        responsive = read("src/static/system/ux_platform_responsive.css")
+
+        self.assertIn("@media screen and (max-width: 38.75rem)", responsive)
+        self.assertIn("@media screen and (min-width: 38.76rem) and (max-width: 79.99rem)", responsive)
+        self.assertIn("@media screen and (min-width: 80rem)", responsive)
+        self.assertIn("body.ux-platform .personnel-contours { grid-template-columns: 1fr; }", responsive)
+        self.assertIn("body.ux-platform .personnel-contours { grid-template-columns: repeat(2, minmax(0, 1fr)); }", responsive)
+        self.assertIn("body.ux-platform .personnel-contours { grid-template-columns: repeat(5, minmax(0, 1fr)); }", responsive)
 
     def test_new_phone_surfaces_preserve_desktop_tables(self) -> None:
         opdoc = read("src/templates/operational_documents/record_detail.html")

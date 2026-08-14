@@ -252,6 +252,14 @@
                 <span class="authority-evaluation-subject" role="cell"><strong>{{ item.subject_id|authority_subject_label }}</strong><code class="ux-technical">{{ item.subject_type }} · {{ item.subject_id }}</code></span>
                 <span class="authority-evaluation-result" role="cell"><span class="authority-status {{ item.decision|authority_decision_tone }}">{{ item.get_decision_display }}</span></span>
             </a>
+            <details class="authority-evaluation-technical">
+                <summary>Технические сведения</summary>
+                <dl>
+                    <div><dt>Код операции</dt><dd><code>{{ item.action_code|authority_action_technical_label }}</code></dd></div>
+                    <div><dt>Контекст</dt><dd>{{ item.organization.short_name|default:item.organization.name }} · {{ item.scope_label|default:item.get_scope_kind_display }}</dd></div>
+                    <div><dt>Объект</dt><dd><code>{{ item.subject_type }} · {{ item.subject_id }}</code></dd></div>
+                </dl>
+            </details>
             {% endfor %}
         </div>
         {% else %}<div class="authority-empty"><strong>Проверки ещё не выполнялись</strong></div>{% endif %}
