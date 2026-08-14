@@ -5,6 +5,7 @@
     const tabs = [...root.querySelectorAll("[data-authority-view]")];
     const panels = [...root.querySelectorAll("[data-authority-panel]")];
     const workspace = root.querySelector("[data-authority-workspace]");
+    const toolbar = root.querySelector(".authority-toolbar");
     const search = root.querySelector("[data-authority-search]");
     const category = root.querySelector("[data-authority-category]");
     const group = root.querySelector("[data-authority-group]");
@@ -15,8 +16,10 @@
     const holderRows = [...root.querySelectorAll("[data-holder-row]")];
     const matrixSections = [...root.querySelectorAll("[data-division-section]")];
     const collapsers = [...root.querySelectorAll("[data-collapse-division]")];
+    const expandAll = root.querySelector("[data-expand-all]");
     const supportedViews = tabs.map((item) => item.dataset.authorityView);
-    let activeView = "matrix";
+    const serverView = root.dataset.initialView || "matrix";
+    let activeView = supportedViews.includes(serverView) ? serverView : "matrix";
     let selectedDivision = "";
     let conditionalOnly = false;
     const collapsed = new Set();
@@ -43,6 +46,18 @@
     const holderMatch = (row) => matrixMatch(row)
         && (!right?.value || row.dataset.rightCode === right.value)
         && (!conditionalOnly || row.dataset.condition === "conditional");
+
+    const syncExpandAllControl = () => {
+        if (!expandAll) return;
+        const allExpanded = collapsed.size === 0;
+        expandAll.setAttribute("aria-expanded", String(allExpanded));
+        const action = allExpanded ? "Свернуть всё" : "Развернуть всё";
+        expandAll.setAttribute("aria-label", `${action} подразделения`);
+        expandAll.title = action;
+        const label = expandAll.querySelector("[data-expand-all-label]");
+        if (label) label.textContent = action;
+        expandAll.classList.toggle("is-collapsed", !allExpanded);
+    };
 
     const applyFilters = () => {
         let visible = 0;
@@ -78,7 +93,13 @@
         if (noResults) noResults.classList.toggle("is-visible", visible === 0);
     };
 
-    const activateView = (view) => {
+    const syncUrlView = (view) => {
+        const url = new URL(window.location.href);
+        url.searchParams.set("view", view);
+        window.history.replaceState(null, "", url);
+    };
+
+    const activateView = (view, { syncUrl = false } = {}) => {
         activeView = supportedViews.includes(view) ? view : "matrix";
         tabs.forEach((tab) => tab.setAttribute(
             "aria-pressed",
@@ -88,21 +109,23 @@
             panel.hidden = panel.dataset.authorityPanel !== activeView;
         });
         if (workspace) workspace.hidden = !["matrix", "holders"].includes(activeView);
+        if (toolbar) toolbar.dataset.activeView = activeView;
         root.querySelectorAll("[data-filter-for]").forEach((field) => {
             field.hidden = !field.dataset.filterFor.split(" ").includes(activeView);
         });
+        if (syncUrl) syncUrlView(activeView);
         applyFilters();
     };
 
     tabs.forEach((tab) => tab.addEventListener("click", () => {
         conditionalOnly = false;
-        activateView(tab.dataset.authorityView);
+        activateView(tab.dataset.authorityView, { syncUrl: true });
     }));
 
     root.querySelectorAll("[data-summary-view]").forEach((button) => {
         button.addEventListener("click", () => {
             conditionalOnly = button.dataset.summaryCondition === "true";
-            activateView(button.dataset.summaryView);
+            activateView(button.dataset.summaryView, { syncUrl: true });
         });
     });
 
@@ -115,6 +138,7 @@
         treeItems.forEach((item) => item.classList.toggle("is-active", item === button));
         collapsed.clear();
         collapsers.forEach((item) => item.setAttribute("aria-expanded", "true"));
+        syncExpandAllControl();
         applyFilters();
     }));
 
@@ -123,12 +147,22 @@
         if (collapsed.has(id)) collapsed.delete(id);
         else collapsed.add(id);
         button.setAttribute("aria-expanded", String(!collapsed.has(id)));
+        syncExpandAllControl();
         applyFilters();
     }));
 
-    root.querySelector("[data-expand-all]")?.addEventListener("click", () => {
-        collapsed.clear();
-        collapsers.forEach((button) => button.setAttribute("aria-expanded", "true"));
+    expandAll?.addEventListener("click", () => {
+        if (collapsed.size === 0) {
+            collapsers.forEach((button) => {
+                const id = button.dataset.collapseDivision;
+                if (id) collapsed.add(id);
+                button.setAttribute("aria-expanded", "false");
+            });
+        } else {
+            collapsed.clear();
+            collapsers.forEach((button) => button.setAttribute("aria-expanded", "true"));
+        }
+        syncExpandAllControl();
         applyFilters();
     });
 
@@ -294,8 +328,9 @@
     window.addEventListener("resize", scheduleConditionPlacement);
     window.addEventListener("scroll", scheduleConditionPlacement, true);
 
-    // Matrix is the complete server-rendered initial state. JavaScript only
-    // enhances explicit user interaction after first paint; it never replays
-    // URL state or performs an initial layout/view recomposition.
+    // The server owns the initial panel, selected tab and scoped contact data.
+    // JavaScript begins from that exact state and only enhances later interaction.
+    syncExpandAllControl();
+    if (toolbar) toolbar.dataset.activeView = activeView;
     applyFilters();
 })();
