@@ -3,34 +3,37 @@
 {% block title %}Импорт справочников · ЭОД{% endblock %}
 
 {% block content %}
-<section class="da-page-header ux-page-header-balanced">
+<section class="da-page-header import-page-header">
     <div>
         <span class="ux-kicker">Безопасная промежуточная зона</span>
         <h1>Импорт справочников</h1>
         <p>Загруженные файлы разбираются отдельно и не изменяют действующие справочники.</p>
     </div>
-    <div class="da-actions">
-        <a class="da-button is-secondary" href="{% url 'imports:data_profiles' %}">Профили данных</a>
-        <a class="da-button is-secondary" href="{% url 'imports:power_system_list' %}">Редакции импорта оборудования</a>
-        <a class="da-button is-secondary" href="{% url 'imports:personnel_list' %}">Импорт персонала и прав</a>
-        <a class="da-button is-secondary" href="{% url 'imports:workplace_document_list' %}">Импорт документации рабочих мест</a>
-        <a class="da-button" href="{% url 'imports:upload' %}">Обычный импорт CSV/XLSX</a>
+    <div class="import-header-actions" aria-label="Действия и разделы импорта">
+        <a class="da-button import-header-actions__primary" href="{% url 'imports:upload' %}">Обычный импорт CSV/XLSX</a>
+        <nav class="import-header-nav" aria-label="Разделы импорта">
+            <a class="da-button is-secondary" href="{% url 'imports:data_profiles' %}">Профили данных</a>
+            <a class="da-button is-secondary" href="{% url 'imports:power_system_list' %}">Редакции оборудования</a>
+            <a class="da-button is-secondary" href="{% url 'imports:personnel_list' %}">Персонал и права</a>
+            <a class="da-button is-secondary" href="{% url 'imports:workplace_document_list' %}">Документация рабочих мест</a>
+        </nav>
     </div>
 </section>
 
-<section class="data-profile-strip ux-profile-strip" aria-label="Профили данных организации">
+<section class="import-profile-grid" aria-label="Профили данных организации">
     {% for profile in profiles %}
-    <article class="data-profile-chip profile-kind-{{ profile.kind|lower }}">
-        <div>
-            <strong class="ux-readable-value">{{ profile.name }}</strong>
-            <span>{{ profile.get_sensitivity_level_display }}</span>
-        </div>
-        <small class="ux-readable-value">{{ profile.get_export_policy_display }}</small>
+    <article class="import-profile-card profile-kind-{{ profile.kind|lower }}{% if profile.sensitivity_level != 'SAFE_DEMO' %} is-sensitive{% endif %}">
+        <strong class="ux-readable-value">{{ profile.name }}</strong>
+        <dl>
+            <div><dt>Уровень данных</dt><dd class="ux-readable-value">{{ profile.get_sensitivity_level_display }}</dd></div>
+            <div><dt>Экспорт</dt><dd class="ux-readable-value">{{ profile.get_export_policy_display }}</dd></div>
+        </dl>
     </article>
     {% endfor %}
-    <a class="data-profile-chip mapping-chip" href="{% url 'imports:data_profiles' %}">
-        <div><strong class="ux-readable-value">Схемы сопоставления</strong><span class="ux-readable-value">Повторное использование структуры файлов</span></div>
-        <small class="ux-readable-value">{{ mapping_template_count }} действующих</small>
+    <a class="import-profile-card" href="{% url 'imports:data_profiles' %}">
+        <strong class="ux-readable-value">Схемы сопоставления</strong>
+        <span class="import-profile-card__description ux-readable-value">Повторное использование структуры файлов</span>
+        <span class="import-profile-card__metric ux-readable-value"><b>{{ mapping_template_count }}</b> действующих</span>
     </a>
 </section>
 
