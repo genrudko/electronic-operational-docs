@@ -2,7 +2,7 @@
 
 ## STATUS
 
-`REPAIR V13 / IMPLEMENTATION AND GATES`
+`REPAIR V13 / READY FOR OWNER VISUAL ACCEPTANCE`
 
 Issue: `#69`
 
@@ -178,7 +178,76 @@ The implementation contract is:
 
 The canonical browser harness now performs the mandatory same-page continuous resize down and back up at widths `1440, 1280, 1180, 1100, 1024, 976, 950, 900, 832, 768, 600, 440, 412, 390` in both themes for Personnel, Rights, Imports, Workplace Documentation, DEFECT, OPJ registry and OPJ draft workspace. It blocks document overflow, human-word shredding, stale desktop compositions below the shared boundary and OPJ toolbar overflow.
 
-Repair v13 technical evidence, exact-head workflow results, trusted persistent Development deployment and executor visual verdict must be recorded here after they exist. Until then, and until a new owner walkthrough occurs, `OWNER VISUAL ACCEPTANCE` remains `PENDING`; Draft PR `#70` must remain Draft and unmerged.
+### Repair v13 automated responsive evidence
+
+The final rendered responsive evidence is `PASS` on runtime presentation head:
+
+`569dfb2725d9a8ce8469a41b98360a5404c545b6`
+
+Development Stack evidence run:
+
+`31831510836 / SUCCESS`
+
+Retained artifact:
+
+- name: `ux-platform-responsive-evidence-31831510836`;
+- id: `9231015034`;
+- size: `110865141` bytes;
+- digest: `sha256:d09c82105e300d93fd7c01e71de1430e757b086795f35118839cad65522b00ef`;
+- GitHub retention record expires `2026-08-28`.
+
+The exact-head run checked out `569dfb2725d9a8ce8469a41b98360a5404c545b6`, created the canonical fixtures, used real server-side demo authentication, executed the responsive harness, uploaded the retained evidence, re-verified application health and finished with a clean repository tree.
+
+The artifact contains 306 fixed-viewport baseline states and 378 continuous-transition states. Fourteen transition groups cover seven core routes in both themes, with 27 same-page resize observations per group: 14 widths down from `1440` to `390` and 13 widths back up to `1440`. The observed width set is `1440, 1280, 1180, 1100, 1024, 976, 950, 900, 832, 768, 600, 440, 412, 390`.
+
+Blocking rendered results:
+
+- baseline runtime errors: `0`;
+- baseline document overflows: `0`;
+- transition runtime errors: `0`;
+- transition document overflows: `0`;
+- human-word wrapping violations: `0`;
+- transient interaction states retained: `13`;
+- deterministic light print isolation: `PASS`.
+
+The applicable source regression contracts, full Django application suite (`866` tests, `OK`, `skipped=3`), lint, compile, system check, dependency projections and documentation contracts also pass locally after the runtime presentation repair.
+
+### Repair v13 executor rendered walkthrough
+
+`CONTINUOUS RESIZE REVIEW: PASS`
+
+The retained evidence was manually reviewed after the automated gate. Personnel, Rights and OPJ were inspected through wide, desktop, compact and phone states in both themes; DEFECT, Workplace Documentation and Imports received the required compact/phone regression review. Wide `1920x1080` and `2560x1440` compositions were reviewed separately in light and dark themes. No new owner-visible responsive cliff, one-character human-word column, required toolbar panning or ordinary document-level overflow was identified.
+
+### Repair v13 closure matrix
+
+| ID | Item | Result | Evidence |
+| --- | --- | --- | --- |
+| R13-01 | Personnel workspace transition | `CLOSED` | Workspace stacks at the shared compact boundary; down/up geometry evidence has no document overflow. |
+| R13-02 | Personnel nested panel wrapping | `CLOSED` | Recent/nested panels collapse to one column before the narrow parent state; human-wrap gate reports `0` violations. |
+| R13-03 | Personnel external contacts | `CLOSED` | Compact full-width composition and phone stacking remain readable in retained light/dark screenshots. |
+| R13-04 | Personnel contour responsive state | `CLOSED` | Desktop contour grid is preserved; compact and phone states transition without a conflicting shell/content state. |
+| R13-05 | Rights Matrix compact state | `CLOSED` | Existing employee-first grouped composition activates at the shared compact boundary before identity columns consume the matrix. |
+| R13-06 | Rights secondary views compact state | `CLOSED` | Secondary rights tables use the established compact/stacked representation; History keeps its accepted disclosure behaviour. |
+| R13-07 | OPJ compact toolbar | `CLOSED` | Primary commands remain visible and secondary formatting stays behind `Формат`; toolbar overflow assertion passes at every transition width. |
+| R13-08 | OPJ registry compact state | `CLOSED` | Compact registry rows/cards replace the dense desktop table before journal text becomes pathological. |
+| R13-09 | DEFECT responsive transition | `CLOSED` | Compact worklist/cards are coherent; the normative register remains the explicit container-owned local-scroll exception. |
+| R13-10 | Documentation responsive transition | `CLOSED` | Compact/phone card transition occurs before table text becomes unreadable; no document overflow. |
+| R13-11 | Import responsive transition | `CLOSED` | Filename/profile/status/uploader content remains readable through compact and phone representations. |
+| R13-12 | Human word wrapping | `CLOSED` | Shared human-text contract uses normal word boundaries; `anywhere` is limited to technical identifiers; rendered violations `0`. |
+| R13-13 | No ordinary horizontal page overflow | `CLOSED` | Baseline and continuous-transition document overflow counts are both `0`. |
+| R13-14 | Desktop regression | `CLOSED` | `1920x1080` primary and `2560x1440` wide compositions manually reviewed in both themes; accepted desktop geometry preserved. |
+| R13-15 | Phone regression | `CLOSED` | `390`, `412` and `440` states retain cards/accordions, sequential OPJ layout and 44px-class touch controls. |
+| R13-16 | Light/dark regression | `CLOSED` | Identical geometry gate and manual review pass in both themes across wide, compact and phone states. |
+
+### Repair v13 trusted-controller boundary
+
+The evidence harness was temporarily wired into `.github/workflows/development-stack.yml` solely to create exact-head browser evidence. It is not part of the deliverable. The final controller-compatible candidate restores that workflow byte-for-byte to trusted `main` blob:
+
+`7e74a4f8ca85b631b49b303d6eb118e64ab72e2f`
+
+No application/runtime presentation file changed after `569dfb2725d9a8ce8469a41b98360a5404c545b6`. Source-neutral closure is limited to restoring the trusted workflow boundary, recording this canonical evidence and regenerating deterministic dependency projections. The final exact PR head is therefore runtime-identical to the rendered evidence head and remains eligible for the trusted persistent Development controller.
+
+This is technical/executor acceptance only. `OWNER VISUAL ACCEPTANCE` remains `PENDING`; Draft PR `#70` must remain Draft, open, unmerged and not Ready for Review until the owner performs the new walkthrough.
 
 ## HARD BOUNDARIES
 
@@ -194,8 +263,8 @@ Stop only at a technically and visually complete Draft PR ready for direct owner
 
 - one final exact head;
 - source contract, full Django suite and all applicable repository gates green;
-- Repair v7 automated browser evidence and mobile/wide proof green on runtime presentation head `eabd9a3281673ababc9beb7ce737ca01346a04cf`;
-- executor manual review of the retained Repair v7 artifact = `PASS`;
+- Repair v13 automated browser evidence and continuous down/up transition proof green on runtime presentation head `569dfb2725d9a8ce8469a41b98360a5404c545b6`;
+- executor manual review of the retained Repair v13 artifact = `PASS`;
 - no application/runtime presentation change after that evidence head;
 - trusted Development workflow restored byte-for-byte to the trusted main blob before privileged deployment;
 - deterministic dependency inventory exact for the final head;
