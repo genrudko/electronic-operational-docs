@@ -1,0 +1,588 @@
+/* UX-PLATFORM-FOUNDATION-001
+ * Mobile functional data-surface compositions.
+ *
+ * This is a bounded platform owner for phone-only record, audit, disclosure and
+ * command-group patterns shared by Repair v12 consumers. Desktop presentation,
+ * domain semantics and business workflows remain feature-owned.
+ */
+
+.ux-mobile-surface,
+.opdoc-revision-mobile-list,
+.workplace-document-mobile-list,
+.workplace-document-entry-mobile-list,
+.import-attempt-mobile-list,
+.authority-mobile-matrix,
+.opj-mobile-command-caption,
+.opj-ribbon-toggle-mobile-label {
+    display: none;
+}
+
+@media screen and (max-width: 47.99rem) {
+    .ux-mobile-surface,
+    .opdoc-revision-mobile-list,
+    .workplace-document-mobile-list,
+    .workplace-document-entry-mobile-list,
+    .import-attempt-mobile-list,
+    .authority-mobile-matrix {
+        min-width: 0;
+        display: grid;
+        gap: var(--theme-space-3);
+    }
+
+    .ux-mobile-record-card,
+    .ux-mobile-audit-card {
+        min-width: 0;
+        display: grid;
+        gap: var(--theme-space-3);
+        padding: var(--theme-space-3);
+        border: 1px solid var(--theme-border);
+        border-radius: var(--theme-radius-md);
+        background: var(--theme-surface);
+        box-shadow: var(--theme-shadow-sm);
+        color: var(--theme-text);
+    }
+
+    .ux-mobile-record-card__header,
+    .ux-mobile-audit-card__header {
+        min-width: 0;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--theme-space-3);
+    }
+
+    .ux-mobile-record-card__title,
+    .ux-mobile-audit-card__title {
+        min-width: 0;
+        display: grid;
+        gap: var(--theme-space-1);
+    }
+
+    .ux-mobile-record-card__title :is(strong, a),
+    .ux-mobile-audit-card__title :is(strong, a) {
+        color: var(--theme-text);
+        font-size: var(--theme-font-size-md);
+        font-weight: var(--theme-font-weight-bold);
+        line-height: 1.35;
+        overflow-wrap: break-word;
+        word-break: normal;
+    }
+
+    .ux-mobile-record-card__title a,
+    .ux-mobile-audit-card__title a {
+        color: var(--theme-primary);
+        text-decoration: none;
+    }
+
+    .ux-mobile-record-card__title a:hover,
+    .ux-mobile-audit-card__title a:hover { color: var(--theme-primary-hover); }
+
+    .ux-mobile-record-card__title a:focus-visible,
+    .ux-mobile-audit-card__title a:focus-visible {
+        outline: var(--theme-focus-width) solid var(--theme-focus);
+        outline-offset: var(--theme-focus-offset);
+    }
+
+    .ux-mobile-record-card__meta,
+    .ux-mobile-audit-card__meta {
+        min-width: 0;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--theme-space-2) var(--theme-space-3);
+        margin: 0;
+    }
+
+    .ux-mobile-record-card__meta > div,
+    .ux-mobile-audit-card__meta > div {
+        min-width: 0;
+        display: grid;
+        align-content: start;
+        gap: var(--theme-space-1);
+    }
+
+    .ux-mobile-record-card__meta > div.is-wide,
+    .ux-mobile-audit-card__meta > div.is-wide { grid-column: 1 / -1; }
+
+    .ux-mobile-record-card__meta dt,
+    .ux-mobile-audit-card__meta dt {
+        color: var(--theme-text-muted);
+        font-size: var(--theme-font-size-xs);
+        font-weight: var(--theme-font-weight-semibold);
+        line-height: 1.3;
+    }
+
+    .ux-mobile-record-card__meta dd,
+    .ux-mobile-audit-card__meta dd {
+        min-width: 0;
+        margin: 0;
+        color: var(--theme-text);
+        font-size: var(--theme-font-size-sm);
+        line-height: 1.4;
+        overflow-wrap: break-word;
+        word-break: normal;
+    }
+
+    .ux-mobile-record-card__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--theme-space-2);
+    }
+
+    .ux-mobile-record-card__actions :is(.da-button, button, a) { min-height: 2.75rem; }
+
+    /* Operational documents: the desktop revision table remains canonical above
+     * phone width; phone users receive one audit event per card. */
+    .opdoc-revision-history .opdoc-revision-desktop-table { display: none; }
+    .opdoc-revision-mobile-list { list-style: none; margin: 0; padding: 0; }
+    .opdoc-revision-mobile-list .da-status-chip { width: fit-content; max-width: 100%; }
+    .opdoc-revision-comment {
+        margin: 0;
+        padding-top: var(--theme-space-2);
+        border-top: 1px solid var(--theme-border);
+        color: var(--theme-text);
+        font-size: var(--theme-font-size-sm);
+        line-height: 1.45;
+        overflow-wrap: break-word;
+        word-break: normal;
+    }
+
+    /* Workplace documentation is an ordinary registry on phones. */
+    .workplace-document-registry .workplace-document-desktop-table,
+    .workplace-document-entries .workplace-document-entry-desktop-table { display: none; }
+    .workplace-document-mobile-list,
+    .workplace-document-entry-mobile-list { list-style: none; margin: 0; padding: 0; }
+    .workplace-document-mobile-list .da-status-chip { width: fit-content; max-width: 100%; }
+    .workplace-document-entry-code {
+        width: fit-content;
+        max-width: 100%;
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: normal;
+    }
+
+    /* Import attempts are audit-like units rather than a horizontally panned
+     * desktop table. Status remains compact and human labels wrap normally. */
+    .import-attempts-panel .import-attempt-desktop-table { display: none; }
+    .import-attempt-mobile-list { list-style: none; margin: 0; padding: 0; }
+    .import-attempt-mobile-list :is(.import-status, .data-profile-badge) {
+        width: fit-content;
+        max-width: 100%;
+        white-space: normal;
+    }
+
+    /* Personnel contour grid: an odd final contour owns the full last row. */
+    body.ux-platform .personnel-contours > .personnel-contour-card:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+    }
+
+    /* OPJ phone command composition. The accepted desktop ribbon is untouched;
+     * at phone width compact mode keeps operational groups visible, while Text
+     * and Paragraph become secondary formatting exposed by the existing ribbon
+     * disclosure. */
+    html body.ux-platform.opj-workspace-page .opj-workspace-meta {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--theme-space-2);
+        overflow: visible;
+        white-space: normal;
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-workspace-meta .opj-shift-period {
+        grid-column: 1 / -1;
+        white-space: normal;
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-workspace-meta :is(.opj-shift-period, .opj-meta-item) {
+        min-width: 0;
+        min-height: 2.75rem;
+        justify-content: flex-start;
+        border-radius: var(--theme-radius-md);
+        line-height: 1.3;
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-clean-summary {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--theme-space-3);
+        padding: var(--theme-space-3);
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-clean-summary-main {
+        min-width: 0;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: var(--theme-space-2);
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-clean-summary-main > strong { min-width: 0; }
+    html body.ux-platform.opj-workspace-page .opj-clean-summary-meta {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--theme-space-2);
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-clean-summary-meta > span {
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        min-height: 2.5rem;
+        padding: var(--theme-space-2);
+        border: 1px solid var(--theme-border);
+        border-radius: var(--theme-radius-sm);
+        background: var(--theme-surface-soft);
+        color: var(--theme-text-muted);
+        line-height: 1.35;
+        white-space: normal;
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-clean-summary-meta > span:last-child { grid-column: 1 / -1; }
+    html body.ux-platform.opj-workspace-page .opj-clean-summary-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--theme-space-2);
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-clean-summary-actions .da-button { width: 100%; }
+
+    html body.ux-platform.opj-workspace-page .opj-toolbar-actions :is(.da-button, .opj-ribbon-toggle, .opj-view-switch > button),
+    html body.ux-platform.opj-workspace-page .opj-page-navigation .da-icon-button,
+    html body.ux-platform.opj-workspace-page .opj-toolbar-search .da-field,
+    html body.ux-platform.opj-workspace-page .draft-page-jump input,
+    html body.ux-platform.opj-workspace-page .draft-row-action,
+    html body.ux-platform.opj-workspace-page .draft-empty-record-add,
+    html body.ux-platform.opj-workspace-page .opj-register-draft-button,
+    html body.ux-platform.opj-workspace-page .opj-dialog-header .da-icon-button {
+        min-height: 2.75rem;
+    }
+
+    html body.ux-platform.opj-workspace-page :is(.draft-row-action, .draft-empty-record-add, .opj-dialog-header .da-icon-button) {
+        width: 2.75rem;
+        min-width: 2.75rem;
+        height: 2.75rem;
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-ribbon-toggle-label { display: none; }
+    html body.ux-platform.opj-workspace-page .opj-ribbon-toggle-mobile-label { display: inline; }
+
+    html body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode="compact"] .opj-editor-toolbar,
+    html body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode="expanded"] .opj-editor-toolbar {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--theme-space-2);
+        padding: var(--theme-space-3);
+        overflow: visible;
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-editor-toolbar-context { display: none; }
+
+    html body.ux-platform.opj-workspace-page .opj-editor-tools,
+    html body.ux-platform.opj-workspace-page .draft-editor-ribbon-groups {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--theme-space-2);
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-tool-group {
+        min-width: 0;
+        display: grid;
+        align-content: start;
+        gap: var(--theme-space-2);
+        padding: var(--theme-space-2);
+        border: 1px solid var(--theme-border);
+        border-radius: var(--theme-radius-md);
+        background: var(--theme-surface-soft);
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-tool-group > small {
+        order: -1;
+        display: block;
+        min-width: 0;
+        color: var(--theme-text-muted);
+        font-size: var(--theme-font-size-xs);
+        font-weight: var(--theme-font-weight-semibold);
+        line-height: 1.3;
+        white-space: normal;
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-tool-group .draft-editor-ribbon-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: stretch;
+        gap: var(--theme-space-1);
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-tool-group .draft-editor-ribbon-button {
+        flex: 1 1 2.75rem;
+        width: auto;
+        min-width: 2.75rem;
+        min-height: 2.75rem;
+        height: auto;
+        padding: var(--theme-space-2);
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-tool-group .draft-entry-kind-trigger,
+    html body.ux-platform.opj-workspace-page .opj-time-format-toggle { flex-basis: 100%; }
+
+    html body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode="compact"] .opj-tool-group:nth-child(1),
+    html body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode="compact"] .opj-tool-group:nth-child(2) {
+        display: none;
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-mobile-command-caption {
+        display: block;
+        font-size: .625rem;
+        font-weight: var(--theme-font-weight-semibold);
+        line-height: 1.15;
+        white-space: normal;
+    }
+
+    html body.ux-platform.opj-workspace-page .draft-editor-ribbon-button:has(.opj-mobile-command-caption) {
+        min-width: 4.25rem;
+        flex-direction: column;
+        gap: var(--theme-space-1);
+    }
+
+    /* Rights: structure/legend become compact disclosures and the desktop
+     * matrix is replaced by an employee-first grouped drill-down. */
+    html body.ux-platform .authority-mobile-preamble-disclosure {
+        display: block;
+        border-bottom: 1px solid var(--theme-border);
+    }
+
+    html body.ux-platform .authority-mobile-preamble-disclosure > summary {
+        min-height: 2.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--theme-space-2);
+        padding: var(--theme-space-3);
+        color: var(--theme-text);
+        font-size: var(--theme-font-size-sm);
+        font-weight: var(--theme-font-weight-semibold);
+        cursor: pointer;
+        list-style: none;
+    }
+
+    html body.ux-platform .authority-mobile-preamble-disclosure > summary::-webkit-details-marker,
+    html body.ux-platform .authority-mobile-employee > summary::-webkit-details-marker { display: none; }
+
+    html body.ux-platform .authority-mobile-preamble-disclosure > summary:focus-visible,
+    html body.ux-platform .authority-mobile-employee > summary:focus-visible {
+        outline: var(--theme-focus-width) solid var(--theme-focus);
+        outline-offset: calc(-1 * var(--theme-focus-width));
+    }
+
+    html body.ux-platform .authority-mobile-preamble-disclosure > summary::after,
+    html body.ux-platform .authority-mobile-employee > summary::after {
+        content: "+";
+        flex: 0 0 auto;
+        color: var(--theme-primary);
+        font-size: var(--theme-font-size-lg);
+        font-weight: var(--theme-font-weight-bold);
+    }
+
+    html body.ux-platform .authority-mobile-preamble-disclosure[open] > summary::after,
+    html body.ux-platform .authority-mobile-employee[open] > summary::after { content: "−"; }
+
+    html body.ux-platform .authority-mobile-preamble-disclosure .authority-tree-heading,
+    html body.ux-platform .authority-mobile-preamble-disclosure .authority-reference-heading { display: none; }
+
+    html body.ux-platform .authority-mobile-preamble-disclosure .authority-tree-list { max-height: 18rem; }
+    html body.ux-platform .authority-mobile-preamble-disclosure .authority-category-legend { padding-top: var(--theme-space-3); }
+
+    html body.ux-platform .authority-matrix-panel .authority-matrix-scroll { display: none; }
+    html body.ux-platform .authority-mobile-matrix { display: grid; }
+
+    html body.ux-platform .authority-mobile-employee {
+        min-width: 0;
+        overflow: hidden;
+        border: 1px solid var(--theme-border);
+        border-radius: var(--theme-radius-md);
+        background: var(--theme-surface);
+        box-shadow: var(--theme-shadow-sm);
+    }
+
+    html body.ux-platform .authority-mobile-employee[hidden] { display: none; }
+
+    html body.ux-platform .authority-mobile-employee > summary {
+        min-height: 2.75rem;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: start;
+        gap: var(--theme-space-2);
+        padding: var(--theme-space-3);
+        cursor: pointer;
+        list-style: none;
+    }
+
+    html body.ux-platform .authority-mobile-identity {
+        min-width: 0;
+        display: grid;
+        gap: var(--theme-space-2);
+    }
+
+    html body.ux-platform .authority-mobile-identity > a {
+        color: var(--theme-primary);
+        font-size: var(--theme-font-size-md);
+        font-weight: var(--theme-font-weight-bold);
+        line-height: 1.3;
+        text-decoration: none;
+        overflow-wrap: break-word;
+        word-break: normal;
+    }
+
+    html body.ux-platform .authority-mobile-identity > span {
+        color: var(--theme-text-muted);
+        font-size: var(--theme-font-size-sm);
+        line-height: 1.35;
+        overflow-wrap: break-word;
+        word-break: normal;
+    }
+
+    html body.ux-platform .authority-mobile-qualification {
+        min-width: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--theme-space-1) var(--theme-space-2);
+    }
+
+    html body.ux-platform .authority-mobile-qualification :is(span, small) {
+        color: var(--theme-text-muted);
+        font-size: var(--theme-font-size-xs);
+        line-height: 1.35;
+        overflow-wrap: break-word;
+        word-break: normal;
+    }
+
+    html body.ux-platform .authority-mobile-counts {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--theme-space-1);
+    }
+
+    html body.ux-platform .authority-mobile-counts span {
+        width: fit-content;
+        padding: .2rem var(--theme-space-2);
+        border-radius: var(--theme-radius-pill);
+        background: var(--theme-surface-soft);
+        color: var(--theme-text-muted);
+        font-size: var(--theme-font-size-xs);
+        font-weight: var(--theme-font-weight-semibold);
+    }
+
+    html body.ux-platform .authority-mobile-rights {
+        display: grid;
+        gap: var(--theme-space-3);
+        padding: 0 var(--theme-space-3) var(--theme-space-3);
+        border-top: 1px solid var(--theme-border);
+    }
+
+    html body.ux-platform .authority-mobile-right-group { display: grid; gap: var(--theme-space-1); }
+    html body.ux-platform .authority-mobile-right-group > h3 {
+        margin: var(--theme-space-3) 0 var(--theme-space-1);
+        color: var(--theme-text-muted);
+        font-size: var(--theme-font-size-xs);
+        font-weight: var(--theme-font-weight-bold);
+        letter-spacing: .02em;
+        line-height: 1.3;
+    }
+
+    html body.ux-platform .authority-mobile-right-row {
+        min-width: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: var(--theme-space-3);
+        padding: var(--theme-space-2) 0;
+        border-top: 1px solid var(--theme-border);
+    }
+
+    html body.ux-platform .authority-mobile-right-row > span:first-child {
+        min-width: 0;
+        color: var(--theme-text);
+        font-size: var(--theme-font-size-sm);
+        font-weight: var(--theme-font-weight-semibold);
+        line-height: 1.4;
+        overflow-wrap: break-word;
+        word-break: normal;
+    }
+
+    html body.ux-platform .authority-mobile-marker {
+        display: inline-grid;
+        width: 2.75rem;
+        min-width: 2.75rem;
+        height: 2.75rem;
+        place-items: center;
+        padding: 0;
+        border: 1px solid transparent;
+        border-radius: var(--theme-radius-md);
+        font: inherit;
+        font-size: var(--theme-font-size-md);
+        font-weight: var(--theme-font-weight-bold);
+        line-height: 1;
+    }
+
+    html body.ux-platform .authority-mobile-marker.is-granted {
+        background: var(--theme-success-soft);
+        color: var(--theme-success);
+    }
+
+    html body.ux-platform button.authority-mobile-marker.is-conditional {
+        border-color: color-mix(in srgb, var(--theme-warning) 45%, var(--theme-border));
+        background: var(--theme-warning-soft);
+        color: var(--theme-warning);
+        cursor: pointer;
+    }
+
+    html body.ux-platform button.authority-mobile-marker.is-conditional:focus-visible {
+        outline: var(--theme-focus-width) solid var(--theme-focus);
+        outline-offset: var(--theme-focus-offset);
+    }
+
+    html body.ux-platform .authority-mobile-condition-detail {
+        grid-column: 1 / -1;
+        display: grid;
+        gap: var(--theme-space-1);
+        margin-top: var(--theme-space-1);
+        padding: var(--theme-space-3);
+        border-left: 3px solid var(--theme-warning);
+        border-radius: var(--theme-radius-sm);
+        background: var(--theme-warning-soft);
+        color: var(--theme-text);
+    }
+
+    html body.ux-platform .authority-mobile-condition-detail[hidden] { display: none; }
+    html body.ux-platform .authority-mobile-condition-detail :is(strong, span, small) {
+        overflow-wrap: break-word;
+        word-break: normal;
+        line-height: 1.4;
+    }
+    html body.ux-platform .authority-mobile-condition-detail small { color: var(--theme-text-muted); }
+
+    html body.ux-platform .authority-mobile-matrix-note {
+        margin: 0;
+        color: var(--theme-text-muted);
+        font-size: var(--theme-font-size-xs);
+        line-height: 1.4;
+    }
+}
+
+@media screen and (max-width: 30rem) {
+    .ux-mobile-record-card__meta,
+    .ux-mobile-audit-card__meta,
+    html body.ux-platform.opj-workspace-page .opj-workspace-meta,
+    html body.ux-platform.opj-workspace-page .opj-clean-summary-meta,
+    html body.ux-platform.opj-workspace-page .opj-editor-tools,
+    html body.ux-platform.opj-workspace-page .draft-editor-ribbon-groups {
+        grid-template-columns: 1fr;
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-workspace-meta .opj-shift-period,
+    html body.ux-platform.opj-workspace-page .opj-clean-summary-meta > span:last-child { grid-column: 1; }
+}
