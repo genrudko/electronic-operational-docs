@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ document_list.title }} · ЭОД{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'system/ux_mobile_surfaces.css' %}?v=uxmobile001">{% endblock %}
 
 {% block content %}
 <section class="da-page-header da-page-header-compact">
@@ -25,10 +27,10 @@
     <details class="technical-only"><summary>Технические реквизиты редакции</summary><div class="da-panel-flat"><dl class="ux-key-value"><dt>Код перечня</dt><dd><code>{{ document_list.code }}</code></dd><dt>SHA-256</dt><dd><code class="breakable">{{ revision.digest }}</code></dd><dt>Идентификатор перечня</dt><dd><code>{{ document_list.pk }}</code></dd><dt>Идентификатор редакции</dt><dd><code>{{ revision.pk }}</code></dd></dl></div></details>
 </section>
 
-<section class="da-card ux-stack">
+<section class="da-card ux-stack workplace-document-entries">
     <div class="da-panel-heading"><div><span class="ux-kicker">Состав документации</span><h2>Позиции перечня</h2></div><span class="ux-counter">{{ entries|length }} показано</span></div>
     <form method="get" class="da-toolbar"><div class="da-field"><label for="workplace-doc-search">Поиск</label><input id="workplace-doc-search" type="search" name="q" value="{{ search_query }}" placeholder="Название, тип, раздел или номер"></div><button class="da-button is-secondary" type="submit">Найти</button>{% if search_query %}<a class="da-button is-tertiary" href="{% url 'workplace_docs:detail' document_list.pk %}">Сбросить</a>{% endif %}</form>
-    <div class="da-table-wrap"><table class="da-table"><thead><tr><th>№ и документация</th><th>Раздел и тип</th><th>Применимость</th><th>Форма хранения</th><th>Пересмотр и утверждение</th><th>Основание</th></tr></thead><tbody>
+    <div class="da-table-wrap workplace-document-entry-desktop-table"><table class="da-table"><thead><tr><th>№ и документация</th><th>Раздел и тип</th><th>Применимость</th><th>Форма хранения</th><th>Пересмотр и утверждение</th><th>Основание</th></tr></thead><tbody>
     {% for entry in entries %}<tr>
         <td><div class="ux-cell-stack"><strong class="ux-cell-primary">{{ entry.title }}</strong><code class="ux-technical-chip">{{ entry.code }}</code>{% if entry.source_register_entry_no or entry.source_document_no %}<small class="ux-cell-secondary">{% if entry.source_register_entry_no %}Позиция {{ entry.source_register_entry_no }}{% endif %}{% if entry.source_register_entry_no and entry.source_document_no %} · {% endif %}{% if entry.source_document_no %}№ {{ entry.source_document_no }} в разделе{% endif %}</small>{% endif %}{% if entry.notes %}<small class="ux-cell-secondary">{{ entry.notes }}</small>{% endif %}</div></td>
         <td><div class="ux-cell-stack">{% if entry.section_no %}<strong class="ux-cell-primary">{{ entry.section_no }}. {{ entry.section_name }}</strong>{% endif %}{% if entry.subsection_no %}<small class="ux-cell-secondary">{{ entry.subsection_no }} {{ entry.subsection_name }}</small>{% endif %}<small class="ux-cell-secondary">{{ entry.document_type_label|default:entry.get_source_kind_display }}</small></div></td>
@@ -38,6 +40,26 @@
         <td><div class="ux-cell-stack">{% if entry.normative_document %}<a class="ux-cell-primary" href="{% url 'normatives:document_detail' entry.normative_document.code %}">{{ entry.normative_document }}</a>{% if entry.normative_clause %}<small class="ux-cell-secondary">{{ entry.normative_clause }}</small>{% endif %}{% else %}<span class="ux-cell-primary">{{ entry.basis_text }}</span>{% endif %}</div></td>
     </tr>{% empty %}<tr><td colspan="6"><div class="ux-empty-state">По запросу позиции не найдены.</div></td></tr>{% endfor %}
     </tbody></table></div>
+    <ol class="workplace-document-entry-mobile-list" aria-label="Позиции перечня документации">
+        {% for entry in entries %}
+        <li class="ux-mobile-record-card">
+            <header class="ux-mobile-record-card__header">
+                <div class="ux-mobile-record-card__title">
+                    <strong>{% if entry.source_register_entry_no %}№ {{ entry.source_register_entry_no }} · {% endif %}{{ entry.title }}</strong>
+                    <code class="ux-technical-chip workplace-document-entry-code">{{ entry.code }}</code>
+                </div>
+            </header>
+            <dl class="ux-mobile-record-card__meta">
+                <div class="is-wide"><dt>Раздел и тип</dt><dd>{% if entry.section_no %}{{ entry.section_no }}. {{ entry.section_name }}{% endif %}{% if entry.subsection_no %}<br>{{ entry.subsection_no }} {{ entry.subsection_name }}{% endif %}<br>{{ entry.document_type_label|default:entry.get_source_kind_display }}</dd></div>
+                <div class="is-wide"><dt>Применимость</dt><dd><strong>{{ entry.get_requirement_kind_display }}</strong>{% if entry.applicability_text %}<br>{{ entry.applicability_text }}{% endif %}</dd></div>
+                <div class="is-wide"><dt>Форма хранения</dt><dd>{{ entry.get_storage_form_display }}{% if entry.electronic_storage_mark %}<br><span class="ux-muted">Исходная отметка: {{ entry.electronic_storage_mark }} · {{ entry.get_electronic_storage_interpretation_display }}</span>{% endif %}</dd></div>
+                <div class="is-wide"><dt>Пересмотр и утверждение</dt><dd>{% if entry.review_period_raw %}{{ entry.review_period_raw }}{% else %}Не указано{% endif %}{% if entry.review_interval_months %} · {{ entry.review_interval_months }} мес.{% endif %}{% if entry.approval_date %}<br>Утверждено {{ entry.approval_date|date:"d.m.Y" }}{% endif %}{% if entry.approver_name %}<br>{{ entry.approving_role }} · {{ entry.approver_name }}{% endif %}</dd></div>
+                <div class="is-wide"><dt>Основание</dt><dd>{% if entry.normative_document %}<a href="{% url 'normatives:document_detail' entry.normative_document.code %}">{{ entry.normative_document }}</a>{% if entry.normative_clause %}<br>{{ entry.normative_clause }}{% endif %}{% else %}{{ entry.basis_text }}{% endif %}</dd></div>
+                {% if entry.notes %}<div class="is-wide"><dt>Примечание</dt><dd>{{ entry.notes }}</dd></div>{% endif %}
+            </dl>
+        </li>
+        {% empty %}<li class="ux-empty-state">По запросу позиции не найдены.</li>{% endfor %}
+    </ol>
 </section>
 
 {% if history|length > 1 %}<section class="da-card ux-stack"><div class="da-panel-heading"><div><span class="ux-kicker">История</span><h2>Утверждённые редакции</h2></div></div><div class="da-table-wrap"><table class="da-table"><thead><tr><th>Редакция</th><th>Период действия</th><th>Утвердил</th></tr></thead><tbody>{% for item in history %}<tr><td><a href="{% url 'workplace_docs:revision_detail' document_list.pk item.revision_number %}">Редакция № {{ item.revision_number }}</a></td><td>{{ item.effective_from|date:"d.m.Y" }} — {{ item.effective_until|date:"d.m.Y"|default:"по настоящее время" }}</td><td>{{ item.approved_by.full_name }}</td></tr>{% endfor %}</tbody></table></div></section>{% endif %}
