@@ -482,7 +482,7 @@
     "supply-chain/Dockerfile.browser": "0060a0d1dde4afeea1b37db6eb2c079c30bf2e38e12c71e1fcb5910e1e9d54fa",
     "tests/automation/test_auto_001b_request_entrypoint.py": "3a5c0fbb38c047de125bb892ddbf74f74c9cfb25e2472b99e5edab8d1919f9f8",
     "tests/browser_theme/repair_v4.py": "cf95b58f90a97fb6846ce7d3b1334ed74f5be2a09e10b1124629a20bff280a5c",
-    "tests/browser_theme/run.py": "e283ae22527232af7ce65079d8b9b3dbbb429e256c4339f83d9cd2bf7042726b",
+    "tests/browser_theme/run.py": "93e53e2831e34c91a8ba3efcc9584098a1110bb6838da4000c73aefae7130417",
     "tests/process/test_dependency_provenance_contract.py": "c1472f55a4d0c47e9151305709d9254c623b2d5f551f2776a7dccbf9484b3539",
     "tests/process/test_dependency_provenance_inventory.py": "e446166e56b002bd0a2a2efc8ed32b486702a8d3c92f8796992bc967c2ca1a6b",
     "tests/process/test_release_plan_compatibility.py": "591c9185f3770e64476cbf7f750011c6c5af0db0be4fd469f6d5748480ce0f42",
