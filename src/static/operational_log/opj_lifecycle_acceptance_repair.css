@@ -49,16 +49,17 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
     transform: none !important;
 }
 
-/* A TD must remain a table-cell. Turning it into flex broke the third-column
- * border grid and row-height calculation. Markers wrap as inline-grid children. */
+/* Desktop fallbacks retain the accepted table/marker layout, but deliberately
+ * avoid !important so the responsive platform owner can compose the same
+ * semantic containers at compact and phone widths. */
 .opj-clean-journal-page .approved-journal-visas.opj-clean-markers {
-    display: table-cell !important;
+    display: table-cell;
     min-width: 0;
-    padding: 5px 3px !important;
-    overflow: visible !important;
-    text-align: center !important;
-    vertical-align: top !important;
-    white-space: normal !important;
+    padding: 5px 3px;
+    overflow: visible;
+    text-align: center;
+    vertical-align: top;
+    white-space: normal;
 }
 
 .opj-clean-journal-page .approved-journal-visas.opj-clean-markers > .opj-normative-marker,
@@ -70,15 +71,15 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
 
 .opj-workspace-page .draft-ledger-visas,
 .opj-workspace-page .draft-ledger-visas.has-normative-markers {
-    display: flex !important;
+    display: flex;
     min-width: 0;
-    flex-wrap: wrap !important;
-    align-content: flex-start !important;
-    align-items: flex-start !important;
-    justify-content: center !important;
-    gap: 5px !important;
-    padding: 5px 3px !important;
-    overflow: visible !important;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 5px;
+    padding: 5px 3px;
+    overflow: visible;
 }
 
 .opj-normative-marker,
@@ -349,11 +350,11 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
 }
 
 .opj-workspace[data-view-mode="spread"] .draft-ledger-visas {
-    display: flex !important;
+    display: flex;
     max-height: 96px;
-    gap: 5px !important;
-    padding: 5px 3px !important;
-    overflow: auto !important;
+    gap: 5px;
+    padding: 5px 3px;
+    overflow: auto;
 }
 
 .opj-workspace[data-view-mode="spread"] .opj-normative-marker,

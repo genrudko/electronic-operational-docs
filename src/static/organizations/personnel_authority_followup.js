@@ -97,10 +97,13 @@
     }
 
     const authorityRoot = document.querySelector("[data-authority-page]");
+    const compactMedia = window.matchMedia("(max-width: 61.25rem)");
     const mobileMedia = window.matchMedia("(max-width: 47.99rem)");
     if (!authorityRoot) return;
 
-    let mobileBuilt = false;
+    let preambleBuilt = false;
+    let mobileMatrixBuilt = false;
+    let disclosureCompactState = null;
     let treeDisclosure = null;
     let legendDisclosure = null;
     let activeMobileCondition = null;
@@ -114,12 +117,14 @@
     };
 
     const syncDisclosureMode = () => {
-        if (!mobileBuilt) return;
-        const isMobile = mobileMedia.matches;
+        if (!preambleBuilt) return;
+        const isCompact = compactMedia.matches;
+        if (disclosureCompactState === isCompact) return;
+        disclosureCompactState = isCompact;
         [treeDisclosure, legendDisclosure].forEach((details) => {
             if (!details) return;
             const summary = details.querySelector(":scope > summary");
-            if (isMobile) {
+            if (isCompact) {
                 details.style.removeProperty("display");
                 details.open = false;
                 if (summary) {
@@ -139,7 +144,7 @@
 
     const enhancePreamble = () => {
         const tree = authorityRoot.querySelector(".authority-org-tree");
-        if (!tree || tree.dataset.mobileEnhanced === "true") return;
+        if (!tree || tree.dataset.responsiveEnhanced === "true") return;
 
         const heading = tree.querySelector(":scope > .authority-tree-heading");
         const allOrganization = tree.querySelector(":scope > [data-division-filter='']");
@@ -165,7 +170,8 @@
         });
 
         tree.replaceChildren(treeDisclosure, legendDisclosure);
-        tree.dataset.mobileEnhanced = "true";
+        tree.dataset.responsiveEnhanced = "true";
+        preambleBuilt = true;
     };
 
     const rightMetadata = () => {
@@ -332,6 +338,7 @@
     };
 
     const buildMobileMatrix = () => {
+        if (mobileMatrixBuilt || !mobileMedia.matches) return;
         const panel = authorityRoot.querySelector('[data-authority-panel="matrix"]');
         const table = panel?.querySelector(".authority-matrix");
         const scroll = panel?.querySelector(".authority-matrix-scroll");
@@ -345,6 +352,7 @@
             container.append(buildMobileEmployee(row, metadata, index));
         });
         scroll.insertAdjacentElement("afterend", container);
+        mobileMatrixBuilt = true;
     };
 
     const closeMobileCondition = () => {
@@ -353,6 +361,14 @@
         if (target) target.hidden = true;
         activeMobileCondition.setAttribute("aria-expanded", "false");
         activeMobileCondition = null;
+    };
+
+    const destroyMobileMatrix = () => {
+        closeMobileCondition();
+        mobileRows.forEach(({ observer }) => observer.disconnect());
+        mobileRows.length = 0;
+        authorityRoot.querySelector(".authority-mobile-matrix")?.remove();
+        mobileMatrixBuilt = false;
     };
 
     authorityRoot.addEventListener("click", (event) => {
@@ -375,21 +391,17 @@
         trigger.focus({ preventScroll: true });
     });
 
-    const ensureMobileAuthority = () => {
-        if (!mobileBuilt) {
-            enhancePreamble();
-            buildMobileMatrix();
-            mobileBuilt = Boolean(treeDisclosure && legendDisclosure);
-        }
+    const ensureAuthorityPresentation = () => {
+        if (!preambleBuilt) enhancePreamble();
         syncDisclosureMode();
+        if (mobileMedia.matches) buildMobileMatrix();
+        else if (mobileMatrixBuilt) destroyMobileMatrix();
         mobileRows.forEach(({ card, sourceRow }) => {
             card.hidden = sourceRow.hidden;
         });
     };
 
-    if (mobileMedia.matches) ensureMobileAuthority();
-    mobileMedia.addEventListener("change", () => {
-        ensureMobileAuthority();
-        if (!mobileMedia.matches) closeMobileCondition();
-    });
+    ensureAuthorityPresentation();
+    compactMedia.addEventListener("change", ensureAuthorityPresentation);
+    mobileMedia.addEventListener("change", ensureAuthorityPresentation);
 })();

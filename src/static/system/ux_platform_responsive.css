@@ -1251,6 +1251,258 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         min-width: var(--theme-control-height-md);
         height: var(--theme-control-height-md);
     }
+
+    /* Repair v14: COMPACT OPJ is a ledger, not a phone card stack. */
+    body.ux-platform.opj-workspace-page .draft-ledger-form {
+        grid-template-columns: clamp(6.5rem, 18%, 8rem) minmax(0, 1fr);
+        align-items: stretch;
+    }
+    body.ux-platform.opj-workspace-page .draft-ledger-time {
+        grid-column: 1;
+        grid-row: 1;
+        width: auto;
+        min-height: 0;
+        align-items: flex-start;
+        padding: var(--theme-space-3) var(--theme-space-2);
+        border: 0;
+        border-right: 1px solid var(--theme-border);
+        background: var(--theme-surface-soft);
+    }
+    body.ux-platform.opj-workspace-page .draft-ledger-form:has(.draft-ledger-visas [data-opj-marker]) .draft-ledger-time {
+        grid-row: 1 / span 2;
+    }
+    body.ux-platform.opj-workspace-page .draft-ledger-content {
+        grid-column: 2;
+        grid-row: 1;
+        width: auto;
+        min-height: 0;
+        padding: var(--theme-space-3);
+        border: 0;
+    }
+    body.ux-platform.opj-workspace-page .draft-ledger-visas {
+        grid-column: 2;
+        grid-row: 2;
+        width: auto;
+        min-height: 0;
+        padding: var(--theme-space-2) var(--theme-space-3);
+        border: 0;
+        border-top: 1px solid var(--theme-border);
+        background: var(--theme-surface-soft);
+    }
+    body.ux-platform.opj-workspace-page .draft-ledger-visas:not(:has([data-opj-marker])) { display: none; }
+    body.ux-platform.opj-workspace-page .draft-ledger-visas:has([data-opj-marker]) {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: var(--theme-space-2);
+    }
+    body.ux-platform.opj-workspace-page .draft-ledger-time::before,
+    body.ux-platform.opj-workspace-page .draft-ledger-content::before { display: none; content: none; }
+    body.ux-platform.opj-workspace-page .draft-ledger-visas::before {
+        flex: 0 0 100%;
+        margin: 0;
+        content: "Визы и замечания";
+    }
+
+    body.ux-platform.opj-clean-journal-page .approved-journal-table-wrap { overflow: visible; }
+    body.ux-platform.opj-clean-journal-page .approved-journal-table {
+        width: 100%;
+        min-width: 0;
+        display: block;
+        table-layout: auto;
+    }
+    body.ux-platform.opj-clean-journal-page .approved-journal-table colgroup,
+    body.ux-platform.opj-clean-journal-page .approved-journal-table thead { display: none; }
+    body.ux-platform.opj-clean-journal-page .approved-journal-table tbody {
+        display: grid;
+        gap: var(--theme-space-3);
+    }
+    body.ux-platform.opj-clean-journal-page .approved-journal-row {
+        display: grid;
+        grid-template-columns: clamp(6.5rem, 18%, 8rem) minmax(0, 1fr);
+        overflow: hidden;
+        border: 1px solid var(--theme-border);
+        border-radius: var(--theme-radius-md);
+        background: var(--theme-surface-document);
+        box-shadow: var(--theme-shadow-sm);
+    }
+    body.ux-platform.opj-clean-journal-page .approved-journal-row > td {
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        display: block;
+        padding: var(--theme-space-3);
+        border: 0;
+        overflow-wrap: break-word;
+        word-break: normal;
+    }
+    body.ux-platform.opj-clean-journal-page .approved-journal-date-time {
+        grid-column: 1;
+        grid-row: 1;
+        display: grid;
+        align-content: start;
+        justify-items: center;
+        gap: var(--theme-space-1);
+        border-right: 1px solid var(--theme-border);
+        background: var(--theme-surface-soft);
+    }
+    body.ux-platform.opj-clean-journal-page .approved-journal-message {
+        grid-column: 2;
+        grid-row: 1;
+    }
+    body.ux-platform.opj-clean-journal-page .approved-journal-message::before { display: none; content: none; }
+    body.ux-platform.opj-clean-journal-page .approved-journal-visas {
+        grid-column: 2;
+        grid-row: 2;
+        width: auto;
+        min-height: 0;
+        padding: var(--theme-space-2) var(--theme-space-3);
+        border: 0;
+        border-top: 1px solid var(--theme-border);
+        background: var(--theme-surface-soft);
+    }
+    body.ux-platform.opj-clean-journal-page .approved-journal-visas:not(:has([data-opj-marker])) { display: none; }
+    body.ux-platform.opj-clean-journal-page .approved-journal-visas:has([data-opj-marker]) { display: block; }
+    body.ux-platform.opj-clean-journal-page .approved-journal-row > td:nth-child(n + 3)::before {
+        margin-block-end: var(--theme-space-1);
+    }
+
+    /* Repair v14: COMPACT Rights keeps the native dense table. */
+    body.ux-platform .authority-org-tree { overflow: visible; }
+    html body.ux-platform .authority-mobile-preamble-disclosure .authority-tree-list {
+        max-height: none;
+        overflow: visible;
+    }
+    html body.ux-platform .authority-matrix-panel .authority-matrix-scroll {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        max-height: min(38rem, calc(100vh - 16rem));
+        overflow: auto;
+        overscroll-behavior-inline: contain;
+        scrollbar-gutter: stable;
+    }
+    html body.ux-platform .authority-mobile-matrix { display: none; }
+    body.ux-platform .authority-matrix {
+        width: max-content;
+        min-width: 100%;
+        display: table;
+        table-layout: fixed;
+        border-collapse: separate;
+    }
+    body.ux-platform .authority-matrix > thead { display: table-header-group; }
+    body.ux-platform .authority-matrix > tbody {
+        display: table-row-group;
+        margin: 0;
+    }
+    body.ux-platform .authority-matrix .authority-division-row,
+    body.ux-platform .authority-matrix .authority-matrix-person { display: table-row; }
+    body.ux-platform .authority-matrix .authority-division-row > th {
+        position: relative;
+        display: table-cell;
+        width: auto;
+        max-width: none;
+        padding: var(--theme-space-2) var(--theme-space-3);
+        border-radius: 0;
+    }
+    body.ux-platform .authority-matrix .authority-matrix-person > td {
+        min-height: 4rem;
+        display: table-cell;
+        padding: var(--theme-space-2);
+        border-right: 1px solid var(--theme-border);
+        border-bottom: 1px solid var(--theme-border);
+        background: var(--theme-surface);
+        box-shadow: none;
+        vertical-align: middle;
+    }
+    body.ux-platform .authority-matrix .authority-matrix-person > td::before { content: none; display: none; }
+    body.ux-platform .authority-matrix .matrix-sticky-name {
+        position: sticky;
+        left: 0;
+        z-index: 4;
+        width: var(--authority-name-width);
+        min-width: var(--authority-name-width);
+        max-width: var(--authority-name-width);
+        background: var(--theme-surface);
+    }
+    body.ux-platform .authority-matrix thead .matrix-sticky-name {
+        z-index: 8;
+        background: var(--theme-surface-soft);
+    }
+    body.ux-platform .authority-matrix .matrix-sticky-position,
+    body.ux-platform .authority-matrix .matrix-sticky-qualification {
+        position: static;
+        left: auto;
+        box-shadow: none;
+    }
+    body.ux-platform .authority-matrix .authority-right-cell,
+    body.ux-platform .authority-matrix .authority-right-cell:not(:has(a)),
+    body.ux-platform .authority-matrix .authority-right-cell:has(a) {
+        display: table-cell;
+        width: 3.875rem;
+        min-width: 3.875rem;
+        max-width: 3.875rem;
+        padding: 0;
+    }
+    body.ux-platform .authority-matrix .authority-right-cell > a {
+        min-height: 3.5rem;
+        display: grid;
+        place-items: center;
+        padding: 0;
+    }
+    body.ux-platform .authority-matrix .authority-right-cell > a::before { content: none; display: none; }
+    body.ux-platform .authority-matrix .authority-cell-marker { display: grid; }
+    body.ux-platform .authority-matrix .authority-condition-popover {
+        position: absolute;
+        display: none;
+        width: min(22rem, 78vw);
+        box-shadow: var(--theme-shadow-overlay);
+        pointer-events: none;
+    }
+
+    body.ux-platform .authority-table-wrap:has(.authority-holders-table) {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        scrollbar-gutter: stable;
+    }
+    body.ux-platform .authority-holders-table {
+        width: max-content;
+        min-width: 74rem;
+        display: table;
+        background: var(--theme-surface);
+    }
+    body.ux-platform .authority-holders-table > thead { display: table-header-group; }
+    body.ux-platform .authority-holders-table > tbody { display: table-row-group; }
+    body.ux-platform .authority-holders-table > tbody > tr {
+        display: table-row;
+        overflow: visible;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+    body.ux-platform .authority-holders-table > tbody > tr > td {
+        display: table-cell;
+        min-width: 0;
+        padding: var(--theme-space-2) var(--theme-space-3);
+        border: 0;
+        border-bottom: 1px solid var(--theme-border);
+        background: var(--theme-surface);
+        vertical-align: top;
+    }
+    body.ux-platform .authority-holders-table > tbody > tr > td::before { content: none; display: none; }
+    body.ux-platform .authority-holders-table :is(th, td):first-child {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: var(--theme-surface);
+    }
+    body.ux-platform .authority-holders-table th:first-child {
+        z-index: 3;
+        background: var(--theme-surface-soft);
+    }
 }
 
 @media screen and (max-width: 47.99rem) {
@@ -1285,6 +1537,44 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         width: auto;
         min-height: 2.75rem;
         height: auto;
+    }
+
+    /* Repair v14: PHONE retains cards, but time is record identity rather than a section. */
+    body.ux-platform.opj-workspace-page .draft-ledger-time::before,
+    body.ux-platform.opj-workspace-page .draft-ledger-content::before { display: none; content: none; }
+    body.ux-platform.opj-workspace-page .draft-ledger-time {
+        min-height: 0;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        padding: var(--theme-space-2) var(--theme-space-3);
+        background: var(--theme-surface-soft);
+    }
+    body.ux-platform.opj-workspace-page .draft-ledger-content {
+        padding: var(--theme-space-3);
+    }
+    body.ux-platform.opj-workspace-page .draft-ledger-visas:not(:has([data-opj-marker])) { display: none; }
+    body.ux-platform.opj-workspace-page .draft-ledger-visas:has([data-opj-marker]) {
+        display: flex;
+        min-height: 0;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: var(--theme-space-2);
+        padding: var(--theme-space-2) var(--theme-space-3);
+    }
+    body.ux-platform.opj-clean-journal-page .approved-journal-visas:not(:has([data-opj-marker])) { display: none; }
+    body.ux-platform.opj-clean-journal-page .approved-journal-message::before { display: none; content: none; }
+
+    /* Phone is the only state that requires the generated employee projection. */
+    html body.ux-platform .authority-matrix-panel .authority-matrix-scroll { display: none; }
+    html body.ux-platform .authority-mobile-matrix {
+        min-width: 0;
+        display: grid;
+        gap: var(--theme-space-3);
+    }
+    html body.ux-platform .authority-mobile-preamble-disclosure .authority-tree-list {
+        max-height: none;
+        overflow: visible;
     }
 }
 

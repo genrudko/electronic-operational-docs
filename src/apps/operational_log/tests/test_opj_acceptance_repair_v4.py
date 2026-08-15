@@ -130,7 +130,8 @@ class OperationalJournalAcceptanceRepairSourceTests(SimpleTestCase):
         )
         self.assertIn("color: #175cd3 !important", css)
 
-    def test_clean_visas_cell_keeps_native_table_cell_geometry(self) -> None:
+    def test_marker_layer_does_not_lock_responsive_visa_container_geometry(self) -> None:
+        partial = self.source("templates/operational_log/_normative_markers.html")
         css = self.source(
             "static/operational_log/opj_lifecycle_acceptance_repair.css"
         )
@@ -139,8 +140,15 @@ class OperationalJournalAcceptanceRepairSourceTests(SimpleTestCase):
             ".opj-clean-journal-page .approved-journal-visas.opj-clean-markers",
             css,
         )
-        self.assertIn("display: table-cell !important", css)
-        self.assertIn("vertical-align: top !important", css)
+        self.assertIn("display: table-cell;", css)
+        self.assertNotIn("display: table-cell !important", css)
+        self.assertNotIn(".opj-empty-marker", partial)
+        critical = partial[partial.index('style.textContent = `') : partial.index('`;')]
+        self.assertNotIn(".draft-ledger-visas,", critical)
+        self.assertNotIn(
+            ".approved-journal-visas.opj-clean-markers {",
+            critical,
+        )
 
     def test_spread_mode_keeps_the_same_marker_artwork(self) -> None:
         css = self.source(

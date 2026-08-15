@@ -33,8 +33,10 @@ TRANSITION_WIDTHS = (
     976,
     950,
     900,
+    880,
     832,
     768,
+    656,
     600,
     440,
     412,
@@ -47,9 +49,10 @@ TRANSITION_ROUTES = (
     "workplace_docs",
     "defect_registry",
     "opj_registry",
+    "registered_opj",
     "draft_workspace",
 )
-TRANSITION_SCREENSHOTS = {1180, 976, 768, 412}
+TRANSITION_SCREENSHOTS = {880, 768, 656, 440}
 THEMES = ("light", "dark")
 PUBLIC_ROUTES = {
     "login": "/accounts/login/",
@@ -255,15 +258,6 @@ def mobile_geometry(page, route, width):
                 .map(describe)
                 .filter(item => item.x < -2 || item.right > innerWidth + 2);
 
-            const authorityPositionedCells = route === "authorities"
-                ? [...document.querySelectorAll(".authority-matrix-person > td")]
-                    .filter(visible)
-                    .filter(node => ["sticky", "fixed", "absolute"].includes(
-                        getComputedStyle(node).position
-                    ))
-                    .map(describe)
-                : [];
-
             return {
                 viewportWidth: innerWidth,
                 smallTargets,
@@ -274,7 +268,6 @@ def mobile_geometry(page, route, width):
                 personnelManagementOverlaps: route === "personnel"
                     ? siblingOverlaps(".personnel-recent-row")
                     : [],
-                authorityPositionedCells,
             };
         }""",
         route,
@@ -391,8 +384,6 @@ def capture_surface(
         surface_selector = ".defect-da-work-row"
     node = need(page, surface_selector)
     page.mouse.move(0, 0)
-    # Some registry rows animate their background for 120 ms. Compare the
-    # settled theme token, not an interpolation frame after light -> dark.
     page.wait_for_timeout(160)
     actual = style(node)
     expected = resolved_background(page, TOKENS[route])
@@ -424,7 +415,6 @@ def capture_surface(
                 "escapedControls",
                 "publicationOverlaps",
                 "personnelManagementOverlaps",
-                "authorityPositionedCells",
             )
             if geometry[name]
         }
@@ -587,6 +577,7 @@ def responsive_transition_state(page, route):
     return page.evaluate(
         """route => {
             const visible = node => {
+                if (!node) return false;
                 const style = getComputedStyle(node);
                 const rect = node.getBoundingClientRect();
                 return style.display !== "none"
@@ -598,6 +589,7 @@ def responsive_transition_state(page, route):
                 const node = document.querySelector(selector);
                 return node ? getComputedStyle(node).display : null;
             };
+            const exists = selector => Boolean(document.querySelector(selector));
             const columns = selector => {
                 const node = document.querySelector(selector);
                 if (!node) return null;
@@ -618,6 +610,7 @@ def responsive_transition_state(page, route):
                 workplace_docs: ".workplace-document-registry",
                 defect_registry: ".defect-da-work-table",
                 opj_registry: ".journal-registry-card",
+                registered_opj: ".approved-journal-shell",
                 draft_workspace: ".opj-workspace",
             }[route];
             const surface = document.querySelector(surfaceSelector) || document.body;
@@ -656,8 +649,11 @@ def responsive_transition_state(page, route):
                 humanWrapViolations,
                 personnelWorkspaceColumns: columns(".personnel-directory-workspace"),
                 personnelRecentColumns: columns(".personnel-recent-grid"),
+                authorityNativeMatrixExists: exists(".authority-matrix-panel .authority-matrix"),
+                authorityMobileMatrixExists: exists(".authority-mobile-matrix"),
                 authorityDesktopMatrix: display(".authority-matrix-panel .authority-matrix-scroll"),
                 authorityCompactMatrix: display(".authority-mobile-matrix"),
+                authorityMatrixOverflow: overflow(".authority-matrix-panel .authority-matrix-scroll"),
                 defectDesktopHead: display(".defect-da-work-head"),
                 workplaceDesktop: display(".workplace-document-desktop-table"),
                 workplaceCompact: display(".workplace-document-mobile-list"),
@@ -665,6 +661,16 @@ def responsive_transition_state(page, route):
                 importsCompact: display(".import-attempt-mobile-list"),
                 opjRegistryHead: display(".journal-registry-table > thead"),
                 opjToolbarOverflow: overflow(".opj-toolbar"),
+                opjDraftColumns: columns(".draft-ledger-form"),
+                opjCleanColumns: columns(".approved-journal-row"),
+                opjEmptyVisasVisible: [...document.querySelectorAll(
+                    ".draft-ledger-visas:not(:has([data-opj-marker])),"
+                    + ".approved-journal-visas:not(:has([data-opj-marker]))"
+                )].some(visible),
+                opjMarkerVisasVisible: [...document.querySelectorAll(
+                    ".draft-ledger-visas:has([data-opj-marker]),"
+                    + ".approved-journal-visas:has([data-opj-marker])"
+                )].some(visible),
             };
         }""",
         route,
@@ -689,9 +695,21 @@ def assert_responsive_transition(state, route, mode):
     if width <= 980 and route == "personnel":
         if not state["personnelRecentColumns"] or " " in state["personnelRecentColumns"]:
             raise AssertionError(f"personnel nested panels not single-column at {width}px: {state}")
-    if width <= 980 and route == "authorities":
-        if state["authorityDesktopMatrix"] != "none" or state["authorityCompactMatrix"] == "none":
-            raise AssertionError(f"rights compact composition missing at {width}px: {state}")
+    if route == "authorities" and 768 <= width <= 980:
+        if not state["authorityNativeMatrixExists"]:
+            raise AssertionError(f"rights native matrix missing at compact {width}px: {state}")
+        if state["authorityDesktopMatrix"] == "none":
+            raise AssertionError(f"rights native matrix hidden at compact {width}px: {state}")
+        if state["authorityMobileMatrixExists"] and state["authorityCompactMatrix"] != "none":
+            raise AssertionError(f"rights phone projection visible at compact {width}px: {state}")
+        viewport = state["authorityMatrixOverflow"]
+        if not viewport or viewport["scrollWidth"] <= viewport["clientWidth"]:
+            raise AssertionError(f"rights compact matrix lacks local horizontal viewport at {width}px: {state}")
+    if route == "authorities" and width < 768:
+        if not state["authorityNativeMatrixExists"] or state["authorityDesktopMatrix"] != "none":
+            raise AssertionError(f"rights native source not correctly hidden on phone {width}px: {state}")
+        if not state["authorityMobileMatrixExists"] or state["authorityCompactMatrix"] == "none":
+            raise AssertionError(f"rights phone projection missing at {width}px: {state}")
     if width <= 980 and route == "defect_registry" and state["defectDesktopHead"] != "none":
         raise AssertionError(f"DEFECT worklist stayed desktop at {width}px: {state}")
     if width <= 980 and route == "workplace_docs":
@@ -706,6 +724,19 @@ def assert_responsive_transition(state, route, mode):
     if width <= 980 and route == "draft_workspace" and toolbar:
         if toolbar["scrollWidth"] > toolbar["clientWidth"] + 2:
             raise AssertionError(f"OPJ toolbar overflow at {width}px: {state}")
+    if route == "draft_workspace" and 768 <= width <= 980:
+        if not state["opjDraftColumns"] or " " not in state["opjDraftColumns"].strip():
+            raise AssertionError(f"OPJ compact ledger did not keep time rail at {width}px: {state}")
+        if state["opjEmptyVisasVisible"]:
+            raise AssertionError(f"OPJ empty visas occupy compact space at {width}px: {state}")
+    if route == "registered_opj" and 768 <= width <= 980:
+        if not state["opjCleanColumns"] or " " not in state["opjCleanColumns"].strip():
+            raise AssertionError(f"registered OPJ compact ledger missing at {width}px: {state}")
+        if state["opjEmptyVisasVisible"]:
+            raise AssertionError(f"registered OPJ empty visas occupy compact space at {width}px: {state}")
+    if route in {"draft_workspace", "registered_opj"} and width < 768:
+        if state["opjEmptyVisasVisible"]:
+            raise AssertionError(f"OPJ empty visas occupy phone space at {width}px: {state}")
 
 
 def capture_responsive_transitions(page, shots, report, runtime_errors):
@@ -721,7 +752,7 @@ def capture_responsive_transitions(page, shots, report, runtime_errors):
             for width in sequence:
                 height = 844 if width <= 768 else 900
                 page.set_viewport_size({"width": width, "height": height})
-                page.wait_for_timeout(80)
+                page.wait_for_timeout(100)
                 state = responsive_transition_state(page, route)
                 assert_responsive_transition(state, route, mode)
                 route_states.append(state)
@@ -736,6 +767,161 @@ def capture_responsive_transitions(page, shots, report, runtime_errors):
             assert_no_runtime_errors(runtime_errors, key)
 
 
+def authority_projection_state(page):
+    return page.evaluate(
+        """() => {
+            const display = selector => {
+                const node = document.querySelector(selector);
+                return node ? getComputedStyle(node).display : null;
+            };
+            return {
+                nativeExists: Boolean(document.querySelector('.authority-matrix')),
+                nativeDisplay: display('.authority-matrix-scroll'),
+                mobileDisplay: display('.authority-mobile-matrix'),
+                visibleEmployeeCards: [...document.querySelectorAll('.authority-mobile-employee')]
+                    .filter(node => getComputedStyle(node).display !== 'none' && !node.hidden).length,
+                treeSummaryVisible: (() => {
+                    const node = document.querySelector('.authority-mobile-tree-disclosure > summary');
+                    return Boolean(node && !node.hidden && getComputedStyle(node).display !== 'none');
+                })(),
+                legendSummaryVisible: (() => {
+                    const node = document.querySelector('.authority-mobile-legend-disclosure > summary');
+                    return Boolean(node && !node.hidden && getComputedStyle(node).display !== 'none');
+                })(),
+            };
+        }"""
+    )
+
+
+def capture_v14_visual_evidence(page, shots, report, runtime_errors):
+    evidence = {}
+
+    def open_at(path, width, height=900):
+        page.set_viewport_size({"width": width, "height": height})
+        clear_runtime_errors(runtime_errors)
+        page.goto(BASE + path)
+        theme(page, "light")
+        page.wait_for_timeout(180)
+        if document_width(page)["scrollWidth"] > width + 2:
+            raise AssertionError(f"v14 evidence document overflow {width}px at {page.url}")
+
+    # Rights direct-load vs resize history must preserve the same visible composition.
+    open_at(ROUTES["authorities"], 880)
+    direct_880 = authority_projection_state(page)
+    screenshots(page, shots, "v14__rights_matrix__880px")
+    tree = need(page, ".authority-mobile-tree-disclosure > summary")
+    legend = need(page, ".authority-mobile-legend-disclosure > summary")
+    evidence["rights_compact_controls_880"] = {
+        "tree_open": page.locator(".authority-mobile-tree-disclosure").evaluate("n=>n.open"),
+        "legend_open": page.locator(".authority-mobile-legend-disclosure").evaluate("n=>n.open"),
+    }
+    if evidence["rights_compact_controls_880"] != {"tree_open": False, "legend_open": False}:
+        raise AssertionError(f"compact Rights disclosures must start closed: {evidence}")
+    page.screenshot(path=shots / "v14__rights_tree_legend_collapsed__880px.png", full_page=False)
+
+    page.set_viewport_size({"width": 440, "height": 844})
+    page.wait_for_timeout(160)
+    phone_state = authority_projection_state(page)
+    if phone_state["nativeDisplay"] != "none" or phone_state["mobileDisplay"] in {None, "none"}:
+        raise AssertionError(f"Rights phone projection failed before resize-up: {phone_state}")
+    page.set_viewport_size({"width": 880, "height": 900})
+    page.wait_for_timeout(160)
+    phone_to_880 = authority_projection_state(page)
+
+    open_at(ROUTES["authorities"], 1440)
+    page.set_viewport_size({"width": 880, "height": 900})
+    page.wait_for_timeout(160)
+    desktop_to_880 = authority_projection_state(page)
+
+    projection_keys = ("nativeExists", "nativeDisplay", "mobileDisplay", "treeSummaryVisible", "legendSummaryVisible")
+    comparable = lambda state: {key: state[key] for key in projection_keys}
+    if comparable(direct_880) != comparable(phone_to_880) or comparable(direct_880) != comparable(desktop_to_880):
+        raise AssertionError(
+            "Rights compact composition depends on viewport history: "
+            f"direct={direct_880} phone_up={phone_to_880} desktop_down={desktop_to_880}"
+        )
+    evidence["rights_projection_history"] = {
+        "direct_880": direct_880,
+        "phone_to_880": phone_to_880,
+        "desktop_to_880": desktop_to_880,
+    }
+
+    # Required Rights evidence widths and holder density.
+    for width in (880, 768, 656, 440):
+        open_at(ROUTES["authorities"], width, 844 if width <= 768 else 900)
+        state = responsive_transition_state(page, "authorities")
+        assert_responsive_transition(state, "authorities", "light")
+        screenshots(page, shots, f"v14__rights_matrix__{width}px")
+        if width == 880:
+            need(page, '[data-authority-view="holders"]').click()
+            page.wait_for_timeout(120)
+            visible_holders = page.locator('[data-holder-row]:visible').count()
+            if visible_holders < 2:
+                raise AssertionError(f"Rights holders are not dense at 880px: {visible_holders}")
+            holder_wrap = need(page, ".authority-table-wrap:has(.authority-holders-table)")
+            holder_overflow = holder_wrap.evaluate(
+                "n=>({clientWidth:n.clientWidth,scrollWidth:n.scrollWidth})"
+            )
+            if holder_overflow["scrollWidth"] <= holder_overflow["clientWidth"]:
+                raise AssertionError(f"Rights holders lack local horizontal viewport: {holder_overflow}")
+            screenshots(page, shots, "v14__rights_holders__880px")
+
+            # Prove global summary resets stale local filters instead of inheriting no-result state.
+            search = need(page, "[data-authority-search]")
+            search.fill("__repair_v14_no_match__")
+            page.wait_for_timeout(80)
+            if not page.locator("[data-authority-no-results]").evaluate(
+                "n=>n.classList.contains('is-visible')"
+            ):
+                raise AssertionError("restrictive Rights filter did not reach no-results state")
+            page.locator('[data-summary-view="holders"]:not([data-summary-condition])').first.click()
+            page.wait_for_timeout(100)
+            if search.input_value() or page.locator('[data-holder-row]:visible').count() == 0:
+                raise AssertionError("global Rights summary retained stale local filters")
+            condition_summary = page.locator('[data-summary-condition="true"]').first
+            condition_summary.click()
+            page.wait_for_timeout(100)
+            if search.input_value() or page.locator('[data-holder-row]:visible').count() == 0:
+                raise AssertionError("conditional Rights summary did not reset stale filters")
+            evidence["rights_filter_reset"] = "pass"
+
+    # Required OPJ working evidence and row-content samples.
+    for width in (880, 768, 656, 440):
+        open_at(ROUTES["draft_workspace"], width, 844 if width <= 768 else 900)
+        state = responsive_transition_state(page, "draft_workspace")
+        assert_responsive_transition(state, "draft_workspace", "light")
+        screenshots(page, shots, f"v14__opj_working__{width}px")
+        if width == 880:
+            empty_row = page.locator(".draft-ledger-row:not(:has([data-opj-marker]))").first
+            marker_row = page.locator(".draft-ledger-row:has([data-opj-marker])").first
+            if not empty_row.count() or not marker_row.count():
+                raise AssertionError("OPJ evidence requires both empty-visas and marker rows")
+            empty_row.screenshot(path=shots / "v14__opj_row_no_visas__880px.png")
+            marker_row.screenshot(path=shots / "v14__opj_row_with_marker__880px.png")
+            long_index = page.locator(".draft-ledger-row").evaluate_all(
+                "rows=>rows.findIndex(row=>(row.querySelector('.draft-ledger-content')?.innerText||'').trim().length>=100)"
+            )
+            if long_index < 0:
+                raise AssertionError("OPJ evidence requires one long-content row")
+            page.locator(".draft-ledger-row").nth(long_index).screenshot(
+                path=shots / "v14__opj_row_long_content__880px.png"
+            )
+            evidence["opj_working_samples"] = {
+                "empty_visas": True,
+                "marker_row": True,
+                "long_content": True,
+            }
+
+    for width in (880, 656):
+        open_at(ROUTES["registered_opj"], width, 844 if width <= 768 else 900)
+        state = responsive_transition_state(page, "registered_opj")
+        assert_responsive_transition(state, "registered_opj", "light")
+        screenshots(page, shots, f"v14__opj_registered__{width}px")
+
+    report["v14_visual_evidence"] = evidence
+    assert_no_runtime_errors(runtime_errors, "Repair v14 focused visual evidence")
+
+
 def main():
     shots = OUT / "screenshots"
     shots.mkdir(parents=True, exist_ok=True)
@@ -746,12 +932,12 @@ def main():
             "desktop_viewports": DESKTOP_VIEWPORTS,
             "mobile_viewports": MOBILE_VIEWPORTS,
             "viewports": VIEWPORTS,
-            "public_routes": PUBLIC_ROUTES,
         },
         "baseline": {},
         "mobile_focus": {},
         "open_states": {},
         "responsive_transitions": {},
+        "v14_visual_evidence": {},
     }
     password = os.getenv("EOD_BROWSER_PASSWORD", "").strip()
     if not password:
@@ -800,6 +986,7 @@ def main():
         report["meta"]["authenticated_routes"] = dict(ROUTES)
 
         capture_responsive_transitions(page, shots, report, runtime_errors)
+        capture_v14_visual_evidence(page, shots, report, runtime_errors)
 
         for route, path in ROUTES.items():
             for mode in THEMES:

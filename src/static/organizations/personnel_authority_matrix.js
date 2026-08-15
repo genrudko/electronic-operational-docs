@@ -117,6 +117,22 @@
         applyFilters();
     };
 
+    const resetGlobalFilterContext = () => {
+        if (search) search.value = "";
+        [category, group, right].forEach((field) => {
+            if (field) field.value = "";
+        });
+        selectedDivision = "";
+        treeItems.forEach((item) => item.classList.toggle(
+            "is-active",
+            (item.dataset.divisionFilter || "") === "",
+        ));
+        collapsed.clear();
+        collapsers.forEach((item) => item.setAttribute("aria-expanded", "true"));
+        root.querySelectorAll(".is-focused").forEach((item) => item.classList.remove("is-focused"));
+        syncExpandAllControl();
+    };
+
     tabs.forEach((tab) => tab.addEventListener("click", () => {
         conditionalOnly = false;
         activateView(tab.dataset.authorityView, { syncUrl: true });
@@ -124,6 +140,7 @@
 
     root.querySelectorAll("[data-summary-view]").forEach((button) => {
         button.addEventListener("click", () => {
+            resetGlobalFilterContext();
             conditionalOnly = button.dataset.summaryCondition === "true";
             activateView(button.dataset.summaryView, { syncUrl: true });
         });

@@ -20,11 +20,12 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
         self.assertIn("@media (max-width: 980px)", shell)
         self.assertIn("@media screen and (max-width: 61.25rem)", responsive)
         self.assertIn("@media screen and (max-width: 61.25rem)", surfaces)
+        self.assertIn("@media screen and (min-width: 48rem) and (max-width: 61.25rem)", responsive)
         self.assertIn("@media screen and (max-width: 47.99rem)", responsive)
         self.assertIn("@media screen and (max-width: 47.99rem)", surfaces)
         self.assertIn("Compact keeps mouse-oriented control density", responsive)
         self.assertIn("Phone is touch-first", surfaces)
-        phone = responsive[responsive.index("@media screen and (max-width: 47.99rem)") :]
+        phone = responsive[responsive.rindex("@media screen and (max-width: 47.99rem)") :]
         self.assertIn(
             "body.ux-platform.opj-clean-journal-page .journal-workspace-actions .da-button",
             phone,
@@ -43,33 +44,62 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
         self.assertIn(".personnel-recent-grid { grid-template-columns:1fr; }", compact)
         self.assertNotIn("@media (max-width:59.375rem)", css)
 
-    def test_compact_state_adapts_dense_operational_surfaces(self) -> None:
+    def test_compact_state_keeps_dense_opj_and_rights_surfaces_distinct_from_phone(self) -> None:
         responsive = read("src/static/system/ux_platform_responsive.css")
-        surfaces = read("src/static/system/ux_mobile_surfaces.css")
-        authority = read("src/static/organizations/personnel_authority_matrix.css")
 
-        compact = responsive[responsive.index("@media screen and (max-width: 61.25rem)") :]
-        for selector in (
-            ".journal-registry-table",
-            ".personnel-employee-table",
-            ".authority-table",
-            ".authority-workspace",
-            ".defect-da-work-table",
-            ".opj-toolbar-primary",
-        ):
-            self.assertIn(selector, compact)
+        compact_start = responsive.index(
+            "@media screen and (min-width: 48rem) and (max-width: 61.25rem)"
+        )
+        phone_start = responsive.index(
+            "@media screen and (max-width: 47.99rem)",
+            compact_start,
+        )
+        compact = responsive[compact_start:phone_start]
+        phone = responsive[phone_start:]
 
-        for selector in (
-            ".workplace-document-mobile-list",
-            ".workplace-document-entry-mobile-list",
-            ".import-attempt-mobile-list",
-            ".authority-mobile-matrix",
-        ):
-            self.assertIn(selector, surfaces)
+        self.assertIn(
+            "grid-template-columns: clamp(6.5rem, 18%, 8rem) minmax(0, 1fr)",
+            compact,
+        )
+        self.assertIn(
+            ".draft-ledger-visas:not(:has([data-opj-marker])) { display: none; }",
+            compact,
+        )
+        self.assertIn(
+            ".approved-journal-visas:not(:has([data-opj-marker])) { display: none; }",
+            compact,
+        )
+        self.assertIn(
+            ".authority-matrix-panel .authority-matrix-scroll {",
+            compact,
+        )
+        self.assertIn("display: block;", compact)
+        self.assertIn(".authority-mobile-matrix { display: none; }", compact)
+        self.assertIn(".authority-holders-table {", compact)
+        self.assertIn("display: table;", compact)
+        self.assertIn("position: sticky;", compact)
+        self.assertIn(".authority-matrix-panel .authority-matrix-scroll { display: none; }", phone)
+        self.assertIn(".authority-mobile-matrix {", phone)
+        self.assertIn("display: grid;", phone)
 
-        self.assertIn("@media (max-width:61.25rem)", authority)
-        self.assertIn(".authority-matrix-panel .authority-matrix-scroll { display:none; }", authority)
-        self.assertIn(".authority-mobile-matrix", authority)
+    def test_authority_progressive_enhancement_splits_compact_preamble_from_phone_projection(self) -> None:
+        script = read("src/static/organizations/personnel_authority_followup.js")
+        controller = read("src/static/organizations/personnel_authority_matrix.js")
+
+        self.assertIn('matchMedia("(max-width: 61.25rem)")', script)
+        self.assertIn('matchMedia("(max-width: 47.99rem)")', script)
+        self.assertIn("const enhancePreamble", script)
+        self.assertIn("const buildMobileMatrix", script)
+        self.assertIn("if (mobileMatrixBuilt || !mobileMedia.matches) return", script)
+        self.assertIn("ensureAuthorityPresentation", script)
+        self.assertIn("compactMedia.addEventListener", script)
+        self.assertIn("mobileMedia.addEventListener", script)
+
+        self.assertIn("const resetGlobalFilterContext", controller)
+        self.assertIn('if (search) search.value = ""', controller)
+        self.assertIn('selectedDivision = ""', controller)
+        self.assertIn("collapsed.clear()", controller)
+        self.assertIn("resetGlobalFilterContext();", controller)
 
     def test_human_text_uses_word_boundaries_and_only_technical_codes_use_anywhere(self) -> None:
         responsive = read("src/static/system/ux_platform_responsive.css")
@@ -96,16 +126,21 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
         self.assertIn("overflow-wrap: break-word", rich_editor)
         self.assertIn("word-break: normal", rich_editor)
 
-    def test_compact_opj_is_disclosure_based_and_spread_is_sequential(self) -> None:
+    def test_compact_opj_keeps_spread_sequential_without_stacking_each_record(self) -> None:
         responsive = read("src/static/system/ux_platform_responsive.css")
         surfaces = read("src/static/system/ux_mobile_surfaces.css")
 
         self.assertIn('.opj-toolbar[data-ribbon-mode="compact"] .opj-tool-group:nth-child(1)', surfaces)
         self.assertIn('.opj-toolbar[data-ribbon-mode="compact"] .opj-tool-group:nth-child(2)', surfaces)
         self.assertIn('.opj-view-switch [data-view-mode="spread"] { display: inline-flex; }', responsive)
-        self.assertIn('grid-template-columns: 1fr;', responsive)
         self.assertIn('content: "Первая страница разворота";', responsive)
         self.assertIn('content: "Вторая страница разворота";', responsive)
+        compact = responsive[
+            responsive.index("/* Repair v14: COMPACT OPJ is a ledger") :
+            responsive.index("/* Repair v14: COMPACT Rights")
+        ]
+        self.assertNotIn('.draft-ledger-time::before { content: "Время"; }', compact)
+        self.assertIn("grid-template-columns: clamp(6.5rem, 18%, 8rem) minmax(0, 1fr)", compact)
 
     def test_no_repair_specific_stylesheet_or_horizontal_page_pan_contract(self) -> None:
         responsive = read("src/static/system/ux_platform_responsive.css")
@@ -113,8 +148,8 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
         self.assertIn("overflow-x: clip", responsive)
         self.assertIn(".ux-intrinsic-wide", responsive)
         self.assertIn("overscroll-behavior-inline: contain", responsive)
-        self.assertNotIn("repair_v13.css", responsive.lower())
-        self.assertFalse((ROOT / "src/static/system/repair_v13.css").exists())
+        self.assertNotIn("repair_v14.css", responsive.lower())
+        self.assertFalse((ROOT / "src/static/system/repair_v14.css").exists())
 
     def test_browser_gate_resizes_mandatory_surfaces_down_and_back_up(self) -> None:
         browser_path = ROOT / "tests/browser_theme/run.py"
@@ -122,7 +157,10 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
             self.skipTest("repository-level browser harness is not packaged in runtime images")
         browser = browser_path.read_text(encoding="utf-8")
 
-        for width in (1440, 1280, 1180, 1100, 1024, 976, 950, 900, 832, 768, 600, 440, 412, 390):
+        for width in (
+            1440, 1280, 1180, 1100, 1024, 976, 950, 900, 880, 832,
+            768, 656, 600, 440, 412, 390,
+        ):
             self.assertIn(f"    {width},", browser)
         for route in (
             '"personnel"',
@@ -131,14 +169,15 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
             '"workplace_docs"',
             '"defect_registry"',
             '"opj_registry"',
+            '"registered_opj"',
             '"draft_workspace"',
         ):
             self.assertIn(route, browser)
         self.assertIn("TRANSITION_WIDTHS + tuple(reversed(TRANSITION_WIDTHS[:-1]))", browser)
         self.assertIn("responsive transition document overflow", browser)
         self.assertIn("responsive transition human-word shredding", browser)
-        self.assertIn('surface_selector = ".defect-da-work-row"', browser)
-        self.assertIn("page.mouse.move(0, 0)", browser)
-        self.assertIn("page.wait_for_timeout(160)", browser)
-        self.assertIn("reference_trigger.click()", browser)
+        self.assertIn("authorityNativeMatrixExists", browser)
+        self.assertIn("authorityMobileMatrixExists", browser)
+        self.assertIn("authorityMatrixOverflow", browser)
+        self.assertIn("opjDraftColumns", browser)
         self.assertIn("capture_responsive_transitions(page, shots, report, runtime_errors)", browser)
