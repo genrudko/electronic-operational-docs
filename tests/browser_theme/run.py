@@ -704,11 +704,21 @@ def assert_responsive_transition(state, route, mode):
             raise AssertionError(f"rights phone projection visible at compact {width}px: {state}")
         viewport = state["authorityMatrixOverflow"]
         if not viewport or viewport["scrollWidth"] <= viewport["clientWidth"]:
-            raise AssertionError(f"rights compact matrix lacks local horizontal viewport at {width}px: {state}")
+            raise AssertionError(
+                f"rights compact matrix lacks local horizontal viewport at {width}px: {state}"
+            )
     if route == "authorities" and width < 768:
-        if not state["authorityNativeMatrixExists"] or state["authorityDesktopMatrix"] != "none":
-            raise AssertionError(f"rights native source not correctly hidden on phone {width}px: {state}")
-        if not state["authorityMobileMatrixExists"] or state["authorityCompactMatrix"] == "none":
+        if (
+            not state["authorityNativeMatrixExists"]
+            or state["authorityDesktopMatrix"] != "none"
+        ):
+            raise AssertionError(
+                f"rights native source not correctly hidden on phone {width}px: {state}"
+            )
+        if (
+            not state["authorityMobileMatrixExists"]
+            or state["authorityCompactMatrix"] == "none"
+        ):
             raise AssertionError(f"rights phone projection missing at {width}px: {state}")
     if width <= 980 and route == "defect_registry" and state["defectDesktopHead"] != "none":
         raise AssertionError(f"DEFECT worklist stayed desktop at {width}px: {state}")
@@ -809,15 +819,21 @@ def capture_v14_visual_evidence(page, shots, report, runtime_errors):
     open_at(ROUTES["authorities"], 880)
     direct_880 = authority_projection_state(page)
     screenshots(page, shots, "v14__rights_matrix__880px")
-    tree = need(page, ".authority-mobile-tree-disclosure > summary")
-    legend = need(page, ".authority-mobile-legend-disclosure > summary")
+    need(page, ".authority-mobile-tree-disclosure > summary")
+    need(page, ".authority-mobile-legend-disclosure > summary")
     evidence["rights_compact_controls_880"] = {
         "tree_open": page.locator(".authority-mobile-tree-disclosure").evaluate("n=>n.open"),
         "legend_open": page.locator(".authority-mobile-legend-disclosure").evaluate("n=>n.open"),
     }
-    if evidence["rights_compact_controls_880"] != {"tree_open": False, "legend_open": False}:
+    if evidence["rights_compact_controls_880"] != {
+        "tree_open": False,
+        "legend_open": False,
+    }:
         raise AssertionError(f"compact Rights disclosures must start closed: {evidence}")
-    page.screenshot(path=shots / "v14__rights_tree_legend_collapsed__880px.png", full_page=False)
+    page.screenshot(
+        path=shots / "v14__rights_tree_legend_collapsed__880px.png",
+        full_page=False,
+    )
 
     page.set_viewport_size({"width": 440, "height": 844})
     page.wait_for_timeout(160)
@@ -833,9 +849,21 @@ def capture_v14_visual_evidence(page, shots, report, runtime_errors):
     page.wait_for_timeout(160)
     desktop_to_880 = authority_projection_state(page)
 
-    projection_keys = ("nativeExists", "nativeDisplay", "mobileDisplay", "treeSummaryVisible", "legendSummaryVisible")
-    comparable = lambda state: {key: state[key] for key in projection_keys}
-    if comparable(direct_880) != comparable(phone_to_880) or comparable(direct_880) != comparable(desktop_to_880):
+    projection_keys = (
+        "nativeExists",
+        "nativeDisplay",
+        "mobileDisplay",
+        "treeSummaryVisible",
+        "legendSummaryVisible",
+    )
+
+    def comparable(state):
+        return {key: state[key] for key in projection_keys}
+
+    if (
+        comparable(direct_880) != comparable(phone_to_880)
+        or comparable(direct_880) != comparable(desktop_to_880)
+    ):
         raise AssertionError(
             "Rights compact composition depends on viewport history: "
             f"direct={direct_880} phone_up={phone_to_880} desktop_down={desktop_to_880}"
@@ -863,7 +891,9 @@ def capture_v14_visual_evidence(page, shots, report, runtime_errors):
                 "n=>({clientWidth:n.clientWidth,scrollWidth:n.scrollWidth})"
             )
             if holder_overflow["scrollWidth"] <= holder_overflow["clientWidth"]:
-                raise AssertionError(f"Rights holders lack local horizontal viewport: {holder_overflow}")
+                raise AssertionError(
+                    f"Rights holders lack local horizontal viewport: {holder_overflow}"
+                )
             screenshots(page, shots, "v14__rights_holders__880px")
 
             # Prove global summary resets stale local filters instead of inheriting no-result state.
@@ -874,7 +904,9 @@ def capture_v14_visual_evidence(page, shots, report, runtime_errors):
                 "n=>n.classList.contains('is-visible')"
             ):
                 raise AssertionError("restrictive Rights filter did not reach no-results state")
-            page.locator('[data-summary-view="holders"]:not([data-summary-condition])').first.click()
+            page.locator(
+                '[data-summary-view="holders"]:not([data-summary-condition])'
+            ).first.click()
             page.wait_for_timeout(100)
             if search.input_value() or page.locator('[data-holder-row]:visible').count() == 0:
                 raise AssertionError("global Rights summary retained stale local filters")
