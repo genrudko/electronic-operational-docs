@@ -143,7 +143,9 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
             compact,
         )
 
-    def test_repair_v14_2_compact_opj_viewport_geometry_and_redundant_date_contract(self) -> None:
+    def test_repair_v14_2_compact_opj_viewport_geometry_and_redundant_date_contract(
+        self,
+    ) -> None:
         responsive = read("src/static/system/ux_platform_responsive.css")
         surfaces = read("src/static/system/ux_mobile_surfaces.css")
 
@@ -165,7 +167,8 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
             compact,
         )
         self.assertIn(
-            "html body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode=\"compact\"] .opj-editor-toolbar {",
+            "html body.ux-platform.opj-workspace-page "
+            ".opj-toolbar[data-ribbon-mode=\"compact\"] .opj-editor-toolbar {",
             compact,
         )
         self.assertIn(
@@ -173,7 +176,9 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
             compact[compact.index("html body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode=\"compact\"] .opj-editor-toolbar") :],
         )
         self.assertIn(
-            "html body.ux-platform.opj-clean-journal-page .opj-clean-shift-group:has(.opj-clean-shift-date) .opj-entry-date-placeholder {",
+            "html body.ux-platform.opj-clean-journal-page "
+            ".opj-clean-shift-group:has(.opj-clean-shift-date) "
+            ".opj-entry-date-placeholder {",
             compact,
         )
         self.assertIn(
@@ -181,7 +186,9 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
             compact[compact.index("html body.ux-platform.opj-clean-journal-page .opj-clean-shift-group:has(.opj-clean-shift-date) .opj-entry-date-placeholder") :],
         )
         self.assertIn(
-            "html body.ux-platform.opj-clean-journal-page .opj-clean-shift-group:has(.opj-clean-shift-date) .opj-entry-date-placeholder {",
+            "html body.ux-platform.opj-clean-journal-page "
+            ".opj-clean-shift-group:has(.opj-clean-shift-date) "
+            ".opj-entry-date-placeholder {",
             phone,
         )
         self.assertNotIn(
