@@ -478,7 +478,7 @@
     "src/apps/system/tests/test_deployment_health.py": "e0443706071d08fb212f471f9747ca0fb24ed5f2a168feb88d993856e04084ec",
     "src/apps/system/tests/test_deployment_profile.py": "5a500054d4ab849c07724fde1c110341c0f552858e7cd970027a5eae9b3ccd6b",
     "src/eod_config/deployment.py": "1f07e17f3e014aa0d8f1a2b6717c6b1bd401355900bfe6ecd7c91a0159edfe75",
-    "src/static/system/eod_typography.css": "6ed237e0b6221fd57ae32888ecfe77ce8f02afc933ca8da56cc19ffd20c7bfdc",
+    "src/static/system/eod_typography.css": "cea246863ce41ac62dfe88275834336bcfe6dc7c21c8635741f8c0f99ca2d908",
     "supply-chain/Dockerfile.browser": "0060a0d1dde4afeea1b37db6eb2c079c30bf2e38e12c71e1fcb5910e1e9d54fa",
     "tests/automation/test_auto_001b_request_entrypoint.py": "3a5c0fbb38c047de125bb892ddbf74f74c9cfb25e2472b99e5edab8d1919f9f8",
     "tests/browser_theme/repair_v4.py": "cf95b58f90a97fb6846ce7d3b1334ed74f5be2a09e10b1124629a20bff280a5c",

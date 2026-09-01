@@ -34,10 +34,7 @@
 .defect-da-work-description a{color:var(--da-text);font-size:.78rem;font-weight:720;line-height:1.42;text-decoration:none;}
 .defect-da-work-description a:hover{color:var(--da-blue-dark);text-decoration:underline;text-underline-offset:2px;}
 .defect-da-work-number{justify-items:center;text-align:center;}
-.defect-da-sequence-badge{display:grid !important;width:48px !important;height:36px !important;place-items:center;border:0 !important;border-radius:8px !important;background:var(--da-blue) !important;color:#fff !important;font-size:.8rem !important;font-weight:900 !important;text-decoration:none !important;box-shadow:0 2px 5px rgba(18,103,165,.2);}
-.defect-da-sequence-badge[data-status="IN_PROGRESS"]{background:var(--da-orange) !important;box-shadow:0 2px 5px rgba(199,101,18,.2);}
-.defect-da-sequence-badge[data-status="RESOLVED"]{background:var(--da-green) !important;box-shadow:0 2px 5px rgba(36,120,73,.2);}
-.defect-da-sequence-badge[data-status="CLOSED"]{background:var(--da-slate) !important;box-shadow:0 2px 5px rgba(77,94,115,.2);}
+.defect-da-sequence-badge{display:grid !important;width:48px !important;height:36px !important;place-items:center;border:1px solid var(--theme-border-strong) !important;border-radius:8px !important;background:var(--theme-surface-soft) !important;color:var(--theme-text) !important;font-size:.8rem !important;font-weight:900 !important;text-decoration:none !important;box-shadow:none !important;}
 .defect-da-status{display:inline-flex !important;width:fit-content;min-height:29px;align-items:center;justify-content:center;padding:5px 11px !important;border:1px solid transparent !important;border-radius:999px !important;background:var(--da-blue) !important;color:#fff !important;font-size:.7rem !important;font-weight:850 !important;letter-spacing:.005em;box-shadow:none;}
 .defect-da-status[data-status="IN_PROGRESS"]{background:var(--da-orange) !important;}
 .defect-da-status[data-status="RESOLVED"]{background:var(--da-green) !important;}

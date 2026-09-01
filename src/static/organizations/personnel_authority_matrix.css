@@ -65,7 +65,7 @@
 .authority-tree-item:hover,.authority-tree-item.is-active { background:var(--theme-primary-soft); color:var(--theme-primary); }
 .authority-tree-icon { display:grid; width:1.75rem; height:1.75rem; place-items:center; border-radius:var(--theme-radius-sm); background:var(--theme-surface-soft); color:var(--theme-text-muted); }
 .authority-tree-icon svg,.authority-inline-icon { width:1rem; height:1rem; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
-.authority-tree-item em { min-width:0; overflow:visible; font-size:var(--theme-font-size-sm); font-style:normal; font-weight:var(--theme-font-weight-semibold); line-height:1.35; white-space:normal; overflow-wrap:normal; word-break:normal; }
+.authority-tree-item .authority-tree-name { min-width:0; overflow:visible; font-size:var(--theme-font-size-sm); font-style:normal; font-weight:var(--theme-font-weight-semibold); line-height:1.35; white-space:normal; overflow-wrap:normal; word-break:normal; }
 .authority-tree-item b { min-width:1.75rem; min-height:1.75rem; display:inline-grid; place-items:center; padding-inline:var(--theme-space-2); border-radius:var(--theme-radius-pill); background:var(--theme-surface-soft); color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); }
 .authority-tree-item[hidden] { display:none; }
 .authority-tree-legend,.authority-abbreviation-legend { display:none; }

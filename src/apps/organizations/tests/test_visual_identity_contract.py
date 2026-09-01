@@ -214,3 +214,23 @@ class VisualIdentityContractTests(SimpleTestCase):
             "overflow-wrap:break-word; word-break:normal",
             stylesheet,
         )
+
+    def test_authority_tree_uses_normal_onest_typography_without_em_misuse(self) -> None:
+        template = (
+            self.source_root / "templates/organizations/authority_registry.html"
+        ).read_text(encoding="utf-8")
+        matrix_css = (
+            self.source_root / "static/organizations/personnel_authority_matrix.css"
+        ).read_text(encoding="utf-8")
+        typography_css = (
+            self.source_root / "static/system/eod_typography.css"
+        ).read_text(encoding="utf-8")
+
+        # Template must not use <em> for division names in the tree
+        self.assertNotIn("<em>Вся организация</em>", template)
+        self.assertNotIn("<em>{{ item.division.name }}</em>", template)
+        self.assertIn("authority-tree-name", template)
+
+        # CSS must style .authority-tree-name or tree item text without em selector
+        self.assertNotIn(".authority-tree-item em", matrix_css)
+        self.assertNotIn(".authority-tree-item em", typography_css)

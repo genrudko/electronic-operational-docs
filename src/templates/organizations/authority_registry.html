@@ -105,13 +105,13 @@
             </div>
             <button class="authority-tree-item is-active" type="button" data-division-filter="">
                 <span class="authority-tree-icon tone-blue"><svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-organization"></use></svg></span>
-                <em>Вся организация</em><b>{{ employee_rows|length }}</b>
+                <span class="authority-tree-name">Вся организация</span><b>{{ employee_rows|length }}</b>
             </button>
             <div class="authority-tree-list">
                 {% for item in division_rows %}
                 <button class="authority-tree-item" type="button" style="--tree-depth: {{ item.depth }}" data-division-filter="{{ item.division.id }}" data-division-path="{{ item.division_path }}" data-parent-id="{{ item.division.parent_id|default:'' }}">
                     <span class="authority-tree-icon tone-{{ item.tone }}"><svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-org-{{ item.icon_kind }}"></use></svg></span>
-                    <em>{{ item.division.name }}</em><b>{{ item.employee_count }}</b>
+                    <span class="authority-tree-name">{{ item.division.name }}</span><b>{{ item.employee_count }}</b>
                 </button>
                 {% endfor %}
             </div>
