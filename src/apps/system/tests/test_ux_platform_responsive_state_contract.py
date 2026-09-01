@@ -101,6 +101,47 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
         self.assertIn("collapsed.clear()", controller)
         self.assertIn("resetGlobalFilterContext();", controller)
 
+    def test_repair_v14_1_compact_dense_surface_owners_are_explicit(self) -> None:
+        responsive = read("src/static/system/ux_platform_responsive.css")
+        compact_start = responsive.index(
+            "@media screen and (min-width: 48rem) and (max-width: 61.25rem)"
+        )
+        phone_start = responsive.index(
+            "@media screen and (max-width: 47.99rem)", compact_start
+        )
+        compact = responsive[compact_start:phone_start]
+
+        self.assertIn(
+            'html body.ux-platform .authority-panel[data-authority-panel="holders"] '
+            '.authority-table-wrap > .authority-table.authority-holders-table {',
+            compact,
+        )
+        self.assertIn(
+            ".authority-matrix > thead th::before { content: none; display: none; }",
+            compact,
+        )
+        self.assertIn(
+            ".authority-holders-table > thead th::before { content: none; display: none; }",
+            compact,
+        )
+        self.assertIn(
+            "grid-template-columns: minmax(0, 1fr) auto;",
+            compact,
+        )
+        self.assertIn(
+            ".opj-toolbar-search {\n        grid-column: 1 / -1;",
+            compact,
+        )
+        self.assertIn(
+            ".draft-ledger-visas::before,\n    body.ux-platform.opj-clean-journal-page .approved-journal-visas::before",
+            compact,
+        )
+        self.assertIn('content: "Визы";', compact)
+        self.assertIn(
+            ".opj-entry-date-placeholder { display: none; }",
+            compact,
+        )
+
     def test_human_text_uses_word_boundaries_and_only_technical_codes_use_anywhere(self) -> None:
         responsive = read("src/static/system/ux_platform_responsive.css")
         surfaces = read("src/static/system/ux_mobile_surfaces.css")

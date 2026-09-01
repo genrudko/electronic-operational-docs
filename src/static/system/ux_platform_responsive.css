@@ -1252,6 +1252,42 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         height: var(--theme-control-height-md);
     }
 
+    /* Repair v14.1: compact OPJ commands stay dense. */
+    body.ux-platform.opj-workspace-page .opj-toolbar-primary {
+        grid-template-columns: minmax(0, 1fr) auto;
+        padding: var(--theme-space-2);
+        gap: var(--theme-space-2);
+    }
+    body.ux-platform.opj-workspace-page .opj-toolbar-search {
+        grid-column: 1 / -1;
+        grid-template-columns: minmax(0, 1fr) minmax(8.5rem, .42fr);
+        gap: var(--theme-space-2);
+    }
+    body.ux-platform.opj-workspace-page .opj-page-navigation { grid-column: 1; width: auto; }
+    body.ux-platform.opj-workspace-page .opj-toolbar-actions {
+        grid-column: 2;
+        width: auto;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: var(--theme-space-1);
+    }
+    body.ux-platform.opj-workspace-page .opj-toolbar-actions > *,
+    body.ux-platform.opj-workspace-page .opj-toolbar-actions form,
+    body.ux-platform.opj-workspace-page .opj-toolbar-actions .da-button,
+    body.ux-platform.opj-workspace-page .opj-ribbon-toggle,
+    body.ux-platform.opj-workspace-page .opj-view-switch { width: auto; }
+    body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode="expanded"] .opj-editor-toolbar {
+        grid-template-columns: minmax(9rem, 11rem) minmax(0, 1fr);
+        gap: var(--theme-space-2);
+        padding: var(--theme-space-2);
+    }
+    body.ux-platform.opj-workspace-page .opj-editor-tools,
+    body.ux-platform.opj-workspace-page .draft-editor-ribbon-groups {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--theme-space-2);
+    }
+
     /* Repair v14: COMPACT OPJ is a ledger, not a phone card stack. */
     body.ux-platform.opj-workspace-page .draft-ledger-form {
         grid-template-columns: clamp(6.5rem, 18%, 8rem) minmax(0, 1fr);
@@ -1299,10 +1335,15 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
     }
     body.ux-platform.opj-workspace-page .draft-ledger-time::before,
     body.ux-platform.opj-workspace-page .draft-ledger-content::before { display: none; content: none; }
-    body.ux-platform.opj-workspace-page .draft-ledger-visas::before {
-        flex: 0 0 100%;
+    body.ux-platform.opj-workspace-page .draft-ledger-visas::before,
+    body.ux-platform.opj-clean-journal-page .approved-journal-visas::before {
+        flex: 0 0 auto;
         margin: 0;
-        content: "Визы и замечания";
+        content: "Визы";
+        color: var(--theme-text-muted);
+        font-size: var(--theme-font-size-xs);
+        font-weight: var(--theme-font-weight-semibold);
+        line-height: 1.35;
     }
 
     body.ux-platform.opj-clean-journal-page .approved-journal-table-wrap { overflow: visible; }
@@ -1363,10 +1404,15 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         background: var(--theme-surface-soft);
     }
     body.ux-platform.opj-clean-journal-page .approved-journal-visas:not(:has([data-opj-marker])) { display: none; }
-    body.ux-platform.opj-clean-journal-page .approved-journal-visas:has([data-opj-marker]) { display: block; }
-    body.ux-platform.opj-clean-journal-page .approved-journal-row > td:nth-child(n + 3)::before {
-        margin-block-end: var(--theme-space-1);
+    body.ux-platform.opj-clean-journal-page .approved-journal-visas:has([data-opj-marker]) {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-start;
+        gap: var(--theme-space-2);
     }
+    body.ux-platform.opj-clean-journal-page .approved-journal-row > td:nth-child(n + 3)::before { margin: 0; }
+    body.ux-platform.opj-clean-journal-page .opj-entry-date-placeholder { display: none; }
 
     /* Repair v14: COMPACT Rights keeps the native dense table. */
     body.ux-platform .authority-org-tree { overflow: visible; }
@@ -1417,6 +1463,7 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         vertical-align: middle;
     }
     body.ux-platform .authority-matrix .authority-matrix-person > td::before { content: none; display: none; }
+    body.ux-platform .authority-matrix > thead th::before { content: none; display: none; }
     body.ux-platform .authority-matrix .matrix-sticky-name {
         position: sticky;
         left: 0;
@@ -1461,29 +1508,29 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         pointer-events: none;
     }
 
-    body.ux-platform .authority-table-wrap:has(.authority-holders-table) {
+    html body.ux-platform .authority-panel[data-authority-panel="holders"] .authority-table-wrap {
         width: 100%;
         max-width: 100%;
         overflow-x: auto;
         overscroll-behavior-inline: contain;
         scrollbar-gutter: stable;
     }
-    body.ux-platform .authority-holders-table {
+    html body.ux-platform .authority-panel[data-authority-panel="holders"] .authority-table-wrap > .authority-table.authority-holders-table {
         width: max-content;
         min-width: 74rem;
         display: table;
         background: var(--theme-surface);
     }
-    body.ux-platform .authority-holders-table > thead { display: table-header-group; }
-    body.ux-platform .authority-holders-table > tbody { display: table-row-group; }
-    body.ux-platform .authority-holders-table > tbody > tr {
+    html body.ux-platform .authority-panel[data-authority-panel="holders"] .authority-table-wrap > .authority-table.authority-holders-table > thead { display: table-header-group; }
+    html body.ux-platform .authority-panel[data-authority-panel="holders"] .authority-table-wrap > .authority-table.authority-holders-table > tbody { display: table-row-group; }
+    html body.ux-platform .authority-panel[data-authority-panel="holders"] .authority-table-wrap > .authority-table.authority-holders-table > tbody > tr {
         display: table-row;
         overflow: visible;
         border: 0;
         border-radius: 0;
         box-shadow: none;
     }
-    body.ux-platform .authority-holders-table > tbody > tr > td {
+    html body.ux-platform .authority-panel[data-authority-panel="holders"] .authority-table-wrap > .authority-table.authority-holders-table > tbody > tr > td {
         display: table-cell;
         min-width: 0;
         padding: var(--theme-space-2) var(--theme-space-3);
@@ -1492,14 +1539,15 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         background: var(--theme-surface);
         vertical-align: top;
     }
-    body.ux-platform .authority-holders-table > tbody > tr > td::before { content: none; display: none; }
-    body.ux-platform .authority-holders-table :is(th, td):first-child {
+    html body.ux-platform .authority-panel[data-authority-panel="holders"] .authority-table-wrap > .authority-table.authority-holders-table > tbody > tr > td::before { content: none; display: none; }
+    html body.ux-platform .authority-panel[data-authority-panel="holders"] .authority-table-wrap > .authority-table.authority-holders-table > thead th::before { content: none; display: none; }
+    html body.ux-platform .authority-panel[data-authority-panel="holders"] .authority-table-wrap > .authority-table.authority-holders-table :is(th, td):first-child {
         position: sticky;
         left: 0;
         z-index: 2;
         background: var(--theme-surface);
     }
-    body.ux-platform .authority-holders-table th:first-child {
+    html body.ux-platform .authority-panel[data-authority-panel="holders"] .authority-table-wrap > .authority-table.authority-holders-table th:first-child {
         z-index: 3;
         background: var(--theme-surface-soft);
     }
