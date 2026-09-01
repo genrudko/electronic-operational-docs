@@ -168,9 +168,6 @@ class EquipmentDefectUXFoundationRepairFiveTests(SimpleTestCase):
         repair2_detail = (
             self.static_root / "ux_foundation_repair2_detail.css"
         ).read_text(encoding="utf-8")
-        repair5 = (self.static_root / "ux_foundation_repair5.css").read_text(
-            encoding="utf-8"
-        )
 
         # Title is normalized to bounded size, not oversized 2.4rem
         self.assertNotIn("clamp(1.75rem,3vw,2.4rem)", repair2_detail)
