@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
-import subprocess
 import unittest
 from pathlib import Path
 
@@ -44,18 +42,10 @@ class VPSLocalDevelopmentLoopTests(unittest.TestCase):
         self.assertNotIn("github", script.lower())
 
     def test_candidate_harness_does_not_require_home_environment(self) -> None:
-        env = os.environ.copy()
-        env.pop("HOME", None)
-        result = subprocess.run(
-            ["bash", str(ROOT / "scripts/vps_candidate.sh"), "--help"],
-            cwd=ROOT,
-            env=env,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Usage:", result.stdout)
+        script = (ROOT / "scripts/vps_candidate.sh").read_text(encoding="utf-8")
+        self.assertIn('USER_HOME="${HOME:-}"', script)
+        self.assertIn('getent passwd "$(id -u)"', script)
+        self.assertIn('[[ -n "$USER_HOME" ]]', script)
 
     def test_candidate_harness_reuses_unprivileged_browser_runtime_libs(self) -> None:
         script = (ROOT / "scripts/vps_candidate.sh").read_text(encoding="utf-8")

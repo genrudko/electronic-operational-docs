@@ -128,7 +128,19 @@ start_server() {
     SERVER_PID=$!
     local ready=0
     for _ in $(seq 1 80); do
-        if curl --fail --silent --show-error "$BASE_URL/_health/" >"${TMPDIR:-/tmp}/eod-vps-candidate-health.json" 2>/dev/null; then
+        if "$PYTHON" - "$BASE_URL/_health/" "${TMPDIR:-/tmp}/eod-vps-candidate-health.json" <<'PY' 2>/dev/null
+import sys
+import urllib.request
+
+url, output_path = sys.argv[1:]
+with urllib.request.urlopen(url, timeout=1) as response:
+    if response.status != 200:
+        raise SystemExit(1)
+    payload = response.read(8192)
+with open(output_path, "wb") as target:
+    target.write(payload)
+PY
+        then
             ready=1
             break
         fi
