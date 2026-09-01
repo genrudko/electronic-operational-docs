@@ -11,7 +11,9 @@
 
 .authority-publication-banner { display:grid; grid-template-columns:minmax(0,1fr) minmax(16rem,22rem); align-items:end; gap:var(--theme-space-4); padding:var(--theme-space-3) var(--theme-space-4); border:1px solid var(--theme-border); border-left:4px solid var(--theme-primary); border-radius:var(--theme-radius-md); background:var(--theme-surface); }
 .authority-publication-banner > div,.authority-publication-banner form { display:grid; gap:var(--theme-space-1); }
-.authority-publication-banner > div { grid-template-columns:auto minmax(0,1fr) auto; align-items:baseline; column-gap:var(--theme-space-3); }
+.authority-publication-banner > div { grid-template-columns:auto minmax(0,1fr); align-items:start; column-gap:var(--theme-space-3); }
+.authority-publication-banner > div > span { grid-row:1 / span 2; }
+.authority-publication-banner > div > strong,.authority-publication-banner > div > small { grid-column:2; min-width:0; }
 .authority-publication-banner span,.authority-publication-banner label,.authority-publication-banner small { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); }
 .authority-publication-banner strong { color:var(--theme-text); font-size:var(--theme-font-size-sm); }
 .authority-publication-banner select { width:100%; min-height:var(--theme-control-height-md); padding:var(--theme-space-2) var(--theme-space-3); border:1px solid var(--theme-border-strong); border-radius:var(--theme-radius-sm); background:var(--theme-control); color:var(--theme-text); }
