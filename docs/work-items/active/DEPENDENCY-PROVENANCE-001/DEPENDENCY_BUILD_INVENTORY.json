@@ -32,7 +32,7 @@
       ]
     },
     "executable_sources": {
-      "applicable_count": 73,
+      "applicable_count": 75,
       "applicable_paths": [
         ".github/workflows/auto-001a-foundation-ci.yml",
         ".github/workflows/auto-001b-controller-ci.yml",
@@ -94,6 +94,7 @@
         "scripts/snapshot_presentation_database.ps1",
         "scripts/snapshot_presentation_database.py",
         "scripts/theme_css_audit.py",
+        "scripts/vps_candidate.sh",
         "src/apps/organizations/management/commands/bootstrap_development_demo_access.py",
         "src/apps/system/plan_001_audit/core.py",
         "src/apps/system/tests/test_deployment_health.py",
@@ -106,6 +107,7 @@
         "tests/process/test_dependency_provenance_contract.py",
         "tests/process/test_dependency_provenance_inventory.py",
         "tests/process/test_release_plan_compatibility.py",
+        "tests/process/test_vps_local_development_loop.py",
         "tests/security/test_secret_hygiene.py"
       ],
       "contract": "all tracked applicable source classes are discovered independently of directory; every exact exclusion is named with rationale",
@@ -117,8 +119,8 @@
         "dockerfile": 3,
         "github-workflow": 12,
         "powershell": 3,
-        "python-operator": 41,
-        "shell": 8,
+        "python-operator": 42,
+        "shell": 9,
         "shell-shebang": 1
       },
       "stale_paths": [],
@@ -473,6 +475,7 @@
     "scripts/snapshot_presentation_database.ps1": "652484df7aa79814d4ae3965c7dab4a51d1d5de0dff802f7328bd2e212cd3767",
     "scripts/snapshot_presentation_database.py": "31b9544113a6284e6a68841084954d7aa1830819c3513168d07271bb6b7e8100",
     "scripts/theme_css_audit.py": "4fc3a02688008151f321cf2e3dae87eb381654d25a289d9488d8e416a5ea361d",
+    "scripts/vps_candidate.sh": "359805588f0865ff6e26bd8f252c1f8ced79870a017af81fee5b30c979620396",
     "src/apps/organizations/management/commands/bootstrap_development_demo_access.py": "994a61592c6b12104046170d6b88cc1a6a5934bc114ad2acb17d20be07e226a1",
     "src/apps/system/plan_001_audit/core.py": "7c0c63efe1ae0ac92a685f1b9561be486d9be692cecbf4ecb69f4ecefeb2e0c0",
     "src/apps/system/tests/test_deployment_health.py": "e0443706071d08fb212f471f9747ca0fb24ed5f2a168feb88d993856e04084ec",
@@ -486,10 +489,11 @@
     "tests/process/test_dependency_provenance_contract.py": "c1472f55a4d0c47e9151305709d9254c623b2d5f551f2776a7dccbf9484b3539",
     "tests/process/test_dependency_provenance_inventory.py": "e446166e56b002bd0a2a2efc8ed32b486702a8d3c92f8796992bc967c2ca1a6b",
     "tests/process/test_release_plan_compatibility.py": "591c9185f3770e64476cbf7f750011c6c5af0db0be4fd469f6d5748480ce0f42",
+    "tests/process/test_vps_local_development_loop.py": "7bdf29461117dc93e81eabe425d431a5702195487787b4f9a7089e12cbf979a0",
     "tests/security/test_secret_hygiene.py": "39f42a287c1f0c5c8a91f8c24af5202b53d56da848e7321f38e0808ca7f72754"
   },
   "totals": {
-    "applicable_executable_sources": 73,
+    "applicable_executable_sources": 75,
     "by_class": {
       "container-image": 12,
       "container-output": 1,
@@ -506,9 +510,9 @@
     "floating_inputs": 17,
     "immutable_inputs": 67,
     "inventory_entries": 85,
-    "source_completeness_digests": 75,
+    "source_completeness_digests": 77,
     "source_files": 21,
-    "tracked_files": 938
+    "tracked_files": 940
   },
   "work_item": "DEPENDENCY-PROVENANCE-001"
 }

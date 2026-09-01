@@ -1,6 +1,6 @@
 # ЭОД — workflow разработки
 
-**Актуализировано:** 01.08.2026
+**Актуализировано:** 01.09.2026
 
 ## 1. Нормальный цикл
 
@@ -8,19 +8,22 @@
 Пользователь формулирует цель
 → AI проверяет current main, active PR и canonical docs
 → factual audit затрагиваемого контура
-→ issue / branch / Draft PR
-→ implementation slice
-→ focused/profile checks
-→ trusted exact-head delivery в isolated development
+→ issue / branch / Draft PR identity
+→ implementation slice в VPS working tree
+→ focused/profile checks на VPS
+→ `scripts/vps_candidate.sh verify [focused_test_label ...]`
+→ VPS-local candidate health/browser evidence
 → пользователь проходит acceptance route
-→ repairs в том же PR
-→ один full final gate на окончательном head
+→ repairs в том же working tree без промежуточного push
+→ ready push готового состояния
+→ один full final exact-head GitHub gate
+→ trusted exact-head final verification
 → пользователь разрешает merge
 → merge commit
 → post-merge baseline/docs
 ```
 
-GitHub — источник кода и постоянной памяти. VPS — runtime/test contour. Пользователь не является техническим оркестратором или курьером между чатами.
+VPS repository checkout — implementation/runtime/test workspace до ready push. GitHub — accepted source и постоянная память после публикации готового candidate; GitHub CI не используется как промежуточный repair-loop test runner. Пользователь не является техническим оркестратором или курьером между чатами.
 
 ## 2. Что пользователь не делает
 
@@ -114,8 +117,8 @@ Large work item делится на reviewable commits/slices внутри то�
 
 ## 5. Реализация
 
-- code создаётся только в GitHub branch;
-- VPS не является автором source code;
+- code изменяется в repository checkout на VPS на work-item branch; промежуточный commit/push не является prerequisite для проверки candidate;
+- VPS working tree может быть dirty во время implementation/repair, но accepted/canonical state появляется только после ready push в GitHub;
 - commit имеет законченную цель;
 - documentation changes идут вместе с изменением либо обязательным post-merge follow-up;
 - real data и secrets не попадают в Git;
@@ -138,7 +141,7 @@ Large work item делится на reviewable commits/slices внутри то�
 - CSS;
 - browser JS без domain state change.
 
-Проверки: changed-path validation, focused tests, source-contract tests, hot refresh, browser acceptance.
+Проверки: changed-path validation, focused tests, source-contract tests, VPS-local candidate, browser acceptance; exact-head GitHub/trusted delivery — после ready push.
 
 ### `APP_LOGIC`
 
@@ -146,7 +149,7 @@ Large work item делится на reviewable commits/slices внутри то�
 - forms;
 - application services без schema.
 
-Проверки: Ruff, compile, Django check, focused/profile tests, migration check, trusted deployment.
+Проверки: Ruff, compile, Django check, focused/profile tests, migration check и VPS-local candidate; PostgreSQL/trusted exact-head verification сохраняются перед final acceptance/merge.
 
 ### `SCHEMA_DATA`
 
@@ -180,11 +183,12 @@ src/static/**
 цикл:
 
 ```text
-repair commit
+working-tree repair
 → focused checks
-→ /eod-hot-refresh <exact-head-sha>
-→ app health
-→ acceptance URL
+→ `scripts/vps_candidate.sh verify [focused_test_label ...]`
+→ ephemeral health/browser evidence на `127.0.0.1:18766`
+→ acceptance route
+→ repeat без промежуточного commit/push
 ```
 
 Не выполняются после каждого repair:
@@ -201,20 +205,19 @@ repair commit
 
 Candidate создаётся, когда delivery slice готов к связной проверке.
 
-Минимум:
+Минимум до ready push:
 
-- exact PR head;
+- текущий work-item branch и working-tree state;
 - diff/path classification;
-- profile tests;
+- focused/profile tests;
 - Django check;
-- migrations check по применимости;
-- collectstatic/container smoke;
-- trusted deployment;
-- health;
+- migration smoke по применимости;
+- `scripts/vps_candidate.sh verify [focused_test_label ...]`;
+- ephemeral health/browser evidence на `127.0.0.1:18766`;
 - acceptance route;
-- machine-readable evidence summary.
+- machine-readable local evidence summary.
 
-Для Python/runtime change используется trusted rebuild/deploy profile. Для presentation-only candidate допускается hot refresh.
+VPS-local candidate использует hashed `requirements/locks/browser.txt`, отдельную SQLite и временный localhost server, не требует root/Docker/GitHub и не заменяет PostgreSQL/container/trusted final gates. Build/dependency/container/infra изменения проходят `FINAL_TRUSTED_ONLY`. Ready push выполняется только после принятого локального candidate.
 
 ## 9. Final gate
 
@@ -234,7 +237,8 @@ Candidate создаётся, когда delivery slice готов к связн
 
 ## 10. CI discipline
 
-- required checks не ослабляются;
+- required final checks не ослабляются;
+- GitHub workflows не запускаются ради промежуточного candidate: после VPS-local candidate и acceptance выполняется ready push, затем один exact-head final gate;
 - queued/running проверки устаревшего head отменяются по concurrency, если безопасно;
 - diagnostics artifact создаётся при failure/rollback, а не обязательно при success;
 - run IDs and conclusions собираются в один PR evidence comment;
@@ -243,6 +247,8 @@ Candidate создаётся, когда delivery slice готов к связн
 - ноль тестов не считается success.
 
 ## 11. Trusted development delivery
+
+Это final exact-head verification после ready push, а не средство получения промежуточного candidate.
 
 Обязательны:
 
@@ -263,7 +269,7 @@ Development никогда не остаётся на `main`.
 
 Пользователю возвращаются:
 
-- exact head;
+- candidate identity: HEAD + working-tree state до ready push, exact head после ready push;
 - URL;
 - 3–7 конкретных шагов;
 - ожидаемый результат;
@@ -279,11 +285,12 @@ Development никогда не остаётся на `main`.
 ```text
 video/log/feedback
 → exact reproduced fact
-→ smallest sufficient repair
-→ same branch/PR
+→ smallest sufficient repair в VPS working tree
+→ same branch/PR identity
 → proportional checks
-→ delivery
+→ VPS-local candidate
 → repeated acceptance
+→ ready push только после acceptance
 ```
 
 Во время серии visual remarks замечания накапливаются и доставляются небольшими пакетами. Full gate откладывается до финального head.

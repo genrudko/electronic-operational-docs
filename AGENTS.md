@@ -34,7 +34,9 @@
 - `docs/project/CURRENT_HANDOFF.md` — навигатор без независимого volatile state.
 - `docs/product/MODULE_MAP.md`, `docs/product/IMPLEMENTATION_SEQUENCE.md` и `docs/project/DEMO_RELEASE_MASTER_CHECKLIST.md` — проверяемые human-readable views плана.
 - `docs/project/ROADMAP.md`, `docs/project/OPEN_ITEMS.md` и `docs/project/MODULE_MAP.md` — compatibility pointers, а не владельцы статусов.
-- GitHub state сильнее любого описания в чате или документации.
+- GitHub state сильнее любого описания в чате или документации как accepted/canonical history.
+- До ready push VPS working tree является допустимым volatile candidate state; GitHub не используется как промежуточный test runner.
+- Обычный runtime candidate проверяется через `scripts/vps_candidate.sh`; trusted Development остаётся final exact-head verification после ready push.
 
 После утверждения baseline изменение release scope, module map, implementation sequence, shared UX contract или presentation scenarios требует явного решения пользователя, decision/ADR, version bump плана и повторной проверки производных представлений.
 
@@ -63,13 +65,15 @@ AI-разработчик:
 
 ```text
 factual preflight
-→ issue / branch / Draft PR
-→ implementation
-→ CI и diagnosis
-→ development candidate
+→ issue / branch / Draft PR identity
+→ implementation в VPS working tree
+→ focused/profile checks
+→ VPS-local candidate
 → пользовательская приёмка
-→ repairs в том же PR
-→ final exact-head gate
+→ repairs в том же working tree без промежуточного push
+→ ready push готового candidate в существующий PR
+→ один exact-head GitHub final gate
+→ trusted exact-head final verification
 → явное разрешение merge
 → merge
 → post-merge coordination
@@ -89,13 +93,16 @@ factual preflight
 
 ```text
 цель и factual preflight
-→ одна issue / branch / Draft PR
-→ implementation slice
-→ focused/profile checks
-→ trusted development delivery
+→ одна issue / branch / Draft PR identity
+→ implementation slice в VPS working tree
+→ focused/profile checks на VPS
+→ `scripts/vps_candidate.sh verify ...`
+→ VPS-local candidate health/browser evidence
 → пользовательская проверка
-→ repairs в том же PR
-→ один full final gate на final exact head
+→ repairs без промежуточного commit/push prerequisite
+→ ready push готового состояния
+→ один full final exact-head GitHub gate
+→ trusted exact-head final verification
 → явная команда пользователя
 → merge
 → post-merge baseline/docs
@@ -104,11 +111,12 @@ factual preflight
 Для presentation-only repairs:
 
 ```text
-commit
+working-tree repair
 → focused checks
-→ trusted hot refresh
-→ health
+→ `scripts/vps_candidate.sh verify [focused_test_label ...]`
+→ VPS-local candidate health/browser evidence
 → пользовательская проверка
+→ repeat без промежуточного commit/push
 ```
 
 Manual VPS-команды пользователя не являются штатной частью functional PR. Скачиваемые patch-файлы — аварийный fallback, а не нормальный процесс.
@@ -153,7 +161,7 @@ Automatic merge запрещён.
 - PostgreSQL не публикуется на host port;
 - secrets preview и development не смешиваются;
 - VPS deploy key остаётся read-only;
-- код не редактируется непосредственно на VPS как источник истины;
+- код изменяется в repository checkout на VPS как volatile implementation/candidate workspace; accepted/canonical source появляется в GitHub только после ready push; ручное редактирование runtime вне repository checkout запрещено;
 - development reset не имеет права записывать в preview;
 - exact PR head и live-head re-check обязательны для trusted delivery;
 - preview write и automatic merge отсутствуют в product PR.
@@ -191,7 +199,7 @@ Automatic merge запрещён.
 
 - diff/path validation;
 - focused template/static/source-contract tests;
-- trusted hot refresh;
+- VPS-local candidate через `scripts/vps_candidate.sh`;
 - browser acceptance;
 - один full final gate перед merge.
 
@@ -200,7 +208,7 @@ Automatic merge запрещён.
 - Ruff, compile, Django check;
 - focused/profile tests;
 - migration check;
-- trusted development deployment;
+- VPS-local candidate до ready push; trusted development — только final exact-head verification;
 - full final gate.
 
 ### `SCHEMA_DATA`

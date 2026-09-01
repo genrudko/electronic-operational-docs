@@ -55,7 +55,7 @@ scripts/automation/work_item_preflight.py
 - change class;
 - максимальный risk profile;
 - быстрые, candidate и final checks;
-- `NONE / HOT_REFRESH / FULL_DEVELOPMENT`;
+- `NONE / VPS_LOCAL_CANDIDATE / FINAL_TRUSTED_ONLY`;
 - targeted либо full browser evidence;
 - retry и timeout policy;
 - стабильный Markdown handoff для Codex/нового чата.
@@ -175,10 +175,11 @@ python -m scripts.automation.atomic_github_publish self-test
 diff/path guard
 → CSS/JS/template syntax
 → focused source-contract
-→ trusted hot refresh
-→ health
+→ `scripts/vps_candidate.sh verify [focused_test_label ...]`
+→ VPS-local candidate health/browser evidence
 → targeted affected states
 → user feedback
+→ repeat без промежуточного push
 ```
 
 Не запускаются после каждого repair:
@@ -204,12 +205,12 @@ Preflight выбирает delivery до публикации:
 
 | Условие | Delivery |
 |---|---|
-| docs-only | `NONE` |
-| только added/modified `src/templates/**`, `src/static/**` | `HOT_REFRESH` |
-| application/schema/infra либо mixed paths | `FULL_DEVELOPMENT` |
+| docs/source-test-only без runtime effect | `NONE` |
+| runtime source `src/**` (кроме source tests) и `manage.py` | `VPS_LOCAL_CANDIDATE` |
+| Dockerfile / Compose / requirements / pyproject / workflow / deploy / infra | `FINAL_TRUSTED_ONLY` |
 | direct-to-main hardening exception | `NONE` |
 
-Hot refresh запрещён при delete, rename, migration, workflow/controller или любом path вне presentation allowlist.
+VPS-local candidate работает из текущего dirty/clean working tree, использует hashed browser lock, отдельную SQLite и ephemeral `127.0.0.1:18766`. Он даёт application/browser evidence до публикации, но не заменяет PostgreSQL, container/build и trusted exact-head evidence. Ready push выполняется только после локальных checks, health/browser evidence и acceptance.
 
 ## 8. Browser evidence reuse
 
@@ -225,18 +226,18 @@ Hot refresh запрещён при delete, rename, migration, workflow/controll
 |---|---|
 | preflight | 2 минуты |
 | focused checks | 10 минут до stall diagnosis |
-| trusted hot refresh | 20 минут |
-| trusted full development | 35 минут |
+| VPS-local candidate | 15 минут |
+| final trusted development | 35 минут |
 
 Правила:
 
 1. Code/test failure не перезапускается до извлечения primary cause.
 2. Доказанный infrastructure timeout допускает один retry только failed job.
 3. Второй одинаковый timeout — blocker.
-4. Deployment label всегда сначала снимается, затем устанавливается заново.
-5. Наличие label не является evidence запуска.
-6. Success объявляется только после exact run/job conclusion и `LIVE_SHA = HEAD_SHA`.
-7. Новый commit инвалидирует старые exact-head gates и runtime evidence.
+4. Промежуточный repair не публикуется только ради запуска проверок или Development candidate.
+5. Любое изменение VPS working tree инвалидирует локальное candidate evidence до повторных proportional checks/health/browser smoke.
+6. До ready push success означает только локальную candidate-готовность; final success после ready push требует exact-head GitHub gate и trusted runtime evidence.
+7. Новый pushed commit после final gate инвалидирует exact-head GitHub/trusted evidence и требует final gate заново.
 
 ## 10. Stable handoff
 

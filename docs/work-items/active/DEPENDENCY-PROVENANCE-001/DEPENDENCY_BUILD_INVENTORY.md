@@ -4,20 +4,20 @@
 
 ## Итог
 
-- tracked files: `938`;
+- tracked files: `940`;
 - inventory entries: `85`;
 - floating inputs: `17`;
 - immutable inputs: `67`;
 - duplicate owner groups: `6`;
 - conflicting owner groups: `0`;
 - source files with dependency/build evidence: `21`;
-- applicable executable/config sources: `73`;
-- source completeness digests: `75`.
+- applicable executable/config sources: `75`;
+- source completeness digests: `77`.
 
 ## Executable/config source completeness
 
-- applicable paths: `73`;
-- source kinds: `{'compose': 5, 'dockerfile': 3, 'github-workflow': 12, 'powershell': 3, 'python-operator': 41, 'shell': 8, 'shell-shebang': 1}`;
+- applicable paths: `75`;
+- source kinds: `{'compose': 5, 'dockerfile': 3, 'github-workflow': 12, 'powershell': 3, 'python-operator': 42, 'shell': 9, 'shell-shebang': 1}`;
 - uncovered paths: `NONE`;
 - exact exclusions: `NONE`.
 
