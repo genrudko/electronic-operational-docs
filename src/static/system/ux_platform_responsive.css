@@ -1252,18 +1252,115 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         height: var(--theme-control-height-md);
     }
 
-    /* Repair v14.1: compact OPJ commands stay dense. */
+    /* Repair v14.2: compact OPJ first-viewport geometry contract. */
+    html body.ux-platform.opj-workspace-page .opj-workspace-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--theme-space-2);
+        padding: var(--theme-space-2) var(--theme-space-3);
+        margin: 0 0 var(--theme-space-2);
+    }
+    html body.ux-platform.opj-workspace-page .opj-title-cluster {
+        flex: 1 1 auto;
+        min-width: 0;
+        gap: var(--theme-space-2);
+    }
+    html body.ux-platform.opj-workspace-page .opj-workspace-meta {
+        width: auto;
+        display: inline-flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--theme-space-1);
+        margin: 0;
+    }
+    html body.ux-platform.opj-workspace-page .opj-workspace-meta .opj-shift-period {
+        grid-column: auto;
+        white-space: nowrap;
+    }
+    html body.ux-platform.opj-workspace-page .opj-workspace-meta :is(.opj-shift-period, .opj-meta-item) {
+        min-width: 0;
+        min-height: var(--theme-control-height-sm);
+        height: auto;
+        padding: 2px var(--theme-space-2);
+        border-radius: 999px;
+        font-size: var(--theme-font-size-xs);
+        line-height: 1.25;
+    }
+    html body.ux-platform.opj-workspace-page .opj-registered-link {
+        min-height: var(--theme-control-height-sm);
+        padding: 2px var(--theme-space-2);
+        font-size: var(--theme-font-size-xs);
+    }
+
+    html body.ux-platform.opj-workspace-page .opj-clean-summary {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--theme-space-2);
+        padding: var(--theme-space-2) var(--theme-space-3);
+        margin: 0 0 var(--theme-space-2);
+    }
+    html body.ux-platform.opj-workspace-page .opj-clean-summary-main {
+        min-width: 0;
+        display: inline-flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--theme-space-2);
+    }
+    html body.ux-platform.opj-workspace-page .opj-clean-summary-meta {
+        grid-column: auto;
+        display: inline-flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--theme-space-1);
+    }
+    html body.ux-platform.opj-workspace-page .opj-clean-summary-meta > span {
+        min-width: 0;
+        width: auto;
+        min-height: auto;
+        padding: 2px var(--theme-space-2);
+        border: 1px solid var(--theme-border);
+        border-radius: var(--theme-radius-sm);
+        background: var(--theme-surface-soft);
+        font-size: var(--theme-font-size-xs);
+        line-height: 1.25;
+        white-space: nowrap;
+    }
+    html body.ux-platform.opj-workspace-page .opj-clean-summary-meta > span:last-child {
+        grid-column: auto;
+    }
+    html body.ux-platform.opj-workspace-page .opj-clean-summary-actions {
+        width: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--theme-space-2);
+    }
+    html body.ux-platform.opj-workspace-page .opj-clean-summary-actions .da-button {
+        width: auto;
+        min-height: var(--theme-control-height-sm);
+    }
+
     body.ux-platform.opj-workspace-page .opj-toolbar-primary {
         grid-template-columns: minmax(0, 1fr) auto;
         padding: var(--theme-space-2);
         gap: var(--theme-space-2);
+        align-items: center;
     }
     body.ux-platform.opj-workspace-page .opj-toolbar-search {
         grid-column: 1 / -1;
         grid-template-columns: minmax(0, 1fr) minmax(8.5rem, .42fr);
         gap: var(--theme-space-2);
     }
-    body.ux-platform.opj-workspace-page .opj-page-navigation { grid-column: 1; width: auto; }
+    body.ux-platform.opj-workspace-page .opj-page-navigation {
+        grid-column: 1;
+        width: auto;
+        display: flex;
+        align-items: center;
+        gap: var(--theme-space-1);
+    }
     body.ux-platform.opj-workspace-page .opj-toolbar-actions {
         grid-column: 2;
         width: auto;
@@ -1277,6 +1374,9 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
     body.ux-platform.opj-workspace-page .opj-toolbar-actions .da-button,
     body.ux-platform.opj-workspace-page .opj-ribbon-toggle,
     body.ux-platform.opj-workspace-page .opj-view-switch { width: auto; }
+    html body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode="compact"] .opj-editor-toolbar {
+        display: none;
+    }
     body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode="expanded"] .opj-editor-toolbar {
         grid-template-columns: minmax(9rem, 11rem) minmax(0, 1fr);
         gap: var(--theme-space-2);
@@ -1412,6 +1512,7 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
         gap: var(--theme-space-2);
     }
     body.ux-platform.opj-clean-journal-page .approved-journal-row > td:nth-child(n + 3)::before { margin: 0; }
+    html body.ux-platform.opj-clean-journal-page .opj-clean-shift-group:has(.opj-clean-shift-date) .opj-entry-date-placeholder { display: none; }
     body.ux-platform.opj-clean-journal-page .opj-entry-date-placeholder { display: none; }
 
     /* Repair v14: COMPACT Rights keeps the native dense table. */
@@ -1612,6 +1713,7 @@ body.ux-platform .defect-journal-view .defect-register-wrap {
     }
     body.ux-platform.opj-clean-journal-page .approved-journal-visas:not(:has([data-opj-marker])) { display: none; }
     body.ux-platform.opj-clean-journal-page .approved-journal-message::before { display: none; content: none; }
+    html body.ux-platform.opj-clean-journal-page .opj-clean-shift-group:has(.opj-clean-shift-date) .opj-entry-date-placeholder { display: none; }
 
     /* Phone is the only state that requires the generated employee projection. */
     html body.ux-platform .authority-matrix-panel .authority-matrix-scroll { display: none; }

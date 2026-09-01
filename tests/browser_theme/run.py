@@ -671,6 +671,17 @@ def responsive_transition_state(page, route):
                     ".draft-ledger-visas:has([data-opj-marker]),"
                     + ".approved-journal-visas:has([data-opj-marker])"
                 )].some(visible),
+                opjFirstRowTop: (() => {
+                    const node = document.querySelector(".draft-ledger-row, .opj-editor-container .draft-ledger-form, .draft-page-body");
+                    return node ? Math.round(node.getBoundingClientRect().top) : null;
+                })(),
+                opjToolbarHeight: (() => {
+                    const node = document.querySelector(".opj-toolbar");
+                    return node ? Math.round(node.getBoundingClientRect().height) : null;
+                })(),
+                opjCleanDuplicateDateVisible: [...document.querySelectorAll(
+                    ".opj-clean-shift-group:has(.opj-clean-shift-date) .approved-journal-row .opj-entry-date-placeholder"
+                )].some(visible),
             };
         }""",
         route,
@@ -739,14 +750,22 @@ def assert_responsive_transition(state, route, mode):
             raise AssertionError(f"OPJ compact ledger did not keep time rail at {width}px: {state}")
         if state["opjEmptyVisasVisible"]:
             raise AssertionError(f"OPJ empty visas occupy compact space at {width}px: {state}")
+        if state["opjToolbarHeight"] and state["opjToolbarHeight"] > 220:
+            raise AssertionError(f"OPJ compact toolbar height too tall ({state['opjToolbarHeight']}px) at {width}px: {state}")
+        if state["opjFirstRowTop"] and state["opjFirstRowTop"] > 600:
+            raise AssertionError(f"OPJ compact working rows begin below first viewport ({state['opjFirstRowTop']}px) at {width}px: {state}")
     if route == "registered_opj" and 768 <= width <= 980:
         if not state["opjCleanColumns"] or " " not in state["opjCleanColumns"].strip():
             raise AssertionError(f"registered OPJ compact ledger missing at {width}px: {state}")
         if state["opjEmptyVisasVisible"]:
             raise AssertionError(f"registered OPJ empty visas occupy compact space at {width}px: {state}")
+        if state["opjCleanDuplicateDateVisible"]:
+            raise AssertionError(f"registered OPJ compact duplicates group date at {width}px: {state}")
     if route in {"draft_workspace", "registered_opj"} and width < 768:
         if state["opjEmptyVisasVisible"]:
             raise AssertionError(f"OPJ empty visas occupy phone space at {width}px: {state}")
+        if route == "registered_opj" and state["opjCleanDuplicateDateVisible"]:
+            raise AssertionError(f"registered OPJ phone duplicates group date at {width}px: {state}")
 
 
 def capture_responsive_transitions(page, shots, report, runtime_errors):

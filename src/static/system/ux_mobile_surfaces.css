@@ -268,7 +268,9 @@
     html body.ux-platform.opj-workspace-page .opj-ribbon-toggle-label { display: none; }
     html body.ux-platform.opj-workspace-page .opj-ribbon-toggle-mobile-label { display: inline; }
 
-    html body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode="compact"] .opj-editor-toolbar,
+    html body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode="compact"] .opj-editor-toolbar {
+        display: none;
+    }
     html body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode="expanded"] .opj-editor-toolbar {
         display: grid;
         grid-template-columns: 1fr;

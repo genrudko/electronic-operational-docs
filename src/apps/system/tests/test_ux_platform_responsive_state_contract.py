@@ -143,6 +143,52 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
             compact,
         )
 
+    def test_repair_v14_2_compact_opj_viewport_geometry_and_redundant_date_contract(self) -> None:
+        responsive = read("src/static/system/ux_platform_responsive.css")
+        surfaces = read("src/static/system/ux_mobile_surfaces.css")
+
+        compact_start = responsive.index(
+            "@media screen and (min-width: 48rem) and (max-width: 61.25rem)"
+        )
+        phone_start = responsive.index(
+            "@media screen and (max-width: 47.99rem)", compact_start
+        )
+        compact = responsive[compact_start:phone_start]
+        phone = responsive[phone_start:]
+
+        self.assertIn(
+            "html body.ux-platform.opj-workspace-page .opj-workspace-header {",
+            compact,
+        )
+        self.assertIn(
+            "html body.ux-platform.opj-workspace-page .opj-clean-summary {",
+            compact,
+        )
+        self.assertIn(
+            "html body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode=\"compact\"] .opj-editor-toolbar {",
+            compact,
+        )
+        self.assertIn(
+            "display: none;",
+            compact[compact.index("html body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode=\"compact\"] .opj-editor-toolbar") :],
+        )
+        self.assertIn(
+            "html body.ux-platform.opj-clean-journal-page .opj-clean-shift-group:has(.opj-clean-shift-date) .opj-entry-date-placeholder {",
+            compact,
+        )
+        self.assertIn(
+            "display: none;",
+            compact[compact.index("html body.ux-platform.opj-clean-journal-page .opj-clean-shift-group:has(.opj-clean-shift-date) .opj-entry-date-placeholder") :],
+        )
+        self.assertIn(
+            "html body.ux-platform.opj-clean-journal-page .opj-clean-shift-group:has(.opj-clean-shift-date) .opj-entry-date-placeholder {",
+            phone,
+        )
+        self.assertNotIn(
+            "html body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode=\"compact\"] .opj-editor-toolbar,\n    html body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode=\"expanded\"] .opj-editor-toolbar {\n        display: grid;",
+            surfaces,
+        )
+
     def test_human_text_uses_word_boundaries_and_only_technical_codes_use_anywhere(self) -> None:
         responsive = read("src/static/system/ux_platform_responsive.css")
         surfaces = read("src/static/system/ux_mobile_surfaces.css")
@@ -222,4 +268,6 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
         self.assertIn("authorityMobileMatrixExists", browser)
         self.assertIn("authorityMatrixOverflow", browser)
         self.assertIn("opjDraftColumns", browser)
+        self.assertIn("opjFirstRowTop", browser)
+        self.assertIn("opjCleanDuplicateDateVisible", browser)
         self.assertIn("capture_responsive_transitions(page, shots, report, runtime_errors)", browser)
