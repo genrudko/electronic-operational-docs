@@ -171,30 +171,37 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
             ".opj-toolbar[data-ribbon-mode=\"compact\"] .opj-editor-toolbar {",
             compact,
         )
-        self.assertIn(
-            "display: none;",
-            compact[compact.index("html body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode=\"compact\"] .opj-editor-toolbar") :],
+        compact_toolbar = (
+            "html body.ux-platform.opj-workspace-page "
+            ".opj-toolbar[data-ribbon-mode=\"compact\"] .opj-editor-toolbar"
         )
+        self.assertIn("display: none;", compact[compact.index(compact_toolbar) :])
         self.assertIn(
             "html body.ux-platform.opj-clean-journal-page "
             ".opj-clean-shift-group:has(.opj-clean-shift-date) "
             ".opj-entry-date-placeholder {",
             compact,
         )
-        self.assertIn(
-            "display: none;",
-            compact[compact.index("html body.ux-platform.opj-clean-journal-page .opj-clean-shift-group:has(.opj-clean-shift-date) .opj-entry-date-placeholder") :],
+        compact_date = (
+            "html body.ux-platform.opj-clean-journal-page "
+            ".opj-clean-shift-group:has(.opj-clean-shift-date) "
+            ".opj-entry-date-placeholder"
         )
+        self.assertIn("display: none;", compact[compact.index(compact_date) :])
         self.assertIn(
             "html body.ux-platform.opj-clean-journal-page "
             ".opj-clean-shift-group:has(.opj-clean-shift-date) "
             ".opj-entry-date-placeholder {",
             phone,
         )
-        self.assertNotIn(
-            "html body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode=\"compact\"] .opj-editor-toolbar,\n    html body.ux-platform.opj-workspace-page .opj-toolbar[data-ribbon-mode=\"expanded\"] .opj-editor-toolbar {\n        display: grid;",
-            surfaces,
+        stale_editor_rule = (
+            "html body.ux-platform.opj-workspace-page "
+            ".opj-toolbar[data-ribbon-mode=\"compact\"] .opj-editor-toolbar,\n"
+            "    html body.ux-platform.opj-workspace-page "
+            ".opj-toolbar[data-ribbon-mode=\"expanded\"] .opj-editor-toolbar {\n"
+            "        display: grid;"
         )
+        self.assertNotIn(stale_editor_rule, surfaces)
 
     def test_human_text_uses_word_boundaries_and_only_technical_codes_use_anywhere(self) -> None:
         responsive = read("src/static/system/ux_platform_responsive.css")
