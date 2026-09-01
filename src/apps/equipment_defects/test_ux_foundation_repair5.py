@@ -145,23 +145,16 @@ class EquipmentDefectUXFoundationRepairFiveTests(SimpleTestCase):
         )
         self.assertIsNone(equipment_defect_status_presentation(generic))
 
-    def test_sequence_number_badges_are_neutral_without_status_color_inheritance(self) -> None:
-        repair2_registry = (
-            self.static_root / "ux_foundation_repair2_registry.css"
-        ).read_text(encoding="utf-8")
+    def test_sequence_number_badges_keep_compact_status_cues_without_dominating(self) -> None:
         repair5 = (self.static_root / "ux_foundation_repair5.css").read_text(
             encoding="utf-8"
         )
-        combined = repair2_registry + "\n" + repair5
-
-        # Badges must not inherit status colors
-        self.assertNotIn('.defect-da-sequence-badge[data-status="IN_PROGRESS"]', combined)
-        self.assertNotIn('.defect-da-sequence-badge[data-status="RESOLVED"]', combined)
-        self.assertNotIn('.defect-da-sequence-badge[data-status="CLOSED"]', combined)
-
-        # Badge must have neutral styling
-        self.assertIn(".defect-da-sequence-badge", repair5)
-        self.assertIn("var(--theme-surface-soft)", repair5)
+        self.assertIn('.defect-da-sequence-badge[data-status="REGISTERED"]', repair5)
+        self.assertIn('.defect-da-sequence-badge[data-status="IN_PROGRESS"]', repair5)
+        self.assertIn('.defect-da-sequence-badge[data-status="RESOLVED"]', repair5)
+        self.assertIn('inset 4px 0 0', repair5)
+        self.assertIn('.defect-da-work-number > small', repair5)
+        self.assertIn('overflow-wrap: anywhere', repair5)
 
     def test_defect_journal_column_geometry_prevents_status_overlap_at_1280(self) -> None:
         stylesheet = (self.static_root / "ux_foundation_repair5.css").read_text(
@@ -182,7 +175,8 @@ class EquipmentDefectUXFoundationRepairFiveTests(SimpleTestCase):
         # Title is normalized to bounded size, not oversized 2.4rem
         self.assertNotIn("clamp(1.75rem,3vw,2.4rem)", repair2_detail)
 
-        # Lifecycle item min-height is bounded to dense height <= 76px
+        # Lifecycle stays substantially denser than the original 94px blocks, but must fit labels.
         self.assertNotIn("min-height:94px", repair2_detail)
-        self.assertIn(".defect-da-lifecycle-card .defect-lifecycle li", repair5)
-        self.assertIn("min-height: 68px", repair5)
+        self.assertIn("min-height:82px", repair2_detail)
+        self.assertIn("white-space:normal", repair2_detail)
+        self.assertIn("overflow-wrap:anywhere", repair2_detail)

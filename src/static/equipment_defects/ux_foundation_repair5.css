@@ -275,13 +275,54 @@ html[data-theme] .defect-da-definition-list.compact > div {
     border-color: var(--theme-border);
 }
 
-/* Sequence numbers are neutral identifiers, not status indicators. */
+/* Sequence numbers remain compact identifiers, but retain a subtle status cue. */
 .defect-da-sequence-badge,
 html[data-theme] .defect-da-sequence-badge {
     border: 1px solid var(--theme-border-strong) !important;
     background: var(--theme-surface-soft) !important;
     color: var(--theme-text) !important;
-    box-shadow: none !important;
+    box-shadow: inset 3px 0 0 transparent !important;
+}
+.defect-da-sequence-badge[data-status="REGISTERED"],
+html[data-theme] .defect-da-sequence-badge[data-status="REGISTERED"] {
+    border-color: var(--da-blue) !important;
+    background: var(--da-blue-soft) !important;
+    color: var(--da-blue-dark) !important;
+    box-shadow: inset 4px 0 0 var(--da-blue) !important;
+}
+.defect-da-sequence-badge[data-status="IN_PROGRESS"],
+html[data-theme] .defect-da-sequence-badge[data-status="IN_PROGRESS"] {
+    border-color: var(--da-orange) !important;
+    background: var(--da-orange-soft) !important;
+    color: #9c4d0c !important;
+    box-shadow: inset 4px 0 0 var(--da-orange) !important;
+}
+.defect-da-sequence-badge[data-status="RESOLVED"],
+html[data-theme] .defect-da-sequence-badge[data-status="RESOLVED"] {
+    border-color: var(--da-green) !important;
+    background: var(--da-green-soft) !important;
+    color: var(--da-green) !important;
+    box-shadow: inset 4px 0 0 var(--da-green) !important;
+}
+.defect-da-sequence-badge[data-status="CLOSED"],
+html[data-theme] .defect-da-sequence-badge[data-status="CLOSED"] {
+    border-color: var(--da-slate) !important;
+    background: var(--da-slate-soft) !important;
+    color: var(--da-slate) !important;
+    box-shadow: inset 4px 0 0 var(--da-slate) !important;
+}
+.defect-da-work-number {
+    min-width: 0;
+    overflow: hidden;
+}
+.defect-da-work-number > small {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    text-align: center;
+    line-height: 1.15;
 }
 
 .defect-da-sequence-badge:hover,
@@ -363,6 +404,8 @@ html[data-theme] .defect-da-sequence-badge:hover {
     .defect-journal-view .defect-status {
         max-width: 100%;
         box-sizing: border-box;
+        margin-top: 2px;
+        margin-bottom: 2px;
     }
 
     html[data-theme] .defect-journal-view .defect-register-wrap {
