@@ -133,7 +133,8 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
             compact,
         )
         self.assertIn(
-            ".draft-ledger-visas::before,\n    body.ux-platform.opj-clean-journal-page .approved-journal-visas::before",
+            ".draft-ledger-visas::before,\n    "
+            "body.ux-platform.opj-clean-journal-page .approved-journal-visas::before",
             compact,
         )
         self.assertIn('content: "Визы";', compact)
