@@ -150,6 +150,20 @@ class OperationalJournalAcceptanceRepairSourceTests(SimpleTestCase):
             critical,
         )
 
+    def test_marker_layer_does_not_lock_responsive_date_placeholder_geometry(self) -> None:
+        partial = self.source("templates/operational_log/_normative_markers.html")
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
+        )
+
+        critical = partial[partial.index('style.textContent = `') : partial.index('`;')]
+        self.assertNotIn(".approved-journal-date-time > span", critical)
+        self.assertNotIn(".approved-journal-date-time > span", css)
+        self.assertIn(".approved-journal-date-time > strong,", critical)
+        self.assertIn(".approved-journal-date-time > small", critical)
+        self.assertIn(".approved-journal-date-time > strong,", css)
+        self.assertIn(".approved-journal-date-time > small", css)
+
     def test_spread_mode_keeps_the_same_marker_artwork(self) -> None:
         css = self.source(
             "static/operational_log/opj_lifecycle_acceptance_repair.css"

@@ -18,7 +18,7 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
     vertical-align: top !important;
 }
 
-.opj-clean-journal-page .approved-journal-date-time > span,
+.opj-clean-journal-page .approved-journal-date-time > strong,
 .opj-clean-journal-page .approved-journal-date-time > small {
     display: block !important;
     width: 100% !important;

@@ -203,6 +203,22 @@ class UxPlatformResponsiveStateContractTests(SimpleTestCase):
         )
         self.assertNotIn(stale_editor_rule, surfaces)
 
+        opj_acceptance = read("src/static/operational_log/opj_lifecycle_acceptance_repair.css")
+        normative_markers = read("src/templates/operational_log/_normative_markers.html")
+
+        self.assertNotIn(".approved-journal-date-time > span", opj_acceptance)
+        self.assertNotIn(".approved-journal-date-time > span", normative_markers)
+        self.assertIn(
+            ".opj-clean-journal-page .approved-journal-date-time > strong,\n"
+            ".opj-clean-journal-page .approved-journal-date-time > small {",
+            opj_acceptance,
+        )
+        self.assertIn(
+            ".opj-clean-journal-page .approved-journal-date-time > strong,\n"
+            "            .opj-clean-journal-page .approved-journal-date-time > small {",
+            normative_markers,
+        )
+
     def test_human_text_uses_word_boundaries_and_only_technical_codes_use_anywhere(self) -> None:
         responsive = read("src/static/system/ux_platform_responsive.css")
         surfaces = read("src/static/system/ux_mobile_surfaces.css")
