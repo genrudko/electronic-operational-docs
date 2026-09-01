@@ -1,66 +1,33 @@
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import unittest
 from pathlib import Path
 
-from scripts.automation.work_item_preflight import build_plan
-
 ROOT = Path(__file__).resolve().parents[2]
 
 
 class VPSLocalDevelopmentLoopTests(unittest.TestCase):
-    def plan(self, path: str, *, status: str = "modified") -> dict:
-        return build_plan(
-            {
-                "repository": "genrudko/electronic-operational-docs",
-                "base_sha": "a" * 40,
-                "purpose": "VPS-local candidate",
-                "changed_files": [{"path": path, "status": status}],
-            }
-        )
+    def test_vps_candidate_feature_does_not_modify_protected_automation(self) -> None:
+        """The local candidate loop must live in unprivileged scripts without touching protected paths."""
+        candidate_script = ROOT / "scripts/vps_candidate.sh"
+        self.assertTrue(candidate_script.exists())
+        self.assertFalse(str(candidate_script).startswith(str(ROOT / "scripts/automation")))
 
-    def test_runtime_source_uses_unprivileged_local_candidate(self) -> None:
-        for path in (
-            "src/static/system/theme.css",
-            "src/templates/base.html",
-            "src/apps/system/views.py",
-        ):
-            with self.subTest(path=path):
-                plan = self.plan(path)
-                self.assertEqual(plan["deployment"], "VPS_LOCAL_CANDIDATE")
-                candidate = "\n".join(plan["checks"]["candidate"])
-                self.assertIn("scripts/vps_candidate.sh verify", candidate)
-                self.assertIn("127.0.0.1:18766", candidate)
-                self.assertNotIn("GitHub", candidate)
-                self.assertNotIn("trusted exact-head", candidate.lower())
+        # Protected automation path invariants
+        policy_path = ROOT / ".github/auto001a-foundation.json"
+        if policy_path.exists():
+            policy = json.loads(policy_path.read_text(encoding="utf-8"))
+            blocked_prefixes = policy.get("blocked_path_prefixes", [])
+            self.assertIn("scripts/automation", blocked_prefixes)
 
-    def test_source_tests_and_docs_need_no_runtime_candidate(self) -> None:
-        for path in (
-            "src/apps/system/tests/test_system.py",
-            "src/apps/equipment_defects/test_source_contract.py",
-            "docs/process/DEVELOPMENT_WORKFLOW.md",
-        ):
-            with self.subTest(path=path):
-                self.assertEqual(self.plan(path)["deployment"], "NONE")
-
-    def test_schema_candidate_keeps_postgresql_and_exact_head_final_gates(self) -> None:
-        plan = self.plan("src/apps/example/migrations/0002_add_field.py")
-        self.assertEqual(plan["deployment"], "VPS_LOCAL_CANDIDATE")
-        final = "\n".join(plan["checks"]["final"])
-        self.assertIn("PostgreSQL", final)
-        self.assertIn("ready push", final)
-        self.assertIn("exact-head GitHub", final)
-
-    def test_build_inputs_are_not_claimed_by_sqlite_candidate(self) -> None:
-        for path in ("Dockerfile", "compose.development.yaml", "requirements/locks/runtime.txt"):
-            with self.subTest(path=path):
-                plan = self.plan(path)
-                self.assertEqual(plan["deployment"], "FINAL_TRUSTED_ONLY")
-                final = "\n".join(plan["checks"]["final"])
-                self.assertIn("container", final.lower())
-                self.assertIn("exact-head GitHub", final)
+        # Preflight script in protected automation must not depend on vps_candidate.sh
+        preflight_text = (ROOT / "scripts/automation/work_item_preflight.py").read_text(encoding="utf-8")
+        self.assertNotIn("scripts/vps_candidate.sh", preflight_text)
+        self.assertNotIn("VPS_LOCAL_CANDIDATE", preflight_text)
+        self.assertNotIn("FINAL_TRUSTED_ONLY", preflight_text)
 
     def test_candidate_harness_is_unprivileged_locked_and_ephemeral(self) -> None:
         script = (ROOT / "scripts/vps_candidate.sh").read_text(encoding="utf-8")
@@ -119,6 +86,12 @@ class VPSLocalDevelopmentLoopTests(unittest.TestCase):
         workflow = (ROOT / "docs/process/DEVELOPMENT_WORKFLOW.md").read_text(encoding="utf-8")
         self.assertIn("scripts/vps_candidate.sh", workflow)
         self.assertNotIn("/eod-hot-refresh <exact-head-sha>", workflow)
+
+    def test_process_contract_preserves_canonical_preflight_and_protected_policy(self) -> None:
+        hardening = (ROOT / "docs/process/PROCESS_HARDENING.md").read_text(encoding="utf-8")
+        self.assertIn("HOT_REFRESH / FULL_DEVELOPMENT", hardening)
+        self.assertNotIn("VPS_LOCAL_CANDIDATE", hardening)
+        self.assertNotIn("FINAL_TRUSTED_ONLY", hardening)
 
 
 if __name__ == "__main__":

@@ -55,7 +55,7 @@ scripts/automation/work_item_preflight.py
 - change class;
 - максимальный risk profile;
 - быстрые, candidate и final checks;
-- `NONE / VPS_LOCAL_CANDIDATE / FINAL_TRUSTED_ONLY`;
+- `NONE / HOT_REFRESH / FULL_DEVELOPMENT`;
 - targeted либо full browser evidence;
 - retry и timeout policy;
 - стабильный Markdown handoff для Codex/нового чата.
@@ -199,18 +199,20 @@ Full matrix и final gate выполняются один раз на оконч
 
 Dedicated security/schema/infra checks, rollback review и controlled evidence. Для product/runtime работы сохраняется отдельный PR.
 
-## 7. Deployment selection
+## 7. Delivery matrix
 
 Preflight выбирает delivery до публикации:
 
 | Условие | Delivery |
 |---|---|
-| docs/source-test-only без runtime effect | `NONE` |
-| runtime source `src/**` (кроме source tests) и `manage.py` | `VPS_LOCAL_CANDIDATE` |
-| Dockerfile / Compose / requirements / pyproject / workflow / deploy / infra | `FINAL_TRUSTED_ONLY` |
+| docs-only | `NONE` |
+| только added/modified `src/templates/**`, `src/static/**` | `HOT_REFRESH` |
+| application/schema/infra либо mixed paths | `FULL_DEVELOPMENT` |
 | direct-to-main hardening exception | `NONE` |
 
-VPS-local candidate работает из текущего dirty/clean working tree, использует hashed browser lock, отдельную SQLite и ephemeral `127.0.0.1:18766`. Он даёт application/browser evidence до публикации, но не заменяет PostgreSQL, container/build и trusted exact-head evidence. Ready push выполняется только после локальных checks, health/browser evidence и acceptance.
+Hot refresh запрещён при delete, rename, migration, workflow/controller или любом path вне presentation allowlist.
+
+До ready push в GitHub локальная проверка и browser evidence выполняются через unprivileged `scripts/vps_candidate.sh` из текущего working tree (с hashed browser lock, отдельной SQLite и `127.0.0.1:18766`). Это обеспечивает быструю локальную итерацию без изменения защищённых automation/security путей и не заменяет PostgreSQL, container/build и exact-head trusted verification после ready push.
 
 ## 8. Browser evidence reuse
 

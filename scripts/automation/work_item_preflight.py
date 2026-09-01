@@ -27,19 +27,6 @@ INFRA_FILES = {
     "docker-compose.yml",
 }
 SCHEMA_MARKERS = ("/migrations/", "/fixtures/", "/seed/", "/imports/")
-FINAL_TRUSTED_PREFIXES = ("requirements/", ".github/", "deploy/", "infra/")
-FINAL_TRUSTED_FILES = {
-    "Dockerfile",
-    "compose.yaml",
-    "compose.yml",
-    "docker-compose.yaml",
-    "docker-compose.yml",
-    "compose.development.yaml",
-    "compose.preview.yaml",
-    "compose.production.yaml",
-    "pyproject.toml",
-}
-LOCAL_RUNTIME_FILES = {"manage.py"}
 
 
 class PreflightError(ValueError):
@@ -168,79 +155,31 @@ def direct_main_exception(
 def checks(risk: str, change_class: str, final: bool) -> dict[str, list[str]]:
     fast = ["git diff --check", "path/protected-boundary validation"]
     candidate: list[str] = []
-    final_checks = [
-        "final gate now"
-        if final
-        else "defer exact-head GitHub gate until accepted ready push"
-    ]
+    final_checks = ["final gate now" if final else "defer final gate to accepted head"]
     if risk == "DOCS":
         fast += ["documentation contract", "links/format/consistency"]
         final_checks += ["documentation gate"]
     elif risk == "PRESENTATION":
         fast += ["CSS/JS/template syntax", "focused source-contract tests"]
-        candidate += ["targeted browser states on the VPS-local candidate"]
-        final_checks += [
-            "one full exact-head GitHub gate after ready push",
-            "trusted development verification on the ready pushed head",
-            "desktop/mobile user acceptance",
-        ]
+        candidate += ["targeted browser states", "hot-refresh health"]
+        final_checks += ["one full exact-head gate", "desktop/mobile user acceptance"]
     elif risk == "APP_LOGIC":
         fast += ["Ruff/compile", "Django check", "focused tests", "migration check"]
-        candidate += ["application smoke on the VPS-local candidate"]
-        final_checks += [
-            "full PostgreSQL suite on VPS before ready push",
-            "required exact-head GitHub workflows once after ready push",
-            "trusted development verification on the ready pushed head",
-        ]
+        candidate += ["trusted exact-head development", "container/runtime smoke"]
+        final_checks += ["full PostgreSQL suite once", "required workflows"]
     elif risk == "SCHEMA_DATA":
-        fast += ["migration consistency", "rollback plan"]
-        candidate += ["SQLite migration and application smoke on the VPS-local candidate"]
-        final_checks += [
-            "PostgreSQL migration/data verification before ready push",
-            "backup/rollback evidence",
-            "required exact-head GitHub workflows once after ready push",
-            "trusted development verification on the ready pushed head",
-        ]
+        fast += ["migration consistency", "PostgreSQL data tests", "rollback plan"]
+        candidate += ["database identity and migration evidence"]
+        final_checks += ["full PostgreSQL suite", "backup/rollback evidence"]
     else:
         fast += ["syntax", "dedicated self-tests", "security/protected-path guard"]
-        final_checks += [
-            "container/build verification",
-            "profile-specific exact-head GitHub gate after ready push",
-            "trusted runtime verification on the ready pushed head",
-        ]
+        candidate += ["controlled infra evidence", "preview/auto-merge assertions"]
+        final_checks += ["profile-specific final gate"]
     if change_class == "MICRO":
         candidate.insert(0, "no full suite before user feedback")
     if change_class == "SYSTEM":
         fast.append("rollback/failure-mode review")
     return {"fast": fast, "candidate": candidate, "final": final_checks}
-
-
-def is_source_test_path(item_path: str) -> bool:
-    pure = PurePosixPath(item_path)
-    return (
-        "/tests/" in f"/{item_path}/"
-        or pure.name.startswith("test_")
-        or pure.name == "tests.py"
-    )
-
-
-def candidate_delivery(items: tuple[Change, ...], mode: str, risk: str) -> str:
-    if mode == "direct_main" or risk == "DOCS":
-        return "NONE"
-    paths = [item.path for item in items]
-    if any(
-        item_path in FINAL_TRUSTED_FILES
-        or item_path.startswith(FINAL_TRUSTED_PREFIXES)
-        for item_path in paths
-    ):
-        return "FINAL_TRUSTED_ONLY"
-    if any(
-        item_path in LOCAL_RUNTIME_FILES
-        or (item_path.startswith("src/") and not is_source_test_path(item_path))
-        for item_path in paths
-    ):
-        return "VPS_LOCAL_CANDIDATE"
-    return "NONE"
 
 
 def build_plan(manifest: dict[str, Any]) -> dict[str, Any]:
@@ -281,19 +220,15 @@ def build_plan(manifest: dict[str, Any]) -> dict[str, Any]:
     else:
         change_class = "STANDARD"
 
-    deployment = candidate_delivery(items, mode, risk)
-    selected_checks = checks(risk, change_class, final_candidate)
-    if deployment == "VPS_LOCAL_CANDIDATE":
-        selected_checks["candidate"].insert(
-            0, "scripts/vps_candidate.sh verify [focused_test_label ...]"
-        )
-        selected_checks["candidate"].insert(
-            1, "ephemeral health/browser evidence on 127.0.0.1:18766"
-        )
-    elif deployment == "FINAL_TRUSTED_ONLY":
-        selected_checks["final"].insert(
-            1, "container/build exact-head GitHub and trusted runtime verification after ready push"
-        )
+    if mode == "direct_main" or risk == "DOCS":
+        deployment = "NONE"
+    elif risk == "PRESENTATION" and all(
+        item.status in {"added", "modified"} and item.path.startswith(HOT_PREFIXES)
+        for item in items
+    ):
+        deployment = "HOT_REFRESH"
+    else:
+        deployment = "FULL_DEVELOPMENT"
 
     if risk != "PRESENTATION":
         browser = "NOT_APPLICABLE"
@@ -315,30 +250,22 @@ def build_plan(manifest: dict[str, Any]) -> dict[str, Any]:
         "risk_profiles_seen": risks,
         "changed_files": [asdict(item) for item in items],
         "deployment": deployment,
-        "checks": selected_checks,
+        "checks": checks(risk, change_class, final_candidate),
         "browser_evidence": browser,
         "retry_policy": [
             "extract primary cause before retrying code/test failures",
             "retry one failed job only for a proven infrastructure timeout",
             "a second identical timeout is a blocker",
-            "new working-tree changes invalidate local candidate evidence",
-            "do not push intermediate repair states merely to obtain candidate evidence",
-        ],
-        "publication_policy": [
-            "VPS working tree is volatile candidate state, not canonical history",
-            "ready push only after local checks, candidate health/browser evidence and acceptance",
-            "run exact-head GitHub gates once for the ready pushed candidate",
+            "remove then re-add deployment labels",
+            "new commits invalidate exact-head evidence",
         ],
         "timeouts_minutes": {
             "preflight": 2,
             "focused_checks": 10,
-            "vps_local_candidate": 15,
-            "final_trusted_development": 35,
+            "hot_refresh": 20,
+            "full_development": 35,
         },
-        "success_evidence": (
-            "pre-push: VPS-local candidate checks + health/browser evidence; "
-            "after ready push: exact-head GitHub and trusted runtime evidence"
-        ),
+        "success_evidence": "exact run/job conclusion and LIVE_SHA=HEAD_SHA",
         "direct_main_exception": exception_id,
     }
 
@@ -414,7 +341,7 @@ def self_test() -> None:
         }
     )
     assert micro["change_class"] == "MICRO"
-    assert micro["deployment"] == "VPS_LOCAL_CANDIDATE"
+    assert micro["deployment"] == "HOT_REFRESH"
     try:
         build_plan(
             {

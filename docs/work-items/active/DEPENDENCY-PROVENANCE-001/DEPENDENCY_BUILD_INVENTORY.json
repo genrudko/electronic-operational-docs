@@ -489,7 +489,7 @@
     "tests/process/test_dependency_provenance_contract.py": "c1472f55a4d0c47e9151305709d9254c623b2d5f551f2776a7dccbf9484b3539",
     "tests/process/test_dependency_provenance_inventory.py": "e446166e56b002bd0a2a2efc8ed32b486702a8d3c92f8796992bc967c2ca1a6b",
     "tests/process/test_release_plan_compatibility.py": "591c9185f3770e64476cbf7f750011c6c5af0db0be4fd469f6d5748480ce0f42",
-    "tests/process/test_vps_local_development_loop.py": "7bdf29461117dc93e81eabe425d431a5702195487787b4f9a7089e12cbf979a0",
+    "tests/process/test_vps_local_development_loop.py": "3b84001131518c14dc569fd006bd3d76bac384c71105251be8c25b26f0401248",
     "tests/security/test_secret_hygiene.py": "39f42a287c1f0c5c8a91f8c24af5202b53d56da848e7321f38e0808ca7f72754"
   },
   "totals": {

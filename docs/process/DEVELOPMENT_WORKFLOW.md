@@ -217,7 +217,7 @@ Candidate создаётся, когда delivery slice готов к связн
 - acceptance route;
 - machine-readable local evidence summary.
 
-VPS-local candidate использует hashed `requirements/locks/browser.txt`, отдельную SQLite и временный localhost server, не требует root/Docker/GitHub и не заменяет PostgreSQL/container/trusted final gates. Build/dependency/container/infra изменения проходят `FINAL_TRUSTED_ONLY`. Ready push выполняется только после принятого локального candidate.
+VPS-local candidate использует hashed `requirements/locks/browser.txt`, отдельную SQLite и временный localhost server, не требует root/Docker/GitHub и не заменяет PostgreSQL/container/trusted final gates. Build/dependency/container/infra изменения проверяются через container/build и final trusted development verification. Ready push выполняется только после принятого локального candidate.
 
 ## 9. Final gate
 
