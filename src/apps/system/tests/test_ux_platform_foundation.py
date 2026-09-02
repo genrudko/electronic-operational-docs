@@ -342,6 +342,24 @@ class UxPlatformFoundationSourceContractTests(SimpleTestCase):
         )
         self.assertIn("font-size:clamp(1.3rem,1.25vw,1.65rem)", compact)
 
+    def test_direction_a_topbar_clock_is_live_after_first_render(self) -> None:
+        topbar = read("src/templates/shared/direction_a/_topbar.html")
+        script = read("src/static/system/direction_a.js")
+
+        self.assertIn("data-da-live-date", topbar)
+        self.assertIn("data-da-live-time", topbar)
+        self.assertIn("function updateLiveClock()", script)
+        self.assertIn("window.setInterval(updateLiveClock, 1000)", script)
+
+    def test_personnel_qualification_chips_do_not_use_italic_semantics(self) -> None:
+        template = read("src/templates/organizations/directory.html")
+        stylesheet = read("src/static/organizations/personnel_directory.css")
+
+        self.assertNotIn("<i>{{ qualification", template)
+        self.assertIn('class="personnel-qualification-chip"', template)
+        self.assertIn(".personnel-qualification-inline .personnel-qualification-chip", stylesheet)
+        self.assertIn("font-style:normal", stylesheet)
+
     def test_repair_v6_opj_bridge_has_no_meaningful_micro_typography(self) -> None:
         css = read("src/static/system/ux_platform_compositions.css")
         opj_bridge = css.split("Specialist OPJ", 1)[1]

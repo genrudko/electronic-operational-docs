@@ -1,15 +1,15 @@
 # ЭОД — текущее состояние
 
-**Дата factual check:** 10.08.2026
+**Дата factual check:** 02.09.2026
 
 **Единственный владелец:** accepted main baseline, active work item/issue/PR/branch и runtime state.
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted main baseline: main / 1befcb73a8a6f7cc03c2e18d292cbb2c85ef6594
+accepted main baseline: main / 19f940bb3a626820deca995293d14352da742262
 active work item: UX-PLATFORM-FOUNDATION-001
 active issue: #69
-active PR: #70 / OPEN / DRAFT / NOT MERGED
+active PR: #71 / OPEN / READY / NOT MERGED
 active branch: ux/ux-platform-foundation-001
 runtime impact: DEVELOPMENT
 preview: UNTOUCHED
@@ -17,7 +17,7 @@ preview: UNTOUCHED
 
 ## Active UX-PLATFORM-FOUNDATION-001 execution
 
-`UX-PLATFORM-FOUNDATION-001` выполняется только в issue #69, ветке `ux/ux-platform-foundation-001` и Draft PR #70.
+`UX-PLATFORM-FOUNDATION-001` после преждевременного merge PR #70 закрывается финальным owner-accepted repair в повторно открытом issue #69, той же ветке `ux/ux-platform-foundation-001` и PR #71.
 
 Цель текущего work item — превратить принятый Direction A / DEFECT / OPJ / UX-THEME визуальный язык в общую UX platform: один application shell, один semantic-token owner, reusable visual/interaction primitives и устойчивые interaction contracts, доказанные на DEFECT и OPJ.
 

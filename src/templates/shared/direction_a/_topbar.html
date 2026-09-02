@@ -27,11 +27,11 @@
     <div class="da-topbar-tools">
         <span class="da-topbar-value">
             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-document"></use></svg>
-            {% now "d.m.Y" %}
+            <time data-da-live-date>{% now "d.m.Y" %}</time>
         </span>
         <span class="da-topbar-value">
             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-history"></use></svg>
-            {% now "H:i" %}
+            <time data-da-live-time>{% now "H:i" %}</time>
         </span>
         <a
             class="da-icon-button"

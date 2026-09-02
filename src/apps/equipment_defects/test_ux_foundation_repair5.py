@@ -162,7 +162,20 @@ class EquipmentDefectUXFoundationRepairFiveTests(SimpleTestCase):
         )
         # Journal table date/status column 2 must have explicit width/min-width in repair5
         self.assertIn(".defect-journal-view .defect-register th:nth-child(2)", stylesheet)
-        self.assertIn("min-width: 138px", stylesheet)
+        compact = stylesheet.replace(" ", "")
+        self.assertIn("width:160px;min-width:160px;max-width:160px", compact)
+        self.assertIn("width:44px;min-width:44px;max-width:44px", compact)
+        for exact_width in ("364px", "277px", "231px", "187px"):
+            self.assertIn(f"width:{exact_width}", compact)
+        self.assertIn("cannot redistribute", stylesheet)
+
+    def test_compact_journal_status_and_lifecycle_do_not_clip(self) -> None:
+        repair5 = (self.static_root / "ux_foundation_repair5.css").read_text(encoding="utf-8")
+        self.assertIn("font-size: .64rem", repair5)
+        self.assertIn("padding: 4px 7px", repair5)
+        self.assertIn("white-space: normal !important", repair5)
+        self.assertIn("min-height: 82px", repair5)
+        self.assertNotIn("min-height: 68px", repair5)
 
     def test_defect_detail_density_is_bounded_and_normalized(self) -> None:
         repair2_detail = (
