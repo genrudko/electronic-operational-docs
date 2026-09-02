@@ -4,6 +4,32 @@
     const shell = document.querySelector("[data-direction-a-shell]");
     const mobileQuery = window.matchMedia("(max-width: 980px)");
 
+    const liveDate = document.querySelector("[data-da-live-date]");
+    const liveTime = document.querySelector("[data-da-live-time]");
+
+    function updateLiveClock() {
+        const now = new Date();
+        if (liveDate) {
+            liveDate.textContent = new Intl.DateTimeFormat("ru-RU", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+            }).format(now);
+        }
+        if (liveTime) {
+            liveTime.textContent = new Intl.DateTimeFormat("ru-RU", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+            }).format(now);
+        }
+    }
+
+    if (liveDate || liveTime) {
+        updateLiveClock();
+        window.setInterval(updateLiveClock, 1000);
+    }
+
     if (shell) {
         const sidebar = shell.querySelector("[data-direction-a-sidebar]");
         const scrim = shell.querySelector("[data-direction-a-scrim]");

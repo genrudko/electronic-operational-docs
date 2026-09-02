@@ -54,7 +54,7 @@
 .personnel-employee-table strong,.personnel-employee-table span,.personnel-employee-table small { display:block; }
 .personnel-employee-table small,.personnel-employee-table span { margin-top:var(--theme-space-1); color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.35; overflow-wrap:normal; word-break:normal; }
 .personnel-qualification-inline { display:flex; flex-wrap:wrap; gap:var(--theme-space-1); }
-.personnel-qualification-inline i { padding:.2rem var(--theme-space-2); border-radius:var(--theme-radius-pill); background:var(--theme-primary-soft); color:var(--theme-primary); font-size:var(--theme-font-size-xs); font-style:normal; font-weight:var(--theme-font-weight-semibold); }
+.personnel-qualification-inline .personnel-qualification-chip { padding:.2rem var(--theme-space-2); border-radius:var(--theme-radius-pill); background:var(--theme-primary-soft); color:var(--theme-primary); font-size:var(--theme-font-size-xs); font-style:normal; font-weight:var(--theme-font-weight-semibold); }
 .personnel-directory-empty { padding:var(--theme-space-6) var(--theme-space-4); color:var(--theme-text-muted); font-size:var(--theme-font-size-sm); text-align:center; }
 
 .personnel-management-actions { display:flex; flex-wrap:wrap; align-items:center; gap:var(--theme-space-2); min-width:max-content; }
