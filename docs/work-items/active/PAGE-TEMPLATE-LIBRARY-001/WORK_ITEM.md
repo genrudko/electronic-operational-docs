@@ -1,9 +1,9 @@
 # PAGE-TEMPLATE-LIBRARY-001
 
-**Status:** planning / prerequisite reconciliation
+**Status:** IN_PROGRESS / trusted baseline re-verification before production templates
 **Issue:** #72
 **Branch:** `ux/page-template-library-001`
-**Draft PR:** to be created from this branch
+**Draft PR:** #73 / OPEN / DRAFT / NOT MERGED
 **Base:** `main` @ `820cdfb9cac9fdd5a8b2fcd09de2a6ce51d846fa`
 **Owner role:** `UX_PLATFORM_OWNER`
 **Risk:** `PSR-010`

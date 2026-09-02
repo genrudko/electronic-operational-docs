@@ -2,17 +2,17 @@
 
 ## STATUS
 
-`REPAIR V13 / READY FOR OWNER VISUAL ACCEPTANCE`
+`ACCEPTED / MERGED THROUGH FINAL REPAIR PR #71`
 
 Issue: `#69`
 
 Branch: `ux/ux-platform-foundation-001`
 
-Draft PR: `#70 / OPEN / DRAFT / NOT MERGED`
+Final PR: `#71 / CLOSED / MERGED`
 
-Owner visual acceptance: `PENDING`
+Owner visual acceptance: `PASSED`
 
-Latest owner verdict: `RESPONSIVE TRANSITION / COMPACT UX = FAIL` on the Repair v12 Development candidate. Repair v12 technical evidence remains historical evidence only and is superseded for owner acceptance by Repair v13.
+Final owner verdict: `PASSED`; final repair exact head `1497e661935c5ec21e4d7ce1d8457cbeb2effe1d` merged as `820cdfb9cac9fdd5a8b2fcd09de2a6ce51d846fa`. Trusted run `33577538211` later failed on GitHub-runner-to-VPS SSH transport; that transport failure is retained and re-verified by the successor work item rather than reported as PASS.
 
 ## EXACT BASELINE SHA
 
@@ -274,3 +274,10 @@ Stop only at a technically and visually complete Draft PR ready for direct owner
 - `OWNER VISUAL ACCEPTANCE = PENDING` until actual owner review.
 
 Ready for Review and merge remain prohibited until explicit owner instruction.
+
+
+## POST-MERGE CLOSURE — 2026-09-02
+
+Final owner-visible repair was accepted and merged through PR #71 at exact head `1497e661935c5ec21e4d7ce1d8457cbeb2effe1d`; merge commit `820cdfb9cac9fdd5a8b2fcd09de2a6ce51d846fa`. Issue #69 is CLOSED / COMPLETED.
+
+All applicable exact-head repository checks on the final head were successful. Trusted Development run `33577538211` did not complete because the GitHub runner timed out establishing the VPS SSH connection; fallback rollback also timed out on the same transport. The failure is infrastructure evidence, not an application-test failure. It is explicitly carried into `PAGE-TEMPLATE-LIBRARY-001` preflight for a fresh trusted runtime verification before production profile implementation.

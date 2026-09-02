@@ -6,31 +6,48 @@
 
 ```text
 repository: genrudko/electronic-operational-docs
-accepted main baseline: main / 19f940bb3a626820deca995293d14352da742262
-active work item: UX-PLATFORM-FOUNDATION-001
-active issue: #69
-active PR: #71 / OPEN / READY / NOT MERGED
-active branch: ux/ux-platform-foundation-001
+accepted main baseline: main / 820cdfb9cac9fdd5a8b2fcd09de2a6ce51d846fa
+active work item: PAGE-TEMPLATE-LIBRARY-001
+active issue: #72
+active PR: #73 / OPEN / DRAFT / NOT MERGED
+active branch: ux/page-template-library-001
 runtime impact: DEVELOPMENT
 preview: UNTOUCHED
 ```
 
-## Active UX-PLATFORM-FOUNDATION-001 execution
+## Active PAGE-TEMPLATE-LIBRARY-001 execution
 
-`UX-PLATFORM-FOUNDATION-001` после преждевременного merge PR #70 закрывается финальным owner-accepted repair в повторно открытом issue #69, той же ветке `ux/ux-platform-foundation-001` и PR #71.
+`PAGE-TEMPLATE-LIBRARY-001` выполняется только в issue #72, ветке `ux/page-template-library-001` и Draft PR #73.
 
-Цель текущего work item — превратить принятый Direction A / DEFECT / OPJ / UX-THEME визуальный язык в общую UX platform: один application shell, один semantic-token owner, reusable visual/interaction primitives и устойчивые interaction contracts, доказанные на DEFECT и OPJ.
+Владелец утвердил архитектуру из четырёх server-rendered Django page profiles: registry, journal, specialist workspace и timeline. Профили строятся через template inheritance/blocks поверх принятого `ux_platform*`/Direction A слоя; новый page-builder DSL, второй design system и broad legacy migration запрещены.
+
+Первый bounded preflight этого work item закрывает фактический post-merge state предыдущего UX contour и повторно подтверждает trusted runtime path до изменения production templates. Final UX PR #71 был merged; его applicable exact-head repository checks завершились `SUCCESS`, но trusted-controller run `33577538211` завершился `FAILURE` из-за таймаута SSH GitHub runner -> VPS. Этот транспортный сбой не объявляется успешным и должен быть re-verified на successor exact head до production page-profile implementation.
 
 Hard boundaries текущего PR:
 
-- не реализуется `PAGE-TEMPLATE-LIBRARY-001`;
 - не выполняется broad `LEGACY-UX-MIGRATION-001`;
 - не создаются новые product modules;
-- не изменяются domain lifecycle, OPJ registration/autosave/revisions/locking, DEFECT lifecycle, Module Registry semantics или stored business data;
+- не изменяются domain models, migrations, lifecycle semantics или stored business data;
+- generic layout остаётся во владельцах `ux_platform*`, feature code не создаёт вторую generic visual system;
 - Preview, pilot и production не изменяются;
 - Ready for Review и merge запрещены до отдельной команды владельца.
 
-Trusted Development delivery разрешён только для final visual candidate; deployed SHA обязан совпадать с final PR head.
+## Accepted UX-PLATFORM-FOUNDATION-001 baseline
+
+`UX-PLATFORM-FOUNDATION-001` принят владельцем и merged окончательным repair через PR #71:
+
+```text
+accepted issue: #69 / CLOSED / COMPLETED
+accepted PR: #71 / CLOSED / MERGED
+accepted exact head: 1497e661935c5ec21e4d7ce1d8457cbeb2effe1d
+merge commit / accepted main: 820cdfb9cac9fdd5a8b2fcd09de2a6ce51d846fa
+owner visual acceptance: PASSED
+applicable exact-head repository checks: SUCCESS
+trusted run 33577538211: FAILURE / GitHub-runner-to-VPS SSH timeout
+preview: UNTOUCHED
+```
+
+The transport failure is retained as factual evidence rather than rewritten. The successor page-template work item must re-establish trusted Development connectivity before changing production profile templates.
 
 ## Accepted MODULE-REGISTRY-001 baseline
 
