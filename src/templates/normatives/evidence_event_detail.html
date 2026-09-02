@@ -3,18 +3,18 @@
 {% block title %}{{ event.get_event_type_display }} · evidence · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading compact">
+<section class="da-page-header da-page-header-compact">
     <div>
-        <div class="eyebrow">EVIDENCE-СОБЫТИЕ</div>
+        <span class="ux-kicker">Evidence-событие</span>
         <h1>{{ event.get_event_type_display }}</h1>
         <p>{{ event.subject_type }} · {{ event.subject_id }}</p>
     </div>
 </section>
 
-<section class="profile-grid">
-    <article class="profile-card">
+<section class="ux-detail-grid">
+    <article class="da-card">
         <h2>Кто и когда</h2>
-        <dl class="detail-list">
+        <dl class="ux-key-value detail-list">
             <dt>Участник</dt>
             <dd>{{ event.actor_snapshot.full_name }}</dd>
             <dt>Должность</dt>
@@ -28,9 +28,9 @@
         </dl>
     </article>
 
-    <article class="profile-card">
+    <article class="da-card">
         <h2>Что подтверждено</h2>
-        <dl class="detail-list">
+        <dl class="ux-key-value detail-list">
             <dt>Тип события</dt>
             <dd>{{ event.get_event_type_display }}</dd>
             <dt>Способ подтверждения</dt>
@@ -52,25 +52,25 @@
     </article>
 </section>
 
-<section class="profile-card">
+<section class="da-card">
     <h2>Evidence payload</h2>
-    <div class="table-wrap">
-        <table>
+    <div class="da-table-wrap">
+        <table class="da-table">
             <tbody>
             {% for key, value in event.payload.items %}
                 <tr><th>{{ key }}</th><td>{{ value }}</td></tr>
             {% empty %}
-                <tr><td>Payload пуст.</td></tr>
+                <tr><td><div class="ux-empty-state">Payload пуст.</div></td></tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
 </section>
 
-<section class="profile-card technical-only">
+<section class="da-card technical-only">
     <h2>Проверка целостности</h2>
     <p><strong>{{ integrity.status.label }}</strong> — {{ integrity.message }}</p>
-    <dl class="detail-list">
+    <dl class="ux-key-value detail-list">
         <dt>SHA-256</dt>
         <dd><code>{{ event.digest }}</code></dd>
         <dt>Версия схемы</dt>

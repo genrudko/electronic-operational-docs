@@ -5,7 +5,7 @@
 {% block main_class %}authority-main{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'organizations/personnel_management.css' %}?v=pa001m2">
-<link rel="stylesheet" href="{% static 'organizations/personnel_directory.css' %}?v=pa001d2">
+<link rel="stylesheet" href="{% static 'organizations/personnel_directory.css' %}?v=pa001d4">
 {% endblock %}
 
 {% block content %}
@@ -32,27 +32,27 @@
     </section>
 
     <section class="personnel-contours" aria-label="Контуры персонала">
-        <a class="personnel-contour-card" href="{% url 'organizations:authority_registry' %}#matrix">
+        <a class="personnel-contour-card is-current" href="{% url 'organizations:directory' %}" aria-current="page">
             <header><span class="personnel-contour-icon"><svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-organization"></use></svg></span><h3>Штатный персонал</h3></header>
             <p>Структура подразделений, квалификации и опубликованная матрица прав.</p>
             <div class="personnel-contour-organizations">{% for item in own_organizations %}<span>{{ item.short_name|default:item.name }}</span>{% empty %}<span>Не настроено</span>{% endfor %}</div>
         </a>
-        <a class="personnel-contour-card" href="{% url 'organizations:authority_registry' %}#dispatch">
+        <a class="personnel-contour-card" href="{% url 'organizations:authority_registry' %}?organization={{ selected_organization.code|urlencode }}&amp;view=dispatch">
             <header><span class="personnel-contour-icon"><svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-org-operations"></use></svg></span><h3>ОДУ и РДУ</h3></header>
             <p>Руководство и оперативно-диспетчерский персонал диспетчерских центров.</p>
             <div class="personnel-contour-organizations">{% for item in dispatch_organizations %}<span>{{ item.short_name|default:item.name }}</span>{% empty %}<span>Не настроено</span>{% endfor %}</div>
         </a>
-        <a class="personnel-contour-card" href="{% url 'organizations:authority_registry' %}#related">
+        <a class="personnel-contour-card" href="{% url 'organizations:authority_registry' %}?organization={{ selected_organization.code|urlencode }}&amp;view=related&amp;scope=grid">
             <header><span class="personnel-contour-icon"><svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-org-technical"></use></svg></span><h3>ЦУС и смежные сети</h3></header>
             <p>Оперативный персонал ЦУС и смежных сетевых организаций.</p>
             <div class="personnel-contour-organizations">{% for item in related_grid_organizations %}<span>{{ item.short_name|default:item.name }}</span>{% empty %}<span>Не настроено</span>{% endfor %}</div>
         </a>
-        <a class="personnel-contour-card" href="{% url 'organizations:authority_registry' %}#related">
+        <a class="personnel-contour-card" href="{% url 'organizations:authority_registry' %}?organization={{ selected_organization.code|urlencode }}&amp;view=related&amp;scope=site">
             <header><span class="personnel-contour-icon"><svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-org-substation"></use></svg></span><h3>Смежные энергообъекты</h3></header>
             <p>Оперативные контакты ПС и других объектов, непосредственно связанных с нашей работой.</p>
             <div class="personnel-contour-organizations">{% for item in related_site_organizations %}<span>{{ item.short_name|default:item.name }}</span>{% empty %}<span>Не настроено</span>{% endfor %}</div>
         </a>
-        <a class="personnel-contour-card" href="{% url 'organizations:authority_registry' %}#related">
+        <a class="personnel-contour-card" href="{% url 'organizations:authority_registry' %}?organization={{ selected_organization.code|urlencode }}&amp;view=related&amp;scope=commercial">
             <header><span class="personnel-contour-icon"><svg aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-request"></use></svg></span><h3>Коммерческий ДЦ</h3></header>
             <p>Руководство и коммерческие диспетчеры с контактами и режимом доступности.</p>
             <div class="personnel-contour-organizations">{% for item in commercial_organizations %}<span>{{ item.short_name|default:item.name }}</span>{% empty %}<span>Не настроено</span>{% endfor %}</div>
@@ -113,12 +113,12 @@
                 </section>
                 <section class="personnel-directory-panel">
                     <header><div><h2>Энергообъекты и обслуживающие подразделения</h2><p>Объект не становится подразделением: связь обслуживания хранится отдельно.</p></div></header>
-                    <div class="personnel-recent-list">{% for row in site_service_rows %}<div class="personnel-recent-row"><span><strong>{{ row.site.short_name|default:row.site.name }}</strong><span>{% for service in row.services %}{{ service.division.name }} — {{ service.get_service_kind_display }}{% if not forloop.last %}; {% endif %}{% endfor %}</span></span><time>{{ row.services|length }}</time></div>{% empty %}<div class="personnel-directory-empty">Связи обслуживания не заданы.</div>{% endfor %}</div>
+                    <div class="personnel-recent-list">{% for row in site_service_rows %}<div class="personnel-recent-row"><span><strong>{{ row.site.short_name|default:row.site.name }}</strong><span class="personnel-service-relations">{% for service in row.services %}<span class="personnel-service-relation"><span>{{ service.division.name }}</span><small>{{ service.get_service_kind_display }}</small></span>{% endfor %}</span></span><time>{{ row.services|length }}</time></div>{% empty %}<div class="personnel-directory-empty">Связи обслуживания не заданы.</div>{% endfor %}</div>
                 </section>
             </div>
 
             <section class="personnel-directory-panel">
-                <header><div><h2>Внешние оперативные контакты</h2><p>ОДУ, РДУ, ЦУС, смежные предприятия, энергообъекты и коммерческий ДЦ.</p></div><a class="da-button secondary" href="{% url 'organizations:authority_registry' %}#dispatch">Открыть справочники</a></header>
+                <header><div><h2>Внешние оперативные контакты</h2><p>ОДУ, РДУ, ЦУС, смежные предприятия, энергообъекты и коммерческий ДЦ.</p></div><a class="da-button secondary" href="{% url 'organizations:authority_registry' %}?organization={{ selected_organization.code|urlencode }}&amp;view=dispatch">Открыть справочники</a></header>
                 {% if external_contacts %}<div class="personnel-employee-table-wrap"><table class="personnel-employee-table"><thead><tr><th>Организация</th><th>Сотрудник</th><th>Роль</th><th>Область взаимодействия</th><th>Контакт</th></tr></thead><tbody>{% for contact in external_contacts %}<tr><td><strong>{{ contact.employee.organization.short_name|default:contact.employee.organization.name }}</strong></td><td><strong>{{ contact.employee.full_name }}</strong><span>{{ contact.employee.position.name }}</span></td><td>{{ contact.get_relation_kind_display }}</td><td>{{ contact.operational_scope }}</td><td><strong>{{ contact.employee.contact_profile.operational_phone|default:contact.employee.contact_profile.primary_phone|default:'Не указан' }}</strong><small>{% if contact.employee.contact_profile.is_round_the_clock %}Круглосуточно{% else %}{{ contact.employee.contact_profile.availability_schedule }}{% endif %}</small></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="personnel-directory-empty">Внешние оперативные контакты не опубликованы.</div>{% endif %}
             </section>
 

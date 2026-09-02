@@ -79,7 +79,7 @@
       "id": "dependency-bypass",
       "mutation": {
         "type": "plan_set_status",
-        "work_item_id": "OBSERVABILITY-001",
+        "work_item_id": "INCIDENT-RESPONSE-001",
         "status": "READY"
       },
       "expected_rule": "dependency-bypass"

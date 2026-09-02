@@ -3,15 +3,15 @@
 {% block title %}Профили данных · Импорт · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading">
+<section class="da-page-header">
     <div>
-        <div class="eyebrow">КОНТРОЛИРУЕМАЯ СРЕДА ДАННЫХ</div>
+        <span class="ux-kicker">Контролируемая среда данных</span>
         <h1>Профили данных</h1>
         <p>Каждая загрузка явно относится к безопасной презентационной, локальной или тестовой среде.</p>
     </div>
-    <div class="document-actions">
-        <a href="{% url 'imports:list' %}">К журналу загрузок</a>
-        <a class="button" href="{% url 'imports:upload' %}">Новая загрузка</a>
+    <div class="da-actions document-actions">
+        <a class="da-button is-tertiary" href="{% url 'imports:list' %}">К журналу загрузок</a>
+        <a class="da-button" href="{% url 'imports:upload' %}">Новая загрузка</a>
     </div>
 </section>
 
@@ -27,16 +27,16 @@
 <section class="data-profile-grid">
 {% for item in profile_rows %}
     {% with profile=item.profile %}
-    <article class="profile-card data-profile-card profile-kind-{{ profile.kind|lower }}">
+    <article class="da-card data-profile-card profile-kind-{{ profile.kind|lower }}">
         <div class="section-heading">
             <div>
-                <div class="eyebrow">{{ profile.get_kind_display }}</div>
+                <span class="ux-kicker">{{ profile.get_kind_display }}</span>
                 <h2>{{ profile.name }}</h2>
             </div>
             {% if profile.is_default %}<span class="count-badge">По умолчанию</span>{% endif %}
         </div>
         <p>{{ profile.description }}</p>
-        <dl class="detail-list">
+        <dl class="ux-key-value detail-list">
             <dt>Внутренний код</dt><dd><code>{{ profile.code }}</code></dd>
             <dt>Чувствительность</dt><dd>{{ profile.get_sensitivity_level_display }}</dd>
             <dt>Экспорт</dt><dd>{{ profile.get_export_policy_display }}</dd>
@@ -50,10 +50,10 @@
 {% endfor %}
 </section>
 
-<section class="profile-card">
+<section class="da-card">
     <div class="section-heading">
         <div>
-            <div class="eyebrow">ПРАВИЛА ИСПОЛЬЗОВАНИЯ</div>
+            <span class="ux-kicker">Правила использования</span>
             <h2>Разделение контуров</h2>
         </div>
     </div>

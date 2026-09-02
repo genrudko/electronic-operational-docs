@@ -72,9 +72,12 @@ class Patch0075PresentationValidationTests(TestCase):
             '<dt class="technical-only">Системный код</dt>',
             template,
         )
-        self.assertIn(
-            '<code class="technical-only">{{ row.equipment.code }}</code>',
+        self.assertRegex(
             template,
+            (
+                r'<code class="[^"]*\btechnical-only\b[^"]*">'
+                r"\{\{ row\.equipment\.code \}\}</code>"
+            ),
         )
 
     def test_dispatching_summary_uses_operational_labels(self):

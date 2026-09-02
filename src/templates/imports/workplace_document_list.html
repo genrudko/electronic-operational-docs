@@ -1,30 +1,30 @@
 {% extends "base.html" %}
 {% block title %}Импорт перечней документации · ЭОД{% endblock %}
 {% block content %}
-<section class="page-heading compact">
+<section class="da-page-header da-page-header-compact">
     <div>
-        <div class="eyebrow">ДОКУМЕНТАЦИЯ РАБОЧЕГО МЕСТА</div>
+        <span class="ux-kicker">Документация рабочего места</span>
         <h1>Редакции импортированных перечней</h1>
         <p>CSV сначала разбирается в staging и не изменяет действующий утверждённый перечень.</p>
     </div>
-    <div class="document-actions">
-        <a class="button" href="{% url 'imports:workplace_document_upload' %}">Загрузить CSV-реестр</a>
-        <a class="button secondary" href="{% url 'workplace_docs:registry' %}">Утверждённые перечни</a>
-        <a class="button secondary" href="{% url 'imports:list' %}">К импорту данных</a>
+    <div class="da-actions document-actions">
+        <a class="da-button" href="{% url 'imports:workplace_document_upload' %}">Загрузить CSV-реестр</a>
+        <a class="da-button is-secondary" href="{% url 'workplace_docs:registry' %}">Утверждённые перечни</a>
+        <a class="da-button is-secondary" href="{% url 'imports:list' %}">К импорту данных</a>
     </div>
 </section>
 <section class="notice-card warning-notice">
     <strong>Отметка электронной формы не отменяет бумажное хранение</strong>
     <p>Знак «+» сохраняется как указание источника. Он не подтверждает наличие файла и не разрешает автоматически отказаться от бумажного экземпляра.</p>
 </section>
-<section class="summary-grid">
-    <article class="metric"><span>Редакций</span><strong>{{ summary.total }}</strong></article>
-    <article class="metric"><span>Ожидают проверки</span><strong>{{ summary.active }}</strong></article>
-    <article class="metric"><span>Требуют внимания</span><strong>{{ summary.attention }}</strong></article>
-    <article class="metric"><span>Опубликованы</span><strong>{{ summary.published }}</strong></article>
+<section class="ux-stat-grid">
+    <article class="ux-stat"><span>Редакций</span><strong>{{ summary.total }}</strong></article>
+    <article class="ux-stat"><span>Ожидают проверки</span><strong>{{ summary.active }}</strong></article>
+    <article class="ux-stat"><span>Требуют внимания</span><strong>{{ summary.attention }}</strong></article>
+    <article class="ux-stat"><span>Опубликованы</span><strong>{{ summary.published }}</strong></article>
 </section>
-<section class="profile-card">
-    <div class="table-wrap"><table>
+<section class="da-card">
+    <div class="da-table-wrap"><table class="da-table">
         <thead><tr><th>Файл и основание</th><th>Рабочее место</th><th>Состав</th><th>Проверка</th><th>Электронная отметка</th><th>Состояние</th><th>Дата</th></tr></thead>
         <tbody>
         {% for revision in revisions %}
@@ -38,7 +38,7 @@
                 <td>{{ revision.created_at|date:"d.m.Y H:i" }}</td>
             </tr>
         {% empty %}
-            <tr><td colspan="7" class="muted">Реестры документации ещё не загружались.</td></tr>
+            <tr><td colspan="7"><div class="ux-empty-state">Реестры документации ещё не загружались.</div></td></tr>
         {% endfor %}
         </tbody>
     </table></div>

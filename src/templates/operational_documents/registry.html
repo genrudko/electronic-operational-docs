@@ -1,133 +1,84 @@
 {% extends "base.html" %}
+{% load equipment_defect_tags %}
 
 {% block title %}Структурированные журналы · ЭОД{% endblock %}
+{% block extra_head %}
+<style>
+.opdoc-registry-page{min-width:0;display:grid;gap:var(--theme-space-3)}
+.opdoc-page-header{margin-block-end:0;padding-block-end:var(--theme-space-3)}
+.opdoc-page-header .ux-kicker{margin-block-end:var(--theme-space-1);color:var(--theme-text-muted)}
+.opdoc-registry-notices{min-width:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(28rem,100%),1fr));gap:var(--theme-space-2)}
+.opdoc-registry-notices .da-alert{min-width:0;margin-block-end:0;padding:var(--theme-space-2) var(--theme-space-3)}
+.opdoc-registry-notices .da-alert p{font-size:var(--theme-font-size-sm);line-height:1.4}
+.opdoc-summary{margin-block:0;gap:var(--theme-space-2)}
+.opdoc-summary .ux-stat{gap:var(--theme-space-1);padding:var(--theme-space-3);box-shadow:none}
+.opdoc-summary .ux-stat>strong{font-size:var(--theme-font-size-xl)}
+.opdoc-filter-grid{gap:var(--theme-space-3)}
+.opdoc-date-range{min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--theme-space-3)}
+.opdoc-filter-grid>.ux-form-actions{margin-block-start:0;padding-block-start:var(--theme-space-1)}
+.opdoc-record-identity{display:grid;gap:var(--theme-space-1)}
+.opdoc-record-meta{display:flex;min-width:0;flex-wrap:wrap;align-items:baseline;gap:var(--theme-space-1);color:var(--theme-text-muted);font-size:var(--theme-font-size-xs);line-height:1.35}
+.opdoc-record-meta__technical{font-weight:var(--theme-font-weight-semibold)}
+.opdoc-record-meta__technical::before{margin-inline-end:var(--theme-space-1);color:var(--theme-border-strong);content:"·"}
+@media(max-width:52rem){.opdoc-registry-page{gap:var(--theme-space-2)}.opdoc-registry-notices,.opdoc-date-range{grid-template-columns:1fr}.opdoc-filter-grid>:is(.ux-field-two-thirds,.ux-field-third,.ux-field-full,.ux-form-actions){grid-column:1/-1}.opdoc-filter-grid>.ux-form-actions{justify-content:stretch}.opdoc-filter-grid>.ux-form-actions>:where(a,button){flex:1 1 10rem}}
+</style>
+{% endblock %}
 
 {% block content %}
-<section class="page-heading">
+<div class="opdoc-registry-page">
+<section class="da-page-header opdoc-page-header">
     <div>
-        <div class="section-kicker">Формы по утверждённым источникам</div>
+        <span class="ux-kicker">Формы по утверждённым источникам</span>
         <h1>Структурированные журналы</h1>
         <p>Состав граф и правила записи устанавливаются инструкциями. Оперативный персонал не конструирует формы журналов.</p>
     </div>
-    <div class="document-actions">
-        <a class="button secondary" href="{% url 'operational_documents:type_registry' %}">Формы журналов</a>
-        {% if can_create_record %}
-            <a class="button" href="{% url 'operational_documents:record_choose_type' %}">Новая запись</a>
-        {% else %}
-            <span class="button disabled" aria-disabled="true">Нет установленных форм</span>
-        {% endif %}
+    <div class="da-actions document-actions">
+        <a class="da-button is-secondary" href="{% url 'operational_documents:type_registry' %}">Формы журналов</a>
+        {% if can_create_record %}<a class="da-button" href="{% url 'operational_documents:record_choose_type' %}">Новая запись</a>{% else %}<span class="da-button is-disabled" aria-disabled="true">Нет установленных форм</span>{% endif %}
     </div>
 </section>
 
-<section class="source-boundary-notice">
-    <strong>Источник формы обязателен</strong>
-    <p>Новая запись доступна только после установки формы, привязанной к конкретному разделу и приложению утверждённой инструкции.</p>
+<section class="opdoc-registry-notices" aria-label="Условия ведения журналов">
+    <div class="da-alert"><div><strong>Источник формы обязателен</strong><p>Новая запись доступна только после установки формы, привязанной к конкретному разделу и приложению утверждённой инструкции.</p></div></div>
+    {% if counts.technical %}<div class="da-alert is-warning"><div><strong>Технические данные ядра: {{ counts.technical }}</strong><p>Они сохранены для проверки механизма, но не считаются записями утверждённого журнала и недоступны для новых действий.</p></div></div>{% endif %}
 </section>
 
-{% if counts.technical %}
-<section class="source-boundary-notice warning">
-    <strong>Технические данные ядра: {{ counts.technical }}</strong>
-    <p>Они сохранены для проверки механизма, но не считаются записями утверждённого журнала и недоступны для новых действий.</p>
-</section>
-{% endif %}
-
-<section class="summary-grid document-summary">
-    <article class="metric"><span>Всего записей</span><strong>{{ counts.total }}</strong></article>
-    <article class="metric"><span>В работе</span><strong>{{ counts.active }}</strong></article>
-    <article class="metric"><span>Завершено</span><strong>{{ counts.closed }}</strong></article>
-    <article class="metric"><span>Установленных форм</span><strong>{{ counts.types }}</strong></article>
+<section class="ux-stat-grid document-summary opdoc-summary" aria-label="Сводка структурированных журналов">
+    <article class="ux-stat"><span>Всего записей</span><strong>{{ counts.total }}</strong></article>
+    <article class="ux-stat"><span>В работе</span><strong>{{ counts.active }}</strong></article>
+    <article class="ux-stat"><span>Завершено</span><strong>{{ counts.closed }}</strong></article>
+    <article class="ux-stat"><span>Установленных форм</span><strong>{{ counts.types }}</strong></article>
 </section>
 
-<section class="directory-card opdoc-filter-card">
-    <form method="get" class="opdoc-filter-grid">
-        <label>Поиск
-            <input type="search" name="q" value="{{ filters.q }}" placeholder="Номер, содержание, участник">
-        </label>
-        <label>Журнал
-            <select name="type">
-                <option value="">Все журналы и технические записи</option>
-                {% for item in document_types %}
-                    <option value="{{ item.public_id }}" {% if filters.type == item.public_id|stringformat:'s' %}selected{% endif %}>{{ item.name }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label>Состояние
-            <select name="status">
-                <option value="">Все состояния</option>
-                {% for code, name in status_options %}
-                    <option value="{{ code }}" {% if filters.status == code %}selected{% endif %}>{{ name }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label>Рабочее место
-            <select name="workplace">
-                <option value="">Все рабочие места</option>
-                {% for item in workplaces %}
-                    <option value="{{ item.code }}" {% if filters.workplace == item.code %}selected{% endif %}>{{ item.name }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label>Оборудование
-            <select name="equipment">
-                <option value="">Любое оборудование</option>
-                {% for item in equipment_assets %}
-                    <option value="{{ item.public_id }}" {% if filters.equipment == item.public_id|stringformat:'s' %}selected{% endif %}>{{ item.code }} · {{ item.technical_name }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label>С даты<input type="date" name="date_from" value="{{ filters.date_from }}"></label>
-        <label>По дату<input type="date" name="date_to" value="{{ filters.date_to }}"></label>
-        <div class="form-actions">
-            <button class="button" type="submit">Применить</button>
-            <a class="button secondary" href="{% url 'operational_documents:registry' %}">Сбросить</a>
+<section class="da-card is-compact opdoc-filter-card">
+    <form method="get" class="ux-form-grid opdoc-filter-grid">
+        <div class="da-field ux-field-two-thirds"><label>Поиск</label><input type="search" name="q" value="{{ filters.q }}" placeholder="Номер, содержание, участник"></div>
+        <div class="da-field ux-field-third"><label>Журнал</label><select name="type"><option value="">Все журналы и технические записи</option>{% for item in document_types %}<option value="{{ item.public_id }}" {% if filters.type == item.public_id|stringformat:'s' %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
+        <div class="da-field ux-field-third"><label>Состояние</label><select name="status"><option value="">Все состояния</option>{% for code, name in status_options %}<option value="{{ code }}" {% if filters.status == code %}selected{% endif %}>{{ name }}</option>{% endfor %}</select></div>
+        <div class="da-field ux-field-third"><label>Рабочее место</label><select name="workplace"><option value="">Все рабочие места</option>{% for item in workplaces %}<option value="{{ item.code }}" {% if filters.workplace == item.code %}selected{% endif %}>{{ item.name }}</option>{% endfor %}</select></div>
+        <div class="da-field ux-field-third"><label>Оборудование</label><select name="equipment"><option value="">Любое оборудование</option>{% for item in equipment_assets %}<option value="{{ item.public_id }}" {% if filters.equipment == item.public_id|stringformat:'s' %}selected{% endif %}>{{ item.code }} · {{ item.technical_name }}</option>{% endfor %}</select></div>
+        <div class="opdoc-date-range ux-field-full" role="group" aria-label="Период">
+            <div class="da-field"><label>С даты</label><input type="date" name="date_from" value="{{ filters.date_from }}"></div>
+            <div class="da-field"><label>По дату</label><input type="date" name="date_to" value="{{ filters.date_to }}"></div>
         </div>
+        <div class="ux-form-actions"><button class="da-button" type="submit">Применить</button><a class="da-button is-tertiary" href="{% url 'operational_documents:registry' %}">Сбросить</a></div>
     </form>
 </section>
 
 {% if records %}
-<section class="directory-card">
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Дата и время</th>
-                    <th>Номер и журнал</th>
-                    <th>Содержание</th>
-                    <th>Данные формы</th>
-                    <th>Рабочее место</th>
-                    <th>Состояние</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for record in records %}
-                <tr{% if not record.is_source_bound %} class="technical-record-row"{% endif %}>
-                    <td>{{ record.event_at|date:"d.m.Y H:i" }}</td>
-                    <td>
-                        <a href="{% url 'operational_documents:record_detail' record.public_id %}"><strong>{{ record.registration_number }}</strong></a><br>
-                        <span class="muted">{{ record.document_type.short_name|default:record.document_type.name }}</span>
-                        {% if not record.is_source_bound %}<span class="status-chip status-warning">Техническая запись</span>{% endif %}
-                    </td>
-                    <td>
-                        <strong>{{ record.title }}</strong>
-                        {% if record.summary %}<div class="muted">{{ record.summary|truncatechars:140 }}</div>{% endif %}
-                    </td>
-                    <td>
-                        {% for value in record.visible_values %}
-                            <div><span class="muted">{{ value.label }}:</span> {{ value.display|truncatechars:100 }}</div>
-                        {% empty %}<span class="muted">Нет отображаемых граф</span>{% endfor %}
-                    </td>
-                    <td>{{ record.workplace_name_snapshot|default:"—" }}</td>
-                    <td><span class="status-chip {% if record.status_is_terminal %}status-registered{% else %}status-draft{% endif %}">{{ record.status_name_snapshot }}</span></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+<section class="da-card">
+    <div class="da-table-wrap"><table class="da-table"><thead><tr><th>Дата и время</th><th>Номер и журнал</th><th>Содержание</th><th>Данные формы</th><th>Рабочее место</th><th>Состояние</th></tr></thead><tbody>
+    {% for record in records %}
+        {% equipment_defect_status_presentation record as defect_status %}
+        <tr{% if not record.is_source_bound %} class="technical-record-row"{% endif %}>
+        <td>{{ record.event_at|date:"d.m.Y H:i" }}</td>
+        <td><div class="opdoc-record-identity"><a href="{% url 'operational_documents:record_detail' record.public_id %}"><strong>{{ record.registration_number }}</strong></a><div class="opdoc-record-meta"><span>{{ record.document_type.short_name|default:record.document_type.name }}</span>{% if not record.is_source_bound %}<span class="opdoc-record-meta__technical" title="Техническая запись ядра, не связанная с утверждённой формой">Техническая запись</span>{% endif %}</div></div></td>
+        <td><strong>{{ record.title }}</strong>{% if record.summary %}<div class="ux-muted">{{ record.summary|truncatechars:140 }}</div>{% endif %}</td>
+        <td>{% for value in record.visible_values %}<div><span class="ux-muted">{{ value.label }}:</span> {{ value.display|truncatechars:100 }}</div>{% empty %}<span class="ux-muted">Нет отображаемых граф</span>{% endfor %}</td>
+        <td>{{ record.workplace_name_snapshot|default:"—" }}</td>
+        <td>{% if defect_status %}<span class="da-status-chip{% if defect_status.class_name %} {{ defect_status.class_name }}{% endif %}" data-domain-status="{{ defect_status.domain }}" data-status="{{ record.status_code }}">{{ record.status_name_snapshot }}</span>{% else %}<span class="da-status-chip {% if record.status_is_terminal %}is-success{% else %}is-warning{% endif %}">{{ record.status_name_snapshot }}</span>{% endif %}</td>
+    </tr>{% endfor %}</tbody></table></div>
 </section>
-{% else %}
-<section class="empty-state">
-    <h2>Записей не найдено</h2>
-    <p>Измените фильтры или дождитесь установки утверждённой формы журнала.</p>
-</section>
-{% endif %}
+{% else %}<section class="ux-empty-state"><h2>Записей не найдено</h2><p>Измените фильтры или дождитесь установки утверждённой формы журнала.</p></section>{% endif %}
+</div>
 {% endblock %}

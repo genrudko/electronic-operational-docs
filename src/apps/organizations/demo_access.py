@@ -10,6 +10,10 @@ from django.db import transaction
 DEMO_ACCESS_ENV = "EOD_DEMO_USER_PASSWORD"
 DEMO_USERNAMES = ("operator.demo", "supervisor.demo")
 MINIMUM_DEMO_PASSWORD_LENGTH = 16
+DEMO_ACCOUNT_IDENTITIES = {
+    "operator.demo": {"first_name": "Илья", "last_name": "Кузнецов"},
+    "supervisor.demo": {"first_name": "Анна", "last_name": "Орлова"},
+}
 
 # Contract marker: COMPROMISED_DEMO_PASSWORD_SHA256.
 # Hashes identify revoked historical values without republishing them.
@@ -29,6 +33,12 @@ class DemoAccessResult:
     status: str
     accounts: int
     changed: int
+
+
+@dataclass(frozen=True)
+class DemoAccessPresentation:
+    usernames: tuple[str, ...]
+    password: str
 
 
 def injected_demo_password() -> str:
@@ -62,6 +72,42 @@ def validate_demo_password(password: str) -> None:
         )
 
 
+def development_demo_access_presentation(
+    *,
+    deployment_mode: str,
+) -> DemoAccessPresentation | None:
+    """Return the Development-only credential that the login page may publish."""
+
+    if deployment_mode.strip().lower() != "development":
+        return None
+    candidate = injected_demo_password()
+    try:
+        validate_demo_password(candidate)
+    except DemoAccessPolicyError:
+        return None
+    return DemoAccessPresentation(usernames=DEMO_USERNAMES, password=candidate)
+
+
+@transaction.atomic
+def ensure_development_demo_accounts() -> int:
+    """Create only missing authentication principals for the Development demo.
+
+    Full demo business data remains owned by ``seed_demo_organization``.  This
+    narrow bootstrap guarantees that the two credentials published on the live
+    Development login page always have principals to authenticate against.
+    """
+
+    user_model = get_user_model()
+    created = 0
+    for username in DEMO_USERNAMES:
+        _, was_created = user_model.objects.get_or_create(
+            username=username,
+            defaults={**DEMO_ACCOUNT_IDENTITIES[username], "is_active": True},
+        )
+        created += int(was_created)
+    return created
+
+
 @transaction.atomic
 def reconcile_demo_access(
     *,
@@ -83,9 +129,15 @@ def reconcile_demo_access(
             )
         changed = 0
         for user in users:
+            update_fields: list[str] = []
             if user.has_usable_password():
                 user.set_unusable_password()
-                user.save(update_fields=["password"])
+                update_fields.append("password")
+            if user.is_active:
+                user.is_active = False
+                update_fields.append("is_active")
+            if update_fields:
+                user.save(update_fields=update_fields)
                 changed += 1
         return DemoAccessResult(
             status="DISABLED_MISSING_INJECTION",
@@ -96,9 +148,15 @@ def reconcile_demo_access(
     validate_demo_password(candidate)
     changed = 0
     for user in users:
+        update_fields = []
         if not user.check_password(candidate):
             user.set_password(candidate)
-            user.save(update_fields=["password"])
+            update_fields.append("password")
+        if not user.is_active:
+            user.is_active = True
+            update_fields.append("is_active")
+        if update_fields:
+            user.save(update_fields=update_fields)
             changed += 1
     return DemoAccessResult(
         status="ENABLED_LOCAL_INJECTION",

@@ -55,22 +55,18 @@
 Для presentation-only изменений в существующем PR:
 
 ```text
-commit
+working-tree repair
 → diff/path validation
 → focused source-contract tests
-→ trusted hot refresh
-→ health
+→ `scripts/vps_candidate.sh verify [focused_test_label ...]`
+→ VPS-local candidate health/browser evidence
 → пользовательская проверка
+→ repeat без промежуточного commit/push
 ```
 
-Разрешённый hot-refresh остаётся ограниченным added/modified regular files в:
+VPS-local candidate запускается прямо из текущего repository working tree через `scripts/vps_candidate.sh`. Он использует cached hashed browser/runtime venv, отдельную SQLite и временный localhost `127.0.0.1:18766`; GitHub SHA, Docker и root для обычного repair-loop не требуются.
 
-```text
-src/templates/**
-src/static/**
-```
-
-Полный PostgreSQL suite и все пять workflow не запускаются после каждого малого visual repair.
+Полный PostgreSQL suite, container/trusted delivery и GitHub workflows не запускаются после каждого малого visual repair.
 
 ### Level 2 — candidate profile
 
@@ -80,7 +76,8 @@ src/static/**
 - Ruff/compile/check;
 - migration check по применимости;
 - container smoke;
-- trusted exact-head development deployment;
+- VPS-local candidate из текущего working tree;
+- ready push только после локальной проверки и acceptance;
 - acceptance route;
 - автоматически сформированный evidence summary.
 
@@ -106,8 +103,8 @@ Candidate profile применяется после содержательног
 | Профиль | Примеры | До пользовательской проверки | Перед merge |
 |---|---|---|---|
 | `DOCS` | canonical docs, research mapping | documentation checks | documentation gate |
-| `PRESENTATION` | templates, CSS, JS без domain logic | focused tests + hot refresh | final full gate один раз |
-| `APP_LOGIC` | views, forms, services без schema | profile tests + trusted deploy | full gate |
+| `PRESENTATION` | templates, CSS, JS без domain logic | focused tests + VPS-local candidate | final full gate один раз после ready push |
+| `APP_LOGIC` | views, forms, services без schema | profile tests + VPS-local candidate | PostgreSQL/exact-head/trusted full gate после ready push |
 | `SCHEMA_DATA` | models, migrations, seed/import | PostgreSQL migrations + focused/full tests | full gate + backup/rollback evidence |
 | `SECURITY_INFRA` | controller, workflows, secrets boundary, Compose | профильный security/infra gate | полный профильный gate и controlled runtime evidence |
 
@@ -134,9 +131,12 @@ Candidate profile применяется после содержательног
 Целевая модель:
 
 ```text
-GitHub exact-head full suite
-→ trusted deployment того же exact head
-→ VPS migrations/check/health/profile smoke
+VPS working-tree focused/profile checks
+→ VPS-local candidate + browser acceptance
+→ PostgreSQL checks для final candidate по риску
+→ ready push готового состояния
+→ один GitHub exact-head final gate
+→ trusted final verification того же exact head
 ```
 
 Повтор полного suite на VPS допускается для:
@@ -283,7 +283,7 @@ preview writes from product PR: 0
 NOW:
 canonical product/UX contract
 + tiered process contract
-+ использование существующего hot refresh
++ использование `scripts/vps_candidate.sh` как VPS-local candidate до ready push
 
 AFTER OPJ-UX-001:
 CI-OPT-001

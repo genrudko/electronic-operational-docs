@@ -2,13 +2,13 @@
 {% load static %}
 {% block title %}Публикация объектов энергосистемы · ЭОД{% endblock %}
 {% block content %}
-<section class="page-heading compact">
+<section class="da-page-header da-page-header-compact">
     <div>
-        <div class="eyebrow">КОНТРОЛИРУЕМАЯ ПУБЛИКАЦИЯ</div>
+        <span class="ux-kicker">Контролируемая публикация</span>
         <h1>Проверка готовой части редакции</h1>
         <p>{{ revision.original_filename }}</p>
     </div>
-    <a href="{% url 'imports:power_system_detail' revision.public_id %}">← К предварительной проверке</a>
+    <a class="da-button is-tertiary" href="{% url 'imports:power_system_detail' revision.public_id %}">← К предварительной проверке</a>
 </section>
 <section class="notice-card warning-notice">
     <strong>Публикуются только строки со статусом «Готова»</strong>
@@ -18,24 +18,24 @@
         Перед записью система повторно проверит состав и SHA-256.
     </p>
 </section>
-<section class="summary-grid">
-    <article class="metric"><span>Будет опубликовано</span><strong>{{ preview.summary.selected }}</strong></article>
-    <article class="metric"><span>Узлов иерархии</span><strong>{{ preview.summary.hierarchy }}</strong></article>
-    <article class="metric"><span>Объектных строк</span><strong>{{ preview.summary.objects }}</strong></article>
-    <article class="metric"><span>Останется в карантине</span><strong>{{ preview.summary.quarantined }}</strong></article>
-    <article class="metric"><span>Корневые энергообъекты</span><strong>{{ preview.summary.root_sites }}</strong></article>
-    <article class="metric"><span>Потерянные родители</span><strong>{{ preview.summary.orphan_rows }}</strong></article>
-    <article class="metric"><span>Оборудование ОПТ</span><strong>{{ preview.summary.dc_control_equipment_rows }}</strong></article>
-    <article class="metric"><span>ШОТ</span><strong>{{ preview.summary.shot_rows }}</strong></article>
-    <article class="metric"><span>ЩПТ</span><strong>{{ preview.summary.shpt_rows }}</strong></article>
-    <article class="metric"><span>Нерешённые группы</span><strong>{{ preview.summary.duplicate_groups_pending }}</strong></article>
+<section class="ux-stat-grid">
+    <article class="ux-stat"><span>Будет опубликовано</span><strong>{{ preview.summary.selected }}</strong></article>
+    <article class="ux-stat"><span>Узлов иерархии</span><strong>{{ preview.summary.hierarchy }}</strong></article>
+    <article class="ux-stat"><span>Объектных строк</span><strong>{{ preview.summary.objects }}</strong></article>
+    <article class="ux-stat"><span>Останется в карантине</span><strong>{{ preview.summary.quarantined }}</strong></article>
+    <article class="ux-stat"><span>Корневые энергообъекты</span><strong>{{ preview.summary.root_sites }}</strong></article>
+    <article class="ux-stat"><span>Потерянные родители</span><strong>{{ preview.summary.orphan_rows }}</strong></article>
+    <article class="ux-stat"><span>Оборудование ОПТ</span><strong>{{ preview.summary.dc_control_equipment_rows }}</strong></article>
+    <article class="ux-stat"><span>ШОТ</span><strong>{{ preview.summary.shot_rows }}</strong></article>
+    <article class="ux-stat"><span>ЩПТ</span><strong>{{ preview.summary.shpt_rows }}</strong></article>
+    <article class="ux-stat"><span>Нерешённые группы</span><strong>{{ preview.summary.duplicate_groups_pending }}</strong></article>
 </section>
 <section class="notice-card {% if preview.summary.orphan_rows %}error-notice{% else %}success-notice{% endif %}">
     <strong>Контроль иерархии перед публикацией</strong>
     <p>Корневые энергообъекты допустимы без родителя. Любая другая строка без родителя блокирует публикацию. Сейчас потерянных родителей: {{ preview.summary.orphan_rows }}.</p>
 </section>
-<section class="profile-card">
-    <dl class="detail-list">
+<section class="da-card">
+    <dl class="ux-key-value detail-list">
         <dt>Дата действия</dt><dd>{{ preview.effective_from|date:"d.m.Y" }}</dd>
         <dt>SHA-256 пакета</dt><dd><code class="breakable">{{ revision.file_sha256 }}</code></dd>
         <dt>SHA-256 публикации</dt><dd><code class="breakable">{{ preview.digest }}</code></dd>
@@ -51,7 +51,7 @@
         </p>
         <div class="ps-canonical-snapshot-actions">
             <a
-                class="button secondary"
+                class="da-button is-secondary"
                 href="{% url 'imports:power_system_snapshot_download' revision.public_id %}"
                 data-power-system-snapshot-trigger
                 download
@@ -70,20 +70,20 @@
     </div>
 </details>
 </section>
-<section class="profile-card">
+<section class="da-card">
     <h2>Подтверждение публикации готовой части</h2>
     {% if can_publish %}
-        <form method="post" class="stacked-form">
+        <form method="post" class="stacked-form ux-form-grid">
             {% csrf_token %}
             {{ form.non_field_errors }}
             {% for field in form %}
                 {% if not field.is_hidden %}
-                    <div class="field-row"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>
+                    <div class="da-field field-row"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>
                 {% else %}{{ field }}{% endif %}
             {% endfor %}
-            <div class="document-actions">
-                <button class="button" type="submit">Опубликовать {{ preview.summary.selected }} готовых строк</button>
-                <a class="button secondary" href="{% url 'imports:power_system_detail' revision.public_id %}">Отмена</a>
+            <div class="da-actions document-actions">
+                <button class="da-button" type="submit">Опубликовать {{ preview.summary.selected }} готовых строк</button>
+                <a class="da-button is-secondary" href="{% url 'imports:power_system_detail' revision.public_id %}">Отмена</a>
             </div>
         </form>
     {% else %}

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.conf import settings
 from django.db import connection as django_connection
 from django.db.migrations.executor import MigrationExecutor
 from django.http import JsonResponse
@@ -32,6 +33,23 @@ def _deployment_dependencies_ready() -> bool:
     return not executor.migration_plan(targets)
 
 
+def _development_authentication_ready() -> bool:
+    if settings.EOD_DEPLOYMENT_MODE != "development":
+        return True
+    try:
+        from apps.organizations.development_auth_smoke import (
+            verify_development_demo_authentication_state,
+        )
+
+        # Development readiness is an acceptance contract, not a compatibility
+        # shortcut.  A missing/invalid local credential or demo principal must
+        # fail closed so a trusted deployment cannot report SUCCESS while the
+        # owner is unable to authenticate through the real login path.
+        return verify_development_demo_authentication_state()
+    except Exception:  # noqa: BLE001 - never disclose credential/auth details via health.
+        return False
+
+
 def readiness(_request):
     """Bounded readiness for mandatory repository-owned deployment dependencies."""
 
@@ -45,7 +63,7 @@ def readiness(_request):
 
 
 def health(_request):
-    """Backward-compatible DB-backed health endpoint with the historic success payload."""
+    """Trusted deployment health including Development demo auth state."""
 
     try:
         ready = _deployment_dependencies_ready()
@@ -53,4 +71,12 @@ def health(_request):
         ready = False
     if not ready:
         return JsonResponse({"status": "unavailable"}, status=503)
-    return JsonResponse({"status": "ok"})
+    if not _development_authentication_ready():
+        return JsonResponse(
+            {"status": "unavailable", "development_authentication": "failed"},
+            status=503,
+        )
+    payload = {"status": "ok"}
+    if settings.EOD_DEPLOYMENT_MODE == "development":
+        payload["development_authentication"] = "verified"
+    return JsonResponse(payload)

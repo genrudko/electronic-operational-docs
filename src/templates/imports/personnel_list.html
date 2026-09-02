@@ -1,29 +1,29 @@
 {% extends "base.html" %}
 {% block title %}Импорт персонала и прав · ЭОД{% endblock %}
 {% block content %}
-<section class="page-heading compact">
+<section class="da-page-header da-page-header-compact">
     <div>
-        <div class="eyebrow">ПЕРСОНАЛ, КВАЛИФИКАЦИИ И ПРАВА</div>
+        <span class="ux-kicker">Персонал, квалификации и права</span>
         <h1>Редакции источников работников</h1>
         <p>Реальные ФИО разрешены только в локальной development-базе и не попадают в обычный экспорт.</p>
     </div>
-    <div class="document-actions">
-        <a class="button" href="{% url 'imports:personnel_upload' %}">Загрузить источник</a>
-        <a class="button secondary" href="{% url 'imports:list' %}">К импорту данных</a>
+    <div class="da-actions document-actions">
+        <a class="da-button" href="{% url 'imports:personnel_upload' %}">Загрузить источник</a>
+        <a class="da-button is-secondary" href="{% url 'imports:list' %}">К импорту данных</a>
     </div>
 </section>
 <section class="notice-card personnel-privacy-notice">
     <strong>Изолированный контур персональных данных</strong>
     <p>При загрузке рабочие карточки не изменяются. Отрицательные отметки и пустые ячейки не создают запретов; неоднозначные значения сохраняются в staging и не публикуются автоматически.</p>
 </section>
-<section class="summary-grid">
-    <article class="metric"><span>Редакций</span><strong>{{ summary.total }}</strong></article>
-    <article class="metric"><span>Ожидают публикации</span><strong>{{ summary.staged }}</strong></article>
-    <article class="metric"><span>Требуют внимания</span><strong>{{ summary.attention }}</strong></article>
-    <article class="metric"><span>С публикациями</span><strong>{{ summary.published }}</strong></article>
+<section class="ux-stat-grid">
+    <article class="ux-stat"><span>Редакций</span><strong>{{ summary.total }}</strong></article>
+    <article class="ux-stat"><span>Ожидают публикации</span><strong>{{ summary.staged }}</strong></article>
+    <article class="ux-stat"><span>Требуют внимания</span><strong>{{ summary.attention }}</strong></article>
+    <article class="ux-stat"><span>С публикациями</span><strong>{{ summary.published }}</strong></article>
 </section>
-<section class="profile-card">
-    <div class="table-wrap"><table>
+<section class="da-card">
+    <div class="da-table-wrap"><table class="da-table">
         <thead><tr><th>Файл и источник</th><th>Структура</th><th>Работники</th><th>Положительные права</th><th>Неоднозначности</th><th>Состояние</th><th>Дата</th></tr></thead>
         <tbody>
         {% for revision in revisions %}
@@ -37,7 +37,7 @@
                 <td>{{ revision.created_at|date:"d.m.Y H:i" }}</td>
             </tr>
         {% empty %}
-            <tr><td colspan="7" class="muted">Источники персонала ещё не загружались.</td></tr>
+            <tr><td colspan="7"><div class="ux-empty-state">Источники персонала ещё не загружались.</div></td></tr>
         {% endfor %}
         </tbody>
     </table></div>

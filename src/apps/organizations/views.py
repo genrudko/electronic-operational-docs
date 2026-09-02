@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
@@ -10,6 +11,7 @@ from django.db.models import Count, Q
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
+from .demo_access import development_demo_access_presentation
 from .forms import InterfacePreferenceForm, PersonalAuthenticationForm
 from .models import (
     Division,
@@ -34,6 +36,13 @@ class PersonalLoginView(LoginView):
     template_name = "organizations/login.html"
     authentication_form = PersonalAuthenticationForm
     redirect_authenticated_user = True
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["demo_access"] = development_demo_access_presentation(
+            deployment_mode=settings.EOD_DEPLOYMENT_MODE,
+        )
+        return context
 
 
 def _organization_kind(organization: Organization) -> str:

@@ -10,7 +10,7 @@
   "contours": {
     "assets": {
       "external_asset_reference_count": 1,
-      "tracked_static_file_count": 66
+      "tracked_static_file_count": 70
     },
     "browser": {
       "binary_integrity_contract_present": false,
@@ -32,7 +32,7 @@
       ]
     },
     "executable_sources": {
-      "applicable_count": 71,
+      "applicable_count": 74,
       "applicable_paths": [
         ".github/workflows/auto-001a-foundation-ci.yml",
         ".github/workflows/auto-001b-controller-ci.yml",
@@ -94,12 +94,15 @@
         "scripts/snapshot_presentation_database.ps1",
         "scripts/snapshot_presentation_database.py",
         "scripts/theme_css_audit.py",
+        "scripts/vps_candidate.sh",
+        "src/apps/organizations/management/commands/bootstrap_development_demo_access.py",
         "src/apps/system/plan_001_audit/core.py",
         "src/apps/system/tests/test_deployment_health.py",
         "src/apps/system/tests/test_deployment_profile.py",
         "src/eod_config/deployment.py",
         "supply-chain/Dockerfile.browser",
         "tests/automation/test_auto_001b_request_entrypoint.py",
+        "tests/browser_theme/repair_v4.py",
         "tests/browser_theme/run.py",
         "tests/process/test_dependency_provenance_contract.py",
         "tests/process/test_dependency_provenance_inventory.py",
@@ -115,8 +118,8 @@
         "dockerfile": 3,
         "github-workflow": 12,
         "powershell": 3,
-        "python-operator": 39,
-        "shell": 8,
+        "python-operator": 41,
+        "shell": 9,
         "shell-shebang": 1
       },
       "stale_paths": [],
@@ -443,12 +446,12 @@
     "scripts/dependency_provenance_core.py": "aa8045db8abb15896bcec63bda733c2ebd7b121f02f4558137b72b922b79f554",
     "scripts/dependency_provenance_fixture_gates.py": "e06f9b0bf060e0b6823975662ed7006a763a713965321bb2e77cd2637f3b3a57",
     "scripts/dependency_provenance_gate.py": "107e2446252fb35700e1a7bb9a433020fc05ded6226dac7b2b3f1f63375d6056",
-    "scripts/dependency_provenance_implementation.py": "978d22bf311a3aacfedc4843b3b7b2ff5d2dabf00ea840d0d2230e2f02a0f62b",
+    "scripts/dependency_provenance_implementation.py": "137d3daeeeb5e7d5e75acb453b48c12e64a53a9c9970fa299203d1cba02b1854",
     "scripts/dependency_provenance_inventory.py": "870f9bbd4b5ced0585a330c180b6e738378f201125b6a346ee1823a86da60980",
     "scripts/dependency_provenance_source_gate.py": "57ec597d4c7749bd595e4aee43e2ae6881edd667b8b2ad2b84a6ea4c6953fd2e",
     "scripts/dependency_provenance_views.py": "853f0dff3d24ac05b6d99478b1e6ef03933a3f4e90fde1df669cd3189591c355",
     "scripts/deployment_preflight.py": "8897c79263594c7998164a50c259c23166016e7c20c430167c75330749b3d4e7",
-    "scripts/development-entrypoint.sh": "56bb59150836f927b915c12f79b689ee4f45ebc50c9e0ebd02f57557bc48d978",
+    "scripts/development-entrypoint.sh": "2ecff056dc832013ef6931e56ab60ba85b0657f421d30e0c35d0f1ed8501f3ae",
     "scripts/development_stack.sh": "3a509b71a6b0a7d6fa5af77661bb596b25eee3d9971a88e3c94a8b983896e646",
     "scripts/eod_context_manager.py": "ab16e2f12e51e00c452753ba9c47312d2a93742d1254c30b2b645488b5298036",
     "scripts/gate_patch_003_1.py": "dccc676702243cc967dfa5291e85ff0d0bf2075df583ca40b9967e0a125cee8a",
@@ -461,7 +464,7 @@
     "scripts/regenerate_dependency_locks.py": "0c4fe4a560b2ea3c08490f9d7eadebf03ba333bfc581259dfc81697a20094a7f",
     "scripts/release_plan_compat_validation.py": "5846e1c11f457fcc8ce5613b43da2832cd812407a7242cebc26bb8baa8ce9ec8",
     "scripts/release_plan_model.py": "e0acfdf300bf94a6b30d2d90c5b555bc014b839496b4f81945a9a0a0f1418c32",
-    "scripts/release_plan_validation.py": "977a30ab241819a439c1e86023674092903ee9cde71efccb6b8dff2ce93cfa4e",
+    "scripts/release_plan_validation.py": "6c5fe51f46b76668a0b6cd387a3702cc1fa5af47568d54682dd43d7ea763e4d3",
     "scripts/release_plan_views.py": "d9295e99c2993e895a4d3a8e936bc159ca7286f169d5285ac7e1f0cee48e8b20",
     "scripts/reset_development_database.sh": "c2162288146fdad508b1791e13f7e08403b08c77bca4beb5da45b04c80d730da",
     "scripts/run_dev.ps1": "87d226cae1b8721246845926ac6131eb396dc5d07f23d0460fdc40103575dc9a",
@@ -471,21 +474,24 @@
     "scripts/snapshot_presentation_database.ps1": "652484df7aa79814d4ae3965c7dab4a51d1d5de0dff802f7328bd2e212cd3767",
     "scripts/snapshot_presentation_database.py": "31b9544113a6284e6a68841084954d7aa1830819c3513168d07271bb6b7e8100",
     "scripts/theme_css_audit.py": "4fc3a02688008151f321cf2e3dae87eb381654d25a289d9488d8e416a5ea361d",
+    "scripts/vps_candidate.sh": "60c909d1ae1e18fec248f125094e462bf0be352294c575a49af60a004fd539a6",
+    "src/apps/organizations/management/commands/bootstrap_development_demo_access.py": "994a61592c6b12104046170d6b88cc1a6a5934bc114ad2acb17d20be07e226a1",
     "src/apps/system/plan_001_audit/core.py": "7c0c63efe1ae0ac92a685f1b9561be486d9be692cecbf4ecb69f4ecefeb2e0c0",
     "src/apps/system/tests/test_deployment_health.py": "e0443706071d08fb212f471f9747ca0fb24ed5f2a168feb88d993856e04084ec",
-    "src/apps/system/tests/test_deployment_profile.py": "bedca66b62c16e1a09f836d5ec01427771d0f64f9a96a80a3f7a221589645aad",
+    "src/apps/system/tests/test_deployment_profile.py": "5a500054d4ab849c07724fde1c110341c0f552858e7cd970027a5eae9b3ccd6b",
     "src/eod_config/deployment.py": "1f07e17f3e014aa0d8f1a2b6717c6b1bd401355900bfe6ecd7c91a0159edfe75",
-    "src/static/system/eod_typography.css": "6ed237e0b6221fd57ae32888ecfe77ce8f02afc933ca8da56cc19ffd20c7bfdc",
+    "src/static/system/eod_typography.css": "cea246863ce41ac62dfe88275834336bcfe6dc7c21c8635741f8c0f99ca2d908",
     "supply-chain/Dockerfile.browser": "0060a0d1dde4afeea1b37db6eb2c079c30bf2e38e12c71e1fcb5910e1e9d54fa",
     "tests/automation/test_auto_001b_request_entrypoint.py": "3a5c0fbb38c047de125bb892ddbf74f74c9cfb25e2472b99e5edab8d1919f9f8",
-    "tests/browser_theme/run.py": "560e719f18ba2456896be68844683e11727e2cdbd26b6a50449e6c50a80a3936",
+    "tests/browser_theme/repair_v4.py": "cf95b58f90a97fb6846ce7d3b1334ed74f5be2a09e10b1124629a20bff280a5c",
+    "tests/browser_theme/run.py": "6ede492dda8fccf640ac70d65ec70e2956d4dc59d08a4aac4cb6e584919f4f7d",
     "tests/process/test_dependency_provenance_contract.py": "c1472f55a4d0c47e9151305709d9254c623b2d5f551f2776a7dccbf9484b3539",
     "tests/process/test_dependency_provenance_inventory.py": "e446166e56b002bd0a2a2efc8ed32b486702a8d3c92f8796992bc967c2ca1a6b",
     "tests/process/test_release_plan_compatibility.py": "591c9185f3770e64476cbf7f750011c6c5af0db0be4fd469f6d5748480ce0f42",
     "tests/security/test_secret_hygiene.py": "39f42a287c1f0c5c8a91f8c24af5202b53d56da848e7321f38e0808ca7f72754"
   },
   "totals": {
-    "applicable_executable_sources": 71,
+    "applicable_executable_sources": 74,
     "by_class": {
       "container-image": 12,
       "container-output": 1,
@@ -502,9 +508,9 @@
     "floating_inputs": 17,
     "immutable_inputs": 67,
     "inventory_entries": 85,
-    "source_completeness_digests": 73,
+    "source_completeness_digests": 76,
     "source_files": 21,
-    "tracked_files": 921
+    "tracked_files": 940
   },
   "work_item": "DEPENDENCY-PROVENANCE-001"
 }

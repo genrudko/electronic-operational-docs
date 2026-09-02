@@ -3,29 +3,47 @@
 {% block title %}Персональный вход · ЭОД{% endblock %}
 
 {% block content %}
-<section class="auth-shell">
-    <div class="auth-card">
-        <div class="eyebrow">ПЕРСОНАЛЬНАЯ АУТЕНТИФИКАЦИЯ</div>
-        <h1>Вход в систему</h1>
-        <p>Используйте только собственную тестовую учётную запись. Факт входа не является электронной подписью.</p>
-        <form method="post" class="auth-form">
+<section class="ux-auth-layout" data-ux-auth-surface>
+    <article class="ux-auth-card">
+        <header class="ux-auth-heading">
+            <span class="da-status is-info">Персональная аутентификация</span>
+            <h1>Вход в систему</h1>
+            <p>Используйте персональную учётную запись. Факт входа не является электронной подписью.</p>
+        </header>
+
+        <form method="post" class="ux-auth-form" data-ux-auth-form>
             {% csrf_token %}
             {% if form.non_field_errors %}
-                <div class="form-errors">{{ form.non_field_errors }}</div>
+                <div class="ux-form-errors" role="alert" data-ux-auth-error>{{ form.non_field_errors }}</div>
             {% endif %}
             {% for field in form %}
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.errors %}<div class="field-errors">{{ field.errors }}</div>{% endif %}
+                <div class="da-field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}<div class="ux-field-errors" role="alert">{{ field.errors }}</div>{% endif %}
+                </div>
             {% endfor %}
             {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
-            <button class="button full" type="submit">Войти</button>
+            <button class="da-button ux-auth-submit" type="submit">Войти</button>
         </form>
-        <div class="demo-credentials">
-            <strong>Локальные демонстрационные записи</strong>
-            <code>operator.demo / EodDemo!2026</code>
-            <code>supervisor.demo / EodDemo!2026</code>
-        </div>
-    </div>
+
+        {% if demo_access %}
+        <aside class="ux-demo-access" data-development-demo-credentials aria-label="Демонстрационный доступ Development">
+            <strong>Демонстрационный доступ Development</strong>
+            <dl class="ux-demo-access-list">
+                <dt>Оператор</dt>
+                <dd><code>{{ demo_access.usernames.0 }}</code></dd>
+                <dt>Начальник смены</dt>
+                <dd><code>{{ demo_access.usernames.1 }}</code></dd>
+                <dt>Пароль</dt>
+                <dd><code class="ux-demo-credential" data-development-demo-password>{{ demo_access.password }}</code></dd>
+            </dl>
+            <p class="ux-demo-access-note">
+                Пароль публикуется только в Development и берётся из того же injected secret,
+                которым настроены эти учётные записи. В Preview/production этот блок отсутствует.
+            </p>
+        </aside>
+        {% endif %}
+    </article>
 </section>
 {% endblock %}

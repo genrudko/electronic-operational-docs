@@ -3,99 +3,25 @@
 {% block title %}{{ document_type.name }} · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading">
+<section class="da-page-header da-page-header-compact">
     <div>
-        <div class="section-kicker">{% if is_source_bound %}Утверждённая форма{% else %}Техническая схема ядра{% endif %}</div>
+        <span class="ux-kicker">{% if is_source_bound %}Утверждённая форма{% else %}Техническая схема ядра{% endif %}</span>
         <h1>{{ document_type.name }}</h1>
         <p>{{ document_type.description|default:"Описание не задано" }}</p>
     </div>
-    <div class="document-actions">
-        <a class="button secondary" href="{% url 'operational_documents:type_registry' %}">К формам</a>
-        {% if can_create_record %}<a class="button" href="{% url 'operational_documents:record_create' document_type.public_id %}">Новая запись</a>{% endif %}
-    </div>
+    <div class="da-actions"><a class="da-button is-tertiary" href="{% url 'operational_documents:type_registry' %}">К формам</a>{% if can_create_record %}<a class="da-button" href="{% url 'operational_documents:record_create' document_type.public_id %}">Новая запись</a>{% endif %}</div>
 </section>
 
-{% if source_form %}
-<section class="source-boundary-notice">
-    <strong>{{ source_form.source_document }}</strong>
-    <p>Раздел {{ source_form.source_section }}, приложение № {{ source_form.source_appendix }}. Состав формы не редактируется оперативным персоналом.</p>
-</section>
-{% else %}
-<section class="source-boundary-notice warning">
-    <strong>Источник формы не привязан</strong>
-    <p>Новые записи и действия по этой технической схеме заблокированы. Она сохранена только для проверки общего ядра.</p>
-</section>
-{% endif %}
+{% if source_form %}<section class="da-alert"><div><strong>{{ source_form.source_document }}</strong><p>Раздел {{ source_form.source_section }}, приложение № {{ source_form.source_appendix }}. Состав формы не редактируется оперативным персоналом.</p></div></section>{% else %}<section class="da-alert is-warning"><div><strong>Источник формы не привязан</strong><p>Новые записи и действия по этой технической схеме заблокированы. Она сохранена только для проверки общего ядра.</p></div></section>{% endif %}
 
 {% if current_revision %}
-<section class="profile-grid">
-    <article class="profile-card">
-        <h2>Действующая редакция</h2>
-        <dl>
-            <dt>Редакция</dt><dd>{{ current_revision.revision_number }}</dd>
-            <dt>Нумерация</dt><dd>{{ current_revision.number_prefix }} · {{ current_revision.number_width }} знаков</dd>
-            <dt>Рабочее место</dt><dd>{{ current_revision.requires_workplace|yesno:"обязательно,необязательно" }}</dd>
-            <dt>Опубликована</dt><dd>{{ current_revision.published_at|date:"d.m.Y H:i" }}</dd>
-            <dt>Опубликовал</dt><dd>{{ current_revision.published_by.full_name }}</dd>
-        </dl>
-    </article>
-    <article class="profile-card">
-        <h2>Состояния записи</h2>
-        <ul class="role-list">
-            {% for status in current_revision.status_definitions %}
-            <li>
-                <strong>{{ status.name }}</strong>
-                <span>{% if status.is_initial %}Начальное состояние{% elif status.is_terminal %}Конечное состояние{% else %}Промежуточное состояние{% endif %}</span>
-            </li>
-            {% endfor %}
-        </ul>
-    </article>
+<section class="ux-detail-grid">
+    <article class="da-card"><h2>Действующая редакция</h2><dl class="ux-key-value"><dt>Редакция</dt><dd>{{ current_revision.revision_number }}</dd><dt>Нумерация</dt><dd>{{ current_revision.number_prefix }} · {{ current_revision.number_width }} знаков</dd><dt>Рабочее место</dt><dd>{{ current_revision.requires_workplace|yesno:"обязательно,необязательно" }}</dd><dt>Опубликована</dt><dd>{{ current_revision.published_at|date:"d.m.Y H:i" }}</dd><dt>Опубликовал</dt><dd>{{ current_revision.published_by.full_name }}</dd></dl></article>
+    <article class="da-card"><h2>Состояния записи</h2><ul class="ux-list-reset ux-stack is-compact">{% for status in current_revision.status_definitions %}<li class="da-panel-flat"><strong>{{ status.name }}</strong><span class="ux-muted">{% if status.is_initial %}Начальное состояние{% elif status.is_terminal %}Конечное состояние{% else %}Промежуточное состояние{% endif %}</span></li>{% endfor %}</ul></article>
 </section>
 
-<section class="directory-card">
-    <h2>Графы и поля формы</h2>
-    <div class="table-wrap">
-        <table>
-            <thead><tr><th>Порядок</th><th>Наименование</th><th>Тип значения</th><th>Правила</th></tr></thead>
-            <tbody>
-                {% for field in field_rows %}
-                <tr>
-                    <td>{{ field.position }}</td>
-                    <td>{{ field.label }}</td>
-                    <td>{{ field.type_label }}</td>
-                    <td>{% if field.required %}обязательно{% else %}необязательно{% endif %}{% if field.show_in_list %}; показывается в реестре{% endif %}{% if field.searchable %}; участвует в поиске{% endif %}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</section>
+<section class="da-card ux-stack"><h2>Графы и поля формы</h2><div class="da-table-wrap"><table class="da-table"><thead><tr><th>Порядок</th><th>Наименование</th><th>Тип значения</th><th>Правила</th></tr></thead><tbody>{% for field in field_rows %}<tr><td>{{ field.position }}</td><td>{{ field.label }}</td><td>{{ field.type_label }}</td><td>{% if field.required %}обязательно{% else %}необязательно{% endif %}{% if field.show_in_list %}; показывается в реестре{% endif %}{% if field.searchable %}; участвует в поиске{% endif %}</td></tr>{% empty %}<tr><td colspan="4"><div class="ux-empty-state">Поля не определены.</div></td></tr>{% endfor %}</tbody></table></div></section>
 {% endif %}
 
-{% if ui_preferences.show_technical_details %}
-<details class="technical-panel technical-only">
-    <summary>Технические сведения</summary>
-    <dl>
-        <dt>Код схемы</dt><dd><code>{{ document_type.code }}</code></dd>
-        {% if current_revision %}<dt>SHA-256 редакции</dt><dd><code class="hash-value">{{ current_revision.sha256 }}</code></dd>{% endif %}
-    </dl>
-    <h3>История редакций</h3>
-    <div class="table-wrap">
-        <table>
-            <thead><tr><th>Редакция</th><th>Состояние</th><th>Создана</th><th>Опубликована</th><th>SHA-256</th></tr></thead>
-            <tbody>
-                {% for revision in revisions %}
-                <tr>
-                    <td>{{ revision.revision_number }}</td>
-                    <td>{{ revision.get_status_display }}</td>
-                    <td>{{ revision.created_at|date:"d.m.Y H:i" }}</td>
-                    <td>{{ revision.published_at|date:"d.m.Y H:i"|default:"—" }}</td>
-                    <td><code class="hash-value">{{ revision.sha256|default:"—" }}</code></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</details>
-{% endif %}
+{% if ui_preferences.show_technical_details %}<details class="da-card technical-only"><summary>Технические сведения</summary><dl class="ux-key-value"><dt>Код схемы</dt><dd><code>{{ document_type.code }}</code></dd>{% if current_revision %}<dt>SHA-256 редакции</dt><dd><code class="hash-value">{{ current_revision.sha256 }}</code></dd>{% endif %}</dl><h3>История редакций</h3><div class="da-table-wrap"><table class="da-table"><thead><tr><th>Редакция</th><th>Состояние</th><th>Создана</th><th>Опубликована</th><th>SHA-256</th></tr></thead><tbody>{% for revision in revisions %}<tr><td>{{ revision.revision_number }}</td><td>{{ revision.get_status_display }}</td><td>{{ revision.created_at|date:"d.m.Y H:i" }}</td><td>{{ revision.published_at|date:"d.m.Y H:i"|default:"—" }}</td><td><code class="hash-value">{{ revision.sha256|default:"—" }}</code></td></tr>{% endfor %}</tbody></table></div></details>{% endif %}
 {% endblock %}

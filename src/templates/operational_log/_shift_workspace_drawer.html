@@ -1,3 +1,4 @@
+{% load static %}
 <aside class="opj-workspace-drawer draft-view-drawer screen-only da-overlay" data-view-drawer hidden aria-label="Настройки рабочего журнала">
     <header class="draft-view-drawer-header">
         <div>
@@ -64,7 +65,7 @@
         <details class="opj-drawer-card" open>
             <summary>
                 <span><strong>Размер текста</strong><small>Быстрый общий масштаб</small></span>
-                <span class="opj-drawer-chevron" aria-hidden="true">⌄</span>
+                <span class="opj-drawer-chevron" aria-hidden="true"><svg class="ui-icon"><use href="{% static 'system/icons.svg' %}#icon-chevron-right"></use></svg></span>
             </summary>
             <div class="opj-drawer-card-body draft-typography-panel" data-typography-panel>
                 <div class="draft-typography-preset-group" role="group" aria-label="Общий размер текста журнала">
@@ -131,7 +132,7 @@
         <details class="opj-drawer-card">
             <summary>
                 <span><strong>Записи на странице</strong><small data-records-summary>15 записей</small></span>
-                <span class="opj-drawer-chevron" aria-hidden="true">⌄</span>
+                <span class="opj-drawer-chevron" aria-hidden="true"><svg class="ui-icon"><use href="{% static 'system/icons.svg' %}#icon-chevron-right"></use></svg></span>
             </summary>
             <div class="opj-drawer-card-body">
                 <div class="draft-record-presets" role="group" aria-label="Количество записей на странице">
@@ -152,7 +153,7 @@
         <details class="opj-drawer-card">
             <summary>
                 <span><strong>Состав смены</strong><small>{{ members|length }} участника</small></span>
-                <span class="opj-drawer-chevron" aria-hidden="true">⌄</span>
+                <span class="opj-drawer-chevron" aria-hidden="true"><svg class="ui-icon"><use href="{% static 'system/icons.svg' %}#icon-chevron-right"></use></svg></span>
             </summary>
             <div class="opj-drawer-card-body">
                 <ul class="shift-member-list compact-member-list">
@@ -172,7 +173,7 @@
         <details class="opj-drawer-card">
             <summary>
                 <span><strong>Состояние черновика</strong><small>{{ drafts|length }} активных · {{ removed_drafts|length }} убрано</small></span>
-                <span class="opj-drawer-chevron" aria-hidden="true">⌄</span>
+                <span class="opj-drawer-chevron" aria-hidden="true"><svg class="ui-icon"><use href="{% static 'system/icons.svg' %}#icon-chevron-right"></use></svg></span>
             </summary>
             <div class="opj-drawer-card-body">
                 <dl class="shift-draft-facts">
@@ -188,7 +189,7 @@
         <details class="opj-drawer-card removed-drafts-section">
             <summary>
                 <span><strong>Убранные записи</strong><small>{{ removed_drafts|length }} записей</small></span>
-                <span class="opj-drawer-chevron" aria-hidden="true">⌄</span>
+                <span class="opj-drawer-chevron" aria-hidden="true"><svg class="ui-icon"><use href="{% static 'system/icons.svg' %}#icon-chevron-right"></use></svg></span>
             </summary>
             <div class="opj-drawer-card-body">
                 {% for draft in removed_drafts %}

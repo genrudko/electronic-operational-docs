@@ -83,7 +83,8 @@ class DocumentEquipmentSelectorTests(EquipmentDemoMixin, TestCase):
         response = self.client.get(reverse("documents:create"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Выбрать оборудование")
-        self.assertContains(response, "СЕРВЕРНЫЙ СЕЛЕКТОР")
+        self.assertContains(response, "Серверный селектор")
+        self.assertContains(response, "ux-dialog")
         self.assertContains(response, 'data-equipment-selector', html=False)
         self.assertNotContains(response, "<select multiple", html=False)
 

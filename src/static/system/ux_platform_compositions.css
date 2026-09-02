@@ -1,0 +1,280 @@
+/* UX-PLATFORM-FOUNDATION-001
+ * Shared geometry/composition contracts used by existing server-rendered UI.
+ * Repair v9 closes rendered-consumer ownership after the v8 responsive baseline.
+ * This remains platform geometry, not PAGE-TEMPLATE-LIBRARY-001.
+ */
+:root {
+    --ux-page-normal-max: 112rem;
+    --ux-page-wide-max: 132rem;
+    --ux-page-gutter: clamp(1rem, 1.35vw, 2.25rem);
+}
+.ux-kicker { display:block; margin-block-end:var(--theme-space-2); color:var(--theme-primary); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-bold); letter-spacing:.08em; text-transform:uppercase; }
+.ux-muted { color:var(--theme-text-muted); }
+.ux-stack { min-width:0; display:grid; gap:var(--theme-space-4); }
+.ux-stack.is-compact { gap:var(--theme-space-2); }
+
+/* Canonical page width profiles. NORMAL is the default readable composition;
+ * WIDE is for data-heavy registries; SPECIALIST consumes the useful stage.
+ * 1920 is primary desktop; 2560 is a required adaptive wide target. */
+body.ux-platform .da-page { width:min(100%,var(--ux-page-normal-max)); padding-inline:var(--ux-page-gutter); }
+body.ux-platform .da-page:has(> main.ux-page-wide),
+body.ux-platform .da-page:has(.opdoc-filter-card),
+body.ux-platform .da-page:has(.workplace-document-registry),
+body.ux-platform .da-page:has(.equipment-registry-page),
+body.ux-platform .da-page:has(.personnel-layout) { width:min(100%,var(--ux-page-wide-max)); }
+body.ux-platform .da-page:has(> main.ux-page-specialist),
+body.ux-platform .da-page:has(> main.authority-main),
+body.ux-platform.opj-workspace-page .da-page:has(> main.opj-shift-main),
+body.ux-platform.opj-clean-journal-page .da-page:has(> main.opj-main) { width:100%; max-width:none; }
+.ux-readable-measure { max-width:72rem; }
+
+/* A profile is accepted only when the useful inner workspace receives it too. */
+body.ux-platform :is(.authority-shell,.authority-workspace,.authority-content,.personnel-layout,.personnel-workspace) { min-width:0; width:100%; max-width:none; }
+body.ux-platform .authority-table-wrap { min-width:0; width:100%; max-width:none; }
+body.ux-platform.opj-workspace-page :is(.opj-workspace,.opj-editor-container) { min-width:0; max-width:none; }
+body.ux-platform.opj-clean-journal-page :is(main.opj-main,.approved-journal-shell,.approved-journal-table-wrap) { min-width:0; width:100%; max-width:none; }
+
+/* Rendered SPECIALIST/WIDE consumers own the width all the way to their data
+ * surface. Outer page profiles alone are not acceptance evidence. */
+body.ux-platform .da-page:has(> main.authority-main) > main.authority-main {
+    width:100%;
+    max-width:none;
+    min-width:0;
+    padding-inline:0;
+}
+body.ux-platform main.authority-main > .authority-matrix-page,
+body.ux-platform .authority-matrix-page > .authority-workspace,
+body.ux-platform .authority-matrix-page > .authority-panel,
+body.ux-platform .authority-workspace > .authority-matrix-panel,
+body.ux-platform .authority-matrix-panel > .authority-matrix-scroll {
+    width:100%;
+    max-width:none;
+    min-width:0;
+}
+body.ux-platform .authority-panel:has(.authority-external-directory-table),
+body.ux-platform .authority-table-wrap:has(.authority-external-directory-table),
+body.ux-platform .authority-external-directory-table {
+    width:100%;
+    max-width:none;
+    min-width:0;
+}
+body.ux-platform .da-page:has(.opdoc-filter-card) > main,
+body.ux-platform .opdoc-filter-card,
+body.ux-platform .opdoc-filter-card + .da-card,
+body.ux-platform .opdoc-filter-card + .da-card .da-table-wrap {
+    width:100%;
+    max-width:none;
+    min-width:0;
+}
+body.ux-platform .opdoc-filter-card + .da-card .da-table {
+    width:100%;
+    max-width:none;
+}
+
+/* Canonical page-header rhythm. The title block owns the left anchor; actions
+ * use the remaining desktop width and stack only when space is genuinely low. */
+.da-page-header.ux-page-header-balanced { grid-template-columns:minmax(24rem,.85fr) minmax(0,1.15fr); align-items:start; }
+.ux-page-header-balanced > div:first-child { min-width:0; max-width:52rem; }
+.ux-page-header-balanced .da-actions { width:auto; max-width:none; justify-self:end; justify-content:flex-end; align-content:start; }
+.ux-page-header-balanced .da-actions .da-button { min-width:0; text-align:center; white-space:nowrap; }
+
+.ux-section-inset { padding:var(--theme-space-5); }
+.ux-section-header,.section-heading { min-width:0; display:flex; align-items:center; justify-content:space-between; gap:var(--theme-space-4); margin:0 0 var(--theme-space-4); }
+.ux-section-header :where(h2,h3),.section-heading :where(h2,h3) { margin:0; }
+.ux-section-header > :first-child,.section-heading > :first-child { min-width:0; }
+:is(.da-card,.ux-card,.da-panel,.ux-section).is-compact { padding:var(--theme-space-3); }
+:is(.da-card,.ux-card,.da-panel,.ux-section).is-dense { padding:var(--theme-space-2); }
+
+.da-button,.ux-button { max-width:100%; text-align:center; white-space:nowrap; }
+.da-icon-button.is-danger,.ux-icon-button.is-danger { color:var(--theme-danger); }
+.da-icon-button.is-danger:hover,.ux-icon-button.is-danger:hover { border-color:var(--theme-danger); background:var(--theme-danger-soft); color:var(--theme-danger); }
+.ux-table-actions { display:flex; flex-wrap:wrap; align-items:center; gap:var(--theme-space-2); }
+.ux-table-actions > :where(.da-button,.ux-button) { flex:0 0 auto; min-width:max-content; }
+.ux-table-actions > :where(.da-button,.ux-button).is-compact { min-height:var(--theme-control-height-sm); padding-inline:var(--theme-space-3); line-height:1.2; }
+.ux-form-actions,.ux-filter-actions { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:var(--theme-space-2); margin-block-start:var(--theme-space-4); }
+
+.ux-form-grid { min-width:0; display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:var(--theme-space-4); }
+.ux-form-grid > * { grid-column:span 6; min-width:0; }
+.ux-form-grid > .ux-field-full,.ux-form-grid > .full-width { grid-column:1 / -1; }
+.ux-form-grid > .ux-form-actions,.ux-form-grid > .ux-filter-actions { grid-column:1 / -1; }
+.ux-form-grid > .ux-field-half { grid-column:span 6; }
+.ux-form-grid > .ux-field-third { grid-column:span 4; }
+.ux-form-grid > .ux-field-two-thirds { grid-column:span 8; }
+
+/* Compact filter rows keep small filter sets and their actions in one controlled
+ * composition. They intentionally wrap by breakpoint, not by browser accident. */
+.ux-compact-filter-row { min-width:0; display:grid; grid-template-columns:minmax(16rem,1.25fr) minmax(13rem,.85fr) auto; align-items:end; gap:var(--theme-space-3); }
+.ux-compact-filter-row > * { min-width:0; }
+.ux-compact-filter-row > .ux-filter-actions { align-self:end; justify-content:flex-start; margin-block-start:0; }
+
+.ux-stat-grid { min-width:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(13.5rem,100%),1fr)); gap:var(--theme-space-3); margin-block:var(--theme-space-4); }
+.ux-stat { min-width:0; display:grid; align-content:start; gap:var(--theme-space-2); padding:var(--theme-space-4); border:1px solid var(--theme-border); border-radius:var(--theme-radius-lg); background:var(--theme-surface); color:var(--theme-text); box-shadow:var(--theme-shadow-sm); }
+.ux-stat > span,.ux-stat > small { color:var(--theme-text-muted); font-size:var(--theme-font-size-sm); line-height:1.35; }
+.ux-stat > strong { color:var(--theme-text); font-size:var(--theme-font-size-2xl); line-height:1.1; }
+.ux-detail-grid { min-width:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--theme-space-4); margin-block-end:var(--theme-space-4); }
+.ux-list-reset { margin:0; padding:0; list-style:none; }
+.ux-key-value { min-width:0; display:grid; grid-template-columns:minmax(8rem,.45fr) minmax(0,1fr); gap:var(--theme-space-2) var(--theme-space-4); margin:0; }
+.ux-key-value dt { color:var(--theme-text-muted); font-size:var(--theme-font-size-sm); }
+.ux-key-value dd { min-width:0; margin:0; overflow-wrap:break-word; word-break:normal; }
+
+/* Human-readable copy keeps word boundaries. Only explicitly technical values
+ * retain arbitrary breaking for UUIDs, codes and other unspaced identifiers. */
+.ux-value-stack,.ux-cell-stack { min-width:0; display:grid; align-content:start; gap:var(--theme-space-1); }
+.ux-value-primary,.ux-cell-primary { min-width:0; color:var(--theme-text); font-weight:var(--theme-font-weight-semibold); line-height:1.35; overflow-wrap:break-word; word-break:normal; }
+.ux-value-secondary,.ux-cell-secondary { min-width:0; color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.4; overflow-wrap:break-word; word-break:normal; }
+.ux-technical,.ux-technical-chip { width:fit-content; max-width:100%; color:var(--theme-text-muted); font-family:var(--theme-font-mono); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-medium); line-height:1.35; overflow-wrap:anywhere; word-break:break-word; }
+.ux-technical-chip { display:inline-flex; padding:.125rem .375rem; border:1px solid var(--theme-border); border-radius:var(--theme-radius-sm); background:var(--theme-surface-soft); }
+.ux-context-value { min-width:0; display:block; padding:var(--theme-space-2) var(--theme-space-3); border:1px solid var(--theme-border); border-radius:var(--theme-radius-sm); background:var(--theme-surface-soft); color:var(--theme-text); font-size:var(--theme-font-size-xs); line-height:1.4; overflow-wrap:break-word; word-break:normal; }
+.ux-heading-count { display:inline-flex; min-width:1.75rem; min-height:1.75rem; align-items:center; justify-content:center; margin-inline-start:var(--theme-space-2); padding-inline:var(--theme-space-2); border:1px solid var(--theme-border); border-radius:var(--theme-radius-pill); background:var(--theme-surface-soft); color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-semibold); vertical-align:middle; }
+
+.ux-tree { display:grid; min-width:0; }
+.ux-tree-row { --ux-tree-depth:0; min-width:0; min-height:var(--theme-control-height-lg); display:grid; grid-template-columns:1.5rem minmax(0,1fr) auto; align-items:center; gap:var(--theme-space-2); padding:var(--theme-space-2) var(--theme-space-3); padding-inline-start:calc(var(--theme-space-3) + var(--ux-tree-depth) * var(--theme-space-4)); border-bottom:1px solid var(--theme-border); }
+.ux-tree-row__icon { width:1.125rem; height:1.125rem; align-self:start; margin-top:.15rem; color:var(--theme-primary); }
+.ux-tree-row__copy { min-width:0; display:grid; gap:var(--theme-space-1); }
+.ux-tree-row__primary { color:var(--theme-text); font-size:var(--theme-font-size-sm); font-weight:var(--theme-font-weight-semibold); line-height:1.35; overflow-wrap:break-word; word-break:normal; }
+.ux-tree-row__secondary { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.35; overflow-wrap:break-word; word-break:normal; }
+.ux-tree-row__meta { min-width:1.75rem; min-height:1.75rem; display:inline-grid; place-items:center; padding-inline:var(--theme-space-2); border:1px solid var(--theme-border); border-radius:var(--theme-radius-pill); background:var(--theme-surface-soft); color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-semibold); }
+
+.ux-profile-strip { grid-template-columns:repeat(auto-fit,minmax(min(15rem,100%),1fr)); }
+.ux-profile-strip .data-profile-chip { min-width:0; }
+.ux-profile-strip .data-profile-chip strong,.ux-readable-value { max-width:100%; overflow:visible; color:var(--theme-text); text-overflow:clip; white-space:normal; overflow-wrap:break-word; word-break:normal; line-height:1.35; }
+.ux-launcher-grid { min-width:0; display:grid; grid-template-columns:repeat(auto-fit,minmax(min(18rem,100%),1fr)); gap:var(--theme-space-3); margin-block:var(--theme-space-5); }
+.ux-launcher-card { min-width:0; display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:var(--theme-space-3); color:var(--theme-text); text-decoration:none; }
+.ux-launcher-card:hover { border-color:var(--theme-primary); background:var(--theme-control-hover); color:var(--theme-text); }
+.ux-launcher-icon { width:2.5rem; height:2.5rem; display:grid; place-items:center; border-radius:var(--theme-radius-md); background:var(--theme-primary-soft); color:var(--theme-primary); }
+.ux-launcher-icon .ui-icon { width:1.25rem; height:1.25rem; }
+.ux-launcher-copy { min-width:0; display:grid; gap:var(--theme-space-1); }
+.ux-launcher-copy strong { color:var(--theme-text); }
+.ux-launcher-copy small { color:var(--theme-text-muted); line-height:var(--theme-line-height-body); }
+.ux-principle-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(16rem,100%),1fr)); gap:var(--theme-space-3); }
+.ux-principle-grid > span { padding:var(--theme-space-3); border-inline-start:3px solid var(--theme-primary); border-radius:var(--theme-radius-sm); background:var(--theme-surface-soft); color:var(--theme-text-muted); }
+
+.da-user { min-height:5rem; }
+.da-user-copy strong { display:-webkit-box; overflow:hidden; -webkit-box-orient:vertical; -webkit-line-clamp:2; white-space:normal; text-overflow:clip; line-height:1.25; overflow-wrap:break-word; word-break:normal; }
+.da-user-copy small { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.25; }
+
+body.ux-platform .dispatching-object-card.da-card { border-color:var(--theme-border)!important; background:var(--theme-surface)!important; color:var(--theme-text)!important; }
+body.ux-platform .equipment-relation-list li { border-color:var(--theme-border); background:var(--theme-surface-soft); color:var(--theme-text); }
+body.ux-platform .equipment-relation-list li > span { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-semibold); }
+body.ux-platform .equipment-relation-list li > a { min-width:0; padding:var(--theme-space-2); border:1px solid transparent; border-radius:var(--theme-radius-sm); color:var(--theme-primary); text-decoration:none; }
+body.ux-platform .equipment-relation-list li > a:not(.ux-value-stack) { display:block; }
+body.ux-platform .equipment-relation-list li > a.ux-value-stack,
+body.ux-platform .document-links li > a.ux-value-stack { display:grid; }
+body.ux-platform .equipment-relation-list li > a:hover { border-color:var(--theme-primary); background:var(--theme-primary-soft); color:var(--theme-primary-hover); }
+body.ux-platform .equipment-relation-list li > a:focus-visible { outline:var(--theme-focus-width) solid var(--theme-focus); outline-offset:var(--theme-focus-offset); }
+body.ux-platform .equipment-relation-list small { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.4; }
+.management-function-card .authority-kind { border-color:color-mix(in srgb,var(--theme-primary) 38%,var(--theme-border)); background:var(--theme-primary-soft); color:var(--theme-primary-hover); }
+.supervision-function-card .authority-kind { border-color:var(--theme-border-strong); background:var(--theme-surface-soft); color:var(--theme-text); box-shadow:inset 3px 0 0 var(--theme-text-muted); }
+.defect-status[data-status] { white-space:nowrap; overflow-wrap:normal; word-break:keep-all; }
+
+/* Technical labels in tree/list consumers use the same semantic stack. */
+body.ux-platform .equipment-tree-row > .ux-value-stack { min-width:0; }
+
+/* Import registry top area uses deterministic, content-sized composition. KPI
+ * cards and the upload table remain owned by their existing contracts. */
+.import-page-header { grid-template-columns:minmax(24rem,.8fr) minmax(0,1.2fr); align-items:start; }
+.import-page-header > div:first-child { min-width:0; max-width:48rem; }
+.import-header-actions { min-width:0; display:grid; grid-template-columns:minmax(13rem,auto) minmax(0,1fr); align-items:start; justify-self:end; gap:var(--theme-space-2); }
+.import-header-actions__primary { grid-row:1 / span 2; align-self:stretch; }
+.import-header-nav { min-width:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--theme-space-2); }
+.import-header-nav .da-button { width:100%; min-width:0; white-space:normal; }
+.import-profile-grid { min-width:0; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--theme-space-3); }
+.import-profile-card { position:relative; min-width:0; display:grid; align-content:start; gap:var(--theme-space-2); padding:var(--theme-space-3) var(--theme-space-4); overflow:hidden; border:1px solid var(--theme-border); border-radius:var(--theme-radius-md); background:var(--theme-surface); color:var(--theme-text); text-decoration:none; }
+.import-profile-card::before { position:absolute; inset:0 auto 0 0; width:3px; background:var(--theme-primary); content:""; }
+.import-profile-card.is-sensitive::before { background:var(--theme-warning); }
+.import-profile-card strong { font-size:var(--theme-font-size-sm); line-height:1.35; overflow-wrap:break-word; word-break:normal; }
+.import-profile-card dl { min-width:0; display:grid; gap:var(--theme-space-2); margin:0; }
+.import-profile-card dl > div { min-width:0; display:grid; gap:var(--theme-space-1); }
+.import-profile-card dt { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); font-weight:var(--theme-font-weight-semibold); }
+.import-profile-card dd { min-width:0; margin:0; color:var(--theme-text); font-size:var(--theme-font-size-xs); line-height:1.4; overflow-wrap:break-word; word-break:normal; }
+.import-profile-card__description { color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); line-height:1.4; overflow-wrap:break-word; word-break:normal; }
+.import-profile-card__metric { width:fit-content; display:inline-flex; align-items:baseline; gap:var(--theme-space-1); color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); white-space:normal; overflow-wrap:break-word; word-break:normal; }
+.import-profile-card__metric b { color:var(--theme-text); font-size:var(--theme-font-size-md); }
+.import-safety-notice { display:grid; gap:var(--theme-space-1); padding:var(--theme-space-3) var(--theme-space-4); }
+.import-safety-notice :where(strong,p) { margin:0; }
+
+/* Specialist OPJ remains denser than generic forms, but meaningful labels and
+ * controls may not collapse into micro-typography. Platform owns interaction
+ * geometry; feature CSS keeps journal-specific structure and behaviour. */
+body.ux-platform.opj-workspace-page .opj-workspace-header { display:grid; grid-template-columns:minmax(18rem,1.2fr) minmax(0,1fr) auto; align-items:center; gap:var(--theme-space-4); min-height:4.25rem; margin:0 0 var(--theme-space-2); padding:var(--theme-space-3) var(--theme-space-4); }
+body.ux-platform.opj-workspace-page .opj-title-cluster { display:grid; min-width:0; align-items:start; gap:var(--theme-space-1); }
+body.ux-platform.opj-workspace-page .opj-title-cluster .eyebrow { margin:0; font-size:var(--theme-font-size-xs); letter-spacing:.075em; line-height:1.2; }
+body.ux-platform.opj-workspace-page .opj-workspace-header h1 { margin:0; overflow:visible; font-size:clamp(1.3rem,1.25vw,1.65rem); line-height:1.15; text-overflow:clip; white-space:normal; }
+body.ux-platform.opj-workspace-page .opj-workspace-header[data-journal-title-size="small"] h1 { font-size:1.2rem; }
+body.ux-platform.opj-workspace-page .opj-workspace-header[data-journal-title-size="normal"] h1 { font-size:clamp(1.3rem,1.25vw,1.65rem); }
+body.ux-platform.opj-workspace-page .opj-workspace-header[data-journal-title-size="large"] h1 { font-size:clamp(1.45rem,1.4vw,1.8rem); }
+body.ux-platform.opj-workspace-page .opj-workspace-header[data-journal-title-size="extra_large"] h1 { font-size:clamp(1.6rem,1.55vw,2rem); }
+body.ux-platform.opj-workspace-page .opj-workspace-meta { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:var(--theme-space-2); margin:0; font-size:var(--theme-font-size-xs); white-space:normal; }
+body.ux-platform.opj-workspace-page :is(.opj-shift-period,.opj-meta-item) { min-height:var(--theme-control-height-sm); padding:var(--theme-space-1) var(--theme-space-2); }
+body.ux-platform.opj-workspace-page .opj-registered-link { min-height:var(--theme-control-height-sm); padding:var(--theme-space-2) var(--theme-space-3); font-size:var(--theme-font-size-xs); }
+body.ux-platform.opj-workspace-page .opj-workspace[data-page-width="standard"] { width:min(100%,72rem); max-width:72rem; margin-inline:auto; }
+body.ux-platform.opj-workspace-page .opj-workspace[data-page-width="wide"] { width:min(100%,124rem); max-width:none; }
+body.ux-platform.opj-workspace-page .opj-workspace[data-page-width="full"] { width:100%; max-width:none; }
+body.ux-platform.opj-workspace-page .opj-workspace[data-page-width="full"] .opj-editor-container { width:100%; max-width:none; }
+body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="single"] .opj-editor-container { display:grid; grid-template-columns:minmax(0,1fr); width:100%; max-width:none; min-width:0; padding:var(--theme-space-3); overflow:visible; background:var(--theme-surface-soft); }
+body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="single"] .opj-ledger-surface { width:min(100%,112rem); max-width:100%; min-width:0; margin-inline:auto; }
+body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="spread"] .opj-editor-container { min-width:0; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; max-width:none; gap:var(--theme-space-3); padding:var(--theme-space-3); }
+body.ux-platform.opj-workspace-page :is(.opj-toolbar-primary,.opj-editor-toolbar,.opj-action-strip) { gap:var(--theme-space-2); padding:var(--theme-space-2) var(--theme-space-3); }
+body.ux-platform.opj-workspace-page .opj-toolbar-primary { min-height:var(--theme-control-height-lg); }
+body.ux-platform.opj-workspace-page .opj-toolbar-search .da-field { min-height:var(--theme-control-height-sm); font-size:var(--theme-font-size-xs); }
+body.ux-platform.opj-workspace-page .opj-page-navigation { gap:var(--theme-space-1); font-size:var(--theme-font-size-xs); }
+body.ux-platform.opj-workspace-page .opj-page-navigation button.da-icon-button { width:var(--theme-control-height-sm); min-width:var(--theme-control-height-sm); height:var(--theme-control-height-sm); min-height:var(--theme-control-height-sm); padding:0; }
+body.ux-platform.opj-workspace-page .opj-page-navigation input { min-height:var(--theme-control-height-sm); font-size:var(--theme-font-size-xs); }
+body.ux-platform.opj-workspace-page .opj-toolbar-actions .da-button,
+body.ux-platform.opj-workspace-page .opj-ribbon-toggle,
+body.ux-platform.opj-workspace-page .opj-view-switch { min-height:var(--theme-control-height-sm); font-size:var(--theme-font-size-xs); }
+body.ux-platform.opj-workspace-page .opj-view-switch > button { min-height:calc(var(--theme-control-height-sm) - 2px); padding-inline:var(--theme-space-2); font-size:var(--theme-font-size-xs); }
+body.ux-platform.opj-workspace-page button.da-icon-button.draft-row-action { width:var(--theme-control-height-sm); min-width:var(--theme-control-height-sm); height:var(--theme-control-height-sm); min-height:var(--theme-control-height-sm); padding:0; border-radius:var(--theme-radius-md); }
+body.ux-platform.opj-workspace-page button.draft-editor-ribbon-button { min-width:var(--theme-control-height-sm); min-height:var(--theme-control-height-sm); padding:var(--theme-space-1) var(--theme-space-2); border-radius:var(--theme-radius-md); font-size:var(--theme-font-size-xs); }
+body.ux-platform.opj-workspace-page .opj-editor-toolbar-context > span,
+body.ux-platform.opj-workspace-page .opj-editor-toolbar-context strong,
+body.ux-platform.opj-workspace-page .opj-editor-toolbar-context small,
+body.ux-platform.opj-workspace-page .opj-tool-group > small { font-size:var(--theme-font-size-xs); }
+
+/* Registered and working OPJ share one operational header contract. */
+body.ux-platform.opj-clean-journal-page .journal-workspace-bar { min-width:0; align-items:start; gap:var(--theme-space-4); padding:var(--theme-space-4) var(--theme-space-5); }
+body.ux-platform.opj-clean-journal-page .journal-workspace-title { min-width:0; display:grid; gap:var(--theme-space-2); }
+body.ux-platform.opj-clean-journal-page .journal-workspace-title .eyebrow { margin:0; font-size:var(--theme-font-size-xs); letter-spacing:.075em; line-height:1.2; }
+body.ux-platform.opj-clean-journal-page .journal-workspace-title h1 { margin:0; font-size:clamp(1.35rem,1.3vw,1.75rem); line-height:1.15; overflow-wrap:break-word; word-break:normal; }
+body.ux-platform.opj-clean-journal-page .journal-workspace-meta { display:flex; flex-wrap:wrap; gap:var(--theme-space-2); color:var(--theme-text-muted); font-size:var(--theme-font-size-xs); }
+body.ux-platform.opj-clean-journal-page .journal-workspace-actions { align-items:center; gap:var(--theme-space-2); }
+
+@media (max-width:80rem) {
+    .da-page-header.ux-page-header-balanced { grid-template-columns:1fr; }
+    .ux-page-header-balanced .da-actions { width:100%; justify-self:start; justify-content:flex-start; }
+    .ux-page-header-balanced .da-actions .da-button { white-space:normal; }
+    .import-page-header { grid-template-columns:1fr; }
+    .import-header-actions { width:100%; justify-self:stretch; grid-template-columns:minmax(12rem,auto) minmax(0,1fr); }
+    body.ux-platform.opj-workspace-page .opj-workspace-header { grid-template-columns:minmax(0,1fr) auto; }
+    body.ux-platform.opj-workspace-page .opj-workspace-meta { grid-column:1 / -1; justify-content:flex-start; }
+}
+@media (max-width:64rem) {
+    .ux-compact-filter-row { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .ux-compact-filter-row > .ux-filter-actions { grid-column:1 / -1; }
+    .import-profile-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .import-header-actions { grid-template-columns:1fr; }
+    .import-header-actions__primary { grid-row:auto; }
+}
+@media (max-width:52rem) {
+    .ux-detail-grid { grid-template-columns:1fr; }
+    .ux-form-grid > *,.ux-form-grid > .ux-field-half,.ux-form-grid > .ux-field-third,.ux-form-grid > .ux-field-two-thirds { grid-column:1 / -1; }
+    .ux-form-actions,.ux-filter-actions { justify-content:stretch; }
+    .ux-form-actions > :where(a,button),.ux-filter-actions > :where(a,button) { flex:1 1 12rem; }
+    .ux-compact-filter-row { grid-template-columns:1fr; }
+    .ux-compact-filter-row > .ux-filter-actions { grid-column:auto; }
+    .import-header-nav { grid-template-columns:1fr 1fr; }
+    body.ux-platform.opj-workspace-page .opj-workspace-header { grid-template-columns:1fr; }
+    body.ux-platform.opj-workspace-page .opj-workspace-meta { grid-column:auto; justify-content:flex-start; }
+    body.ux-platform.opj-workspace-page .opj-registered-link { justify-self:start; }
+    body.ux-platform.opj-workspace-page .opj-workspace[data-view-mode="spread"] .opj-editor-container { min-width:64rem; }
+    body.ux-platform.opj-clean-journal-page .journal-workspace-bar { padding:var(--theme-space-3); }
+}
+@media (max-width:42rem) {
+    .ux-key-value { grid-template-columns:1fr; gap:var(--theme-space-1); }
+    .ux-key-value dd + dt { margin-block-start:var(--theme-space-2); }
+    .ux-launcher-card { grid-template-columns:auto minmax(0,1fr); }
+    .ux-launcher-card > .da-status { grid-column:2; justify-self:start; }
+    .ux-table-actions { width:100%; }
+    .ux-table-actions > :where(.da-button,.ux-button) { flex:1 1 auto; }
+    .import-profile-grid,.import-header-nav { grid-template-columns:1fr; }
+}

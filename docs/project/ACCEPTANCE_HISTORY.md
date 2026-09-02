@@ -26,6 +26,28 @@
 | `MODULE-ACTIVATION-CONTRACT-001` | #62 | `6025d7b405bc1d88543dc341757e5685bcf05b98` | `3e43422ba6000c2aa5f4bdc6abe0f95c7774454f` | modular-monolith activation architecture contract accepted; Preview untouched |
 | `BACKUP-RESTORE-DRILL-001` | #64 | `9f9b650f637af7b9bbeb2c63cb3995763b0854e0` | `860e189bbb5bc05a6da4a7680acd5f719b4874af` | verified PostgreSQL restore and non-secret restore certificate accepted; Preview untouched |
 | `SECURITY-BASELINE-001` | #66 | `b59a9485187dbd588c7b9f35bfd634c89344ea9d` | `862b682ba19b6747ea6f4d41fd31322808140b82` | repository-grounded threat model and fail-closed production security baseline accepted; Preview untouched |
+| `MODULE-REGISTRY-001` | #68 | `f00d99b6434477c7bcefceff5253d6ccbe4a5fca` | `1befcb73a8a6f7cc03c2e18d292cbb2c85ef6594` | runtime module registry/control plane accepted; Preview untouched |
+
+## MODULE-REGISTRY-001 exact-head evidence
+
+```text
+EOD CI:                      31416503293 / SUCCESS
+EOD Dependency Provenance:   31416503309 / SUCCESS
+EOD Backup Restore Drill:    31416503474 / SUCCESS
+EOD Development Stack:       31416503465 / SUCCESS
+AUTO-001A Foundation CI:     31416503539 / SUCCESS
+AUTO-001B Controller CI:     31416503568 / SUCCESS
+EOD Documentation Contract: 31416503580 / SUCCESS
+EOD Deployment Profile:      31416503584 / SUCCESS
+EOD Secret Hygiene:          31416503615 / SUCCESS
+```
+
+Accepted exact head `f00d99b6434477c7bcefceff5253d6ccbe4a5fca` was merged as
+`1befcb73a8a6f7cc03c2e18d292cbb2c85ef6594`; issue #67 is `CLOSED / COMPLETED`
+and owner acceptance is `PASSED`. Accepted scope: deterministic runtime module
+manifests, scoped lifecycle/activation audit, central module-access semantics,
+representative OPJ↔DEFECT integration and history-preserving deactivation /
+reactivation. Live Preview/VPS was untouched.
 
 ### Why two heads appear for some historical PRs
 

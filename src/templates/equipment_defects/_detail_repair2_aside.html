@@ -14,8 +14,8 @@
                 <span class="defect-lifecycle-marker">3</span>
                 <span><strong>Устранён</strong><small>Результат подтверждён</small></span>
             </li>
-            <li data-step="CLOSED">
-                <span class="defect-lifecycle-marker">4</span>
+            <li data-step="CLOSED"{% if record.status_code == 'CLOSED' %} class="is-terminal-reached"{% endif %}>
+                <span class="defect-lifecycle-marker">{% if record.status_code == 'CLOSED' %}✓{% else %}4{% endif %}</span>
                 <span><strong>Закрыт</strong><small>Цикл завершён</small></span>
             </li>
         </ol>
@@ -33,11 +33,11 @@
             <p>Дефект закрыт. Запись доступна только для просмотра и печати.</p>
         {% endif %}
         <div class="defect-action-stack">
-            {% if can_confirm_deadline %}<a class="defect-button" href="{% url 'equipment_defects:confirm_deadline' record.public_id %}">Подтвердить срок</a>{% endif %}
-            {% if can_extend_deadline %}<a class="defect-button secondary" href="{% url 'equipment_defects:extend_deadline' record.public_id %}">Продлить срок</a>{% endif %}
-            {% if can_confirm_resolution %}<a class="defect-button" href="{% url 'equipment_defects:confirm_resolution' record.public_id %}">Подтвердить устранение</a>{% endif %}
-            {% if can_acknowledge %}<form method="post" action="{% url 'equipment_defects:acknowledge' record.public_id %}" data-time-sensitive-form>{% csrf_token %}<button class="defect-button" type="submit">Ознакомиться</button></form>{% endif %}
-            {% if can_close %}<form method="post" action="{% url 'equipment_defects:close' record.public_id %}" data-time-sensitive-form>{% csrf_token %}<button class="defect-button danger" type="submit">Закрыть дефект</button></form>{% endif %}
+            {% if can_confirm_deadline %}<a class="da-button" href="{% url 'equipment_defects:confirm_deadline' record.public_id %}">Подтвердить срок</a>{% endif %}
+            {% if can_extend_deadline %}<a class="da-button is-secondary" href="{% url 'equipment_defects:extend_deadline' record.public_id %}">Продлить срок</a>{% endif %}
+            {% if can_confirm_resolution %}<a class="da-button" href="{% url 'equipment_defects:confirm_resolution' record.public_id %}">Подтвердить устранение</a>{% endif %}
+            {% if can_acknowledge %}<form method="post" action="{% url 'equipment_defects:acknowledge' record.public_id %}" data-time-sensitive-form>{% csrf_token %}<button class="da-button" type="submit">Ознакомиться</button></form>{% endif %}
+            {% if can_close %}<form method="post" action="{% url 'equipment_defects:close' record.public_id %}" data-time-sensitive-form>{% csrf_token %}<button class="da-button is-danger" type="submit">Закрыть дефект</button></form>{% endif %}
             {% if record.status_is_terminal %}
                 <div class="defect-terminal-note">Запись закрыта и защищена от изменения.</div>
             {% elif not can_confirm_deadline and not can_extend_deadline and not can_confirm_resolution and not can_acknowledge and not can_close %}

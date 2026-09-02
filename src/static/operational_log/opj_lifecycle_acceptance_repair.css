@@ -18,7 +18,7 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
     vertical-align: top !important;
 }
 
-.opj-clean-journal-page .approved-journal-date-time > span,
+.opj-clean-journal-page .approved-journal-date-time > strong,
 .opj-clean-journal-page .approved-journal-date-time > small {
     display: block !important;
     width: 100% !important;
@@ -49,16 +49,17 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
     transform: none !important;
 }
 
-/* A TD must remain a table-cell. Turning it into flex broke the third-column
- * border grid and row-height calculation. Markers wrap as inline-grid children. */
+/* Desktop fallbacks retain the accepted table/marker layout, but deliberately
+ * avoid !important so the responsive platform owner can compose the same
+ * semantic containers at compact and phone widths. */
 .opj-clean-journal-page .approved-journal-visas.opj-clean-markers {
-    display: table-cell !important;
+    display: table-cell;
     min-width: 0;
-    padding: 5px 3px !important;
-    overflow: visible !important;
-    text-align: center !important;
-    vertical-align: top !important;
-    white-space: normal !important;
+    padding: 5px 3px;
+    overflow: visible;
+    text-align: center;
+    vertical-align: top;
+    white-space: normal;
 }
 
 .opj-clean-journal-page .approved-journal-visas.opj-clean-markers > .opj-normative-marker,
@@ -70,15 +71,15 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
 
 .opj-workspace-page .draft-ledger-visas,
 .opj-workspace-page .draft-ledger-visas.has-normative-markers {
-    display: flex !important;
+    display: flex;
     min-width: 0;
-    flex-wrap: wrap !important;
-    align-content: flex-start !important;
-    align-items: flex-start !important;
-    justify-content: center !important;
-    gap: 5px !important;
-    padding: 5px 3px !important;
-    overflow: visible !important;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 5px;
+    padding: 5px 3px;
+    overflow: visible;
 }
 
 .opj-normative-marker,
@@ -276,22 +277,55 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
     padding: 10px 12px;
     border: 1px solid var(--theme-border-strong, #94a3b8);
     border-radius: 7px;
-    background: var(--theme-surface-elevated, #fff);
-    box-shadow: 0 14px 32px rgba(15, 23, 42, 0.22);
-    color: var(--theme-text, #111827);
+    background: var(--theme-surface-raised, var(--theme-surface, #fff));
+    box-shadow: var(--theme-shadow-overlay, 0 14px 32px rgba(15, 23, 42, 0.22));
+    color: var(--theme-text, #111827) !important;
     font-family: var(--font-interface, "Onest Variable", "Onest", system-ui, sans-serif) !important;
-    font-size: 0.72rem;
+    font-size: var(--theme-font-size-sm, .8125rem);
     font-weight: 400;
-    line-height: 1.4;
+    line-height: 1.45;
     text-align: left;
     transform: none !important;
     overscroll-behavior: contain;
     pointer-events: none;
 }
 
-.opj-marker-popover.is-floating strong {
+.opj-marker-popover.is-floating strong,
+.opj-marker-popover.is-floating span,
+.opj-marker-popover.is-floating p,
+.opj-marker-popover.is-floating dt,
+.opj-marker-popover.is-floating dd,
+.opj-marker-popover.is-floating li {
+    color: var(--theme-text) !important;
     font-family: inherit !important;
-    font-weight: 750;
+}
+
+.opj-marker-popover.is-floating small,
+.opj-marker-popover.is-floating .ux-muted,
+.opj-marker-popover.is-floating [data-muted] {
+    color: var(--theme-text-muted) !important;
+}
+
+.opj-marker-popover.is-floating a {
+    color: var(--theme-primary) !important;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.opj-marker-popover.is-floating a:hover {
+    color: var(--theme-primary-hover) !important;
+}
+
+.opj-marker-popover.is-floating a:focus-visible {
+    outline: var(--theme-focus-width, 2px) solid var(--theme-focus);
+    outline-offset: var(--theme-focus-offset, 2px);
+}
+
+.opj-marker-popover.is-floating svg,
+.opj-marker-popover.is-floating .ui-icon {
+    color: var(--theme-primary) !important;
+    fill: none;
+    stroke: currentColor;
 }
 
 .opj-marker-source-list {
@@ -311,15 +345,16 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
 .opj-marker-source-list li::before {
     position: absolute;
     left: 0;
+    color: var(--theme-text-muted);
     content: "•";
 }
 
 .opj-workspace[data-view-mode="spread"] .draft-ledger-visas {
-    display: flex !important;
+    display: flex;
     max-height: 96px;
-    gap: 5px !important;
-    padding: 5px 3px !important;
-    overflow: auto !important;
+    gap: 5px;
+    padding: 5px 3px;
+    overflow: auto;
 }
 
 .opj-workspace[data-view-mode="spread"] .opj-normative-marker,
@@ -328,6 +363,164 @@ html body.opj-workspace-page main.opj-shift-main [data-draft-workspace] {
     min-width: 38px !important;
     max-width: 38px !important;
     min-height: 49px !important;
+}
+
+/* Repair v4 — specialised OPJ presentation remains a platform token consumer. */
+.opj-workspace-page .da-page:has(.opj-workspace[data-page-width="wide"]) {
+    max-width: 112rem;
+}
+
+.opj-workspace-page .da-page:has(.opj-workspace[data-page-width="full"]) {
+    max-width: none;
+}
+
+.opj-workspace[data-page-width="wide"] {
+    width: min(100%, 1680px) !important;
+}
+
+.opj-workspace[data-page-width="full"] {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+.opj-workspace-page .opj-ribbon-toggle,
+.opj-workspace-page .opj-view-switch > button,
+.opj-workspace-page .draft-editor-ribbon-button,
+.opj-workspace-page .draft-row-action {
+    border-color: var(--theme-border) !important;
+    background: var(--theme-control) !important;
+    color: var(--theme-text) !important;
+    opacity: 1 !important;
+}
+
+.opj-workspace-page :is(.opj-ribbon-toggle, .opj-view-switch > button, .draft-editor-ribbon-button, .draft-row-action):not(:disabled):hover {
+    border-color: var(--theme-primary) !important;
+    background: var(--theme-control-hover) !important;
+    color: var(--theme-primary-hover) !important;
+}
+
+.opj-workspace-page :is(.opj-ribbon-toggle, .opj-view-switch > button, .draft-editor-ribbon-button, .draft-row-action):focus-visible {
+    outline: var(--theme-focus-width, 2px) solid var(--theme-focus) !important;
+    outline-offset: var(--theme-focus-offset, 2px) !important;
+}
+
+.opj-workspace-page :is(.draft-editor-ribbon-button, .draft-row-action, .da-icon-button):disabled {
+    border-color: var(--theme-border) !important;
+    background: var(--theme-control-disabled) !important;
+    color: var(--theme-text-muted) !important;
+    opacity: 1 !important;
+    cursor: not-allowed !important;
+}
+
+.opj-workspace-page .draft-editor-ribbon-button[aria-pressed="true"],
+.opj-workspace-page .opj-view-switch > button[aria-pressed="true"],
+.opj-workspace-page .opj-ribbon-toggle[aria-expanded="true"] {
+    border-color: var(--theme-primary) !important;
+    background: var(--theme-primary-soft) !important;
+    color: var(--theme-primary-hover) !important;
+}
+
+.opj-workspace-page .draft-row-action.is-danger:not(:disabled) {
+    color: var(--theme-danger) !important;
+}
+
+.opj-workspace-page .draft-row-action.is-danger:not(:disabled):hover {
+    border-color: var(--theme-danger) !important;
+    background: var(--theme-danger-soft) !important;
+    color: var(--theme-danger) !important;
+}
+
+.opj-workspace-page .opj-register-draft-button,
+.opj-workspace-page .opj-batch-registration-actions .da-button:not(.is-tertiary) {
+    border-color: var(--theme-primary) !important;
+    background: var(--theme-primary) !important;
+    color: var(--theme-on-primary) !important;
+    opacity: 1 !important;
+}
+
+.opj-workspace-page .opj-register-draft-button:hover,
+.opj-workspace-page .opj-register-draft-button:focus-visible,
+.opj-workspace-page .opj-batch-registration-actions .da-button:not(.is-tertiary):hover,
+.opj-workspace-page .opj-batch-registration-actions .da-button:not(.is-tertiary):focus-visible {
+    border-color: var(--theme-primary-hover) !important;
+    background: var(--theme-primary-hover) !important;
+    color: var(--theme-on-primary) !important;
+}
+
+.opj-workspace[data-view-mode="spread"] {
+    --opj-grid-strong: var(--theme-border-strong);
+}
+
+.opj-workspace[data-view-mode="spread"] .opj-editor-container {
+    gap: 10px !important;
+    background: var(--theme-surface-soft) !important;
+}
+
+.opj-workspace[data-view-mode="spread"] .opj-ledger-surface {
+    border-color: var(--theme-border-strong) !important;
+    box-shadow: var(--theme-shadow-sm) !important;
+}
+
+.opj-workspace[data-view-mode="spread"] .opj-ledger-header,
+.opj-workspace[data-view-mode="spread"] .draft-table-header,
+.opj-workspace[data-view-mode="spread"] .draft-page-date,
+.opj-workspace[data-view-mode="spread"] .draft-page-footer {
+    border-color: var(--theme-border) !important;
+}
+
+.opj-workspace-page .opj-drawer-chevron {
+    width: 1rem;
+    height: 1rem;
+    display: inline-grid;
+    place-items: center;
+    color: var(--theme-text-muted);
+    rotate: 0deg !important;
+}
+
+.opj-workspace-page .opj-drawer-chevron .ui-icon {
+    width: 1rem;
+    height: 1rem;
+    color: inherit;
+    fill: none;
+    stroke: currentColor;
+    transition: transform var(--theme-motion-fast, 160ms) ease;
+    transform: rotate(0deg);
+}
+
+.opj-workspace-page .opj-drawer-card[open] > summary .opj-drawer-chevron {
+    rotate: 0deg !important;
+}
+
+.opj-workspace-page .opj-drawer-card[open] > summary .opj-drawer-chevron .ui-icon {
+    transform: rotate(90deg);
+}
+
+.opj-workspace-page .opj-drawer-card > summary:hover .opj-drawer-chevron,
+.opj-workspace-page .opj-drawer-card > summary:focus-visible .opj-drawer-chevron {
+    color: var(--theme-primary-hover);
+}
+
+.opj-workspace-page .opj-drawer-card > summary:focus-visible {
+    outline: var(--theme-focus-width, 2px) solid var(--theme-focus);
+    outline-offset: calc(-1 * var(--theme-focus-width, 2px));
+}
+
+/* On narrow viewports a persisted spread preference stays available, but its
+ * wide two-page rail must scroll inside the specialised workspace rather than
+ * widening the document itself. */
+@media (max-width: 720px) {
+    .opj-workspace-page .opj-workspace {
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    .opj-workspace-page .opj-workspace[data-view-mode="spread"] .opj-editor-container {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        overscroll-behavior-inline: contain;
+    }
 }
 
 @media print {

@@ -3,18 +3,18 @@
 {% block title %}{{ decision.subject_label }} · правовой режим · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading compact">
+<section class="da-page-header da-page-header-compact">
     <div>
-        <div class="eyebrow">РЕШЕНИЕ О ПРАВОВОМ РЕЖИМЕ</div>
+        <span class="ux-kicker">Решение о правовом режиме</span>
         <h1>{{ decision.subject_label }}</h1>
         <p>{{ decision.module_id }} · {{ decision.code }}</p>
     </div>
 </section>
 
-<section class="profile-grid">
-    <article class="profile-card">
+<section class="ux-detail-grid">
+    <article class="da-card">
         <h2>Режимы</h2>
-        <dl class="detail-list">
+        <dl class="ux-key-value detail-list">
             <dt>Целевой режим продукта</dt>
             <dd>{{ decision.get_product_target_mode_display }}</dd>
             <dt>Доказанный правовой режим</dt>
@@ -25,16 +25,16 @@
             <dd>{{ decision.get_local_act_status_display }}</dd>
         </dl>
         {% if decision.proven_legal_mode == "VERIFY" %}
-            <p class="muted">
+            <p class="ux-muted">
                 Режим оставлен на проверке. Эта запись не подтверждает допустимость электронного оригинала
                 и не объявляет используемый механизм УКЭП или УНЭП.
             </p>
         {% endif %}
     </article>
 
-    <article class="profile-card">
+    <article class="da-card">
         <h2>Основания</h2>
-        <dl class="detail-list">
+        <dl class="ux-key-value detail-list">
             <dt>Нормативная редакция</dt>
             <dd>
                 {% if decision.normative_basis_revision %}
@@ -61,10 +61,10 @@
     </article>
 </section>
 
-<section class="profile-card technical-only">
+<section class="da-card technical-only">
     <h2>Проверка целостности</h2>
     <p><strong>{{ integrity.status.label }}</strong> — {{ integrity.message }}</p>
-    <dl class="detail-list">
+    <dl class="ux-key-value detail-list">
         <dt>Зафиксировал</dt>
         <dd>{{ decision.decision_maker_snapshot.full_name }}</dd>
         <dt>Серверное время</dt>

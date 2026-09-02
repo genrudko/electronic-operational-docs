@@ -33,19 +33,26 @@
             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-history"></use></svg>
             {% now "H:i" %}
         </span>
-        <a class="da-icon-button" href="{% url 'system:health' %}" title="Проверка состояния">
+        <a
+            class="da-icon-button"
+            href="{% url 'system:health' %}"
+            title="Проверка состояния"
+            aria-label="Проверка состояния"
+        >
             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-info"></use></svg>
-            <span class="visually-hidden">Проверка состояния</span>
         </a>
-        <a class="da-icon-button" href="{% url 'organizations:account' %}" title="Настройки пользователя">
+        <a
+            class="da-icon-button"
+            href="{% url 'organizations:account' %}"
+            title="Настройки пользователя"
+            aria-label="Настройки пользователя"
+        >
             <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-user"></use></svg>
-            <span class="visually-hidden">Настройки пользователя</span>
         </a>
         <form method="post" action="{% url 'organizations:logout' %}">
             {% csrf_token %}
-            <button class="da-icon-button" type="submit" title="Выйти">
+            <button class="da-icon-button" type="submit" title="Выйти" aria-label="Выйти">
                 <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-logout"></use></svg>
-                <span class="visually-hidden">Выйти</span>
             </button>
         </form>
     </div>

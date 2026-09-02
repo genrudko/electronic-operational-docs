@@ -30,12 +30,14 @@ def main() -> None:
     root_urls = read("src/eod_config/urls.py")
     app_urls = read("src/apps/operational_documents/urls.py")
     base = read("src/templates/base.html")
+    navigation = read("src/templates/shared/direction_a/_sidebar.html")
     home = read("src/templates/system/home.html")
     system_smoke = read("src/apps/system/tests/test_system.py")
     require(settings, "apps.operational_documents.apps.OperationalDocumentsConfig")
     require(root_urls, 'include("apps.operational_documents.urls")')
     require(app_urls, 'app_name = "operational_documents"', 'name="registry"')
-    require(base, "operational_documents:registry", "Оперативные документы")
+    require(base, '{% include "shared/direction_a/_sidebar.html" %}')
+    require(navigation, "operational_documents:registry", "Оперативные документы")
     require(
         home,
         "Утверждённые формы журналов",

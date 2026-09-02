@@ -4,19 +4,19 @@
 {% block title %}Управление и ведение · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading compact presentation-heading">
+<section class="da-page-header da-page-header-compact">
     <div>
-        <div class="section-kicker">Распределение оперативных функций</div>
+        <span class="ux-kicker">Распределение оперативных функций</span>
         <h1>Управление и ведение</h1>
         <p>Действующее распределение оборудования по управлению и ведению с указанием диспетчерского или технологического контура.</p>
     </div>
-    <a class="button secondary-action" href="{% url 'dispatching:subjects' %}">
+    <a class="da-button is-secondary" href="{% url 'dispatching:subjects' %}">
         <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-subjects"></use></svg>
         Субъекты и взаимодействие
     </a>
 </section>
 
-<section class="concept-note terminology-note">
+<section class="da-alert terminology-note">
     <span class="section-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-info"></use></svg></span>
     <div>
         <strong>Управление и ведение учитываются раздельно</strong>
@@ -24,79 +24,79 @@
     </div>
 </section>
 
-<section class="summary-grid presentation-summary dispatching-summary">
-    <article class="metric"><span>Оборудование с назначенным управлением</span><strong>{{ management_count }}</strong></article>
-    <article class="metric"><span>Оборудование с назначенным ведением</span><strong>{{ supervision_count }}</strong></article>
-    <article class="metric"><span>В том числе информационное ведение</span><strong>{{ information_count }}</strong></article>
+<section class="ux-stat-grid dispatching-summary" aria-label="Сводка распределения">
+    <article class="ux-stat"><span>Оборудование с назначенным управлением</span><strong>{{ management_count }}</strong></article>
+    <article class="ux-stat"><span>Оборудование с назначенным ведением</span><strong>{{ supervision_count }}</strong></article>
+    <article class="ux-stat"><span>В том числе информационное ведение</span><strong>{{ information_count }}</strong></article>
 </section>
 
-<details class="filter-disclosure" {% if query or level_type %}open{% endif %}>
+<details class="da-card filter-disclosure" {% if query or level_type %}open{% endif %}>
     <summary><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-search"></use></svg> Поиск и фильтры</summary>
-    <form method="get" class="equipment-filter-form disclosure-body">
-        <div>
+    <form method="get" class="ux-compact-filter-row disclosure-body equipment-filter-form">
+        <div class="da-field">
             <label for="dispatching-search">Оборудование или субъект</label>
             <input id="dispatching-search" type="search" name="q" value="{{ query }}" placeholder="Например: КЛ 35 кВ или Региональный ДЦ">
         </div>
-        <div>
+        <div class="da-field">
             <label for="dispatching-level-type">Контур управления</label>
             <select id="dispatching-level-type" name="level_type">
                 <option value="">Все контуры</option>
                 {% for value, label in level_types %}<option value="{{ value }}" {% if level_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
             </select>
         </div>
-        <button class="button" type="submit">Найти</button>
-        {% if query or level_type %}<a class="quiet-action" href="{% url 'dispatching:registry' %}">Сбросить</a>{% endif %}
+        <div class="ux-filter-actions ux-field-full">
+            <button class="da-button" type="submit">Найти</button>
+            {% if query or level_type %}<a class="da-button is-tertiary" href="{% url 'dispatching:registry' %}">Сбросить</a>{% endif %}
+        </div>
     </form>
 </details>
 
-<section class="dispatching-object-list" aria-label="Действующее распределение">
+<section class="dispatching-object-list ux-stack" aria-label="Действующее распределение">
     {% for row in rows %}
-        <article class="dispatching-object-card">
+        <article class="dispatching-object-card da-card">
             <header>
                 <div>
                     <a class="object-title" href="{% url 'dispatching:equipment_detail' row.equipment.public_id %}">{{ row.display_name }}</a>
                     <span class="object-context">{{ row.equipment.equipment_type.name }} · {{ row.equipment.site }}</span>
                 </div>
-                <a class="icon-action" href="{% url 'dispatching:equipment_detail' row.equipment.public_id %}" aria-label="Открыть карточку {{ row.display_name }}">
+                <a class="da-icon-button" href="{% url 'dispatching:equipment_detail' row.equipment.public_id %}" aria-label="Открыть карточку {{ row.display_name }}">
                     <svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-chevron-right"></use></svg>
                 </a>
             </header>
             <div class="assignment-columns">
-                <section class="assignment-lane management-lane">
+                <section class="assignment-lane management-lane management-function-card da-panel-flat">
                     <div class="lane-heading"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-management"></use></svg><span>Управление</span></div>
                     {% for item in row.management %}
                         <div class="assignment-person">
-                            <span class="semantic-badge management authority-kind">{% if item.level.level_type == "DISPATCH" %}Диспетчерское управление{% else %}Технологическое управление{% endif %}</span>
+                            <span class="da-status-chip is-info authority-kind">{% if item.level.level_type == "DISPATCH" %}Диспетчерское управление{% else %}Технологическое управление{% endif %}</span>
                             <strong>{{ item.subject.presentation_label }}</strong>
                             <small>{{ item.level.presentation_label }}</small>
                         </div>
-                    {% empty %}<div class="friendly-empty">Назначение управления отсутствует</div>{% endfor %}
+                    {% empty %}<div class="ux-empty-state">Назначение управления отсутствует</div>{% endfor %}
                 </section>
-                <section class="assignment-lane supervision-lane">
+                <section class="assignment-lane supervision-lane supervision-function-card da-panel-flat">
                     <div class="lane-heading"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-supervision"></use></svg><span>Ведение</span></div>
                     {% for item in row.supervision %}
                         <div class="assignment-person">
-                            <span class="semantic-badge supervision authority-kind">{% if item.level.level_type == "DISPATCH" %}Диспетчерское ведение{% else %}Технологическое ведение{% endif %}</span>
+                            <span class="da-status-chip is-info authority-kind">{% if item.level.level_type == "DISPATCH" %}Диспетчерское ведение{% else %}Технологическое ведение{% endif %}</span>
                             <strong>{{ item.subject.presentation_label }}</strong>
                             <small>{{ item.level.presentation_label }}</small>
-                            {% if item.conduct_mode == 'INFORMATIONAL' %}<span class="semantic-badge information" title="Без права выдачи команд управления">Информационное ведение</span>{% elif item.conduct_mode == 'UNKNOWN' %}<span class="semantic-badge warning" title="Режим ведения не определён источником">Режим не определён</span>{% endif %}
+                            {% if item.conduct_mode == 'INFORMATIONAL' %}<span class="da-status-chip is-info" title="Без права выдачи команд управления">Информационное ведение</span>{% elif item.conduct_mode == 'UNKNOWN' %}<span class="da-status-chip is-warning" title="Режим ведения не определён источником">Режим не определён</span>{% endif %}
                         </div>
-                    {% empty %}<div class="friendly-empty">Назначение ведения отсутствует</div>{% endfor %}
+                    {% empty %}<div class="ux-empty-state">Назначение ведения отсутствует</div>{% endfor %}
                 </section>
             </div>
             <details class="record-details technical-only">
                 <summary>Технические реквизиты</summary>
                 <div class="record-detail-grid">
                     <span>Код оборудования</span><code>{{ row.equipment.code }}</code>
-                    <span>Основание управления</span>
-                    <div>{% for item in row.management %}{{ item.basis_reference }}{% if not forloop.last %}<br>{% endif %}{% empty %}—{% endfor %}</div>
-                    <span>Основание ведения</span>
-                    <div>{% for item in row.supervision %}{{ item.basis_reference }}{% if not forloop.last %}<br>{% endif %}{% empty %}—{% endfor %}</div>
+                    <span>Основание управления</span><div>{% for item in row.management %}{{ item.basis_reference }}{% if not forloop.last %}<br>{% endif %}{% empty %}—{% endfor %}</div>
+                    <span>Основание ведения</span><div>{% for item in row.supervision %}{{ item.basis_reference }}{% if not forloop.last %}<br>{% endif %}{% empty %}—{% endfor %}</div>
                 </div>
             </details>
         </article>
     {% empty %}
-        <section class="empty-state"><h2>Записи не найдены</h2><p>Измените строку поиска или снимите фильтр контура.</p></section>
+        <section class="ux-empty-state"><h2>Записи не найдены</h2><p>Измените строку поиска или снимите фильтр контура.</p></section>
     {% endfor %}
 </section>
 {% endblock %}

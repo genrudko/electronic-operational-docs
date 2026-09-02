@@ -6,6 +6,7 @@ register = template.Library()
 
 
 _ACTION_LABELS = {
+    "OPJ.REGISTER": "Регистрация записи ОЖ",
     "REQUEST.DISPATCH.SUBMIT": "Подача диспетчерской заявки",
     "REQUEST.DISPATCH.APPROVE": "Согласование диспетчерской заявки",
     "REQUEST.OPERATIONAL.SUBMIT": "Подача оперативной заявки",
@@ -174,6 +175,12 @@ _DECISION_EXPLANATIONS = {
     ),
 }
 
+_CONTACT_SCOPE_KINDS = {
+    "grid": "RELATED_GRID",
+    "site": "RELATED_SITE",
+    "commercial": "COMMERCIAL_DISPATCH",
+}
+
 
 @register.filter
 def authority_action_label(value: object) -> str:
@@ -182,6 +189,12 @@ def authority_action_label(value: object) -> str:
         code,
         code.replace("_", " ").replace(".", " · ").title(),
     )
+
+
+@register.filter
+def authority_action_technical_label(value: object) -> str:
+    code = str(value or "").strip()
+    return code.replace("_", " ").replace(".", " · ").title()
 
 
 @register.filter
@@ -211,6 +224,23 @@ def authority_basis_label(value: object) -> str:
                 suffix = " — требует подтверждения"
             return f"{label}{suffix}"
     return raw
+
+
+@register.filter
+def authority_contact_scope(contacts: object, scope: object) -> list[object]:
+    """Return external contacts for a server-resolved personnel contour."""
+    target = _CONTACT_SCOPE_KINDS.get(str(scope or "").strip().lower())
+    values = list(contacts or [])
+    if target is None:
+        return values
+    result = []
+    for contact in values:
+        employee = getattr(contact, "employee", None)
+        organization = getattr(employee, "organization", None)
+        profile = getattr(organization, "operational_profile", None)
+        if getattr(profile, "relation_kind", "") == target:
+            result.append(contact)
+    return result
 
 
 @register.filter

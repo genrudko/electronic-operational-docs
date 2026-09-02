@@ -3,13 +3,13 @@
 {% block title %}Подтверждение регистрации · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading compact">
+<section class="da-page-header da-page-header-compact">
     <div>
-        <div class="eyebrow">СИСТЕМНОЕ ПОДТВЕРЖДЕНИЕ · PATCH 005.1–006</div>
+        <span class="ux-kicker">Системное подтверждение</span>
         <h1>Подтверждение регистрации</h1>
         <p>Проверьте точное содержимое версии до выделения регистрационного номера.</p>
     </div>
-    <a href="{% url 'documents:detail' document.public_id %}">Отмена</a>
+    <a class="da-button is-tertiary" href="{% url 'documents:detail' document.public_id %}">Отмена</a>
 </section>
 
 <section class="prototype-signature-warning">
@@ -33,10 +33,10 @@
     </div>
 </details>
 
-<section class="profile-grid document-profile-grid">
-    <article class="profile-card">
+<section class="ux-detail-grid document-profile-grid">
+    <article class="da-card">
         <h2>Подтверждаемые реквизиты</h2>
-        <dl>
+        <dl class="ux-key-value">
             <dt><span class="help-label">Документ
                 <details class="help-tip"><summary>?</summary><div>Заголовок документа, который будет зафиксирован при регистрации.</div></details>
             </span></dt><dd>{{ document.title }}</dd>
@@ -73,7 +73,7 @@
             </dd>
         </dl>
     </article>
-    <article class="profile-card">
+    <article class="da-card">
         <h2>Содержимое версии</h2>
         {% if document.current_version.content.subject %}
             <div class="document-subject">{{ document.current_version.content.subject }}</div>
@@ -82,9 +82,9 @@
     </article>
 </section>
 
-<section class="profile-card">
+<section class="da-card">
     <h2>Оборудование, включаемое в снимок</h2>
-    <p class="muted">
+    <p class="ux-muted">
         При регистрации будут зафиксированы стабильный код, вид оборудования,
         энергообъект, иерархический путь и действующее диспетчерское наименование.
     </p>
@@ -95,29 +95,29 @@
                 <a href="{% url 'equipment:detail' row.public_id %}">
                     <strong>{{ row.display_name }}</strong>
                 </a>
-                <div class="muted">{{ row.technical_name }}</div>
+                <div class="ux-muted">{{ row.technical_name }}</div>
             </div>
             <code>{{ row.code }}</code>
             <span>{{ row.type_name }}</span>
             <small>{{ row.site_name }}{% if row.hierarchy_path %} · {{ row.hierarchy_path }}{% endif %}</small>
         </article>
     {% empty %}
-        <p class="muted">Оборудование к версии не привязано.</p>
+        <p class="ux-muted">Оборудование к версии не привязано.</p>
     {% endfor %}
     </div>
 </section>
 
-<section class="profile-card registration-confirm-card">
+<section class="da-card registration-confirm-card">
     <h2>Повторная аутентификация</h2>
-    <p class="muted">
+    <p class="ux-muted">
         Пароль проверяется только механизмом Django и не сохраняется в документе, снимке,
         подтверждении, аудите или журнале патча.
     </p>
-    <form method="post" autocomplete="off">
+    <form class="ux-form-grid" method="post" autocomplete="off">
         {% csrf_token %}
         {{ form.non_field_errors }}
         {% for field in form %}
-            <div class="form-row">
+            <div class="da-field">
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }}
                 {% if field.name == "password" %}
@@ -128,7 +128,7 @@
                 {% for error in field.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
             </div>
         {% endfor %}
-        <button class="button" type="submit">Подтвердить и зарегистрировать</button>
+        <div class="ux-form-actions"><button class="da-button" type="submit">Подтвердить и зарегистрировать</button></div>
     </form>
 </section>
 {% endblock %}

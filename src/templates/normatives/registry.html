@@ -3,103 +3,43 @@
 {% block title %}Нормативный реестр · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading compact">
+<section class="da-page-header da-page-header-compact">
+    <div><span class="ux-kicker">Нормативная основа</span><h1>Нормативный реестр</h1><p>Нормативные документы, их опубликованные редакции, требования и связь требований с функциями и испытаниями системы.</p></div>
+</section>
+
+<section class="da-alert">
     <div>
-        <div class="eyebrow">НОРМАТИВНАЯ ОСНОВА</div>
-        <h1>Нормативный реестр</h1>
-        <p>
-            Нормативные документы, их опубликованные редакции, требования и связь
-            требований с функциями и испытаниями системы.
-        </p>
+        <strong>Как пользоваться разделом</strong>
+        <p>Значок <strong>?</strong> рядом с полем открывает пояснение простыми словами. Опубликованные редакции нельзя переписать или удалить: новая редакция создаётся отдельно.</p>
+        <p><a href="{% url 'normatives:evidence_registry' %}">Открыть правовые режимы и evidence-события</a> — здесь целевой режим продукта хранится отдельно от доказанного режима, а подпись, ознакомление, инструктаж, проверка знаний и подтверждение действия не смешиваются.</p>
     </div>
 </section>
 
-<section class="help-overview">
-    <h2>Как пользоваться разделом</h2>
-    <p>
-        Значок <strong>?</strong> рядом с полем открывает пояснение простыми словами.
-        Опубликованные редакции нельзя переписать или удалить: новая редакция создаётся отдельно.
-    </p>
-    <p>
-        <a href="{% url 'normatives:evidence_registry' %}">
-            Открыть правовые режимы и evidence-события
-        </a>
-        — здесь целевой режим продукта хранится отдельно от доказанного режима, а подпись,
-        ознакомление, инструктаж, проверка знаний и подтверждение действия не смешиваются.
-    </p>
-</section>
-
-<section class="profile-card">
+<section class="da-card ux-stack">
     <h2>Нормативные документы</h2>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Документ</th>
-                    <th>Уровень</th>
-                    <th>Издатель</th>
-                    <th>Редакции</th>
-                </tr>
-            </thead>
+    <div class="da-table-wrap">
+        <table class="da-table">
+            <thead><tr><th>Документ</th><th>Уровень</th><th>Издатель</th><th>Редакции</th></tr></thead>
             <tbody>
             {% for item in documents %}
                 <tr>
-                    <td>
-                        <a href="{% url 'normatives:document_detail' item.code %}">
-                            {{ item.short_title|default:item.title }}
-                        </a>
-                        {% if item.document_number %}<div class="muted">№ {{ item.document_number }}</div>{% endif %}
-                    </td>
-                    <td>{{ item.get_scope_display }}</td>
-                    <td>{{ item.issuer }}</td>
-                    <td>{{ item.revision_count }}</td>
+                    <td><a href="{% url 'normatives:document_detail' item.code %}">{{ item.short_title|default:item.title }}</a>{% if item.document_number %}<div class="ux-muted">№ {{ item.document_number }}</div>{% endif %}</td>
+                    <td>{{ item.get_scope_display }}</td><td>{{ item.issuer }}</td><td>{{ item.revision_count }}</td>
                 </tr>
-            {% empty %}
-                <tr><td colspan="4">Нормативных документов пока нет.</td></tr>
-            {% endfor %}
+            {% empty %}<tr><td colspan="4"><div class="ux-empty-state">Нормативных документов пока нет.</div></td></tr>{% endfor %}
             </tbody>
         </table>
     </div>
 </section>
 
-<section class="profile-grid technical-only">
-    <article class="profile-card">
-        <h2>История наименований организации</h2>
-        <p class="muted">
-            Исторические документы сохраняют то наименование, которое действовало
-            в соответствующий период.
-        </p>
-        <ul class="revision-list">
-        {% for item in name_revisions %}
-            <li>
-                <strong>{{ item.full_name }}</strong>
-                <span>
-                    с {{ item.valid_from|date:"d.m.Y" }}
-                    {% if item.valid_until %}по {{ item.valid_until|date:"d.m.Y" }}{% else %}по настоящее время{% endif %}
-                </span>
-            </li>
-        {% empty %}
-            <li>Опубликованных наименований пока нет.</li>
-        {% endfor %}
-        </ul>
+<section class="ux-detail-grid technical-only">
+    <article class="da-card">
+        <h2>История наименований организации</h2><p class="ux-muted">Исторические документы сохраняют то наименование, которое действовало в соответствующий период.</p>
+        <ul class="revision-list ux-list-reset">{% for item in name_revisions %}<li><strong>{{ item.full_name }}</strong><span>с {{ item.valid_from|date:"d.m.Y" }} {% if item.valid_until %}по {{ item.valid_until|date:"d.m.Y" }}{% else %}по настоящее время{% endif %}</span></li>{% empty %}<li class="ux-muted">Опубликованных наименований пока нет.</li>{% endfor %}</ul>
     </article>
-    <article class="profile-card">
-        <h2>Конфигурация организации</h2>
-        <p class="muted">
-            Организационные особенности хранятся в публикуемых редакциях,
-            а не зашиваются в программный код.
-        </p>
-        <ul class="revision-list">
-        {% for item in configurations %}
-            <li>
-                <strong>Редакция № {{ item.revision_number }}</strong>
-                <span>действует с {{ item.effective_from|date:"d.m.Y" }}</span>
-                <code class="short-hash">{{ item.digest|slice:":16" }}…</code>
-            </li>
-        {% empty %}
-            <li>Опубликованных конфигураций пока нет.</li>
-        {% endfor %}
-        </ul>
+    <article class="da-card">
+        <h2>Конфигурация организации</h2><p class="ux-muted">Организационные особенности хранятся в публикуемых редакциях, а не зашиваются в программный код.</p>
+        <ul class="revision-list ux-list-reset">{% for item in configurations %}<li><strong>Редакция № {{ item.revision_number }}</strong><span>действует с {{ item.effective_from|date:"d.m.Y" }}</span><code class="short-hash">{{ item.digest|slice:":16" }}…</code></li>{% empty %}<li class="ux-muted">Опубликованных конфигураций пока нет.</li>{% endfor %}</ul>
     </article>
 </section>
 {% endblock %}

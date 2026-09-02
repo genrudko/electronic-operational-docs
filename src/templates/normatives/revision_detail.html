@@ -3,18 +3,18 @@
 {% block title %}Редакция № {{ revision.revision_number }} · {{ document.short_title|default:document.title }}{% endblock %}
 
 {% block content %}
-<section class="page-heading compact">
+<section class="da-page-header da-page-header-compact">
     <div>
-        <div class="eyebrow">ОПУБЛИКОВАННАЯ НОРМАТИВНАЯ РЕДАКЦИЯ</div>
+        <span class="ux-kicker">Опубликованная нормативная редакция</span>
         <h1>{{ document.short_title|default:document.title }} · редакция № {{ revision.revision_number }}</h1>
         <p>{{ revision.change_summary|default:"Описание редакции не указано." }}</p>
     </div>
-    <a href="{% url 'normatives:document_detail' document.code %}">К документу</a>
+    <a class="da-button is-tertiary" href="{% url 'normatives:document_detail' document.code %}">К документу</a>
 </section>
 
-<section class="profile-card">
+<section class="da-card">
     <h2>Сведения о редакции</h2>
-    <dl>
+    <dl class="ux-key-value">
         <dt>
             <span class="help-label">Статус
                 <details class="help-tip"><summary>?</summary><div>Опубликованная редакция зафиксирована и больше не изменяется.</div></details>
@@ -30,12 +30,12 @@
 </section>
 
 <details
-    class="profile-card technical-disclosure revision-technical-details technical-only"
+    class="da-card technical-disclosure revision-technical-details technical-only"
     data-default-collapsed="true"
 >
     <summary>Технические реквизиты редакции</summary>
     <div class="technical-disclosure-body">
-        <dl>
+        <dl class="ux-key-value">
             <dt>
                 <span class="help-label">SHA-256 редакции
                     <details class="help-tip"><summary>?</summary><div>Контрольная сумма опубликованных реквизитов и требований. Изменение данных приведёт к другому значению.</div></details>
@@ -50,7 +50,7 @@
 
 <section class="requirements-stack">
 {% for requirement in requirements %}
-    <article class="profile-card requirement-card">
+    <article class="da-card requirement-card">
         <div class="requirement-heading">
             <div>
                 <span class="code-chip technical-only">{{ requirement.code }}</span>
@@ -59,7 +59,7 @@
             <strong>{{ requirement.clause }}</strong>
         </div>
         <p>{{ requirement.requirement_text }}</p>
-        <dl>
+        <dl class="ux-key-value">
             <dt>Применимость</dt><dd>{{ requirement.applicability_text|default:"Применяется ко всей системе." }}</dd>
             <dt>Обязательность</dt><dd>{% if requirement.is_mandatory %}Обязательное{% else %}Рекомендательное{% endif %}</dd>
         </dl>
@@ -70,27 +70,26 @@
         >
             <summary>Техническая трассируемость</summary>
             <div class="technical-disclosure-body">
-
-        <div class="trace-list">
-        {% for trace in requirement.traces.all %}
-            <div class="trace-card">
-                <strong>{{ trace.function_name }}</strong>
-                <span>{{ trace.get_implementation_status_display }}</span>
-                <dl>
-                    <dt>Код функции</dt><dd>{{ trace.function_code }}</dd>
-                    <dt>Автоматический тест</dt><dd>{{ trace.test_reference|default:"Пока не назначен" }}</dd>
-                    <dt>Приёмочный сценарий</dt><dd>{{ trace.acceptance_scenario|default:"Пока не назначен" }}</dd>
-                </dl>
-            </div>
-        {% empty %}
-            <p class="muted">Трассировка для требования пока не создана.</p>
-        {% endfor %}
-        </div>
+                <div class="trace-list">
+                {% for trace in requirement.traces.all %}
+                    <div class="trace-card">
+                        <strong>{{ trace.function_name }}</strong>
+                        <span>{{ trace.get_implementation_status_display }}</span>
+                        <dl class="ux-key-value">
+                            <dt>Код функции</dt><dd>{{ trace.function_code }}</dd>
+                            <dt>Автоматический тест</dt><dd>{{ trace.test_reference|default:"Пока не назначен" }}</dd>
+                            <dt>Приёмочный сценарий</dt><dd>{{ trace.acceptance_scenario|default:"Пока не назначен" }}</dd>
+                        </dl>
+                    </div>
+                {% empty %}
+                    <p class="ux-muted">Трассировка для требования пока не создана.</p>
+                {% endfor %}
+                </div>
             </div>
         </details>
     </article>
 {% empty %}
-    <section class="empty-state">В этой редакции пока нет требований.</section>
+    <section class="ux-empty-state">В этой редакции пока нет требований.</section>
 {% endfor %}
 </section>
 {% endblock %}

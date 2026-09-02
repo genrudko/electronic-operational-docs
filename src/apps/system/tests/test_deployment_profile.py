@@ -127,7 +127,13 @@ class DeploymentEnvironmentContractTests(unittest.TestCase):
 class ProductionComposeContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.compose = (ROOT / "compose.production.yaml").read_text(encoding="utf-8")
+        super().setUpClass()
+        compose_path = ROOT / "compose.production.yaml"
+        if not compose_path.is_file():
+            raise unittest.SkipTest(
+                "repository-only production Compose contract is not packaged in runtime images"
+            )
+        cls.compose = compose_path.read_text(encoding="utf-8")
 
     def test_production_mode_cannot_be_replaced_by_environment(self) -> None:
         self.assertIn("EOD_DEPLOYMENT_MODE: production", self.compose)

@@ -75,7 +75,7 @@
             </button>
             <button class="opj-ribbon-toggle" type="button" data-ribbon-mode-toggle aria-expanded="false" title="Показать или скрыть подписи ленты">
                 <svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-ribbon"></use></svg>
-                <span>Лента</span>
+                <span class="opj-ribbon-toggle-label">Лента</span><span class="opj-ribbon-toggle-mobile-label">Формат</span>
             </button>
         </div>
     </div>
@@ -96,7 +96,7 @@
                     <button type="button" class="draft-editor-ribbon-button" data-editor-command="strike" title="Зачёркивание" aria-label="Зачёркивание" aria-pressed="false" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-strike"></use></svg></button>
                     <button type="button" class="draft-editor-ribbon-button is-text-red" data-editor-command="text_red" title="Красный текст" aria-label="Красный текст" aria-pressed="false" disabled><span class="opj-text-colour-icon">А</span></button>
                     <button type="button" class="draft-editor-ribbon-button is-text-blue" data-editor-command="text_blue" title="Синий текст" aria-label="Синий текст" aria-pressed="false" disabled><span class="opj-text-colour-icon">А</span></button>
-                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="clear" title="Очистить форматирование (Ctrl+\)" aria-label="Очистить форматирование" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-eraser"></use></svg></button>
+                    <button type="button" class="draft-editor-ribbon-button" data-editor-command="clear" title="Очистить форматирование (Ctrl+\)" aria-label="Очистить форматирование" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-eraser"></use></svg><span class="opj-mobile-command-caption">Сброс</span></button>
                 </div>
                 <small>Текст</small>
             </section>
@@ -123,16 +123,16 @@
 
             <section class="opj-tool-group draft-editor-ribbon-group" aria-label="Связанные объекты">
                 <div class="draft-editor-ribbon-buttons">
-                    <button type="button" class="draft-editor-ribbon-button" data-reference-trigger title="Связать текст с объектом (Ctrl+Shift+M)" aria-label="Вставить связанную ссылку" aria-haspopup="dialog" aria-expanded="false" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-link"></use></svg></button>
-                    <button type="button" class="draft-editor-ribbon-button draft-auto-reference-toggle" data-auto-reference-toggle title="Автоматически находить однозначные связи" aria-label="Автоматическое определение связей" aria-pressed="true"><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-sparkle"></use></svg></button>
-                    <button type="button" class="draft-editor-ribbon-button" data-auto-reference-scan title="Найти связи в текущей записи" aria-label="Найти связи в текущей записи" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-scan"></use></svg></button>
+                    <button type="button" class="draft-editor-ribbon-button" data-reference-trigger title="Связать текст с объектом (Ctrl+Shift+M)" aria-label="Вставить связанную ссылку" aria-haspopup="dialog" aria-expanded="false" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-link"></use></svg><span class="opj-mobile-command-caption">Связать</span></button>
+                    <button type="button" class="draft-editor-ribbon-button draft-auto-reference-toggle" data-auto-reference-toggle title="Автоматически находить однозначные связи" aria-label="Автоматическое определение связей" aria-pressed="true"><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-sparkle"></use></svg><span class="opj-mobile-command-caption">Авто</span></button>
+                    <button type="button" class="draft-editor-ribbon-button" data-auto-reference-scan title="Найти связи в текущей записи" aria-label="Найти связи в текущей записи" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-scan"></use></svg><span class="opj-mobile-command-caption">Найти</span></button>
                 </div>
                 <small data-auto-reference-label>Связь · авто включено</small>
             </section>
 
             <section class="opj-tool-group draft-editor-ribbon-group" aria-label="Нормативные отметки">
                 <div class="draft-editor-ribbon-buttons">
-                    <button type="button" class="draft-editor-ribbon-button draft-normative-trigger" data-normative-trigger title="Нормативные отметки ПЗ, ЗН и аварий" aria-label="Открыть нормативные отметки" aria-haspopup="menu" aria-expanded="false" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-bolt"></use></svg></button>
+                    <button type="button" class="draft-editor-ribbon-button draft-normative-trigger" data-normative-trigger title="Нормативные отметки ПЗ, ЗН и аварий" aria-label="Открыть нормативные отметки" aria-haspopup="menu" aria-expanded="false" disabled><svg class="opj-command-icon" aria-hidden="true"><use href="#opj-icon-bolt"></use></svg><span class="opj-mobile-command-caption">Открыть</span></button>
                 </div>
                 <small>Отметки</small>
             </section>

@@ -130,7 +130,8 @@ class OperationalJournalAcceptanceRepairSourceTests(SimpleTestCase):
         )
         self.assertIn("color: #175cd3 !important", css)
 
-    def test_clean_visas_cell_keeps_native_table_cell_geometry(self) -> None:
+    def test_marker_layer_does_not_lock_responsive_visa_container_geometry(self) -> None:
+        partial = self.source("templates/operational_log/_normative_markers.html")
         css = self.source(
             "static/operational_log/opj_lifecycle_acceptance_repair.css"
         )
@@ -139,8 +140,29 @@ class OperationalJournalAcceptanceRepairSourceTests(SimpleTestCase):
             ".opj-clean-journal-page .approved-journal-visas.opj-clean-markers",
             css,
         )
-        self.assertIn("display: table-cell !important", css)
-        self.assertIn("vertical-align: top !important", css)
+        self.assertIn("display: table-cell;", css)
+        self.assertNotIn("display: table-cell !important", css)
+        self.assertNotIn(".opj-empty-marker", partial)
+        critical = partial[partial.index('style.textContent = `') : partial.index('`;')]
+        self.assertNotIn(".draft-ledger-visas,", critical)
+        self.assertNotIn(
+            ".approved-journal-visas.opj-clean-markers {",
+            critical,
+        )
+
+    def test_marker_layer_does_not_lock_responsive_date_placeholder_geometry(self) -> None:
+        partial = self.source("templates/operational_log/_normative_markers.html")
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
+        )
+
+        critical = partial[partial.index('style.textContent = `') : partial.index('`;')]
+        self.assertNotIn(".approved-journal-date-time > span", critical)
+        self.assertNotIn(".approved-journal-date-time > span", css)
+        self.assertIn(".approved-journal-date-time > strong,", critical)
+        self.assertIn(".approved-journal-date-time > small", critical)
+        self.assertIn(".approved-journal-date-time > strong,", css)
+        self.assertIn(".approved-journal-date-time > small", css)
 
     def test_spread_mode_keeps_the_same_marker_artwork(self) -> None:
         css = self.source(
@@ -153,3 +175,77 @@ class OperationalJournalAcceptanceRepairSourceTests(SimpleTestCase):
         )
         self.assertIn("width: 38px !important", css)
         self.assertIn("min-height: 49px !important", css)
+
+    def test_repair_v4_marker_tooltip_consumes_complete_theme_contract(self) -> None:
+        partial = self.source("templates/operational_log/_normative_markers.html")
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
+        )
+
+        self.assertIn("var(--theme-surface-raised", css)
+        self.assertIn("color: var(--theme-text, #111827) !important", css)
+        self.assertIn("color: var(--theme-text-muted) !important", css)
+        self.assertIn("color: var(--theme-primary) !important", css)
+        self.assertIn("color: var(--theme-primary-hover) !important", css)
+        self.assertIn("var(--theme-shadow-overlay", css)
+        self.assertNotIn("--theme-surface-elevated", css)
+        self.assertNotIn("--theme-surface-elevated", partial)
+        self.assertNotIn(".opj-marker-popover.is-floating {", partial)
+
+    def test_repair_v4_toolbar_states_do_not_hide_disabled_controls_with_opacity(self) -> None:
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
+        )
+
+        self.assertIn(
+            ":is(.draft-editor-ribbon-button, .draft-row-action, .da-icon-button):disabled",
+            css,
+        )
+        self.assertIn("background: var(--theme-control-disabled) !important", css)
+        self.assertIn("color: var(--theme-text-muted) !important", css)
+        self.assertIn("opacity: 1 !important", css)
+        self.assertIn(".opj-register-draft-button", css)
+        self.assertIn("background: var(--theme-primary) !important", css)
+        self.assertIn("color: var(--theme-on-primary) !important", css)
+
+    def test_repair_v4_spread_and_width_profiles_use_platform_geometry(self) -> None:
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
+        )
+
+        self.assertIn('.opj-workspace[data-page-width="wide"]', css)
+        self.assertIn('.opj-workspace[data-page-width="full"]', css)
+        self.assertIn("width: min(100%, 1680px) !important", css)
+        self.assertIn("max-width: none !important", css)
+        self.assertIn("--opj-grid-strong: var(--theme-border-strong)", css)
+        self.assertIn("border-color: var(--theme-border-strong) !important", css)
+        self.assertIn("background: var(--theme-surface-soft) !important", css)
+
+    def test_repair_v4_mobile_spread_scroll_is_contained_inside_workspace(self) -> None:
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
+        )
+
+        self.assertIn("@media (max-width: 720px)", css)
+        self.assertIn(
+            '.opj-workspace-page .opj-workspace[data-view-mode="spread"] '
+            ".opj-editor-container",
+            css,
+        )
+        self.assertIn("width: 100% !important", css)
+        self.assertIn("min-width: 0 !important", css)
+        self.assertIn("max-width: 100% !important", css)
+        self.assertIn("overflow-x: auto !important", css)
+
+    def test_repair_v4_disclosure_uses_canonical_svg_and_no_raw_caret(self) -> None:
+        drawer = self.source("templates/operational_log/_shift_workspace_drawer.html")
+        css = self.source(
+            "static/operational_log/opj_lifecycle_acceptance_repair.css"
+        )
+
+        self.assertGreaterEqual(drawer.count("#icon-chevron-right"), 5)
+        self.assertNotIn('class="opj-drawer-chevron" aria-hidden="true">⌄', drawer)
+        self.assertNotIn('class="opj-drawer-chevron" aria-hidden="true">^', drawer)
+        self.assertIn(".opj-drawer-chevron .ui-icon", css)
+        self.assertIn("transform: rotate(90deg)", css)
+        self.assertIn("color: var(--theme-primary-hover)", css)

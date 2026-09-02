@@ -3,16 +3,18 @@
 {% block title %}Ручное создание формы отключено · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading">
+<section class="da-page-header da-page-header-compact">
     <div>
-        <div class="section-kicker">Source-bound конфигурация</div>
+        <span class="ux-kicker">Source-bound конфигурация</span>
         <h1>Ручное создание формы отключено</h1>
         <p>Формы журналов устанавливаются только по утверждённым инструкциям и приложениям.</p>
     </div>
 </section>
-<section class="empty-state warning">
-    <h2>Оперативный персонал не настраивает состав граф</h2>
-    <p>Для новой формы требуется отдельный автономный патч с явной привязкой к источнику и тестами соответствия.</p>
-    <a class="button" href="{% url 'operational_documents:type_registry' %}">Открыть каталог форм</a>
+<section class="da-alert is-warning">
+    <div>
+        <h2>Оперативный персонал не настраивает состав граф</h2>
+        <p>Для новой формы требуется отдельный автономный патч с явной привязкой к источнику и тестами соответствия.</p>
+        <a class="da-button" href="{% url 'operational_documents:type_registry' %}">Открыть каталог форм</a>
+    </div>
 </section>
 {% endblock %}

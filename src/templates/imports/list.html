@@ -1,36 +1,41 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Импорт справочников · ЭОД{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'system/ux_mobile_surfaces.css' %}?v=uxmobile001">{% endblock %}
 
 {% block content %}
-<section class="page-heading">
+<section class="da-page-header ux-page-header-balanced import-page-header">
     <div>
-        <div class="eyebrow">БЕЗОПАСНАЯ ПРОМЕЖУТОЧНАЯ ЗОНА</div>
+        <span class="ux-kicker">Безопасная промежуточная зона</span>
         <h1>Импорт справочников</h1>
         <p>Загруженные файлы разбираются отдельно и не изменяют действующие справочники.</p>
     </div>
-    <div class="document-actions">
-        <a class="button secondary" href="{% url 'imports:data_profiles' %}">Профили данных</a>
-        <a class="button secondary" href="{% url 'imports:power_system_list' %}">Редакции импорта оборудования</a>
-        <a class="button secondary" href="{% url 'imports:personnel_list' %}">Импорт персонала и прав</a>
-        <a class="button secondary" href="{% url 'imports:workplace_document_list' %}">Импорт документации рабочих мест</a>
-        <a class="button" href="{% url 'imports:upload' %}">Обычный импорт CSV/XLSX</a>
+    <div class="import-header-actions" aria-label="Действия и разделы импорта">
+        <a class="da-button import-header-actions__primary" href="{% url 'imports:upload' %}">Обычный импорт CSV/XLSX</a>
+        <nav class="import-header-nav" aria-label="Разделы импорта">
+            <a class="da-button is-secondary" href="{% url 'imports:data_profiles' %}">Профили данных</a>
+            <a class="da-button is-secondary" href="{% url 'imports:power_system_list' %}">Редакции оборудования</a>
+            <a class="da-button is-secondary" href="{% url 'imports:personnel_list' %}">Персонал и права</a>
+            <a class="da-button is-secondary" href="{% url 'imports:workplace_document_list' %}">Документация рабочих мест</a>
+        </nav>
     </div>
 </section>
 
-<section class="data-profile-strip" aria-label="Профили данных организации">
+<section class="ux-profile-strip import-profile-grid" aria-label="Профили данных организации">
     {% for profile in profiles %}
-    <article class="data-profile-chip profile-kind-{{ profile.kind|lower }}">
-        <div>
-            <strong>{{ profile.name }}</strong>
-            <span>{{ profile.get_sensitivity_level_display }}</span>
-        </div>
-        <small>{{ profile.get_export_policy_display }}</small>
+    <article class="import-profile-card profile-kind-{{ profile.kind|lower }}{% if profile.sensitivity_level != 'SAFE_DEMO' %} is-sensitive{% endif %}">
+        <strong class="ux-readable-value">{{ profile.name }}</strong>
+        <dl>
+            <div><dt>Уровень данных</dt><dd class="ux-readable-value">{{ profile.get_sensitivity_level_display }}</dd></div>
+            <div><dt>Экспорт</dt><dd class="ux-readable-value">{{ profile.get_export_policy_display }}</dd></div>
+        </dl>
     </article>
     {% endfor %}
-    <a class="data-profile-chip mapping-chip" href="{% url 'imports:data_profiles' %}">
-        <div><strong>Схемы сопоставления</strong><span>Повторное использование структуры файлов</span></div>
-        <small>{{ mapping_template_count }} действующих</small>
+    <a class="import-profile-card" href="{% url 'imports:data_profiles' %}">
+        <strong class="ux-readable-value">Схемы сопоставления</strong>
+        <span class="import-profile-card__description ux-readable-value">Повторное использование структуры файлов</span>
+        <span class="import-profile-card__metric ux-readable-value"><b>{{ mapping_template_count }}</b> действующих</span>
     </a>
 </section>
 
@@ -43,26 +48,26 @@
     </p>
 </section>
 
-<section class="summary-grid import-summary">
-    <article class="metric"><span>Попыток</span><strong>{{ summary.total }}</strong></article>
-    <article class="metric"><span>Готовы к просмотру</span><strong>{{ summary.ready }}</strong></article>
-    <article class="metric"><span>Требуют внимания</span><strong>{{ summary.attention }}</strong></article>
-    <article class="metric"><span>Опубликованы</span><strong>{{ summary.published }}</strong></article>
-    <article class="metric"><span>Убраны из рабочего списка</span><strong>{{ summary.discarded }}</strong></article>
+<section class="ux-stat-grid import-summary">
+    <article class="ux-stat"><span>Попыток</span><strong>{{ summary.total }}</strong></article>
+    <article class="ux-stat"><span>Готовы к просмотру</span><strong>{{ summary.ready }}</strong></article>
+    <article class="ux-stat"><span>Требуют внимания</span><strong>{{ summary.attention }}</strong></article>
+    <article class="ux-stat"><span>Опубликованы</span><strong>{{ summary.published }}</strong></article>
+    <article class="ux-stat"><span>Убраны из рабочего списка</span><strong>{{ summary.discarded }}</strong></article>
 </section>
 
-<section class="profile-card">
+<section class="da-card import-attempts-panel">
     <div class="section-heading">
         <div>
-            <div class="eyebrow">ЖУРНАЛ ПОПЫТОК</div>
+            <span class="ux-kicker">Журнал попыток</span>
             <h2>Загрузки организации</h2>
         </div>
         {% if batches %}
             <span class="count-badge">Всего загрузок: {{ batches|length }}</span>
         {% endif %}
     </div>
-    <div class="table-wrap">
-        <table>
+    <div class="da-table-wrap import-attempt-desktop-table">
+        <table class="da-table">
             <thead>
                 <tr>
                     <th>Файл</th>
@@ -108,13 +113,30 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="8" class="muted">
-                        Загрузок пока нет. Начните с небольшого тестового CSV или XLSX.
-                    </td>
+                    <td colspan="8"><div class="ux-empty-state">Загрузок пока нет. Начните с небольшого тестового CSV или XLSX.</div></td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
+    <ol class="import-attempt-mobile-list" aria-label="Загрузки организации">
+        {% for batch in batches %}
+        <li class="ux-mobile-audit-card{% if batch.status == 'DISCARDED' %} is-muted{% endif %}">
+            <header class="ux-mobile-audit-card__header">
+                <div class="ux-mobile-audit-card__title"><a href="{% url 'imports:detail' batch.public_id %}">{{ batch.original_filename }}</a><span class="ux-muted">{{ batch.get_target_registry_display }}</span></div>
+                <span class="import-status status-{{ batch.status|lower }}">{{ batch.get_status_display }}</span>
+            </header>
+            <dl class="ux-mobile-audit-card__meta">
+                <div class="is-wide"><dt>Профиль данных</dt><dd><span class="data-profile-badge profile-kind-{{ batch.data_profile.kind|lower }}">{{ batch.data_profile.name }}</span></dd></div>
+                <div><dt>Формат</dt><dd>{{ batch.get_source_format_display }}</dd></div>
+                <div><dt>Строки</dt><dd>{{ batch.data_rows }}</dd></div>
+                <div class="is-wide"><dt>Загрузил</dt><dd>{{ batch.created_by.full_name }}</dd></div>
+                <div><dt>Время</dt><dd>{{ batch.created_at|date:"d.m.Y H:i" }}</dd></div>
+                {% if batch.status == 'PUBLISHED' %}<div class="is-wide"><dt>Результат</dt><dd>Создано записей: {{ batch.publication_counts.accepted }}</dd></div>{% elif batch.mapping_completed_at %}<div class="is-wide"><dt>Сопоставление</dt><dd>Редакция № {{ batch.mapping_revision }}</dd></div>{% elif batch.status == 'READY' %}<div class="is-wide"><dt>Следующий шаг</dt><dd>Ожидается сопоставление колонок</dd></div>{% endif %}
+            </dl>
+            <div class="ux-mobile-record-card__actions"><a class="da-button is-secondary" href="{% url 'imports:detail' batch.public_id %}">Открыть загрузку</a></div>
+        </li>
+        {% empty %}<li class="ux-empty-state">Загрузок пока нет. Начните с небольшого тестового CSV или XLSX.</li>{% endfor %}
+    </ol>
 </section>
 {% endblock %}

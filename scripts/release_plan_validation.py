@@ -331,25 +331,28 @@ def _validate_queue(
         "BACKUP-RESTORE-DRILL-001",
         "SECURITY-BASELINE-001",
     )
-    post_safe_foundations = (
-        "MODULE-REGISTRY-001",
-        "UX-PLATFORM-FOUNDATION-001",
-        "PAGE-TEMPLATE-LIBRARY-001",
-    )
     safe_complete = all(
         work_by_id.get(item_id, {}).get("status") == "ACCEPTED"
         for item_id in safe_required
     )
-    foundations_complete = all(
+    registry_complete = (
+        work_by_id.get("MODULE-REGISTRY-001", {}).get("status") == "ACCEPTED"
+    )
+    ux_foundations_complete = all(
         work_by_id.get(item_id, {}).get("status") == "ACCEPTED"
-        for item_id in post_safe_foundations
+        for item_id in (
+            "UX-PLATFORM-FOUNDATION-001",
+            "PAGE-TEMPLATE-LIBRARY-001",
+        )
     )
     if not safe_complete:
         expected_status = (
             "PAUSED_PENDING_SAFE_CONTINUATION_AND_EXPLICIT_OWNER_DECISION"
         )
-    elif not foundations_complete:
+    elif not registry_complete:
         expected_status = "PAUSED_PENDING_MODULE_REGISTRY_AND_UX_FOUNDATIONS"
+    elif not ux_foundations_complete:
+        expected_status = "PAUSED_PENDING_UX_PLATFORM_AND_PAGE_TEMPLATES"
     else:
         expected_status = "READY_FOR_PRODUCT_MODULE_DEVELOPMENT"
     actual_status = plan.get("execution", {}).get("domain_queue_status")

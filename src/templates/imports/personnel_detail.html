@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block title %}{{ revision.original_filename }} · Персонал · ЭОД{% endblock %}
 {% block content %}
-<section class="page-heading compact">
-    <div><div class="eyebrow">ПРЕДВАРИТЕЛЬНАЯ ПРОВЕРКА ПЕРСОНАЛА</div><h1>{{ revision.original_filename }}</h1><p>{{ revision.source_reference }}</p></div>
-    <div class="document-actions">
-        <a class="button secondary" href="{% url 'imports:personnel_list' %}">К редакциям</a>
-        {% if revision.status == 'STAGED' %}<a class="button" href="{% url 'imports:personnel_publication' revision.public_id %}">Проверить публикацию</a>{% endif %}
+<section class="da-page-header da-page-header-compact">
+    <div><span class="ux-kicker">Предварительная проверка персонала</span><h1>{{ revision.original_filename }}</h1><p>{{ revision.source_reference }}</p></div>
+    <div class="da-actions document-actions">
+        <a class="da-button is-secondary" href="{% url 'imports:personnel_list' %}">К редакциям</a>
+        {% if revision.status == 'STAGED' %}<a class="da-button" href="{% url 'imports:personnel_publication' revision.public_id %}">Проверить публикацию</a>{% endif %}
     </div>
 </section>
 <section class="notice-card data-profile-notice">
@@ -23,16 +23,16 @@
     <article><strong>«–» и пусто</strong><span>Не создают постоянных запретов и не отзывают ранее выданные права.</span></article>
     <article><strong>Неоднозначные значения</strong><span>Сохраняются дословно и остаются вне автоматической публикации.</span></article>
 </section>
-<section class="summary-grid personnel-summary">
-    <a class="metric {% if status_filter == 'ALL' %}is-active{% endif %}" href="?status=ALL"><span>Работников</span><strong>{{ revision.total_people }}</strong></a>
-    <a class="metric {% if status_filter == 'READY' %}is-active{% endif %}" href="?status=READY"><span>Готово</span><strong>{{ revision.ready_rows }}</strong></a>
-    <a class="metric {% if status_filter == 'REVIEW_REQUIRED' %}is-active{% endif %}" href="?status=REVIEW_REQUIRED"><span>На проверке</span><strong>{{ revision.review_rows }}</strong></a>
-    <a class="metric {% if status_filter == 'BLOCKED' %}is-active{% endif %}" href="?status=BLOCKED"><span>Заблокировано</span><strong>{{ revision.blocked_rows }}</strong></a>
-    <article class="metric"><span>Публикуемых прав</span><strong>{{ revision.publishable_grants }}</strong></article>
-    <article class="metric"><span>Неоднозначных ячеек</span><strong>{{ revision.ambiguous_cells }}</strong></article>
+<section class="ux-stat-grid personnel-summary">
+    <a class="ux-stat {% if status_filter == 'ALL' %}is-active{% endif %}" href="?status=ALL"><span>Работников</span><strong>{{ revision.total_people }}</strong></a>
+    <a class="ux-stat {% if status_filter == 'READY' %}is-active{% endif %}" href="?status=READY"><span>Готово</span><strong>{{ revision.ready_rows }}</strong></a>
+    <a class="ux-stat {% if status_filter == 'REVIEW_REQUIRED' %}is-active{% endif %}" href="?status=REVIEW_REQUIRED"><span>На проверке</span><strong>{{ revision.review_rows }}</strong></a>
+    <a class="ux-stat {% if status_filter == 'BLOCKED' %}is-active{% endif %}" href="?status=BLOCKED"><span>Заблокировано</span><strong>{{ revision.blocked_rows }}</strong></a>
+    <article class="ux-stat"><span>Публикуемых прав</span><strong>{{ revision.publishable_grants }}</strong></article>
+    <article class="ux-stat"><span>Неоднозначных ячеек</span><strong>{{ revision.ambiguous_cells }}</strong></article>
 </section>
-<section class="profile-card">
-    <div class="section-heading"><div><div class="eyebrow">СТРОКИ ИСТОЧНИКА</div><h2>Работники и отметки прав</h2></div><span class="count-badge">Страница {{ page.number }} из {{ page.paginator.num_pages }}</span></div>
+<section class="da-card">
+    <div class="section-heading"><div><span class="ux-kicker">Строки источника</span><h2>Работники и отметки прав</h2></div><span class="count-badge">Страница {{ page.number }} из {{ page.paginator.num_pages }}</span></div>
     <div class="personnel-row-list">
     {% for row in page.object_list %}
         <article class="personnel-source-row status-{{ row.review_status|lower }}">
@@ -64,11 +64,11 @@
             {% endif %}
             {% if row.matched_employee %}<small>Однозначно сопоставлено с карточкой: <a href="{% url 'organizations:employee_detail' row.matched_employee.public_id %}">{{ row.matched_employee.full_name }}</a></small>{% endif %}
         </article>
-    {% empty %}<p class="muted">По выбранному фильтру строк нет.</p>{% endfor %}
+    {% empty %}<div class="ux-empty-state">По выбранному фильтру строк нет.</div>{% endfor %}
     </div>
     {% if page.paginator.num_pages > 1 %}<nav class="pagination" aria-label="Страницы">{% if page.has_previous %}<a href="?status={{ status_filter }}&page={{ page.previous_page_number }}">← Назад</a>{% endif %}<span>{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a href="?status={{ status_filter }}&page={{ page.next_page_number }}">Далее →</a>{% endif %}</nav>{% endif %}
 </section>
 {% if revision.status == 'STAGED' %}
-<section class="profile-card danger-zone"><h2>Управление staging-редакцией</h2><p>Физическое удаление запрещено. Операция только убирает редакцию из рабочего списка.</p><form method="post" action="{% url 'imports:personnel_discard' revision.public_id %}">{% csrf_token %}<button class="button secondary" type="submit">Убрать редакцию из рабочего списка</button></form></section>
+<section class="da-card danger-zone"><h2>Управление staging-редакцией</h2><p>Физическое удаление запрещено. Операция только убирает редакцию из рабочего списка.</p><form method="post" action="{% url 'imports:personnel_discard' revision.public_id %}">{% csrf_token %}<button class="da-button is-secondary" type="submit">Убрать редакцию из рабочего списка</button></form></section>
 {% endif %}
 {% endblock %}

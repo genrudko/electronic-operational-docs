@@ -1,37 +1,111 @@
 #!/usr/bin/env python3
-"""Blocking browser evidence for seven theme routes."""
+"""Blocking browser evidence for the representative UX Platform surface matrix."""
 
 import json
 import os
 import re
 from pathlib import Path
-from uuid import UUID
 
 from playwright.sync_api import sync_playwright
 
 BASE = os.getenv("EOD_BROWSER_BASE_URL", "http://127.0.0.1:8766").rstrip("/")
 OUT = Path(os.getenv("EOD_BROWSER_EVIDENCE", "artifacts/browser-theme"))
-VIEWPORTS = ((1440, 900), (1024, 768), (390, 844))
+DESKTOP_VIEWPORTS = (
+    (1280, 800),
+    (1366, 768),
+    (1440, 900),
+    (1536, 864),
+    (1920, 1080),
+    (2560, 1440),
+)
+MOBILE_VIEWPORTS = (
+    (390, 844),
+    (412, 915),
+    (430, 932),
+)
+VIEWPORTS = DESKTOP_VIEWPORTS + MOBILE_VIEWPORTS
+TRANSITION_WIDTHS = (
+    1440,
+    1280,
+    1180,
+    1100,
+    1024,
+    976,
+    950,
+    900,
+    880,
+    832,
+    768,
+    656,
+    600,
+    440,
+    412,
+    390,
+)
+TRANSITION_ROUTES = (
+    "personnel",
+    "authorities",
+    "imports",
+    "workplace_docs",
+    "defect_registry",
+    "opj_registry",
+    "registered_opj",
+    "draft_workspace",
+)
+TRANSITION_SCREENSHOTS = {880, 768, 656, 440}
 THEMES = ("light", "dark")
+PUBLIC_ROUTES = {
+    "login": "/accounts/login/",
+}
 ROUTES = {
     "home": "/",
+    "documents": "/documents/",
+    "equipment": "/equipment/",
+    "personnel": "/organization/",
+    "authorities": "/organization/authorities/",
+    "dispatching": "/dispatching/",
+    "normatives": "/normatives/",
+    "imports": "/imports/",
+    "workplace_docs": "/workplace-documentation/",
+    "operational_documents": "/operational-documents/",
     "defect_registry": "/operations/defects/",
+    "defect_registration": "/operations/defects/new/",
     "opj_registry": "/operations/journal/",
     "account_settings": "/accounts/me/",
 }
 SELECTORS = {
-    "home": ".metric.da-card",
+    "login": ".ux-auth-card",
+    "home": ".ux-launcher-card",
+    "documents": ".document-list-card",
+    "equipment": ".equipment-filter-card",
+    "personnel": ".personnel-directory-sidebar",
+    "authorities": ".authority-summary-card",
+    "dispatching": ".dispatching-object-card",
+    "normatives": ".da-card.ux-stack",
+    "imports": "section.da-card",
+    "workplace_docs": ".workplace-document-registry",
+    "operational_documents": ".opdoc-filter-card",
     "defect_registry": ".defect-da-work-table",
-    "defect_detail": ".defect-record-section",
+    "defect_registration": ".defect-guided-form",
     "opj_registry": ".journal-registry-card",
     "registered_opj": ".approved-journal-shell",
     "draft_workspace": ".opj-workspace",
     "account_settings": ".account-setting-card",
 }
 TOKENS = {
+    "login": "--theme-surface",
     "home": "--theme-surface",
+    "documents": "--theme-surface",
+    "equipment": "--theme-surface",
+    "personnel": "--theme-surface",
+    "authorities": "--theme-surface",
+    "dispatching": "--theme-surface",
+    "normatives": "--theme-surface",
+    "imports": "--theme-surface",
+    "workplace_docs": "--theme-surface",
+    "operational_documents": "--theme-surface",
     "defect_registry": "--theme-surface",
-    "defect_detail": "--theme-surface",
+    "defect_registration": "--theme-surface",
     "opj_registry": "--theme-surface",
     "registered_opj": "--theme-surface-document",
     "draft_workspace": "--theme-surface",
@@ -53,6 +127,11 @@ def style(node):
             background:s.backgroundColor, border:s.borderColor,
             color:s.color, scheme:s.colorScheme}; }"""
     )
+
+
+def screenshots(page, shots: Path, name: str) -> None:
+    page.screenshot(path=shots / f"{name}__screen.png", full_page=False)
+    page.screenshot(path=shots / f"{name}__fullpage.png", full_page=True)
 
 
 def resolved_background(page, token):
@@ -80,134 +159,1066 @@ def theme(page, value):
     page.wait_for_function("v=>document.documentElement.dataset.theme===v", arg=value)
 
 
-def activate_editor_caret(page):
+def document_width(page):
+    return page.evaluate(
+        """() => ({
+            scrollWidth: document.documentElement.scrollWidth,
+            innerWidth: window.innerWidth,
+            clientWidth: document.documentElement.clientWidth,
+        })"""
+    )
+
+
+def mobile_geometry(page, route, width):
+    if width > 520:
+        return None
+    return page.evaluate(
+        """route => {
+            const visible = node => {
+                const style = getComputedStyle(node);
+                const rect = node.getBoundingClientRect();
+                return style.display !== "none"
+                    && style.visibility !== "hidden"
+                    && Number(style.opacity || 1) !== 0
+                    && rect.width > 0
+                    && rect.height > 0;
+            };
+            const describe = node => {
+                const rect = node.getBoundingClientRect();
+                return {
+                    tag: node.tagName.toLowerCase(),
+                    className: String(node.className || ""),
+                    text: (node.innerText || node.textContent || "").trim().slice(0, 120),
+                    x: rect.x,
+                    y: rect.y,
+                    width: rect.width,
+                    height: rect.height,
+                    right: rect.right,
+                    bottom: rect.bottom,
+                };
+            };
+            const intersect = (a, b) => {
+                const x = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+                const y = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+                return x > 2 && y > 2;
+            };
+            const siblingOverlaps = selector => {
+                const collisions = [];
+                for (const parent of document.querySelectorAll(selector)) {
+                    if (!visible(parent)) continue;
+                    const nodes = [...parent.children].filter(visible);
+                    for (let i = 0; i < nodes.length; i += 1) {
+                        for (let j = i + 1; j < nodes.length; j += 1) {
+                            const a = nodes[i].getBoundingClientRect();
+                            const b = nodes[j].getBoundingClientRect();
+                            if (intersect(a, b)) {
+                                collisions.push({
+                                    parent: String(parent.className || selector),
+                                    first: describe(nodes[i]),
+                                    second: describe(nodes[j]),
+                                });
+                            }
+                        }
+                    }
+                }
+                return collisions;
+            };
+
+            const touchSelectors = [".da-menu-button"];
+            if (route === "authorities") {
+                touchSelectors.push(".authority-tabs button", ".authority-tree-heading button");
+            }
+            if (route === "personnel") {
+                touchSelectors.push(".personnel-management-actions .da-button");
+            }
+            if (route === "draft_workspace") {
+                touchSelectors.push(
+                    ".opj-toolbar-actions .da-button",
+                    ".opj-ribbon-toggle",
+                    ".opj-view-switch > button",
+                    "button.draft-editor-ribbon-button",
+                    ".opj-page-navigation button.da-icon-button",
+                    "button.da-icon-button.draft-row-action"
+                );
+            }
+            if (route === "registered_opj") {
+                touchSelectors.push(".journal-workspace-actions .da-button");
+            }
+
+            const touchNodes = new Set();
+            for (const selector of touchSelectors) {
+                for (const node of document.querySelectorAll(selector)) {
+                    if (visible(node)) touchNodes.add(node);
+                }
+            }
+            const smallTargets = [...touchNodes]
+                .map(describe)
+                .filter(item => item.width < 42 || item.height < 42);
+            const escapedControls = [...touchNodes]
+                .map(describe)
+                .filter(item => item.x < -2 || item.right > innerWidth + 2);
+
+            return {
+                viewportWidth: innerWidth,
+                smallTargets,
+                escapedControls,
+                publicationOverlaps: route === "authorities"
+                    ? siblingOverlaps(".authority-publication-banner")
+                    : [],
+                personnelManagementOverlaps: route === "personnel"
+                    ? siblingOverlaps(".personnel-recent-row")
+                    : [],
+            };
+        }""",
+        route,
+    )
+
+
+def rendered_regions(page, surface):
+    surface_box = surface.bounding_box()
+    heading_state = page.evaluate(
+        """() => {
+            const main = document.querySelector("main");
+            const candidates = [
+                ...(main ? main.querySelectorAll("h1, [role='heading'], h2") : []),
+                ...document.querySelectorAll("h1, [role='heading'], h2"),
+            ];
+            const seen = new Set();
+            for (const node of candidates) {
+                if (seen.has(node)) continue;
+                seen.add(node);
+                const rect = node.getBoundingClientRect();
+                const style = getComputedStyle(node);
+                const visible = rect.width > 0 && rect.height > 0
+                    && style.display !== "none"
+                    && style.visibility !== "hidden";
+                if (!visible) continue;
+                return {
+                    text: (node.innerText || node.textContent || "").trim(),
+                    tag: node.tagName.toLowerCase(),
+                    box: {
+                        x: rect.x, y: rect.y, width: rect.width, height: rect.height,
+                    },
+                };
+            }
+            return null;
+        }"""
+    )
+    main = page.locator("main").first
+    main_box = main.bounding_box() if main.count() and main.is_visible() else None
+    return {
+        "heading": heading_state,
+        "content_region": surface_box,
+        "main_region": main_box,
+    }
+
+
+def bind_runtime_errors(page):
+    bucket = {"console_errors": [], "page_errors": []}
+
+    def on_console(message):
+        if message.type == "error":
+            bucket["console_errors"].append(message.text)
+
+    page.on("console", on_console)
+    page.on("pageerror", lambda error: bucket["page_errors"].append(str(error)))
+    return bucket
+
+
+def clear_runtime_errors(bucket):
+    bucket["console_errors"].clear()
+    bucket["page_errors"].clear()
+
+
+def runtime_error_snapshot(bucket):
+    return {
+        "console_errors": list(bucket["console_errors"]),
+        "page_errors": list(bucket["page_errors"]),
+    }
+
+
+def assert_no_runtime_errors(bucket, context):
+    errors = runtime_error_snapshot(bucket)
+    if errors["console_errors"] or errors["page_errors"]:
+        raise AssertionError(f"browser runtime errors {context}: {errors}")
+    return errors
+
+
+def visual_viewport_state(page):
+    return page.evaluate(
+        """() => ({
+            scale: window.visualViewport ? window.visualViewport.scale : 1,
+            width: window.visualViewport ? window.visualViewport.width : innerWidth,
+            height: window.visualViewport ? window.visualViewport.height : innerHeight,
+            offsetLeft: window.visualViewport ? window.visualViewport.offsetLeft : 0,
+            offsetTop: window.visualViewport ? window.visualViewport.offsetTop : 0,
+        })"""
+    )
+
+
+def mask_public_demo_password(page):
+    password_node = page.locator("[data-development-demo-password]")
+    if password_node.count():
+        password_node.evaluate("node => { node.textContent = '••••••••'; }")
+
+
+def capture_surface(
+    page,
+    shots,
+    report,
+    runtime_errors,
+    route,
+    path,
+    mode,
+    width,
+    height,
+):
+    page.set_viewport_size({"width": width, "height": height})
+    clear_runtime_errors(runtime_errors)
+    page.goto(BASE + path)
+    if route == "login":
+        mask_public_demo_password(page)
+    theme(page, mode)
+    surface_selector = SELECTORS[route]
+    if route == "defect_registry" and width <= 980:
+        surface_selector = ".defect-da-work-row"
+    node = need(page, surface_selector)
+    page.mouse.move(0, 0)
+    page.wait_for_timeout(160)
+    actual = style(node)
+    expected = resolved_background(page, TOKENS[route])
+    width_state = document_width(page)
+    geometry = mobile_geometry(page, route, width)
+    regions = rendered_regions(page, node)
+    page.wait_for_timeout(50)
+    errors = runtime_error_snapshot(runtime_errors)
+    key = f"{route}__{mode}__{width}x{height}"
+    report["baseline"][key] = {
+        **actual,
+        "expected_background": expected,
+        "document_width": width_state,
+        "responsive_geometry": geometry,
+        "rendered": regions,
+        **errors,
+    }
+    screenshots(page, shots, key)
+
+    if width_state["scrollWidth"] > width_state["innerWidth"] + 2:
+        raise AssertionError(
+            f"document overflow {route} {mode} {width}px: {width_state}"
+        )
+    if geometry:
+        broken = {
+            name: geometry[name]
+            for name in (
+                "smallTargets",
+                "escapedControls",
+                "publicationOverlaps",
+                "personnelManagementOverlaps",
+            )
+            if geometry[name]
+        }
+        if broken:
+            raise AssertionError(
+                f"mobile geometry violation {route} {mode} {width}px: {broken}"
+            )
+    if not regions["heading"] or not regions["heading"]["text"]:
+        raise AssertionError(f"missing rendered heading {route} {mode} {width}px")
+    if not regions["content_region"]:
+        raise AssertionError(f"missing rendered content region {route} {mode} {width}px")
+    assert_no_runtime_errors(runtime_errors, key)
+
+    html_scheme = style(page.locator("html"))["scheme"].split()
+    if (
+        actual["background"].replace(" ", "") != expected.replace(" ", "")
+        or mode not in html_scheme
+    ):
+        raise AssertionError(
+            f"theme mismatch {route} {mode}: {actual} {expected} {html_scheme}"
+        )
+
+
+def capture_mobile_login_focus(browser, shots, report):
+    context = browser.new_context(
+        viewport={"width": MOBILE_VIEWPORTS[0][0], "height": MOBILE_VIEWPORTS[0][1]},
+        is_mobile=True,
+        has_touch=True,
+    )
+    page = context.new_page()
+    runtime_errors = bind_runtime_errors(page)
+
+    for mode in THEMES:
+        for width, height in MOBILE_VIEWPORTS:
+            page.set_viewport_size({"width": width, "height": height})
+            clear_runtime_errors(runtime_errors)
+            page.goto(BASE + PUBLIC_ROUTES["login"])
+            mask_public_demo_password(page)
+            theme(page, mode)
+            username_input = need(page, "input[name=username]")
+            password_input = need(page, "input[name=password]")
+            before = visual_viewport_state(page)
+            key = f"login_focus__{mode}__{width}x{height}"
+            screenshots(page, shots, f"{key}__unfocused")
+
+            username_input.focus()
+            page.wait_for_timeout(150)
+            username_scale = visual_viewport_state(page)
+            username_font_size = float(
+                username_input.evaluate(
+                    "node => parseFloat(getComputedStyle(node).fontSize)"
+                )
+            )
+            password_input.focus()
+            page.wait_for_timeout(150)
+            password_scale = visual_viewport_state(page)
+            password_font_size = float(
+                password_input.evaluate(
+                    "node => parseFloat(getComputedStyle(node).fontSize)"
+                )
+            )
+            width_state = document_width(page)
+            errors = runtime_error_snapshot(runtime_errors)
+            report["mobile_focus"][key] = {
+                "before": before,
+                "username_focus": username_scale,
+                "password_focus": password_scale,
+                "username_font_size": username_font_size,
+                "password_font_size": password_font_size,
+                "document_width": width_state,
+                **errors,
+            }
+            screenshots(page, shots, f"{key}__focused")
+
+            if username_font_size < 16 or password_font_size < 16:
+                raise AssertionError(
+                    f"mobile login input font too small {width}px: "
+                    f"{username_font_size}px/{password_font_size}px"
+                )
+            for label, state in (
+                ("before", before),
+                ("username", username_scale),
+                ("password", password_scale),
+            ):
+                if abs(float(state["scale"]) - 1.0) > 0.01:
+                    raise AssertionError(
+                        f"mobile login visualViewport zoom {label} {mode} "
+                        f"{width}px: {state}"
+                    )
+            if width_state["scrollWidth"] > width_state["innerWidth"] + 2:
+                raise AssertionError(
+                    f"mobile login focus overflow {mode} {width}px: {width_state}"
+                )
+            assert_no_runtime_errors(runtime_errors, key)
+
+    context.close()
+
+
+def activate_editor_reference_selection(page):
     editor = need(page, '.draft-rich-editor-host [contenteditable="true"]')
     editor.click()
     prepared = editor.evaluate(
-        """editor => {
-            const block = editor.querySelector('p, li');
-            if (!block) return false;
-            const range = document.createRange();
-            range.selectNodeContents(block);
-            range.collapse(false);
-            const selection = window.getSelection();
-            selection.removeAllRanges();
-            selection.addRange(range);
-            editor.focus({preventScroll: true});
-            document.dispatchEvent(new Event('selectionchange'));
-            return true;
+        r"""editor => {
+  const walker = document.createTreeWalker(
+      editor,
+      NodeFilter.SHOW_TEXT,
+      {
+acceptNode(node) {
+    const parent = node.parentElement;
+    const block = parent?.closest?.('p, li');
+    if (!block || !editor.contains(block)) {
+        return NodeFilter.FILTER_REJECT;
+    }
+    return (node.textContent || '').trim()
+        ? NodeFilter.FILTER_ACCEPT
+        : NodeFilter.FILTER_REJECT;
+},
+      },
+  );
+  const textNode = walker.nextNode();
+  if (!textNode) return null;
+  const text = textNode.textContent || '';
+  const start = text.search(/\S/u);
+  if (start < 0) return null;
+  let end = Math.min(text.length, start + 8);
+  while (end > start && /\s/u.test(text[end - 1])) end -= 1;
+  if (end <= start) end = Math.min(text.length, start + 1);
+  const range = document.createRange();
+  range.setStart(textNode, start);
+  range.setEnd(textNode, end);
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  editor.focus({preventScroll: true});
+  document.dispatchEvent(new Event('selectionchange'));
+  return {text: range.toString(), collapsed: range.collapsed};
         }"""
     )
-    if not prepared:
-        raise AssertionError(f"missing editable paragraph at {page.url}")
+    if not prepared or prepared["collapsed"] or not prepared["text"].strip():
+        raise AssertionError(f"missing selectable editor text at {page.url}")
     page.wait_for_timeout(80)
-
-
-def defect_detail_path(hrefs):
-    for href in hrefs:
-        match = re.fullmatch(r"/operations/defects/([^/]+)/", href)
-        if not match:
-            continue
-        try:
-            UUID(match.group(1))
-        except ValueError:
-            continue
-        return href
-    raise AssertionError(f"missing UUID defect detail link: {hrefs}")
+    return editor
 
 
 def discover(page):
-    page.goto(BASE + ROUTES["defect_registry"])
-    hrefs = page.locator('a[href*="/operations/defects/"]').evaluate_all(
-        "ns=>ns.map(n=>new URL(n.href).pathname)"
-    )
-    ROUTES["defect_detail"] = defect_detail_path(hrefs)
     page.goto(BASE + ROUTES["opj_registry"])
     hrefs = page.locator('a[href*="/operations/journal/"]').evaluate_all(
         "ns=>ns.map(n=>new URL(n.href).pathname)"
     )
-    ROUTES["registered_opj"] = next(h for h in hrefs if re.fullmatch(r"/operations/journal/\d+/", h))
+    ROUTES["registered_opj"] = next(
+        h for h in hrefs if re.fullmatch(r"/operations/journal/\d+/", h)
+    )
     page.goto(BASE + ROUTES["registered_opj"])
-    ROUTES["draft_workspace"] = need(page, 'a[href*="/shift/"]').evaluate("n=>new URL(n.href).pathname")
+    ROUTES["draft_workspace"] = need(page, 'a[href*="/shift/"]').evaluate(
+        "n=>new URL(n.href).pathname"
+    )
+
+
+def responsive_transition_state(page, route):
+    return page.evaluate(
+        """route => {
+            const visible = node => {
+                if (!node) return false;
+                const style = getComputedStyle(node);
+                const rect = node.getBoundingClientRect();
+                return style.display !== "none"
+                    && style.visibility !== "hidden"
+                    && rect.width > 0
+                    && rect.height > 0;
+            };
+            const display = selector => {
+                const node = document.querySelector(selector);
+                return node ? getComputedStyle(node).display : null;
+            };
+            const exists = selector => Boolean(document.querySelector(selector));
+            const columns = selector => {
+                const node = document.querySelector(selector);
+                if (!node) return null;
+                return getComputedStyle(node).gridTemplateColumns;
+            };
+            const overflow = selector => {
+                const node = document.querySelector(selector);
+                if (!node || !visible(node)) return null;
+                return {
+                    clientWidth: node.clientWidth,
+                    scrollWidth: node.scrollWidth,
+                };
+            };
+            const surfaceSelector = {
+                personnel: ".personnel-directory-page",
+                authorities: ".authority-matrix-page",
+                imports: ".import-attempts-panel",
+                workplace_docs: ".workplace-document-registry",
+                defect_registry: ".defect-da-work-table",
+                opj_registry: ".journal-registry-card",
+                registered_opj: ".approved-journal-shell",
+                draft_workspace: ".opj-workspace",
+            }[route];
+            const surface = document.querySelector(surfaceSelector) || document.body;
+            const humanWrapViolations = [...surface.querySelectorAll(
+                "p, a, strong, span, small, td, th, dt, dd, label, button"
+            )]
+                .filter(visible)
+                .filter(node => !node.closest(
+                    "code, pre, .ux-technical, .technical-only, [data-technical-only]"
+                ))
+                .filter(node => /[А-Яа-яЁёA-Za-z]{6}/u.test(
+                    (node.innerText || node.textContent || "").trim()
+                ))
+                .map(node => ({
+                    node,
+                    style: getComputedStyle(node),
+                }))
+                .filter(item => item.style.overflowWrap === "anywhere"
+                    || item.style.wordBreak === "break-all")
+                .slice(0, 12)
+                .map(item => ({
+                    tag: item.node.tagName.toLowerCase(),
+                    className: String(item.node.className || ""),
+                    text: (item.node.innerText || item.node.textContent || "")
+                        .trim().slice(0, 100),
+                    overflowWrap: item.style.overflowWrap,
+                    wordBreak: item.style.wordBreak,
+                }));
+
+            return {
+                width: innerWidth,
+                documentWidth: {
+                    innerWidth,
+                    scrollWidth: document.documentElement.scrollWidth,
+                },
+                humanWrapViolations,
+                personnelWorkspaceColumns: columns(".personnel-directory-workspace"),
+                personnelRecentColumns: columns(".personnel-recent-grid"),
+                authorityNativeMatrixExists: exists(".authority-matrix-panel .authority-matrix"),
+                authorityMobileMatrixExists: exists(".authority-mobile-matrix"),
+                authorityDesktopMatrix: display(".authority-matrix-panel .authority-matrix-scroll"),
+                authorityCompactMatrix: display(".authority-mobile-matrix"),
+                authorityMatrixOverflow: overflow(".authority-matrix-panel .authority-matrix-scroll"),
+                defectDesktopHead: display(".defect-da-work-head"),
+                workplaceDesktop: display(".workplace-document-desktop-table"),
+                workplaceCompact: display(".workplace-document-mobile-list"),
+                importsDesktop: display(".import-attempt-desktop-table"),
+                importsCompact: display(".import-attempt-mobile-list"),
+                opjRegistryHead: display(".journal-registry-table > thead"),
+                opjToolbarOverflow: overflow(".opj-toolbar"),
+                opjDraftColumns: columns(".draft-ledger-form"),
+                opjCleanColumns: columns(".approved-journal-row"),
+                opjEmptyVisasVisible: [...document.querySelectorAll(
+                    ".draft-ledger-visas:not(:has([data-opj-marker])),"
+                    + ".approved-journal-visas:not(:has([data-opj-marker]))"
+                )].some(visible),
+                opjMarkerVisasVisible: [...document.querySelectorAll(
+                    ".draft-ledger-visas:has([data-opj-marker]),"
+                    + ".approved-journal-visas:has([data-opj-marker])"
+                )].some(visible),
+                opjFirstRowTop: (() => {
+                    const node = document.querySelector(
+                        ".draft-ledger-row, .opj-editor-container .draft-ledger-form, "
+                        + ".draft-page-body"
+                    );
+                    return node ? Math.round(node.getBoundingClientRect().top) : null;
+                })(),
+                opjToolbarHeight: (() => {
+                    const node = document.querySelector(".opj-toolbar");
+                    return node ? Math.round(node.getBoundingClientRect().height) : null;
+                })(),
+                opjCleanDuplicateDateVisible: [...document.querySelectorAll(
+                    ".opj-clean-shift-group:has(.opj-clean-shift-date) "
+                    + ".approved-journal-row .opj-entry-date-placeholder"
+                )].some(visible),
+            };
+        }""",
+        route,
+    )
+
+
+def assert_responsive_transition(state, route, mode):
+    width = state["width"]
+    if state["documentWidth"]["scrollWidth"] > width + 2:
+        raise AssertionError(
+            f"responsive transition document overflow {route} {mode} {width}px: "
+            f"{state['documentWidth']}"
+        )
+    if state["humanWrapViolations"]:
+        raise AssertionError(
+            f"responsive transition human-word shredding {route} {mode} {width}px: "
+            f"{state['humanWrapViolations']}"
+        )
+    if width <= 1120 and route == "personnel":
+        if not state["personnelWorkspaceColumns"] or " " in state["personnelWorkspaceColumns"]:
+            raise AssertionError(f"personnel workspace not single-column at {width}px: {state}")
+    if width <= 980 and route == "personnel":
+        if not state["personnelRecentColumns"] or " " in state["personnelRecentColumns"]:
+            raise AssertionError(f"personnel nested panels not single-column at {width}px: {state}")
+    if route == "authorities" and 768 <= width <= 980:
+        if not state["authorityNativeMatrixExists"]:
+            raise AssertionError(f"rights native matrix missing at compact {width}px: {state}")
+        if state["authorityDesktopMatrix"] == "none":
+            raise AssertionError(f"rights native matrix hidden at compact {width}px: {state}")
+        if state["authorityMobileMatrixExists"] and state["authorityCompactMatrix"] != "none":
+            raise AssertionError(f"rights phone projection visible at compact {width}px: {state}")
+        viewport = state["authorityMatrixOverflow"]
+        if not viewport or viewport["scrollWidth"] <= viewport["clientWidth"]:
+            raise AssertionError(
+                f"rights compact matrix lacks local horizontal viewport at {width}px: {state}"
+            )
+    if route == "authorities" and width < 768:
+        if (
+            not state["authorityNativeMatrixExists"]
+            or state["authorityDesktopMatrix"] != "none"
+        ):
+            raise AssertionError(
+                f"rights native source not correctly hidden on phone {width}px: {state}"
+            )
+        if (
+            not state["authorityMobileMatrixExists"]
+            or state["authorityCompactMatrix"] == "none"
+        ):
+            raise AssertionError(f"rights phone projection missing at {width}px: {state}")
+    if width <= 980 and route == "defect_registry" and state["defectDesktopHead"] != "none":
+        raise AssertionError(f"DEFECT worklist stayed desktop at {width}px: {state}")
+    if width <= 980 and route == "workplace_docs":
+        if state["workplaceDesktop"] != "none" or state["workplaceCompact"] == "none":
+            raise AssertionError(f"workplace documents compact composition missing at {width}px: {state}")
+    if width <= 980 and route == "imports":
+        if state["importsDesktop"] != "none" or state["importsCompact"] == "none":
+            raise AssertionError(f"imports compact composition missing at {width}px: {state}")
+    if width <= 980 and route == "opj_registry" and state["opjRegistryHead"] != "none":
+        raise AssertionError(f"OPJ registry stayed desktop at {width}px: {state}")
+    toolbar = state["opjToolbarOverflow"]
+    if width <= 980 and route == "draft_workspace" and toolbar:
+        if toolbar["scrollWidth"] > toolbar["clientWidth"] + 2:
+            raise AssertionError(f"OPJ toolbar overflow at {width}px: {state}")
+    if route == "draft_workspace" and 768 <= width <= 980:
+        if not state["opjDraftColumns"] or " " not in state["opjDraftColumns"].strip():
+            raise AssertionError(f"OPJ compact ledger did not keep time rail at {width}px: {state}")
+        if state["opjEmptyVisasVisible"]:
+            raise AssertionError(f"OPJ empty visas occupy compact space at {width}px: {state}")
+        if state["opjToolbarHeight"] and state["opjToolbarHeight"] > 220:
+            raise AssertionError(
+                "OPJ compact toolbar height too tall "
+                f"({state['opjToolbarHeight']}px) at {width}px: {state}"
+            )
+        if state["opjFirstRowTop"] and state["opjFirstRowTop"] > 600:
+            raise AssertionError(
+                "OPJ compact working rows begin below first viewport "
+                f"({state['opjFirstRowTop']}px) at {width}px: {state}"
+            )
+    if route == "registered_opj" and 768 <= width <= 980:
+        if not state["opjCleanColumns"] or " " not in state["opjCleanColumns"].strip():
+            raise AssertionError(f"registered OPJ compact ledger missing at {width}px: {state}")
+        if state["opjEmptyVisasVisible"]:
+            raise AssertionError(f"registered OPJ empty visas occupy compact space at {width}px: {state}")
+        if state["opjCleanDuplicateDateVisible"]:
+            raise AssertionError(f"registered OPJ compact duplicates group date at {width}px: {state}")
+    if route in {"draft_workspace", "registered_opj"} and width < 768:
+        if state["opjEmptyVisasVisible"]:
+            raise AssertionError(f"OPJ empty visas occupy phone space at {width}px: {state}")
+        if route == "registered_opj" and state["opjCleanDuplicateDateVisible"]:
+            raise AssertionError(f"registered OPJ phone duplicates group date at {width}px: {state}")
+
+
+def capture_responsive_transitions(page, shots, report, runtime_errors):
+    sequence = TRANSITION_WIDTHS + tuple(reversed(TRANSITION_WIDTHS[:-1]))
+    for route in TRANSITION_ROUTES:
+        path = ROUTES[route]
+        for mode in THEMES:
+            page.set_viewport_size({"width": TRANSITION_WIDTHS[0], "height": 900})
+            clear_runtime_errors(runtime_errors)
+            page.goto(BASE + path)
+            theme(page, mode)
+            route_states = []
+            for width in sequence:
+                height = 844 if width <= 768 else 900
+                page.set_viewport_size({"width": width, "height": height})
+                page.wait_for_timeout(100)
+                state = responsive_transition_state(page, route)
+                assert_responsive_transition(state, route, mode)
+                route_states.append(state)
+                if width in TRANSITION_SCREENSHOTS:
+                    direction = "down" if len(route_states) <= len(TRANSITION_WIDTHS) else "up"
+                    page.screenshot(
+                        path=shots / f"transition__{route}__{mode}__{width}px__{direction}.png",
+                        full_page=False,
+                    )
+            key = f"{route}__{mode}__1440-to-390-to-1440"
+            report["responsive_transitions"][key] = route_states
+            assert_no_runtime_errors(runtime_errors, key)
+
+
+def authority_projection_state(page):
+    return page.evaluate(
+        """() => {
+            const display = selector => {
+                const node = document.querySelector(selector);
+                return node ? getComputedStyle(node).display : null;
+            };
+            return {
+                nativeExists: Boolean(document.querySelector('.authority-matrix')),
+                nativeDisplay: display('.authority-matrix-scroll'),
+                mobileDisplay: display('.authority-mobile-matrix'),
+                visibleEmployeeCards: [...document.querySelectorAll('.authority-mobile-employee')]
+                    .filter(node => getComputedStyle(node).display !== 'none' && !node.hidden).length,
+                treeSummaryVisible: (() => {
+                    const node = document.querySelector('.authority-mobile-tree-disclosure > summary');
+                    return Boolean(node && !node.hidden && getComputedStyle(node).display !== 'none');
+                })(),
+                legendSummaryVisible: (() => {
+                    const node = document.querySelector('.authority-mobile-legend-disclosure > summary');
+                    return Boolean(node && !node.hidden && getComputedStyle(node).display !== 'none');
+                })(),
+            };
+        }"""
+    )
+
+
+def capture_v14_visual_evidence(page, shots, report, runtime_errors):
+    evidence = {}
+
+    def open_at(path, width, height=900):
+        page.set_viewport_size({"width": width, "height": height})
+        clear_runtime_errors(runtime_errors)
+        page.goto(BASE + path)
+        theme(page, "light")
+        page.wait_for_timeout(180)
+        if document_width(page)["scrollWidth"] > width + 2:
+            raise AssertionError(f"v14 evidence document overflow {width}px at {page.url}")
+
+    # Rights direct-load vs resize history must preserve the same visible composition.
+    open_at(ROUTES["authorities"], 880)
+    direct_880 = authority_projection_state(page)
+    screenshots(page, shots, "v14__rights_matrix__880px")
+    need(page, ".authority-mobile-tree-disclosure > summary")
+    need(page, ".authority-mobile-legend-disclosure > summary")
+    evidence["rights_compact_controls_880"] = {
+        "tree_open": page.locator(".authority-mobile-tree-disclosure").evaluate("n=>n.open"),
+        "legend_open": page.locator(".authority-mobile-legend-disclosure").evaluate("n=>n.open"),
+    }
+    if evidence["rights_compact_controls_880"] != {
+        "tree_open": False,
+        "legend_open": False,
+    }:
+        raise AssertionError(f"compact Rights disclosures must start closed: {evidence}")
+    page.screenshot(
+        path=shots / "v14__rights_tree_legend_collapsed__880px.png",
+        full_page=False,
+    )
+
+    page.set_viewport_size({"width": 440, "height": 844})
+    page.wait_for_timeout(160)
+    phone_state = authority_projection_state(page)
+    if phone_state["nativeDisplay"] != "none" or phone_state["mobileDisplay"] in {None, "none"}:
+        raise AssertionError(f"Rights phone projection failed before resize-up: {phone_state}")
+    page.set_viewport_size({"width": 880, "height": 900})
+    page.wait_for_timeout(160)
+    phone_to_880 = authority_projection_state(page)
+
+    open_at(ROUTES["authorities"], 1440)
+    page.set_viewport_size({"width": 880, "height": 900})
+    page.wait_for_timeout(160)
+    desktop_to_880 = authority_projection_state(page)
+
+    projection_keys = (
+        "nativeExists",
+        "nativeDisplay",
+        "mobileDisplay",
+        "treeSummaryVisible",
+        "legendSummaryVisible",
+    )
+
+    def comparable(state):
+        return {key: state[key] for key in projection_keys}
+
+    if (
+        comparable(direct_880) != comparable(phone_to_880)
+        or comparable(direct_880) != comparable(desktop_to_880)
+    ):
+        raise AssertionError(
+            "Rights compact composition depends on viewport history: "
+            f"direct={direct_880} phone_up={phone_to_880} desktop_down={desktop_to_880}"
+        )
+    evidence["rights_projection_history"] = {
+        "direct_880": direct_880,
+        "phone_to_880": phone_to_880,
+        "desktop_to_880": desktop_to_880,
+    }
+
+    # Required Rights evidence widths and holder density.
+    for width in (880, 768, 656, 440):
+        open_at(ROUTES["authorities"], width, 844 if width <= 768 else 900)
+        state = responsive_transition_state(page, "authorities")
+        assert_responsive_transition(state, "authorities", "light")
+        screenshots(page, shots, f"v14__rights_matrix__{width}px")
+        if width == 880:
+            need(page, '[data-authority-view="holders"]').click()
+            page.wait_for_timeout(120)
+            visible_holders = page.locator('[data-holder-row]:visible').count()
+            if visible_holders < 2:
+                raise AssertionError(f"Rights holders are not dense at 880px: {visible_holders}")
+            holder_wrap = need(page, ".authority-table-wrap:has(.authority-holders-table)")
+            holder_overflow = holder_wrap.evaluate(
+                "n=>({clientWidth:n.clientWidth,scrollWidth:n.scrollWidth})"
+            )
+            if holder_overflow["scrollWidth"] <= holder_overflow["clientWidth"]:
+                raise AssertionError(
+                    f"Rights holders lack local horizontal viewport: {holder_overflow}"
+                )
+            screenshots(page, shots, "v14__rights_holders__880px")
+
+            # Prove global summary resets stale local filters instead of inheriting no-result state.
+            search = need(page, "[data-authority-search]")
+            search.fill("__repair_v14_no_match__")
+            page.wait_for_timeout(80)
+            if not page.locator("[data-authority-no-results]").evaluate(
+                "n=>n.classList.contains('is-visible')"
+            ):
+                raise AssertionError("restrictive Rights filter did not reach no-results state")
+            page.locator(
+                '[data-summary-view="holders"]:not([data-summary-condition])'
+            ).first.click()
+            page.wait_for_timeout(100)
+            if search.input_value() or page.locator('[data-holder-row]:visible').count() == 0:
+                raise AssertionError("global Rights summary retained stale local filters")
+            condition_summary = page.locator('[data-summary-condition="true"]').first
+            condition_summary.click()
+            page.wait_for_timeout(100)
+            if search.input_value() or page.locator('[data-holder-row]:visible').count() == 0:
+                raise AssertionError("conditional Rights summary did not reset stale filters")
+            evidence["rights_filter_reset"] = "pass"
+
+    # Required OPJ working evidence and row-content samples.
+    for width in (880, 768, 656, 440):
+        open_at(ROUTES["draft_workspace"], width, 844 if width <= 768 else 900)
+        state = responsive_transition_state(page, "draft_workspace")
+        assert_responsive_transition(state, "draft_workspace", "light")
+        screenshots(page, shots, f"v14__opj_working__{width}px")
+        if width == 880:
+            empty_row = page.locator(".draft-ledger-row:not(:has([data-opj-marker]))").first
+            marker_row = page.locator(".draft-ledger-row:has([data-opj-marker])").first
+            if not empty_row.count() or not marker_row.count():
+                raise AssertionError("OPJ evidence requires both empty-visas and marker rows")
+            empty_row.screenshot(path=shots / "v14__opj_row_no_visas__880px.png")
+            marker_row.screenshot(path=shots / "v14__opj_row_with_marker__880px.png")
+            long_index = page.locator(".draft-ledger-row").evaluate_all(
+                "rows=>rows.findIndex(row=>(row.querySelector('.draft-ledger-content')?.innerText||'').trim().length>=100)"
+            )
+            if long_index < 0:
+                raise AssertionError("OPJ evidence requires one long-content row")
+            page.locator(".draft-ledger-row").nth(long_index).screenshot(
+                path=shots / "v14__opj_row_long_content__880px.png"
+            )
+            evidence["opj_working_samples"] = {
+                "empty_visas": True,
+                "marker_row": True,
+                "long_content": True,
+            }
+
+    for width in (880, 656):
+        open_at(ROUTES["registered_opj"], width, 844 if width <= 768 else 900)
+        state = responsive_transition_state(page, "registered_opj")
+        assert_responsive_transition(state, "registered_opj", "light")
+        screenshots(page, shots, f"v14__opj_registered__{width}px")
+
+    report["v14_visual_evidence"] = evidence
+    assert_no_runtime_errors(runtime_errors, "Repair v14 focused visual evidence")
 
 
 def main():
     shots = OUT / "screenshots"
     shots.mkdir(parents=True, exist_ok=True)
-    report = {"baseline": {}, "open_states": {}}
+    report = {
+        "meta": {
+            "base_url": BASE,
+            "themes": THEMES,
+            "desktop_viewports": DESKTOP_VIEWPORTS,
+            "mobile_viewports": MOBILE_VIEWPORTS,
+            "viewports": VIEWPORTS,
+        },
+        "baseline": {},
+        "mobile_focus": {},
+        "open_states": {},
+        "responsive_transitions": {},
+        "v14_visual_evidence": {},
+    }
+    password = os.getenv("EOD_BROWSER_PASSWORD", "").strip()
+    if not password:
+        raise AssertionError("EOD_BROWSER_PASSWORD must be an ephemeral test credential")
+
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
-        page = browser.new_page(viewport={"width": 1440, "height": 900})
-        page.goto(BASE + "/accounts/login/")
-        need(page, "input[name=username]").fill(os.getenv("EOD_BROWSER_USERNAME", "operator.demo"))
-        need(page, "input[name=password]").fill(os.getenv("EOD_BROWSER_PASSWORD", "EodDemo!2026"))
+        page = browser.new_page(
+            viewport={"width": DESKTOP_VIEWPORTS[0][0], "height": DESKTOP_VIEWPORTS[0][1]}
+        )
+        runtime_errors = bind_runtime_errors(page)
+
+        for route, path in PUBLIC_ROUTES.items():
+            for mode in THEMES:
+                for width, height in VIEWPORTS:
+                    capture_surface(
+                        page,
+                        shots,
+                        report,
+                        runtime_errors,
+                        route,
+                        path,
+                        mode,
+                        width,
+                        height,
+                    )
+
+        capture_mobile_login_focus(browser, shots, report)
+
+        page.set_viewport_size(
+            {"width": DESKTOP_VIEWPORTS[0][0], "height": DESKTOP_VIEWPORTS[0][1]}
+        )
+        clear_runtime_errors(runtime_errors)
+        page.goto(BASE + PUBLIC_ROUTES["login"])
+        need(page, "input[name=username]").fill(
+            os.getenv("EOD_BROWSER_USERNAME", "operator.demo")
+        )
+        need(page, "input[name=password]").fill(password)
         need(page, "button[type=submit]").click()
+        need(page, "[data-direction-a-shell]")
+        assert_no_runtime_errors(runtime_errors, "authenticated login")
+
+        clear_runtime_errors(runtime_errors)
         discover(page)
+        assert_no_runtime_errors(runtime_errors, "OPJ route discovery")
+        report["meta"]["authenticated_routes"] = dict(ROUTES)
+
+        capture_responsive_transitions(page, shots, report, runtime_errors)
+        capture_v14_visual_evidence(page, shots, report, runtime_errors)
+
         for route, path in ROUTES.items():
             for mode in THEMES:
                 for width, height in VIEWPORTS:
-                    page.set_viewport_size({"width": width, "height": height})
-                    page.goto(BASE + path)
-                    theme(page, mode)
-                    node = need(page, SELECTORS[route])
-                    actual = style(node)
-                    expected = resolved_background(page, TOKENS[route])
-                    key = f"{route}__{mode}__{width}x{height}"
-                    report["baseline"][key] = {**actual, "expected_background": expected}
-                    page.screenshot(path=shots / f"{key}.png", full_page=True)
-                    if (
-                        actual["background"].replace(" ", "") != expected.replace(" ", "")
-                        or mode not in style(page.locator("html"))["scheme"].split()
-                    ):
-                        raise AssertionError(f"theme mismatch {route} {mode}: {actual} {expected}")
-        if len(report["baseline"]) != 42:
-            raise AssertionError("must contain exactly 42 files")
+                    capture_surface(
+                        page,
+                        shots,
+                        report,
+                        runtime_errors,
+                        route,
+                        path,
+                        mode,
+                        width,
+                        height,
+                    )
+
+        expected_baselines = (
+            len(PUBLIC_ROUTES) + len(ROUTES)
+        ) * len(THEMES) * len(VIEWPORTS)
+        if len(report["baseline"]) != expected_baselines:
+            raise AssertionError(
+                f"must contain exactly {expected_baselines} baseline states, "
+                f"got {len(report['baseline'])}"
+            )
+        report["meta"]["baseline_state_count"] = expected_baselines
+
+        clear_runtime_errors(runtime_errors)
+        page.set_viewport_size({"width": 390, "height": 844})
+        page.goto(BASE + ROUTES["home"])
+        theme(page, "dark")
+        toggle = need(page, "[data-direction-a-toggle]")
+        toggle.click()
+        page.wait_for_function("()=>document.body.classList.contains('da-nav-open')")
+        sidebar = need(page, "[data-direction-a-sidebar]")
+        if toggle.get_attribute("aria-expanded") != "true":
+            raise AssertionError("mobile shell toggle did not publish expanded state")
+        report["open_states"]["mobile_navigation"] = style(sidebar)
+        screenshots(page, shots, "transient__mobile_navigation__dark__390x844")
+        page.keyboard.press("Escape")
+        page.wait_for_function("()=>!document.body.classList.contains('da-nav-open')")
+
         page.set_viewport_size({"width": 1440, "height": 900})
+        page.goto(BASE + ROUTES["documents"])
+        theme(page, "dark")
+        create_path = need(page, 'a[href*="/documents/"]').evaluate(
+            """node => {
+                const links = Array.from(document.querySelectorAll('a[href]'));
+                const found = links.find(
+                    link => link.textContent.trim() === 'Новый черновик'
+                );
+                return found ? new URL(found.href).pathname : '';
+            }"""
+        )
+        if not create_path:
+            raise AssertionError("missing document create route")
+        page.goto(BASE + create_path)
+        theme(page, "dark")
+        need(page, "[data-equipment-selector-open]").click()
+        equipment_dialog = need(page, ".equipment-selector-dialog")
+        if not equipment_dialog.evaluate("dialog => dialog.open"):
+            raise AssertionError("equipment selector dialog did not open")
+        report["open_states"]["document_equipment_dialog"] = style(equipment_dialog)
+        screenshots(
+            page,
+            shots,
+            "transient__document_equipment_dialog__dark__1440x900",
+        )
+        page.keyboard.press("Escape")
+
+        page.goto(BASE + ROUTES["dispatching"])
+        theme(page, "dark")
+        dispatching_filter = need(page, ".filter-disclosure")
+        need(page, ".filter-disclosure > summary").click()
+        if not dispatching_filter.evaluate("details => details.open"):
+            raise AssertionError("dispatching filter disclosure did not open")
+        report["open_states"]["dispatching_filters"] = style(dispatching_filter)
+        screenshots(page, shots, "transient__dispatching_filters__dark__1440x900")
+
         page.goto(BASE + ROUTES["defect_registry"])
         theme(page, "dark")
         need(page, ".defect-filter-drawer > summary").click()
-        report["open_states"]["defect_filters"] = style(need(page, ".defect-filter-grid"))
-        page.goto(BASE + "/operations/defects/new/")
+        report["open_states"]["defect_filters"] = style(
+            need(page, ".defect-filter-grid")
+        )
+        screenshots(page, shots, "transient__defect_filters__dark__1440x900")
+
+        page.goto(BASE + ROUTES["defect_registration"])
         theme(page, "dark")
         need(page, ".defect-picker-trigger").click()
         picker = need(page, ".defect-picker-panel")
         report["open_states"]["defect_datetime"] = style(picker)
+        screenshots(page, shots, "transient__defect_datetime__dark__1440x900")
         page.keyboard.press("Escape")
         picker.wait_for(state="hidden")
+
         for kind in ("equipment", "personnel", "workplace"):
             field = need(page, f".defect-tree-selector--{kind} .defect-tree-input")
             field.click()
-            report["open_states"][kind] = style(
+            report["open_states"][f"defect_{kind}"] = style(
                 need(page, f".defect-tree-selector--{kind} .defect-tree-panel")
             )
+            screenshots(page, shots, f"transient__defect_{kind}__dark__1440x900")
             field.press("Escape")
+
+        page.goto(BASE + ROUTES["defect_registry"])
+        theme(page, "dark")
+        defect_rows = page.locator("[data-defect-row-link]")
+        report["meta"]["defect_row_present"] = bool(defect_rows.count())
+        if defect_rows.count():
+            defect_row = defect_rows.first
+            defect_row.hover()
+            report["open_states"]["defect_hover"] = style(defect_row)
+            screenshots(page, shots, "transient__defect_hover__dark__1440x900")
+
         page.goto(BASE + ROUTES["registered_opj"])
         theme(page, "dark")
-        need(page, ".journal-settings-trigger").click()
-        report["open_states"]["opj_settings"] = style(need(page, ".journal-settings-dialog"))
+        need(page, "[data-open-journal-settings]").click()
+        report["open_states"]["opj_settings"] = style(
+            need(page, ".journal-settings-dialog")
+        )
+        screenshots(page, shots, "transient__opj_settings__dark__1440x900")
+
         page.goto(BASE + ROUTES["draft_workspace"])
         theme(page, "dark")
         need(page, "[data-open-view-drawer]").click()
         report["open_states"]["opj_drawer"] = style(need(page, "[data-view-drawer]"))
+        screenshots(page, shots, "transient__opj_drawer__dark__1440x900")
         need(page, "[data-close-view-drawer]").click()
-        activate_editor_caret(page)
-        need(page, "[data-reference-trigger]:not([disabled])").click()
-        report["open_states"]["opj_reference"] = style(need(page, "[data-reference-picker]"))
+        activate_editor_reference_selection(page)
+        reference_trigger = need(
+            page,
+            "[data-reference-trigger]:not([disabled])",
+        )
+        reference_trigger.click()
+        need(page, "[data-reference-picker]")
+        if reference_trigger.get_attribute("aria-expanded") != "true":
+            raise AssertionError(
+                "OPJ reference picker did not publish expanded state"
+            )
+        report["open_states"]["opj_reference"] = style(
+            need(page, "[data-reference-picker]")
+        )
+        screenshots(page, shots, "transient__opj_reference__dark__1440x900")
+
         page.goto(BASE + ROUTES["account_settings"])
         theme(page, "dark")
         select = need(page, '.interface-settings-form select[name="theme"]')
         select.focus()
         report["open_states"]["account_theme"] = style(select)
+        screenshots(page, shots, "transient__account_focus__dark__1440x900")
+        assert_no_runtime_errors(runtime_errors, "transient states")
+
+        clear_runtime_errors(runtime_errors)
         page.goto(BASE + ROUTES["registered_opj"])
         theme(page, "dark")
         page.emulate_media(media="print")
         printed = style(page.locator("html"))
-        report["print"] = printed
+        report["print"] = {
+            **printed,
+            **runtime_error_snapshot(runtime_errors),
+        }
         if "light" not in printed["scheme"]:
             raise AssertionError("print isolation failed")
+        screenshots(page, shots, "registered_opj__print__light__1440x900")
+        assert_no_runtime_errors(runtime_errors, "print isolation")
+
         browser.close()
+
     (OUT / "computed-styles.json").write_text(
-        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
     )
 
 

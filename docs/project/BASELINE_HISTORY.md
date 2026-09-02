@@ -35,6 +35,18 @@ Baseline фиксируется после применимых technical gates,
 | 2026-08-10 | `3e43422ba6000c2aa5f4bdc6abe0f95c7774454f` | MODULE-ACTIVATION-CONTRACT-001 merge | accepted module-activation architecture baseline |
 | 2026-08-10 | `860e189bbb5bc05a6da4a7680acd5f719b4874af` | BACKUP-RESTORE-DRILL-001 merge | accepted verified PostgreSQL restore / DR certificate baseline |
 | 2026-08-10 | `862b682ba19b6747ea6f4d41fd31322808140b82` | SECURITY-BASELINE-001 merge | accepted threat model / fail-closed production-security baseline; SAFE-CONTINUATION 8/8 |
+| 2026-08-10 | `1befcb73a8a6f7cc03c2e18d292cbb2c85ef6594` | MODULE-REGISTRY-001 merge | accepted runtime module registry/control-plane baseline |
+
+## Reconciliation note — 2026-08-10 / Module Registry
+
+`MODULE-REGISTRY-001` принят по exact head
+`f00d99b6434477c7bcefceff5253d6ccbe4a5fca` и merged в
+`1befcb73a8a6f7cc03c2e18d292cbb2c85ef6594`; issue #67 закрыт как `COMPLETED`,
+owner acceptance — `PASSED`. Canonical planning state переведён в `ACCEPTED`
+согласованно со стартом `UX-PLATFORM-FOUNDATION-001` в issue #69 / Draft PR #70.
+Accepted registry включает deterministic manifests, scoped activation lifecycle,
+central access semantics и history-preserving deactivation/reactivation. Live
+Preview/VPS остался untouched.
 
 ## Reconciliation note — 2026-08-10 / Backup Restore Drill
 
@@ -107,10 +119,12 @@ Canonical current state не выводится из последней стро
 `SECURITY-BASELINE-001` принят по exact head `b59a9485187dbd588c7b9f35bfd634c89344ea9d` и merged в
 `862b682ba19b6747ea6f4d41fd31322808140b82`. `SAFE-CONTINUATION = 8/8 ACCEPTED`.
 
-Владелец отдельно утвердил дальнейший маршрут:
+После принятия и merge `MODULE-REGISTRY-001` в
+`1befcb73a8a6f7cc03c2e18d292cbb2c85ef6594` владелец сохраняет дальнейший
+маршрут:
 
-`SAFE closure -> MODULE-REGISTRY-001 -> UX-PLATFORM-FOUNDATION-001 + PAGE-TEMPLATE-LIBRARY-001 with controlled existing-UI migration -> new product/module development -> PILOT-READY hardening in risk-based portions`.
+`SAFE closure -> MODULE-REGISTRY-001 -> UX-PLATFORM-FOUNDATION-001 -> PAGE-TEMPLATE-LIBRARY-001 -> controlled existing-UI migration -> new product/module development -> PILOT-READY hardening in risk-based portions`.
 
 Это решение прекращает автоматическое наращивание hardening после SAFE. Текущий
-активный work item — `MODULE-REGISTRY-001`; предметная очередь не стартует до
-завершения registry и утверждённого UX foundation/page-template этапа.
+активный work item — `UX-PLATFORM-FOUNDATION-001`; предметная очередь не
+стартует до завершения UX platform и следующего page-template этапа.

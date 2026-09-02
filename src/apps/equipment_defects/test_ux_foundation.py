@@ -17,6 +17,7 @@ class EquipmentDefectUXFoundationTests(SimpleTestCase):
         self.static_root = (
             Path(settings.BASE_DIR) / "src" / "static" / "equipment_defects"
         )
+        self.root_base_path = Path(settings.BASE_DIR) / "src" / "templates" / "base.html"
         self.registry_path = self.template_root / "registry.html"
         self.registry_header_path = self.template_root / "_registry_repair2_header.html"
         self.registry_worklist_path = self.template_root / "_registry_repair2_worklist.html"
@@ -99,6 +100,7 @@ class EquipmentDefectUXFoundationTests(SimpleTestCase):
         sidebar = self.sidebar_path.read_text(encoding="utf-8")
         topbar = self.topbar_path.read_text(encoding="utf-8")
         shared_base = self.shared_base_path.read_text(encoding="utf-8")
+        root_base = self.root_base_path.read_text(encoding="utf-8")
         for marker in (
             'class="da-sidebar"',
             "data-direction-a-sidebar",
@@ -126,11 +128,13 @@ class EquipmentDefectUXFoundationTests(SimpleTestCase):
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, topbar)
-        self.assertIn("data-direction-a-shell", shared_base)
-        self.assertIn("shared/direction_a/_sidebar.html", shared_base)
-        self.assertIn("shared/direction_a/_topbar.html", shared_base)
-        shared_shell = "\n".join((shared_base, sidebar, topbar))
-        self.assertNotIn("defect-da-", shared_shell)
+        self.assertIn("data-direction-a-shell", root_base)
+        self.assertIn("shared/direction_a/_sidebar.html", root_base)
+        self.assertIn("shared/direction_a/_topbar.html", root_base)
+        self.assertIn('{% extends "base.html" %}', shared_base)
+        self.assertNotIn("data-direction-a-shell", shared_base)
+        shared_shell = "\n".join((root_base, shared_base, sidebar, topbar))
+        self.assertNotIn("defect-da-shell", shared_shell)
         self.assertNotIn("data-defect-shell-", shared_shell)
 
     def test_registry_uses_dense_work_list_and_retains_exact_journal_view(self) -> None:
@@ -248,8 +252,9 @@ class EquipmentDefectUXFoundationTests(SimpleTestCase):
         }
         for name, template in templates.items():
             with self.subTest(template=name):
-                self.assertIn("equipment_defects/_direction_a_sidebar.html", template)
-                self.assertIn("equipment_defects/_direction_a_topbar.html", template)
+                self.assertIn('{% extends "shared/direction_a/base.html" %}', template)
+                self.assertNotIn("equipment_defects/_direction_a_sidebar.html", template)
+                self.assertNotIn("equipment_defects/_direction_a_topbar.html", template)
                 self.assertIn("equipment_defects/ux_foundation_repair2.css", template)
                 self.assertIn("equipment_defects/ux_foundation_repair2.js", template)
                 self.assertIn("equipment_defects/defects.js", template)

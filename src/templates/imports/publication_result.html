@@ -3,13 +3,13 @@
 {% block title %}Итог публикации · {{ batch.original_filename }} · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading">
+<section class="da-page-header">
     <div>
-        <div class="eyebrow">НЕИЗМЕНЯЕМЫЙ ИТОГ ПУБЛИКАЦИИ</div>
+        <span class="ux-kicker">Неизменяемый итог публикации</span>
         <h1>{{ batch.original_filename }}</h1>
         <p>{{ batch.get_target_registry_display }} · {{ publication.created_at|date:"d.m.Y H:i:s" }}</p>
     </div>
-    <a href="{% url 'imports:detail' batch.public_id %}">К карточке загрузки</a>
+    <a class="da-button is-tertiary" href="{% url 'imports:detail' batch.public_id %}">К карточке загрузки</a>
 </section>
 
 <section class="notice-card success-notice">
@@ -20,26 +20,26 @@
     </p>
 </section>
 
-<section class="summary-grid">
-    <article class="metric">
+<section class="ux-stat-grid">
+    <article class="ux-stat">
         <span>Создано записей</span><strong>{{ publication.result_summary.accepted }}</strong>
     </article>
-    <article class="metric">
+    <article class="ux-stat">
         <span>Отклонено и не записано</span><strong>{{ publication.result_summary.rejected }}</strong>
     </article>
-    <article class="metric">
+    <article class="ux-stat">
         <span>Редакция сопоставления</span><strong>{{ publication.mapping_revision }}</strong>
     </article>
 </section>
 
-<section class="profile-card">
+<section class="da-card">
     <div class="section-heading">
         <div>
-            <div class="eyebrow">РЕКВИЗИТЫ</div>
+            <span class="ux-kicker">Реквизиты</span>
             <h2>Снимок публикации</h2>
         </div>
     </div>
-    <dl class="detail-list">
+    <dl class="ux-key-value detail-list">
         <dt>Опубликовал</dt>
         <dd>{{ publication.actor.full_name }} · {{ publication.actor.position.name }}</dd>
         <dt>Назначение</dt>
@@ -57,16 +57,16 @@
     </dl>
 </section>
 
-<section class="profile-card">
+<section class="da-card">
     <div class="section-heading">
         <div>
-            <div class="eyebrow">РЕЗУЛЬТАТЫ СТРОК</div>
+            <span class="ux-kicker">Результаты строк</span>
             <h2>Созданные записи</h2>
         </div>
         <span class="count-badge">{{ publication.result_summary.accepted }}</span>
     </div>
-    <div class="table-wrap">
-        <table>
+    <div class="da-table-wrap">
+        <table class="da-table">
             <thead>
                 <tr>
                     <th>Строка</th>
@@ -83,13 +83,15 @@
                     <td><code>{{ item.target_object_id }}</code></td>
                     <td><code class="breakable">{{ item.digest }}</code></td>
                 </tr>
+            {% empty %}
+                <tr><td colspan="4"><div class="ux-empty-state">Созданных записей нет.</div></td></tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
 </section>
 
-<details class="profile-card technical-only">
+<details class="da-card technical-only">
     <summary>Канонический снимок публикации</summary>
     <div class="technical-panel">
         <pre class="breakable">{{ publication.canonical_json }}</pre>

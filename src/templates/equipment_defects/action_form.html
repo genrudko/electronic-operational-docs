@@ -1,7 +1,8 @@
-{% extends "base.html" %}
+{% extends "shared/direction_a/base.html" %}
 {% load static %}
 
 {% block title %}{{ page_title }} · ЭОД{% endblock %}
+{% block body_class %}direction-a-body defect-direction-a{% endblock %}
 {% block main_class %}defect-main defect-direction-a-page{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'equipment_defects/defects.css' %}?v=defect004">
@@ -22,78 +23,70 @@
 {% endblock %}
 
 {% block content %}
-<div class="defect-da-shell">
-    {% include "equipment_defects/_direction_a_sidebar.html" %}
-    <div class="defect-da-stage">
-        {% include "equipment_defects/_direction_a_topbar.html" %}
-        <div class="defect-da-page">
-            <section class="defect-form-workspace defect-da-form-page">
-                <header class="defect-form-header">
-                    <div>
-                        <a class="defect-da-back-link" href="{% url 'equipment_defects:detail' record.public_id %}">← К карточке {{ record.registration_number }}</a>
-                        <h1>{{ page_title }}</h1>
-                        <p>Изменение будет зафиксировано в истории карточки с указанием сотрудника, должности, системного времени и версии записи.</p>
-                    </div>
-                    <span class="defect-status defect-da-status large" data-status="{{ record.status_code }}">{{ record.status_name_snapshot }}</span>
+<section class="defect-form-workspace defect-da-form-page">
+    <header class="defect-form-header da-page-header">
+        <div>
+            <a class="defect-da-back-link" href="{% url 'equipment_defects:detail' record.public_id %}">← К карточке {{ record.registration_number }}</a>
+            <h1>{{ page_title }}</h1>
+            <p>Изменение будет зафиксировано в истории карточки с указанием сотрудника, должности, системного времени и версии записи.</p>
+        </div>
+        <span class="defect-status defect-da-status large" data-status="{{ record.status_code }}">{{ record.status_name_snapshot }}</span>
+    </header>
+
+    <div class="defect-form-layout">
+        <form class="defect-guided-form" method="post" novalidate data-time-sensitive-form>
+            {% csrf_token %}
+            {% if form.non_field_errors %}<div class="nonfield">{{ form.non_field_errors }}</div>{% endif %}
+
+            <section class="defect-form-section">
+                <header>
+                    <h2>Данные действия</h2>
+                    <p>Проверьте значения перед подтверждением. После отправки действие станет частью неизменяемой истории.</p>
                 </header>
-
-                <div class="defect-form-layout">
-                    <form class="defect-guided-form" method="post" novalidate data-time-sensitive-form>
-                        {% csrf_token %}
-                        {% if form.non_field_errors %}<div class="nonfield">{{ form.non_field_errors }}</div>{% endif %}
-
-                        <section class="defect-form-section">
-                            <header>
-                                <h2>Данные действия</h2>
-                                <p>Проверьте значения перед подтверждением. После отправки действие станет частью неизменяемой истории.</p>
-                            </header>
-                            <div class="defect-form-grid">
-                                {% for field in form %}
-                                    <div class="defect-form-row{% if field.field.widget.input_type == 'textarea' %} is-wide{% endif %}">
-                                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                        {{ field }}
-                                        {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
-                                        {{ field.errors }}
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </section>
-
-                        <div class="defect-time-trust-sentinel">
-                            {% include "equipment_defects/_time_trust.html" %}
+                <div class="defect-form-grid">
+                    {% for field in form %}
+                        <div class="defect-form-row{% if field.field.widget.input_type == 'textarea' %} is-wide{% endif %}">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                            {{ field.errors }}
                         </div>
-
-                        <footer class="defect-form-footer">
-                            <span class="defect-form-footer-note">Это персональное подтверждаемое действие демонстрационного контура. Оно не называется УКЭП и не отменяет рукописную подпись утверждённой бумажной формы.</span>
-                            <div class="defect-form-actions">
-                                <button class="defect-button" type="submit">{{ submit_label }}</button>
-                                <a class="defect-button secondary" href="{% url 'equipment_defects:detail' record.public_id %}">Отмена</a>
-                            </div>
-                        </footer>
-                    </form>
-
-                    <aside class="defect-form-context defect-screen-only">
-                        <section class="defect-context-card">
-                            <h2>Текущая запись</h2>
-                            <p><strong>{{ record.registration_number }}</strong></p>
-                            <p>{{ record.status_name_snapshot }} · обнаружен {{ record.event_at|date:"d.m.Y H:i" }}</p>
-                        </section>
-                        <section class="defect-context-card">
-                            <h2>Проверка перед отправкой</h2>
-                            <ul>
-                                <li>Срок и время указаны по МСК.</li>
-                                <li>Ответственный выбран из действующего персонала.</li>
-                                <li>Комментарий описывает фактическое основание действия.</li>
-                            </ul>
-                        </section>
-                        <section class="defect-context-card defect-da-form-trust-note">
-                            <h2>Фиксация действия</h2>
-                            <p>Время и сведения о пользователе фиксируются системой автоматически. Несогласованные часы устройства блокируют подтверждение.</p>
-                        </section>
-                    </aside>
+                    {% endfor %}
                 </div>
             </section>
-        </div>
+
+            <div class="defect-time-trust-sentinel">
+                {% include "equipment_defects/_time_trust.html" %}
+            </div>
+
+            <footer class="defect-form-footer">
+                <span class="defect-form-footer-note">Это персональное подтверждаемое действие демонстрационного контура. Оно не называется УКЭП и не отменяет рукописную подпись утверждённой бумажной формы.</span>
+                <div class="defect-form-actions ux-action-group">
+                    <button class="defect-button da-button" type="submit">{{ submit_label }}</button>
+                    <a class="defect-button secondary da-button is-secondary" href="{% url 'equipment_defects:detail' record.public_id %}">Отмена</a>
+                </div>
+            </footer>
+        </form>
+
+        <aside class="defect-form-context defect-screen-only">
+            <section class="defect-context-card">
+                <h2>Текущая запись</h2>
+                <p><strong>{{ record.registration_number }}</strong></p>
+                <p>{{ record.status_name_snapshot }} · обнаружен {{ record.event_at|date:"d.m.Y H:i" }}</p>
+            </section>
+            <section class="defect-context-card">
+                <h2>Проверка перед отправкой</h2>
+                <ul>
+                    <li>Срок и время указаны по МСК.</li>
+                    <li>Ответственный выбран из действующего персонала.</li>
+                    <li>Комментарий описывает фактическое основание действия.</li>
+                </ul>
+            </section>
+            <section class="defect-context-card defect-da-form-trust-note">
+                <h2>Фиксация действия</h2>
+                <p>Время и сведения о пользователе фиксируются системой автоматически. Несогласованные часы устройства блокируют подтверждение.</p>
+            </section>
+        </aside>
     </div>
-</div>
+</section>
 {% endblock %}

@@ -4,7 +4,7 @@ import hashlib
 from unittest import mock
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from apps.organizations import demo_access
 from apps.organizations.demo_access import (
@@ -12,6 +12,7 @@ from apps.organizations.demo_access import (
     DemoAccessPolicyError,
     reconcile_demo_access,
 )
+from apps.organizations.demo_access_signals import enforce_demo_access_policy
 
 
 def strong_candidate(prefix: str) -> str:
@@ -22,12 +23,14 @@ class DemoAccessPolicyTests(TestCase):
     def setUp(self) -> None:
         user_model = get_user_model()
         initial = strong_candidate("Initial")
-        self.operator = user_model.objects.create(username="operator.demo")
+        self.operator, _ = user_model.objects.get_or_create(username="operator.demo")
+        self.operator.is_active = True
         self.operator.set_password(initial)
-        self.operator.save(update_fields=["password"])
-        self.supervisor = user_model.objects.create(username="supervisor.demo")
+        self.operator.save(update_fields=["is_active", "password"])
+        self.supervisor, _ = user_model.objects.get_or_create(username="supervisor.demo")
+        self.supervisor.is_active = True
         self.supervisor.set_password(initial)
-        self.supervisor.save(update_fields=["password"])
+        self.supervisor.save(update_fields=["is_active", "password"])
 
     @mock.patch.dict("os.environ", {}, clear=True)
     def test_missing_injection_disables_existing_demo_access(self) -> None:
@@ -47,6 +50,33 @@ class DemoAccessPolicyTests(TestCase):
         self.supervisor.refresh_from_db()
         self.assertTrue(self.operator.has_usable_password())
         self.assertTrue(self.supervisor.has_usable_password())
+
+    @mock.patch.dict("os.environ", {}, clear=True)
+    @override_settings(TESTING=False, EOD_DEPLOYMENT_MODE="development")
+    def test_development_post_migrate_without_injection_preserves_demo_access(self) -> None:
+        operator_password = self.operator.password
+        supervisor_password = self.supervisor.password
+
+        enforce_demo_access_policy(mock.Mock(label="organizations"))
+
+        self.operator.refresh_from_db()
+        self.supervisor.refresh_from_db()
+        self.assertTrue(self.operator.is_active)
+        self.assertTrue(self.supervisor.is_active)
+        self.assertEqual(self.operator.password, operator_password)
+        self.assertEqual(self.supervisor.password, supervisor_password)
+
+    @mock.patch.dict("os.environ", {}, clear=True)
+    @override_settings(TESTING=False, EOD_DEPLOYMENT_MODE="production")
+    def test_non_development_post_migrate_without_injection_disables_demo_access(self) -> None:
+        enforce_demo_access_policy(mock.Mock(label="organizations"))
+
+        self.operator.refresh_from_db()
+        self.supervisor.refresh_from_db()
+        self.assertFalse(self.operator.is_active)
+        self.assertFalse(self.supervisor.is_active)
+        self.assertFalse(self.operator.has_usable_password())
+        self.assertFalse(self.supervisor.has_usable_password())
 
     def test_local_injection_enables_both_accounts(self) -> None:
         candidate = strong_candidate("Local")

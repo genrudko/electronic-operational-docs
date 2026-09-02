@@ -384,6 +384,29 @@ def _validate_item_metadata(
     return errors
 
 
+def _validated_acceptance_evidence(
+    item_id: str, evidence: dict[str, Any]
+) -> dict[str, Any]:
+    """Return the evidence mapping with one bounded accepted-name alias.
+
+    PR #68 was accepted with the runtime proof stored as ``module_registry_runtime``
+    before the industrialization requirement named the same proof
+    ``mixed_scope_activation_evidence``. Preserve the immutable accepted payload
+    while keeping the newer requirement fail-closed and Registry-specific.
+    """
+    if (
+        item_id == "MODULE-REGISTRY-001"
+        and evidence.get("module_registry_runtime")
+        and not evidence.get("mixed_scope_activation_evidence")
+    ):
+        normalized = dict(evidence)
+        normalized["mixed_scope_activation_evidence"] = evidence[
+            "module_registry_runtime"
+        ]
+        return normalized
+    return evidence
+
+
 def _validate_transitions_and_dependencies(
     program_raw: dict[str, Any], plan: dict[str, Any]
 ) -> list[str]:
@@ -498,13 +521,16 @@ def _validate_transitions_and_dependencies(
                     )
                 )
             else:
+                validated_evidence = _validated_acceptance_evidence(
+                    item_id, evidence
+                )
                 expected_fields = item.get(
                     "acceptance_evidence_requirements", []
                 )
                 missing = [
                     field
                     for field in expected_fields
-                    if not evidence.get(field)
+                    if not validated_evidence.get(field)
                 ]
                 if missing:
                     errors.append(
@@ -518,7 +544,7 @@ def _validate_transitions_and_dependencies(
                     )
                 for key in ("exact_head", "merge_commit"):
                     if key in expected_fields and not SHA_RE.fullmatch(
-                        str(evidence.get(key, ""))
+                        str(validated_evidence.get(key, ""))
                     ):
                         errors.append(
                             diagnostic(
@@ -526,7 +552,7 @@ def _validate_transitions_and_dependencies(
                                 item_id,
                                 f"accepted-{key}",
                                 "40 lowercase hex",
-                                evidence.get(key),
+                                validated_evidence.get(key),
                             )
                         )
     return errors
@@ -757,6 +783,7 @@ def _validate_no_accepted_active_queue(plan: dict[str, Any]) -> list[str]:
                     )
                 )
     return errors
+
 
 def validate_github_evidence(
     plan: dict[str, Any], github_evidence: dict[str, Any] | None

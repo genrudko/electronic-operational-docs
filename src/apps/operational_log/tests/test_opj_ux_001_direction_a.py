@@ -9,7 +9,6 @@ from django.urls import reverse
 from .base import OperationalLogTestCase
 
 ROOT = Path(__file__).resolve().parents[3]
-ASSET_REVISION = "opjux00103"
 WORKSPACE_REVISION = "opjux00105"
 
 
@@ -22,15 +21,19 @@ class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
         for marker in (
             "{% block body_class %}",
             "{% block body %}",
-            "system/direction_a.css",
+            "system/theme.css",
+            "system/ux_platform_compat.css",
+            "system/ux_platform.css",
             "system/direction_a.js",
             "operational_log/opj_ux_001.css",
             "operational_log/opj_ux_001.js",
         ):
             self.assertIn(marker, base)
-        self.assertEqual(base.count(f"?v={ASSET_REVISION}"), 4)
+        self.assertIn("data-direction-a-shell", base)
+        self.assertLess(base.index("system/ux_platform.css"), base.index("operational_log/opj_ux_001.css"))
 
     def test_shared_shell_is_one_server_rendered_composition(self) -> None:
+        base = self.source("templates/base.html")
         shared_base = self.source("templates/shared/direction_a/base.html")
         sidebar = self.source("templates/shared/direction_a/_sidebar.html")
         topbar = self.source("templates/shared/direction_a/_topbar.html")
@@ -41,7 +44,9 @@ class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
             'class="da-stage"',
             'class="da-page"',
         ):
-            self.assertIn(marker, shared_base)
+            self.assertIn(marker, base)
+        self.assertIn('{% extends "base.html" %}', shared_base)
+        self.assertNotIn("data-direction-a-shell", shared_base)
         for marker in (
             "data-direction-a-sidebar",
             'class="da-navigation"',
@@ -55,8 +60,8 @@ class OpjPresentationRewriteStaticContractTests(SimpleTestCase):
             'class="da-workplace"',
         ):
             self.assertIn(marker, topbar)
-        shared_shell = "\n".join((shared_base, sidebar, topbar))
-        self.assertNotIn("defect-da-", shared_shell)
+        shared_shell = "\n".join((base, shared_base, sidebar, topbar))
+        self.assertNotIn("defect-da-shell", shared_shell)
         self.assertNotIn("data-defect-shell-", shared_shell)
 
     def test_shell_javascript_never_constructs_application_layout(self) -> None:

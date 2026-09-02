@@ -4,20 +4,20 @@
 
 ## Итог
 
-- tracked files: `921`;
+- tracked files: `940`;
 - inventory entries: `85`;
 - floating inputs: `17`;
 - immutable inputs: `67`;
 - duplicate owner groups: `6`;
 - conflicting owner groups: `0`;
 - source files with dependency/build evidence: `21`;
-- applicable executable/config sources: `71`;
-- source completeness digests: `73`.
+- applicable executable/config sources: `74`;
+- source completeness digests: `76`.
 
 ## Executable/config source completeness
 
-- applicable paths: `71`;
-- source kinds: `{'compose': 5, 'dockerfile': 3, 'github-workflow': 12, 'powershell': 3, 'python-operator': 39, 'shell': 8, 'shell-shebang': 1}`;
+- applicable paths: `74`;
+- source kinds: `{'compose': 5, 'dockerfile': 3, 'github-workflow': 12, 'powershell': 3, 'python-operator': 41, 'shell': 9, 'shell-shebang': 1}`;
 - uncovered paths: `NONE`;
 - exact exclusions: `NONE`.
 
@@ -29,7 +29,7 @@
 - Containers: Dockerfiles=['Dockerfile', 'deploy/automation/Dockerfile.development', 'supply-chain/Dockerfile.browser']; Compose=['compose.development.yaml', 'compose.preview.yaml', 'compose.production.yaml', 'compose.yaml', 'deploy/automation/compose.development.yaml'].
 - GitHub Actions: workflows=`12`; temporary=NONE.
 - External downloads: `0`; local runtime probes excluded=`True`.
-- Static assets: tracked=`66`; external references=`1`.
+- Static assets: tracked=`70`; external references=`1`.
 
 ## Totals by class
 

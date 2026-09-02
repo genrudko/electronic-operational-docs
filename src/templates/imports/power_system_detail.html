@@ -2,16 +2,16 @@
 {% load static %}
 {% block title %}{{ revision.original_filename }} · ЭОД{% endblock %}
 {% block content %}
-<section class="page-heading compact">
+<section class="da-page-header da-page-header-compact">
     <div>
         <div class="eyebrow">ПРЕДВАРИТЕЛЬНАЯ ПРОВЕРКА ИСТОЧНИКА</div>
         <h1>{{ revision.original_filename }}</h1>
         <p>{{ revision.source_reference }}</p>
     </div>
     <div class="document-actions">
-        <a class="button secondary" href="{% url 'imports:power_system_list' %}">К списку редакций</a>
+        <a class="da-button is-secondary" href="{% url 'imports:power_system_list' %}">К списку редакций</a>
         {% if revision.ready_count %}
-            <div data-power-system-preview-container><a data-power-system-preview-trigger class="button" href="{% url 'imports:power_system_publication' revision.public_id %}">
+            <div data-power-system-preview-container><a data-power-system-preview-trigger class="da-button" href="{% url 'imports:power_system_publication' revision.public_id %}">
                 Проверить публикацию {{ revision.ready_count }} строк
             </a>
 <p class="ps-preview-progress" data-power-system-preview-progress hidden role="status" aria-live="polite">
@@ -57,25 +57,25 @@
     </article>
 </section>
 
-<section class="summary-grid power-system-summary">
-    <a class="metric ps-count-link {% if status_filter == 'ALL' %}is-active{% endif %}" href="?status=ALL">
+<section class="ux-stat-grid power-system-summary">
+    <a class="ux-stat ps-count-link {% if status_filter == 'ALL' %}is-active{% endif %}" href="?status=ALL">
         <span>Всего строк</span><strong>{{ revision.total_occurrences }}</strong>
     </a>
-    <a class="metric ps-count-link {% if status_filter == 'READY' %}is-active{% endif %}" href="?status=READY">
+    <a class="ux-stat ps-count-link {% if status_filter == 'READY' %}is-active{% endif %}" href="?status=READY">
         <span>Готово автоматически</span><strong>{{ revision.ready_count }}</strong>
     </a>
-    <a class="metric ps-count-link {% if status_filter == 'ATTENTION' %}is-active{% endif %}" href="?status=ATTENTION">
+    <a class="ux-stat ps-count-link {% if status_filter == 'ATTENTION' %}is-active{% endif %}" href="?status=ATTENTION">
         <span>Требуют решения</span><strong>{{ attention_count }}</strong>
     </a>
-    <a class="metric ps-count-link {% if status_filter == 'EXCLUDED' %}is-active{% endif %}" href="?status=EXCLUDED">
+    <a class="ux-stat ps-count-link {% if status_filter == 'EXCLUDED' %}is-active{% endif %}" href="?status=EXCLUDED">
         <span>Исключено</span><strong>{{ revision.excluded_count }}</strong>
     </a>
-    <a class="metric ps-count-link {% if status_filter == 'PUBLISHED' %}is-active{% endif %}" href="?status=PUBLISHED">
+    <a class="ux-stat ps-count-link {% if status_filter == 'PUBLISHED' %}is-active{% endif %}" href="?status=PUBLISHED">
         <span>Опубликовано</span><strong>{{ revision.published_count }}</strong>
     </a>
 </section>
 
-<section class="profile-card ps-hierarchy-card">
+<section class="da-card ps-hierarchy-card">
     <div class="section-heading">
         <div>
             <div class="eyebrow">ВОССТАНОВЛЕННАЯ СТРУКТУРА</div>
@@ -109,7 +109,7 @@
 </section>
 
 {% if duplicate_group_count %}
-<section class="profile-card ps-conflict-groups">
+<section class="da-card ps-conflict-groups">
     <div class="section-heading">
         <div>
             <div class="eyebrow">СГРУППИРОВАННАЯ ПРОВЕРКА</div>
@@ -166,7 +166,7 @@
                         Комментарий
                         <input name="note" placeholder="Основание решения">
                     </label>
-                    <button class="button secondary" type="submit">Сохранить решение по группе</button>
+                    <button class="da-button is-secondary" type="submit">Сохранить решение по группе</button>
                 </form>
             </article>
             {% endif %}
@@ -175,7 +175,7 @@
 </section>
 {% endif %}
 
-<section class="profile-card equipment-filter-card">
+<section class="da-card equipment-filter-card">
     <div class="section-heading">
         <div>
             <div class="eyebrow">РАБОЧАЯ ВЫБОРКА</div>
@@ -211,12 +211,12 @@
                 {% endfor %}
             </select>
         </div>
-        <button class="button" type="submit">Применить</button>
+        <button class="da-button" type="submit">Применить</button>
         <a href="{% url 'imports:power_system_detail' revision.public_id %}">К строкам на проверке</a>
     </form>
 </section>
 
-<section class="profile-card ps-source-card">
+<section class="da-card ps-source-card">
     <div class="section-heading">
         <div>
             <div class="eyebrow">ИСХОДНЫЕ СТРОКИ</div>
@@ -226,7 +226,7 @@
         </div>
         <span class="count-badge">{{ page.paginator.count }}</span>
     </div>
-    <div class="table-wrap ps-review-table-wrap">
+    <div class="da-table-wrap ps-review-table-wrap">
         <table class="ps-review-table">
             <colgroup>
                 <col class="ps-col-source">
@@ -301,7 +301,7 @@
                                         Комментарий
                                         <textarea name="note" rows="3" placeholder="Почему принято это решение"></textarea>
                                     </label>
-                                    <button class="button secondary" type="submit">Сохранить решение</button>
+                                    <button class="da-button is-secondary" type="submit">Сохранить решение</button>
                                 </form>
                             </details>
                         {% elif row.is_automatic_ready %}
@@ -343,8 +343,8 @@
     {% endif %}
 </section>
 
-<section class="profile-grid ps-bottom-grid">
-    <article class="profile-card">
+<section class="ux-detail-grid ps-bottom-grid">
+    <article class="da-card">
         <div class="section-heading">
             <div><div class="eyebrow">КАЧЕСТВО ИСТОЧНИКА</div><h2>Зарегистрированные проблемы</h2></div>
             <span class="count-badge">{{ revision.issue_rows }}</span>
@@ -369,7 +369,7 @@
             {% endfor %}
         </div>
     </article>
-    <article class="profile-card">
+    <article class="da-card">
         <div class="section-heading">
             <div><div class="eyebrow">ИСТОРИЯ</div><h2>Публикации редакции</h2></div>
         </div>
@@ -387,7 +387,7 @@
         {% if revision.status == 'STAGED' or revision.status == 'PARTIALLY_PUBLISHED' %}
             <form method="post" action="{% url 'imports:power_system_discard' revision.public_id %}">
                 {% csrf_token %}
-                <button class="button danger" type="submit">Убрать редакцию из рабочего списка</button>
+                <button class="da-button danger" type="submit">Убрать редакцию из рабочего списка</button>
             </form>
         {% endif %}
     </article>

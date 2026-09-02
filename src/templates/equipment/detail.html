@@ -3,38 +3,35 @@
 {% block title %}{{ dispatcher_name }} · Реестр оборудования{% endblock %}
 
 {% block content %}
-<section class="page-heading compact presentation-heading">
-    <div>
-        <div class="section-kicker">Единица оборудования</div>
-        <h1>{{ dispatcher_name }}</h1>
-        <p>{{ equipment.technical_name }}</p>
-    </div>
-    <a class="quiet-action" href="{% url 'equipment:registry' %}">← К реестру</a>
+<section class="da-page-header da-page-header-compact">
+    <div><span class="ux-kicker">Единица оборудования</span><h1>{{ dispatcher_name }}</h1><p>{{ equipment.technical_name }}</p></div>
+    <a class="da-button is-tertiary" href="{% url 'equipment:registry' %}">← К реестру</a>
 </section>
 
-<section class="profile-grid">
-    <article class="profile-card">
+<section class="ux-detail-grid">
+    <article class="da-card">
         <h2>Основные сведения</h2>
-        <dl>
+        <dl class="ux-key-value">
             <dt class="technical-only">Стабильный код</dt><dd class="technical-only"><code>{{ equipment.code }}</code></dd>
             <dt>Диспетчерское наименование</dt><dd>{{ dispatcher_name }}</dd>
             <dt>Техническое наименование</dt><dd>{{ equipment.technical_name }}</dd>
             <dt>Вид оборудования</dt><dd>{{ equipment.equipment_type.name }}</dd>
             <dt>Категория</dt><dd>{{ equipment.equipment_type.get_category_display }}</dd>
             <dt>Класс напряжения</dt><dd>{{ equipment.voltage_level|default:"Не указан" }}</dd>
-            <dt>Состояние</dt><dd>{{ equipment.get_status_display }}</dd>
+            <dt>Состояние</dt><dd><span class="da-status-chip {% if equipment.status == 'ACTIVE' %}is-success{% endif %}">{{ equipment.get_status_display }}</span></dd>
         </dl>
     </article>
-    <article class="profile-card">
+    <article class="da-card">
         <h2>Размещение и иерархия</h2>
-        <dl>
+        <dl class="ux-key-value">
             <dt>Энергообъект</dt><dd><a href="{% url 'equipment:site_detail' equipment.site.code %}">{{ equipment.site }}</a></dd>
             <dt>Родительский объект</dt>
             <dd>
                 {% if equipment.parent %}
-                    <a href="{% url 'equipment:detail' equipment.parent.public_id %}">
-                        <code class="technical-only">{{ equipment.parent.code }} · </code>{{ equipment.parent.technical_name }}
-                    </a>
+                <a class="ux-value-stack" href="{% url 'equipment:detail' equipment.parent.public_id %}">
+                    <span class="ux-value-primary">{{ equipment.parent.technical_name }}</span>
+                    <code class="ux-technical technical-only">{{ equipment.parent.code }}</code>
+                </a>
                 {% else %}Верхний уровень{% endif %}
             </dd>
             <dt>Контур</dt><dd>{% if equipment.is_external %}Смежное оборудование{% else %}Оборудование организации{% endif %}</dd>
@@ -44,71 +41,38 @@
     </article>
 </section>
 
-<details class="history-disclosure profile-card">
+<details class="history-disclosure da-card">
     <summary><span>История диспетчерских наименований</span><small>{{ name_history|length }} редакций</small></summary>
-    <div class="table-wrap disclosure-body">
-        <p class="muted">Новая редакция не переписывает старую: документы сохраняют наименование, действовавшее при регистрации.</p>
-        <table>
+    <div class="da-table-wrap disclosure-body">
+        <p class="ux-muted">Новая редакция не переписывает старую: документы сохраняют наименование, действовавшее при регистрации.</p>
+        <table class="da-table">
             <thead><tr><th class="technical-only">Редакция</th><th>Наименование</th><th>Период</th><th>Основание</th><th class="technical-only">SHA-256</th></tr></thead>
             <tbody>
             {% for row in name_history %}
                 <tr>
                     <td class="technical-only">№ {{ row.revision.revision_number }}</td>
-                    <td>{{ row.revision.dispatcher_name }}{% if row.is_current %}<span class="badge">Действующее</span>{% endif %}</td>
+                    <td>{{ row.revision.dispatcher_name }}{% if row.is_current %}<span class="da-status-chip is-success">Действующее</span>{% endif %}</td>
                     <td>с {{ row.revision.effective_from|date:"d.m.Y" }} {% if row.effective_until %}по {{ row.effective_until|date:"d.m.Y" }}{% else %}без даты окончания{% endif %}</td>
                     <td>{{ row.revision.basis_reference|default:"Не указано" }}</td>
                     <td class="technical-only"><code class="short-hash">{{ row.revision.digest|slice:":16" }}…</code></td>
                 </tr>
-            {% empty %}<tr><td colspan="5">Опубликованных наименований пока нет.</td></tr>{% endfor %}
+            {% empty %}<tr><td colspan="5"><div class="ux-empty-state">Опубликованных наименований пока нет.</div></td></tr>{% endfor %}
             </tbody>
         </table>
     </div>
 </details>
 
-<section class="profile-grid">
-    <article class="profile-card">
-        <h2>Алиасы и поисковые варианты</h2>
-        <ul class="revision-list">
-        {% for alias in aliases %}<li><strong>{{ alias.alias }}</strong><span>{{ alias.get_alias_type_display }}</span></li>
-        {% empty %}<li>Действующих алиасов нет.</li>{% endfor %}
-        </ul>
-    </article>
-    <article class="profile-card">
-        <h2>Дочернее оборудование</h2>
-        <ul class="revision-list">
-        {% for child in children %}
-            <li><a href="{% url 'equipment:detail' child.public_id %}"><code class="technical-only">{{ child.code }} · </code><strong>{{ child.technical_name }}</strong></a></li>
-        {% empty %}<li>Дочернего оборудования нет.</li>{% endfor %}
-        </ul>
-    </article>
+<section class="ux-detail-grid">
+    <article class="da-card"><h2>Алиасы и поисковые варианты</h2><ul class="revision-list ux-list-reset">{% for alias in aliases %}<li><strong>{{ alias.alias }}</strong><span>{{ alias.get_alias_type_display }}</span></li>{% empty %}<li class="ux-muted">Действующих алиасов нет.</li>{% endfor %}</ul></article>
+    <article class="da-card"><h2>Дочернее оборудование</h2><ul class="revision-list ux-list-reset">{% for child in children %}<li><a class="ux-value-stack" href="{% url 'equipment:detail' child.public_id %}"><strong class="ux-value-primary">{{ child.technical_name }}</strong><code class="ux-technical technical-only">{{ child.code }}</code></a></li>{% empty %}<li class="ux-muted">Дочернего оборудования нет.</li>{% endfor %}</ul></article>
 </section>
 
-<section class="profile-grid">
-    <article class="profile-card">
-        <h2>Исходящие связи</h2>
-        <ul class="equipment-relation-list">
-        {% for relation in outgoing_relations %}
-            <li><span>{{ relation.get_relation_type_display }}</span><a href="{% url 'equipment:detail' relation.target_equipment.public_id %}"><code class="technical-only">{{ relation.target_equipment.code }} · </code>{{ relation.target_equipment.technical_name }}</a>{% if relation.description %}<small>{{ relation.description }}</small>{% endif %}</li>
-        {% empty %}<li class="muted">Исходящих связей нет.</li>{% endfor %}
-        </ul>
-    </article>
-    <article class="profile-card">
-        <h2>Входящие связи</h2>
-        <ul class="equipment-relation-list">
-        {% for relation in incoming_relations %}
-            <li><span>{{ relation.get_relation_type_display }}</span><a href="{% url 'equipment:detail' relation.source_equipment.public_id %}"><code class="technical-only">{{ relation.source_equipment.code }} · </code>{{ relation.source_equipment.technical_name }}</a>{% if relation.description %}<small>{{ relation.description }}</small>{% endif %}</li>
-        {% empty %}<li class="muted">Входящих связей нет.</li>{% endfor %}
-        </ul>
-    </article>
+<section class="ux-detail-grid">
+    <article class="da-card"><h2>Исходящие связи</h2><ul class="equipment-relation-list ux-list-reset">{% for relation in outgoing_relations %}<li><span>{{ relation.get_relation_type_display }}</span><a class="ux-value-stack" href="{% url 'equipment:detail' relation.target_equipment.public_id %}"><strong class="ux-value-primary">{{ relation.target_equipment.technical_name }}</strong><code class="ux-technical technical-only">{{ relation.target_equipment.code }}</code></a>{% if relation.description %}<small>{{ relation.description }}</small>{% endif %}</li>{% empty %}<li class="ux-muted">Исходящих связей нет.</li>{% endfor %}</ul></article>
+    <article class="da-card"><h2>Входящие связи</h2><ul class="equipment-relation-list ux-list-reset">{% for relation in incoming_relations %}<li><span>{{ relation.get_relation_type_display }}</span><a class="ux-value-stack" href="{% url 'equipment:detail' relation.source_equipment.public_id %}"><strong class="ux-value-primary">{{ relation.source_equipment.technical_name }}</strong><code class="ux-technical technical-only">{{ relation.source_equipment.code }}</code></a>{% if relation.description %}<small>{{ relation.description }}</small>{% endif %}</li>{% empty %}<li class="ux-muted">Входящих связей нет.</li>{% endfor %}</ul></article>
 </section>
 
 {% if source_provenance %}
-<section class="profile-card technical-only">
-    <h2>Происхождение из источника</h2>
-    <dl class="detail-list">
-        <dt>Редакция источника</dt><dd><code>{{ source_revision_public_id }}</code></dd>
-        <dt>Исходные строки</dt><dd>{% for item in source_provenance %}<code>{{ item }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
-    </dl>
-</section>
+<section class="da-card technical-only"><h2>Происхождение из источника</h2><dl class="ux-key-value detail-list"><dt>Редакция источника</dt><dd><code>{{ source_revision_public_id }}</code></dd><dt>Исходные строки</dt><dd>{% for item in source_provenance %}<code>{{ item }}</code>{% if not forloop.last %}, {% endif %}{% endfor %}</dd></dl></section>
 {% endif %}
 {% endblock %}

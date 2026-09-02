@@ -170,7 +170,7 @@ body.da-active .personnel-management-page textarea {
     font-family: var(--eod-font-ui);
 }
 
-body.da-active .authority-tree-item em,
+body.da-active .authority-tree-item .authority-tree-name,
 body.da-active .authority-right-header th > button,
 body.da-active .authority-right-header .matrix-sticky-name,
 body.da-active .authority-right-header .matrix-sticky-position,

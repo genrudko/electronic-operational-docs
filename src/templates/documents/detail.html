@@ -3,61 +3,57 @@
 {% block title %}{{ document.title }} · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading compact">
+<section class="da-page-header da-page-header-compact">
     <div>
-        <div class="eyebrow">ДОКУМЕНТАРНОЕ ЯДРО</div>
+        <span class="ux-kicker">Документарное ядро</span>
         <h1>{{ document.title }}</h1>
         <p>
             {% if document.registration_number %}
                 Регистрационный номер <code>{{ document.registration_number }}</code>
             {% else %}
                 Черновик без регистрационного номера
-                <span class="technical-only">
-                    · внутренний идентификатор <code>{{ document.public_id }}</code>
-                </span>
+                <span class="technical-only">· внутренний идентификатор <code>{{ document.public_id }}</code></span>
             {% endif %}
         </p>
     </div>
-    <div class="document-actions">
-        <a href="{% url 'documents:list' %}">К списку</a>
+    <div class="da-actions document-actions">
+        <a class="da-button is-tertiary" href="{% url 'documents:list' %}">К списку</a>
         {% if document.status == "DRAFT" %}
-            <a class="button secondary" href="{% url 'documents:edit' document.public_id %}">
-                Редактировать
-            </a>
-            <a class="button" href="{% url 'documents:register' document.public_id %}">
-                Проверить и зарегистрировать
-            </a>
+            <a class="da-button is-secondary" href="{% url 'documents:edit' document.public_id %}">Редактировать</a>
+            <a class="da-button" href="{% url 'documents:register' document.public_id %}">Проверить и зарегистрировать</a>
         {% endif %}
     </div>
 </section>
 
-<section class="document-state {% if document.status == 'REGISTERED' %}registered{% else %}draft{% endif %}">
-    <strong>{{ document.get_status_display }}</strong>
-    {% if document.status == "REGISTERED" %}
-        <span>Версия зафиксирована и защищена от изменения и физического удаления.</span>
-    {% else %}
-        <span>Черновик можно редактировать до серверной регистрации.</span>
-    {% endif %}
+<section class="da-alert {% if document.status == 'REGISTERED' %}is-success{% else %}is-warning{% endif %} document-state">
+    <div>
+        <strong>{{ document.get_status_display }}</strong>
+        <p>
+            {% if document.status == "REGISTERED" %}
+                Версия зафиксирована и защищена от изменения и физического удаления.
+            {% else %}
+                Черновик можно редактировать до серверной регистрации.
+            {% endif %}
+        </p>
+    </div>
 </section>
 
 {% if integrity %}
-<section class="profile-card integrity-panel status-{{ integrity.status.value|lower }}">
-    <div class="eyebrow">КОНТРОЛЬ ЦЕЛОСТНОСТИ</div>
+<section class="da-card integrity-panel status-{{ integrity.status.value|lower }}">
+    <span class="ux-kicker">Контроль целостности</span>
     <div class="integrity-summary-row">
-        <span class="integrity-badge">{{ integrity.status.label }}</span>
+        <span class="da-status-chip {% if integrity.status.value == 'OK' %}is-success{% else %}is-warning{% endif %}">{{ integrity.status.label }}</span>
         <strong>{{ integrity.message }}</strong>
         <details class="help-tip"><summary>?</summary><div>Проверяется соответствие зарегистрированного содержания неизменяемому снимку.</div></details>
     </div>
     <details class="help-panel">
         <summary>Что означает этот раздел?</summary>
-        <div>
-            <p><strong>Целостность подтверждена</strong> означает, что зарегистрированное содержание совпадает с зафиксированным снимком. Это системный контроль прототипа, а не электронная подпись.</p>
-        </div>
+        <div><p><strong>Целостность подтверждена</strong> означает, что зарегистрированное содержание совпадает с зафиксированным снимком. Это системный контроль прототипа, а не электронная подпись.</p></div>
     </details>
     <details class="technical-disclosure technical-only">
         <summary>Технические сведения о проверке</summary>
         <div class="technical-disclosure-body">
-            <dl>
+            <dl class="ux-key-value">
                 {% if integrity.snapshot %}
                     <dt>SHA-256 снимка</dt><dd class="hash-value">{{ integrity.snapshot.digest }}</dd>
                     <dt>Формат снимка</dt><dd>{{ integrity.snapshot.schema_version }}</dd>
@@ -75,10 +71,10 @@
 </section>
 {% endif %}
 
-<section class="profile-grid document-profile-grid">
-    <article class="profile-card">
+<section class="ux-detail-grid document-profile-grid">
+    <article class="da-card">
         <h2>Реквизиты</h2>
-        <dl>
+        <dl class="ux-key-value">
             <dt>Тип документа</dt><dd>{{ document.document_type.name }}</dd>
             <dt>Организация</dt><dd>{{ document.organization }}</dd>
             <dt>Автор</dt><dd>{{ document.created_by.full_name }}</dd>
@@ -90,47 +86,40 @@
             {% endif %}
         </dl>
     </article>
-    <article class="profile-card">
+    <article class="da-card">
         <h2>Содержимое версии</h2>
-        {% if document.current_version.content.subject %}
-            <div class="document-subject">{{ document.current_version.content.subject }}</div>
-        {% endif %}
+        {% if document.current_version.content.subject %}<div class="document-subject">{{ document.current_version.content.subject }}</div>{% endif %}
         <div class="document-body">{{ document.current_version.content.body|linebreaksbr }}</div>
     </article>
 </section>
 
-<section class="profile-card">
-    <h2>Оборудование документа</h2>
-    <p class="muted">
-        Для зарегистрированной версии показаны диспетчерские наименования,
-        зафиксированные на момент регистрации.
-    </p>
+<section class="da-card ux-stack">
+    <div>
+        <h2>Оборудование документа</h2>
+        <p class="ux-muted">Для зарегистрированной версии показаны диспетчерские наименования, зафиксированные на момент регистрации.</p>
+    </div>
     <div class="document-equipment-list">
     {% for row in equipment_rows %}
         <article class="document-equipment-item">
-            <div>
-                <a href="{% url 'equipment:detail' row.public_id %}">
-                    <strong>{{ row.display_name }}</strong>
-                </a>
-                <div class="muted technical-only">{{ row.technical_name }}</div>
+            <div class="ux-value-stack">
+                <a class="ux-value-primary" href="{% url 'equipment:detail' row.public_id %}"><strong>{{ row.display_name }}</strong></a>
+                <code class="ux-value-secondary ux-technical technical-only">{{ row.code }}</code>
+                <span class="ux-value-secondary technical-only">{{ row.technical_name }}</span>
             </div>
-            <code class="technical-only">{{ row.code }}</code>
             <span>{{ row.type_name }}</span>
             <small class="technical-only">{{ row.site_name }}{% if row.hierarchy_path %} · {{ row.hierarchy_path }}{% endif %}</small>
-            {% if row.frozen %}
-                <span class="snapshot-label">Снимок на момент регистрации</span>
-            {% endif %}
+            {% if row.frozen %}<span class="da-status-chip is-info">Снимок на момент регистрации</span>{% endif %}
         </article>
     {% empty %}
-        <p class="muted">Оборудование к этой версии не привязано.</p>
+        <div class="ux-empty-state">Оборудование к этой версии не привязано.</div>
     {% endfor %}
     </div>
 </section>
 
-<details class="history-disclosure profile-card">
+<details class="history-disclosure da-card">
     <summary><span>История версий</span><small>{{ versions|length }} записей</small></summary>
-    <div class="table-wrap disclosure-body">
-        <table>
+    <div class="da-table-wrap disclosure-body">
+        <table class="da-table">
             <thead><tr><th>Версия</th><th>Статус</th><th>Автор</th><th>Создана</th><th>Зафиксирована</th></tr></thead>
             <tbody>
             {% for version in versions %}
@@ -141,70 +130,63 @@
     </div>
 </details>
 
-<section class="profile-grid document-profile-grid">
-    <article class="profile-card">
+<section class="ux-detail-grid document-profile-grid">
+    <article class="da-card">
         <h2>Исходящие связи</h2>
-        <ul class="clean-list document-links">
+        <ul class="ux-list-reset document-links">
             {% for link in outgoing_links %}
                 <li>
                     <span>{{ link.get_link_type_display }}</span>
-                    <a href="{% url 'documents:detail' link.target_document.public_id %}">
-                        {{ link.target_document.registration_number }} · {{ link.target_document.title }}
+                    <a class="ux-value-stack" href="{% url 'documents:detail' link.target_document.public_id %}">
+                        <span class="ux-value-primary">{{ link.target_document.title }}</span>
+                        {% if link.target_document.registration_number %}
+                            <code class="ux-technical">{{ link.target_document.registration_number }}</code>
+                        {% else %}
+                            <span class="ux-value-secondary">Черновик без регистрационного номера</span>
+                        {% endif %}
                     </a>
                 </li>
-            {% empty %}
-                <li class="muted">Исходящих связей нет.</li>
-            {% endfor %}
+            {% empty %}<li class="ux-muted">Исходящих связей нет.</li>{% endfor %}
         </ul>
     </article>
-    <article class="profile-card">
+    <article class="da-card">
         <h2>Входящие связи</h2>
-        <ul class="clean-list document-links">
+        <ul class="ux-list-reset document-links">
             {% for link in incoming_links %}
                 <li>
                     <span>{{ link.get_link_type_display }}</span>
-                    <a href="{% url 'documents:detail' link.source_document.public_id %}">
-                        {{ link.source_document.registration_number }} · {{ link.source_document.title }}
+                    <a class="ux-value-stack" href="{% url 'documents:detail' link.source_document.public_id %}">
+                        <span class="ux-value-primary">{{ link.source_document.title }}</span>
+                        {% if link.source_document.registration_number %}
+                            <code class="ux-technical">{{ link.source_document.registration_number }}</code>
+                        {% else %}
+                            <span class="ux-value-secondary">Черновик без регистрационного номера</span>
+                        {% endif %}
                     </a>
                 </li>
-            {% empty %}
-                <li class="muted">Входящих связей нет.</li>
-            {% endfor %}
+            {% empty %}<li class="ux-muted">Входящих связей нет.</li>{% endfor %}
         </ul>
     </article>
 </section>
 
 {% if link_form %}
-<section class="profile-card">
+<section class="da-card">
     <h2>Добавить связь</h2>
-    <form class="inline-form" method="post" action="{% url 'documents:link_create' document.public_id %}">
+    <form class="ux-form-grid" method="post" action="{% url 'documents:link_create' document.public_id %}">
         {% csrf_token %}
-        <div>
-            <label for="{{ link_form.target_document.id_for_label }}">
-                {{ link_form.target_document.label }}
-            </label>
-            {{ link_form.target_document }}
-        </div>
-        <div>
-            <label for="{{ link_form.link_type.id_for_label }}">{{ link_form.link_type.label }}</label>
-            {{ link_form.link_type }}
-        </div>
-        <button class="button" type="submit">Создать связь</button>
+        <div class="da-field"><label for="{{ link_form.target_document.id_for_label }}">{{ link_form.target_document.label }}</label>{{ link_form.target_document }}</div>
+        <div class="da-field"><label for="{{ link_form.link_type.id_for_label }}">{{ link_form.link_type.label }}</label>{{ link_form.link_type }}</div>
+        <div class="ux-form-actions"><button class="da-button" type="submit">Создать связь</button></div>
     </form>
 </section>
 {% endif %}
 
-<details class="history-disclosure profile-card technical-only">
+<details class="history-disclosure da-card technical-only">
     <summary><span>Системный аудит</span><small>{{ audit_events|length }} событий</small></summary>
     <div class="audit-timeline disclosure-body">
         {% for event in audit_events %}
-            <article>
-                <time>{{ event.occurred_at|date:"d.m.Y H:i:s T" }}</time>
-                <strong>{{ event.get_event_type_display }}</strong>
-                <span>{{ event.actor_employee.full_name|default:"системное действие" }}</span>
-                {% if event.payload.registration_number %}<code>{{ event.payload.registration_number }}</code>{% endif %}
-            </article>
-        {% empty %}<p class="muted">Событий аудита нет.</p>{% endfor %}
+            <article><time>{{ event.occurred_at|date:"d.m.Y H:i:s T" }}</time><strong>{{ event.get_event_type_display }}</strong><span>{{ event.actor_employee.full_name|default:"системное действие" }}</span>{% if event.payload.registration_number %}<code>{{ event.payload.registration_number }}</code>{% endif %}</article>
+        {% empty %}<p class="ux-muted">Событий аудита нет.</p>{% endfor %}
     </div>
 </details>
 {% endblock %}

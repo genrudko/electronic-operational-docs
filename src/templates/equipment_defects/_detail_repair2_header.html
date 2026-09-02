@@ -1,21 +1,19 @@
 <header class="defect-da-record-header da-page-header" data-status="{{ record.status_code }}">
-    <a class="defect-da-back-link" href="{% url 'equipment_defects:registry' %}">← К списку</a>
-    <div class="defect-da-record-heading-row">
-        <div class="defect-da-record-heading">
-            <div class="defect-module-kicker">Карточка дефекта</div>
-            <div class="defect-da-record-title-line">
-                <h1>{{ record.registration_number }}</h1>
-                <span class="defect-status defect-da-status da-status large" data-status="{{ record.status_code }}">{{ record.status_name_snapshot }}</span>
-            </div>
-            <p class="defect-da-record-subject"><span class="visually-hidden">Что произошло: </span>{{ row.description }}</p>
-            <div class="defect-da-record-context">
-                <strong>{% if row.equipment %}{{ row.equipment.dispatcher_name_snapshot }}{% else %}Оборудование не указано{% endif %}</strong>
-                <span>Обнаружен {{ record.event_at|date:"d.m.Y H:i" }}</span>
-                <span>№ {{ record.sequence_value }}</span>
-            </div>
+    <div class="defect-da-record-heading">
+        <a class="defect-da-back-link" href="{% url 'equipment_defects:registry' %}">← К списку</a>
+        <div class="defect-module-kicker">Карточка дефекта</div>
+        <div class="defect-da-record-title-line">
+            <h1>{{ record.registration_number }}</h1>
+            <span class="defect-status defect-da-status da-status large" data-status="{{ record.status_code }}">{{ record.status_name_snapshot }}</span>
         </div>
-        <div class="defect-module-actions da-actions defect-screen-only">
-            <a class="defect-button da-button secondary is-secondary" href="{% url 'equipment_defects:print' %}?volume={{ record.equipment_defect_context.volume.public_id }}">Печатная форма</a>
+        <p class="defect-da-record-subject"><span class="visually-hidden">Что произошло: </span>{{ row.description }}</p>
+        <div class="defect-da-record-context">
+            <strong>{% if row.equipment %}{{ row.equipment.dispatcher_name_snapshot }}{% else %}Оборудование не указано{% endif %}</strong>
+            <span>Обнаружен {{ record.event_at|date:"d.m.Y H:i" }}</span>
+            <span>№ {{ record.sequence_value }}</span>
         </div>
+    </div>
+    <div class="defect-module-actions da-actions defect-screen-only">
+        <a class="da-button is-secondary" href="{% url 'equipment_defects:print' %}?volume={{ record.equipment_defect_context.volume.public_id }}">Печатная форма</a>
     </div>
 </header>

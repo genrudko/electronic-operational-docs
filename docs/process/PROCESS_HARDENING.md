@@ -175,10 +175,11 @@ python -m scripts.automation.atomic_github_publish self-test
 diff/path guard
 → CSS/JS/template syntax
 → focused source-contract
-→ trusted hot refresh
-→ health
+→ `scripts/vps_candidate.sh verify [focused_test_label ...]`
+→ VPS-local candidate health/browser evidence
 → targeted affected states
 → user feedback
+→ repeat без промежуточного push
 ```
 
 Не запускаются после каждого repair:
@@ -198,7 +199,7 @@ Full matrix и final gate выполняются один раз на оконч
 
 Dedicated security/schema/infra checks, rollback review и controlled evidence. Для product/runtime работы сохраняется отдельный PR.
 
-## 7. Deployment selection
+## 7. Delivery matrix
 
 Preflight выбирает delivery до публикации:
 
@@ -210,6 +211,8 @@ Preflight выбирает delivery до публикации:
 | direct-to-main hardening exception | `NONE` |
 
 Hot refresh запрещён при delete, rename, migration, workflow/controller или любом path вне presentation allowlist.
+
+До ready push в GitHub локальная проверка и browser evidence выполняются через unprivileged `scripts/vps_candidate.sh` из текущего working tree (с hashed browser lock, отдельной SQLite и `127.0.0.1:18766`). Это обеспечивает быструю локальную итерацию без изменения защищённых automation/security путей и не заменяет PostgreSQL, container/build и exact-head trusted verification после ready push.
 
 ## 8. Browser evidence reuse
 
@@ -225,18 +228,18 @@ Hot refresh запрещён при delete, rename, migration, workflow/controll
 |---|---|
 | preflight | 2 минуты |
 | focused checks | 10 минут до stall diagnosis |
-| trusted hot refresh | 20 минут |
-| trusted full development | 35 минут |
+| VPS-local candidate | 15 минут |
+| final trusted development | 35 минут |
 
 Правила:
 
 1. Code/test failure не перезапускается до извлечения primary cause.
 2. Доказанный infrastructure timeout допускает один retry только failed job.
 3. Второй одинаковый timeout — blocker.
-4. Deployment label всегда сначала снимается, затем устанавливается заново.
-5. Наличие label не является evidence запуска.
-6. Success объявляется только после exact run/job conclusion и `LIVE_SHA = HEAD_SHA`.
-7. Новый commit инвалидирует старые exact-head gates и runtime evidence.
+4. Промежуточный repair не публикуется только ради запуска проверок или Development candidate.
+5. Любое изменение VPS working tree инвалидирует локальное candidate evidence до повторных proportional checks/health/browser smoke.
+6. До ready push success означает только локальную candidate-готовность; final success после ready push требует exact-head GitHub gate и trusted runtime evidence.
+7. Новый pushed commit после final gate инвалидирует exact-head GitHub/trusted evidence и требует final gate заново.
 
 ## 10. Stable handoff
 

@@ -4,229 +4,56 @@
 {% block title %}Учётная запись и интерфейс · ЭОД{% endblock %}
 
 {% block content %}
-<section class="page-heading compact presentation-heading">
-    <div>
-        <div class="section-kicker">Персональный профиль</div>
-        <h1>Учётная запись и интерфейс</h1>
-        <p>
-            Персональные данные, действующие роли и общие настройки
-            отображения системы.
-        </p>
-    </div>
+<section class="da-page-header da-page-header-compact">
+    <div><span class="ux-kicker">Персональный профиль</span><h1>Учётная запись и интерфейс</h1><p>Персональные данные, действующие роли и общие настройки отображения системы.</p></div>
 </section>
 
 {% if employee %}
-<section class="profile-grid account-overview-grid">
-    <article class="profile-card identity-card">
-        <div class="card-heading-with-icon">
-            <span class="section-icon">
-                <svg class="ui-icon" aria-hidden="true">
-                    <use href="{% static 'system/icons.svg' %}#icon-user"></use>
-                </svg>
-            </span>
-            <div>
-                <span class="card-label">Сотрудник</span>
-                <h2>{{ employee.full_name }}</h2>
-            </div>
-        </div>
-        <dl class="human-detail-list">
-            <dt>Организация</dt>
-            <dd>{{ employee.organization }}</dd>
-            <dt>Подразделение</dt>
-            <dd>{{ employee.division.name }}</dd>
-            <dt>Должность</dt>
-            <dd>{{ employee.position.name }}</dd>
-            <dt>Рабочее место</dt>
-            <dd>{{ employee.workplace|default:"Не назначено" }}</dd>
-            <dt class="technical-only">Табельный номер</dt>
-            <dd class="technical-only">
-                <code>{{ employee.personnel_number }}</code>
-            </dd>
+<section class="ux-detail-grid account-overview-grid">
+    <article class="da-card identity-card">
+        <div class="card-heading-with-icon"><span class="section-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-user"></use></svg></span><div><span class="ux-kicker">Сотрудник</span><h2>{{ employee.full_name }}</h2></div></div>
+        <dl class="ux-key-value human-detail-list">
+            <dt>Организация</dt><dd>{{ employee.organization }}</dd><dt>Подразделение</dt><dd>{{ employee.division.name }}</dd><dt>Должность</dt><dd>{{ employee.position.name }}</dd><dt>Рабочее место</dt><dd>{{ employee.workplace|default:"Не назначено" }}</dd><dt class="technical-only">Табельный номер</dt><dd class="technical-only"><code>{{ employee.personnel_number }}</code></dd>
         </dl>
     </article>
 
-    <article class="profile-card roles-card">
-        <div class="card-heading-with-icon">
-            <span class="section-icon">
-                <svg class="ui-icon" aria-hidden="true">
-                    <use href="{% static 'system/icons.svg' %}#icon-role"></use>
-                </svg>
-            </span>
-            <div>
-                <span class="card-label">Полномочия</span>
-                <h2>Действующие роли</h2>
-            </div>
-        </div>
-        <ul class="role-list">
+    <article class="da-card roles-card">
+        <div class="card-heading-with-icon"><span class="section-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-role"></use></svg></span><div><span class="ux-kicker">Полномочия</span><h2>Действующие роли</h2></div></div>
+        <ul class="role-list ux-list-reset">
             {% for item in effective_roles %}
                 <li class="role-assignment {% if item.is_substituted %}substituted{% else %}direct{% endif %}">
-                    <div class="role-assignment-heading">
-                        <strong>{{ item.assignment.role.name }}</strong>
-                        <em class="role-assignment-basis">
-                            {% if item.is_substituted %}
-                                По замещению
-                            {% else %}
-                                Прямое назначение
-                            {% endif %}
-                        </em>
-                    </div>
-                    <span class="role-assignment-scope-label">
-                        Область действия
-                    </span>
-                    <span class="role-assignment-scope">
-                        {{ item.assignment.scope|default:"Вся организация" }}
-                    </span>
+                    <div class="role-assignment-heading"><strong>{{ item.assignment.role.name }}</strong><span class="da-status-chip {% if item.is_substituted %}is-info{% else %}is-success{% endif %}">{% if item.is_substituted %}По замещению{% else %}Прямое назначение{% endif %}</span></div>
+                    <span class="role-assignment-scope-label">Область действия</span><span class="role-assignment-scope">{{ item.assignment.scope|default:"Вся организация" }}</span>
                 </li>
-            {% empty %}
-                <li class="muted">Действующих ролей нет.</li>
-            {% endfor %}
+            {% empty %}<li class="ux-muted">Действующих ролей нет.</li>{% endfor %}
         </ul>
     </article>
 </section>
 
-<section
-    class="profile-card interface-settings-card account-general-settings"
-    data-interface-settings
->
+<section class="da-card interface-settings-card account-general-settings" data-interface-settings>
     <div class="settings-heading account-settings-heading">
-        <div class="card-heading-with-icon">
-            <span class="section-icon">
-                <svg class="ui-icon" aria-hidden="true">
-                    <use href="{% static 'system/icons.svg' %}#icon-settings"></use>
-                </svg>
-            </span>
-            <div>
-                <span class="card-label">Персональные настройки</span>
-                <h2>Общий интерфейс системы</h2>
-            </div>
-        </div>
-        <p>
-            Параметры отдельных рабочих модулей находятся внутри
-            соответствующих экранов.
-        </p>
+        <div class="card-heading-with-icon"><span class="section-icon"><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-settings"></use></svg></span><div><span class="ux-kicker">Персональные настройки</span><h2>Общий интерфейс системы</h2></div></div>
+        <p class="ux-muted">Параметры отдельных рабочих модулей находятся внутри соответствующих экранов.</p>
     </div>
 
-    <form
-        method="post"
-        class="interface-settings-form"
-        data-interface-settings-form
-    >
+    <form method="post" class="interface-settings-form" data-interface-settings-form>
         {% csrf_token %}
-        <div class="account-general-settings-grid">
-            <div class="account-setting-card">
-                <label for="{{ preference_form.theme.id_for_label }}">
-                    {{ preference_form.theme.label }}
-                </label>
-                {{ preference_form.theme }}
-                {% for error in preference_form.theme.errors %}
-                    <span class="field-errors">{{ error }}</span>
-                {% endfor %}
-            </div>
-
-            <div class="account-setting-card">
-                <label for="{{ preference_form.density.id_for_label }}">
-                    {{ preference_form.density.label }}
-                </label>
-                {{ preference_form.density }}
-                {% for error in preference_form.density.errors %}
-                    <span class="field-errors">{{ error }}</span>
-                {% endfor %}
-            </div>
-
-            <div class="account-setting-card">
-                <label for="{{ preference_form.font_scale.id_for_label }}">
-                    {{ preference_form.font_scale.label }}
-                </label>
-                {{ preference_form.font_scale }}
-                {% for error in preference_form.font_scale.errors %}
-                    <span class="field-errors">{{ error }}</span>
-                {% endfor %}
-            </div>
-
-            <div class="account-setting-card">
-                <label for="{{ preference_form.content_width.id_for_label }}">
-                    {{ preference_form.content_width.label }}
-                </label>
-                {{ preference_form.content_width }}
-                {% for error in preference_form.content_width.errors %}
-                    <span class="field-errors">{{ error }}</span>
-                {% endfor %}
-            </div>
-
-            <label class="account-setting-card account-setting-toggle">
-                <span class="account-setting-toggle-control">
-                    {{ preference_form.show_technical_details }}
-                    <strong>
-                        {{ preference_form.show_technical_details.label }}
-                    </strong>
-                </span>
-                <small>
-                    {{ preference_form.show_technical_details.help_text }}
-                </small>
-                {% for error in preference_form.show_technical_details.errors %}
-                    <span class="field-errors">{{ error }}</span>
-                {% endfor %}
-            </label>
+        <div class="ux-form-grid account-general-settings-grid">
+            <div class="account-setting-card da-field"><label for="{{ preference_form.theme.id_for_label }}">{{ preference_form.theme.label }}</label>{{ preference_form.theme }}{% for error in preference_form.theme.errors %}<span class="ux-field-errors">{{ error }}</span>{% endfor %}</div>
+            <div class="account-setting-card da-field"><label for="{{ preference_form.density.id_for_label }}">{{ preference_form.density.label }}</label>{{ preference_form.density }}{% for error in preference_form.density.errors %}<span class="ux-field-errors">{{ error }}</span>{% endfor %}</div>
+            <div class="account-setting-card da-field"><label for="{{ preference_form.font_scale.id_for_label }}">{{ preference_form.font_scale.label }}</label>{{ preference_form.font_scale }}{% for error in preference_form.font_scale.errors %}<span class="ux-field-errors">{{ error }}</span>{% endfor %}</div>
+            <div class="account-setting-card da-field"><label for="{{ preference_form.content_width.id_for_label }}">{{ preference_form.content_width.label }}</label>{{ preference_form.content_width }}{% for error in preference_form.content_width.errors %}<span class="ux-field-errors">{{ error }}</span>{% endfor %}</div>
+            <label class="account-setting-card account-setting-toggle ux-check"><span class="account-setting-toggle-control">{{ preference_form.show_technical_details }}<strong>{{ preference_form.show_technical_details.label }}</strong></span><small>{{ preference_form.show_technical_details.help_text }}</small>{% for error in preference_form.show_technical_details.errors %}<span class="ux-field-errors">{{ error }}</span>{% endfor %}</label>
         </div>
-
-        <div class="settings-actions account-settings-actions">
-            <button class="button" type="submit">
-                Сохранить общие настройки
-            </button>
-            <a href="{% url 'operational_log:registry' %}">
-                Открыть настройки журнала
-            </a>
-        </div>
+        <div class="ux-form-actions account-settings-actions"><button class="da-button" type="submit">Сохранить общие настройки</button><a class="da-button is-tertiary" href="{% url 'operational_log:registry' %}">Открыть настройки журнала</a></div>
     </form>
 </section>
 
-<details class="profile-card history-disclosure technical-only">
-    <summary>
-        <span>
-            <svg class="ui-icon" aria-hidden="true">
-                <use href="{% static 'system/icons.svg' %}#icon-history"></use>
-            </svg>
-            История прямых назначений
-        </span>
-        <small>{{ direct_assignments|length }} записей</small>
-    </summary>
-    <div class="table-wrap disclosure-body">
-        <table>
-            <thead>
-                <tr>
-                    <th>Роль</th>
-                    <th>Область</th>
-                    <th>Начало</th>
-                    <th>Окончание</th>
-                    <th>Активно</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for assignment in direct_assignments %}
-                <tr>
-                    <td>{{ assignment.role.name }}</td>
-                    <td>
-                        {{ assignment.scope|default:"Вся организация" }}
-                    </td>
-                    <td>{{ assignment.valid_from }}</td>
-                    <td>
-                        {{ assignment.valid_until|default:"без ограничения" }}
-                    </td>
-                    <td>{{ assignment.is_active|yesno:"да,нет" }}</td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="5" class="muted">Назначений нет.</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
+<details class="da-card history-disclosure technical-only">
+    <summary><span><svg class="ui-icon" aria-hidden="true"><use href="{% static 'system/icons.svg' %}#icon-history"></use></svg> История прямых назначений</span><small>{{ direct_assignments|length }} записей</small></summary>
+    <div class="da-table-wrap disclosure-body"><table class="da-table"><thead><tr><th>Роль</th><th>Область</th><th>Начало</th><th>Окончание</th><th>Активно</th></tr></thead><tbody>{% for assignment in direct_assignments %}<tr><td>{{ assignment.role.name }}</td><td>{{ assignment.scope|default:"Вся организация" }}</td><td>{{ assignment.valid_from }}</td><td>{{ assignment.valid_until|default:"без ограничения" }}</td><td><span class="da-status-chip {% if assignment.is_active %}is-success{% endif %}">{{ assignment.is_active|yesno:"да,нет" }}</span></td></tr>{% empty %}<tr><td colspan="5"><div class="ux-empty-state">Назначений нет.</div></td></tr>{% endfor %}</tbody></table></div>
 </details>
 {% else %}
-<section class="empty-state warning">
-    <h2>Учётная запись не связана с сотрудником</h2>
-    <p>Обратитесь к администратору справочников.</p>
-</section>
+<section class="ux-error-state"><h2>Учётная запись не связана с сотрудником</h2><p>Обратитесь к администратору справочников.</p></section>
 {% endif %}
 {% endblock %}
