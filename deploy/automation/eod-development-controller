@@ -9,6 +9,8 @@ DEPLOY_KEY="/etc/eod-automation/github_deploy_key"
 GITHUB_KNOWN_HOSTS="/etc/eod-automation/github_known_hosts"
 LOCK_FILE="/run/lock/eod-development-controller.lock"
 HOT_REFRESH_MARKER="/app/.eod-hot-refresh.env"
+LOCAL_OVERLAY_INBOX="/home/eodadmin/.local/state/development-bridge/eod-overlay"
+LOCAL_OVERLAY_HELPER="/usr/local/lib/eod/local_overlay.py"
 
 fail() {
     printf 'ERROR: %s\n' "$*" >&2
@@ -744,9 +746,109 @@ ssh_gateway() {
     esac
 }
 
+write_local_hot_refresh_marker() {
+    local container="$1" run_id="$2" bundle_sha256="$3" applied_at="$4"
+    docker exec -i --user root "$container" sh -s -- \
+        "$HOT_REFRESH_MARKER" "$run_id" "$bundle_sha256" "$applied_at" <<'SH'
+set -eu
+marker="$1"
+run_id="$2"
+bundle_sha256="$3"
+applied_at="$4"
+tmp="${marker}.tmp"
+umask 077
+{
+    printf 'SOURCE=LOCAL\n'
+    printf 'RUN_ID=%s\n' "$run_id"
+    printf 'BUNDLE_SHA256=%s\n' "$bundle_sha256"
+    printf 'APPLIED_AT=%s\n' "$applied_at"
+} >"$tmp"
+chown eod:eod "$tmp"
+chmod 0600 "$tmp"
+mv "$tmp" "$marker"
+SH
+}
+
+local_hot_refresh() {
+    local bundle_path="$1" run_id="$2"
+    require_command date
+    require_command mktemp
+    require_command sha256sum
+    [[ -n "$bundle_path" ]] || fail "missing bundle path"
+    [[ -n "$run_id" ]] || fail "missing run id"
+    [[ "$run_id" =~ ^[A-Za-z0-9._-]+$ ]] || fail "invalid run id: $run_id"
+    [[ -f "$LOCAL_OVERLAY_HELPER" ]] || fail "installed local overlay helper is missing: $LOCAL_OVERLAY_HELPER"
+    compgen -G "$EOD_STATE_DIR/pending-*.env" >/dev/null && \
+        fail "a full deployment transaction is pending"
+
+    local image container temp_root files=() paths=()
+    image="$(current_application_image)"
+    docker image inspect "$image" >/dev/null 2>&1 || fail "current development image is unavailable: $image"
+
+    temp_root="$(mktemp -d)"
+    local extract_out
+    if ! extract_out="$(python3 "$LOCAL_OVERLAY_HELPER" extract "$bundle_path" "$temp_root" --run-id "$run_id" --inbox-dir "$LOCAL_OVERLAY_INBOX")"; then
+        rm -rf "$temp_root"
+        fail "local overlay bundle validation failed"
+    fi
+
+    while IFS=$'\t' read -r idx file_path sha; do
+        [[ -n "$idx" && "$idx" =~ ^[0-9]+$ ]] || continue
+        paths+=("$file_path")
+    done <<<"$extract_out"
+
+    [[ "${#paths[@]}" -gt 0 ]] || { rm -rf "$temp_root"; fail "no files found in overlay bundle"; }
+
+    local bundle_sha256
+    bundle_sha256="$(sha256sum "$bundle_path" | awk '{print $1}')"
+    [[ "$bundle_sha256" =~ ^[0-9a-f]{64}$ ]] || { rm -rf "$temp_root"; fail "failed to compute bundle sha256"; }
+
+    local rollback_required=1
+    trap 'rc=$?; trap - ERR; set +e; if [[ "$rollback_required" == "1" ]]; then log "local hot refresh failed; restoring clean development app from full image"; force_recreate_application_only "$image"; rollback_rc=$?; rm -rf "$temp_root"; if [[ "$rollback_rc" -ne 0 ]]; then printf "ERROR: local hot-refresh rollback failed for image %s\n" "$image" >&2; exit "$rollback_rc"; fi; fi; exit "$rc"' ERR
+
+    force_recreate_application_only "$image"
+    container="$(current_application_container "$image")"
+    [[ -n "$container" ]] || fail "development app container is absent"
+
+    local index=0
+    for file_path in "${paths[@]}"; do
+        copy_hot_refresh_file "$container" "$temp_root/$index" "$file_path" "$run_id"
+        index=$((index + 1))
+    done
+
+    restart_application_only "$image"
+    container="$(current_application_container "$image")"
+    [[ -n "$container" ]] || fail "development app container is absent after restart"
+
+    local applied_at
+    applied_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    write_local_hot_refresh_marker "$container" "$run_id" "$bundle_sha256" "$applied_at"
+    wait_for_application "$image"
+
+    rollback_required=0
+    trap - ERR
+    rm -rf "$temp_root"
+    printf 'SUCCESS bundle=%s run_id=%s bundle_sha256=%s image=%s files=%s database=NONE preview=UNTOUCHED\n' \
+        "$bundle_path" "$run_id" "$bundle_sha256" "$image" "${#paths[@]}"
+}
+
+local_hot_refresh_clear() {
+    compgen -G "$EOD_STATE_DIR/pending-*.env" >/dev/null && \
+        fail "a full deployment transaction is pending"
+
+    local image
+    image="$(current_application_image)"
+    docker image inspect "$image" >/dev/null 2>&1 || fail "current development image is unavailable: $image"
+
+    log "restoring clean development application from current image: $image"
+    force_recreate_application_only "$image" || fail "could not restore clean development application"
+
+    printf 'SUCCESS clear image=%s database=NONE preview=UNTOUCHED\n' "$image"
+}
+
 main() {
     require_root
-    for command in git ssh tar docker curl flock python3; do
+    for command in git ssh tar docker curl flock python3 sha256sum; do
         require_command "$command"
     done
     load_config
@@ -766,8 +868,16 @@ main() {
         status)
             show_status
             ;;
+        local-hot-refresh)
+            [[ "$#" -eq 3 ]] || fail "usage: eod-development-controller local-hot-refresh <bundle_path> <run_id>"
+            local_hot_refresh "$2" "$3"
+            ;;
+        local-hot-refresh-clear)
+            [[ "$#" -eq 1 ]] || fail "usage: eod-development-controller local-hot-refresh-clear"
+            local_hot_refresh_clear
+            ;;
         *)
-            fail "usage: eod-development-controller {ssh-gateway|rollback-pending|rollback-last|status}"
+            fail "usage: eod-development-controller {ssh-gateway|rollback-pending|rollback-last|status} | local-hot-refresh <bundle_path> <run_id> | local-hot-refresh-clear"
             ;;
     esac
 }
